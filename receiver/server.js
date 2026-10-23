@@ -15,6 +15,16 @@ const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 function response(res,code,obj){res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(obj));}
 function validId(id){return typeof id==='string'&&/^[a-z0-9-]{12,128}$/i.test(id);}
+function tokenMatches(header,token){
+  const a=Buffer.from(String(header||'')),b=Buffer.from(`Bearer ${token}`);
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+// A crash mid-append can leave a final line without its newline; terminate it so the next record stays parseable.
+async function terminateJournal(file){
+  let fd;try{fd=await fs.open(file,'r');}catch(e){if(e.code==='ENOENT')return '';throw e;}
+  try{const {size}=await fd.stat();if(!size)return '';const b=Buffer.alloc(1);await fd.read(b,0,1,size-1);return b[0]===10?'':'\n';}
+  finally{await fd.close();}
+}
 function createService(options={}) {
   const dataDir=path.resolve(options.dataDir||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
   const intervalMs=Number(options.sortIntervalMs)||10000;
@@ -23,7 +33,7 @@ function createService(options={}) {
   if(!['127.0.0.1','::1','localhost'].includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');
   let server,worker,token,actualPort,closing=false;
   const flight=new Map();let cursor=0;
-  const writes=new Map();
+  const writes=new Map();const checkedJournals=new Set();
   function appendEvents(projectId,events) {
     const previous=writes.get(projectId)||Promise.resolve();
     const next=previous.catch(()=>{}).then(async()=>{
@@ -44,7 +54,9 @@ function createService(options={}) {
           prepared.push({...rest,contentHash:blobId});
         }else prepared.push(item);
       }
-      await fs.appendFile(path.join(dir,'events.jsonl'),prepared.map(e=>JSON.stringify(e)).join('\n')+'\n',{mode:0o600});
+      const journal=path.join(dir,'events.jsonl');
+      let prefix='';if(!checkedJournals.has(projectId)){prefix=await terminateJournal(journal);checkedJournals.add(projectId);}
+      await fs.appendFile(journal,prefix+prepared.map(e=>JSON.stringify(e)).join('\n')+'\n',{mode:0o600});
     });
     writes.set(projectId,next);
     return next;
@@ -123,7 +135,7 @@ function createService(options={}) {
           sessions:Object.values(s.sessions),timeline:s.timeline,frames:s.frames});return;
       }
       if(req.method==='POST'&&(pathname==='/v1/events'||pathname==='/v1/flush')) {
-        if(req.headers.authorization!==`Bearer ${token}`){response(res,401,{error:'Receiver token required'});return;}
+        if(!tokenMatches(req.headers.authorization,token)){response(res,401,{error:'Receiver token required'});return;}
         if(pathname==='/v1/flush') {
           const id=u.searchParams.get('id');if(id&&!validId(id)){response(res,400,{error:'Invalid project'});return;}
           const result=await flush(id||undefined);response(res,result.error?500:200,result);return;
@@ -133,11 +145,14 @@ function createService(options={}) {
         for await(const chunk of req){size+=chunk.length;if(size>512*1024){response(res,413,{error:'Batch exceeds 512 KiB'});return;}chunks.push(chunk);}
         let parsed;try{parsed=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{response(res,400,{error:'Invalid JSON'});return;}
         if(!parsed||!Array.isArray(parsed.events)||parsed.events.length<1||parsed.events.length>100){response(res,400,{error:'Expected 1-100 events'});return;}
-        let events;try{events=parsed.events.map(validateEvent);}catch(e){response(res,422,{error:e.message});return;}
+        // Valid events are kept even when a sibling in the batch is rejected; rejections are reported per event.
+        const events=[],rejected=[];
+        parsed.events.forEach((raw,index)=>{try{events.push(validateEvent(raw));}catch(e){rejected.push({index,id:typeof raw?.id==='string'?raw.id.slice(0,120):null,error:e.message});}});
+        if(!events.length){response(res,422,{error:rejected[0]?.error||'No valid events',rejected});return;}
         const ids=[...new Set(events.map(e=>e.projectId))];
         if(ids.length!==1){response(res,422,{error:'Batch must target one project'});return;}
         await appendEvents(ids[0],events);
-        response(res,202,{accepted:events.length,projectId:ids[0],status:'persisted; awaiting interpretation'});return;
+        response(res,202,{accepted:events.length,rejected,projectId:ids[0],status:'persisted; awaiting interpretation'});return;
       }
       response(res,404,{error:'Not found'});
     }catch(error){if(!res.headersSent)response(res,500,{error:'Receiver failure'});console.error('[resonance receiver]',error);}

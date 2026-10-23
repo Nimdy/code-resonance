@@ -148,6 +148,10 @@ async function observeGit(rec){
 async function baseline(rec){
   const limit=conf().get('baselineFileLimit',450);
   if(limit===0)return;
+  // Indexing queues up to tens of MB; wait for a reachable receiver instead of piling it up on disk.
+  if(!rec.outbox.online)decorateStatus('waiting for receiver');
+  while(!rec.outbox.online){if(!rec.active)return;await new Promise(r=>setTimeout(r,1000));}
+  decorateStatus('indexing');
   const pattern=new vscode.RelativePattern(rec.folder,SOURCE_GLOB);
   const found=await vscode.workspace.findFiles(pattern,EXCLUDE_GLOB,limit);
   send(rec,'project.baseline',{meta:{count:found.length,truncated:found.length>=limit}});
@@ -178,7 +182,7 @@ async function start(context,showConsent=true){
   const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null};
   rec.outbox=new DurableOutbox({directory,port:conf().get('receiverPort',4174),onStatus:(kind)=>{
     if(recording!==rec)return;
-    decorateStatus(kind==='online'?'recording':kind==='offline'?'queued offline':kind==='disk-error'?'storage error':'recording');
+    decorateStatus({online:'recording',offline:'queued offline','disk-error':'storage error','queue-full':'queue full','rejected':'recording (events rejected)'}[kind]||'recording');
   }});
   await rec.outbox.start().catch(()=>{});
   recording=rec;
