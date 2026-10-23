@@ -51,10 +51,21 @@ function categoryOf(event){
   if(typeof c==='string')return c;
   return event.kind==='task.finished'&&LEGACY_TEST_TASK.test(event.meta?.taskName||'')?'test':'other';
 }
+// Duplicate deliveries (outbox retries) are dropped. The worker supplies an insertion-ordered Set for O(1) checks.
+function alreadySeen(state,id){
+  if(state.seenSet){
+    if(state.seenSet.has(id))return true;
+    state.seenSet.add(id);
+    if(state.seenSet.size>24000){const oldest=state.seenSet.values();for(let i=0;i<12000;i++)state.seenSet.delete(oldest.next().value);}
+    return false;
+  }
+  if(!state.seen)state.seen=[];
+  if(state.seen.includes(id))return true;
+  state.seen.push(id);if(state.seen.length>12000)state.seen.splice(0,state.seen.length-12000);
+  return false;
+}
 function apply(state,event) {
-  if (!state.seen) state.seen=[];
-  if(state.seen.includes(event.id)) return [];
-  state.seen.push(event.id); if(state.seen.length>12000) state.seen.splice(0,state.seen.length-12000);
+  if(alreadySeen(state,event.id)) return [];
   const cues=[];
   const c=(kind,cat,w,details={})=>{const cue=makeCue(event,kind,cat,w,details);cues.push(cue);return cue;};
   state.stats.raw++;

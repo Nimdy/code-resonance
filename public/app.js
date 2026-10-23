@@ -5,7 +5,7 @@
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
   const dom={project:$('projectSelect'),feed:$('feed'),scrub:$('scrub'),sound:$('soundBtn'),chapter:$('chapter')};
   let selected='',model=null,lastCue='',mode='live',playback=false,replayPos=0,replayPrev=0,replayClock=0;
-  let frame=null,firstPoll=true,clock=0,scaledW=0,scaledH=0,replayGraphs=[];
+  let frame=null,firstPoll=true,clock=0,scaledW=0,scaledH=0,replay=null;
   let graph=new Map(),edges=[],particles=[],pulses=[],sparks=[],lastGraphKey='';
   const music=new window.ResonanceMusic(({index})=>setText('barCounter',`BAR ${String(index).padStart(3,'0')}`));
   let selectedWorld='nexus',recorder=null,recordChunks=[],recordStreams=[];
@@ -66,7 +66,7 @@
         for(const p of list.projects)dom.project.add(new Option(`PROJECT ${p.id.slice(0,8).toUpperCase()}`,p.id));
         dom.project.value=ids.has(choice)?choice:'';
       }
-      if(!selected||!ids.has(selected)){selected=ids.has(choice)?choice:list.projects[0]?.id||'';dom.project.value=selected;lastCue='';lastGraphKey='';replayGraphs=[];}
+      if(!selected||!ids.has(selected)){selected=ids.has(choice)?choice:list.projects[0]?.id||'';dom.project.value=selected;lastCue='';lastGraphKey='';replay=null;}
       if(!selected){setConnection(false);return;}
       const next=await getJSON(`/api/project?id=${encodeURIComponent(selected)}`);
       if(!next.timeline||!next.graph)throw Error('Invalid project model');
@@ -84,6 +84,11 @@
     }catch(e){setConnection(false);setText('connection','RECEIVER OFFLINE');}
   }
   function setConnection(ok){$('statusDot').classList.toggle('active',!!ok);setText('connection',ok?'SESSION CONNECTED':'RECEIVER OFFLINE');$('stageEmpty').classList.toggle('hidden',!!model);}
+  // Live views use the latest projection; replay uses the full recorded timeline.
+  function history(){
+    if(mode==='replay'&&replay)return replay;
+    return {cues:model?.timeline||[],frames:model?.frames||[],start:model?.timeline.at(0)?.ts||0,end:model?.timeline.at(-1)?.ts||0};
+  }
   function setStats(m){
     const p=m.performance||{};const controls=(mode==='replay'&&frame)?frame.controls:m.frames.at(-1)?.controls||{};
     setText('projectName',m.projectId.slice(0,12).toUpperCase());
@@ -97,15 +102,15 @@
       const n=Math.round(clamp(value)*100);$(`${name}Bar`).style.width=n+'%';setText(`${name}Number`,String(n).padStart(2,'0'));
     }
     setText('files',m.stats.files);setText('symbols',m.stats.symbols);setText('events',m.stats.raw);setText('tests',m.stats.testsPassed);
-    setText('eventCount',m.timeline.length);
+    const h=history();
+    setText('eventCount',h.cues.length);
     setText('confidence','OBSERVED + INFERRED');
-    const min=m.timeline.at(0)?.ts,max=m.timeline.at(-1)?.ts;
-    setText('scrubStart',timeText(min));setText('scrubEnd',mode==='live'?'NOW':timeText(max));
+    setText('scrubStart',timeText(h.start));setText('scrubEnd',mode==='live'?'NOW':timeText(h.end));
     $('stageEmpty').classList.toggle('hidden',true);
-    $('playBtn').disabled=!m.timeline.length||mode!=='replay';
+    $('playBtn').disabled=!h.cues.length||mode!=='replay';
   }
   function renderFeed(){if(!model)return;
-    const filtered=model.timeline.filter(c=>!['editor.change.observed','document.baseline.indexed'].includes(c.type));
+    const filtered=history().cues.filter(c=>!['editor.change.observed','document.baseline.indexed'].includes(c.type));
     const source=mode==='replay'?filtered.filter(c=>c.ts<=replayPos):filtered;
     const recent=source.slice(-28).reverse();
     const fragment=document.createDocumentFragment();
@@ -362,9 +367,23 @@
     capture.onerror=()=>{capture.stop();};capture.start(1000);
     $('recordBtn').classList.add('recording');setText('recordBtn','■ STOP');
   }
-  async function loadReplayGraphs(){
+  // The whole recorded performance is paged in; graphs are rebuilt on demand from the nearest keyframe plus deltas.
+  async function loadReplay(){
     if(!selected)return;
-    try{const data=await getJSON(`/api/replay?id=${encodeURIComponent(selected)}`);replayGraphs=data.graphs||[];}catch{replayGraphs=[];}
+    const entries=[];let after=-1;
+    try{
+      for(;;){const page=await getJSON(`/api/timeline?id=${encodeURIComponent(selected)}&after=${after}&limit=500`);
+        entries.push(...page.entries);if(!page.entries.length||entries.length>=page.total)break;after=page.entries.at(-1).seq;}
+    }catch{}
+    replay={entries,frames:entries.map(e=>e.frame),cues:entries.flatMap(e=>e.cues),start:entries[0]?.start||0,end:entries.at(-1)?.end||0};
+  }
+  function graphAt(i){
+    const entries=replay.entries;let k=i;while(k>0&&!entries[k].graph.keyframe)k--;
+    const nodes=new Map(),edges=new Map(),key=e=>`${e.a}>${e.b}>${e.kind}`;
+    for(let j=k;j<=i;j++){const d=entries[j].graph;
+      if(d.keyframe){nodes.clear();edges.clear();d.nodes.forEach(n=>nodes.set(n.id,n));d.edges.forEach(e=>edges.set(key(e),e));continue;}
+      d.add.forEach(n=>nodes.set(n.id,n));d.remove.forEach(id=>nodes.delete(id));d.addEdges.forEach(e=>edges.set(key(e),e));d.removeEdges.forEach(e=>edges.delete(key(e)));}
+    return {nodes:[...nodes.values()],edges:[...edges.values()]};
   }
   function changeMode(value){
     mode=value;playback=false;$('playBtn').textContent='▶';
@@ -373,47 +392,43 @@
     dom.scrub.disabled=value==='live';$('playBtn').disabled=value==='live'||!model?.timeline.length;
     syncPlayerControls();
     $('liveIndicator').textContent=value==='live'?'LIVE':'REPLAY';
-    if(value==='replay'){replayPos=model?.timeline.at(0)?.ts||0;dom.scrub.value='0';frame=model?.frames.at(0)||frame;music.setFrame(frame);
-      void loadReplayGraphs().then(()=>frameAt(replayPos));}
+    if(value==='replay'){dom.scrub.value='0';
+      void loadReplay().then(()=>{if(mode!=='replay')return;replayPos=replay.start;frameAt(replayPos);if(model){setStats(model);renderFeed();}});}
     else{frame=model?.frames.at(-1)||frame;music.setFrame(frame);dom.scrub.value='1000';if(model)layoutGraph(model.graph);}
     if(model){setStats(model);renderFeed();}
   }
-  function timestampFromScrub(v){if(!model?.timeline.length)return 0;
-    const from=model.timeline.at(0).ts,to=model.timeline.at(-1).ts;
-    return from+(to-from)*(Number(v)/1000);
-  }
+  function timestampFromScrub(v){const h=history();return h.start+(h.end-h.start)*(Number(v)/1000);}
   function frameAt(ts){
+    if(mode==='replay'&&replay?.entries.length){
+      let i=replay.entries.findIndex(e=>e.end>ts);if(i<0)i=replay.entries.length-1;
+      if(frame!==replay.entries[i].frame){frame=replay.entries[i].frame;music.setFrame(frame);layoutGraph(graphAt(i));}
+      return;
+    }
     if(!model?.frames?.length)return;
-    // Derived batches arrive later than raw event clocks. Use the latest available stage frame.
     const picked=[...model.frames].reverse().find(f=>f.createdAt<=ts+12000);
     frame=picked||model.frames[0];music.setFrame(frame);
-    if(mode==='replay'&&replayGraphs.length){
-      const history=replayGraphs.find(x=>x.id===frame.id)||replayGraphs.filter(x=>x.ts<=ts+12000).at(-1);
-      if(history)layoutGraph(history.graph);
-    }
   }
   function seek(ts){replayPos=ts;frameAt(ts);if(model){
-    const a=model.timeline.at(0)?.ts||0,b=model.timeline.at(-1)?.ts||1;
-    dom.scrub.value=String(Math.round(((ts-a)/(b-a||1))*1000));
+    const h=history();
+    dom.scrub.value=String(Math.round(((ts-h.start)/(h.end-h.start||1))*1000));
     renderFeed();setStats(model);
   }}
   function tickReplay(now){
-    if(!model?.timeline.length)return;
+    const h=history();if(!h.cues.length)return;
     const dt=Math.min(300,now-replayClock),speed=Number($('speedSelect').value)||4;
     const previous=replayPos;replayPos+=dt*speed;replayClock=now;
-    const max=model.timeline.at(-1).ts;
-    for(const c of model.timeline.filter(c=>c.ts>previous&&c.ts<=replayPos).slice(-24))animateCue(c);
-    if(replayPos>=max){replayPos=max;playback=false;$('playBtn').textContent='▶';}
-    frameAt(replayPos);const min=model.timeline.at(0).ts;
-    dom.scrub.value=String(Math.round(((replayPos-min)/(max-min||1))*1000));
+    for(const c of h.cues.filter(c=>c.ts>previous&&c.ts<=replayPos).slice(-24))animateCue(c);
+    if(replayPos>=h.end){replayPos=h.end;playback=false;$('playBtn').textContent='▶';}
+    frameAt(replayPos);
+    dom.scrub.value=String(Math.round(((replayPos-h.start)/(h.end-h.start||1))*1000));
     if(Math.floor(now/500)!==Math.floor((now-dt)/500)){renderFeed();setStats(model);}
   }
-  dom.project.addEventListener('change',()=>{selected=dom.project.value;lastCue='';firstPoll=true;lastGraphKey='';graph.clear();poll();});
+  dom.project.addEventListener('change',()=>{selected=dom.project.value;lastCue='';firstPoll=true;lastGraphKey='';replay=null;graph.clear();poll();if(mode==='replay')changeMode('replay');});
   $('liveBtn').addEventListener('click',()=>changeMode('live'));
   $('replayBtn').addEventListener('click',()=>changeMode('replay'));
   $('playBtn').addEventListener('click',()=>{
-    if(mode!=='replay'||!model?.timeline.length)return;
-    if(replayPos>=model.timeline.at(-1).ts)seek(model.timeline.at(0).ts);
+    const h=history();if(mode!=='replay'||!h.cues.length)return;
+    if(replayPos>=h.end)seek(h.start);
     playback=!playback;replayClock=performance.now();$('playBtn').textContent=playback?'Ⅱ':'▶';
   });
   dom.scrub.addEventListener('input',()=>{if(mode==='replay'){playback=false;$('playBtn').textContent='▶';seek(timestampFromScrub(dom.scrub.value));}});
