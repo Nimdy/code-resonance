@@ -415,6 +415,9 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     const add=(dx,dz,y)=>pts.push([q(dx*c+dz*s),q(y),q(-dx*s+dz*c)]);
     for(const p of sectors)if(p){const k=p.r>0?(p.r+.9)/p.r:1;add(p.dx*k,p.dz*k,0);add(p.dx,p.dz,p.h);}
     if(tallest)add(tallest.dx,tallest.dz,tallest.h);
+    // Bridges between districts arc high, and working drones hover above their building: both stay in frame.
+    for(const l of links.values())if(l.cross&&l.curve&&l.born!==null&&l.born<=t&&l.removed===null){const m=l.curve.getPoint(.5);add(m.x-tx,m.z-tz,m.y);}
+    for(const a of agents.values())if(a.moveAt>-1e11&&t-a.active<14000)add(a.to.x-tx,a.to.z-tz,a.to.y+.4);
     if(!pts.length)add(0,0,0);
     return pts;
   }

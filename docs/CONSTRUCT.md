@@ -40,7 +40,8 @@ Animations run in viewer time (performance time divided by replay speed), so pac
 
 - Renderer: `public/construct.js`, Three.js 0.170 vendored at `public/vendor/three.module.min.js` (MIT, see
   `public/vendor/THREE-LICENSE.txt`), loaded on demand. Without WebGL the player falls back to Monolith (Canvas2D).
-- Camera: a slow orbit (one turn in about nine minutes) that frames the site's actual outline as closely as it can,
+- Camera: a slow orbit (one turn in about nine minutes) that frames the site's actual outline (buildings, bridges and
+  working drones) as closely as it can,
   balanced between the top of the frame and the caption area, and leans toward where something meaningful happens
   without letting the rest leave the frame. It never cuts or jumps.
 - Scale: storeys per building are capped (the rest form a crown), conduits inside a district rest quieter the more
