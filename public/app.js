@@ -66,12 +66,13 @@
   function runQueue(){const now=perfNow();while(queue.length&&queue[0].time<=now)queue.shift().fn();}
   const cueTime=(cue,entry)=>clamp(cue.ts,entry.start,Math.max(entry.start,entry.end-1));
   // Schedules one recorded window: its frame at the window start, each cue at its own time.
-  function schedule(entry,{animate=true}={}){
+  // Cues before `from` (e.g. earlier in a window that a seek lands inside) join the feed silently, never as a burst.
+  function schedule(entry,{animate=true,from=-Infinity}={}){
     at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);});
     for(const cue of entry.cues){
-      const time=cueTime(cue,entry);
-      if(animate&&!QUIET.has(cue.type))music.enqueue(cue,time);
-      at(time,()=>{if(animate)animateCue(cue);feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
+      const time=cueTime(cue,entry),live=animate&&time>=from;
+      if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
+      at(time,()=>{if(live)animateCue(cue);feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
     }
   }
   function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);if(model)setStats(model);}
@@ -510,8 +511,8 @@
     if(!replay?.entries.length)return;
     let i=replay.entries.findIndex(e=>e.end>ts);if(i<0)i=replay.entries.length-1;
     resetScene(graphAt(Math.max(0,i-1)));applyFrame(replay.entries[i].frame);
-    feedCues=replay.cues.filter(c=>c.ts<=ts);
-    for(const entry of replay.entries.slice(i))if(entry.start<=ts+60000)schedule(entry,{animate:true});else break;
+    feedCues=replay.cues.filter(c=>c.ts<ts&&c.ts<replay.entries[i].start);
+    for(const entry of replay.entries.slice(i))if(entry.start<=ts+60000)schedule(entry,{animate:true,from:ts});else break;
     replay.scheduledTo=i;
     const h=history();dom.scrub.value=String(Math.round(((ts-h.start)/(h.end-h.start||1))*1000));
     if(model){renderFeed();setStats(model);}

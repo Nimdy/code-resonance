@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-23T17:47:32.070Z",
+  "at": "2026-10-23T18:39:58.181Z",
   "sample": "excalidraw",
   "browser": "chromium (playwright-core 1.62.0, headless)",
   "checks": [
@@ -16,17 +16,17 @@
     {
       "name": "audio context runs and produces signal",
       "pass": true,
-      "detail": "{\"state\":\"running\",\"peak\":0.1918,\"meanRms\":0.0649,\"silentSamples\":0}"
+      "detail": "{\"state\":\"running\",\"peak\":0.1574,\"meanRms\":0.062,\"silentSamples\":0}"
     },
     {
       "name": "audio output does not clip",
       "pass": true,
-      "detail": "peak=0.192"
+      "detail": "peak=0.157"
     },
     {
       "name": "all worlds render at >= 30 fps (headless software raster, 1920x1080)",
       "pass": true,
-      "detail": "{\"nexus\":60.3,\"city\":60.2,\"nebula\":39.3}"
+      "detail": "{\"nexus\":60.3,\"city\":60.2,\"nebula\":39}"
     },
     {
       "name": "replay loads the full recorded timeline",
@@ -36,7 +36,7 @@
     {
       "name": "scrubbing replay changes the rendered architecture",
       "pass": true,
-      "detail": "lit samples start=86027 end=75070"
+      "detail": "lit samples start=74746 end=76312"
     },
     {
       "name": "replay playback advances",
@@ -46,7 +46,12 @@
     {
       "name": "recording produces a WebM file",
       "pass": true,
-      "detail": "2622917 bytes"
+      "detail": "2596460 bytes"
+    },
+    {
+      "name": "audio export renders the recorded performance to WAV",
+      "pass": true,
+      "detail": "939552 bytes"
     },
     {
       "name": "OBS overlay hides all controls",
@@ -78,15 +83,16 @@
     },
     "audio": {
       "state": "running",
-      "peak": 0.1918,
-      "meanRms": 0.0649,
+      "peak": 0.1574,
+      "meanRms": 0.062,
       "silentSamples": 0
     },
     "fps": {
       "nexus": 60.3,
       "city": 60.2,
-      "nebula": 39.3
+      "nebula": 39
     },
-    "recordingBytes": 2622917
+    "recordingBytes": 2596460,
+    "exportWavBytes": 939552
   }
 }
