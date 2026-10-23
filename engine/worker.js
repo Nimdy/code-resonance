@@ -9,7 +9,7 @@
 const {parentPort,workerData}=require('node:worker_threads');
 const fs=require('node:fs/promises');
 const path=require('node:path');
-const {INTERPRETATION_VERSION,newState,apply,closeBatch,publicProjection}=require('./reducer');
+const {INTERPRETATION_VERSION,newState,apply,closeBatch,publicProjection,drainIntents}=require('./reducer');
 const {sha}=require('../receiver/protocol');
 const zlib=require('node:zlib');
 const {promisify}=require('node:util');
@@ -92,7 +92,7 @@ function graphDelta(state,graph,keyframe){
 }
 async function checkpoint(id,state){
   state.seen=[...state.seenSet].slice(-12000);
-  const {seenSet,...persisted}=state;
+  const {seenSet,intents,...persisted}=state;
   await writeAtomic(path.join(projectDir(id),'state.json'),JSON.stringify(persisted));
   state.lastCheckpoint=Date.now();state.dirty=false;
 }
@@ -141,13 +141,14 @@ async function runProject(id,now,force){
       const endTime=w.control?Math.max(startTime,w.control.receivedAt):(w.index+1)*WINDOW_MS;
       state.window.lastIndex=w.index;state.window.lastEnd=endTime;
       state.processedOffset=w.lines.at(-1).end;
-      if(!cues.length)continue;
+      if(!cues.length){drainIntents(state);continue;}
       const frame=closeBatch(state,cues,endTime);
+      const intents=drainIntents(state);
       const seq=state.window.seq++;
       Object.assign(frame,{seq,window:w.index,start:startTime,end:endTime});
       const graph=publicProjection(state).graph;
       const shown=cues.filter(c=>c.type!=='document.baseline.indexed');
-      timeline.push({seq,start:startTime,end:endTime,frame,cues:shown.slice(-TIMELINE_CUES),omittedCues:Math.max(0,shown.length-TIMELINE_CUES),graph:graphDelta(state,graph,seq%KEYFRAME_EVERY===0)});
+      timeline.push({seq,start:startTime,end:endTime,frame,cues:shown.slice(-TIMELINE_CUES),omittedCues:Math.max(0,shown.length-TIMELINE_CUES),intents,graph:graphDelta(state,graph,seq%KEYFRAME_EVERY===0)});
       frames++;
     }
     if(!events&&!frames&&state.processedOffset===start)return {events:0,frames:0,more};

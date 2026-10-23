@@ -28,7 +28,12 @@ test('Claude Code hook payloads become privacy-preserving, valid events',()=>{
     assert.equal(outside[0].file,undefined);
     const sub=translate({...common,agent_id:'agent-9',agent_type:'Explore',hook_event_name:'PreToolUse',tool_name:'Read',tool_input:{}});
     assert.notEqual(sub[0].meta.agent,prompt[0].meta.agent);
-    for(const e of [...prompt,...write,...bash,...ok,...outside,...sub])validateEvent(e);
+    // A read names the file it looks at (so the player can show where an agent works) but is never a modification.
+    const read=translate({...common,hook_event_name:'PostToolUse',tool_name:'Read',tool_input:{file_path:path.join(root,'src/ui/App.tsx')},tool_response:{}});
+    assert.deepEqual(read.map(e=>e.kind),['agent.tool.completed']);assert.equal(read[0].file,'src/ui/App.tsx');
+    const secret=translate({...common,hook_event_name:'PreToolUse',tool_name:'Read',tool_input:{file_path:path.join(root,'.env')}});
+    assert.equal(secret[0].file,undefined);
+    for(const e of [...prompt,...write,...bash,...ok,...outside,...sub,...read,...secret])validateEvent(e);
     assert.equal(translate({...common,hook_event_name:'Notification'}).length,0);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

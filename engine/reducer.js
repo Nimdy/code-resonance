@@ -1,9 +1,12 @@
 'use strict';
 const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
+const {languageOf} = require('./languages');
+const {makeIntent,activityOf,nextAgentState} = require('./intents');
 const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
-const INTERPRETATION_VERSION=6;
+// v7: canonical performance intents, agent lifecycle, language adapters (Python), module language categories.
+const INTERPRETATION_VERSION=7;
 const RENAME_WINDOW_MS=60000;
 const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const SNAPSHOT_CREDIT_CAP=6;
@@ -15,6 +18,9 @@ const CREATED={'ui.component':2,'api.route':2.2,'class':1.4,'function':0.9,'meth
 const MODIFIED={'ui.component':0.15,'api.route':0.15,'function':0.12,'method':0.1,'class':0.03,'interface':0.05,'type':0.05,'property':0.02,'variable':0,'callsite':0};
 const LEGACY_TEST_TASK=/\b(test|spec|jest|vitest|playwright|pytest|mocha)\b/i;
 const VALIDATIONS=['test','build','typecheck','lint'];
+// Tools that only look: an agent reading a file is activity, not authorship of the next change to it.
+const READ_ONLY_TOOLS=new Set(['Read','NotebookRead','Grep','Glob','LS','WebFetch','WebSearch','TodoWrite']);
+const BIG_KINDS=new Set(['ui.component','api.route','class']);
 function newState(projectId) {
   const seed=parseInt(sha(projectId).slice(0,8),16);
   return {
@@ -22,7 +28,7 @@ function newState(projectId) {
     docs:{}, seen:[], stats:{raw:0,files:0,symbols:0,created:0,modified:0,removed:0,imports:0,commands:0,testsPassed:0,testsFailed:0,agentEvents:0,newlines:0,baselines:0,milestones:0,agents:0},
     performance:{identity:{scale:['D','E','F#','G','A','B','C#'][seed%7],motif:[seed%7,(seed>>>3)%7,(seed>>>9)%7,(seed>>>15)%7]},
       progress:0,tension:0,energy:0,chapter:1,version:0},
-    validation:{},pending:{structure:0,removedSymbols:0,removedLines:0,sinceCommit:0,files:{}},
+    validation:{},pending:{structure:0,removedSymbols:0,removedLines:0,sinceCommit:0,files:{},crossLinks:0,crossFiles:{}},connections:{},intents:[],
     diagnostics:{},agents:{},agentFiles:{},
     // Construct: stable identities (survive renames), site plan, tier order and material state per module.
     salt:'',identity:{},layout:newLayout(),slots:{},moduleState:{},recentlyDeleted:[],
@@ -109,6 +115,9 @@ function apply(state,event) {
   if(alreadySeen(state,event.id)) return [];
   const cues=[];
   const c=(kind,cat,w,details={})=>{const cue=makeCue(event,kind,cat,w,details);cues.push(cue);return cue;};
+  // Intents are buffered on the state and collected per window by the worker (see drainIntents).
+  if(!state.intents)state.intents=[];let ordinal=0;
+  const intent=(type,spec)=>{state.intents.push(makeIntent(event,type,spec,ordinal++));};
   state.stats.raw++;
   if(event.sessionId){const session=state.sessions[event.sessionId]||{id:event.sessionId,start:event.ts,end:event.ts,events:0};session.start=Math.min(session.start,event.ts);session.end=Math.max(session.end,event.ts);session.events++;state.sessions[event.sessionId]=session;}
   function validation(category,passed){
@@ -118,17 +127,37 @@ function apply(state,event) {
     const covered=Object.keys(p.files||{}).slice(0,64);
     if(!passed){
       if(category==='test'){state.stats.testsFailed++;for(const mid of covered)state.moduleState[mid]='stressed';}
-      state.validation[category]='fail';c(`validation.${category}.failed`,'observed',0,{fileIds:category==='test'?covered:[]});return true;
+      state.validation[category]='fail';c(`validation.${category}.failed`,'observed',0,{fileIds:category==='test'?covered:[]});
+      intent('validation.failed',{tier:2,magnitude:category==='test'?.35+.45*Math.min(1,covered.length/10):.3,evidence:'verified',subject:{fileIds:category==='test'?covered:[]},detail:{category}});
+      return true;
     }
     // A green run only counts when it validates something new or recovers a failure; re-running is not progress.
     let weight=previous==='fail'?(category==='test'?3:1):0;
     if(category==='test'){
+      const repaired=covered.filter(mid=>state.moduleState[mid]==='stressed').length,firstPass=state.stats.testsPassed===0;
+      // Integration is validated when this run covers modules joined across districts since the previous run.
+      const integrated=p.crossLinks>0&&Object.keys(p.crossFiles||{}).some(id=>p.files[id]);
       state.stats.testsPassed++;
       if(p.structure>0)weight+=0.5+Math.min(2,p.structure*0.25);
-      if(p.removedSymbols>=3){state.stats.milestones++;c('milestone.refactor.validated','inferred',Math.min(4,1+Math.log2(1+p.removedSymbols)),{removedSymbols:p.removedSymbols,removedLines:p.removedLines,fileIds:covered});}
+      const refactor=p.removedSymbols>=3;
+      if(refactor){state.stats.milestones++;c('milestone.refactor.validated','inferred',Math.min(4,1+Math.log2(1+p.removedSymbols)),{removedSymbols:p.removedSymbols,removedLines:p.removedLines,fileIds:covered});}
       for(const mid of covered)if(state.moduleState[mid])state.moduleState[mid]='validated';
-      p.structure=0;p.removedSymbols=0;p.removedLines=0;p.files={};
-    }else if(p.structure>0)weight+=category==='build'?0.4:0.2;
+      if(previous==='fail')intent('validation.recovered',{tier:3,magnitude:.5+.4*Math.min(1,repaired/8)+(p.structure>0?.1:0),evidence:'verified',subject:{fileIds:covered},detail:{category,repaired}});
+      else intent('validation.passed',{tier:p.structure>0?2:0,magnitude:p.structure>0?.25+.5*Math.min(1,p.structure/6):.05,evidence:'verified',subject:{fileIds:covered},detail:{category}});
+      if(refactor)intent('refactor.validated',{tier:3,magnitude:.4+.12*Math.log2(1+p.removedSymbols),evidence:'inferred',subject:{fileIds:covered},detail:{removedSymbols:p.removedSymbols,verifiedBy:'test'}});
+      // A milestone needs a verified run plus a structural reason; several reasons together are rare (tier 4).
+      const kinds=[];let score=0;
+      if(firstPass&&p.structure>0){kinds.push('first-validation');score+=.45;}
+      if(integrated){kinds.push('integration-validated');score+=.5;}
+      if(previous==='fail'&&repaired>0){kinds.push('recovery');score+=.3;}
+      if(refactor){kinds.push('refactor');score+=.35;}
+      if(kinds.length&&Object.keys(state.layout?.districts||{}).length>=3)score+=.15;
+      if(score>=.45)intent('milestone.achieved',{tier:score>=1?4:3,magnitude:score,evidence:'verified',subject:{fileIds:covered},detail:{kinds}});
+      p.structure=0;p.removedSymbols=0;p.removedLines=0;p.files={};p.crossLinks=0;p.crossFiles={};
+    }else{
+      if(p.structure>0)weight+=category==='build'?0.4:0.2;
+      intent(previous==='fail'?'validation.recovered':'validation.passed',{tier:previous==='fail'?2:p.structure>0?1:0,magnitude:previous==='fail'?.4:p.structure>0?.2:.05,evidence:'verified',subject:{fileIds:[]},detail:{category}});
+    }
     state.validation[category]='pass';c(`validation.${category}.passed`,'observed',weight,{fileIds:category==='test'?covered:[]});return true;
   }
   expireDeleted(state,event.ts);
@@ -145,11 +174,13 @@ function apply(state,event) {
       if(!state.docs[file]&&!isBaseline){
         const keys=new Set(analysis.symbols.filter(tier).map(x=>x.key));
         const match=(state.recentlyDeleted||[]).find(d=>{if(keys.size<3||!d.keys.length)return false;const shared=d.keys.filter(k=>keys.has(k)).length;return shared/(keys.size+d.keys.length-shared)>=0.6;});
-        if(match){state.identity[file]=match.origin;state.docs[file]=match.doc;state.recentlyDeleted=state.recentlyDeleted.filter(d=>d!==match);c('module.renamed','inferred',0,{fileId:moduleId(state,file)});}
+        if(match){state.identity[file]=match.origin;state.docs[file]=match.doc;state.recentlyDeleted=state.recentlyDeleted.filter(d=>d!==match);c('module.renamed','inferred',0,{fileId:moduleId(state,file)});
+          intent('module.renamed',{tier:0,magnitude:.1,evidence:'inferred',subject:{fileId:moduleId(state,file)}});}
       }
       const before=state.docs[file];
       const differences=diff(before?.analysis||{symbols:[],imports:[]},analysis);
       state.docs[file]={hash,analysis};
+      const newDistrict=!isBaseline&&!state.layout.districts[pid(state,'g',groupKey(file))];
       placeFile(state,file);updateSlots(state,file,analysis,differences,!before);
       const mid=moduleId(state,file);
       state.stats.files=Object.keys(state.docs).length;
@@ -159,14 +190,14 @@ function apply(state,event) {
       const recent=state.agentFiles[file];
       const attribution=recent&&event.ts-recent.ts>=0&&event.ts-recent.ts<=AGENT_ATTRIBUTION_MS?{agentId:recent.agentId,voice:state.agents[recent.agentId]?.voice??0,attribution:'correlated'}:{};
       const fileId=mid;
-      const group=pid(state,'g',groupKey(file));
-      const changes=[];let raw=0;
+      const group=pid(state,'g',groupKey(file));const links=[];
+      const changes=[];let raw=0;const created={},counts={created:0,modified:0,removed:0};
       for(const change of differences){
         if(change.symbol&&!meaningful(change.symbol))continue;
         let weight=0;
-        if(change.kind==='symbol.created'){weight=CREATED[change.symbol.kind]??0.15;state.stats.created++;}
-        else if(change.kind==='symbol.modified'){weight=MODIFIED[change.symbol.kind]??0.05;state.stats.modified++;}
-        else if(change.kind==='symbol.removed'){state.stats.removed++;state.pending.removedSymbols++;}
+        if(change.kind==='symbol.created'){weight=CREATED[change.symbol.kind]??0.15;state.stats.created++;counts.created++;created[change.symbol.kind]=(created[change.symbol.kind]||0)+1;}
+        else if(change.kind==='symbol.modified'){weight=MODIFIED[change.symbol.kind]??0.05;state.stats.modified++;counts.modified++;}
+        else if(change.kind==='symbol.removed'){state.stats.removed++;state.pending.removedSymbols++;counts.removed++;}
         else if(change.kind==='dependency.added')weight=change.import.target?0.35:0.5;
         raw+=weight;changes.push({change,weight});
       }
@@ -178,10 +209,28 @@ function apply(state,event) {
         if(change.symbol)details={...describeSymbol(change.symbol),symbolId:pid(state,'s',`${originOf(state,file)}:${change.symbol.key}`)};
         else{
           // Internal dependencies name the module they connect to; crossing districts is integration.
-          const target=change.import.target?resolveModule(state,change.import.target):null;
-          details={dependencyId:pid(state,'p',change.import.spec),internal:!!change.import.target,...(target?{targetId:moduleId(state,target),cross:groupKey(target)!==groupKey(file)}:{})};
+          const target=resolveImport(state,change.import);
+          details={dependencyId:pid(state,'p',change.import.spec),internal:!!(change.import.target||target),...(target?{targetId:moduleId(state,target),cross:groupKey(target)!==groupKey(file)}:{})};
+          if(target&&change.kind==='dependency.added')links.push({targetId:details.targetId,targetGroupId:pid(state,'g',groupKey(target)),cross:details.cross});
         }
         c(change.kind,'inferred',+(weight*scale).toFixed(4),{...details,fileId,...attribution});
+      }
+      if(changes.length>max){for(const {change} of changes.slice(max))if(change.kind==='dependency.added'){const target=resolveImport(state,change.import);if(target)links.push({targetId:moduleId(state,target),targetGroupId:pid(state,'g',groupKey(target)),cross:groupKey(target)!==groupKey(file)});}}
+      // Intents: what this snapshot changed, at what significance. Attributed only when correlated with an agent.
+      const who=attribution.agentId?{agentId:attribution.agentId,voice:attribution.voice,provenance:'correlated'}:{};
+      const share=credit/SNAPSHOT_CREDIT_CAP;
+      if(!before&&!isBaseline)intent('module.created',{tier:1,magnitude:.3+.4*share,evidence:'observed',subject:{fileId,groupId:group,...who}});
+      if(newDistrict)intent('subsystem.created',{tier:2,magnitude:.55+.25*Math.min(1,counts.created/8),evidence:'derived',subject:{groupId:group,fileId,...who}});
+      if(counts.created)intent('structure.created',{tier:Object.keys(created).some(k=>BIG_KINDS.has(k))?2:1,magnitude:share,evidence:'derived',subject:{fileId,groupId:group,...who},detail:{count:counts.created,kinds:created}});
+      if(counts.modified)intent('structure.modified',{tier:0,magnitude:.3*Math.min(1,counts.modified/10),evidence:'derived',subject:{fileId,groupId:group,...who},detail:{count:counts.modified}});
+      if(counts.removed)intent('structure.removed',{tier:1,magnitude:.5*Math.min(1,counts.removed/6),evidence:'derived',subject:{fileId,groupId:group,...who},detail:{count:counts.removed}});
+      for(const l of links){
+        if(!l.cross){intent('structure.linked',{tier:0,magnitude:.15,evidence:'derived',subject:{fileId,targetId:l.targetId,groupId:group}});continue;}
+        // The first connection between two districts is integration; later ones strengthen an existing route.
+        const pair=[group,l.targetGroupId].sort().join('>');const first=!state.connections[pair];
+        state.connections[pair]=(state.connections[pair]||0)+1;state.pending.crossLinks=(state.pending.crossLinks||0)+1;
+        if(!state.pending.crossFiles)state.pending.crossFiles={};state.pending.crossFiles[fileId]=true;state.pending.crossFiles[l.targetId]=true;
+        intent('subsystem.connected',{tier:first?2:1,magnitude:first?.65:.25,evidence:'derived',subject:{fileId,groupId:group,targetId:l.targetId,targetGroupId:l.targetGroupId,...who},detail:{first}});
       }
       if(changes.length>max) c('document.change.overflow','observed',0,{omitted:changes.length-max});
       if(analysis.errors) c('source.parse.diagnostics','observed',0,{errors:analysis.errors});
@@ -217,13 +266,15 @@ function apply(state,event) {
         delete state.docs[event.file];delete state.identity[event.file];state.stats.files=Object.keys(state.docs).length;
         if(state.pending.files)delete state.pending.files[fileId];
       }
-      c('file.deleted','observed',0,fileId?{fileId}:{});break;
+      c('file.deleted','observed',0,fileId?{fileId}:{});
+      if(fileId)intent('module.removed',{tier:1,magnitude:.3,evidence:'observed',subject:{fileId}});break;
     }
     case 'file.renamed': {
       if(event.from&&event.file&&event.from!==event.file&&(state.docs[event.from]||state.identity[event.from])){
         transferIdentity(state,event.from,event.file);
         if(state.docs[event.file])placeFile(state,event.file);
         c('module.renamed','observed',0,{fileId:moduleId(state,event.file)});
+        intent('module.renamed',{tier:0,magnitude:.1,evidence:'observed',subject:{fileId:moduleId(state,event.file)}});
       }else c('file.renamed','observed',0);
       break;
     }
@@ -249,14 +300,28 @@ function apply(state,event) {
     case 'repository.commit.observed': {
       const committed=Object.keys(state.moduleState).filter(m=>state.moduleState[m]==='draft');
       for(const m of committed)state.moduleState[m]='committed';
-      c('repository.commit.observed','observed',0.2+Math.min(0.8,state.pending.sinceCommit*0.1),{fileIds:committed.slice(0,64)});state.pending.sinceCommit=0;break;
+      c('repository.commit.observed','observed',0.2+Math.min(0.8,state.pending.sinceCommit*0.1),{fileIds:committed.slice(0,64)});
+      intent('repository.checkpoint',{tier:2,magnitude:.2+.6*Math.min(1,state.pending.sinceCommit/6),evidence:'observed',subject:{fileIds:committed.slice(0,64)}});
+      state.pending.sinceCommit=0;break;
     }
     case 'repository.head.changed':c('repository.head.changed','observed',0);break;
     case 'agent.prompt.submitted':case 'agent.thinking.visible':case 'agent.tool.started':case 'agent.tool.completed':case 'agent.response.completed':case 'agent.plan.visible':case 'agent.message.visible':case 'agent.file.modified':
     case 'agent.session.started':case 'agent.session.ended':case 'agent.subagent.started':case 'agent.subagent.stopped': {
       state.stats.agentEvents++;
       const agent=agentFor(state,event);
-      if(event.file&&(event.kind==='agent.file.modified'||event.kind==='agent.tool.completed'))state.agentFiles[event.file]={agentId:agent.id,ts:event.ts};
+      const tool=typeof event.meta?.tool==='string'?event.meta.tool:'';
+      if(event.file&&(event.kind==='agent.file.modified'||(event.kind==='agent.tool.completed'&&!READ_ONLY_TOOLS.has(tool))))state.agentFiles[event.file]={agentId:agent.id,ts:event.ts};
+      // Lifecycle from hook-reported events only; what an agent is doing is a tool category, never its arguments.
+      const before={state:agent.state||null,activity:agent.activity||null};
+      agent.state=nextAgentState(event.kind,agent.state);
+      if(event.kind==='agent.tool.started')agent.activity=activityOf(tool,event.meta?.category);
+      else if(event.kind==='agent.thinking.visible')agent.activity='reasoning (visible)';
+      else if(event.kind==='agent.plan.visible')agent.activity='planning (visible)';
+      else if(agent.state!=='tool')agent.activity=null;
+      const touched=event.file&&state.docs[event.file]?moduleId(state,event.file):undefined;
+      if(agent.state!==before.state||agent.activity!==before.activity||(touched&&event.kind==='agent.tool.started'))
+        intent('agent.state',{tier:0,magnitude:event.kind==='agent.tool.started'?.2:.1,evidence:'observed',subject:{agentId:agent.id,voice:agent.voice,...(touched?{fileId:touched}:{})},
+          detail:{state:agent.state,activity:agent.activity,provider:agent.provider,...(event.kind.startsWith('agent.subagent')?{subagent:true}:{})}});
       c(event.kind,'observed',0,{provider:event.meta?.provider||'unspecified',source:event.meta?.source||'hook',agentId:agent.id,voice:agent.voice,...(event.meta?.tool?{tool:String(event.meta.tool).slice(0,40)}:{}),
         ...(event.file&&state.docs[event.file]?{fileId:moduleId(state,event.file)}:{})});
       if(event.kind==='agent.tool.completed'&&typeof event.meta?.exitCode==='number')validation(categoryOf(event),event.meta.exitCode===0);
@@ -284,7 +349,10 @@ function closeBatch(state,cues,clock=Math.max(0,...cues.map(c=>c.ts))) {
   state.performance.energy=bounded(0.4*(1-Math.exp(-typing/60))+0.4*(1-Math.exp(-weighted/3))+0.2*Math.min(1,diversity/8));
   const p=state.performance;
   // Chapters double in cost: an intense session reaches about 4, multi-hour work 5-6, a project built over weeks 7-8.
+  const previousChapter=p.chapter;
   p.chapter=1+Math.floor(Math.log2(1+p.progress/CHAPTER_UNIT));p.version++;
+  // Growth into a new chapter enlarges the world; it is accumulated structure, not a claim of completion.
+  if(p.chapter>previousChapter&&previousChapter>=1){if(!state.intents)state.intents=[];state.intents.push(makeIntent({id:`chapter-${p.chapter}`,ts:clock},'world.expanded',{tier:2,magnitude:.5,evidence:'derived',detail:{chapter:p.chapter}},0));}
   const agents=new Map();
   for(const x of cues)if(x.detail?.agentId){const a=agents.get(x.detail.agentId)||{id:x.detail.agentId,voice:x.detail.voice??0,events:0};a.events++;agents.set(a.id,a);}
   const frame={
@@ -307,11 +375,18 @@ const moduleIndexes=new WeakMap();
 function resolveModule(state,target){
   const files=Object.keys(state.docs);let cached=moduleIndexes.get(state);
   if(!cached||cached.docs!==state.docs||cached.size!==files.length){
-    const index=new Map();for(const file of files){index.set(file.replace(/\.[^.]+$/,''),file);const m=file.match(/^(.*)\/index\.[^.]+$/);if(m)index.set(m[1],file);}
+    const index=new Map();for(const file of files){index.set(file.replace(/\.[^.]+$/,''),file);const m=file.match(/^(.*)\/(?:index\.[^.]+|__init__\.pyi?)$/);if(m&&!index.has(m[1]))index.set(m[1],file);}
     cached={index,docs:state.docs,size:files.length};moduleIndexes.set(state,cached);
   }
   return cached.index.get(target)||null;
 }
+// An import's project file: its target, else an adapter's fallback, else a candidate path that exists in the project.
+function resolveImport(state,imp){
+  for(const t of [imp.target,imp.alt,imp.candidate])if(t){const file=resolveModule(state,t);if(file)return file;}
+  return null;
+}
+// The worker collects the intents emitted since the last window.
+function drainIntents(state){const out=state.intents||[];state.intents=[];return out;}
 // Every module is shown; the remaining budget goes to the most architecturally meaningful symbols, spread
 // round-robin across modules so large projects are represented evenly rather than by whichever files came first.
 const KIND_RANK={'api.route':0,'ui.component':1,'class':2,'interface':3,'function':4,'method':5,'type':6,'variable':7};
@@ -331,7 +406,7 @@ function publicProjection(state) {
     const group=groups.get(gid)||{id:gid,type:'group',core:g==='.',modules:0,tests:0,counts:{}};group.modules++;if(TEST_FILE.test(file))group.tests++;
     for(const [k,n] of Object.entries(counts))group.counts[k]=(group.counts[k]||0)+n;groups.set(gid,group);
     nodes.push({id:fileId,type:'module',weight:Math.min(6,Math.max(1,Math.sqrt(symbols.length))),group:gid,dir:pid(state,'d',dirOf(file)),q:placed.q,r:placed.r,
-      state:state.moduleState?.[fileId]||'committed',test:TEST_FILE.test(file),counts});
+      state:state.moduleState?.[fileId]||'committed',test:TEST_FILE.test(file),lang:languageOf(file),counts});
     // Which symbols are shown is decided by importance; where each one sits in the building is its stable slot.
     const byKey=new Map(symbols.map(x=>[x.key,x]));
     const order=(state.slots?.[fileId]||symbols.map(x=>x.key)).filter(k=>byKey.has(k));
@@ -348,9 +423,9 @@ function publicProjection(state) {
   const linked=new Set(),visible=new Set(shown);
   for(const file of shown){
     const fileId=moduleId(state,file);
-    for(const imp of state.docs[file].analysis.imports.filter(x=>x.target)) {
+    for(const imp of state.docs[file].analysis.imports) {
       // Graph edges only when target is a known module, without leaking paths.
-      const target=resolveModule(state,imp.target);
+      const target=resolveImport(state,imp);
       if(!target||!visible.has(target))continue;
       const targetId=moduleId(state,target);
       if(targetId!==fileId&&!linked.has(fileId+targetId)){linked.add(fileId+targetId);edges.push({a:fileId,b:targetId,kind:'depends',cross:groupKey(target)!==groupKey(file)});}
@@ -359,6 +434,8 @@ function publicProjection(state) {
   return {projectId:state.projectId,name:state.name||null,stats:state.stats,performance:state.performance,
     graph:{nodes,edges:edges.slice(0,4000)},
     frames:state.frames.slice(-100),timeline:state.timeline.slice(-500),
-    sessions:Object.values(state.sessions).sort((a,b)=>b.end-a.end).slice(0,40),updatedAt:state.frames.at(-1)?.createdAt||null};
+    sessions:Object.values(state.sessions).sort((a,b)=>b.end-a.end).slice(0,40),
+    agents:Object.values(state.agents||{}).map(a=>({id:a.id,voice:a.voice,provider:a.provider,state:a.state||null,activity:a.activity||null,first:a.first,last:a.last,events:a.events})),
+    updatedAt:state.frames.at(-1)?.createdAt||null};
 }
-module.exports={INTERPRETATION_VERSION,CHAPTER_UNIT,newState,apply,closeBatch,publicProjection};
+module.exports={INTERPRETATION_VERSION,CHAPTER_UNIT,newState,apply,closeBatch,publicProjection,drainIntents};
