@@ -31,6 +31,8 @@
   };
   const AGENT_RATIOS=[1.5,2,2.5,3,3.5,4,5,7];
   const REVERB={ambient:3.2,pulse:1.6,cinematic:3.6,chip:.9};
+  // Output trims so switching palette does not change perceived loudness (from offline renders: pulse/chip ~5 dB quieter).
+  const TRIM={ambient:1,pulse:1.6,cinematic:1.1,chip:1.4};
   class ResonanceMusic {
     constructor(onBar=()=>{}){
       this.ctx=null;this.output=null;this.recordNode=null;this.onBar=onBar;
@@ -71,21 +73,24 @@
       g.output=ctx.createGain();g.output.gain.value=.5*this.options.volume;
       const comp=ctx.createDynamicsCompressor();comp.threshold.value=-20;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.012;comp.release.value=.25;
       const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.002;limiter.release.value=.1;
-      g.dry=ctx.createGain();g.dry.connect(comp);
+      // Dry, reverb and delay meet on one mix bus whose gain is the palette trim.
+      g.mix=ctx.createGain();g.mix.gain.value=TRIM[this.appliedOptions.style]||1;g.mix.connect(comp);
+      g.dry=ctx.createGain();g.dry.connect(g.mix);
       g.reverb=ctx.createConvolver();g.reverb.buffer=this.impulse(ctx,REVERB[this.appliedOptions.style]||2.4);
-      g.reverbIn=ctx.createGain();g.reverbIn.gain.value=.55;g.reverbIn.connect(g.reverb);g.reverb.connect(comp);
+      g.reverbIn=ctx.createGain();g.reverbIn.gain.value=.55;g.reverbIn.connect(g.reverb);g.reverb.connect(g.mix);
       // Ping-pong delay at a dotted eighth, darkened each repeat.
       const dl=ctx.createDelay(2),dr=ctx.createDelay(2),fb=ctx.createGain(),tone=ctx.createBiquadFilter(),merger=ctx.createChannelMerger(2);
       dl.delayTime.value=dr.delayTime.value=this.stepSeconds()*3;fb.gain.value=.32;tone.type='lowpass';tone.frequency.value=2600;
       g.delayIn=ctx.createGain();g.delayIn.gain.value=.4;g.delayIn.connect(dl);dl.connect(tone);tone.connect(dr);dr.connect(fb);fb.connect(dl);
-      dl.connect(merger,0,0);dr.connect(merger,0,1);merger.connect(comp);
+      dl.connect(merger,0,0);dr.connect(merger,0,1);merger.connect(g.mix);
       comp.connect(limiter);limiter.connect(g.output);g.output.connect(destination);
-      g.noise=this.noiseBuffer(ctx);g.voices=0;g.delays=[dl,dr];g.style=this.appliedOptions.style;g.tempo=this.tempo();
+      g.noise=this.noiseBuffer(ctx);g.active=[];g.delays=[dl,dr];g.style=this.appliedOptions.style;g.tempo=this.tempo();
       return g;
     }
     // A palette or tempo change re-sizes the room and the echo on the next bar.
     retune(g){
       g.style=this.appliedOptions.style;g.tempo=this.tempo();
+      g.mix.gain.setTargetAtTime(TRIM[g.style]||1,g.ctx.currentTime,.1);
       g.reverb.buffer=this.impulse(g.ctx,REVERB[g.style]||2.4);
       for(const d of g.delays)d.delayTime.setTargetAtTime(this.stepSeconds()*3,g.ctx.currentTime,.05);
     }
@@ -119,8 +124,9 @@
     level(){if(!this.analyser)return 0;const b=new Float32Array(this.analyser.fftSize);this.analyser.getFloatTimeDomainData(b);let s=0;for(const v of b)s+=v*v;return Math.sqrt(s/b.length);}
     // Position on the bar grid (for audio-reactive visuals); null when not playing.
     phase(){if(!this.ctx||!this.bar)return null;const bar=STEPS*this.stepSeconds();return {barIndex:this.bar.barIndex,phase:clamp((this.ctx.currentTime-this.barStartTime)/bar),section:this.bar.section,chord:this.bar.chord};}
+    // Counts voices still sounding at `at` from their scheduled end times; works live and offline alike.
     voice(g,note,at){
-      const ctx=g.ctx;if(g.voices>=MAX_VOICES&&note.velocity<.2)return;
+      const ctx=g.ctx;g.active=g.active.filter(t=>t>at);if(g.active.length>=MAX_VOICES&&note.velocity<.2)return;
       const style=this.appliedOptions.style,role=note.instrument;
       if(['hat','shaker','snare','kick','taiko','texture','riser'].includes(role))return this.percussion(g,note,at);
       const p=(PATCH[role]&&(PATCH[role][style]||PATCH[role].all))||PATCH.pluck.all;
@@ -138,7 +144,7 @@
         modGain.gain.setValueAtTime(f*p.index,at);modGain.gain.exponentialRampToValueAtTime(Math.max(1,f*.05),at+p.decay*.7);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(Math.max(.0002,amp),at+.006);
         out.gain.exponentialRampToValueAtTime(.0001,at+p.decay);end=at+p.decay+.05;
-        car.start(at);mod.start(at);car.stop(end);mod.stop(end);nodes.push(car,mod,modGain);car.onended=()=>this.release(g,nodes);
+        car.start(at);mod.start(at);car.stop(end);mod.stop(end);nodes.push(car,mod,modGain);car.onended=()=>this.release(nodes);
       }else{
         const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.Q.value=p.q||.7;filter.connect(out);nodes.push(filter);
         const cutoff=(p.cutoff||2000)*(.55+.9*this.appliedOptions.texture);
@@ -160,11 +166,11 @@
           end=hold+p.release*1.6;
         }
         for(const o of oscs){o.start(at);o.stop(end);}
-        nodes.push(...oscs);oscs[0].onended=()=>this.release(g,nodes);
+        nodes.push(...oscs);oscs[0].onended=()=>this.release(nodes);
       }
-      g.voices++;
+      g.active.push(end);
     }
-    release(g,nodes){g.voices=Math.max(0,g.voices-1);for(const n of nodes){try{n.disconnect();}catch{}}}
+    release(nodes){for(const n of nodes){try{n.disconnect();}catch{}}}
     percussion(g,note,at){
       const ctx=g.ctx,v=clamp(note.velocity,0,1)*(.6+.8*this.appliedOptions.texture);
       const out=ctx.createGain(),pan=ctx.createStereoPanner();pan.pan.value=clamp(note.pan||0,-1,1);out.connect(pan);pan.connect(g.dry);
@@ -174,7 +180,7 @@
         o.frequency.setValueAtTime(top,at);o.frequency.exponentialRampToValueAtTime(low,at+.12);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(v*.9,at+.004);out.gain.exponentialRampToValueAtTime(.0001,at+decay);
         if(note.instrument==='taiko'){const s=ctx.createGain();s.gain.value=.35;pan.connect(s);s.connect(g.reverbIn);nodes.push(s);}
-        o.connect(out);end=at+decay+.02;o.start(at);o.stop(end);nodes.push(o);o.onended=()=>this.release(g,nodes);
+        o.connect(out);end=at+decay+.02;o.start(at);o.stop(end);nodes.push(o);o.onended=()=>this.release(nodes);
       }else{
         const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter();src.buffer=g.noise;src.connect(filter);filter.connect(out);nodes.push(src,filter);
         const shape={hat:['highpass',8200,.0,.05,.22],shaker:['bandpass',5200,.012,.09,.16],snare:['bandpass',1900,.0,.16,.42],texture:['bandpass',900,note.duration*.5,note.duration*.5,.16],riser:['highpass',500,note.duration*.92,.08,.2]}[note.instrument]||['highpass',6000,0,.05,.2];
@@ -182,9 +188,9 @@
         if(note.instrument==='riser'||note.instrument==='texture')filter.frequency.exponentialRampToValueAtTime(note.instrument==='riser'?7000:2400,at+attack);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(Math.max(.0002,v*gain),at+Math.max(.003,attack));out.gain.exponentialRampToValueAtTime(.0001,at+attack+decay);
         if(note.instrument==='texture'||note.instrument==='riser'){const s=ctx.createGain();s.gain.value=.5;pan.connect(s);s.connect(g.reverbIn);nodes.push(s);}
-        end=at+attack+decay+.02;src.start(at,(note.midi*0.013)%0.8);src.stop(end);src.onended=()=>this.release(g,nodes);
+        end=at+attack+decay+.02;src.start(at,(note.midi*0.013)%0.8);src.stop(end);src.onended=()=>this.release(nodes);
       }
-      g.voices++;
+      g.active.push(end);
     }
     // Section and layer decisions happen on bar boundaries only, from smoothed state, so changes arrive musically.
     beginBar(){
@@ -234,7 +240,8 @@
       this.accents=keep;
       const figures=due.filter(a=>a.when>=time-2).map(a=>({a,notes:window.ResonanceScore.accentFigure(a.cue,{seed:this.seed(),chord:this.bar?.chord||0,style:this.appliedOptions.style})})).filter(x=>x.notes.length);
       figures.sort((x,y)=>(y.notes[0].priority||0)-(x.notes[0].priority||0));
-      for(const x of figures)if(/^(milestone\.|validation\.test\.passed|repository\.commit)/.test(x.a.cue.type)&&x.a.cue.weight>=1)this.milestone=true;
+      // Milestones (validated refactors, recovered or newly validated tests, substantial commits) lift the next section.
+      for(const x of figures)if((/^(milestone\.|validation\.test\.passed)/.test(x.a.cue.type)&&x.a.cue.weight>=1)||(x.a.cue.type==='repository.commit.observed'&&x.a.cue.weight>=0.6))this.milestone=true;
       // At most two figures per step and a bar budget; lower-priority figures yield.
       return figures.slice(0,Math.min(2,barBudget.left)).map(x=>{barBudget.left--;return x.notes;});
     }
@@ -261,9 +268,9 @@
     // Compatibility with the v0.2 player: an immediate cue becomes a quantized accent.
     accent(type,cue){if(this.ctx&&this.enabled)this.enqueue(cue||{id:type,type,weight:1,detail:{}},this.clock?this.clock():0);}
     // Offline render of a recorded performance: [{atMs, frame?, cue?}] sorted by time, starting at startMs.
-    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,sampleRate=44100,projectId='offline'}){
+    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,sampleRate=44100,projectId='offline',onBar}){
       const ctx=new OfflineAudioContext(2,Math.ceil(durationSec*sampleRate),sampleRate);
-      const m=new ResonanceMusic();m.setProject(projectId);m.setOptions({style,texture,volume});m.appliedOptions={...m.options};
+      const m=new ResonanceMusic(onBar?(info=>onBar({...info,layers:m.bar?.layers,chord:m.bar?.chord})):undefined);m.setProject(projectId);m.setOptions({style,texture,volume});m.appliedOptions={...m.options};
       m.ctx=ctx;const g=m.buildGraph(ctx,ctx.destination);m.graph=g;
       const stepDur=m.stepSeconds(),barMs=stepDur*STEPS*1000;
       let i=0;const events=timeline.slice().sort((a,b)=>a.atMs-b.atMs);
