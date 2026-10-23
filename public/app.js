@@ -460,6 +460,32 @@
     capture.onerror=()=>{capture.stop();};capture.start(1000);
     $('recordBtn').classList.add('recording');setText('recordBtn','■ STOP');
   }
+  // ---- Offline audio export: the deterministic renderer turns the recorded performance into a WAV file ------
+  function wav(buffer){
+    const frames=buffer.length,L=buffer.getChannelData(0),R=buffer.getChannelData(1),view=new DataView(new ArrayBuffer(44+frames*4));
+    const w=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
+    w(0,'RIFF');view.setUint32(4,36+frames*4,true);w(8,'WAVEfmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,2,true);
+    view.setUint32(24,buffer.sampleRate,true);view.setUint32(28,buffer.sampleRate*4,true);view.setUint16(32,4,true);view.setUint16(34,16,true);w(36,'data');view.setUint32(40,frames*4,true);
+    for(let i=0;i<frames;i++){view.setInt16(44+i*4,clamp(L[i],-1,1)*32767,true);view.setInt16(46+i*4,clamp(R[i],-1,1)*32767,true);}
+    return new Blob([view.buffer],{type:'audio/wav'});
+  }
+  async function exportAudio(){
+    if(!selected)return;
+    const button=$('audioBtn');button.disabled=true;setText('audioBtn','RENDERING…');
+    try{
+      if(!replay)await loadReplay();
+      if(!replay?.entries.length)return;
+      const from=mode==='replay'?replayPos:Math.max(replay.start,replay.end-600000),to=Math.min(replay.end,from+600000);
+      const timeline=[];
+      for(const e of replay.entries){if(e.end<from-60000||e.start>to)continue;timeline.push({atMs:Math.max(from,e.start),frame:e.frame});
+        for(const c of e.cues)if(!QUIET.has(c.type))timeline.push({atMs:cueTime(c,e),cue:c});}
+      const buffer=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:Math.max(5,(to-from)/1000),
+        style:music.options.style,texture:music.options.texture,volume:Math.max(.4,music.options.volume),projectId:selected});
+      const url=URL.createObjectURL(wav(buffer)),link=document.createElement('a');
+      link.href=url;link.download=`code-resonance-${(model?.name||selected.slice(0,10)).replace(/[^a-z0-9-]+/gi,'-')}-${music.options.style}.wav`;
+      document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    }finally{button.disabled=false;setText('audioBtn','AUDIO ↓');}
+  }
   // ---- Replay: the whole recorded performance, played on the same clock -----------------------------------
   async function loadReplay(){
     if(!selected)return;
@@ -535,6 +561,7 @@
   if(overlay)document.body.classList.add('overlay');
   syncPlayerControls();
   $('exportBtn').addEventListener('click',()=>{if(selected)window.open(`/api/export?id=${encodeURIComponent(selected)}`,'_blank','noopener');});
+  $('audioBtn').addEventListener('click',()=>exportAudio().catch(e=>{console.error(e);setText('audioBtn','EXPORT ERROR');}));
   getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+2000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
   // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
   if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});

@@ -87,6 +87,13 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     const file=await download;
     if(file){const saved=path.join(OUT,'recording.webm');await file.saveAs(saved);const size=fs.statSync(saved).size;measurements.recordingBytes=size;check('recording produces a WebM file',size>20000,`${size} bytes`);}
     else check('recording produces a WebM file',false,'no download');
+    // Offline export of the recorded performance to WAV.
+    const wavDownload=page.waitForEvent('download',{timeout:120000}).catch(()=>null);
+    await page.click('#audioBtn');
+    const wavFile=await wavDownload;
+    if(wavFile){const saved=path.join(OUT,'export.wav');await wavFile.saveAs(saved);const head=fs.readFileSync(saved).subarray(0,12).toString('latin1');const size=fs.statSync(saved).size;
+      measurements.exportWavBytes=size;check('audio export renders the recorded performance to WAV',head.startsWith('RIFF')&&head.endsWith('WAVE')&&size>100000,`${size} bytes`);}
+    else check('audio export renders the recorded performance to WAV',false,'no download');
     const overlay=await browser.newPage({viewport:{width:1920,height:1080}});
     await overlay.goto(url+'/?overlay=1');await overlay.waitForTimeout(4000);
     check('OBS overlay hides all controls',!(await overlay.isVisible('.toolbar'))&&!(await overlay.isVisible('.panel.left'))&&!(await overlay.isVisible('.transport')));

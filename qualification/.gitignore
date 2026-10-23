@@ -1,5 +1,8 @@
 node_modules/
 .vscode-test/
 results/audio/*.wav
+results/session/*.wav
+results/session/*.png
 results/browser/*.webm
+results/browser/*.wav
 results/browser/*.png
