@@ -10,7 +10,7 @@
 const SQRT3=Math.sqrt(3);
 const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
 const ROOTS=new Set(['src','app','apps','lib','libs','packages','server','client','source','pages','components','web']);
-const DISTRICT_RADIUS=5;
+const DISTRICT_RADIUS=3;
 // Groups: the first two folders under a conventional root (src/ui), otherwise the top folder (test, scripts).
 function groupOf(file){
   const parts=String(file).split('/');parts.pop();

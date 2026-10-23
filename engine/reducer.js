@@ -3,7 +3,7 @@ const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
 const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
-const INTERPRETATION_VERSION=5;
+const INTERPRETATION_VERSION=6;
 const RENAME_WINDOW_MS=60000;
 const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const SNAPSHOT_CREDIT_CAP=6;
@@ -328,7 +328,7 @@ function publicProjection(state) {
     const placed=state.layout?.modules?.[fileId]||placeFile(state,file);
     const counts={};for(const x of symbols)counts[x.kind]=(counts[x.kind]||0)+1;
     const g=groupKey(file),gid=pid(state,'g',g);
-    const group=groups.get(gid)||{id:gid,type:'group',core:g==='.',modules:0,counts:{}};group.modules++;
+    const group=groups.get(gid)||{id:gid,type:'group',core:g==='.',modules:0,tests:0,counts:{}};group.modules++;if(TEST_FILE.test(file))group.tests++;
     for(const [k,n] of Object.entries(counts))group.counts[k]=(group.counts[k]||0)+n;groups.set(gid,group);
     nodes.push({id:fileId,type:'module',weight:Math.min(6,Math.max(1,Math.sqrt(symbols.length))),group:gid,dir:pid(state,'d',dirOf(file)),q:placed.q,r:placed.r,
       state:state.moduleState?.[fileId]||'committed',test:TEST_FILE.test(file),counts});
@@ -337,7 +337,7 @@ function publicProjection(state) {
     const order=(state.slots?.[fileId]||symbols.map(x=>x.key)).filter(k=>byKey.has(k));
     queues.push(order.map((k,slot)=>({fileId,s:byKey.get(k),slot,origin:originOf(state,file)})).sort((a,b)=>(KIND_RANK[a.s.kind]??9)-(KIND_RANK[b.s.kind]??9)||a.slot-b.slot));
   }
-  for(const g of groups.values()){const d=state.layout?.districts?.[g.id];if(d)Object.assign(g,{q:d.q,r:d.r,angle:d.angle,order:d.order});nodes.unshift(g);}
+  for(const g of groups.values()){const d=state.layout?.districts?.[g.id];if(d)Object.assign(g,{q:d.q,r:d.r,angle:d.angle,order:d.order});g.test=g.tests===g.modules;nodes.unshift(g);}
   // Most important symbols first, capped per building; the remaining budget is spread round-robin.
   for(let rank=0,budget=GRAPH_NODES-nodes.length;rank<tierCap&&budget>0;rank++)for(const q of queues){
     if(budget<=0)break;const item=q[rank];if(!item)continue;
