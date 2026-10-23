@@ -60,10 +60,12 @@ function apply(state,event) {
       if(analysis.errors) c('source.parse.diagnostics','observed',0,{errors:analysis.errors});
       break;
     }
-    case 'document.change': {
-      const enters=(event.changes||[]).reduce((n,x)=>n+(x.insertedLines||0),0);
+    case 'document.change': case 'document.edits': {
+      // v0.2 extensions sent one document.change per keystroke; newer ones send a per-second document.edits summary.
+      const edits=event.kind==='document.edits'?(event.meta?.edits||0):(event.changes?.length||0);
+      const enters=event.kind==='document.edits'?(event.meta?.insertedLines||0):(event.changes||[]).reduce((n,x)=>n+(x.insertedLines||0),0);
       state.stats.newlines+=enters;
-      c('editor.change.observed','observed',0,{edits:event.changes?.length||0,insertedNewlines:enters});
+      c('editor.change.observed','observed',0,{edits,insertedNewlines:enters});
       if(enters)c('editor.newline.inserted','observed',0,{count:enters});
       break;
     }

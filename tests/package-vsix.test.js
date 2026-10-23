@@ -21,7 +21,7 @@ test('VSIX packager needs only Node and produces a valid, versioned extension ar
   try{
     build(dest);
     const files=readZip(fs.readFileSync(dest));
-    for(const f of ['[Content_Types].xml','extension.vsixmanifest','extension/package.json','extension/extension.js','extension/outbox.js','extension/README.md'])assert(files.has(f),f);
+    for(const f of ['[Content_Types].xml','extension.vsixmanifest','extension/package.json','extension/extension.js','extension/outbox.js','extension/filters.js','extension/README.md'])assert(files.has(f),f);
     const pkg=JSON.parse(files.get('extension/package.json'));
     const manifest=files.get('extension.vsixmanifest').toString();
     assert.match(manifest,new RegExp(`Version="${pkg.version.replace(/\./g,'\\.')}"`));

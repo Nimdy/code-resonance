@@ -69,7 +69,7 @@
         "resonance.includeHidden": {
           "type": "boolean",
           "default": false,
-          "description": "Permit dotfile filenames in initial indexing. Files matching secret exclusions are always omitted."
+          "description": "Capture files inside dot-directories or with dot-filenames (for example .github/ or .eslintrc.js). Files matching secret exclusions are always omitted."
         },
         "resonance.captureDocumentContents": {
           "type": "boolean",

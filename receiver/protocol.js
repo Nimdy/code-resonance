@@ -1,21 +1,24 @@
 'use strict';
 const crypto = require('node:crypto');
 const path = require('node:path');
+const filters = require('../extension/filters');
+// Kinds are only ever added, never repurposed, so historical journals stay interpretable.
 const VALID_KINDS = new Set([
-  'workspace.started','workspace.stopped','project.baseline','document.snapshot','document.change',
+  'workspace.started','workspace.stopped','project.baseline','document.snapshot','document.change','document.edits',
   'document.opened','document.saved','file.created','file.deleted','file.renamed',
   'terminal.command.started','terminal.command.finished','task.started','task.finished',
-  'diagnostics.updated','repository.commit.observed',
+  'diagnostics.updated','repository.commit.observed','repository.head.changed',
   'agent.prompt.submitted','agent.thinking.visible','agent.tool.started','agent.tool.completed',
   'agent.response.completed','agent.plan.visible','agent.message.visible',
   'agent.file.modified','instrument.note'
 ]);
 const EXTENSIONS = new Set(['.js','.jsx','.mjs','.cjs','.ts','.tsx','.mts','.cts','.json','.css','.html','.py','.go','.rs','.md']);
-const EXCLUDE_PARTS = new Set(['node_modules','.git','.next','dist','build','out','coverage','.venv','venv','__pycache__','.cache','.turbo','.idea','.vscode-test']);
-const SECRET_FILE = /(^|\/)(\.env(?:\..*)?|\.npmrc|\.pypirc|\.netrc|id_(?:rsa|ed25519|ecdsa)(?:\.pub)?|.*\.(?:pem|key|p12|pfx|kdbx|sqlite|db)|credentials(?:\..+)?|secrets?(?:\..+)?|.*\.min\.(?:js|css))$/i;
+// Shared with the extension so it can never send a path the receiver would reject.
+const EXCLUDE_PARTS = new Set(filters.EXCLUDED_DIRS);
+const SECRET_FILE = filters.SECRET_FILE;
 function sha(s) { return crypto.createHash('sha256').update(String(s)).digest('hex'); }
 function safeRelative(input) {
-  if (typeof input !== 'string' || !input || input.length > 300 || /\0/.test(input)) return null;
+  if (typeof input !== 'string' || !input || input.length > filters.MAX_PATH || /\0/.test(input)) return null;
   const str = input.replace(/\\/g,'/');
   if (str.startsWith('/') || /^[a-z]:\//i.test(str)) return null;
   const normalized = path.posix.normalize(str);
@@ -45,16 +48,18 @@ function validateEvent(value) {
   }
   if (Array.isArray(value.changes)) {
     if (value.changes.length>120) throw new Error('Too many edits');
+    // Inserted text is never persisted (v0.2 extensions sent it); only its size survives.
     result.changes=value.changes.map(c=>({
       start: Math.max(0, Number(c.start)||0),
       end: Math.max(0, Number(c.end)||0),
-      text:cleanString(c.text,8000),
+      insertedChars:typeof c.text==='string'?c.text.length:Math.max(0,Number(c.insertedChars)||0),
       insertedLines:Math.max(0,Math.min(10000,Number(c.insertedLines)||0)),
       removedLines:Math.max(0,Math.min(10000,Number(c.removedLines)||0))
     }));
   }
   if (value.meta && typeof value.meta === 'object' && !Array.isArray(value.meta)) {
-    const allowed=['count','truncated','language','changed','errors','warnings','exitCode','taskName','durationMs', 'command','fingerprint','length','tool','result','commit','parent','provider','thinkingExposed','source','reason'];
+    const allowed=['count','truncated','language','changed','errors','warnings','exitCode','taskName','durationMs', 'command','fingerprint','length','tool','result','commit','parent','provider','thinkingExposed','source','reason',
+      'category','edits','insertedChars','removedChars','insertedLines','removedLines','windowMs'];
     result.meta={};
     for (const key of allowed) if (Object.hasOwn(value.meta,key)) {
       const val=value.meta[key];

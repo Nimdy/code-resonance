@@ -6,7 +6,7 @@ const path=require('node:path');
 const zlib=require('node:zlib');
 const ROOT=path.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(path.join(ROOT,'extension','package.json'),'utf8'));
-const FILES=['extension.js','outbox.js','package.json','README.md'];
+const FILES=['extension.js','outbox.js','filters.js','package.json','README.md'];
 const CRC_TABLE=Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0;});
 function crc32(buf){if(zlib.crc32)return zlib.crc32(buf);let c=0xffffffff;for(const b of buf)c=CRC_TABLE[(c^b)&0xff]^(c>>>8);return (c^0xffffffff)>>>0;}
 function escapeXml(s){return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}

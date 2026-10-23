@@ -4,16 +4,12 @@ const crypto=require('node:crypto');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const {DurableOutbox}=require('./outbox');
+const {SOURCE_GLOB,EXCLUDE_GLOB,isFileEligible,countNewlines,classifyCommand}=require('./filters');
 let recording=null;
 let statusBar=null;
-const EXCLUDE='**/{node_modules,.git,.next,dist,build,out,coverage,.venv,venv,__pycache__,.cache,.turbo}/**';
-const SKIP=/(?:^|\/)(?:\.env(?:\.[^/]*)?|\.npmrc|\.pypirc|\.netrc|id_(?:rsa|ed25519|ecdsa)(?:\.pub)?|.*\.(?:pem|key|p12|pfx|kdbx|sqlite|db)|credentials(?:\..+)?|secrets?(?:\..+)?|.*\.min\.(?:js|css))$/i;
+const EDIT_WINDOW_MS=1000;
 function hash(s){return crypto.createHash('sha256').update(String(s)).digest('hex');}
 function conf(){return vscode.workspace.getConfiguration('resonance');}
-function isFileEligible(file){
-  if(!file||file.startsWith('../')||file.startsWith('/')||file.includes('\\')||SKIP.test(file))return false;
-  return !file.split('/').some(seg=>['node_modules','.git','.next','dist','build','out','coverage','.venv','venv','__pycache__','.cache','.turbo'].includes(seg));
-}
 function decorateStatus(text){if(statusBar){statusBar.text=`$(pulse) CR ${text}`;statusBar.tooltip='Code Resonance';statusBar.show();}}
 function createEvent(rec,kind,fields={}){return {v:1,id:crypto.randomUUID(),ts:Date.now(),kind,projectId:rec.projectId,sessionId:rec.sessionId,origin:fields.origin||'unknown',...fields};}
 function relative(rec,uri){
@@ -21,7 +17,7 @@ function relative(rec,uri){
   const folder=vscode.workspace.getWorkspaceFolder(uri);
   if(!folder||folder.uri.toString()!==rec.folder.uri.toString())return null;
   const file=path.relative(rec.folder.uri.fsPath,uri.fsPath).replace(/\\/g,'/');
-  return isFileEligible(file)?file:null;
+  return isFileEligible(file,{includeHidden:conf().get('includeHidden',false)})?file:null;
 }
 function send(rec,kind,fields={}){rec.outbox.enqueue(createEvent(rec,kind,fields));}
 async function snapshot(rec,doc,reason){
@@ -40,7 +36,7 @@ function debounceSnapshot(rec,doc){
 }
 function watchExternalFiles(rec){
   // Essential for Codex/Claude/CLI agents writing files outside open VS Code documents.
-  const pattern=new vscode.RelativePattern(rec.folder,'**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,py,go,rs,md}');
+  const pattern=new vscode.RelativePattern(rec.folder,SOURCE_GLOB);
   const watcher=vscode.workspace.createFileSystemWatcher(pattern,false,false,false);
   const pending=new Map();
   function queue(uri,reason){
@@ -62,15 +58,25 @@ function watchExternalFiles(rec){
   rec.listeners.push(watcher.onDidDelete(uri=>{const file=relative(rec,uri);if(file)send(rec,'file.deleted',{file});}));
   rec.listeners.push({dispose:()=>{for(const id of pending.values())clearTimeout(id);}});
 }
+// Typing is summarised per file per second. Only counts leave the handler, never the inserted text.
+function recordEdits(rec,file,changes){
+  let w=rec.editWindows.get(file);
+  if(!w){w={edits:0,insertedChars:0,removedChars:0,insertedLines:0,removedLines:0,start:Date.now(),timer:null};rec.editWindows.set(file,w);
+    w.timer=setTimeout(()=>flushEdits(rec,file),EDIT_WINDOW_MS);}
+  for(const c of changes){w.edits++;w.insertedChars+=c.text.length;w.removedChars+=c.rangeLength;w.insertedLines+=countNewlines(c.text);w.removedLines+=c.range.end.line-c.range.start.line;}
+}
+function flushEdits(rec,file){
+  const w=rec.editWindows.get(file);if(!w)return;
+  rec.editWindows.delete(file);clearTimeout(w.timer);
+  send(rec,'document.edits',{file,meta:{edits:w.edits,insertedChars:w.insertedChars,removedChars:w.removedChars,insertedLines:w.insertedLines,removedLines:w.removedLines,windowMs:Date.now()-w.start}});
+}
+function flushAllEdits(rec){for(const file of [...rec.editWindows.keys()])flushEdits(rec,file);}
 function listen(rec){
   watchExternalFiles(rec);
   const attach=(disposable)=>rec.listeners.push(disposable);
   attach(vscode.workspace.onDidChangeTextDocument(event=>{
     const file=relative(rec,event.document.uri);if(!file||event.contentChanges.length===0)return;
-    send(rec,'document.change',{file,origin:'unknown',changes:event.contentChanges.slice(0,120).map(c=>({
-      start:c.rangeOffset,end:c.rangeOffset+c.rangeLength,text:c.text.slice(0,8000),
-      insertedLines:(c.text.match(/\n/g)||[]).length,removedLines:c.range.end.line-c.range.start.line
-    }))});
+    recordEdits(rec,file,event.contentChanges);
     debounceSnapshot(rec,event.document);
   }));
   attach(vscode.workspace.onDidSaveTextDocument(doc=>{
@@ -80,22 +86,28 @@ function listen(rec){
   attach(vscode.workspace.onDidCreateFiles(e=>{for(const uri of e.files){const file=relative(rec,uri);if(file)send(rec,'file.created',{file});}}));
   attach(vscode.workspace.onDidDeleteFiles(e=>{for(const uri of e.files){const file=relative(rec,uri);if(file)send(rec,'file.deleted',{file});}}));
   attach(vscode.workspace.onDidRenameFiles(e=>{for(const f of e.files){const file=relative(rec,f.newUri);if(file)send(rec,'file.renamed',{file,meta:{source:hash(f.oldUri.toString()).slice(0,12)}});}}));
+  // Commands are classified here (test, build, lint, ...) so the category can be shared without the command text.
   if(vscode.window.onDidStartTerminalShellExecution)attach(vscode.window.onDidStartTerminalShellExecution(e=>{
     const captureCommand=conf().get('captureTerminalCommands',false);
     const command=String(e.execution?.commandLine?.value||'');
-    send(rec,'terminal.command.started',{meta:{command:captureCommand?command.slice(0,500):'',fingerprint:command?hash(command).slice(0,12):''}});
+    send(rec,'terminal.command.started',{meta:{command:captureCommand?command.slice(0,500):'',fingerprint:command?hash(command).slice(0,12):'',category:classifyCommand(command)}});
   }));
   if(vscode.window.onDidEndTerminalShellExecution)attach(vscode.window.onDidEndTerminalShellExecution(e=>{
     const exit=Number.isInteger(e.exitCode)?e.exitCode:undefined;
-    send(rec,'terminal.command.finished',{meta:{...(exit===undefined?{}:{exitCode:exit})}});
+    const command=String(e.execution?.commandLine?.value||'');
+    send(rec,'terminal.command.finished',{meta:{category:classifyCommand(command),...(exit===undefined?{}:{exitCode:exit})}});
   }));
-  attach(vscode.tasks.onDidStartTask(e=>send(rec,'task.started',{meta:{taskName:e.execution.task.name}})));
-  attach(vscode.tasks.onDidEndTaskProcess(e=>send(rec,'task.finished',{meta:{taskName:e.execution.task.name, ...(Number.isInteger(e.exitCode)?{exitCode:e.exitCode}:{})}})));
-  let diagnosticTimer=null;
+  const taskCategory=task=>{const x=task.execution;const line=x&&typeof x.commandLine==='string'?x.commandLine:x&&x.command?[typeof x.command==='string'?x.command:x.command.value,...(x.args||[]).map(a=>typeof a==='string'?a:a.value)].join(' '):'';
+    const byName=classifyCommand(task.name);return byName!=='other'?byName:classifyCommand(line);};
+  attach(vscode.tasks.onDidStartTask(e=>send(rec,'task.started',{meta:{taskName:e.execution.task.name,category:taskCategory(e.execution.task)}})));
+  attach(vscode.tasks.onDidEndTaskProcess(e=>send(rec,'task.finished',{meta:{taskName:e.execution.task.name,category:taskCategory(e.execution.task),...(Number.isInteger(e.exitCode)?{exitCode:e.exitCode}:{})}})));
+  let diagnosticTimer=null;const diagnosticUris=new Map();
   attach(vscode.languages.onDidChangeDiagnostics(e=>{
+    for(const uri of e.uris)if(diagnosticUris.size<200)diagnosticUris.set(uri.toString(),uri);
     clearTimeout(diagnosticTimer);
     diagnosticTimer=setTimeout(()=>{
-      for(const uri of e.uris.slice(0,60)){
+      const uris=[...diagnosticUris.values()];diagnosticUris.clear();
+      for(const uri of uris.slice(0,60)){
         const file=relative(rec,uri);if(!file)continue;
         const diags=vscode.languages.getDiagnostics(uri);
         send(rec,'diagnostics.updated',{file,meta:{errors:diags.filter(x=>x.severity===vscode.DiagnosticSeverity.Error).length,
@@ -119,7 +131,13 @@ async function observeGit(rec){
       let last=repo.state.HEAD?.commit||null;
       const d=repo.state.onDidChange(()=>{
         const head=repo.state.HEAD?.commit||null;
-        if(head&&last&&head!==last){send(rec,'repository.commit.observed',{meta:{commit:head.slice(0,40),parent:last.slice(0,40)}});}
+        if(head&&last&&head!==last){
+          const previous=last;
+          // A new commit has the previous HEAD as a parent; checkouts, resets and rebases do not.
+          Promise.resolve(repo.getCommit?.(head)).then(c=>c?.parents?.includes(previous)).catch(()=>false).then(isCommit=>{
+            if(rec.active)send(rec,isCommit?'repository.commit.observed':'repository.head.changed',{meta:{commit:head.slice(0,40),parent:previous.slice(0,40)}});
+          });
+        }
         last=head;
       });subscriptions.set(key,d);rec.listeners.push(d);
     }
@@ -130,8 +148,8 @@ async function observeGit(rec){
 async function baseline(rec){
   const limit=conf().get('baselineFileLimit',450);
   if(limit===0)return;
-  const pattern=new vscode.RelativePattern(rec.folder,'**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,py,go,rs,md}');
-  const found=await vscode.workspace.findFiles(pattern,EXCLUDE,limit);
+  const pattern=new vscode.RelativePattern(rec.folder,SOURCE_GLOB);
+  const found=await vscode.workspace.findFiles(pattern,EXCLUDE_GLOB,limit);
   send(rec,'project.baseline',{meta:{count:found.length,truncated:found.length>=limit}});
   for(let i=0;i<found.length;i++){
     if(!rec.active)break;
@@ -157,7 +175,7 @@ async function start(context,showConsent=true){
   }
   const projectId=hash(folder.uri.toString());
   const directory=path.join(context.globalStorageUri.fsPath,'outbox',projectId);
-  const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),listeners:[],outbox:null};
+  const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null};
   rec.outbox=new DurableOutbox({directory,port:conf().get('receiverPort',4174),onStatus:(kind)=>{
     if(recording!==rec)return;
     decorateStatus(kind==='online'?'recording':kind==='offline'?'queued offline':kind==='disk-error'?'storage error':'recording');
@@ -172,7 +190,7 @@ async function start(context,showConsent=true){
 }
 async function stop(context){
   if(!recording)return;
-  const rec=recording;rec.active=false;
+  const rec=recording;flushAllEdits(rec);rec.active=false;
   for(const t of rec.documentTimers.values())clearTimeout(t);
   for(const d of rec.listeners)d.dispose();
   send(rec,'workspace.stopped');
@@ -202,5 +220,5 @@ function activate(context){
   context.subscriptions.push(vscode.commands.registerCommand('resonance.recordPrompt',recordPrompt));
   if(context.workspaceState.get('resonanceRecording',false))void start(context,false);
 }
-async function deactivate(){if(recording){const rec=recording;rec.active=false;for(const t of rec.documentTimers.values())clearTimeout(t);for(const d of rec.listeners)d.dispose();await rec.outbox.close();recording=null;}}
+async function deactivate(){if(recording){const rec=recording;flushAllEdits(rec);rec.active=false;for(const t of rec.documentTimers.values())clearTimeout(t);for(const d of rec.listeners)d.dispose();await rec.outbox.close();recording=null;}}
 module.exports={activate,deactivate};
