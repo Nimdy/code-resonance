@@ -10,7 +10,7 @@
   const params=new URLSearchParams(location.search);
   const overlay=params.has('overlay');
   let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0;
-  let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=9500,feedCues=[],section='home',barPhase=0,feedDirty=false;
+  let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,feedDirty=false;
   // World coordinates are centred on (0,0); the camera eases to frame the structure as it grows.
   const scene={nodes:new Map(),edges:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
   let firstBar=null;
@@ -562,7 +562,8 @@
   syncPlayerControls();
   $('exportBtn').addEventListener('click',()=>{if(selected)window.open(`/api/export?id=${encodeURIComponent(selected)}`,'_blank','noopener');});
   $('audioBtn').addEventListener('click',()=>exportAudio().catch(e=>{console.error(e);setText('audioBtn','EXPORT ERROR');}));
-  getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+2000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
+  // Delay = window + grace + scan + 3 s for outbox delivery (<=2.5 s) and polling (<=1 s). Measured worst case: ~9.9 s.
+  getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
   // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
   if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
   setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
