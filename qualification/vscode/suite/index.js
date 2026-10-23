@@ -32,7 +32,8 @@ async function getJSON(route){const r=await fetch(`http://127.0.0.1:${PORT}${rou
 async function getText(route){const r=await fetch(`http://127.0.0.1:${PORT}${route}`);return r.text();}
 function journal(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(pid),'events.jsonl'),'utf8').split('\n').filter(Boolean).map(l=>JSON.parse(l));}catch{return [];}}
 function journalText(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(pid),'events.jsonl'),'utf8');}catch{return '';}}
-async function cues(pid){await flush(pid);const x=await getJSON(`/api/export?id=${pid}`);return x?x.timeline:[];}
+// The export's timeline is the recorded performance: one entry per window, each carrying its cues.
+async function cues(pid){await flush(pid);const x=await getJSON(`/api/export?id=${pid}`);return x?x.timeline.flatMap(e=>e.cues):[];}
 const fileId=f=>sha(f).slice(0,14);
 
 let consentPrompts=0;
@@ -105,16 +106,23 @@ async function mainPhase(){
   await list.document.save();
   const server=await editorFor('src/api/server.ts');server.selection=new vscode.Selection(0,0,0,0);
   await typeText(server,"import { formatTitle } from '../lib/format.js';\n");moveToEnd(server);
-  await typeText(server,'\nexport function normalize(title: string) {\n  const clean = formatTitle(title);\n  return clean;\n}\n');
+  await typeText(server,'\nexport const MAX_TITLE = 80;\nexport function normalize(title: string) {\n  const clean = formatTitle(title);\n  return clean.slice(0, MAX_TITLE);\n}\n');
   await server.document.save();
-  await sleep(2500);
-  let tl=await cues(pid);
-  check('typed React component classified as ui.component (human editor)',tl.some(c=>c.type==='symbol.created'&&c.detail.symbolType==='ui.component'&&c.detail.fileId===fileId('src/ui/TodoList.tsx')));
-  check('typed function classified as function',tl.some(c=>c.type==='symbol.created'&&c.detail.symbolType==='function'&&c.detail.fileId===fileId('src/api/server.ts')));
-  check('typed import classified as dependency.added',tl.some(c=>c.type==='dependency.added'&&c.detail.fileId===fileId('src/api/server.ts')));
-  check('typed local variable classified as variable',tl.some(c=>c.type==='symbol.created'&&c.detail.symbolType==='variable'&&c.detail.fileId===fileId('src/api/server.ts')));
+  // Snapshot debounce (1.2 s) + outbox persist/delivery (up to ~2.5 s): wait for the outcome rather than a fixed time.
+  const typed=(tl)=>({component:tl.some(c=>c.type==='symbol.created'&&c.detail.symbolType==='ui.component'&&c.detail.fileId===fileId('src/ui/TodoList.tsx')),
+    fn:tl.some(c=>c.type==='symbol.created'&&c.detail.symbolType==='function'&&c.detail.fileId===fileId('src/api/server.ts')),
+    dep:tl.some(c=>c.type==='dependency.added'&&c.detail.fileId===fileId('src/api/server.ts')),
+    variables:tl.filter(c=>c.type==='symbol.created'&&c.detail.symbolType==='variable'&&c.detail.fileId===fileId('src/api/server.ts')).length});
+  let tl=[];const seen=await waitFor(async()=>{tl=await cues(pid);const t=typed(tl);return t.component&&t.fn&&t.dep&&t.variables?t:null;},20000,1000)||typed(tl);
+  check('typed React component classified as ui.component (human editor)',seen.component);
+  check('typed function classified as function',seen.fn);
+  check('typed import classified as dependency.added',seen.dep);
+  // Module-level constants are structure; locals inside a function are recorded but earn no cue (interpretation v2+).
+  check('typed module-level variable classified as variable; local variable not credited',seen.variables===1,`variable cues=${seen.variables}`);
   const raw=journal(pid);
-  check('editor keystrokes produce document.change events',raw.filter(e=>e.kind==='document.change').length>50,`document.change=${raw.filter(e=>e.kind==='document.change').length}`);
+  // v0.2 sent one document.change per keystroke (with text); newer extensions send per-second document.edits counts.
+  const edits=raw.filter(e=>e.kind==='document.change'||e.kind==='document.edits');
+  check('editor keystrokes are observed (document.change or document.edits)',edits.length>0,`document.change=${raw.filter(e=>e.kind==='document.change').length} document.edits=${raw.filter(e=>e.kind==='document.edits').length}`);
 
   step('agent-like external writes');
   // Agent-like path: files written outside the editor (not open in VS Code).
@@ -146,7 +154,7 @@ async function mainPhase(){
     const formatPath=path.join(WS,'src/lib/format.js');const good=fs.readFileSync(formatPath,'utf8');
     fs.writeFileSync(formatPath,good.replace("count === 1 ? '' : 's'","count === 1 ? 's' : ''"));
     const bad=await runTask(testTask);fs.writeFileSync(formatPath,good);
-    await sleep(2000);tl=await cues(pid);
+    await waitFor(async()=>{tl=await cues(pid);return tl.some(c=>c.type==='validation.test.failed');},15000,1000);
     check('task npm test exit codes observed (pass then fail)',ok===0&&bad===1,`exit=${ok},${bad}`);
     check('passing task classified validation.test.passed',tl.some(c=>c.type==='validation.test.passed'));
     check('failing task classified validation.test.failed',tl.some(c=>c.type==='validation.test.failed'));
@@ -175,7 +183,7 @@ async function mainPhase(){
   await typeText(todos,"\nconst broken: number = 'text';\n");await todos.document.save();
   const diag=await waitFor(()=>vscode.languages.getDiagnostics(todos.document.uri).some(d=>d.severity===vscode.DiagnosticSeverity.Error),45000,500);
   if(!diag)unverified('diagnostics observed','TypeScript service reported no error within 45s');
-  else{await sleep(2500);check('diagnostics with errors recorded',journal(pid).some(e=>e.kind==='diagnostics.updated'&&e.file==='src/api/todos.ts'&&e.meta?.errors>0));}
+  else check('diagnostics with errors recorded',!!await waitFor(()=>journal(pid).some(e=>e.kind==='diagnostics.updated'&&e.file==='src/api/todos.ts'&&e.meta?.errors>0),15000,500));
   await vscode.commands.executeCommand('undo');await vscode.commands.executeCommand('undo');await todos.document.save();
 
   step('git');
@@ -215,7 +223,7 @@ async function mainPhase(){
   results.measurements.journal={events:ids.length,duplicates:ids.length-new Set(ids).size,bytes:journalText(pid).length};
   const publicText=(await Promise.all([`/api/project?id=${pid}`,`/api/replay?id=${pid}`,`/v1/performance/frames?id=${pid}`,`/api/export?id=${pid}`,'/api/projects'].map(getText))).join('\n');
   check('public Stage APIs never contain typed text or file paths',!publicText.includes(marker)&&!publicText.includes('TodoList')&&!publicText.includes('src/'));
-  check('raw typed text not persisted in the event journal',!journalText(pid).includes(marker),'document.change events carry inserted text');
+  check('raw typed text not persisted in the event journal',!journalText(pid).includes(marker));
   const cfg=vscode.workspace.getConfiguration('resonance');await cfg.update('captureDocumentContents',false,vscode.ConfigurationTarget.Global);
   const marker2='QUAL_CONTENT_OFF_'+crypto.randomBytes(4).toString('hex');
   const app3=await editorFor('src/ui/App.tsx');moveToEnd(app3);await typeText(app3,`\n// ${marker2}\n`);await app3.document.save();await sleep(4000);
@@ -265,7 +273,9 @@ async function restartPhase(){
   await startReceiver();
   const ext=vscode.extensions.getExtension('zerobandwidth.code-resonance');await ext.activate();
   const resumed=await waitFor(()=>journal(pid).find(e=>e.kind==='workspace.started'&&!before.has(e.sessionId)),30000,500);
-  check('capture auto-resumes after VS Code restart without a new prompt',!!resumed&&consentPrompts===0,`prompts=${consentPrompts}`);
+  const fresh=journal(pid).filter(e=>!before.has(e.sessionId));
+  results.measurements.restart={extensionActive:ext.isActive,newSessions:[...new Set(fresh.map(e=>e.sessionId))].length,newKinds:[...new Set(fresh.map(e=>e.kind))],outboxBacklog:outboxFiles(pid).length};
+  check('capture auto-resumes after VS Code restart without a new prompt',!!resumed&&consentPrompts===0,`prompts=${consentPrompts} ${JSON.stringify(results.measurements.restart)}`);
   const ed=await editorFor('src/index.ts');moveToEnd(ed);await typeText(ed,'\nexport const resumed = true;\n');await ed.document.save();
   const after=await waitFor(()=>journal(pid).find(e=>e.kind==='document.snapshot'&&e.file==='src/index.ts'&&e.sessionId===resumed?.sessionId&&e.meta?.reason==='edit'),15000);
   check('edits after restart are captured in the new session',!!after);

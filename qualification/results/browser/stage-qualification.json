@@ -1,0 +1,92 @@
+{
+  "at": "2026-10-23T17:47:32.070Z",
+  "sample": "excalidraw",
+  "browser": "chromium (playwright-core 1.62.0, headless)",
+  "checks": [
+    {
+      "name": "live view connects and selects the project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "stage shows derived stats",
+      "pass": true,
+      "detail": "symbols=3233"
+    },
+    {
+      "name": "audio context runs and produces signal",
+      "pass": true,
+      "detail": "{\"state\":\"running\",\"peak\":0.1918,\"meanRms\":0.0649,\"silentSamples\":0}"
+    },
+    {
+      "name": "audio output does not clip",
+      "pass": true,
+      "detail": "peak=0.192"
+    },
+    {
+      "name": "all worlds render at >= 30 fps (headless software raster, 1920x1080)",
+      "pass": true,
+      "detail": "{\"nexus\":60.3,\"city\":60.2,\"nebula\":39.3}"
+    },
+    {
+      "name": "replay loads the full recorded timeline",
+      "pass": true,
+      "detail": "replay cues=111, live projection (excluding baseline indexing)=111"
+    },
+    {
+      "name": "scrubbing replay changes the rendered architecture",
+      "pass": true,
+      "detail": "lit samples start=86027 end=75070"
+    },
+    {
+      "name": "replay playback advances",
+      "pass": true,
+      "detail": "scrub=1000"
+    },
+    {
+      "name": "recording produces a WebM file",
+      "pass": true,
+      "detail": "2622917 bytes"
+    },
+    {
+      "name": "OBS overlay hides all controls",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "OBS overlay canvas fills the frame",
+      "pass": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "no file paths reach the page",
+      "pass": true,
+      "detail": "dev-docs/src/components/Homepage/index.tsx"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "project": {
+      "files": 450,
+      "symbols": 3233,
+      "frames": 25,
+      "graphNodes": 1400
+    },
+    "audio": {
+      "state": "running",
+      "peak": 0.1918,
+      "meanRms": 0.0649,
+      "silentSamples": 0
+    },
+    "fps": {
+      "nexus": 60.3,
+      "city": 60.2,
+      "nebula": 39.3
+    },
+    "recordingBytes": 2622917
+  }
+}
