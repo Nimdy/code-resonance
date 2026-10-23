@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-23T20:19:49.799Z",
+  "at": "2026-10-23T21:15:01.056Z",
   "sample": "sample-app",
   "checks": [
     {
@@ -26,7 +26,21 @@
       "modules": 10,
       "tiers": 12
     },
-    "fps": 17.6,
-    "renderer": "SwiftShader (CPU WebGL) in headless Chromium"
+    "fps": 33.1,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "scene": {
+      "districts": 6,
+      "buildings": 10,
+      "tiers": 12,
+      "links": 7,
+      "bridges": 5,
+      "agents": 0,
+      "drawCalls": 100,
+      "triangles": 3942,
+      "quality": 1,
+      "detail": "fine",
+      "updateMs": 0.19,
+      "drawMs": 0.72
+    }
   }
 }

@@ -2,6 +2,7 @@
 // Technical qualification of the Construct (artistic acceptance is a separate, human judgement):
 // WebGL renders, frame rate and draw calls at scale, no page errors, no file paths in the page.
 // node visual/construct.qual.js [path-to-a-real-repo]
+// CR_QUAL_GPU=wsl renders on the GPU under WSL2 (ANGLE GL -> Mesa d3d12); the default is SwiftShader (CPU).
 const path=require('node:path');
 const fs=require('node:fs');
 const fsp=require('node:fs/promises');
@@ -29,7 +30,10 @@ function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(
   await fetch(url+`/v1/flush?id=${projectId}`,{method:'POST',headers:{Authorization:`Bearer ${svc.token}`}});
   const project=await (await fetch(`${url}/api/project?id=${projectId}`)).json();
   measurements.project={files:project.stats.files,symbols:project.stats.symbols,districts:project.graph.nodes.filter(n=>n.type==='group').length,modules:project.graph.nodes.filter(n=>n.type==='module').length,tiers:project.graph.nodes.filter(n=>n.parent).length};
-  const browser=await chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+  const gpu=process.env.CR_QUAL_GPU==='wsl';
+  const browser=await chromium.launch(gpu?{args:['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu'],
+    env:{...process.env,GALLIUM_DRIVER:'d3d12',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}}
+    :{args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
   try{
     const page=await browser.newPage({viewport:{width:1920,height:1080}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -39,14 +43,16 @@ function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(
     const visible=await page.$eval('#construct',e=>!e.classList.contains('hidden')&&e.width>0);
     check('the Construct renders with WebGL in the player',visible);
     const fps=await page.evaluate(()=>new Promise(r=>{let n=0;const s=performance.now();const f=()=>{n++;performance.now()-s<5000?requestAnimationFrame(f):r(n/((performance.now()-s)/1000));};requestAnimationFrame(f);}));
-    measurements.fps=+fps.toFixed(1);measurements.renderer='SwiftShader (CPU WebGL) in headless Chromium';
-    await page.screenshot({path:path.join(OUT,`construct-${path.basename(SAMPLE)}.png`)});
+    measurements.fps=+fps.toFixed(1);
+    measurements.renderer=await page.evaluate(()=>{const gl=document.createElement('canvas').getContext('webgl2'),d=gl&&gl.getExtension('WEBGL_debug_renderer_info');return gl?gl.getParameter(d?d.UNMASKED_RENDERER_WEBGL:gl.RENDERER):'none';});
+    measurements.scene=await page.evaluate(()=>window.__constructStats());    await page.screenshot({path:path.join(OUT,`construct-${path.basename(SAMPLE)}.png`)});
     const text=await page.evaluate(()=>document.body.innerText);
     check('no file paths reach the page',!text.includes(secretPath)&&!text.includes('src/'),secretPath);
     check('no page errors',errors.length===0,errors.slice(0,3).join(' | '));
-    console.log('fps',measurements.fps,'(software rendering; GPU browsers not measured here)');
+    console.log('fps',measurements.fps,'on',measurements.renderer);
   }finally{await browser.close();await svc.stop();await fsp.rm(dir,{recursive:true,force:true});}
-  fs.writeFileSync(path.join(OUT,`construct-qualification-${path.basename(SAMPLE)}.json`),JSON.stringify({at:new Date().toISOString(),sample:path.basename(SAMPLE),checks,measurements},null,2));
+  const r=measurements.renderer||'',tag=/NVIDIA/.test(r)?'-nvidia':/AMD|Radeon/.test(r)?'-amd':/SwiftShader/.test(r)?'':'-gpu';
+  fs.writeFileSync(path.join(OUT,`construct-qualification-${path.basename(SAMPLE)}${tag}.json`),JSON.stringify({at:new Date().toISOString(),sample:path.basename(SAMPLE),checks,measurements},null,2));
   console.log(JSON.stringify(measurements));
   process.exitCode=checks.every(c=>c.pass)?0:1;
 })().catch(e=>{console.error(e);process.exitCode=1;});

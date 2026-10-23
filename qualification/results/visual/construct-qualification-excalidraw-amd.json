@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-23T21:38:07.678Z",
+  "sample": "excalidraw",
+  "checks": [
+    {
+      "name": "the Construct renders with WebGL in the player",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no file paths reach the page",
+      "pass": true,
+      "detail": "dev-docs/src/components/Homepage/index.tsx"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "project": {
+      "files": 450,
+      "symbols": 3185,
+      "districts": 11,
+      "modules": 450,
+      "tiers": 939
+    },
+    "fps": 46.7,
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+    "scene": {
+      "districts": 11,
+      "buildings": 450,
+      "tiers": 939,
+      "links": 1008,
+      "bridges": 1,
+      "agents": 0,
+      "drawCalls": 3622,
+      "triangles": 300064,
+      "quality": 0,
+      "detail": "coarse",
+      "updateMs": 1.71,
+      "drawMs": 23.2
+    }
+  }
+}

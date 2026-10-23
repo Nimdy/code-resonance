@@ -30,6 +30,8 @@ const PLINTH_H=.16,GAP=.008;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const ease=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
 const easeOut=x=>1-Math.pow(1-clamp(x),3);
+// Fully faded objects are hidden, so they cost no draw call (it matters with hundreds of buildings).
+function fade(o,opacity){if(!o)return;o.material.opacity=opacity;o.visible=opacity>.002;}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 const plot=(q,r)=>({x:SQRT3*q+SQRT3/2*r,z:1.5*r});
 function radialTexture(stops){
@@ -82,7 +84,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
   const ringGeo=new THREE.RingGeometry(.74,.84,6,1);ringGeo.rotateX(-Math.PI/2);
   const districts=new Map(),buildings=new Map(),tiers=new Map(),links=new Map(),agents=new Map(),effects=[];
   let stepMs=60000/(92*4),mood='home',energy=0,lastCaptionAt=-1e12,extent=4,attention=null,focus=new THREE.Vector3(),distance=11,lampTarget=null,lampAt=-1e12;
-  const view={target:new THREE.Vector3(),distance:11};
+  const view={target:new THREE.Vector3(),distance:11,shift:0};
   // Callers pass performance time. Animations run in viewer time (performance time / replay speed) so pacing stays
   // natural at any replay speed, while starts are snapped to the music's step grid in performance time.
   const vsnap=t=>Math.ceil(t/stepMs)*stepMs/speed;
@@ -129,7 +131,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       new THREE.LineBasicMaterial({color:SCAFFOLD,transparent:true,opacity:0}));
     group.add(tile,tileLine,plinth,trim,glow,survey,outline);
     b={id:node.id,gid:node.group,x,z,group,tile,tileLine,plinth,trim,glow,survey,outline,outlineSig:'',color,state:node.state||'draft',shownState:node.state||'draft',
-      stateAt:t,counts:node.counts||{},test:!!node.test,born:t,removed:null,builder:null,builderAt:-1e12,stressAt:-1e12,validAt:-1e12,crown:null,spires:[]};
+      stateAt:t,counts:node.counts||{},test:!!node.test,born:t,removed:null,builder:null,builderAt:-1e12,stressAt:-1e12,validAt:-1e12,crown:null,spires:[],storeys:new Set()};
     buildings.set(node.id,b);
     return b;
   }
@@ -159,8 +161,9 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       const holder=new THREE.Group();b.group.add(holder);
       s={id:node.id,parent:b.id,kind:node.type,slot:node.slot??0,holder,mats:m,k,born:hidden?null:t,removed:null,weld:-1e12,y:null,r:null,mesh:null,edges:null,band:null};
     }
-    tiers.set(node.id,s);return s;
+    tiers.set(node.id,s);b.storeys.add(s);return s;
   }
+  function dropTier(s){tiers.delete(s.id);buildings.get(s.parent)?.storeys.delete(s);}
   // Storey geometry depends on its height in the stack (slight taper), so it is (re)built when the stack changes.
   function shapeTier(s,i,y){
     const taper=1-Math.min(.4,i*.035),r=s.k.r*taper,h=s.k.h;
@@ -172,7 +175,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     if(s.mats.band){s.band=new THREE.Mesh(hexGeo(r+.006,Math.min(.045,h*.32),true),s.mats.band);s.band.position.y=h*.42;s.holder.add(s.band);}
   }
   function layoutStack(b,dt,immediate){
-    const stack=[...tiers.values()].filter(s=>s.parent===b.id&&s.kind!=='api.route'&&s.born!==null).sort((a,c)=>a.slot-c.slot||a.id.localeCompare(c.id));
+    const stack=[...b.storeys].filter(s=>s.kind!=='api.route'&&s.born!==null).sort((a,c)=>a.slot-c.slot||a.id.localeCompare(c.id));
     let y=PLINTH_H+GAP,i=0;
     for(const s of stack){
       shapeTier(s,i,y);
@@ -199,7 +202,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     if(sig!==b.outlineSig){b.outlineSig=sig;const pts=[];
       for(let k=0;k<6;k++){const a=k/6*Math.PI*2,a1=(k+1)/6*Math.PI*2;pts.push(Math.sin(a)*roofR,y-GAP,Math.cos(a)*roofR,Math.sin(a1)*roofR,y-GAP,Math.cos(a1)*roofR);}
       b.outline.geometry.dispose();b.outline.geometry=new THREE.BufferGeometry();b.outline.geometry.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));}
-    const spires=[...tiers.values()].filter(s=>s.parent===b.id&&s.kind==='api.route'&&s.born!==null).sort((a,c)=>a.slot-c.slot);
+    const spires=[...b.storeys].filter(s=>s.kind==='api.route'&&s.born!==null).sort((a,c)=>a.slot-c.slot);
     spires.forEach((s,j)=>{const a=j/Math.max(1,spires.length)*Math.PI*2+.4,rr=spires.length>1?.28:0;s.spire.position.set(Math.sin(a)*rr,y,Math.cos(a)*rr);s.beacon.position.y=.66;});
   }
   // ---- Links ---------------------------------------------------------------------------------------------
@@ -222,6 +225,19 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     if(l.mesh){world.remove(l.mesh);l.mesh.geometry.dispose();}
     l.mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:l.cross?.8:.55,blending:THREE.AdditiveBlending,depthWrite:false}));
     l.curve=curve;l.indexCount=geo.index.count;world.add(l.mesh);
+  }
+  // Settled conduits are merged into one mesh (one draw call); a conduit being laid or removed keeps its own.
+  const SETTLE=6900;
+  const conduitMesh=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+  world.add(conduitMesh);let mergedAt=-1e12;
+  function mergeConduits(t){
+    const list=[...links.values()].filter(l=>!l.cross&&l.removed===null&&l.mesh&&t-l.born>SETTLE);
+    for(const l of links.values())l.merged=false;for(const l of list){l.merged=true;l.mesh.visible=false;}
+    let nv=0,ni=0;for(const l of list){nv+=l.mesh.geometry.attributes.position.count;ni+=l.mesh.geometry.index.count;}
+    const pos=new Float32Array(nv*3),col=new Float32Array(nv*3),idx=new Uint32Array(ni);let v=0,i=0;
+    for(const l of list){const g=l.mesh.geometry;pos.set(g.attributes.position.array,v*3);col.set(g.attributes.color.array,v*3);for(const x of g.index.array)idx[i++]=x+v;v+=g.attributes.position.count;}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.setIndex(new THREE.BufferAttribute(idx,1));
+    conduitMesh.geometry.dispose();conduitMesh.geometry=geo;mergedAt=t;
   }
   // ---- Agents (verified provenance only) and the editor lamp ---------------------------------------------
   function drone(voice){
@@ -268,6 +284,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     for(const b of buildings.values())world.remove(b.group);for(const l of links.values())if(l.mesh)world.remove(l.mesh);
     for(const d of districts.values())world.remove(d.pool);for(const a of agents.values())world.remove(a.g);for(const e of effects)e.dispose?.();
     buildings.clear();tiers.clear();links.clear();districts.clear();agents.clear();effects.length=0;
+    conduitMesh.geometry.dispose();conduitMesh.geometry=new THREE.BufferGeometry();mergedAt=-1e12;
     applyGraph(graph,t,true);
   }
   function applyGraph(graph,t,immediate){
@@ -369,6 +386,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
   const moodKey=new THREE.Color('#dce8ff');
   // Live playback only: sustained slow frames lower the pixel ratio, then drop shadows. Films keep full quality.
   let frameEma=1/60,slowFor=0,quality=0,pixelRatio=1,size=[16,9];
+  const timing={update:0,draw:0};let fine=true;
   function adapt(dt){
     if(film||dt<=0)return;
     frameEma+=(dt-frameEma)*.05;slowFor=frameEma>1/30?slowFor+dt:0;
@@ -376,8 +394,54 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       if(quality===1){renderer.setPixelRatio(Math.max(.75,pixelRatio*.66));renderer.setSize(size[0],size[1],false);}
       if(quality===2){renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});}}
   }
+  // Closest camera distance at which the site fits the frame, and how far beyond the view target to aim (s) so the
+  // site sits balanced between the top margin and the caption area (in perspective the near edge looms, so aiming
+  // at the centre would leave the top of the frame empty). The site is its outline: the outermost building in each
+  // of 16 directions (ground and roof) and the tallest tower. A minimum distance keeps a first building from being a
+  // close-up.
+  const probeCam=new THREE.PerspectiveCamera(),probePt=new THREE.Vector3(),fitMemo={key:'',d:0,s:0};
+  const TOP=.8,BOTTOM=-.72,SIDE=.84,SECTORS=16,MIN_SITE=3.2,MIN_DISTANCE=10;
+  const q=x=>Math.round(x*4)/4;
+  function siteOutline(t,az){
+    const sectors=new Array(SECTORS).fill(null),tx=q(view.target.x),tz=q(view.target.z);let tallest=null;
+    for(const b of buildings.values())if(!b.removed&&b.born<=t){
+      const dx=b.x-tx,dz=b.z-tz,r=Math.hypot(dx,dz),h=b.top||.5;
+      const i=Math.floor((Math.atan2(dz,dx)+Math.PI)/(2*Math.PI)*SECTORS)%SECTORS;
+      if(!sectors[i]||r>sectors[i].r)sectors[i]={dx,dz,r,h};
+      if(!tallest||h>tallest.h)tallest={dx,dz,r,h};
+    }
+    // Points relative to the view target, pushed out by a footprint, rotated so the camera looks along -x.
+    const pts=[],c=Math.cos(az),s=Math.sin(az);
+    const add=(dx,dz,y)=>pts.push([q(dx*c+dz*s),q(y),q(-dx*s+dz*c)]);
+    for(const p of sectors)if(p){const k=p.r>0?(p.r+.9)/p.r:1;add(p.dx*k,p.dz*k,0);add(p.dx,p.dz,p.h);}
+    if(tallest)add(tallest.dx,tallest.dz,tallest.h);
+    if(!pts.length)add(0,0,0);
+    return pts;
+  }
+  function fitView(pts,el,ty){
+    // The outline is quantised, so the search (a few ms) reruns only when the site or the orbit has changed noticeably.
+    ty=q(ty);const key=`${el.toFixed(3)}|${ty}|${camera.aspect.toFixed(3)}|${pts.join(';')}`;if(key===fitMemo.key)return fitMemo;
+    probeCam.fov=camera.fov;probeCam.aspect=camera.aspect;probeCam.updateProjectionMatrix();
+    const R=Math.max(MIN_SITE,...pts.map(p=>Math.hypot(p[0],p[2])));
+    const extent=(d,s)=>{
+      probeCam.position.set(Math.cos(el)*d-s,ty+Math.sin(el)*d,0);probeCam.lookAt(-s,ty,0);probeCam.updateMatrixWorld();
+      let x=0,y0=Infinity,y1=-Infinity;
+      for(const p of pts){probePt.set(p[0],p[1],p[2]).project(probeCam);
+        if(probePt.z>1)return null;x=Math.max(x,Math.abs(probePt.x));y0=Math.min(y0,probePt.y);y1=Math.max(y1,probePt.y);}
+      return {x,y0,y1};
+    };
+    // Aiming further away moves the site down the frame; search for the aim that centres it between the margins.
+    const aimFor=d=>{let a=-R,b=R,s=0,e=null;for(let j=0;j<12;j++){s=(a+b)/2;e=extent(d,s);if(!e){a=s;continue;}if((e.y0+e.y1)/2>(TOP+BOTTOM)/2)a=s;else b=s;}return {s,e};};
+    let lo=Math.max(MIN_DISTANCE,R*.5)*.999,hi=Math.max(MIN_DISTANCE,R*20),best=null;
+    for(let k=0;k<16;k++){
+      const d=(lo+hi)/2,{s,e}=aimFor(d);
+      if(e&&e.x<=SIDE&&e.y1-e.y0<=TOP-BOTTOM){hi=d;best={d,s};}else lo=d;
+    }
+    if(!best)best={d:hi,s:aimFor(hi).s};
+    return Object.assign(fitMemo,{key},best);
+  }
   function render(t,dt,{phase=0}={}){
-    t=t/speed;dt=Math.min(.1,Math.max(0,dt));adapt(dt);
+    const began=performance.now();t=t/speed;adapt(Math.max(0,dt));dt=Math.min(.1,Math.max(0,dt));
     // Mood follows the musical section, slowly.
     const m=MOODS[mood]||MOODS.home;moodKey.lerp(new THREE.Color(m.key),Math.min(1,dt*.8));key.color.copy(moodKey);
     key.intensity+=(1.15*m.k-key.intensity)*Math.min(1,dt*.8);
@@ -394,20 +458,24 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       }
     }
     extent=4;for(const b of buildings.values())if(!b.removed&&b.born<=t)extent=Math.max(extent,Math.hypot(b.x,b.z)+1.5);
+    // Level of detail: when a building is only a few pixels wide, storey corner lines and plot outlines are noise,
+    // not detail, so they are left out (with hysteresis, so they do not flicker at the threshold).
+    const unitPx=size[1]/2/(Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)*view.distance);
+    if(fine&&unitPx<34)fine=false;else if(!fine&&unitPx>40)fine=true;
     for(const b of buildings.values()){
       const age=t-b.born,p=clamp(age/900);
       const visible=age>=0;b.group.visible=visible;if(!visible)continue;
       if(b.pending&&t>=b.pending.at){b.state=b.pending.state;b.pending=null;b.stateAt=t;}
       // Birth: survey outline, ground tile, plinth.
-      b.survey.material.opacity=age<1800?Math.sin(Math.PI*clamp(age/1800))*.9:0;b.survey.material.color.set(b.builder!==null&&t-b.builderAt<6000?AGENT_COLORS[b.builder%8]:SCAFFOLD);
-      b.tile.material.opacity=easeOut(p)*.95;b.tileLine.material.opacity=easeOut(p)*.35;
+      fade(b.survey,age<1800?Math.sin(Math.PI*clamp(age/1800))*.9:0);b.survey.material.color.set(b.builder!==null&&t-b.builderAt<6000?AGENT_COLORS[b.builder%8]:SCAFFOLD);
+      b.tile.material.opacity=easeOut(p)*.95;b.tileLine.material.opacity=easeOut(p)*.35;b.tileLine.visible=fine;
       b.plinth.scale.y=Math.max(.001,ease(clamp((age-250)/600)));
       const stressed=b.state==='stressed',validated=b.state==='validated';
       b.trim.material.opacity=(validated?.55:stressed?.65:.28)*easeOut(p)*(1+.25*downbeat*energy);b.trim.material.color.set(stressed?STRESS:b.color);
-      b.glow.material.opacity+=((stressed?.8:0)-b.glow.material.opacity)*Math.min(1,dt*2.5);b.glow.scale.setScalar(stressed?1.4:1);
+      fade(b.glow,b.glow.material.opacity+((stressed?.8:0)-b.glow.material.opacity)*Math.min(1,dt*2.5));b.glow.scale.setScalar(stressed?1.4:1);
       b.outline.material.color.copy(stressed?new THREE.Color(STRESS):b.state==='draft'?new THREE.Color(SCAFFOLD):b.color);
       b.outline.material.opacity=easeOut(clamp((age-600)/900))*(b.state==='draft'?.5:validated?.75:stressed?.85:.55);
-      if(b.removed!==null){const q=clamp((t-b.removed)/1400);b.group.scale.set(1,1-ease(q)*.98,1);b.tile.material.opacity*=1-q;if(q>=1){world.remove(b.group);buildings.delete(b.id);for(const [id,s] of tiers)if(s.parent===b.id)tiers.delete(id);}}
+      if(b.removed!==null){const q=clamp((t-b.removed)/1400);b.group.scale.set(1,1-ease(q)*.98,1);b.tile.material.opacity*=1-q;if(q>=1){world.remove(b.group);buildings.delete(b.id);for(const s of b.storeys)tiers.delete(s.id);}}
     }
     for(const s of tiers.values()){
       if(s.born===null&&s.dueAt!==undefined&&t>=s.dueAt)s.born=s.dueAt;
@@ -418,11 +486,11 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       const agentTint=b.builder!==null&&t-b.builderAt<8000?new THREE.Color(AGENT_COLORS[b.builder%8]):null;
       if(s.kind==='api.route'){
         s.spire.visible=true;const p=ease(clamp(age/900));s.mast.scale.set(1,Math.max(.001,p),1);s.mat.opacity=Math.min(1,p*1.4);
-        s.beacon.material.opacity=p*(.55+.45*downbeat*(.3+energy));
-        if(ageR>=0){const q=clamp(ageR/900);s.mast.scale.y*=1-q;s.beacon.material.opacity*=1-q;if(q>=1){b.group.remove(s.spire);tiers.delete(s.id);}}
+        s.beacon.material.opacity=p*(.55+.45*downbeat*energy);
+        if(ageR>=0){const q=clamp(ageR/900);s.mast.scale.y*=1-q;s.beacon.material.opacity*=1-q;if(q>=1){b.group.remove(s.spire);dropTier(s);}}
         continue;
       }
-      s.holder.visible=true;
+      s.holder.visible=true;if(s.corners)s.corners.visible=fine;
       // Construction: the frame appears first, then the panels; a weld flashes along the edges on modification.
       const frame=clamp(age/450),panel=clamp((age-300)/700),weld=Math.exp(-Math.max(0,t-s.weld)/500)*(t>=s.weld?1:0);
       const st=b.state,mats=s.mats;
@@ -435,25 +503,36 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       mats.edge.color.copy(edgeColor).lerp(new THREE.Color('#ffffff'),weld*.7);
       // Storey edges are scaffolding: visible while drafted (or strained, or for open frames); solid work shows only its silhouette.
       const building=age<1400?1-clamp((age-700)/700):0;
-      mats.edge.opacity=Math.min(1,frame*Math.max(building,st==='draft'?.9:st==='stressed'?.75:mats.look==='frame'?.85:0)+weld*.8)*(ageR>=0?1-clamp(ageR/900):1);
+      fade(s.edges,Math.min(1,frame*Math.max(building,st==='draft'?.9:st==='stressed'?.75:mats.look==='frame'?.85:0)+weld*.8)*(ageR>=0?1-clamp(ageR/900):1));
       if(mats.band){
         const lit=st==='validated'?1:st==='committed'?.45:st==='stressed'?1:.12;
         mats.band.color.set(st==='stressed'?STRESS:VALID_LIGHT).lerp(b.color,st==='stressed'?0:.5);
         // Windows light from the bottom up as a validation scan passes.
         const scanP=clamp((t-b.validAt)/1500),reached=s.y!==null&&b.top?(s.y/(b.top||1))<=scanP:true;
-        mats.band.opacity+=(((reached?lit:0)*panel*(1+.18*downbeat*energy))-mats.band.opacity)*Math.min(1,dt*4);
+        fade(s.band,mats.band.opacity+(((reached?lit:0)*panel*(1+.18*downbeat*energy))-mats.band.opacity)*Math.min(1,dt*4));
       }
-      if(ageR>=0){const q=clamp(ageR/900);s.holder.scale.set(1-q*.6,1,1-q*.6);if(q>=1){b.group.remove(s.holder);tiers.delete(s.id);}}
+      if(ageR>=0){const q=clamp(ageR/900);s.holder.scale.set(1-q*.6,1,1-q*.6);if(q>=1){b.group.remove(s.holder);dropTier(s);}}
       else s.holder.scale.set(1,ease(clamp(age/450))*.999+.001,1);
     }
     for(const b of buildings.values())if(b.group.visible)layoutStack(b,dt,false);
+    // A new conduit is bright while it is laid, then settles; the more conduits a site has, the quieter they rest,
+    // so hundreds of internal dependencies read as texture, not a tangle. Bridges between districts stay bright.
+    let conduits=0;for(const l of links.values())if(!l.cross&&l.born!==null&&t>=l.born)conduits++;
+    const rest=Math.min(.32,3/Math.sqrt(conduits+1));
+    let merge=false,mergeNow=false;
     for(const l of links.values()){
       if(l.born===null&&l.dueAt!==undefined&&t>=l.dueAt)l.born=l.dueAt;
       if(l.born===null||t<l.born){if(l.mesh)l.mesh.visible=false;continue;}
-      shapeLink(l);if(!l.mesh)continue;l.mesh.visible=true;
+      if(l.merged){if(l.removed===null){l.mesh.visible=false;continue;}l.merged=false;mergeNow=true;}
+      shapeLink(l);if(!l.mesh)continue;
       const p=clamp((t-l.born)/(l.cross?1800:900));l.mesh.geometry.setDrawRange(0,Math.floor(l.indexCount*easeOut(p)/3)*3);
-      if(l.removed!==null){const q=clamp((t-l.removed)/900);l.mesh.material.opacity=(l.cross?.8:.55)*(1-q);if(q>=1){world.remove(l.mesh);links.delete(l.key);}}
+      const lit=l.cross?.8:rest+(.55-rest)*(1-clamp((t-l.born-900)/6000));
+      if(l.removed!==null){const q=clamp((t-l.removed)/900);fade(l.mesh,lit*(1-q));if(q>=1){world.remove(l.mesh);links.delete(l.key);}}
+      else{fade(l.mesh,lit);if(!l.cross&&t-l.born>SETTLE)merge=true;}
     }
+    // Merging is batched (at most every 2 s) except when a merged conduit is being removed.
+    if(mergeNow||merge&&t-mergedAt>2000)mergeConduits(t);
+    fade(conduitMesh,conduitMesh.geometry.index?rest:0);
     for(const a of agents.values()){
       const idle=t-a.active;const pos=idle>14000?dock(a.voice):currentDrone(a,t);
       if(idle>14000){a.from.copy(a.g.position);a.to.copy(dock(a.voice));}
@@ -462,7 +541,6 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       const beamH=b?Math.max(.4,a.g.position.y-(b.top||.6)):1;a.beam.scale.set(1,beamH,1);
       a.beam.material.opacity+=((working?.38:0)-a.beam.material.opacity)*Math.min(1,dt*4);
       a.light.intensity+=((working?3.5:idle<14000?.8:0)-a.light.intensity)*Math.min(1,dt*3);
-      a.body.rotation.y=t/1600;
     }
     for(let i=effects.length-1;i>=0;i--)if(!effects[i].update(t)){effects[i].dispose?.();effects.splice(i,1);}
     // Camera: a slow architectural orbit that eases toward real construction and back, never jumping.
@@ -470,24 +548,32 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,maxH=.5;
     for(const b of buildings.values())if(!b.removed&&b.born<=t){minX=Math.min(minX,b.x);maxX=Math.max(maxX,b.x);minZ=Math.min(minZ,b.z);maxZ=Math.max(maxZ,b.z);maxH=Math.max(maxH,b.top||.5);}
     if(minX===Infinity){minX=maxX=minZ=maxZ=0;}
-    const centre=new THREE.Vector3((minX+maxX)/2,0,(minZ+maxZ)/2),radius=Math.max(3.2,Math.hypot(maxX-minX,maxZ-minZ)/2+1.6,maxH*.9);
+    const centre=new THREE.Vector3((minX+maxX)/2,0,(minZ+maxZ)/2);
+    let reach=0;for(const b of buildings.values())if(!b.removed&&b.born<=t)reach=Math.max(reach,Math.hypot(b.x-centre.x,b.z-centre.z));
+    const radius=Math.max(MIN_SITE,reach+1.3);
     const att=attention&&t-attention.t<9000&&t>=attention.t?attention:null;
     const goal=centre.clone().lerp(new THREE.Vector3(att?att.x:centre.x,0,att?att.z:centre.z),att?Math.min(.3,2.2/radius):0);goal.y=Math.min(1.2,maxH*.3);
     if(!view.ready){view.target.copy(goal);view.ready=true;}
     view.target.lerp(goal,Math.min(1,dt*.6));
-    const halfFov=THREE.MathUtils.degToRad(camera.fov)/2,fit=radius/Math.sin(Math.min(halfFov,Math.atan(Math.tan(halfFov)*camera.aspect)))*.8;
-    if(!view.sized){view.distance=fit;view.sized=true;}
-    view.distance+=(fit-view.distance)*Math.min(1,dt*.5);
-    const az=-0.9+t/520000*Math.PI*2,el=.42+Math.min(.14,radius/100);
-    camera.position.set(view.target.x+Math.cos(az)*Math.cos(el)*view.distance,view.target.y+Math.sin(el)*view.distance,view.target.z+Math.sin(az)*Math.cos(el)*view.distance);
-    camera.lookAt(view.target);
+    const el=.42+Math.min(.14,radius/100);
+    const az=-0.9+t/520000*Math.PI*2;
+    // The camera leans toward attention, so the site is fitted around the view target; the orbit angle is quantised
+    // (3°) so the fit is recomputed only every few seconds while the camera turns.
+    const fit=fitView(siteOutline(t,Math.round(az/.05236)*.05236),el,view.target.y);
+    if(!view.sized){view.distance=fit.d;view.shift=fit.s;view.sized=true;}
+    view.distance+=(fit.d-view.distance)*Math.min(1,dt*.5);view.shift+=(fit.s-view.shift)*Math.min(1,dt*.5);
+    const aim=new THREE.Vector3(view.target.x-Math.cos(az)*view.shift,view.target.y,view.target.z-Math.sin(az)*view.shift);
+    camera.position.set(aim.x+Math.cos(az)*Math.cos(el)*view.distance,aim.y+Math.sin(el)*view.distance,aim.z+Math.sin(az)*Math.cos(el)*view.distance);
+    camera.lookAt(aim);
     const span=radius+3;key.target.position.copy(view.target);key.position.set(view.target.x-14,26,view.target.z+10);
     if(Math.abs((key.shadow.camera.right||0)-span)>.5){Object.assign(key.shadow.camera,{left:-span,right:span,top:span,bottom:-span,near:1,far:90});key.shadow.camera.updateProjectionMatrix();}
     scene.fog.density=.9/(view.distance*4+20);
-    renderer.render(scene,camera);
+    const drawn=performance.now();renderer.render(scene,camera);
+    timing.update+=(drawn-began-timing.update)*.1;timing.draw+=(performance.now()-drawn-timing.draw)*.1;
   }
   function resize(w,h,dpr=1){pixelRatio=dpr;size=[w,h];renderer.setPixelRatio(quality?Math.max(.75,dpr*.66):dpr);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-  function stats(){return {districts:districts.size,buildings:buildings.size,tiers:tiers.size,links:links.size,agents:agents.size,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,quality};}
+  function stats(){return {districts:districts.size,buildings:buildings.size,tiers:tiers.size,links:links.size,bridges:[...links.values()].filter(l=>l.cross).length,agents:agents.size,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,quality,detail:fine?'fine':'coarse',
+    updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2)};}
   function dispose(){renderer.dispose();}
   function setSpeed(k){if(k>0)speed=k;}
   return {reset,applyDelta,cue,setMood,setSpeed,render,resize,stats,dispose};

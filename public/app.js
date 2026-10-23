@@ -639,6 +639,8 @@
       stats(){return construct?.stats();}
     };
   }else{
+    // Render counts only (draw calls, buildings, …) for the technical qualification.
+    window.__constructStats=()=>construct?.stats();
     setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
     setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
     pollProjects().then(pollProject);requestAnimationFrame(paint);
