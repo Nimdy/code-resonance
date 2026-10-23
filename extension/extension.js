@@ -187,7 +187,8 @@ async function start(context,showConsent=true){
   await rec.outbox.start().catch(()=>{});
   recording=rec;
   listen(rec);
-  send(rec,'workspace.started');
+  // The folder name labels the project in the local player's project list; it is never drawn on the Stage.
+  send(rec,'workspace.started',conf().get('shareProjectName',true)?{name:folder.name.slice(0,100)}:{});
   await context.workspaceState.update('resonanceRecording',true);
   decorateStatus('indexing');
   void baseline(rec).then(()=>{if(recording===rec)decorateStatus('recording');}).catch(e=>vscode.window.showWarningMessage(`CODE RESONANCE indexing limited: ${e.message}`));
@@ -210,17 +211,28 @@ async function recordPrompt(){
   const meta={fingerprint:hash(content).slice(0,20),length:content.length,source:'manual'};
   send(recording,'agent.prompt.submitted',{meta,...(conf().get('capturePromptText',false)?{text:content}:{})});
 }
-async function openStage(){
+async function openStage(overlay=false){
   const port=conf().get('receiverPort',4174);
-  await vscode.env.openExternal(vscode.Uri.parse(`http://127.0.0.1:${port}/`));
+  const project=recording?`?project=${recording.projectId}`:'';
+  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}`));
+}
+// One click from the status bar to everything a performer needs while coding.
+async function menu(context){
+  const items=recording?[{label:'$(debug-stop) Stop capture',run:()=>stop(context)},{label:'$(globe) Open Stage',run:()=>openStage(false)},
+    {label:'$(device-camera-video) Open OBS view',detail:'Clean browser-source view with sound',run:()=>openStage(true)},{label:'$(comment) Record AI prompt (explicit)',run:recordPrompt}]
+    :[{label:'$(record) Start capture',detail:'Asks for consent before recording this workspace locally',run:()=>start(context,true)},{label:'$(globe) Open Stage',run:()=>openStage(false)}];
+  const pick=await vscode.window.showQuickPick(items,{title:'Code Resonance'});
+  if(pick)await pick.run();
 }
 function activate(context){
   statusBar=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,45);
-  statusBar.command='resonance.openStage';context.subscriptions.push(statusBar);
+  statusBar.command='resonance.menu';context.subscriptions.push(statusBar);
   decorateStatus('stopped');
   context.subscriptions.push(vscode.commands.registerCommand('resonance.start',()=>start(context,true)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.stop',()=>stop(context)));
-  context.subscriptions.push(vscode.commands.registerCommand('resonance.openStage',openStage));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.openStage',()=>openStage(false)));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.openOverlay',()=>openStage(true)));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.menu',()=>menu(context)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.recordPrompt',recordPrompt));
   if(context.workspaceState.get('resonanceRecording',false))void start(context,false);
 }

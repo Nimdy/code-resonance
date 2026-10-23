@@ -111,3 +111,12 @@ test('Public graph shows every module and fills its budget with the most meaning
   assert(graph.nodes.filter(n=>n.parent).every(n=>graph.nodes.some(m=>m.id===n.parent)));
   assert.equal(graph.edges.filter(x=>x.kind==='depends').length,30);
 });
+test('Project name labels the local project list but never enters the recorded performance',()=>{
+  const state=newState(projectId);
+  const cues=apply(state,e('workspace.started',{name:'my-app'}));
+  assert.equal(publicProjection(state).name,'my-app');
+  const frame=closeBatch(state,cues);
+  assert(!JSON.stringify(frame).includes('my-app')&&!JSON.stringify(cues).includes('my-app'));
+  apply(state,e('workspace.started',{}));
+  assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
+});
