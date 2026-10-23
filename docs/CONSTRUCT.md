@@ -41,9 +41,8 @@ Animations run in viewer time (performance time divided by replay speed), so pac
 - Renderer: `public/construct.js`, Three.js 0.170 vendored at `public/vendor/three.module.min.js` (MIT, see
   `public/vendor/THREE-LICENSE.txt`), loaded on demand. Without WebGL the player falls back to Monolith (Canvas2D).
 - Camera: a slow orbit (one turn in about nine minutes) that frames the site's actual outline (buildings, bridges and
-  working drones) as closely as it can,
-  balanced between the top of the frame and the caption area, and leans toward where something meaningful happens
-  without letting the rest leave the frame. It never cuts or jumps.
+  working drones) as closely as it can, balanced between the top of the frame and the caption area, and leans toward
+  where something meaningful happens without letting the rest leave the frame. It never cuts or jumps.
 - Scale: storeys per building are capped (the rest form a crown), conduits inside a district rest quieter the more
   there are, and when buildings are only a few pixels wide the storey corner lines and plot outlines are left out.
   Settled conduits are merged into one mesh. With 450 files: 3,622 draw calls (see `docs/QUALIFICATION.md`).
