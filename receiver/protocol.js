@@ -59,7 +59,7 @@ function validateEvent(value) {
   }
   if (value.meta && typeof value.meta === 'object' && !Array.isArray(value.meta)) {
     const allowed=['count','truncated','language','changed','errors','warnings','exitCode','taskName','durationMs', 'command','fingerprint','length','tool','result','commit','parent','provider','thinkingExposed','source','reason',
-      'category','edits','insertedChars','removedChars','insertedLines','removedLines','windowMs'];
+      'category','edits','insertedChars','removedChars','insertedLines','removedLines','windowMs','agent'];
     result.meta={};
     for (const key of allowed) if (Object.hasOwn(value.meta,key)) {
       const val=value.meta[key];
