@@ -1,0 +1,14 @@
+node_modules/
+data/
+.code-resonance/
+*.vsix
+*.webm
+*.mp4
+*.zip
+*.log
+.DS_Store
+.env
+.env.*
+coverage/
+playwright-report/
+test-results/
