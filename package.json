@@ -11,7 +11,7 @@
     "start": "node receiver/server.js",
     "demo": "node scripts/demo.js",
     "test": "node --test --test-timeout=120000 tests/*.test.js",
-    "check": "node --check receiver/server.js && node --check engine/semantic.js && node --check engine/reducer.js && node --check engine/worker.js && node --check extension/extension.js && node --check extension/outbox.js && node --check extension/filters.js && node --check public/app.js && node --check public/music.js && node --check public/score.js && node --check sdk/performance.js && node --check scripts/package-vsix.js && node --check sdk/project-id.js && node --check scripts/hooks/claude-code.js && node --check scripts/hooks/install-claude-code.js",
+    "check": "node --check receiver/server.js && node --check engine/semantic.js && node --check engine/reducer.js && node --check engine/layout.js && node --check engine/worker.js && node --check extension/extension.js && node --check extension/outbox.js && node --check extension/filters.js && node --check public/app.js && node --check public/music.js && node --check public/score.js && node --check sdk/performance.js && node --check scripts/package-vsix.js && node --check sdk/project-id.js && node --check scripts/hooks/claude-code.js && node --check scripts/hooks/install-claude-code.js",
     "package:vsix": "node scripts/package-vsix.js",
     "hooks:claude": "node scripts/hooks/install-claude-code.js"
   }

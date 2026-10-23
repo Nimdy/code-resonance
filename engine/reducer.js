@@ -1,8 +1,11 @@
 'use strict';
 const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
+const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
-const INTERPRETATION_VERSION=4;
+const INTERPRETATION_VERSION=5;
+const RENAME_WINDOW_MS=60000;
+const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const SNAPSHOT_CREDIT_CAP=6;
 const CHAPTER_UNIT=12;
 const AGENT_ATTRIBUTION_MS=60000;
@@ -19,8 +22,10 @@ function newState(projectId) {
     docs:{}, seen:[], stats:{raw:0,files:0,symbols:0,created:0,modified:0,removed:0,imports:0,commands:0,testsPassed:0,testsFailed:0,agentEvents:0,newlines:0,baselines:0,milestones:0,agents:0},
     performance:{identity:{scale:['D','E','F#','G','A','B','C#'][seed%7],motif:[seed%7,(seed>>>3)%7,(seed>>>9)%7,(seed>>>15)%7]},
       progress:0,tension:0,energy:0,chapter:1,version:0},
-    validation:{},pending:{structure:0,removedSymbols:0,removedLines:0,sinceCommit:0},
+    validation:{},pending:{structure:0,removedSymbols:0,removedLines:0,sinceCommit:0,files:{}},
     diagnostics:{},agents:{},agentFiles:{},
+    // Construct: stable identities (survive renames), site plan, tier order and material state per module.
+    salt:'',identity:{},layout:newLayout(),slots:{},moduleState:{},recentlyDeleted:[],
     timeline:[],frames:[],replayGraphs:[],sessions:{}
   };
 }
@@ -34,6 +39,41 @@ function describeSymbol(s) {
   return {symbolId:sha(`${s.kind}:${s.name}:${s.owner}`).slice(0,14),symbolType:s.kind, size:s.size};
 }
 const meaningful=s=>s.kind!=='callsite'&&!s.local;
+const tier=s=>meaningful(s)&&s.kind!=='property';
+// Public ids are salted per project (the salt never leaves the receiver), so exported or displayed ids cannot be
+// matched against guessed paths such as src/index.ts.
+function pid(state,kind,key){return sha(`${state.salt||''}:${kind}:${key}`).slice(0,14);}
+function originOf(state,file){if(!state.identity)state.identity={};return state.identity[file]||file;}
+function moduleId(state,file){return pid(state,'m',originOf(state,file));}
+function groupKey(file){const g=groupOf(file);return g==='.'?'.':g;}
+function placeFile(state,file){
+  const g=groupKey(file);
+  return placeModule(state.layout,{id:moduleId(state,file),group:pid(state,'g',g),core:g==='.',dir:pid(state,'d',dirOf(file))});
+}
+// Tier slots keep their order as symbols come and go: new symbols stack on top, removed ones let the rest settle.
+function updateSlots(state,file,analysis,differences,isNew){
+  const mid=moduleId(state,file);const keys=analysis.symbols.filter(tier).map(x=>x.key);
+  if(isNew||!state.slots[mid]){state.slots[mid]=keys;return;}
+  const removed=new Set(differences.filter(d=>d.kind==='symbol.removed').map(d=>d.symbol.key));
+  const present=new Set(keys);
+  const kept=state.slots[mid].filter(k=>!removed.has(k)&&present.has(k));const known=new Set(kept);
+  state.slots[mid]=[...kept,...keys.filter(k=>!known.has(k))];
+}
+function expireDeleted(state,now){
+  if(!state.recentlyDeleted)state.recentlyDeleted=[];
+  state.recentlyDeleted=state.recentlyDeleted.filter(d=>{
+    if(now-d.ts<=RENAME_WINDOW_MS)return true;
+    removeModule(state.layout,d.mid);delete state.slots[d.mid];delete state.moduleState[d.mid];return false;
+  });
+}
+// Identity moves with a file on rename, so its building transforms in place instead of being demolished and rebuilt.
+function transferIdentity(state,from,to){
+  const origin=originOf(state,from);
+  state.identity[to]=origin;delete state.identity[from];
+  if(state.docs[from]&&!state.docs[to])state.docs[to]=state.docs[from];
+  delete state.docs[from];
+  state.recentlyDeleted=(state.recentlyDeleted||[]).filter(d=>d.origin!==origin);
+}
 function agentFor(state,event){
   const provider=String(event.meta?.provider||'unspecified').slice(0,40);
   const id=sha(`${provider}/${event.meta?.agent||event.sessionId||''}`).slice(0,10);
@@ -74,39 +114,52 @@ function apply(state,event) {
   function validation(category,passed){
     if(!VALIDATIONS.includes(category))return false;
     const previous=state.validation[category],p=state.pending;
+    // Results are localized to the modules changed since the last test run: those are the ones the run speaks for.
+    const covered=Object.keys(p.files||{}).slice(0,64);
     if(!passed){
-      if(category==='test')state.stats.testsFailed++;
-      state.validation[category]='fail';c(`validation.${category}.failed`,'observed',0);return true;
+      if(category==='test'){state.stats.testsFailed++;for(const mid of covered)state.moduleState[mid]='stressed';}
+      state.validation[category]='fail';c(`validation.${category}.failed`,'observed',0,{fileIds:category==='test'?covered:[]});return true;
     }
     // A green run only counts when it validates something new or recovers a failure; re-running is not progress.
     let weight=previous==='fail'?(category==='test'?3:1):0;
     if(category==='test'){
       state.stats.testsPassed++;
       if(p.structure>0)weight+=0.5+Math.min(2,p.structure*0.25);
-      if(p.removedSymbols>=3){state.stats.milestones++;c('milestone.refactor.validated','inferred',Math.min(4,1+Math.log2(1+p.removedSymbols)),{removedSymbols:p.removedSymbols,removedLines:p.removedLines});}
-      p.structure=0;p.removedSymbols=0;p.removedLines=0;
+      if(p.removedSymbols>=3){state.stats.milestones++;c('milestone.refactor.validated','inferred',Math.min(4,1+Math.log2(1+p.removedSymbols)),{removedSymbols:p.removedSymbols,removedLines:p.removedLines,fileIds:covered});}
+      for(const mid of covered)if(state.moduleState[mid])state.moduleState[mid]='validated';
+      p.structure=0;p.removedSymbols=0;p.removedLines=0;p.files={};
     }else if(p.structure>0)weight+=category==='build'?0.4:0.2;
-    state.validation[category]='pass';c(`validation.${category}.passed`,'observed',weight);return true;
+    state.validation[category]='pass';c(`validation.${category}.passed`,'observed',weight,{fileIds:category==='test'?covered:[]});return true;
   }
+  expireDeleted(state,event.ts);
   switch(event.kind) {
     case 'project.baseline':state.stats.baselines++;c('project.baseline','observed',0,{count:event.meta?.count||0,truncated:!!event.meta?.truncated});break;
     case 'document.snapshot': {
       if(!event.file||typeof event.content!=='string') break;
       const file=event.file;
-      const before=state.docs[file];
       const hash=sha(event.content);
-      if(before?.hash===hash) break;
+      if(state.docs[file]?.hash===hash) break;
       const analysis=analyze(file,event.content);
       const isBaseline=event.meta?.reason==='baseline';
+      // A new file that closely matches one deleted moments ago is that file, renamed.
+      if(!state.docs[file]&&!isBaseline){
+        const keys=new Set(analysis.symbols.filter(tier).map(x=>x.key));
+        const match=(state.recentlyDeleted||[]).find(d=>{if(keys.size<3||!d.keys.length)return false;const shared=d.keys.filter(k=>keys.has(k)).length;return shared/(keys.size+d.keys.length-shared)>=0.6;});
+        if(match){state.identity[file]=match.origin;state.docs[file]=match.doc;state.recentlyDeleted=state.recentlyDeleted.filter(d=>d!==match);c('module.renamed','inferred',0,{fileId:moduleId(state,file)});}
+      }
+      const before=state.docs[file];
       const differences=diff(before?.analysis||{symbols:[],imports:[]},analysis);
       state.docs[file]={hash,analysis};
+      placeFile(state,file);updateSlots(state,file,analysis,differences,!before);
+      const mid=moduleId(state,file);
       state.stats.files=Object.keys(state.docs).length;
       state.stats.symbols=Object.values(state.docs).reduce((n,d)=>n+d.analysis.symbols.filter(meaningful).length,0);
       state.stats.imports=Object.values(state.docs).reduce((n,d)=>n+d.analysis.imports.length,0);
-      if(isBaseline){c('document.baseline.indexed','observed',0,{symbols:analysis.symbols.length,imports:analysis.imports.length,parseErrors:analysis.errors});break;}
+      if(isBaseline){if(!state.moduleState[mid])state.moduleState[mid]='committed';c('document.baseline.indexed','observed',0,{symbols:analysis.symbols.length,imports:analysis.imports.length,parseErrors:analysis.errors});break;}
       const recent=state.agentFiles[file];
       const attribution=recent&&event.ts-recent.ts>=0&&event.ts-recent.ts<=AGENT_ATTRIBUTION_MS?{agentId:recent.agentId,voice:state.agents[recent.agentId]?.voice??0,attribution:'correlated'}:{};
-      const fileId=sha(file).slice(0,14);
+      const fileId=mid;
+      const group=pid(state,'g',groupKey(file));
       const changes=[];let raw=0;
       for(const change of differences){
         if(change.symbol&&!meaningful(change.symbol))continue;
@@ -121,12 +174,22 @@ function apply(state,event) {
       const credit=raw>0?SNAPSHOT_CREDIT_CAP*(1-Math.exp(-raw/SNAPSHOT_CREDIT_CAP)):0,scale=raw>0?credit/raw:0;
       const max=160;
       for(const {change,weight} of changes.slice(0,max)) {
-        const details=change.symbol?describeSymbol(change.symbol):{dependencyId:sha(change.import.spec).slice(0,12),internal:!!change.import.target};
+        let details;
+        if(change.symbol)details={...describeSymbol(change.symbol),symbolId:pid(state,'s',`${originOf(state,file)}:${change.symbol.key}`)};
+        else{
+          // Internal dependencies name the module they connect to; crossing districts is integration.
+          const target=change.import.target?resolveModule(state,change.import.target):null;
+          details={dependencyId:pid(state,'p',change.import.spec),internal:!!change.import.target,...(target?{targetId:moduleId(state,target),cross:groupKey(target)!==groupKey(file)}:{})};
+        }
         c(change.kind,'inferred',+(weight*scale).toFixed(4),{...details,fileId,...attribution});
       }
       if(changes.length>max) c('document.change.overflow','observed',0,{omitted:changes.length-max});
       if(analysis.errors) c('source.parse.diagnostics','observed',0,{errors:analysis.errors});
       state.pending.structure+=credit;state.pending.sinceCommit+=credit;
+      if(changes.length){if(!state.pending.files)state.pending.files={};state.pending.files[mid]=true;
+        // Editing a stressed building is a repair in progress; anything else changed is a fresh draft.
+        state.moduleState[mid]=state.moduleState[mid]==='stressed'?'stressed':'draft';}
+      else if(!before)state.moduleState[mid]='draft';
       if(before)state.pending.removedLines+=Math.max(0,(before.analysis.lines||0)-(analysis.lines||0));
       break;
     }
@@ -135,21 +198,35 @@ function apply(state,event) {
       const edits=event.kind==='document.edits'?(event.meta?.edits||0):(event.changes?.length||0);
       const enters=event.kind==='document.edits'?(event.meta?.insertedLines||0):(event.changes||[]).reduce((n,x)=>n+(x.insertedLines||0),0);
       state.stats.newlines+=enters;
-      c('editor.change.observed','observed',0,{edits,insertedNewlines:enters});
+      c('editor.change.observed','observed',0,{edits,insertedNewlines:enters,...(event.file&&state.docs[event.file]?{fileId:moduleId(state,event.file)}:{})});
       if(enters)c('editor.newline.inserted','observed',0,{count:enters});
       break;
     }
     case 'document.saved':c('document.saved','observed',0);break;
     case 'file.created':c('file.created','observed',.25);break;
     case 'file.deleted': {
+      let fileId;
       if(event.file&&state.docs[event.file]){
-        state.pending.removedSymbols+=state.docs[event.file].analysis.symbols.filter(meaningful).length;
-        state.pending.removedLines+=state.docs[event.file].analysis.lines||0;
-        delete state.docs[event.file];state.stats.files=Object.keys(state.docs).length;
+        const doc=state.docs[event.file];fileId=moduleId(state,event.file);
+        state.pending.removedSymbols+=doc.analysis.symbols.filter(meaningful).length;
+        state.pending.removedLines+=doc.analysis.lines||0;
+        // The building's plot is held briefly in case this is the first half of a rename.
+        if(!state.recentlyDeleted)state.recentlyDeleted=[];
+        state.recentlyDeleted.push({mid:fileId,origin:originOf(state,event.file),keys:doc.analysis.symbols.filter(tier).map(x=>x.key),doc,ts:event.ts});
+        if(state.recentlyDeleted.length>40)state.recentlyDeleted.shift();
+        delete state.docs[event.file];delete state.identity[event.file];state.stats.files=Object.keys(state.docs).length;
+        if(state.pending.files)delete state.pending.files[fileId];
       }
-      c('file.deleted','observed',0);break;
+      c('file.deleted','observed',0,fileId?{fileId}:{});break;
     }
-    case 'file.renamed':c('file.renamed','observed',0);break;
+    case 'file.renamed': {
+      if(event.from&&event.file&&event.from!==event.file&&(state.docs[event.from]||state.identity[event.from])){
+        transferIdentity(state,event.from,event.file);
+        if(state.docs[event.file])placeFile(state,event.file);
+        c('module.renamed','observed',0,{fileId:moduleId(state,event.file)});
+      }else c('file.renamed','observed',0);
+      break;
+    }
     case 'task.started':c('execution.task.started','observed',0,{category:categoryOf(event)});break;
     case 'task.finished': {
       const exit=event.meta?.exitCode;
@@ -169,14 +246,19 @@ function apply(state,event) {
       c('validation.diagnostics','observed',0,{errors,warnings:event.meta?.warnings||0});break;
     }
     // A commit is a checkpoint: worth little by itself, more when it captures substantial new structure.
-    case 'repository.commit.observed':c('repository.commit.observed','observed',0.2+Math.min(0.8,state.pending.sinceCommit*0.1));state.pending.sinceCommit=0;break;
+    case 'repository.commit.observed': {
+      const committed=Object.keys(state.moduleState).filter(m=>state.moduleState[m]==='draft');
+      for(const m of committed)state.moduleState[m]='committed';
+      c('repository.commit.observed','observed',0.2+Math.min(0.8,state.pending.sinceCommit*0.1),{fileIds:committed.slice(0,64)});state.pending.sinceCommit=0;break;
+    }
     case 'repository.head.changed':c('repository.head.changed','observed',0);break;
     case 'agent.prompt.submitted':case 'agent.thinking.visible':case 'agent.tool.started':case 'agent.tool.completed':case 'agent.response.completed':case 'agent.plan.visible':case 'agent.message.visible':case 'agent.file.modified':
     case 'agent.session.started':case 'agent.session.ended':case 'agent.subagent.started':case 'agent.subagent.stopped': {
       state.stats.agentEvents++;
       const agent=agentFor(state,event);
       if(event.file&&(event.kind==='agent.file.modified'||event.kind==='agent.tool.completed'))state.agentFiles[event.file]={agentId:agent.id,ts:event.ts};
-      c(event.kind,'observed',0,{provider:event.meta?.provider||'unspecified',source:event.meta?.source||'hook',agentId:agent.id,voice:agent.voice,...(event.meta?.tool?{tool:String(event.meta.tool).slice(0,40)}:{})});
+      c(event.kind,'observed',0,{provider:event.meta?.provider||'unspecified',source:event.meta?.source||'hook',agentId:agent.id,voice:agent.voice,...(event.meta?.tool?{tool:String(event.meta.tool).slice(0,40)}:{}),
+        ...(event.file&&state.docs[event.file]?{fileId:moduleId(state,event.file)}:{})});
       if(event.kind==='agent.tool.completed'&&typeof event.meta?.exitCode==='number')validation(categoryOf(event),event.meta.exitCode===0);
       break;
     }
@@ -219,35 +301,59 @@ function closeBatch(state,cues,clock=Math.max(0,...cues.map(c=>c.ts))) {
   if(state.frames.length>800)state.frames.splice(0,state.frames.length-800);
   return frame;
 }
+// Relative imports resolve to a known file (with or without extension, or a folder's index file).
+// The index is cached outside the persisted state and rebuilt when the set of files changes.
+const moduleIndexes=new WeakMap();
+function resolveModule(state,target){
+  const files=Object.keys(state.docs);let cached=moduleIndexes.get(state);
+  if(!cached||cached.docs!==state.docs||cached.size!==files.length){
+    const index=new Map();for(const file of files){index.set(file.replace(/\.[^.]+$/,''),file);const m=file.match(/^(.*)\/index\.[^.]+$/);if(m)index.set(m[1],file);}
+    cached={index,docs:state.docs,size:files.length};moduleIndexes.set(state,cached);
+  }
+  return cached.index.get(target)||null;
+}
 // Every module is shown; the remaining budget goes to the most architecturally meaningful symbols, spread
 // round-robin across modules so large projects are represented evenly rather than by whichever files came first.
 const KIND_RANK={'api.route':0,'ui.component':1,'class':2,'interface':3,'function':4,'method':5,'type':6,'variable':7};
-const GRAPH_NODES=1400,MODULE_NODES=700,SYMBOLS_PER_MODULE=24;
+const GRAPH_NODES=1400,MODULE_NODES=700,SYMBOLS_PER_MODULE=24,TIER_BUDGET=2400;
 function publicProjection(state) {
   const files=Object.keys(state.docs).sort();
-  const modules=new Map();
-  for(const file of files){const id=sha(file).slice(0,14);modules.set(file.replace(/\.[^.]+$/,''),id);const index=file.match(/^(.*)\/index\.[^.]+$/);if(index)modules.set(index[1],id);}
   const symbolCount=file=>state.docs[file].analysis.symbols.filter(meaningful).length;
   const shown=files.length>MODULE_NODES?files.slice().sort((a,b)=>symbolCount(b)-symbolCount(a)||a.localeCompare(b)).slice(0,MODULE_NODES).sort():files;
-  const nodes=[],edges=[],queues=[];
+  const nodes=[],edges=[],queues=[],groups=new Map();
+  // Tiers per building shrink as the project grows, so thousands of symbols stay legible (counts keep the totals).
+  const tierCap=Math.max(3,Math.min(16,Math.floor(TIER_BUDGET/Math.max(1,shown.length))));
   for(const file of shown){
-    const fileId=sha(file).slice(0,14),symbols=state.docs[file].analysis.symbols.filter(s=>meaningful(s)&&s.kind!=='property');
-    nodes.push({id:fileId,type:'module',weight:Math.min(6,Math.max(1,Math.sqrt(symbols.length)))});
-    queues.push(symbols.sort((a,b)=>(KIND_RANK[a.kind]??9)-(KIND_RANK[b.kind]??9)).slice(0,SYMBOLS_PER_MODULE).map(s=>({file,fileId,s})));
+    const fileId=moduleId(state,file),symbols=state.docs[file].analysis.symbols.filter(tier);
+    const placed=state.layout?.modules?.[fileId]||placeFile(state,file);
+    const counts={};for(const x of symbols)counts[x.kind]=(counts[x.kind]||0)+1;
+    const g=groupKey(file),gid=pid(state,'g',g);
+    const group=groups.get(gid)||{id:gid,type:'group',core:g==='.',modules:0,counts:{}};group.modules++;
+    for(const [k,n] of Object.entries(counts))group.counts[k]=(group.counts[k]||0)+n;groups.set(gid,group);
+    nodes.push({id:fileId,type:'module',weight:Math.min(6,Math.max(1,Math.sqrt(symbols.length))),group:gid,dir:pid(state,'d',dirOf(file)),q:placed.q,r:placed.r,
+      state:state.moduleState?.[fileId]||'committed',test:TEST_FILE.test(file),counts});
+    // Which symbols are shown is decided by importance; where each one sits in the building is its stable slot.
+    const byKey=new Map(symbols.map(x=>[x.key,x]));
+    const order=(state.slots?.[fileId]||symbols.map(x=>x.key)).filter(k=>byKey.has(k));
+    queues.push(order.map((k,slot)=>({fileId,s:byKey.get(k),slot,origin:originOf(state,file)})).sort((a,b)=>(KIND_RANK[a.s.kind]??9)-(KIND_RANK[b.s.kind]??9)||a.slot-b.slot));
   }
-  for(let rank=0,budget=GRAPH_NODES-nodes.length;rank<SYMBOLS_PER_MODULE&&budget>0;rank++)for(const q of queues){
+  for(const g of groups.values()){const d=state.layout?.districts?.[g.id];if(d)Object.assign(g,{q:d.q,r:d.r,angle:d.angle,order:d.order});nodes.unshift(g);}
+  // Most important symbols first, capped per building; the remaining budget is spread round-robin.
+  for(let rank=0,budget=GRAPH_NODES-nodes.length;rank<tierCap&&budget>0;rank++)for(const q of queues){
     if(budget<=0)break;const item=q[rank];if(!item)continue;
-    const id=sha(`${item.file}:${item.s.key}`).slice(0,14);
-    nodes.push({id,type:item.s.kind,weight:Math.min(4,Math.max(.5,Math.log2(2+item.s.size)/3)),parent:item.fileId});
+    const id=pid(state,'s',`${item.origin}:${item.s.key}`);
+    nodes.push({id,type:item.s.kind,weight:Math.min(4,Math.max(.5,Math.log2(2+item.s.size)/3)),parent:item.fileId,slot:item.slot});
     edges.push({a:item.fileId,b:id,kind:'contains'});budget--;
   }
-  const linked=new Set();
+  const linked=new Set(),visible=new Set(shown);
   for(const file of shown){
-    const fileId=sha(file).slice(0,14);
+    const fileId=moduleId(state,file);
     for(const imp of state.docs[file].analysis.imports.filter(x=>x.target)) {
       // Graph edges only when target is a known module, without leaking paths.
-      const target=modules.get(imp.target);
-      if(target&&target!==fileId&&!linked.has(fileId+target)){linked.add(fileId+target);edges.push({a:fileId,b:target,kind:'depends'});}
+      const target=resolveModule(state,imp.target);
+      if(!target||!visible.has(target))continue;
+      const targetId=moduleId(state,target);
+      if(targetId!==fileId&&!linked.has(fileId+targetId)){linked.add(fileId+targetId);edges.push({a:fileId,b:targetId,kind:'depends',cross:groupKey(target)!==groupKey(file)});}
     }
   }
   return {projectId:state.projectId,name:state.name||null,stats:state.stats,performance:state.performance,

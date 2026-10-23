@@ -85,7 +85,8 @@ function listen(rec){
   }));
   attach(vscode.workspace.onDidCreateFiles(e=>{for(const uri of e.files){const file=relative(rec,uri);if(file)send(rec,'file.created',{file});}}));
   attach(vscode.workspace.onDidDeleteFiles(e=>{for(const uri of e.files){const file=relative(rec,uri);if(file)send(rec,'file.deleted',{file});}}));
-  attach(vscode.workspace.onDidRenameFiles(e=>{for(const f of e.files){const file=relative(rec,f.newUri);if(file)send(rec,'file.renamed',{file,meta:{source:hash(f.oldUri.toString()).slice(0,12)}});}}));
+  // The rename source lets the receiver keep the file's identity (its building transforms instead of being rebuilt).
+  attach(vscode.workspace.onDidRenameFiles(e=>{for(const f of e.files){const file=relative(rec,f.newUri);const from=relative(rec,f.oldUri);if(file)send(rec,'file.renamed',{file,...(from?{from}:{}),meta:{source:hash(f.oldUri.toString()).slice(0,12)}});}}));
   // Commands are classified here (test, build, lint, ...) so the category can be shared without the command text.
   if(vscode.window.onDidStartTerminalShellExecution)attach(vscode.window.onDidStartTerminalShellExecution(e=>{
     const captureCommand=conf().get('captureTerminalCommands',false);

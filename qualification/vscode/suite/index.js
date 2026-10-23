@@ -34,7 +34,9 @@ function journal(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(p
 function journalText(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(pid),'events.jsonl'),'utf8');}catch{return '';}}
 // The export's timeline is the recorded performance: one entry per window, each carrying its cues.
 async function cues(pid){await flush(pid);const x=await getJSON(`/api/export?id=${pid}`);return x?x.timeline.flatMap(e=>e.cues):[];}
-const fileId=f=>sha(f).slice(0,14);
+// Public module ids are salted per project (interpretation v5); the salt is readable only on this machine.
+let currentPid=null;
+const fileId=f=>{let salt='';try{salt=fs.readFileSync(path.join(DATA,'projects',sha(currentPid),'salt'),'utf8').trim();}catch{}return sha(`${salt}:m:${f}`).slice(0,14);};
 
 let consentPrompts=0;
 function patchConsent(){
@@ -73,7 +75,7 @@ async function measureTyping(editor,text,pid){
 function rssMB(pid){try{const m=fs.readFileSync(`/proc/${pid}/status`,'utf8').match(/VmRSS:\s+(\d+)/);return m?+(Number(m[1])/1024).toFixed(1):null;}catch{return null;}}
 
 async function mainPhase(){
-  const folder=vscode.workspace.workspaceFolders[0];const pid=sha(folder.uri.toString());results.projectId=pid;
+  const folder=vscode.workspace.workspaceFolders[0];const pid=sha(folder.uri.toString());results.projectId=pid;currentPid=pid;
   results.measurements.workspaceUri=folder.uri.toString();
   patchConsent();
   const ext=vscode.extensions.getExtension('zerobandwidth.code-resonance');
