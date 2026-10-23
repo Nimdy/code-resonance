@@ -86,7 +86,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
   // Callers pass performance time. Animations run in viewer time (performance time / replay speed) so pacing stays
   // natural at any replay speed, while starts are snapped to the music's step grid in performance time.
   const vsnap=t=>Math.ceil(t/stepMs)*stepMs/speed;
-  function caption(t,text,priority=1){if(t-lastCaptionAt<3800&&priority<3)return;lastCaptionAt=t;onCaption(text,t);}
+  function caption(t,text,priority=1){if(t-lastCaptionAt<3800&&priority<3)return false;lastCaptionAt=t;onCaption(text,t);return true;}
   function look(gid){const d=districts.get(gid);return d?d.color:new THREE.Color(CORE);}
   // ---- Districts -------------------------------------------------------------------------------------------
   function district(node,t){
@@ -332,7 +332,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
         if(voice!==null){const a=drone(voice);a.lastTool=at;
           // "In parallel" only when another agent used a tool within the last few seconds: a claim the data supports.
           const concurrent=[...agents.values()].filter(x=>x.lastTool!==undefined&&at-x.lastTool<6000).length;
-          if(concurrent>1&&(!a.parallelAt||at-a.parallelAt>20000)){a.parallelAt=at;caption(at,`${concurrent} agents are building in parallel`,2);}}
+          if(concurrent>1&&(!a.parallelAt||at-a.parallelAt>20000)&&caption(at,`${concurrent} agents are building in parallel`,2))a.parallelAt=at;}
         break;
       }
       case 'agent.prompt.submitted':case 'agent.session.started':if(voice!==null){const a=drone(voice);a.active=at;a.g.visible=true;caption(at,'An agent joins the work',1);}break;
