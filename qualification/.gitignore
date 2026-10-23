@@ -1,0 +1,5 @@
+node_modules/
+.vscode-test/
+results/audio/*.wav
+results/browser/*.webm
+results/browser/*.png

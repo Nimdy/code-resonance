@@ -1,0 +1,15 @@
+{
+  "name": "code-resonance-qualification",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Real-environment qualification harnesses (VS Code extension host, browser). Kept apart so the product stays dependency-free.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "vscode": "node vscode/run.js",
+    "browser": "node browser/stage.qual.js"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "2.5.2",
+    "playwright-core": "1.62.0"
+  }
+}

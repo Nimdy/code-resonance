@@ -1,0 +1,9 @@
+{
+  "name": "sample-tasks",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "build": "node -e \"console.log('build ok')\""
+  },
+  "type": "module"
+}
