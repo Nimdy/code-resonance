@@ -1,3 +1,5 @@
+receiver-auth.json
+spool/
 projects/*/state.json
 projects/*/performance.jsonl
 projects/*/public.json
