@@ -1,0 +1,4 @@
+projects/*/state.json
+projects/*/performance.jsonl
+projects/*/public.json
+projects/*/*.tmp
