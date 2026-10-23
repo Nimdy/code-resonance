@@ -2,8 +2,9 @@
 const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
-const INTERPRETATION_VERSION=3;
+const INTERPRETATION_VERSION=4;
 const SNAPSHOT_CREDIT_CAP=6;
+const CHAPTER_UNIT=12;
 const AGENT_ATTRIBUTION_MS=60000;
 const AGENT_VOICES=8;
 // Credit for structure that appears, by symbol kind. Local variables and call sites are facts, not progress.
@@ -167,7 +168,8 @@ function apply(state,event) {
       if(event.file){if(errors)state.diagnostics[event.file]=errors;else delete state.diagnostics[event.file];}
       c('validation.diagnostics','observed',0,{errors,warnings:event.meta?.warnings||0});break;
     }
-    case 'repository.commit.observed':c('repository.commit.observed','observed',0.6+Math.min(1.4,state.pending.sinceCommit*0.2));state.pending.sinceCommit=0;break;
+    // A commit is a checkpoint: worth little by itself, more when it captures substantial new structure.
+    case 'repository.commit.observed':c('repository.commit.observed','observed',0.2+Math.min(0.8,state.pending.sinceCommit*0.1));state.pending.sinceCommit=0;break;
     case 'repository.head.changed':c('repository.head.changed','observed',0);break;
     case 'agent.prompt.submitted':case 'agent.thinking.visible':case 'agent.tool.started':case 'agent.tool.completed':case 'agent.response.completed':case 'agent.plan.visible':case 'agent.message.visible':case 'agent.file.modified':
     case 'agent.session.started':case 'agent.session.ended':case 'agent.subagent.started':case 'agent.subagent.stopped': {
@@ -178,7 +180,7 @@ function apply(state,event) {
       if(event.kind==='agent.tool.completed'&&typeof event.meta?.exitCode==='number')validation(categoryOf(event),event.meta.exitCode===0);
       break;
     }
-    case 'workspace.started':case 'workspace.stopped':c(event.kind,'observed',0);break;
+    case 'workspace.started':case 'workspace.stopped':if(event.name)state.name=event.name;c(event.kind,'observed',0);break;
     case 'instrument.note':c('instrument.note','observed',0);break;
     default:break;
   }
@@ -199,7 +201,8 @@ function closeBatch(state,cues,clock=Math.max(0,...cues.map(c=>c.ts))) {
   // Current activity (typing, structural change, variety) drives energy; long-term progress drives the chapter.
   state.performance.energy=bounded(0.4*(1-Math.exp(-typing/60))+0.4*(1-Math.exp(-weighted/3))+0.2*Math.min(1,diversity/8));
   const p=state.performance;
-  p.chapter=1+Math.floor(Math.log2(1+p.progress/6));p.version++;
+  // Chapters double in cost: an intense session reaches about 4, multi-hour work 5-6, a project built over weeks 7-8.
+  p.chapter=1+Math.floor(Math.log2(1+p.progress/CHAPTER_UNIT));p.version++;
   const agents=new Map();
   for(const x of cues)if(x.detail?.agentId){const a=agents.get(x.detail.agentId)||{id:x.detail.agentId,voice:x.detail.voice??0,events:0};a.events++;agents.set(a.id,a);}
   const frame={
@@ -247,9 +250,9 @@ function publicProjection(state) {
       if(target&&target!==fileId&&!linked.has(fileId+target)){linked.add(fileId+target);edges.push({a:fileId,b:target,kind:'depends'});}
     }
   }
-  return {projectId:state.projectId,stats:state.stats,performance:state.performance,
+  return {projectId:state.projectId,name:state.name||null,stats:state.stats,performance:state.performance,
     graph:{nodes,edges:edges.slice(0,4000)},
     frames:state.frames.slice(-100),timeline:state.timeline.slice(-500),
     sessions:Object.values(state.sessions).sort((a,b)=>b.end-a.end).slice(0,40),updatedAt:state.frames.at(-1)?.createdAt||null};
 }
-module.exports={INTERPRETATION_VERSION,newState,apply,closeBatch,publicProjection};
+module.exports={INTERPRETATION_VERSION,CHAPTER_UNIT,newState,apply,closeBatch,publicProjection};

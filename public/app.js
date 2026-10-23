@@ -187,8 +187,8 @@
     setText('chapter',String(chapter).padStart(2,'0'));
     const names=['ORIGIN','FORMATION','STRUCTURE','CONNECTION','INTEGRATION','EVOLUTION','COMPOSITION','RESONANCE'];
     setText('chapterName',names[Math.min(names.length-1,Math.max(0,chapter-1))]);
-    // Progress through the current chapter (chapter n begins at progress 6*(2^(n-1)-1)).
-    const lo=6*(2**(chapter-1)-1),hi=6*(2**chapter-1);
+    // Progress through the current chapter (chapter n begins at progress 12*(2^(n-1)-1); see engine/reducer.js).
+    const lo=12*(2**(chapter-1)-1),hi=12*(2**chapter-1);
     $('chapterFill').style.width=`${(clamp(((p.progress||0)-lo)/(hi-lo))*100).toFixed(1)}%`;
     for(const [name,value] of [['energy',controls.energy||0],['tension',controls.tension||0],['complexity',controls.complexity||0]]){
       const n=Math.round(clamp(value)*100);$(`${name}Bar`).style.width=n+'%';setText(`${name}Number`,String(n).padStart(2,'0'));
