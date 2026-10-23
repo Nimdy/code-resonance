@@ -10,7 +10,8 @@ const VALID_KINDS = new Set([
   'diagnostics.updated','repository.commit.observed','repository.head.changed',
   'agent.prompt.submitted','agent.thinking.visible','agent.tool.started','agent.tool.completed',
   'agent.response.completed','agent.plan.visible','agent.message.visible',
-  'agent.file.modified','instrument.note'
+  'agent.file.modified','instrument.note',
+  'agent.session.started','agent.session.ended','agent.subagent.started','agent.subagent.stopped'
 ]);
 const EXTENSIONS = new Set(['.js','.jsx','.mjs','.cjs','.ts','.tsx','.mts','.cts','.json','.css','.html','.py','.go','.rs','.md']);
 // Shared with the extension so it can never send a path the receiver would reject.

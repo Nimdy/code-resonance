@@ -7,6 +7,7 @@ const path=require('node:path');
 const http=require('node:http');
 const crypto=require('node:crypto');
 const {VALID_KINDS,sha}=require('../receiver/protocol');
+const {projectIdForRoot}=require('../sdk/project-id');
 function arg(k){const i=process.argv.indexOf(k);return i<0?undefined:process.argv[i+1];}
 function request(port,token,events){
   return new Promise((resolve,reject)=>{
@@ -22,9 +23,8 @@ async function main(){
   const dir=arg('--data')||path.join(os.homedir(),'.code-resonance');
   const auth=JSON.parse(fs.readFileSync(path.join(dir,'receiver-auth.json'),'utf8'));
   const root=path.resolve(arg('--root')||process.cwd());
-  // file URI equivalent of a local POSIX VS Code workspace URI; override for other URI schemes.
-  const rootUri=process.platform==='win32'?'file:///'+root.replace(/\\/g,'/').replace(/^[A-Z]:/,x=>x.toLowerCase()):'file://'+root;
-  const projectId=arg('--project-id')||process.env.RESONANCE_PROJECT_ID||sha(rootUri);
+  // Same identity as the extension: sha256 of vscode.Uri.file(root).toString().
+  const projectId=arg('--project-id')||process.env.RESONANCE_PROJECT_ID||projectIdForRoot(root);
   const explicitText=arg('--text');
   const bodyText=process.argv.includes('--stdin')?fs.readFileSync(0,'utf8').slice(0,12000):explicitText;
   const event={v:1,id:crypto.randomUUID(),ts:Date.now(),kind,projectId,

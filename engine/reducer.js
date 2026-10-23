@@ -169,7 +169,8 @@ function apply(state,event) {
     }
     case 'repository.commit.observed':c('repository.commit.observed','observed',0.6+Math.min(1.4,state.pending.sinceCommit*0.2));state.pending.sinceCommit=0;break;
     case 'repository.head.changed':c('repository.head.changed','observed',0);break;
-    case 'agent.prompt.submitted':case 'agent.thinking.visible':case 'agent.tool.started':case 'agent.tool.completed':case 'agent.response.completed':case 'agent.plan.visible':case 'agent.message.visible':case 'agent.file.modified': {
+    case 'agent.prompt.submitted':case 'agent.thinking.visible':case 'agent.tool.started':case 'agent.tool.completed':case 'agent.response.completed':case 'agent.plan.visible':case 'agent.message.visible':case 'agent.file.modified':
+    case 'agent.session.started':case 'agent.session.ended':case 'agent.subagent.started':case 'agent.subagent.stopped': {
       state.stats.agentEvents++;
       const agent=agentFor(state,event);
       if(event.file&&(event.kind==='agent.file.modified'||event.kind==='agent.tool.completed'))state.agentFiles[event.file]={agentId:agent.id,ts:event.ts};
