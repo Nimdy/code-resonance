@@ -1,0 +1,106 @@
+{
+  "at": "2026-10-23T18:48:12.537Z",
+  "seconds": 180,
+  "styles": {
+    "ambient": {
+      "peak": 0.287,
+      "clips": 0,
+      "rmsDb": -22.082,
+      "shortTermDb": {
+        "p10": -28.9,
+        "median": -21.5,
+        "p95": -20.6
+      },
+      "loudnessRangeDb": 8.268,
+      "silentWindows": 1,
+      "silentAt": [
+        0
+      ],
+      "windows": 60,
+      "beforeTensionDb": -22.815,
+      "tensionDb": -21.397,
+      "renderSeconds": 44.4
+    },
+    "pulse": {
+      "peak": 0.302,
+      "clips": 0,
+      "rmsDb": -23.211,
+      "shortTermDb": {
+        "p10": -25.7,
+        "median": -22.6,
+        "p95": -21.9
+      },
+      "loudnessRangeDb": 3.755,
+      "silentWindows": 0,
+      "silentAt": [],
+      "windows": 60,
+      "beforeTensionDb": -24.278,
+      "tensionDb": -22.398,
+      "renderSeconds": 75.3
+    },
+    "cinematic": {
+      "peak": 0.302,
+      "clips": 0,
+      "rmsDb": -23.077,
+      "shortTermDb": {
+        "p10": -28,
+        "median": -22.6,
+        "p95": -21.5
+      },
+      "loudnessRangeDb": 6.512,
+      "silentWindows": 0,
+      "silentAt": [],
+      "windows": 60,
+      "beforeTensionDb": -23.678,
+      "tensionDb": -22.448,
+      "renderSeconds": 42.5
+    },
+    "chip": {
+      "peak": 0.271,
+      "clips": 0,
+      "rmsDb": -23.499,
+      "shortTermDb": {
+        "p10": -29.9,
+        "median": -22.7,
+        "p95": -22.3
+      },
+      "loudnessRangeDb": 7.657,
+      "silentWindows": 0,
+      "silentAt": [],
+      "windows": 60,
+      "beforeTensionDb": -24.159,
+      "tensionDb": -22.599,
+      "renderSeconds": 204.4
+    }
+  },
+  "checks": [
+    {
+      "style": "ambient",
+      "noClipping": true,
+      "audible": true,
+      "noDropouts": true,
+      "dynamicButStable": true
+    },
+    {
+      "style": "pulse",
+      "noClipping": true,
+      "audible": true,
+      "noDropouts": true,
+      "dynamicButStable": true
+    },
+    {
+      "style": "cinematic",
+      "noClipping": true,
+      "audible": true,
+      "noDropouts": true,
+      "dynamicButStable": true
+    },
+    {
+      "style": "chip",
+      "noClipping": true,
+      "audible": true,
+      "noDropouts": true,
+      "dynamicButStable": true
+    }
+  ]
+}
