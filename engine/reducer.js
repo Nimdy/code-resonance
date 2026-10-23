@@ -380,9 +380,29 @@ function resolveModule(state,target){
   }
   return cached.index.get(target)||null;
 }
-// An import's project file: its target, else an adapter's fallback, else a candidate path that exists in the project.
+// Workspace packages declared by package.json files in the project (monorepos), cached like the module index.
+const packageIndexes=new WeakMap();
+function workspacePackages(state){
+  const files=Object.keys(state.docs);let cached=packageIndexes.get(state);
+  if(!cached||cached.docs!==state.docs||cached.size!==files.length||cached.version!==state.stats.raw){
+    const list=[];for(const f of files){const m=state.docs[f].analysis.manifest;if(m)list.push(m);}
+    list.sort((a,b)=>b.name.length-a.name.length);cached={list,docs:state.docs,size:files.length,version:state.stats.raw};packageIndexes.set(state,cached);
+  }
+  return cached.list;
+}
+// An import's project file: its target, else an adapter's fallback, else a candidate path that exists in the project,
+// else (for a bare specifier) the workspace package that declares that name.
 function resolveImport(state,imp){
   for(const t of [imp.target,imp.alt,imp.candidate])if(t){const file=resolveModule(state,t);if(file)return file;}
+  if(!imp.target&&imp.spec&&!imp.spec.startsWith('.')){
+    for(const p of workspacePackages(state)){
+      if(imp.spec!==p.name&&!imp.spec.startsWith(p.name+'/'))continue;
+      const sub=imp.spec.slice(p.name.length+1),base=p.dir==='.'?'':p.dir+'/';
+      const tries=sub?[base+sub,base+'src/'+sub]:[base+'src/index',base+'index',base+'src/main',base+'main'];
+      for(const t of tries){const file=resolveModule(state,t);if(file)return file;}
+      return null;
+    }
+  }
   return null;
 }
 // The worker collects the intents emitted since the last window.

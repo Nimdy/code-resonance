@@ -11,6 +11,7 @@ const {promisify}=require('node:util');
 const gzip=promisify(zlib.gzip);
 const {Worker}=require('node:worker_threads');
 const {validateEvent,sha}=require('./protocol');
+const recipes=require('../engine/recipe');
 const VERSION=require('../package.json').version;
 const PUBLIC=path.resolve(__dirname,'../public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
@@ -135,6 +136,17 @@ function createService(options={}) {
       return {entries:buf.toString('utf8').split('\n').filter(Boolean).map(l=>JSON.parse(l)),total:index.length};}
     finally{await fd.close();}
   }
+  // Visual recipe: generated from the project's traits on first request, provisional until founded, then permanent.
+  const recipeLocks=new Map();
+  function withRecipeLock(id,fn){const prev=recipeLocks.get(id)||Promise.resolve();const next=prev.catch(()=>{}).then(fn);recipeLocks.set(id,next);return next;}
+  async function readRecipe(id){try{return JSON.parse(await fs.readFile(path.join(projectDir(id),'recipe.json'),'utf8'));}catch{return null;}}
+  async function writeRecipe(id,recipe){const f=path.join(projectDir(id),'recipe.json'),tmp=`${f}.${process.pid}.tmp`;await fs.writeFile(tmp,JSON.stringify(recipe,null,1),{mode:0o600});await fs.rename(tmp,f);}
+  function loadRecipe(id,entry){return withRecipeLock(id,async()=>{
+    const stored=await readRecipe(id);const {recipe,changed}=recipes.resolve(stored,JSON.parse(entry.json));
+    if(changed)await writeRecipe(id,recipe);return recipe;});}
+  function editRecipe(id,entry,action){return withRecipeLock(id,async()=>{
+    const project=JSON.parse(entry.json);const current=recipes.resolve(await readRecipe(id),project).recipe;
+    const next=recipes.update(current,action,project);await writeRecipe(id,next);return next;});}
   async function exportProject(res,id,entry){
     const p=JSON.parse(entry.json);
     res.writeHead(200,{...JSON_HEADERS,'Content-Disposition':`attachment; filename="code-resonance-${id.slice(0,10)}.json"`});
@@ -155,8 +167,10 @@ function createService(options={}) {
       if(req.headers.origin&&!expectedOrigins.includes(req.headers.origin)){response(res,403,{error:'Cross-origin access forbidden'});return;}
       const u=new URL(req.url,`http://localhost:${actualPort}`);
       const pathname=u.pathname;
-      if(req.method==='GET'&&FILENAMES.has(pathname)){
-        const f=path.join(PUBLIC,FILENAMES.get(pathname));
+      const worldFile=/^\/worlds\/[a-z0-9-]+\.js$/.test(pathname)?pathname.slice(1):null;
+      if(req.method==='GET'&&(FILENAMES.has(pathname)||worldFile)){
+        const f=path.join(PUBLIC,worldFile||FILENAMES.get(pathname));
+        if(worldFile&&!fss.existsSync(f)){response(res,404,{error:'Not found'});return;}
         const source=await fs.readFile(f);
         res.writeHead(200,{'Content-Type':MIME[path.extname(f)],'Cache-Control':'no-store',
           'Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
@@ -186,6 +200,20 @@ function createService(options={}) {
         const from=Number.isInteger(version)&&version>=1&&version-1<=last?version-1:Math.max(-1,last-(after?40:200));
         const {entries}=await readTimeline(id,from,200);
         response(res,200,{schema:'code-resonance.performance.v1',projectId:id,frames:entries.map(x=>x.frame)});return;
+      }
+      if(pathname==='/api/recipe'&&(req.method==='GET'||req.method==='POST')){
+        const entry=await projection(id);
+        if(!entry){response(res,404,{error:'Project not found'});return;}
+        if(req.method==='POST'){
+          // Recipe edits come from the player page itself: same origin required (a browser always sends Origin on POST).
+          if(!req.headers.origin||!expectedOrigins.includes(req.headers.origin)){response(res,403,{error:'Same-origin request required'});return;}
+          if((req.headers['content-type']||'').split(';')[0]!=='application/json'){response(res,415,{error:'Expected application/json'});return;}
+          let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>8192){response(res,413,{error:'Too large'});return;}chunks.push(chunk);}
+          let body;try{body=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{response(res,400,{error:'Invalid JSON'});return;}
+          try{response(res,200,await editRecipe(id,entry,body.action));}catch(e){response(res,400,{error:e.message});}
+          return;
+        }
+        response(res,200,await loadRecipe(id,entry));return;
       }
       if(req.method==='GET'&&pathname==='/api/export'){
         const entry=await projection(id);

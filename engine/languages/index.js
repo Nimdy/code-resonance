@@ -8,7 +8,8 @@
 // (class, interface, type, function, method, property, variable, ui.component, api.route, callsite).
 // An import is {spec, target} where target is a project-relative path without extension (or null when external);
 // adapters may add `alt` (a fallback target) and `candidate` (a path that is internal only if such a file exists).
-const ADAPTERS=[require('./typescript'),require('./python')];
+// A manifest adapter may add `manifest: {name, dir}` so imports of a workspace package resolve to its folder.
+const ADAPTERS=[require('./typescript'),require('./python'),require('./manifest')];
 const EMPTY=()=>({symbols:[],imports:[],errors:0,lines:0});
 function adapterFor(file){return ADAPTERS.find(a=>a.test(file))||null;}
 function analyze(file,source){const a=adapterFor(file);return a?a.analyze(file,source):EMPTY();}
