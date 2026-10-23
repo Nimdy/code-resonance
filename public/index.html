@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Code Resonance — Software in motion</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/score.js" defer></script>
+  <script src="/music.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="toolbar">
+      <div class="brand"><div class="glyph"><span></span><span></span><span></span></div>
+        <div><div class="brand-title">CODE<span class="slash">/</span>RESONANCE</div><div class="brand-sub">SOFTWARE IN MOTION <span class="dot">·</span> GENERATIVE PERFORMANCE</div></div>
+      </div>
+      <div class="toolbar-center"><span class="status-dot" id="statusDot"></span><span id="connection">AWAITING SESSION</span><span class="mini-divider"></span><span id="renderDelay">10s SEMANTIC WINDOW</span></div>
+      <div class="toolbar-actions">
+        <label for="projectSelect" class="visually-hidden">Select project</label><select id="projectSelect"><option value="">No project</option></select>
+        <button class="action" id="overlayBtn" title="Open the clean OBS browser-source view">OBS VIEW ↗</button>
+        <button class="action" id="exportBtn" title="Export derived event history">DATA ↗</button>
+        <button class="action record" id="recordBtn" title="Record the canvas and player audio to WebM">● RECORD</button>
+        <button class="action primary" id="soundBtn" aria-pressed="false">◌ ENABLE SOUND</button>
+      </div>
+    </header>
+    <main class="layout">
+      <aside class="panel left">
+        <div class="section-label"><span class="eyebrow">01 / COMPOSITION</span><span class="rule"></span></div>
+        <div class="side-title">A project<br>becomes a <em>piece.</em></div>
+        <div class="identity">
+          <span class="eyebrow">PROJECT IDENTITY</span>
+          <strong id="projectName">NO PROJECT</strong>
+          <span id="seedLabel">Waiting for source</span>
+        </div>
+        <div class="chapter-card"><span class="eyebrow">CURRENT MOVEMENT</span><div class="chapter"><span id="chapter">01</span><span class="chapter-name" id="chapterName">ORIGIN</span></div><div class="chapter-rule"><div id="chapterFill"></div></div></div>
+        <div class="section-label studio-label"><span class="eyebrow">WORLD / VISUAL LANGUAGE</span><span class="rule"></span></div>
+        <div class="worlds" role="group" aria-label="Visual world">
+          <button class="world active" data-world="nexus" aria-pressed="true"><span>◉</span>NEXUS</button>
+          <button class="world" data-world="city" aria-pressed="false"><span>▥</span>MONOLITH</button>
+          <button class="world" data-world="nebula" aria-pressed="false"><span>✧</span>NEBULA</button>
+        </div>
+        <div class="section-label studio-label"><span class="eyebrow">SCORE / SYNTHESIS</span><span class="rule"></span></div>
+        <div class="sound-controls">
+          <label class="control-line" for="musicStyle">SOUND PALETTE <span id="styleReadout">AMBIENT</span></label>
+          <select id="musicStyle" class="sound-select"><option value="ambient">AMBIENT / DRIFT</option><option value="pulse">PULSE / SYNTH</option><option value="cinematic">CINEMATIC / SCORE</option><option value="chip">CHIP / DIGITAL</option></select>
+          <label class="control-line" for="volumeSlider">VOLUME <span id="volumeReadout">55%</span></label>
+          <input type="range" id="volumeSlider" min="0" max="100" value="55" aria-label="Master volume">
+          <label class="control-line" for="tempoSlider">TEMPO <span id="tempoReadout">92 BPM</span></label>
+          <input type="range" id="tempoSlider" min="58" max="160" value="92" aria-label="Base beats per minute">
+          <label class="control-line" for="textureSlider">TEXTURE <span id="textureReadout">58%</span></label>
+          <input type="range" id="textureSlider" min="0" max="100" value="58" aria-label="Arrangement texture">
+        </div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-meta"><span>ACTIVITY</span><b id="energyNumber">00</b></div><div class="meter"><div id="energyBar"></div></div></div>
+          <div class="metric"><div class="metric-meta"><span>TENSION</span><b id="tensionNumber">00</b></div><div class="meter"><div id="tensionBar"></div></div></div>
+          <div class="metric"><div class="metric-meta"><span>COMPLEXITY</span><b id="complexityNumber">00</b></div><div class="meter"><div id="complexityBar"></div></div></div>
+        </div>
+        <div class="stats">
+          <div><b id="files">—</b><span>MODULES</span></div><div><b id="symbols">—</b><span>SYMBOLS</span></div><div><b id="events">—</b><span>EVENTS</span></div><div><b id="tests">—</b><span>TESTS PASS</span></div>
+        </div>
+        <p class="fineprint">Only hashed graph identities are displayed. Source code, prompts, and command text never enter this Stage.</p>
+      </aside>
+      <section class="stage-section">
+        <div class="stage-top"><span class="eyebrow">02 / THE LIVING STRUCTURE</span><div><span id="stageMode">NEXUS / GENERATIVE STAGE</span><span class="live-indicator" id="liveIndicator">LIVE</span></div></div>
+        <div class="canvas-wrap"><canvas id="stage" aria-label="Animated representation of software architecture and musical energy"></canvas>
+          <div class="stage-overlay stage-empty" id="stageEmpty"><div class="empty-orbit"></div><span class="eyebrow">NO PROJECT ACTIVITY YET</span><h1>Give your code<br>a <i>pulse.</i></h1><p>Start the receiver, then run <strong>Code Resonance: Start Code Performance</strong> in VS Code. You can also run the included demo.</p></div>
+          <div class="stage-lower-left"><span class="stage-subtle">ENGINE</span><strong>SOURCE → STRUCTURE → SOUND</strong></div>
+          <div class="stage-watermark">CODE / RESONANCE <span id="barCounter">BAR 000</span></div>
+          <div class="stage-lower-right"><span class="stage-subtle">INTERPRETATION</span><strong id="confidence">OBSERVED + INFERRED</strong></div>
+        </div>
+        <div class="transport">
+          <div class="transport-toggle"><button id="liveBtn" class="selected" aria-pressed="true">● LIVE</button><button id="replayBtn" aria-pressed="false">↺ REPLAY</button></div>
+          <button id="playBtn" class="transport-play" disabled title="Play selected timeline">▶</button>
+          <div class="scrub-area"><div class="scrub-label"><span id="scrubStart">SESSION BEGINNING</span><span id="scrubEnd">NOW</span></div><input type="range" id="scrub" min="0" max="1000" value="1000" disabled aria-label="Replay time"></div>
+          <label class="visually-hidden" for="speedSelect">Replay speed</label><select id="speedSelect" title="Replay speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="16">16×</option></select>
+        </div>
+      </section>
+      <aside class="panel right"><div class="section-label"><span class="eyebrow">03 / SCORE EVENTS</span><span class="rule"></span></div>
+        <div class="feed-heading"><h2>What shaped<br>the sound</h2><span id="eventCount">0</span></div>
+        <div id="feed" class="feed"><div class="feed-empty">Meaningful events will appear here as they are classified.</div></div>
+        <div class="legend"><span><i class="legend-dot blue"></i> STRUCTURE</span><span><i class="legend-dot purple"></i> AI AGENTS</span><span><i class="legend-dot orange"></i> VALIDATION</span><span><i class="legend-dot green"></i> SYSTEM</span></div>
+        <div class="right-footer"><span>INTERPRETATION IS NOT PROOF OF CORRECTNESS.</span><span>LOCAL RECEIVER · NO CLOUD</span></div>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

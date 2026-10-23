@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Code Resonance Receiver",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/receiver/server.js",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

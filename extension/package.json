@@ -1,0 +1,92 @@
+{
+  "name": "code-resonance",
+  "displayName": "Code Resonance",
+  "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
+  "version": "0.2.0",
+  "publisher": "zerobandwidth",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "code resonance",
+    "software",
+    "generative music",
+    "developer tools",
+    "visualization"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onCommand:resonance.start",
+    "onCommand:resonance.stop",
+    "onCommand:resonance.openStage",
+    "onCommand:resonance.recordPrompt",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "resonance.start",
+        "title": "CODE RESONANCE: Start Code Performance"
+      },
+      {
+        "command": "resonance.stop",
+        "title": "CODE RESONANCE: Stop Code Performance"
+      },
+      {
+        "command": "resonance.openStage",
+        "title": "CODE RESONANCE: Open Code Stage"
+      },
+      {
+        "command": "resonance.recordPrompt",
+        "title": "CODE RESONANCE: Record AI Prompt (Explicit)"
+      }
+    ],
+    "configuration": {
+      "title": "Code Resonance",
+      "properties": {
+        "resonance.receiverPort": {
+          "type": "number",
+          "default": 4174,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Loopback receiver port in the same VS Code extension host (including WSL/SSH)."
+        },
+        "resonance.baselineFileLimit": {
+          "type": "number",
+          "default": 450,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "Maximum workspace files indexed when recording begins."
+        },
+        "resonance.includeHidden": {
+          "type": "boolean",
+          "default": false,
+          "description": "Permit dotfile filenames in initial indexing. Files matching secret exclusions are always omitted."
+        },
+        "resonance.captureDocumentContents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send bounded source snapshots to the private loopback receiver for AST analysis; never exposed by Stage API. Requires explicit Start command."
+        },
+        "resonance.captureTerminalCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Record raw terminal command lines. Disabled by default to avoid capturing credentials. Start/end/exit events still recorded."
+        },
+        "resonance.capturePromptText": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow explicit Record AI Prompt command to include prompt text. Normally records only length and fingerprint."
+        }
+      }
+    }
+  }
+}
