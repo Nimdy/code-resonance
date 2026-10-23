@@ -268,16 +268,19 @@
     // Compatibility with the v0.2 player: an immediate cue becomes a quantized accent.
     accent(type,cue){if(this.ctx&&this.enabled)this.enqueue(cue||{id:type,type,weight:1,detail:{}},this.clock?this.clock():0);}
     // Offline render of a recorded performance: [{atMs, frame?, cue?}] sorted by time, starting at startMs.
-    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,sampleRate=44100,projectId='offline',onBar}){
+    // `speed` replays the performance faster than real time while the music keeps its tempo; onBar reports each bar's
+    // audio time and the performance time it corresponds to (used to keep a rendered film's light in step with the score).
+    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,sampleRate=44100,projectId='offline',onBar,speed=1}){
       const ctx=new OfflineAudioContext(2,Math.ceil(durationSec*sampleRate),sampleRate);
-      const m=new ResonanceMusic(onBar?(info=>onBar({...info,layers:m.bar?.layers,chord:m.bar?.chord})):undefined);m.setProject(projectId);m.setOptions({style,texture,volume});m.appliedOptions={...m.options};
+      let t=0;
+      const m=new ResonanceMusic(onBar?(info=>onBar({...info,layers:m.bar?.layers,chord:m.bar?.chord,time:t,perfMs:startMs+t*1000*speed})):undefined);m.setProject(projectId);m.setOptions({style,texture,volume});m.appliedOptions={...m.options};
       m.ctx=ctx;const g=m.buildGraph(ctx,ctx.destination);m.graph=g;
       const stepDur=m.stepSeconds(),barMs=stepDur*STEPS*1000;
       let i=0;const events=timeline.slice().sort((a,b)=>a.atMs-b.atMs);
-      m.barIndex=Math.ceil(startMs/barMs);let t=(m.barIndex*barMs-startMs)/1000;
+      m.barIndex=Math.ceil(startMs/barMs);t=speed===1?(m.barIndex*barMs-startMs)/1000:0;
       while(t<durationSec){
-        const perf=startMs+t*1000;
-        while(i<events.length&&events[i].atMs<=perf+stepDur*1000){if(events[i].frame)m.setFrame(events[i].frame);if(events[i].cue)m.accents.push({cue:events[i].cue,when:Math.max(t,(events[i].atMs-startMs)/1000)});i++;}
+        const perf=startMs+t*1000*speed;
+        while(i<events.length&&events[i].atMs<=perf+stepDur*1000*speed){if(events[i].frame)m.setFrame(events[i].frame);if(events[i].cue)m.accents.push({cue:events[i].cue,when:Math.max(t,(events[i].atMs-startMs)/1000/speed)});i++;}
         if(m.step===0){m.beginBar();m.budget={left:6};}
         for(const e of m.bar.steps[m.step])m.voice(g,e,t+(m.step%2?(m.bar.swing||0)*stepDur:0));
         for(const notes of m.accentsFor(t,stepDur,m.budget))for(const n of notes)m.voice(g,n,t+n.offset*stepDur);

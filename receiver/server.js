@@ -13,7 +13,8 @@ const {Worker}=require('node:worker_threads');
 const {validateEvent,sha}=require('./protocol');
 const VERSION=require('../package.json').version;
 const PUBLIC=path.resolve(__dirname,'../public');
-const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js']]);
+const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
+  ['/construct.js','construct.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 function response(res,code,obj){res.writeHead(code,JSON_HEADERS);res.end(JSON.stringify(obj));}
