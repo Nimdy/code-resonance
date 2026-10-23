@@ -165,7 +165,8 @@
       const answerBar=barIndex%4===1&&e>0.35;
       if(call||answerBar){
         const dev=developMotif(identity,phrase,barIndex%4,depth,chord,answerBar);
-        const octave=section==='lift'?1:0;
+        // The melody sits an octave above the pad and arpeggio so it stays the clearest line.
+        const octave=section==='lift'?2:1;
         for(const n of dev.notes)add(n.step,inst.lead,noteOf(identity,n.degree,octave),(.26+e*.14)*human()*lift,stepSec*Math.max(1,n.len-.3),{pan:-.1});
         if(depth>=8&&layers.includes('texture'))for(const n of dev.notes.slice(0,3))add(n.step,inst.motif,noteOf(identity,n.degree,1),.08,stepSec*n.len,{pan:.3});
       }

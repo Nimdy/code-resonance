@@ -96,11 +96,14 @@
     const parent=scene.nodes.get(node.parent);node.x=parent?parent.x:node.tx;node.y=parent?parent.y:node.ty;
   }
   const edgeKey=e=>`${e.a}>${e.b}>${e.kind}`;
-  function resetScene(graph){
+  // `birth` (replay) orders modules by when they first appeared, so every seek rebuilds the same layout.
+  function resetScene(graph,birth){
     scene.nodes.clear();scene.edges.clear();scene.order=0;scene.extent=.12;
     for(const e of graph.edges)scene.edges.set(edgeKey(e),e);
     const parents=new Map();for(const e of graph.edges)if(e.kind==='contains')parents.set(e.b,e.a);
-    for(const n of graph.nodes.filter(n=>n.type==='module'))addNode(n,-Infinity);
+    const modules=graph.nodes.filter(n=>n.type==='module');
+    if(birth)modules.sort((a,b)=>(birth.get(a.id)??Infinity)-(birth.get(b.id)??Infinity));
+    for(const n of modules)addNode(n,-Infinity);
     for(const n of graph.nodes.filter(n=>n.type!=='module'))addNode({...n,parent:n.parent||parents.get(n.id)},-Infinity);
     for(const n of scene.nodes.values()){n.x=n.tx;n.y=n.ty;}
     scene.view=scene.extent;
@@ -495,7 +498,9 @@
       for(;;){const page=(await getJSON(`/api/timeline?id=${encodeURIComponent(selected)}&after=${after}&limit=500`))?.json;if(!page)break;
         entries.push(...page.entries);if(!page.entries.length||entries.length>=page.total)break;after=page.entries.at(-1).seq;}
     }catch{}
-    replay={entries,cues:entries.flatMap(e=>e.cues),start:entries[0]?.start||0,end:entries.at(-1)?.end||0};
+    const birth=new Map();
+    for(const e of entries)for(const n of e.graph.keyframe?e.graph.nodes:e.graph.add)if(n.type==='module'&&!birth.has(n.id))birth.set(n.id,birth.size);
+    replay={entries,cues:entries.flatMap(e=>e.cues),start:entries[0]?.start||0,end:entries.at(-1)?.end||0,birth};
   }
   function graphAt(i){
     const entries=replay.entries;let k=i;while(k>0&&!entries[k].graph.keyframe)k--;
@@ -510,7 +515,7 @@
     replayPos=ts;queue.length=0;music.resync();
     if(!replay?.entries.length)return;
     let i=replay.entries.findIndex(e=>e.end>ts);if(i<0)i=replay.entries.length-1;
-    resetScene(graphAt(Math.max(0,i-1)));applyFrame(replay.entries[i].frame);
+    resetScene(graphAt(Math.max(0,i-1)),replay.birth);applyFrame(replay.entries[i].frame);
     feedCues=replay.cues.filter(c=>c.ts<ts&&c.ts<replay.entries[i].start);
     for(const entry of replay.entries.slice(i))if(entry.start<=ts+60000)schedule(entry,{animate:true,from:ts});else break;
     replay.scheduledTo=i;

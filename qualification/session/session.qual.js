@@ -9,7 +9,7 @@ const REPO=path.resolve(__dirname,'../..');
 const {createService}=require(path.join(REPO,'receiver/server'));
 const OUT=path.join(__dirname,'..','results','session');
 const [dataDir,projectId,stylesArg]=process.argv.slice(2);
-const STYLES=(stylesArg||'ambient,pulse').split(',');
+const STYLES=stylesArg==='none'?[]:(stylesArg||'ambient,pulse').split(',');
 const CHUNK=300,EXCERPTS=[60,600,1200,1740];
 (async()=>{
   fs.mkdirSync(OUT,{recursive:true});
@@ -78,6 +78,6 @@ const CHUNK=300,EXCERPTS=[60,600,1200,1740];
     await sheet.setContent(`<body style="margin:0;background:#05070d;display:grid;grid-template-columns:repeat(3,600px);gap:0">${shots.map(s=>`<div style="position:relative"><img style="width:600px;height:350px;object-fit:cover;display:block" src="data:image/png;base64,${s.image}"><span style="position:absolute;left:10px;top:8px;color:#9fdcf0;font:12px monospace">${Math.round(s.pos/1000*duration/60)} min · chapter ${s.chapter}</span></div>`).join('')}</body>`);
     await sheet.screenshot({path:path.join(OUT,'contact-sheet-nexus.png')});
   }finally{await browser.close();await svc.stop();}
-  fs.writeFileSync(path.join(OUT,'session-qualification.json'),JSON.stringify(report,null,2));
+  if(STYLES.length)fs.writeFileSync(path.join(OUT,'session-qualification.json'),JSON.stringify(report,null,2));
   console.log('chapters every 3 minutes:',report.chapters.join(' '));
 })().catch(e=>{console.error(e);process.exitCode=1;});
