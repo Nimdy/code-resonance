@@ -1,0 +1,166 @@
+Validation of original Code Resonance v0.2.0 source distribution
+Node v22.16.0 | npm 10.9.2
+[npm run check]
+
+> code-resonance@0.2.0 check
+> node --check receiver/server.js && node --check engine/semantic.js && node --check engine/reducer.js && node --check engine/worker.js && node --check extension/extension.js && node --check extension/outbox.js && node --check public/app.js && node --check public/music.js && node --check public/score.js && node --check sdk/performance.js
+
+[npm test]
+
+> code-resonance@0.2.0 test
+> node --test tests/*.test.js
+
+TAP version 13
+# Subtest: Audio controller can switch project without inheriting old musical identity
+ok 1 - Audio controller can switch project without inheriting old musical identity
+  ---
+  duration_ms: 3.953982
+  type: 'test'
+  ...
+# Subtest: Palette changes are applied at the next musical bar rather than rewriting current bar
+ok 2 - Palette changes are applied at the next musical bar rather than rewriting current bar
+  ---
+  duration_ms: 1.350727
+  type: 'test'
+  ...
+# Subtest: Audio mix controls are clamped before oscillator scheduling
+ok 3 - Audio mix controls are clamped before oscillator scheduling
+  ---
+  duration_ms: 2.394951
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:33127
+# [CODE RESONANCE] Local data: /tmp/s3code-qSWXCY
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:33637
+# [CODE RESONANCE] Local data: /tmp/s3code-qSWXCY
+# Subtest: End-to-end receiver -> durable journal -> AST sorter -> versioned performance frames -> restart
+ok 4 - End-to-end receiver -> durable journal -> AST sorter -> versioned performance frames -> restart
+  ---
+  duration_ms: 365.111842
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:38227
+# [CODE RESONANCE] Local data: /tmp/s3-outbox-KxhSbx/receiver
+# Subtest: Outbox persists while offline, then replays without blocking event handlers
+ok 5 - Outbox persists while offline, then replays without blocking event handlers
+  ---
+  duration_ms: 337.314535
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:40163
+# [CODE RESONANCE] Local data: /tmp/resonance-player-wCYTto
+# Subtest: Standalone assets, OBS mode, derived performance API and privacy boundary
+ok 6 - Standalone assets, OBS mode, derived performance API and privacy boundary
+  ---
+  duration_ms: 321.174602
+  type: 'test'
+  ...
+# Subtest: Baseline is not credited as newly created work; later changes are
+ok 7 - Baseline is not credited as newly created work; later changes are
+  ---
+  duration_ms: 11.553192
+  type: 'test'
+  ...
+# Subtest: AI visible thinking is not hidden reasoning; prompt does not count as validated progress
+ok 8 - AI visible thinking is not hidden reasoning; prompt does not count as validated progress
+  ---
+  duration_ms: 0.372241
+  type: 'test'
+  ...
+# Subtest: Failing test increases tension, passing test resolves and contributes growth
+ok 9 - Failing test increases tension, passing test resolves and contributes growth
+  ---
+  duration_ms: 0.53034
+  type: 'test'
+  ...
+# Subtest: Journal event IDs are idempotent and 10-second output is contract bounded
+ok 10 - Journal event IDs are idempotent and 10-second output is contract bounded
+  ---
+  duration_ms: 0.765214
+  type: 'test'
+  ...
+# Subtest: Path traversal and secret filenames rejected at ingestion
+ok 11 - Path traversal and secret filenames rejected at ingestion
+  ---
+  duration_ms: 1.333861
+  type: 'test'
+  ...
+# Subtest: Deterministic interpretations from identical journal inputs
+ok 12 - Deterministic interpretations from identical journal inputs
+  ---
+  duration_ms: 2.523575
+  type: 'test'
+  ...
+# Subtest: Score identity is deterministic across repeated runs and does not depend on wall-clock
+ok 13 - Score identity is deterministic across repeated runs and does not depend on wall-clock
+  ---
+  duration_ms: 2.676396
+  type: 'test'
+  ...
+# Subtest: Chapters unlock arrangement layers; baseline remains quiet
+ok 14 - Chapters unlock arrangement layers; baseline remains quiet
+  ---
+  duration_ms: 0.413974
+  type: 'test'
+  ...
+# Subtest: Four score palettes have distinct deterministic orchestrations
+ok 15 - Four score palettes have distinct deterministic orchestrations
+  ---
+  duration_ms: 3.28949
+  type: 'test'
+  ...
+# Subtest: No musical event can exceed safe MIDI/velocity/duration bounds
+ok 16 - No musical event can exceed safe MIDI/velocity/duration bounds
+  ---
+  duration_ms: 1.781046
+  type: 'test'
+  ...
+# Subtest: AST classifier recognizes real structures and ignores fake symbols in strings
+ok 17 - AST classifier recognizes real structures and ignores fake symbols in strings
+  ---
+  duration_ms: 11.556227
+  type: 'test'
+  ...
+# Subtest: Next.js exported GET arrow is a route, not generic function
+ok 18 - Next.js exported GET arrow is a route, not generic function
+  ---
+  duration_ms: 1.586983
+  type: 'test'
+  ...
+# Subtest: AST diff identifies create / modify / remove and dependency changes
+ok 19 - AST diff identifies create / modify / remove and dependency changes
+  ---
+  duration_ms: 1.084856
+  type: 'test'
+  ...
+# Subtest: Non-TypeScript files are not misclassified as TS AST
+ok 20 - Non-TypeScript files are not misclassified as TS AST
+  ---
+  duration_ms: 0.569799
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 932.886394
+[npm run package:vsix]
+
+> code-resonance@0.2.0 package:vsix
+> bash scripts/package-vsix.sh
+
+Created /mnt/data/code-resonance-packaging-check-RHZWM0/code-resonance/code-resonance-0.2.0.vsix
+[unzip -t generated VSIX]
+Archive:  code-resonance-0.2.0.vsix
+    testing: [Content_Types].xml      OK
+    testing: extension.vsixmanifest   OK
+    testing: extension/               OK
+    testing: extension/README.md      OK
+    testing: extension/package.json   OK
+    testing: extension/outbox.js      OK
+    testing: extension/extension.js   OK
+No errors detected in compressed data of code-resonance-0.2.0.vsix.

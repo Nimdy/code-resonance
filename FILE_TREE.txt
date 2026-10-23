@@ -1,0 +1,56 @@
+code-resonance/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── .vscode/
+│   └── launch.json
+├── engine/
+│   ├── reducer.js
+│   ├── semantic.js
+│   └── worker.js
+├── extension/
+│   ├── extension.js
+│   ├── outbox.js
+│   ├── package-lock.json
+│   ├── package.json
+│   └── README.md
+├── public/
+│   ├── app.js
+│   ├── index.html
+│   ├── music.js
+│   ├── score.js
+│   └── style.css
+├── receiver/
+│   ├── protocol.js
+│   └── server.js
+├── scripts/
+│   ├── demo.js
+│   ├── event.js
+│   ├── package-vsix.sh
+│   └── publish-private.sh
+├── sdk/
+│   └── performance.js
+├── tests/
+│   ├── audio-engine.test.js
+│   ├── integration.test.js
+│   ├── outbox.test.js
+│   ├── player-http.test.js
+│   ├── reducer.test.js
+│   ├── score.test.js
+│   └── semantic.test.js
+├── vendor/
+│   ├── TYPESCRIPT-LICENSE.txt
+│   └── typescript.js
+├── .gitignore
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── FILE_TREE.txt
+├── MANIFEST.sha256
+├── package-lock.json
+├── package.json
+├── README.md
+├── REPOSITORY.md
+├── SECURITY.md
+├── SMOKE_OUTPUT.txt
+├── VALIDATION_OUTPUT.txt
+└── VALIDATION_REPORT.md

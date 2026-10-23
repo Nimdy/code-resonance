@@ -1,0 +1,6 @@
+Loopback receiver health: {'ok': True, 'version': '0.2.0', 'sortIntervalMs': 10000}
+Stage overlay: HTTP 200
+Sent 20 fictional demo events; project now has 20 recorded events and 20 musical control frames.
+Open http://127.0.0.1:59673/ and select PROJECT 2A59C1D4
+Derived performance frames: 20
+Saved demo projects: 1
