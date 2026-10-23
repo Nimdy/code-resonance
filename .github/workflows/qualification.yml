@@ -1,0 +1,48 @@
+name: qualification
+# Real-environment checks: Chromium (Stage, audio) and a real VS Code extension host under Xvfb.
+# The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
+on:
+  workflow_dispatch:
+  pull_request:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node browser/stage.qual.js
+      - run: node browser/audio.qual.js
+        env:
+          CR_AUDIO_SECONDS: '60'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-qualification
+          path: qualification/results
+  vscode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: npm ci
+      - run: xvfb-run -a -s "-screen 0 1600x1000x24" node vscode/run.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vscode-qualification
+          path: qualification/results
