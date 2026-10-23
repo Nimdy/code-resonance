@@ -116,5 +116,5 @@ no page errors; JS heap followed a garbage-collection sawtooth between 2.4 and 2
 - Multi-hour real development sessions (the longest soak was 30 minutes).
 - Rename detection: a renamed module is treated as a new module (new position).
 - `npm test` failed once (one receiver test) while the machine was saturated by parallel renders; it did not
-  reproduce in 9 later runs and its output was not captured.
+  reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured.
 - AI agents other than Claude Code.
