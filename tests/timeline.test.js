@@ -73,7 +73,7 @@ test('An older interpretation is rebuilt from the journal on start; frames after
   await fs.rm(perfFile(dir));
   s=await start(t,dir);await s.flush(null);
   assert.equal(await fs.readFile(perfFile(dir),'utf8'),live);
-  assert.equal((await s.get(`/api/project?id=${projectId}`)).interpretationVersion,2);
+  assert.equal((await s.get(`/api/project?id=${projectId}`)).interpretationVersion,require('../engine/reducer').INTERPRETATION_VERSION);
 });
 test('Project view supports conditional requests',async t=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));

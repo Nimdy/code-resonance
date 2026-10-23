@@ -2,7 +2,7 @@
 const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
-const INTERPRETATION_VERSION=2;
+const INTERPRETATION_VERSION=3;
 const SNAPSHOT_CREDIT_CAP=6;
 const AGENT_ATTRIBUTION_MS=60000;
 const AGENT_VOICES=8;
@@ -216,28 +216,39 @@ function closeBatch(state,cues,clock=Math.max(0,...cues.map(c=>c.ts))) {
   if(state.frames.length>800)state.frames.splice(0,state.frames.length-800);
   return frame;
 }
+// Every module is shown; the remaining budget goes to the most architecturally meaningful symbols, spread
+// round-robin across modules so large projects are represented evenly rather than by whichever files came first.
+const KIND_RANK={'api.route':0,'ui.component':1,'class':2,'interface':3,'function':4,'method':5,'type':6,'variable':7};
+const GRAPH_NODES=1400,MODULE_NODES=700,SYMBOLS_PER_MODULE=24;
 function publicProjection(state) {
-  const nodes=[];const edges=[];
-  // Resolve relative imports through an index instead of scanning every document per import.
+  const files=Object.keys(state.docs).sort();
   const modules=new Map();
-  for(const file of Object.keys(state.docs)){const id=sha(file).slice(0,14);modules.set(file.replace(/\.[^.]+$/,''),id);const index=file.match(/^(.*)\/index\.[^.]+$/);if(index)modules.set(index[1],id);}
-  for (const [file,entry] of Object.entries(state.docs)) {
-    const fileId=sha(file).slice(0,14);
-    const symbols=entry.analysis.symbols.filter(meaningful);
+  for(const file of files){const id=sha(file).slice(0,14);modules.set(file.replace(/\.[^.]+$/,''),id);const index=file.match(/^(.*)\/index\.[^.]+$/);if(index)modules.set(index[1],id);}
+  const symbolCount=file=>state.docs[file].analysis.symbols.filter(meaningful).length;
+  const shown=files.length>MODULE_NODES?files.slice().sort((a,b)=>symbolCount(b)-symbolCount(a)||a.localeCompare(b)).slice(0,MODULE_NODES).sort():files;
+  const nodes=[],edges=[],queues=[];
+  for(const file of shown){
+    const fileId=sha(file).slice(0,14),symbols=state.docs[file].analysis.symbols.filter(s=>meaningful(s)&&s.kind!=='property');
     nodes.push({id:fileId,type:'module',weight:Math.min(6,Math.max(1,Math.sqrt(symbols.length)))});
-    for(const s of symbols.filter(x=>x.kind!=='property').slice(0,36)) {
-      const id=sha(`${file}:${s.key}`).slice(0,14);
-      nodes.push({id,type:s.kind,weight:Math.min(4,Math.max(.5,Math.log2(2+s.size)/3))});
-      edges.push({a:fileId,b:id,kind:'contains'});
-    }
-    for(const imp of entry.analysis.imports.filter(x=>x.target).slice(0,24)) {
+    queues.push(symbols.sort((a,b)=>(KIND_RANK[a.kind]??9)-(KIND_RANK[b.kind]??9)).slice(0,SYMBOLS_PER_MODULE).map(s=>({file,fileId,s})));
+  }
+  for(let rank=0,budget=GRAPH_NODES-nodes.length;rank<SYMBOLS_PER_MODULE&&budget>0;rank++)for(const q of queues){
+    if(budget<=0)break;const item=q[rank];if(!item)continue;
+    const id=sha(`${item.file}:${item.s.key}`).slice(0,14);
+    nodes.push({id,type:item.s.kind,weight:Math.min(4,Math.max(.5,Math.log2(2+item.s.size)/3)),parent:item.fileId});
+    edges.push({a:item.fileId,b:id,kind:'contains'});budget--;
+  }
+  const linked=new Set();
+  for(const file of shown){
+    const fileId=sha(file).slice(0,14);
+    for(const imp of state.docs[file].analysis.imports.filter(x=>x.target)) {
       // Graph edges only when target is a known module, without leaking paths.
       const target=modules.get(imp.target);
-      if(target&&target!==fileId) edges.push({a:fileId,b:target,kind:'depends'});
+      if(target&&target!==fileId&&!linked.has(fileId+target)){linked.add(fileId+target);edges.push({a:fileId,b:target,kind:'depends'});}
     }
   }
   return {projectId:state.projectId,stats:state.stats,performance:state.performance,
-    graph:{nodes:nodes.slice(0,900),edges:edges.slice(0,2200)},
+    graph:{nodes,edges:edges.slice(0,4000)},
     frames:state.frames.slice(-100),timeline:state.timeline.slice(-500),
     sessions:Object.values(state.sessions).sort((a,b)=>b.end-a.end).slice(0,40),updatedAt:state.frames.at(-1)?.createdAt||null};
 }

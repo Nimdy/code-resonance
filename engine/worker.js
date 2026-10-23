@@ -14,8 +14,10 @@ const {sha}=require('../receiver/protocol');
 const zlib=require('node:zlib');
 const {promisify}=require('node:util');
 const gunzip=promisify(zlib.gunzip);
-const WINDOW_MS=workerData.windowMs||10000;
-const GRACE_MS=workerData.graceMs??3000;
+const WINDOW_MS=workerData.windowMs||5000;
+const GRACE_MS=workerData.graceMs??1500;
+// Checkpoints are throttled: frames appended after the last checkpoint are regenerated identically on restart.
+const CHECKPOINT_MS=30000;
 const KEYFRAME_EVERY=60;
 const MAX_SCAN_BYTES=64*1024*1024;
 const TIMELINE_CUES=400;
@@ -79,7 +81,13 @@ function graphDelta(state,graph,keyframe){
   state.graph={nodes,edges};
   return delta;
 }
-async function runProject(id,now){
+async function checkpoint(id,state){
+  state.seen=[...state.seenSet].slice(-12000);
+  const {seenSet,...persisted}=state;
+  await writeAtomic(path.join(projectDir(id),'state.json'),JSON.stringify(persisted));
+  state.lastCheckpoint=Date.now();state.dirty=false;
+}
+async function runProject(id,now,force){
   const dir=projectDir(id);
   const state=await load(id);
   const file=path.join(dir,'events.jsonl');
@@ -142,24 +150,24 @@ async function runProject(id,now){
       await fs.appendFile(perf,text,{mode:0o600});
       state.performanceBytes=offset;
     }
-    state.seen=[...state.seenSet].slice(-12000);
     const reset=!!state.resetPending;delete state.resetPending;
-    const {seenSet,...persisted}=state;
-    await writeAtomic(path.join(dir,'state.json'),JSON.stringify(persisted));
+    state.dirty=true;
+    if(force||Date.now()-(state.lastCheckpoint||0)>=CHECKPOINT_MS)await checkpoint(id,state);
     const projection=JSON.stringify({...publicProjection(state),interpretationVersion:INTERPRETATION_VERSION,timelineFrames:state.window.seq});
     await writeAtomic(path.join(dir,'public.json'),projection);
     parentPort.postMessage({type:'projection',projectId:id,json:projection,appended,reset,summary:{id,updatedAt:state.frames.at(-1)?.createdAt||null,events:state.stats.raw,chapter:state.performance.chapter,frames:state.window.seq,name:state.name||null}});
   }finally{await fd.close();}
   return {events,frames,more};
 }
-async function scan(target,now=Date.now()){
-  if(running){await running;return scan(target,now);}
+async function scan(target,now=Date.now(),force=false){
+  if(running){await running;return scan(target,now,force);}
   running=(async()=>{
     const projectIds=target?[target]:await ids();
     let events=0,frames=0;
     for(const id of projectIds){
       // Catch up fully (e.g. after a rebuild), one bounded chunk at a time.
-      for(let i=0;i<10000;i++){const r=await runProject(id,now);events+=r.events;frames+=r.frames;if(!r.more)break;}
+      for(let i=0;i<10000;i++){const r=await runProject(id,now,force);events+=r.events;frames+=r.frames;if(!r.more)break;}
+      const state=states.get(id);if(force&&state?.dirty)await checkpoint(id,state);
     }
     return {events,frames};
   })();
@@ -170,11 +178,12 @@ async function rebuild(id){
   states.delete(id);
   const dir=projectDir(id);
   for(const f of ['state.json','performance.jsonl','public.json'])await fs.rm(path.join(dir,f),{force:true});
-  return scan(id);
+  return scan(id,Date.now(),true);
 }
+async function checkpointAll(){if(running)await running;for(const [id,state] of states)if(state.dirty)await checkpoint(id,state);return {events:0,frames:0};}
 parentPort.on('message',async m=>{
-  if(m.type!=='flush'&&m.type!=='rebuild')return;
-  try{const result=await (m.type==='rebuild'?rebuild(m.projectId):scan(m.projectId));parentPort.postMessage({type:'flushed',requestId:m.requestId,...result});}
+  if(!['flush','rebuild','shutdown'].includes(m.type))return;
+  try{const result=await (m.type==='rebuild'?rebuild(m.projectId):m.type==='shutdown'?checkpointAll():scan(m.projectId,Date.now(),true));parentPort.postMessage({type:'flushed',requestId:m.requestId,...result});}
   catch(e){parentPort.postMessage({type:'flushed',requestId:m.requestId,error:e.message});}
 });
 setInterval(()=>scan().catch(e=>parentPort.postMessage({type:'log',message:e.message})),workerData.intervalMs).unref();

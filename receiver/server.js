@@ -30,7 +30,8 @@ async function terminateJournal(file){
 }
 function createService(options={}) {
   const dataDir=path.resolve(options.dataDir||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
-  const intervalMs=Number(options.sortIntervalMs)||10000;
+  const intervalMs=Number(options.sortIntervalMs)||1000;
+  const windowMs=Number(options.windowMs)||5000,graceMs=Number(options.graceMs??1500);
   const port=Number(options.port??process.env.RESONANCE_PORT??4174);
   const host=options.host||'127.0.0.1';
   if(!['127.0.0.1','::1','localhost'].includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');
@@ -161,7 +162,7 @@ function createService(options={}) {
           'X-Content-Type-Options':'nosniff'});
         res.end(source);return;
       }
-      if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs});return;}
+      if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
       if(req.method==='GET'&&pathname==='/api/projects'){response(res,200,{projects:await listProjects()});return;}
       const id=u.searchParams.get('id');
       if(req.method==='GET'&&pathname==='/api/project'){
@@ -223,7 +224,7 @@ function createService(options={}) {
       try{const a=JSON.parse(await fs.readFile(authFile,'utf8'));token=String(a.token||'');if(token.length<40)throw Error('Invalid token');}
       catch{token=crypto.randomBytes(32).toString('hex');await fs.writeFile(authFile,JSON.stringify({version:1,token,port}),{mode:0o600});}
       await fs.chmod(authFile,0o600).catch(()=>{});
-      worker=new Worker(path.resolve(__dirname,'../engine/worker.js'),{workerData:{dataDir,intervalMs,windowMs:options.windowMs,graceMs:options.graceMs}});
+      worker=new Worker(path.resolve(__dirname,'../engine/worker.js'),{workerData:{dataDir,intervalMs,windowMs,graceMs}});
       worker.on('message',m=>{
         if(m.type==='log')console.warn('[sorter]',m.message);
         if(m.type==='projection'){
@@ -244,7 +245,11 @@ function createService(options={}) {
       return this;
     },
     flush,
-    async stop(){if(closing)return;closing=true;await new Promise(resolve=>server?server.close(resolve):resolve());await Promise.allSettled([...writes.values()]);if(worker)await worker.terminate();}
+    async stop(){
+      if(closing)return;closing=true;
+      await new Promise(resolve=>server?server.close(resolve):resolve());await Promise.allSettled([...writes.values()]);
+      if(worker){await Promise.race([ask({type:'shutdown'}).catch(()=>{}),new Promise(r=>setTimeout(r,10000))]);await worker.terminate();}
+    }
   };
 }
 if(require.main===module){
