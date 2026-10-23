@@ -67,7 +67,14 @@ async function main(){
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'cr-vscode-qual-'));
   const dirs={home:path.join(root,'home'),userData:path.join(root,'user-data'),extensions:path.join(root,'extensions'),workspace:path.join(root,'workspace','sample-app'),ext:path.join(root,'ext')};
   for(const d of Object.values(dirs))fs.mkdirSync(d,{recursive:true});
-  fs.cpSync(path.join(__dirname,'../fixtures/sample-app'),dirs.workspace,{recursive:true});
+  const scenario=process.env.CR_QUAL_SCENARIO;
+  if(scenario==='construct'){
+    // An almost empty repository: the recorded project starts from nothing.
+    dirs.workspace=path.join(root,'workspace','lumen-recipes');fs.mkdirSync(dirs.workspace,{recursive:true});
+    fs.writeFileSync(path.join(dirs.workspace,'package.json'),JSON.stringify({name:'lumen-recipes',private:true,type:'module',scripts:{test:'node --test'}},null,2)+'\n');
+    fs.writeFileSync(path.join(dirs.workspace,'README.md'),'# Lumen Recipes\n\nA small recipe collection app.\n');
+    fs.writeFileSync(path.join(dirs.workspace,'.gitignore'),'node_modules/\n');
+  }else fs.cpSync(path.join(__dirname,'../fixtures/sample-app'),dirs.workspace,{recursive:true});
   git(dirs.workspace,'init','-q','-b','main');git(dirs.workspace,'add','-A');git(dirs.workspace,'commit','-q','-m','initial sample');
   // The suite must live inside the extension folder so VS Code hands it the same `vscode` API instance as the
   // extension (needed to answer the modal consent prompt). Extension sources are copied byte-for-byte.
@@ -107,7 +114,7 @@ async function main(){
   const env={HOME:dirs.home,CR_QUAL_REAL_HOME:os.homedir(),...(process.env.CR_QUAL_AGENT?{CR_QUAL_AGENT:process.env.CR_QUAL_AGENT}:{}),CR_QUAL_REPO:REPO,CR_QUAL_PORT:String(port),CR_QUAL_NODE:process.execPath,CR_QUAL_ROOT:root,CR_QUAL_WORKSPACE:dirs.workspace};
   // runTests moves every argument not starting with `--` to the end, so options must use --flag=value.
   const launchArgs=[dirs.workspace,`--user-data-dir=${dirs.userData}`,`--extensions-dir=${dirs.extensions}`,'--skip-welcome','--skip-release-notes','--disable-gpu','--disable-workspace-trust'];
-  for(const phase of ['main']){
+  for(const phase of scenario==='construct'?['construct']:['main']){
     const resultFile=path.join(root,`result-${phase}.json`);
     let error=null;
     log(`phase ${phase}: launching VS Code`);
@@ -123,7 +130,9 @@ async function main(){
     report.phases[phase].persistedWorkspaceState=readWorkspaceState(dirs.userData);
     if(error)report.phases[phase].runnerError=error;
   }
-  report.phases.resume=await resumePhase({dirs,port,vscodePath});
+  if(scenario!=='construct')report.phases.resume=await resumePhase({dirs,port,vscodePath});
+  // Keep the recorded project (receiver data) for rendering, e.g. the Construct film.
+  if(process.env.CR_QUAL_EXPORT_DATA){fs.cpSync(path.join(dirs.home,'.code-resonance'),process.env.CR_QUAL_EXPORT_DATA,{recursive:true});log(`receiver data exported to ${process.env.CR_QUAL_EXPORT_DATA}`);}
   const out=process.env.CR_QUAL_REPORT||path.join(__dirname,'..','results','vscode-qualification.json');
   fs.mkdirSync(path.dirname(out),{recursive:true});
   fs.writeFileSync(out,JSON.stringify(report,null,2));

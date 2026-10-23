@@ -1,0 +1,82 @@
+'use strict';
+// Renders a recorded performance as a film: every frame at an exact performance time (deterministic, independent of
+// render speed), the music rendered offline for the same range, muxed to WebM (VP9 + Opus) with ffmpeg.
+//
+// node visual/film.js --data <receiver-data> --project <id> [--from ms] [--to ms] [--speed 2] [--fps 30]
+//        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
+const path=require('node:path');
+const fs=require('node:fs');
+const cp=require('node:child_process');
+const {chromium}=require('playwright-core');
+const ffmpeg=require('ffmpeg-static');
+const REPO=path.resolve(__dirname,'../..');
+const {createService}=require(path.join(REPO,'receiver/server'));
+const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
+const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual','film.webm')));
+const fps=Number(arg('fps',30)),speed=Number(arg('speed',1)),width=Number(arg('width',1920)),height=Number(arg('height',1080)),style=arg('style','ambient');
+(async()=>{
+  fs.mkdirSync(path.dirname(OUT),{recursive:true});
+  const svc=await createService({port:0,dataDir:path.resolve(arg('data'))}).start();
+  // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
+  await svc.flush();
+  const browser=await chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+  const started=Date.now();
+  try{
+    const page=await browser.newPage({viewport:{width,height}});
+    const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+    await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=construct&style=${style}&project=${arg('project')}`);
+    await page.waitForFunction(()=>!!window.__film);
+    const info=await page.evaluate(([project,speed])=>window.__film.open({project,speed}),[arg('project'),speed]);
+    if(!info.webgl)throw new Error('WebGL unavailable; the Construct cannot render');
+    const from=Number(arg('from',info.start)),to=Math.min(Number(arg('to',info.end)),info.end);
+    const seconds=(to-from)/1000/speed;
+    console.log(`performance ${new Date(from).toISOString()} .. ${new Date(to).toISOString()} (${((to-from)/60000).toFixed(1)} min) -> film ${seconds.toFixed(1)} s at ${speed}x`);
+    // Music first: its bars give the section (and so the light) for every moment of the film. Stills skip it unless --sections.
+    const stillsOnly=!!arg('stills')&&!process.argv.includes('--sections');
+    const audio=stillsOnly?{bars:[],wav:''}:await page.evaluate(async({from,to,speed,style})=>{
+      const entries=[];let after=-1;
+      for(;;){const p=await (await fetch(`/api/timeline?id=${new URLSearchParams(location.search).get('project')}&after=${after}&limit=1000`)).json();entries.push(...p.entries);if(!p.entries.length||entries.length>=p.total)break;after=p.entries.at(-1).seq;}
+      const quiet=new Set(['editor.change.observed','editor.newline.inserted','document.baseline.indexed','validation.diagnostics','execution.command.started','agent.tool.started']);
+      const timeline=[];for(const e of entries){if(e.end<from-60000||e.start>to)continue;timeline.push({atMs:Math.max(from,e.start),frame:e.frame});
+        for(const c of e.cues)if(!quiet.has(c.type))timeline.push({atMs:Math.min(Math.max(c.ts,e.start),e.end-1),cue:c});}
+      const bars=[];
+      const buf=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:(to-from)/1000/speed,style,speed,projectId:'film',onBar:b=>bars.push({at:b.perfMs,section:b.section})});
+      const L=buf.getChannelData(0),R=buf.getChannelData(1),rate=buf.sampleRate,n=buf.length,view=new DataView(new ArrayBuffer(44+n*4));
+      const w=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
+      w(0,'RIFF');view.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,2,true);
+      view.setUint32(24,rate,true);view.setUint32(28,rate*4,true);view.setUint16(32,4,true);view.setUint16(34,16,true);w(36,'data');view.setUint32(40,n*4,true);
+      for(let i=0;i<n;i++){view.setInt16(44+i*4,Math.max(-1,Math.min(1,L[i]))*32767,true);view.setInt16(46+i*4,Math.max(-1,Math.min(1,R[i]))*32767,true);}
+      const bytes=new Uint8Array(view.buffer);let bin='';for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+      return {wav:btoa(bin),bars};
+    },{from,to,speed,style});
+    await page.evaluate(bars=>window.__film.sections(bars),audio.bars);
+    const stills=arg('stills')?arg('stills').split(',').map(Number):null;
+    const frameMs=1000/fps*speed;
+    if(stills){
+      // Each still is preceded by a few seconds of rendering so the camera and animations are where they would be.
+      for(const t of stills){
+        const at=from+t;await page.evaluate(x=>window.__film.seek(x),at-6000*speed);
+        let img;for(let x=at-6000*speed;x<=at;x+=frameMs)img=await page.evaluate(([x,dt])=>window.__film.frame(x,dt),[x,1/fps]);
+        const file=OUT.replace(/\.webm$/,'')+`-${String(Math.round(t/1000)).padStart(5,'0')}s.jpg`;fs.writeFileSync(file,Buffer.from(img.split(',')[1],'base64'));console.log('still',file);
+      }
+    }else{
+      const wavFile=OUT.replace(/\.webm$/,'.wav');fs.writeFileSync(wavFile,Buffer.from(audio.wav,'base64'));
+      const enc=cp.spawn(ffmpeg,['-y','-loglevel','error','-f','image2pipe','-framerate',String(fps),'-c:v','mjpeg','-i','-','-i',wavFile,
+        '-c:v','libvpx-vp9','-b:v','6M','-deadline','good','-cpu-used','4','-row-mt','1','-pix_fmt','yuv420p','-c:a','libopus','-b:a','160k','-shortest',OUT],{stdio:['pipe','inherit','inherit']});
+      const keyframes=(arg('keyframes')||'').split(',').filter(Boolean).map(Number);
+      await page.evaluate(x=>window.__film.seek(x),from);
+      const total=Math.ceil(seconds*fps);
+      for(let i=0;i<=total;i++){
+        const t=from+i*frameMs;
+        const img=await page.evaluate(([x,dt])=>window.__film.frame(x,dt),[t,1/fps]);
+        const buf=Buffer.from(img.split(',')[1],'base64');
+        if(!enc.stdin.write(buf))await new Promise(r=>enc.stdin.once('drain',r));
+        const second=i/fps;if(keyframes.some(k=>Math.abs(k-second)<.5/fps))fs.writeFileSync(OUT.replace(/\.webm$/,'')+`-frame-${String(Math.round(second)).padStart(4,'0')}s.jpg`,buf);
+        if(i%(fps*10)===0)console.log(`frame ${i}/${total} (${(i/total*100).toFixed(0)}%) ${JSON.stringify(await page.evaluate(()=>window.__film.stats()))}`);
+      }
+      enc.stdin.end();await new Promise((res,rej)=>enc.on('close',c=>c===0?res():rej(new Error(`ffmpeg exit ${c}`))));
+      console.log(`film ${OUT} (${(fs.statSync(OUT).size/1e6).toFixed(1)} MB, ${seconds.toFixed(1)} s) rendered in ${((Date.now()-started)/60000).toFixed(1)} min`);
+    }
+    if(errors.length)console.log('page errors:',errors.slice(0,5));
+  }finally{await browser.close();await svc.stop();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
