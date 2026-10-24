@@ -16,29 +16,51 @@
     const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
     const g=canvas.getContext('2d',{alpha:false});
     let recorder=null,chunks=[],streams=[],startedAt=0,frames=0,bytes=0,audio=false,mimeType='',finishing=null,lastDraw=0;
+    // The recorded sound is watched while recording: a browser can stop delivering it (an audio device lost or reset)
+    // while the music still plays. Then the user is told, and the result says so: never a silent file passed as good.
+    let watch=null,audioLost=false,lostMs=0,onAudioLost=null,inputs=[];
+    // The recorded sound is watched while recording: an audio device lost or stalled (a headset disconnected, an audio
+    // server hung) stops the music's audio clock, and the browser's recorder then stalls the whole file (its WebM muxer
+    // waits for sound to interleave with the picture). Lost: the recorded track ended or muted, the music's context not
+    // running or its clock not advancing, or the recorded sound digitally silent for two seconds while the music is
+    // audible. The player is told at once (it finishes and saves the recording): never a silent file passed as good.
+    function watchAudio(input,ctx,musicLevel){
+      let an=null,src=null;try{src=ctx.createMediaStreamSource(new MediaStream([input]));an=ctx.createAnalyser();an.fftSize=2048;src.connect(an);}catch{}
+      const buf=new Float32Array(2048);let silentFor=0,lastClock=ctx.currentTime,stalledFor=0;
+      const lose=()=>{lostMs+=500;if(!audioLost){audioLost=true;onAudioLost?.();}};
+      const timer=setInterval(()=>{
+        if(input.readyState==='ended'||input.muted||ctx.state!=='running'){lose();return;}
+        if(ctx.currentTime===lastClock){stalledFor+=500;if(stalledFor>=1500){lose();return;}}else{stalledFor=0;lastClock=ctx.currentTime;}
+        if(!an)return;an.getFloatTimeDomainData(buf);let e=0;for(const v of buf)e+=v*v;const rms=Math.sqrt(e/buf.length);
+        if(rms<1e-6&&(musicLevel?.()||0)>.003){silentFor+=500;if(silentFor>=2000)lose();}else silentFor=0;
+      },500);
+      return {stop(){clearInterval(timer);try{src?.disconnect();}catch{}}};
+    }
     const even=n=>Math.max(2,Math.round(n/2)*2);
     return {
       canvas,supported,
       get active(){return !!recorder&&recorder.state==='recording';},
-      get audio(){return audio;},
+      get audio(){return audio;},get audioLost(){return audioLost;},
       // Size of the recording (even numbers, as video encoders require). Changes apply while idle only.
       resize(w,h){if(recorder)return;canvas.width=even(w);canvas.height=even(h);},
-      start({audioStream=null,fps=30,bitsPerSecond=8000000}={}){
+      start({audioStream=null,fps=30,bitsPerSecond=8000000,audioContext=null,musicLevel=null,audioLostListener=null}={}){
         if(recorder)return {ok:false,reason:'Already recording'};
         const s=supported();if(!s.ok)return s;
         g.fillStyle='#000';g.fillRect(0,0,canvas.width,canvas.height);
         const video=canvas.captureStream(fps);
         // The recording owns clones of the music's tracks: stopping it never ends the music output itself (a second
         // recording, or the speakers, keep working).
-        const tracks=(audioStream?.getAudioTracks().filter(t=>t.readyState==='live')||[]).map(t=>t.clone());audio=tracks.length>0;
-        const combined=new MediaStream([...video.getVideoTracks(),...tracks]);
-        streams=[video,combined];chunks=[];bytes=0;frames=0;mimeType=s.mimeType;
+        inputs=(audioStream?.getAudioTracks().filter(t=>t.readyState==='live')||[]).map(t=>t.clone());audio=inputs.length>0;
+        const combined=new MediaStream([...video.getVideoTracks(),...inputs]);
+        streams=[video,combined];chunks=[];bytes=0;frames=0;mimeType=s.mimeType;audioLost=false;lostMs=0;onAudioLost=audioLostListener;
+        watch=audio&&audioContext?watchAudio(inputs[0],audioContext,musicLevel):null;
         recorder=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:bitsPerSecond,audioBitsPerSecond:160000});
         recorder.ondataavailable=e=>{if(e.data?.size){chunks.push(e.data);bytes+=e.data.size;}};
         finishing=new Promise(resolve=>{recorder.onstop=()=>{
           const blob=new Blob(chunks,{type:mimeType}),durationMs=performance.now()-startedAt;
           for(const st of streams)for(const t of st.getTracks())t.stop();
-          const result={blob,mimeType,durationMs,frames,bytes:blob.size,audio,reason:recorder.stopReason||'stopped'};
+          watch?.stop();watch=null;inputs=[];
+          const result={blob,mimeType,durationMs,frames,bytes:blob.size,audio,audioLost,audioLostMs:lostMs,reason:recorder.stopReason||'stopped'};
           recorder=null;chunks=[];streams=[];resolve(result);};});
         recorder.onerror=()=>{if(recorder?.state==='recording'){recorder.stopReason='recorder error';recorder.stop();}};
         recorder.start(1000);startedAt=performance.now();
@@ -47,7 +69,9 @@
       // One presented frame: draw(g, w, h) paints it. Called once per player frame while recording.
       frame(draw){if(!recorder||recorder.state!=='recording')return;try{draw(g,canvas.width,canvas.height);frames++;lastDraw=performance.now();}catch(e){console.error('recording frame',e);}},
       stop(reason='stopped'){if(!recorder)return Promise.resolve(null);if(recorder.state==='recording'){recorder.stopReason=reason;recorder.requestData?.();recorder.stop();}return finishing;},
-      stats(){return {active:!!recorder,elapsedMs:recorder?performance.now()-startedAt:0,frames,bytes,chunks:chunks.length,audio,mimeType,width:canvas.width,height:canvas.height,lastFrameAgoMs:recorder?performance.now()-lastDraw:null};}
+      // Qualification: end the recorded audio track, as a lost audio device would.
+      breakAudio(){for(const t of inputs)t.stop();},
+      stats(){return {active:!!recorder,elapsedMs:recorder?performance.now()-startedAt:0,frames,bytes,chunks:chunks.length,audio,audioLost,mimeType,width:canvas.width,height:canvas.height,lastFrameAgoMs:recorder?performance.now()-lastDraw:null};}
     };
   }
   window.ResonanceRecording={create,supported};

@@ -715,24 +715,29 @@
     const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
     // A pack world: its worker starts compositing frames for the recording first, so the file starts on a real frame.
     if(living?.remote){living.record(onPackFrame);const t0=performance.now();while(!packFrame&&living?.remote&&performance.now()-t0<2000)await new Promise(res=>setTimeout(res,16));}
-    const started=recording.start({audioStream:music.stream,fps:30});
+    const started=recording.start({audioStream:music.stream,fps:30,audioContext:music.ctx,musicLevel:()=>music.level(),
+      // The sound lost (an audio device lost or stalled): the browser's recorder would stall the file, so it is finished
+      // and saved now, with the reason.
+      audioLostListener:()=>{void finishRecording('the sound stopped: an audio device was lost or stalled');}});
     if(!started.ok){if(living?.remote)living.record(null);showNotice(started.reason);return;}
     if(!started.audio)showNotice('Recording without sound: the music output could not be captured.');
     $('recordBtn').classList.add('recording');updateRecordButton();
   }
   function updateRecordButton(){
     if(!recording.active){$('recordBtn').classList.remove('recording');setText('recordBtn','● RECORD');return;}
-    const s=Math.floor(recording.stats().elapsedMs/1000);setText('recordBtn',`■ STOP ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}${recording.audio?'':' · NO SOUND'}`);
+    const s=Math.floor(recording.stats().elapsedMs/1000);setText('recordBtn',`■ STOP ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}${recording.audio&&!recording.audioLost?'':' · NO SOUND'}`);
   }
   // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
   async function finishRecording(reason){
     if(living?.remote)living.record(null);
     const result=await recording.stop(reason);packFrame?.close();packFrame=null;updateRecordButton();
     if(!result)return null;
-    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,reason:result.reason};
+    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason};
+    if(!result.blob.size){showNotice(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`);return lastRecording;}
     if(result.blob.size>0){const url=URL.createObjectURL(result.blob),link=document.createElement('a');
       link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
     if(reason!=='stopped')showNotice(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`);
+
     return lastRecording;
   }
   // ---- Offline audio export: the deterministic renderer turns the recorded performance into a WAV file ------
@@ -859,8 +864,9 @@
   if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
   // Qualification hooks (?qual=1 only): recording control and picture/sound markers.
   if(params.has('qual'))window.__qual={
-    record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),recording:()=>({...recording.stats(),last:lastRecording}),
+    record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),breakRecordingAudio:()=>recording.breakAudio(),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
+    audioClock:()=>music.ctx?music.ctx.currentTime:null,
     marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
