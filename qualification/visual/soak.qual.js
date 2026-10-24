@@ -127,16 +127,17 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     check('events: every event produced was accepted and stored exactly once (including across the receiver restart)',stored.size===n&&journal.length===n&&outbox.length===0,
       `${n} produced, ${accepted} accepted, ${journal.length} stored (${stored.size} distinct), ${postFailures} failed posts retried`);
     const hourly=k=>Array.from({length:HOURS},(_,h)=>samples.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s[k]).filter(v=>v!==null&&v!==undefined));
-    const mean=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0,first=k=>mean(hourly(k)[0]),last=k=>mean(hourly(k).at(-1));
-    check('memory: the page heap does not grow hour over hour (last hour within 25 % of the first)',last('heapMB')<=first('heapMB')*1.25+5,hourly('heapMB').map(h=>mean(h).toFixed(1)).join(' → ')+' MB (hourly means)');
+    const mean=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null,first=k=>mean(hourly(k)[0]),last=k=>mean(hourly(k).at(-1));
+    check('memory: the page heap does not grow hour over hour (last hour within 25 % of the first)',last('heapMB')<=first('heapMB')*1.25+5,hourly('heapMB').map(h=>(mean(h)??0).toFixed(1)).join(' → ')+' MB (hourly means)');
     check('memory: DOM nodes and listeners stay bounded',last('nodes')<=first('nodes')*1.3+300&&last('listeners')<=first('listeners')*1.3+100,
-      `nodes ${hourly('nodes').map(h=>Math.round(mean(h))).join(' → ')}; listeners ${hourly('listeners').map(h=>Math.round(mean(h))).join(' → ')}`);
-    const rss=k=>samples.map(s=>s.rssMB[k]),rssHour=k=>Array.from({length:HOURS},(_,h)=>mean(samples.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s.rssMB[k])));
+      `nodes ${hourly('nodes').map(h=>Math.round(mean(h)??0)).join(' → ')}; listeners ${hourly('listeners').map(h=>Math.round(mean(h)??0)).join(' → ')}`);
+    const rssHour=k=>Array.from({length:HOURS},(_,h)=>mean(samples.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60&&s.rssMB).map(s=>s.rssMB[k]))??0);
     check('memory: the browser and receiver processes do not grow hour over hour (last hour within 25 % of the first)',['node','renderer','gpu'].every(k=>rssHour(k).at(-1)<=rssHour(k)[0]*1.25+50),
       ['node','browser','renderer','gpu'].map(k=>`${k} ${rssHour(k).map(v=>Math.round(v)).join('→')} MB`).join('; '));
     const bySegment={};for(const s of samples){(bySegment[s.segment]??=[]).push(s);}
-    const decay=Object.entries(bySegment).map(([seg,xs])=>{const hours=Array.from({length:HOURS},(_,h)=>mean(xs.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s.playerFps)));return {seg,hours};});
-    check('frame rate: no decay over time (each world\'s last-hour frame rate at least 80 % of its first-hour rate)',decay.every(d=>!d.hours[0]||d.hours.at(-1)>=d.hours[0]*.8),
+    // Each world's frame rate in the first and the last hour it was shown (hours without samples of it are skipped).
+    const decay=Object.entries(bySegment).map(([seg,xs])=>{const hours=Array.from({length:HOURS},(_,h)=>mean(xs.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s.playerFps))).filter(v=>v!==null);return {seg,hours};});
+    check('frame rate: no decay over time (each world\'s last-hour frame rate at least 80 % of its first-hour rate)',decay.every(d=>d.hours.length<2||d.hours.at(-1)>=d.hours[0]*.8),
       decay.map(d=>`${d.seg} ${d.hours.map(v=>v.toFixed(0)).join('→')}`).join('; '));
     const gpu=Object.entries(bySegment).map(([seg,xs])=>{const g=xs.map(s=>s.geometries).filter(v=>v!==null),t=xs.map(s=>s.textures).filter(v=>v!==null);return {seg,geometries:g.length?[g[0],Math.max(...g),g.at(-1)]:null,textures:t.length?[t[0],Math.max(...t),t.at(-1)]:null};});
     check('GPU objects: geometries and textures stay bounded per world (not growing with time)',gpu.every(x=>!x.geometries||x.geometries[2]<=x.geometries[0]*1.5+50),
@@ -151,7 +152,10 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
       restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),
       restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s; world ${restart.worldBefore.selectedWorld}/${restart.worldBefore.family} → ${restart.worldAfter.selectedWorld}/${restart.worldAfter.family}`:'no restart');
-    check('no page errors in the whole soak',!errors.length,errors.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||'none');
+    // The browser logs every non-2xx request as a console error (a 404 for the project before its first interpretation,
+    // refused requests while the receiver was down): counted, not errors of the player.
+    const network=errors.filter(e=>/^Failed to load resource/.test(e.error)),real=errors.filter(e=>!/^Failed to load resource/.test(e.error));
+    check('no page errors in the whole soak',!real.length,real.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||`none (${network.length} failed requests logged by the browser)`);
     fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));
   }finally{clearInterval(produce);await browser.close();await svc.stop().catch(()=>{});fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(recDir,{recursive:true,force:true});}
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);
