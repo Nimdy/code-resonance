@@ -11,12 +11,14 @@
   const MAX_VOICES=72;
   // Role x palette patches. Sends are reverb/delay amounts; times in seconds.
   const PATCH={
-    pad:{ambient:{wave:'sawtooth',voices:2,detune:7,cutoff:900,q:.6,attack:1.4,release:2.4,gain:.32,reverb:.55,delay:0},
-      pulse:{wave:'sawtooth',voices:2,detune:11,cutoff:1500,q:.8,attack:.35,release:1.2,gain:.26,reverb:.35,delay:.05},
-      cinematic:{wave:'sawtooth',voices:3,detune:6,cutoff:1700,q:.5,attack:.9,release:2.2,gain:.24,reverb:.6,delay:0,vibrato:4.6},
+    // Pads: unison voices spread across the stereo field, and a slow filter LFO so held chords keep evolving.
+    pad:{ambient:{wave:'sawtooth',voices:2,detune:7,cutoff:1350,q:.6,attack:1.4,release:2.4,gain:.32,reverb:.55,delay:0,spread:.8,lfo:.07},
+      pulse:{wave:'sawtooth',voices:2,detune:11,cutoff:1600,q:.8,attack:.35,release:1.2,gain:.26,reverb:.35,delay:.05,spread:.6,lfo:.11},
+      cinematic:{wave:'sawtooth',voices:3,detune:6,cutoff:1800,q:.5,attack:.9,release:2.2,gain:.24,reverb:.6,delay:0,vibrato:4.6,spread:.75,lfo:.05},
       chip:{wave:'square',voices:1,detune:0,cutoff:2600,q:.3,attack:.01,release:.25,gain:.13,reverb:.15,delay:0}},
-    bass:{ambient:{wave:'sine',sub:true,cutoff:420,attack:.03,release:.6,gain:.55,reverb:.12},pulse:{wave:'sawtooth',cutoff:520,env:900,attack:.005,release:.18,gain:.42,reverb:.05},
-      cinematic:{wave:'triangle',sub:true,cutoff:480,attack:.08,release:.9,gain:.5,reverb:.2},chip:{wave:'triangle',cutoff:2000,attack:.003,release:.08,gain:.42,reverb:.02}},
+    // Bass: the octave below was mostly below what speakers reproduce; an octave above lets small speakers imply it.
+    bass:{ambient:{wave:'sine',sub:.1,harm:.34,cutoff:560,attack:.03,release:.6,gain:.42,reverb:.12},pulse:{wave:'sawtooth',cutoff:520,env:900,attack:.005,release:.18,gain:.42,reverb:.05},
+      cinematic:{wave:'triangle',sub:.14,harm:.18,cutoff:560,attack:.08,release:.9,gain:.46,reverb:.2},chip:{wave:'triangle',cutoff:2000,attack:.003,release:.08,gain:.42,reverb:.02}},
     arp:{ambient:{wave:'triangle',cutoff:2400,env:1800,attack:.004,decay:.35,gain:.34,reverb:.4,delay:.25},pulse:{wave:'sawtooth',cutoff:1800,env:2600,attack:.003,decay:.18,gain:.24,reverb:.25,delay:.3},
       cinematic:{wave:'triangle',cutoff:2600,env:1200,attack:.004,decay:.45,gain:.3,reverb:.45,delay:.2},chip:{wave:'square',cutoff:4000,attack:.002,decay:.12,gain:.16,reverb:.1,delay:.15}},
     lead:{ambient:{wave:'sine',blend:'triangle',cutoff:3200,attack:.06,release:.7,gain:.36,reverb:.45,delay:.25,vibrato:5.2},pulse:{wave:'sawtooth',cutoff:2400,q:2,attack:.01,release:.25,gain:.22,reverb:.25,delay:.3,glide:.03},
@@ -73,8 +75,13 @@
       g.output=ctx.createGain();g.output.gain.value=.5*this.options.volume;
       const comp=ctx.createDynamicsCompressor();comp.threshold.value=-20;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.012;comp.release.value=.25;
       const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.002;limiter.release.value=.1;
-      // Dry, reverb and delay meet on one mix bus whose gain is the palette trim.
-      g.mix=ctx.createGain();g.mix.gain.value=TRIM[this.appliedOptions.style]||1;g.mix.connect(comp);
+      // Dry, reverb and delay meet on one mix bus whose gain is the palette trim, then a gentle tone shaping: sub-sonic
+      // rumble removed, the low end eased, a little presence and air so laptop and phone speakers carry the music.
+      g.mix=ctx.createGain();g.mix.gain.value=TRIM[this.appliedOptions.style]||1;
+      const eq=[['highpass',40,.7,0],['lowshelf',130,.7,-4.5],['peaking',2600,.8,2],['highshelf',7200,.7,2.5]].map(([type,f,q,gain])=>{const b=ctx.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q;b.gain.value=gain;return b;});
+      // Make-up gain after the tone shaping keeps integrated loudness where it was (the music stays quiet).
+      const makeup=ctx.createGain();makeup.gain.value=1.19;
+      g.mix.connect(eq[0]);for(let i=1;i<eq.length;i++)eq[i-1].connect(eq[i]);eq.at(-1).connect(makeup);makeup.connect(comp);g.eq=eq;
       g.dry=ctx.createGain();g.dry.connect(g.mix);
       g.reverb=ctx.createConvolver();g.reverb.buffer=this.impulse(ctx,REVERB[this.appliedOptions.style]||2.4);
       g.reverbIn=ctx.createGain();g.reverbIn.gain.value=.55;g.reverbIn.connect(g.reverb);g.reverb.connect(g.mix);
@@ -150,9 +157,12 @@
         const cutoff=(p.cutoff||2000)*(.55+.9*this.appliedOptions.texture);
         const dur=Math.max(.05,note.duration);
         const oscs=[];const count=p.voices||1;
-        for(let i=0;i<count;i++){const o=ctx.createOscillator();o.type=p.wave||'sine';o.frequency.value=f;o.detune.value=count>1?(i-(count-1)/2)*(p.detune||0)*2/(count-1||1):0;o.connect(filter);oscs.push(o);}
+        for(let i=0;i<count;i++){const o=ctx.createOscillator();o.type=p.wave||'sine';o.frequency.value=f;o.detune.value=count>1?(i-(count-1)/2)*(p.detune||0)*2/(count-1||1):0;
+          // Unison voices each take a side; the filter and panner after them keep the stereo image.
+          if(count>1&&p.spread){const sp=ctx.createStereoPanner();sp.pan.value=clamp((i/(count-1)*2-1)*p.spread,-1,1);o.connect(sp);sp.connect(filter);nodes.push(sp);}else o.connect(filter);oscs.push(o);}
         if(p.blend){const o=ctx.createOscillator(),bg=ctx.createGain();o.type=p.blend;o.frequency.value=f;bg.gain.value=.5;o.connect(bg);bg.connect(filter);oscs.push(o);nodes.push(bg);}
-        if(p.sub){const o=ctx.createOscillator(),sg=ctx.createGain();o.type='sine';o.frequency.value=f/2;sg.gain.value=.45;o.connect(sg);sg.connect(out);oscs.push(o);nodes.push(sg);}
+        if(p.sub){const o=ctx.createOscillator(),sg=ctx.createGain();o.type='sine';o.frequency.value=f/2;sg.gain.value=p.sub===true?.45:p.sub;o.connect(sg);sg.connect(out);oscs.push(o);nodes.push(sg);}
+        if(p.harm){const o=ctx.createOscillator(),hg=ctx.createGain();o.type='triangle';o.frequency.value=f*2;hg.gain.value=p.harm;o.connect(hg);hg.connect(filter);oscs.push(o);nodes.push(hg);}
         if(p.vibrato){const lfo=ctx.createOscillator(),depth=ctx.createGain();lfo.frequency.value=p.vibrato;depth.gain.setValueAtTime(0,at);depth.gain.linearRampToValueAtTime(f*.004,at+Math.min(.6,dur));lfo.connect(depth);for(const o of oscs)depth.connect(o.frequency);oscs.push(lfo);nodes.push(depth);}
         if(p.decay){
           // Plucks: filter and amplitude fall together.
@@ -161,6 +171,7 @@
           end=at+p.attack+p.decay+.05;
         }else{
           filter.frequency.setValueAtTime(p.env?cutoff+p.env:cutoff,at);if(p.env)filter.frequency.exponentialRampToValueAtTime(cutoff,at+.2);
+          if(p.lfo&&dur>1){const lfo=ctx.createOscillator(),depth=ctx.createGain();lfo.frequency.value=p.lfo*(1+((note.midi*7)%5)*.08);depth.gain.value=cutoff*.28;lfo.connect(depth);depth.connect(filter.frequency);oscs.push(lfo);nodes.push(depth);}
           out.gain.setValueAtTime(0,at);out.gain.linearRampToValueAtTime(amp,at+p.attack);
           const hold=Math.max(at+p.attack,at+dur);out.gain.setValueAtTime(amp,hold);out.gain.setTargetAtTime(0,hold,p.release/4);
           end=hold+p.release*1.6;
@@ -197,7 +208,9 @@
       this.frame=this.requestedFrame||this.frame;
       this.appliedOptions={...this.options};
       const f=this.frame||{},score=window.ResonanceScore;
-      this.energy=this.energy*.7+(f.controls?.energy||0)*.3;
+      // With no new frame for 15 s the work has gone quiet: the energy relaxes (frames are only made when events arrive).
+      const stale=Number.isFinite(this.perfNow)&&Number.isFinite(f.end)&&this.perfNow-f.end>15000;
+      this.energy=this.energy*.7+(stale?0:(f.controls?.energy||0))*.3;
       const tension=f.controls?.tension||0;
       if(this.barIndex%score.SECTION_BARS===0||!this.bar){
         this.sectionIndex=Math.floor(this.barIndex/score.SECTION_BARS);
@@ -250,7 +263,7 @@
       if(!this.anchored)this.anchor();
       let limit=0;
       while(this.nextTime<this.ctx.currentTime+.3&&limit++<32){
-        if(!this.bar||this.step===0){this.beginBar();this.barStartTime=this.nextTime-this.step*this.stepSeconds();this.budget={left:6};
+        if(!this.bar||this.step===0){this.perfNow=this.clock?this.clock()+(this.nextTime-this.ctx.currentTime)*1000*this.speed:undefined;this.beginBar();this.barStartTime=this.nextTime-this.step*this.stepSeconds();this.budget={left:6};
           if(this.entry){this.entry=false;if(this.step>0)this.playEntry();}}
         const stepDur=this.stepSeconds();
         const swing=this.step%2===1?(this.bar.swing||0)*stepDur:0;
@@ -281,7 +294,7 @@
       while(t<durationSec){
         const perf=startMs+t*1000*speed;
         while(i<events.length&&events[i].atMs<=perf+stepDur*1000*speed){if(events[i].frame)m.setFrame(events[i].frame);if(events[i].cue)m.accents.push({cue:events[i].cue,when:Math.max(t,(events[i].atMs-startMs)/1000/speed)});i++;}
-        if(m.step===0){m.beginBar();m.budget={left:6};}
+        if(m.step===0){m.perfNow=perf;m.beginBar();m.budget={left:6};}
         for(const e of m.bar.steps[m.step])m.voice(g,e,t+(m.step%2?(m.bar.swing||0)*stepDur:0));
         for(const notes of m.accentsFor(t,stepDur,m.budget))for(const n of notes)m.voice(g,n,t+n.offset*stepDur);
         m.step=(m.step+1)%STEPS;t+=stepDur;
