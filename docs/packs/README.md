@@ -15,6 +15,23 @@ only: **Cymatic Field** (a world: every subsystem is a resonant plate whose sand
 **Blueprint Cathedral** (a shader pack: Machine Cathedral as a living blueprint) and **Ember Observatory** (a
 declarative pack: Stellar Forge through an old observatory lens).
 
+![The three reference packs, and the same world pack on another project](images/reference-packs.jpg)
+
+*Frames from films rendered by the real player (artistic candidates, not reviewed): Cymatic Field, Blueprint Cathedral
+and Ember Observatory on the recorded Lumen Recipes session, and Cymatic Field on Code Resonance's own history, where
+the same pack drew another identity (radial plates, a cool tone) from that project's seed and traits.*
+
+| | |
+|---|---|
+| ![Growth](images/cymatic-01-growth.jpg) | ![Dissonance](images/cymatic-02-dissonance.jpg) |
+| 0:24 plates are struck as subsystems appear; sand gathers with each module and symbol | 1:16 a failing test run: the covered plates turn dissonant, their sand scatters |
+| ![Retuned](images/cymatic-03-retuned.jpg) | ![Resonance](images/cymatic-04-resonance.jpg) |
+| 1:36 the tests pass again: retuned | 2:38 a verified milestone: resonance, golden halos that stay |
+| ![Idle](images/cymatic-05-idle.jpg) | ![History](images/cymatic-06-history.jpg) |
+| 5:20, 80 s after the last event: the plates have morphed into new figures; nothing new appears | Code Resonance's 38-commit history at 8× |
+| ![Blueprint Cathedral](images/blueprint-cathedral.jpg) | ![Ember Observatory](images/ember-observatory.jpg) |
+| Blueprint Cathedral (shader pack): ink lines traced from the lit city, survey rings | Ember Observatory (declarative): a milestone shown as an aurora, by data only |
+
 ## Quick start
 
 ```sh

@@ -5,7 +5,7 @@
     {
       "name": "performance: stellar-forge on 450 files uses fewer than 40 scene draw calls",
       "pass": true,
-      "detail": "13 draw calls; 28.1 fps full quality, 27.1 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+      "detail": "13 draw calls; 25.8 fps full quality, 36.3 fps adaptive (level 1) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
     },
     {
       "name": "no page errors in the live player: stellar-forge",
@@ -15,7 +15,7 @@
     {
       "name": "performance: fractal-biosphere on 450 files uses fewer than 40 scene draw calls",
       "pass": true,
-      "detail": "7 draw calls; 25.5 fps full quality, 27.3 fps adaptive (level 1) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+      "detail": "7 draw calls; 24.8 fps full quality, 26.9 fps adaptive (level 1) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
     },
     {
       "name": "no page errors in the live player: fractal-biosphere",
@@ -25,7 +25,7 @@
     {
       "name": "performance: machine-cathedral on 450 files uses fewer than 40 scene draw calls",
       "pass": true,
-      "detail": "8 draw calls; 34.5 fps full quality, 34.2 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+      "detail": "8 draw calls; 41 fps full quality, 41 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
     },
     {
       "name": "no page errors in the live player: machine-cathedral",
@@ -38,82 +38,96 @@
     "performance": {
       "stellar-forge": {
         "full": {
-          "fps": 28.1,
+          "fps": 25.8,
           "quality": 0,
           "drawCalls": 13,
           "passes": 27,
           "triangles": 308000,
           "points": 23568,
-          "updateMs": 0.22,
-          "drawMs": 0.41,
+          "updateMs": 0.28,
+          "drawMs": 0.59,
+          "gpuMs": 37.7,
           "geometries": 20,
           "textures": 13
         },
         "adaptive": {
-          "fps": 27.1,
-          "quality": 0,
+          "fps": 36.3,
+          "quality": 1,
           "drawCalls": 13,
           "passes": 27,
           "triangles": 308000,
           "points": 23568,
-          "updateMs": 0.18,
-          "drawMs": 0.33,
+          "updateMs": 0.23,
+          "drawMs": 0.47,
+          "gpuMs": 25.81,
           "geometries": 20,
           "textures": 13
         }
       },
       "fractal-biosphere": {
         "full": {
-          "fps": 25.5,
+          "fps": 24.8,
           "quality": 0,
           "drawCalls": 7,
           "passes": 21,
           "triangles": 90984,
           "points": 7326,
-          "updateMs": 0.2,
-          "drawMs": 0.35,
+          "updateMs": 0.27,
+          "drawMs": 0.51,
+          "gpuMs": 39.17,
           "geometries": 14,
           "textures": 13
         },
         "adaptive": {
-          "fps": 27.3,
+          "fps": 26.9,
           "quality": 1,
           "drawCalls": 7,
           "passes": 21,
           "triangles": 90984,
           "points": 7326,
           "updateMs": 0.2,
-          "drawMs": 0.35,
+          "drawMs": 0.45,
+          "gpuMs": 35.73,
           "geometries": 14,
           "textures": 13
         }
       },
       "machine-cathedral": {
         "full": {
-          "fps": 34.5,
+          "fps": 41,
           "quality": 0,
           "drawCalls": 8,
           "passes": 22,
-          "triangles": 105894,
+          "triangles": 85158,
           "points": 5403,
-          "updateMs": 0.35,
-          "drawMs": 0.36,
+          "updateMs": 0.46,
+          "drawMs": 0.48,
+          "gpuMs": 22.9,
           "geometries": 15,
           "textures": 13
         },
         "adaptive": {
-          "fps": 34.2,
+          "fps": 41,
           "quality": 0,
           "drawCalls": 8,
           "passes": 22,
-          "triangles": 105894,
+          "triangles": 85158,
           "points": 5403,
-          "updateMs": 0.42,
-          "drawMs": 0.3,
+          "updateMs": 0.37,
+          "drawMs": 0.42,
+          "gpuMs": 22.94,
           "geometries": 15,
           "textures": 13
         }
       }
     }
-  }
+  },
+  "reruns": [
+    {
+      "at": "2026-10-24T15:45:12.875Z",
+      "sections": [
+        "performance"
+      ]
+    }
+  ]
 }

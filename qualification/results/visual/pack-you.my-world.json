@@ -1,0 +1,288 @@
+{
+  "at": "2026-10-24T15:36:38.872Z",
+  "sdk": "1.0.0",
+  "gpu": "swiftshader",
+  "checks": [
+    {
+      "name": "manifest: valid and compatible with SDK 1.0.0",
+      "pass": true,
+      "detail": "you.my-world 0.1.0 (world)"
+    },
+    {
+      "name": "install: files copied and recorded; a pack with code starts unapproved",
+      "pass": true,
+      "detail": "digest 338ebd09f600d77e, contains code: not approved until the user allows it"
+    },
+    {
+      "name": "runtime: the player runs the pack inside the isolated pack frame",
+      "pass": true,
+      "detail": "fallback while unapproved: stellar-forge"
+    },
+    {
+      "name": "isolation: from the pack frame nothing reaches the receiver or an outside listener; no storage, cookies, player, WebRTC, workers or popups",
+      "pass": true,
+      "detail": "{\"fetchReceiver\":\"blocked\",\"fetchOutside\":\"blocked\",\"xhr\":\"blocked\",\"websocket\":\"blocked\",\"importApi\":\"blocked\",\"importOutside\":\"blocked\",\"parentDocument\":\"blocked\",\"localStorage\":\"blocked\",\"cookie\":\"blocked\",\"webrtc\":\"blocked\",\"worker\":\"blocked\",\"popup\":\"blocked\"} · outside listener received 0"
+    },
+    {
+      "name": "isolation: the pack frame has an opaque origin",
+      "pass": true,
+      "detail": "null"
+    },
+    {
+      "name": "isolation: a pack that navigates its frame away is stopped by the player (the navigation request itself is a documented residual risk)",
+      "pass": true,
+      "detail": "navigation request did not reach the listener; player: My World stopped: the pack navigated its frame away"
+    },
+    {
+      "name": "events: the world received and expressed the recording's semantic events",
+      "pass": true,
+      "detail": "8 effects: spark×30, bloom×5, wave×4, alarm×1, glow×4, crown×2, link×1, fade×1"
+    },
+    {
+      "name": "events: failures and verified milestones are expressed with the pack's own effects",
+      "pass": true,
+      "detail": "alarm / crown"
+    },
+    {
+      "name": "privacy: no label shows the folder name, a path, a file name, an identifier or a raw id",
+      "pass": true,
+      "detail": "5 label strings"
+    },
+    {
+      "name": "idle: the image keeps moving for 90 s without events",
+      "pass": true,
+      "detail": "mean |Δluma| 10.32, 11.85, 11.47"
+    },
+    {
+      "name": "idle: nothing new happens (history unchanged, director idle)",
+      "pass": true,
+      "detail": "205/active, 205/idle, 205/idle, 205/idle"
+    },
+    {
+      "name": "music: the image follows the beat (same moment on and off the beat differs)",
+      "pass": true,
+      "detail": "mean |Δluma| 0.7"
+    },
+    {
+      "name": "no page errors during the session",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: the same moment renders the same frame regardless of seek history",
+      "pass": true,
+      "detail": "0168c518f91e52e7 / 0168c518f91e52e7"
+    },
+    {
+      "name": "resources: switching away removes the pack frame and switching back creates exactly one",
+      "pass": true,
+      "detail": "0/1 0/1 0/1 0/1"
+    },
+    {
+      "name": "resources: GPU objects return to their level after four switches",
+      "pass": true,
+      "detail": "geometries 5->5, textures 12->12, programs 5->5"
+    },
+    {
+      "name": "resources: the player's heap does not grow with switches (within 25 MB)",
+      "pass": true,
+      "detail": "14 -> 14 MB"
+    },
+    {
+      "name": "recipe: another project (self) gets its own parameters from the same pack",
+      "pass": true,
+      "detail": "{\"p\":{\"size\":0.907,\"spin\":0.065},\"u\":null} / {\"p\":{\"size\":1.122,\"spin\":0.038},\"u\":null}"
+    },
+    {
+      "name": "performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)",
+      "pass": true,
+      "detail": "1 draw calls, 13 passes, 158400 triangles, 0 points, update 0.51 ms"
+    },
+    {
+      "name": "performance: frame rate, GPU time and adaptive quality measured",
+      "pass": true,
+      "detail": "2.8 fps full quality (GPU time not exposed by this driver), 4.1 fps adaptive (level 1) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "name": "no page errors in the live player",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "pack": {
+      "id": "you.my-world",
+      "version": "0.1.0",
+      "kind": "world",
+      "digest": "338ebd09f600d77e02530f26d90c7b45e455c56cd964a2c5b6b21cab71df8ddf",
+      "files": 3
+    },
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "recipe": {
+      "family": "you.my-world",
+      "pack": null,
+      "params": {
+        "size": 0.907,
+        "spin": 0.065
+      },
+      "uniforms": null
+    },
+    "isolation": {
+      "probes": {
+        "fetchReceiver": "blocked",
+        "fetchOutside": "blocked",
+        "xhr": "blocked",
+        "websocket": "blocked",
+        "importApi": "blocked",
+        "importOutside": "blocked",
+        "parentDocument": "blocked",
+        "localStorage": "blocked",
+        "cookie": "blocked",
+        "webrtc": "blocked",
+        "worker": "blocked",
+        "popup": "blocked"
+      },
+      "outsideRequests": [],
+      "selfNavigation": {
+        "reachedListener": false,
+        "noticed": "My World stopped: the pack navigated its frame away"
+      }
+    },
+    "session": {
+      "frames": 961,
+      "effects": {
+        "spark": 30,
+        "bloom": 5,
+        "wave": 4,
+        "alarm": 1,
+        "glow": 4,
+        "crown": 2,
+        "link": 1,
+        "fade": 1
+      },
+      "world": {
+        "family": "you.my-world",
+        "variant": 0,
+        "spheres": 17,
+        "intents": 205,
+        "unlocked": 1,
+        "lasting": 2,
+        "agents": 0,
+        "phase": "active",
+        "activity": 0.376,
+        "quality": 0,
+        "drawCalls": 1,
+        "passes": 13,
+        "triangles": 5984,
+        "points": 0,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "updateMs": 0.16,
+        "drawMs": 0.45,
+        "rendered": 961,
+        "now": 130978.79999995232,
+        "remote": true,
+        "pack": "you.my-world"
+      }
+    },
+    "labels": [
+      "A generative world from this project's code",
+      "Milestone",
+      "My World",
+      "Tests fail",
+      "verified"
+    ],
+    "idle": {
+      "motion": [
+        10.32,
+        11.85,
+        11.47
+      ],
+      "phases": [
+        "active",
+        "idle",
+        "idle",
+        "idle"
+      ]
+    },
+    "music": {
+      "difference": 0.7
+    },
+    "resources": [
+      {
+        "awayFrames": 0,
+        "backFrames": 1,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "heapMB": 14
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 1,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "heapMB": 14
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 1,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "heapMB": 14
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 1,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "heapMB": 14
+      }
+    ],
+    "otherProject": {
+      "dataset": "self",
+      "params": {
+        "size": 1.122,
+        "spin": 0.038
+      },
+      "uniforms": null
+    },
+    "performance": {
+      "dataset": "excalidraw",
+      "full": {
+        "fps": 2.8,
+        "quality": 0,
+        "drawCalls": 1,
+        "passes": 13,
+        "triangles": 158400,
+        "points": 0,
+        "updateMs": 0.51,
+        "drawMs": 0.97,
+        "gpuMs": null,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "errors": []
+      },
+      "adaptive": {
+        "fps": 4.1,
+        "quality": 1,
+        "drawCalls": 1,
+        "passes": 13,
+        "triangles": 158400,
+        "points": 0,
+        "updateMs": 0.49,
+        "drawMs": 0.57,
+        "gpuMs": null,
+        "geometries": 5,
+        "textures": 12,
+        "programs": 5,
+        "errors": []
+      }
+    }
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "at": "2026-10-24T15:16:30.822Z",
+  "sdk": "1.0.0",
+  "gpu": "swiftshader",
+  "checks": [
+    {
+      "name": "manifest: valid and compatible with SDK 1.0.0",
+      "pass": true,
+      "detail": "northlight.ember-observatory 1.0.0 (declarative)"
+    },
+    {
+      "name": "install: files copied and recorded; a pack with code starts unapproved",
+      "pass": true,
+      "detail": "digest 6547ed16fb6a1655, data only: no approval needed"
+    },
+    {
+      "name": "runtime: the player runs the pack in the built-in world it tunes",
+      "pass": true,
+      "detail": "no frame needed"
+    },
+    {
+      "name": "events: the world received and expressed the recording's semantic events",
+      "pass": true,
+      "detail": "10 effects: planet-birth×15, ignition×5, accretion-spark×15, expansion×2, stellar-storm×1, calm-pulse×4, aurora×2, flare-bridge×1, gravity-wave×2, ablation×1"
+    },
+    {
+      "name": "privacy: no label shows the folder name, a path, a file name, an identifier or a raw id",
+      "pass": true,
+      "detail": "39 label strings"
+    },
+    {
+      "name": "idle: the image keeps moving for 90 s without events",
+      "pass": true,
+      "detail": "mean |Δluma| 23.47, 24.18, 35.12"
+    },
+    {
+      "name": "idle: nothing new happens (history unchanged, director idle)",
+      "pass": true,
+      "detail": "205/active, 205/idle, 205/idle, 205/idle"
+    },
+    {
+      "name": "music: the image follows the beat (same moment on and off the beat differs)",
+      "pass": true,
+      "detail": "mean |Δluma| 0.22"
+    },
+    {
+      "name": "no page errors during the session",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: the same moment renders the same frame regardless of seek history",
+      "pass": true,
+      "detail": "020dfaf46aebe645 / 020dfaf46aebe645"
+    },
+    {
+      "name": "resources: switching away removes the pack frame and switching back creates exactly one",
+      "pass": true,
+      "detail": "0/0 0/0 0/0 0/0"
+    },
+    {
+      "name": "resources: GPU objects return to their level after four switches",
+      "pass": true,
+      "detail": "geometries 20->20, textures 13->13, programs 20->20"
+    },
+    {
+      "name": "resources: the player's heap does not grow with switches (within 25 MB)",
+      "pass": true,
+      "detail": "15 -> 15 MB"
+    },
+    {
+      "name": "recipe: another project (self) gets its own parameters from the same pack",
+      "pass": true,
+      "detail": "declarative overrides apply to the base family's project-specific genome"
+    },
+    {
+      "name": "performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)",
+      "pass": true,
+      "detail": "13 draw calls, 27 passes, 308000 triangles, 23431 points, update 0.75 ms"
+    },
+    {
+      "name": "performance: frame rate and adaptive quality measured",
+      "pass": true,
+      "detail": "2 fps full quality, 2 fps adaptive (level 0) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "name": "no page errors in the live player",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "pack": {
+      "id": "northlight.ember-observatory",
+      "version": "1.0.0",
+      "kind": "declarative",
+      "digest": "6547ed16fb6a1655b3a78387b67ad3bb4fe93a63a6545a8ec2d676dae704d9db",
+      "files": 2
+    },
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "recipe": {
+      "family": "stellar-forge",
+      "pack": {
+        "id": "northlight.ember-observatory",
+        "version": "1.0.0",
+        "kind": "declarative"
+      },
+      "params": null,
+      "uniforms": null
+    },
+    "session": {
+      "frames": 961,
+      "effects": {
+        "planet-birth": 15,
+        "ignition": 5,
+        "accretion-spark": 15,
+        "expansion": 2,
+        "stellar-storm": 1,
+        "calm-pulse": 4,
+        "aurora": 2,
+        "flare-bridge": 1,
+        "gravity-wave": 2,
+        "ablation": 1
+      },
+      "world": {
+        "family": "stellar-forge",
+        "variant": 0,
+        "systems": 6,
+        "planets": 17,
+        "moons": 32,
+        "links": 12,
+        "dust": 19009,
+        "galaxy": 33.7,
+        "arrangement": "binary-core",
+        "intents": 205,
+        "unlocked": 2,
+        "lasting": 2,
+        "agents": 0,
+        "phase": "active",
+        "activity": 0.376,
+        "quality": 0,
+        "drawCalls": 13,
+        "passes": 27,
+        "triangles": 13830,
+        "points": 25487,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "updateMs": 0.21,
+        "drawMs": 0.5
+      }
+    },
+    "labels": [
+      "1 component",
+      "A generative world from this project's code",
+      "A new star ignites",
+      "Agent 1 · disconnected",
+      "Agent 1 · working on a request",
+      "Agent 2 · disconnected",
+      "Agent 2 · working on a request",
+      "Agent 3 · disconnected",
+      "Agent 3 · running",
+      "Agent 3 · working on a request",
+      "Agent 4 · disconnected",
+      "Agent 4 · working on a request",
+      "Agent 5 · disconnected",
+      "Agent 5 · working on a request",
+      "Agent 6 · disconnected",
+      "Agent 6 · working on a request",
+      "Alyror · logic",
+      "Alyror ↔ Vauos",
+      "Committed · 1 world set in orbit",
+      "Committed · the work is set in place",
+      "Deen · tests",
+      "Integration validated",
+      "Integration · two systems connect",
+      "Ioeoel · logic",
+      "New structure enters orbit",
+      "Nova · Integration validated",
+      "Recovered · 8 worlds repaired",
+      "Recovery",
+      "Stellar Forge",
+      "Tests fail · storms on 8 worlds",
+      "Tests pass · 2 worlds validated",
+      "The forge grows · chapter 2",
+      "The forge grows · chapter 3",
+      "accumulated structure",
+      "commit observed",
+      "milestone · verified by a passing test run",
+      "observed failing run",
+      "the tests pass again",
+      "verified by a passing test run"
+    ],
+    "idle": {
+      "motion": [
+        23.47,
+        24.18,
+        35.12
+      ],
+      "phases": [
+        "active",
+        "idle",
+        "idle",
+        "idle"
+      ]
+    },
+    "music": {
+      "difference": 0.22
+    },
+    "resources": [
+      {
+        "awayFrames": 0,
+        "backFrames": 0,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "heapMB": 15
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 0,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "heapMB": 15
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 0,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "heapMB": 15
+      },
+      {
+        "awayFrames": 0,
+        "backFrames": 0,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "heapMB": 15
+      }
+    ],
+    "otherProject": {
+      "dataset": "self",
+      "params": null,
+      "uniforms": null
+    },
+    "performance": {
+      "dataset": "excalidraw",
+      "full": {
+        "fps": 2,
+        "quality": 0,
+        "drawCalls": 13,
+        "passes": 27,
+        "triangles": 308000,
+        "points": 23431,
+        "updateMs": 0.75,
+        "drawMs": 2.76,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "errors": []
+      },
+      "adaptive": {
+        "fps": 2,
+        "quality": 0,
+        "drawCalls": 13,
+        "passes": 27,
+        "triangles": 308000,
+        "points": 23431,
+        "updateMs": 0.53,
+        "drawMs": 1.28,
+        "geometries": 20,
+        "textures": 13,
+        "programs": 20,
+        "errors": []
+      }
+    }
+  }
+}

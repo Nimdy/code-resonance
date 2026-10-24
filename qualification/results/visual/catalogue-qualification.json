@@ -1,0 +1,99 @@
+{
+  "at": "2026-10-24T15:18:38.159Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "catalogue: stellar-forge with every parameter at its minimum renders",
+      "pass": true,
+      "detail": "mean luma 59.9, 60.6, 60.1; 13 draw calls, 13830 triangles"
+    },
+    {
+      "name": "catalogue: stellar-forge with every parameter at its maximum renders",
+      "pass": true,
+      "detail": "mean luma 162, 161, 161.9; 13 draw calls, 13830 triangles"
+    },
+    {
+      "name": "catalogue: fractal-biosphere with every parameter at its minimum renders",
+      "pass": true,
+      "detail": "mean luma 58.8, 60.1, 60.1; 8 draw calls, 2842 triangles"
+    },
+    {
+      "name": "catalogue: fractal-biosphere with every parameter at its maximum renders",
+      "pass": true,
+      "detail": "mean luma 154, 153.4, 154.4; 8 draw calls, 2842 triangles"
+    },
+    {
+      "name": "catalogue: machine-cathedral with every parameter at its minimum renders",
+      "pass": true,
+      "detail": "mean luma 62.3, 60.4, 60.9; 7 draw calls, 1950 triangles"
+    },
+    {
+      "name": "catalogue: machine-cathedral with every parameter at its maximum renders",
+      "pass": true,
+      "detail": "mean luma 160.4, 160, 159.7; 8 draw calls, 10654 triangles"
+    }
+  ],
+  "measurements": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "qual.stellar-forge-min": {
+      "lumas": [
+        59.9,
+        60.6,
+        60.1
+      ],
+      "drawCalls": 13,
+      "triangles": 13830,
+      "points": 20451
+    },
+    "qual.stellar-forge-max": {
+      "lumas": [
+        162,
+        161,
+        161.9
+      ],
+      "drawCalls": 13,
+      "triangles": 13830,
+      "points": 35495
+    },
+    "qual.fractal-biosphere-min": {
+      "lumas": [
+        58.8,
+        60.1,
+        60.1
+      ],
+      "drawCalls": 8,
+      "triangles": 2842,
+      "points": 3752
+    },
+    "qual.fractal-biosphere-max": {
+      "lumas": [
+        154,
+        153.4,
+        154.4
+      ],
+      "drawCalls": 8,
+      "triangles": 2842,
+      "points": 10052
+    },
+    "qual.machine-cathedral-min": {
+      "lumas": [
+        62.3,
+        60.4,
+        60.9
+      ],
+      "drawCalls": 7,
+      "triangles": 1950,
+      "points": 3152
+    },
+    "qual.machine-cathedral-max": {
+      "lumas": [
+        160.4,
+        160,
+        159.7
+      ],
+      "drawCalls": 8,
+      "triangles": 10654,
+      "points": 8402
+    }
+  }
+}

@@ -110,7 +110,7 @@ const launch=()=>launchBrowser(GPU);
           await page.waitForFunction(()=>window.__worldStats&&window.__worldStats()&&window.__worldStats().drawCalls>0,null,{timeout:60000});
           await page.waitForTimeout(label==='adaptive'?14000:3000);
           const fps=await fpsOver(page,8000);const st=await page.evaluate(()=>window.__worldStats());
-          result[label]={fps:+fps.toFixed(1),quality:st.quality,drawCalls:st.drawCalls,passes:st.passes,triangles:st.triangles,points:st.points,updateMs:st.updateMs,drawMs:st.drawMs,geometries:st.geometries,textures:st.textures};
+          result[label]={fps:+fps.toFixed(1),quality:st.quality,drawCalls:st.drawCalls,passes:st.passes,triangles:st.triangles,points:st.points,updateMs:st.updateMs,drawMs:st.drawMs,gpuMs:st.gpuMs??null,geometries:st.geometries,textures:st.textures};
           if(errors.length)result[label].errors=errors.slice(0,2);await page.close();
         }
         measurements.performance[family]=result;console.log(family.padEnd(18),JSON.stringify(result));
