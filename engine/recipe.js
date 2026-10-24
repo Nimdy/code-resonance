@@ -186,6 +186,7 @@ function update(recipe,action,project,now=Date.now()){
     case 'regenerate':{const r=generate(project,{seed:recipe.projectSeed,variant:(recipe.variant||0)+1,traits:recipe.founded?recipe.traits:null,now});
       if(action.keepFamily)return keep(generate(project,{seed:recipe.projectSeed,variant:r.variant,family:recipe.family,traits:r.traits,now}));
       return keep(Object.assign(r,{locked:true,founded:true,source:'user'}));}
+    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now}));
     case 'lock':return {...recipe,locked:action.locked!==false,founded:recipe.founded||action.locked!==false};
     case 'overrides':{const o={...recipe.overrides};
       for(const k of ['intensity','motion','atmosphere'])if(action[k]!==undefined){const v=Number(action[k]);if(!Number.isFinite(v))throw new Error(`Invalid ${k}`);o[k]=round(clamp(v,0,2));}

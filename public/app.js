@@ -8,7 +8,8 @@
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
   const dom={project:$('projectSelect'),feed:$('feed'),scrub:$('scrub'),sound:$('soundBtn'),chapter:$('chapter')};
   const params=new URLSearchParams(location.search);
-  const WORLDS=['construct','nexus','city','nebula'];
+  // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages.
+  const WORLDS=['living','construct','nexus','city','nebula'];
   // Film mode: the clock is driven frame by frame (window.__film), so a recorded performance renders deterministically.
   const FILM=params.has('film');
   const overlay=params.has('overlay');
@@ -19,7 +20,10 @@
   let firstBar=null;
   const queue=[];
   const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;setText('barCounter',`BAR ${String(index-firstBar+1).padStart(3,'0')}`);if(s)section=s;if(key)setText('seedLabel',key.toUpperCase());});
-  let selectedWorld='construct',recorder=null,recordChunks=[],recordStreams=[];
+  let selectedWorld='living',recorder=null,recordChunks=[],recordStreams=[];
+  let living=null,livingLoading=null,livingFailed=false,livingFor='',recipe=null;
+  const LABEL_MODES=['cinematic','explorer','stream','off'];
+  let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
   let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12};
   let soundEnabled=false;
   try {const prefs=JSON.parse(localStorage.getItem('code-resonance-player-v1')||'{}');
@@ -72,11 +76,13 @@
   // Schedules one recorded window: its frame at the window start, each cue at its own time.
   // Cues before `from` (e.g. earlier in a window that a seek lands inside) join the feed silently, never as a burst.
   function schedule(entry,{animate=true,from=-Infinity}={}){
-    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);});
+    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);});
+    // Canonical intents (engine/intents.js) drive the living world's effects at their own recorded times.
+    for(const intent of entry.intents||[]){const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));}
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
-      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
+      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);living?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
     }
   }
   function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);if(model)setStats(model);}
@@ -114,6 +120,7 @@
     for(const n of scene.nodes.values()){n.x=n.tx;n.y=n.ty;}
     scene.view=scene.extent;
     construct?.reset(constructGraph(),perfNow());
+    if(living){living.reset(constructGraph(),perfNow());if(replay&&mode==='replay')living.prime(replay.entries,perfNow());}
   }
   function constructGraph(){return {nodes:[...scene.groups.values(),...[...scene.nodes.values()].filter(n=>n.dying===null)],edges:[...scene.edges.values()]};}
   // Births are staggered across the window so new structure appears in step with the music.
@@ -183,7 +190,7 @@
     }catch{}
   }
   function selectProject(id){
-    selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];resetScene({nodes:[],edges:[]});
+    selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];disposeLiving();resetScene({nodes:[],edges:[]});
     scene.pulses.length=0;scene.comets.clear();music.resync();
     if(mode==='replay')changeMode('replay');else{pollProject();}
   }
@@ -419,21 +426,69 @@
     });
     return constructLoading;
   }
+  // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
+  function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
+  function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;}
+  function ensureLiving(){
+    if(living&&livingFor===selected)return Promise.resolve(living);
+    if(livingFailed||!selected||!model)return Promise.resolve(null);
+    if(livingLoading)return livingLoading;
+    livingLoading=(async()=>{
+      try{
+        const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
+        const m=await import('/worlds/host.js');if(living)disposeLiving();
+        recipe=r.json;
+        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null}});
+        livingFor=selected;livingSize='';
+        living.reset(constructGraph(),perfNow());
+        if(replay&&(mode==='replay'||FILM))living.prime(replay.entries,perfNow());
+        syncRecipePanel();
+      }catch(e){console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;if(selectedWorld==='living'){selectedWorld='construct';syncPlayerControls();void ensureConstruct();}}
+      finally{livingLoading=null;}
+      return living;
+    })();
+    return livingLoading;
+  }
+  async function recipeAction(action){
+    if(!selected)return;
+    const res=await fetch(`/api/recipe?id=${encodeURIComponent(selected)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
+    if(!res.ok)return;recipe=await res.json();await living?.setRecipe(recipe);syncRecipePanel();
+  }
+  function syncRecipePanel(){
+    if(!$('dnaFamily'))return;
+    setText('dnaFamily',recipe?recipe.familyName.toUpperCase():'—');
+    setText('dnaSource',recipe?`${recipe.source==='user'?'CHOSEN':'FROM THE CODE'}${recipe.locked?' · LOCKED':recipe.founded?'':' · PROVISIONAL'} · V${recipe.variant}`:'');
+    $('dnaFamilySelect').value=recipe&&recipe.source==='user'?recipe.family:'';
+    $('dnaLock').setAttribute('aria-pressed',String(!!recipe?.locked));setText('dnaLock',recipe?.locked?'UNLOCK':'LOCK');
+    const k=Math.round((recipe?.overrides?.intensity??1)*100);$('intensitySlider').value=String(k);setText('intensityReadout',`${k}%`);
+    $('labelsSelect').value=labelMode;
+  }
+  function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();living.pick(e.clientX-r.left,e.clientY-r.top);});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
   let captionTimer=null;
   function showCaption(text){
     caption={text,at:perfNow()};if(params.get('captions')==='0')return;
     const el=$('caption');el.textContent=text;el.classList.add('show');clearTimeout(captionTimer);if(!FILM)captionTimer=setTimeout(()=>el.classList.remove('show'),3800);
   }
-  function showWorldCanvas(){const c=selectedWorld==='construct'&&construct;$('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!c);}
-  let lastPaint=performance.now(),clock=0,constructSize='';
+  function showWorldCanvas(){const l=selectedWorld==='living'&&!!living,c=!l&&selectedWorld==='construct'&&construct;
+    $('world').classList.toggle('hidden',!l);$('worldOverlay').classList.toggle('hidden',!l);$('caption').classList.toggle('hidden',l);
+    $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));}
+  let lastPaint=performance.now(),clock=0,constructSize='',livingSize='';
   function renderAt(dt,now){
     clock+=dt;
     runQueue();
     const pulse=beat();
     stepScene(dt,now);
     showWorldCanvas();
-    if(selectedWorld==='construct'&&construct){
+    if(selectedWorld==='living'&&(!living||livingFor!==selected)&&model)void ensureLiving();
+    if(selectedWorld==='living'&&living){
+      const r=$('world').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
+      if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
+      if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
+      const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
+      living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
+      living.render(now,dt,{phase:barPhase});
+    }else if(selectedWorld==='construct'&&construct){
       const r=$('construct').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
       if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
@@ -481,10 +536,11 @@
   function setWorld(world){if(!WORLDS.includes(world))return;
     selectedWorld=world;syncPlayerControls();storePrefs();
     if(world==='construct')void ensureConstruct();
+    if(world==='living')void ensureLiving();
   }
   async function toggleRecord(){
     if(recorder){if(recorder.state==='recording')recorder.stop();return;}
-    const source=selectedWorld==='construct'&&construct?$('construct'):canvas;
+    const source=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas;
     if(!window.MediaRecorder||!source.captureStream){alert('WebM recording requires a browser with MediaRecorder and canvas.captureStream support.');return;}
     if(!soundEnabled)await toggleSound();
     const preferred=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
@@ -580,7 +636,7 @@
     dom.scrub.disabled=value==='live';$('playBtn').disabled=value==='live';
     syncPlayerControls();
     $('liveIndicator').textContent=value==='live'?'LIVE':'REPLAY';
-    music.setClock(perfNow,value==='replay'?Number($('speedSelect').value)||1:1);construct?.setSpeed(replaySpeed());
+    music.setClock(perfNow,value==='replay'?Number($('speedSelect').value)||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
     if(value==='replay'){dom.scrub.value='0';
       void loadReplay().then(()=>{if(mode!=='replay')return;seek(replay.start);});}
     else{dom.scrub.value='1000';replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
@@ -594,10 +650,17 @@
     if(replayPos>=h.end)seek(h.start);
     playback=!playback;replayClock=performance.now();$('playBtn').textContent=playback?'Ⅱ':'▶';
   });
-  $('speedSelect').addEventListener('change',()=>{if(mode==='replay'){music.setClock(perfNow,Number($('speedSelect').value)||1);construct?.setSpeed(replaySpeed());seek(replayPos);}});
+  $('speedSelect').addEventListener('change',()=>{if(mode==='replay'){music.setClock(perfNow,Number($('speedSelect').value)||1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());seek(replayPos);}});
   dom.scrub.addEventListener('input',()=>{if(mode==='replay'){playback=false;$('playBtn').textContent='▶';seek(timestampFromScrub(dom.scrub.value));}});
   dom.sound.addEventListener('click',()=>toggleSound().catch(e=>{console.error(e);setText('soundBtn','AUDIO ERROR');}));
   for(const btn of document.querySelectorAll('[data-world]'))btn.addEventListener('click',()=>setWorld(btn.dataset.world));
+  bindWorldCanvas($('world'));
+  $('dnaFamilySelect').addEventListener('change',()=>{const v=$('dnaFamilySelect').value;recipeAction(v?{type:'family',family:v}:{type:'automatic'}).catch(console.error);});
+  $('dnaRegenerate').addEventListener('click',()=>recipeAction({type:'regenerate',keepFamily:recipe?.source==='user'}).catch(console.error));
+  $('dnaLock').addEventListener('click',()=>recipeAction({type:'lock',locked:!recipe?.locked}).catch(console.error));
+  $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
+  $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
+  $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
   $('musicStyle').addEventListener('change',()=>{music.setOptions({style:$('musicStyle').value});syncPlayerControls();storePrefs();});
   for(const [id,key,convert] of [['volumeSlider','volume',v=>v/100],['tempoSlider','tempo',v=>v],['textureSlider','texture',v=>v/100]]){
     $(id).addEventListener('input',()=>{music.setOptions({[key]:convert(Number($(id).value)),...(key==='tempo'?{tempoMode:'manual'}:{})});syncPlayerControls();storePrefs();});
@@ -617,8 +680,9 @@
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
     document.body.classList.add('overlay');mode='replay';
     window.__film={
-      async open({project,speed=1}){selected=project;filmSpeed=speed;await pollProject();await loadReplay();await ensureConstruct();construct?.setSpeed(speed);
-        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!construct};},
+      async open({project,speed=1}){selected=project;filmSpeed=speed;await pollProject();await loadReplay();
+        if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
+        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null};},
       sections(list){filmSections=list;},
       seek(t){filmTime=t;seek(t);},
       frame(t,dt){
@@ -626,8 +690,9 @@
         while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=t+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
         renderAt(dt,t);
         // Composite the stage with the caption layer so the film carries the narration.
-        const src=selectedWorld==='construct'&&construct?$('construct'):canvas,out=document.createElement('canvas');out.width=src.width;out.height=src.height;
+        const src=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas,out=document.createElement('canvas');out.width=src.width;out.height=src.height;
         const g2=out.getContext('2d');g2.drawImage(src,0,0);
+        if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);return out.toDataURL('image/jpeg',.92);}
         const age=(t-caption.at)/Math.max(1,filmSpeed);
         if(caption.text&&age<4200&&params.get('captions')!=='0'){
           const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=out.width/1920;
@@ -636,11 +701,11 @@
         }
         return out.toDataURL('image/jpeg',.92);
       },
-      stats(){return construct?.stats();}
+      stats(){return living?living.stats():construct?.stats();}
     };
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
-    window.__constructStats=()=>construct?.stats();
+    window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();
     setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
     setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
     pollProjects().then(pollProject);requestAnimationFrame(paint);
