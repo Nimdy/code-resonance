@@ -85,3 +85,8 @@ test('Choosing "automatic" returns to the identity the code would generate, keep
   const back=recipe.update(chosen,{type:'automatic'},p);
   assert.equal(back.family,generated.family);assert.equal(back.source,'generated');assert.equal(back.overrides.intensity,.4);
 });
+test('Identities generated before visual packs existed are unchanged (genome fingerprint pinned)',()=>{
+  const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}};
+  const genomes=JSON.stringify(['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome));
+  assert.equal(require('node:crypto').createHash('sha256').update(genomes).digest('hex').slice(0,16),'878fd3c463891211');
+});

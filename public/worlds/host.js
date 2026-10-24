@@ -5,6 +5,7 @@ import {THREE,createPipeline,createCameraRig,createOverlay,clamp,hash,rng} from 
 import {createModel} from './model.js';
 import {createDirector} from './director.js';
 import {createAgents} from './agents.js';
+import {createHistory} from './history.js';
 import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
 const FAMILIES={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
 const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
@@ -39,25 +40,23 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const camera=new THREE.PerspectiveCamera(36,16/9,.1,4000);
   const rig=createCameraRig(camera);
   const model=createModel({speed});
-  const intents=[],intentIds=new Set();let director,agents,world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null;
+  let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null;
+  // The director and agent presences fold the recorded intents; the history keeps that fold exact for any length of
+  // project with bounded memory (checkpoints), and it survives recipe switches (decisions do not depend on the look).
+  const director=createDirector({recipe,intensity:recipe.overrides?.intensity??1}),agents=createAgents();
+  const history=createHistory({step:i=>{agents.record(i);return director.process(i);},snapshot:()=>({d:director.snapshot(),a:agents.snapshot()}),restore:x=>{director.restore(x.d);agents.restore(x.a);}});
   const timing={update:0,draw:0},calls={scene:0,total:0,triangles:0,points:0};
-  function prime(upTo){
-    director=createDirector({recipe:current,intensity:current.overrides?.intensity??1});agents=createAgents();
-    for(const i of intents){if(i.ts>upTo)break;agents.record(i);director.process(i);}
-  }
   async function load(next){
     const mod=await import(FAMILIES[next.family]);
     if(world){world.dispose();}
     if(scene)scene.traverse(o=>{o.geometry?.dispose?.();const m=o.material;if(m)(Array.isArray(m)?m:[m]).forEach(x=>{for(const v of Object.values(x.uniforms||{}))v?.value?.isTexture&&v.value.dispose();x.dispose();});});
     scene=new THREE.Scene();current=next;
-    prime(info?.t??Infinity);
+    director.setRecipe(next);director.setIntensity(next.overrides?.intensity??1);
     world=mod.createFamily({THREE,renderer,scene,camera,model,recipe:next,get director(){return director;},get agents(){return agents;},pipeline,film,
       speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id)});
     world.rebuild();snapCamera=true;
   }
   await load(recipe);
-  function addIntent(i){if(intentIds.has(i.id))return false;intentIds.add(i.id);let k=intents.length;while(k>0&&intents[k-1].ts>i.ts)k--;intents.splice(k,0,i);
-    if(intents.length>30000)for(const x of intents.splice(0,intents.length-30000))intentIds.delete(x.id);return true;}
   // ---- Labels -------------------------------------------------------------------------------------------------
   function labelItems(i){
     return composeLabels({mode,recipe:current,info:i,commands:director.commands,agentName:a=>agents.name(a),world,toScreen:pos=>overlay.project(camera,pos,size[0],size[1]),
@@ -89,12 +88,13 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     reset(graph,t){model.reset(graph,t);world.rebuild();snapCamera=true;},
     applyDelta(delta,start,end){model.applyDelta(delta,start,end);world.onDelta?.(delta,start,end);},
     cue(c,t){model.cue(c,t);world.onCue?.(c,t);},
-    intent(i,t){if(!addIntent(i))return;agents.record(i);const cmd=director.process(i);if(cmd)world.effect(cmd,info);},
+    // A recorded intent at its time: folded (exactly, also when it arrives late) and expressed if the world has an effect.
+    intent(i,t){const r=history.add(i);if(r.cmd?.effect)world.effect(r.cmd,info);},
     // After a seek: intents before t set the director (cooldowns, unlocks) and agent lifecycles, without effects.
+    // Intents at or after the seek point are forgotten, so the schedule delivers them again as fresh events.
     prime(entries,t){
-      // Intents at or after the seek point are forgotten, so the schedule delivers them again as fresh events.
-      for(let k=intents.length-1;k>=0;k--)if(intents[k].ts>=t){intentIds.delete(intents[k].id);intents.splice(k,1);}
-      for(const e of entries)for(const i of e.intents||[])if(i.ts<t)addIntent(i);prime(t);
+      const list=[];for(const e of entries)(e.intents||[]).forEach((i,k)=>{if(i.ord===undefined&&Number.isInteger(e.seq))i.ord=e.seq*65536+k;if(i.ts<t)list.push(i);});
+      history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
       world.onPrime?.(t,(t-model.epoch)/1000);},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
@@ -108,7 +108,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     labels(){return labelStrings(lastLabels);},
     resize(w,h,dpr=1){size=[w,h];pixelRatio=dpr;applyLevel();camera.aspect=w/h;camera.updateProjectionMatrix();
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
-    stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:intents.length,agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
+    stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:history.count,history:history.stats(),
+      unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
       quality:level,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2)};},
     dispose(){world?.dispose();pipeline.dispose();renderer.dispose();}

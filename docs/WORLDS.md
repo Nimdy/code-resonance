@@ -128,7 +128,33 @@ are micro; only verified milestones unlock ambient layers; time alone never crea
 
 The director scales effects by evidence: micro and routine effects coalesce per subject, structural effects have
 cooldowns, milestones spend a spectacle token (three, one regained per 90 s), rare effects need three tokens and ten
-minutes since the last one, and the viewer's spectacle intensity scales everything.
+minutes since the last one, and the viewer's spectacle intensity scales everything. These decisions depend only on
+the intents, never on the world drawing them: every world (built-in or a visual pack) gets the same tiers, tokens,
+unlocks and attention for the same history; the recipe's vocabulary only names the look.
+
+## Long histories
+
+The director and agent presences are folds over intents in canonical order (timestamp, then recorded position), so
+their state at a moment is a pure function of the intents before it. `public/worlds/history.js` keeps that state exact
+with bounded memory for any length of project:
+
+- at most 30,000 raw intents (the newest) are held, always folded; a checkpoint (exact snapshot) is taken every 2,000
+  intents inside that window, and at most 24 older checkpoints stay spread evenly over the rest of the history;
+- the fold's own state is bounded by time, not history: recent commands (10 minutes), activity (3 minutes), coalescing
+  keys (4 s), agents' last ten minutes of events; lasting transformations (verified milestones) are kept per subject
+  with their count, and the first 16 verified milestones' times give the ambient unlocks;
+- an intent that arrives late re-folds exactly from the nearest earlier checkpoint;
+- a seek forgets what lies at or after the seek point and restores the fold before it; checkpoints beyond it are
+  parked, each with a fingerprint of the exact intent sequence it summarizes, and a later seek forward reuses one only
+  when the intents leading to it are the same;
+- a recipe switch keeps the fold (it only relabels effects).
+
+The PR #3 host kept the newest 30,000 intents and rebuilt the director and agents from them after every seek or recipe
+switch, and the Fractal Biosphere rebuilt its lasting blooms from the director's last 400 commands. On long histories
+that lost early verified milestones (their ambient unlocks and blooms), renumbered agents, and kept crashed agent
+sessions as "status unknown" forever (measurements in `docs/QUALIFICATION.md`). Presences now also leave after thirty
+minutes without any observation; the last 512 departed agents keep their numbers, so a returning session is still
+"Agent 3".
 
 ## Agents
 
@@ -143,9 +169,12 @@ now names the file a `Read` looks at, so reading is visible; only edits attribut
 
 Modes: **cinematic** (title card, callouts for structural events and above, milestone banners, agent chips when
 their activity changes), **explorer** (subsystem labels always, click to inspect a structure), **stream** (a lower
-third: project and family, current event, agent status, validation status), **off**. Text comes only from roles,
+third: public title and family, current event, agent status, validation status), **off**. Text comes only from roles,
 counts, states, activity categories, generated names (pronounceable, derived from salted ids, filtered against crude
-words) and user aliases. No path, file name, prompt or source identifier is ever drawn (checked in qualification).
+words), user aliases and the **public title**, which exists only when the user sets it in the World DNA panel; without
+it the title card shows the family name and the lower third "Code Resonance · <family>". The project folder name is
+never an input (`public/worlds/labels.js`, unit-tested). No path, file name, prompt or source identifier is ever drawn
+(checked in qualification).
 
 ## Music
 

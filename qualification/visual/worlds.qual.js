@@ -12,43 +12,15 @@
 // The NVIDIA GPU is never used: the run aborts if the renderer string is not the requested adapter.
 const path=require('node:path');
 const fs=require('node:fs');
-const crypto=require('node:crypto');
-const {chromium}=require('playwright-core');
-const REPO=path.resolve(__dirname,'../..');
-const {createService}=require(path.join(REPO,'receiver/server'));
+const {REPO,projectOf,launch:launchBrowser,withService,setFamily,filmPage,renderTo,thumb,diff,sha,checker}=require('./harness');
 const recipes=require(path.join(REPO,'engine/recipe'));
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const DATA=path.resolve(arg('datasets',path.join(__dirname,'..','results','datasets')));
 const OUT=path.join(__dirname,'..','results','visual');
 const GPU=arg('gpu',null);
 const ONLY=arg('only',null)?new Set(arg('only').split(',')):null,run=k=>!ONLY||ONLY.has(k);
-const checks=[],measurements={};
-function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(detail)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${detail}`:''}`);}
-const projectOf=dir=>fs.readFileSync(path.join(dir,'projects',fs.readdirSync(path.join(dir,'projects'))[0],'id'),'utf8');
-function launch(){
-  if(GPU==='amd')return chromium.launch({args:['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu'],
-    env:{...process.env,GALLIUM_DRIVER:'d3d12',MESA_D3D12_DEFAULT_ADAPTER_NAME:'AMD',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}});
-  return chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
-}
-async function withService(dir,fn){const svc=await createService({port:0,dataDir:dir}).start();try{await svc.flush();return await fn(svc);}finally{await svc.stop();}}
-async function setFamily(svc,project,family){
-  const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'family',family}})});
-  if(!r.ok)throw new Error(await r.text());return r.json();
-}
-async function filmPage(browser,svc,project,{width=1280,height=720}={}){
-  const page=await browser.newPage({viewport:{width,height}});const errors=[];
-  page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-  await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&project=${project}`);await page.waitForFunction(()=>!!window.__film);
-  const info=await page.evaluate(p=>window.__film.open({project:p,speed:1}),project);
-  return {page,info,errors};
-}
-// Renders from `from` to `to` (performance ms) at `fps`, returning the last frame (JPEG data URL).
-async function renderTo(page,from,to,fps=15){await page.evaluate(x=>window.__film.seek(x),from);let img;for(let t=from;t<=to;t+=1000/fps)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/fps]);return img;}
-// A small luminance thumbnail of a frame, to compare motion between moments.
-async function thumb(page,dataUrl){return page.evaluate(async src=>{const img=new Image();img.src=src;await img.decode();const c=document.createElement('canvas');c.width=96;c.height=54;const g=c.getContext('2d');g.drawImage(img,0,0,96,54);
-  const d=g.getImageData(0,0,96,54).data;const out=[];for(let i=0;i<d.length;i+=4)out.push(Math.round(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));return out;},dataUrl);}
-const diff=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0)/a.length;
-const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
+const {checks,check}=checker(),measurements={};
+const launch=()=>launchBrowser(GPU);
 (async()=>{
   fs.mkdirSync(OUT,{recursive:true});
   const sets={lumen:{dir:path.join(DATA,'lumen'),family:'stellar-forge',at:160000},excalidraw:{dir:path.join(DATA,'excalidraw'),family:'fractal-biosphere',at:5000},self:{dir:path.join(DATA,'self'),family:'machine-cathedral',at:600000}};
@@ -94,7 +66,8 @@ const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
       measurements.privacyFolderName=!!folder;
       const seen=new Set();await page.evaluate(x=>window.__film.seek(x),info.start);
       for(let t=info.start;t<info.end;t+=1000/5){await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/5]);if(Math.round((t-info.start)/1000)%3===0)for(const s of await page.evaluate(()=>window.__film.labels()))seen.add(s);}
-      await page.evaluate(()=>window.__film.setLabels('stream'));for(let t=info.start+90000;t<info.start+100000;t+=200){await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.2]);for(const s of await page.evaluate(()=>window.__film.labels()))seen.add(s);}
+      // Back to 90 s through a seek, as playback always does (the fold answers for times at or after its last intent).
+      await page.evaluate(()=>window.__film.setLabels('stream'));await page.evaluate(x=>window.__film.seek(x),info.start+90000);for(let t=info.start+90000;t<info.start+100000;t+=200){await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.2]);for(const s of await page.evaluate(()=>window.__film.labels()))seen.add(s);}
       // Whole words only: "searching" and "validated" are label vocabulary, not the files search.js and validate.js.
       const escape=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
       const pathWords=[...paths].map(p=>new RegExp(`(?:^|[^\\w-])${escape(p)}(?![\\w-])`,'i'));

@@ -78,7 +78,8 @@
   function schedule(entry,{animate=true,from=-Infinity}={}){
     at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);});
     // Canonical intents (engine/intents.js) drive the living world's effects at their own recorded times.
-    for(const intent of entry.intents||[]){const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));}
+    // Each intent carries its recorded position (window, index): with its timestamp, the canonical order of history.
+    (entry.intents||[]).forEach((intent,k)=>{if(intent.ord===undefined)intent.ord=entry.seq*65536+k;const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));});
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
@@ -456,7 +457,7 @@
     // The whole history's intents (the intents view is small), so unlocks and lasting blooms match a full replay.
     const id=selected,intents=[];let after=-1;
     for(let page=0;page<1000;page++){const r=(await getJSON(`/api/timeline?id=${encodeURIComponent(id)}&after=${after}&limit=2000&fields=intents`))?.json;if(!r||!r.entries.length||selected!==id)break;
-      for(const e of r.entries)if(e.intents?.length)intents.push({intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
+      for(const e of r.entries)if(e.intents?.length)intents.push({seq:e.seq,intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
     if(world===living&&mode==='live'&&selected===id)living.prime(intents,perfNow());
   }
   async function recipeAction(action){

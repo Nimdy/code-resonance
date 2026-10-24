@@ -1,0 +1,605 @@
+{
+  "at": "2026-10-24T14:08:15.486Z",
+  "synthetic": true,
+  "baseline": "06dd680",
+  "node": "v22.22.2",
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "sizes": [
+    {
+      "profile": "active",
+      "intents": 30000,
+      "milestones": 46,
+      "sessions": 430,
+      "hours": 180.5,
+      "pr3": {
+        "unlocked": 4,
+        "unlockedExpected": 4,
+        "blooms": 1,
+        "bloomsExpected": 46,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "337:unknown",
+          "429:tool",
+          "430:disconnected",
+          "46:unknown"
+        ],
+        "agentsExpected": [
+          "429:tool",
+          "430:disconnected"
+        ],
+        "intentsForgotten": 0
+      },
+      "history": {
+        "streamMs": 571,
+        "usPerIntent": 19.03,
+        "folded": 30000,
+        "raw": 30000,
+        "checkpoints": 15,
+        "parked": 0,
+        "base": 0,
+        "late": 727,
+        "covered": 0,
+        "refolded": 708069,
+        "jumps": 0,
+        "payloadMB": 8.2,
+        "checkpointKB": 65,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 6,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 4,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 3,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 3,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 10,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "mature",
+      "intents": 30000,
+      "milestones": 0,
+      "sessions": 430,
+      "hours": 180.5,
+      "pr3": {
+        "unlocked": 0,
+        "unlockedExpected": 0,
+        "blooms": 0,
+        "bloomsExpected": 0,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "337:unknown",
+          "429:tool",
+          "430:disconnected",
+          "46:unknown"
+        ],
+        "agentsExpected": [
+          "429:tool",
+          "430:disconnected"
+        ],
+        "intentsForgotten": 0
+      },
+      "history": {
+        "streamMs": 558,
+        "usPerIntent": 18.62,
+        "folded": 30000,
+        "raw": 30000,
+        "checkpoints": 15,
+        "parked": 0,
+        "base": 0,
+        "late": 727,
+        "covered": 0,
+        "refolded": 708069,
+        "jumps": 0,
+        "payloadMB": 8.1,
+        "checkpointKB": 60,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 4,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 3,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 2,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 2,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 9,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "active",
+      "intents": 100000,
+      "milestones": 151,
+      "sessions": 1418,
+      "hours": 529.6,
+      "pr3": {
+        "unlocked": 4,
+        "unlockedExpected": 4,
+        "blooms": 3,
+        "bloomsExpected": 151,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "119:unknown",
+          "177:unknown",
+          "208:unknown",
+          "232:unknown",
+          "251:unknown",
+          "413:unknown"
+        ],
+        "agentsExpected": [
+          "1415:unknown",
+          "1417:tool"
+        ],
+        "intentsForgotten": 70000
+      },
+      "history": {
+        "streamMs": 1980,
+        "usPerIntent": 19.8,
+        "folded": 100000,
+        "raw": 30000,
+        "checkpoints": 40,
+        "parked": 0,
+        "base": 70000,
+        "late": 2286,
+        "covered": 0,
+        "refolded": 2242730,
+        "jumps": 0,
+        "payloadMB": 10.4,
+        "checkpointKB": 81,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 11,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 8,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 8,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 6,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 27,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "mature",
+      "intents": 100000,
+      "milestones": 12,
+      "sessions": 1418,
+      "hours": 529.6,
+      "pr3": {
+        "unlocked": 0,
+        "unlockedExpected": 4,
+        "blooms": 0,
+        "bloomsExpected": 12,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "119:unknown",
+          "177:unknown",
+          "208:unknown",
+          "232:unknown",
+          "251:unknown",
+          "413:unknown"
+        ],
+        "agentsExpected": [
+          "1415:unknown",
+          "1417:tool"
+        ],
+        "intentsForgotten": 70000
+      },
+      "history": {
+        "streamMs": 1999,
+        "usPerIntent": 19.99,
+        "folded": 100000,
+        "raw": 30000,
+        "checkpoints": 40,
+        "parked": 0,
+        "base": 70000,
+        "late": 2286,
+        "covered": 0,
+        "refolded": 2242730,
+        "jumps": 0,
+        "payloadMB": 10.3,
+        "checkpointKB": 77,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 8,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 7,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 6,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 5,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 25,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "active",
+      "intents": 300000,
+      "milestones": 453,
+      "sessions": 4216,
+      "hours": 1428.8,
+      "pr3": {
+        "unlocked": 4,
+        "unlockedExpected": 4,
+        "blooms": 2,
+        "bloomsExpected": 453,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "206:unknown",
+          "222:unknown",
+          "260:unknown",
+          "270:unknown",
+          "376:unknown",
+          "389:unknown"
+        ],
+        "agentsExpected": [
+          "4214:tool",
+          "4216:tool"
+        ],
+        "intentsForgotten": 270000
+      },
+      "history": {
+        "streamMs": 6146,
+        "usPerIntent": 20.49,
+        "folded": 300000,
+        "raw": 20000,
+        "checkpoints": 35,
+        "parked": 0,
+        "base": 280000,
+        "late": 6676,
+        "covered": 0,
+        "refolded": 6589136,
+        "jumps": 0,
+        "payloadMB": 7.4,
+        "checkpointKB": 74,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 18,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 13,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 9,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 10,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 60,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "mature",
+      "intents": 300000,
+      "milestones": 46,
+      "sessions": 4216,
+      "hours": 1428.8,
+      "pr3": {
+        "unlocked": 0,
+        "unlockedExpected": 4,
+        "blooms": 0,
+        "bloomsExpected": 46,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "206:unknown",
+          "222:unknown",
+          "260:unknown",
+          "270:unknown",
+          "376:unknown",
+          "389:unknown"
+        ],
+        "agentsExpected": [
+          "4214:tool",
+          "4216:tool"
+        ],
+        "intentsForgotten": 270000
+      },
+      "history": {
+        "streamMs": 6026,
+        "usPerIntent": 20.09,
+        "folded": 300000,
+        "raw": 20000,
+        "checkpoints": 35,
+        "parked": 0,
+        "base": 280000,
+        "late": 6676,
+        "covered": 0,
+        "refolded": 6589136,
+        "jumps": 0,
+        "payloadMB": 7.3,
+        "checkpointKB": 72,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 17,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 16,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 10,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 15,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 71,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "active",
+      "intents": 1000000,
+      "milestones": 1489,
+      "sessions": 13885,
+      "hours": 4384,
+      "pr3": {
+        "unlocked": 4,
+        "unlockedExpected": 4,
+        "blooms": 2,
+        "bloomsExpected": 1489,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "136:unknown",
+          "220:unknown",
+          "223:unknown",
+          "226:unknown",
+          "244:unknown",
+          "286:unknown"
+        ],
+        "agentsExpected": [
+          "13883:tool",
+          "13885:processing"
+        ],
+        "intentsForgotten": 970000
+      },
+      "history": {
+        "streamMs": 25011,
+        "usPerIntent": 25.01,
+        "folded": 1000000,
+        "raw": 20000,
+        "checkpoints": 35,
+        "parked": 0,
+        "base": 980000,
+        "late": 22524,
+        "covered": 0,
+        "refolded": 22475062,
+        "jumps": 0,
+        "payloadMB": 7.3,
+        "checkpointKB": 72,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 71,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 56,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 66,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 41,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 265,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    },
+    {
+      "profile": "mature",
+      "intents": 1000000,
+      "milestones": 151,
+      "sessions": 13885,
+      "hours": 4384,
+      "pr3": {
+        "unlocked": 0,
+        "unlockedExpected": 4,
+        "blooms": 0,
+        "bloomsExpected": 151,
+        "agentLabelsDiffer": true,
+        "agents": [
+          "136:unknown",
+          "220:unknown",
+          "223:unknown",
+          "226:unknown",
+          "244:unknown",
+          "286:unknown"
+        ],
+        "agentsExpected": [
+          "13883:tool",
+          "13885:processing"
+        ],
+        "intentsForgotten": 970000
+      },
+      "history": {
+        "streamMs": 26978,
+        "usPerIntent": 26.98,
+        "folded": 1000000,
+        "raw": 20000,
+        "checkpoints": 35,
+        "parked": 0,
+        "base": 980000,
+        "late": 22524,
+        "covered": 0,
+        "refolded": 22475062,
+        "jumps": 0,
+        "payloadMB": 7.3,
+        "checkpointKB": 71,
+        "exactAtEnd": true,
+        "seeks": [
+          {
+            "at": 0.9995,
+            "ms": 60,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.995,
+            "ms": 60,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.5,
+            "ms": 60,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.02,
+            "ms": 37,
+            "exact": true,
+            "jumps": 0
+          },
+          {
+            "at": 0.999,
+            "ms": 216,
+            "exact": true,
+            "jumps": 1
+          }
+        ]
+      }
+    }
+  ]
+}
