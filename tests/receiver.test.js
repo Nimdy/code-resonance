@@ -1,11 +1,12 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs/promises'),os=require('node:os'),path=require('node:path');
-const {createService}=require('../receiver/server');const {sha}=require('../receiver/protocol');
+const fs=require('node:fs/promises'),path=require('node:path');
+const {sha}=require('../receiver/protocol');
+const {tempDir,startService}=require('./helpers');
 const projectId=sha('receiver-test');
 async function start(t){
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-receiver-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
-  const service=await createService({port:0,dataDir:dir,sortIntervalMs:600000}).start();t.after(()=>service.stop());
+  const dir=tempDir(t,'cr-receiver-');
+  const service=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000});
   const post=events=>fetch(`http://127.0.0.1:${service.port}/v1/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${service.token}`},body:JSON.stringify({events})});
   return {dir,service,post,journal:path.join(dir,'projects',sha(projectId),'events.jsonl')};
 }
@@ -24,7 +25,7 @@ test('A journal truncated mid-line by a crash is terminated before new records a
   await post([ev('before-crash-01')]);
   await service.stop();
   await fs.appendFile(journal,'{"v":1,"id":"torn-rec');
-  const again=await createService({port:0,dataDir:dir,sortIntervalMs:600000}).start();t.after(()=>again.stop());
+  const again=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000});
   const r=await fetch(`http://127.0.0.1:${again.port}/v1/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${again.token}`},body:JSON.stringify({events:[ev('after-crash-01')]})});
   assert.equal(r.status,202);
   const lines=(await fs.readFile(journal,'utf8')).split('\n').filter(Boolean);

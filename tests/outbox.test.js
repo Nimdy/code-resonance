@@ -1,12 +1,13 @@
 'use strict';
 const test=require('node:test');const assert=require('node:assert/strict');
-const fs=require('node:fs/promises');const os=require('node:os');const path=require('node:path');
+const fs=require('node:fs/promises');const path=require('node:path');
 const {DurableOutbox}=require('../extension/outbox');
 const {createService}=require('../receiver/server');const {sha}=require('../receiver/protocol');
+const {tempDir,startService,track}=require('./helpers');
 const projectId=sha('outbox-test');
 test('Outbox persists while offline, then replays without blocking event handlers',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'s3-outbox-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
-  let service=createService({port:0,dataDir:path.join(dir,'receiver'),sortIntervalMs:200000});
+  const dir=tempDir(t,'s3-outbox-');
+  let service=track(t,createService({port:0,dataDir:path.join(dir,'receiver'),sortIntervalMs:200000}));
   const outbox=new DurableOutbox({directory:path.join(dir,'outbox'),port:41888,authFile:path.join(dir,'receiver','receiver-auth.json')});
   outbox.enqueue({v:1,id:'outbox-event-01',ts:1750000000000,projectId,sessionId:'outbox-test',kind:'workspace.started'});
   await outbox.persist();
@@ -22,8 +23,8 @@ test('Outbox persists while offline, then replays without blocking event handler
   await service.stop();
 });
 async function harness(t,opts={}){
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-outbox-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
-  const service=await createService({port:0,dataDir:path.join(dir,'receiver'),sortIntervalMs:600000}).start();t.after(()=>service.stop());
+  const dir=tempDir(t,'cr-outbox-');
+  const service=await startService(t,{port:0,dataDir:path.join(dir,'receiver'),sortIntervalMs:600000});
   const outbox=new DurableOutbox({directory:path.join(dir,'outbox'),port:service.port,authFile:path.join(dir,'receiver','receiver-auth.json'),...opts});
   const journal=async()=>fs.readFile(path.join(dir,'receiver','projects',sha(projectId),'events.jsonl'),'utf8').catch(()=>'');
   return {dir,service,outbox,journal};

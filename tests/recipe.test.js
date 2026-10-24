@@ -2,9 +2,8 @@
 // Visual recipes: a persistent, deterministic artistic identity per project, distinct in structure (not just colour),
 // provisional while a project is tiny, permanent once founded or chosen, and editable only from the player's origin.
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const recipe=require('../engine/recipe');
-const {createService}=require('../receiver/server');
+const {tempDir,startService}=require('./helpers');
 const {sha}=require('../receiver/protocol');
 // A public projection with the given shape: modules (counts of symbol kinds), dependency edges, test modules.
 function project(id,{modules=10,ui=0,routes=0,classes=0,fns=3,tests=0,dirs=3,hub=0,cross=0,agents=0,agentEvents=0}={}){
@@ -61,8 +60,8 @@ test('Artist control: choose a family, regenerate, lock, adjust and name; inputs
   assert.equal(recipe.update(r,{type:'family',family:'stellar-forge'},p).aliases['0123456789abcd'],'Recipe Book');
 });
 test('The receiver persists the recipe across restarts and accepts edits only from its own origin',async t=>{
-  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-recipe-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
-  let svc=await createService({port:0,dataDir:dir}).start();
+  const dir=tempDir(t,'cr-recipe-');
+  let svc=await startService(t,{port:0,dataDir:dir});
   const projectId=sha('recipe-http');let seq=0;
   const ev=(file,content)=>({v:1,id:`rh-${++seq}-xxxxxxxx`,ts:Date.now(),kind:'document.snapshot',projectId,sessionId:'s',origin:'test',file,content,meta:{reason:'edit'}});
   const events=Array.from({length:8},(_,i)=>ev(`src/part${i%3}/m${i}.tsx`,`export function C${i}(){return <div/>}`));
@@ -76,7 +75,7 @@ test('The receiver persists the recipe across restarts and accepts edits only fr
   assert.equal((await post({Origin:'http://evil.example'},{type:'family',family:'stellar-forge'})).status,403,'foreign origin: refused');
   const ok=await post({Origin:`http://127.0.0.1:${svc.port}`},{type:'family',family:'stellar-forge'});
   assert.equal(ok.status,200);assert.equal((await ok.json()).family,'stellar-forge');
-  await svc.stop();svc=await createService({port:0,dataDir:dir}).start();t.after(()=>svc.stop());
+  await svc.stop();svc=await startService(t,{port:0,dataDir:dir});
   const after=await (await fetch(url())).json();assert.equal(after.family,'stellar-forge');assert.equal(after.source,'user');
 });
 test('Choosing "automatic" returns to the identity the code would generate, keeping the viewer\'s settings',()=>{
