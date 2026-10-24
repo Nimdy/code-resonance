@@ -4,7 +4,7 @@
 
 Code Resonance is a completely independent, local-first audiovisual instrument for software creation. An opt-in VS Code extension (and, optionally, an AI agent's hooks) reports observable activity. A loopback receiver records it and interprets it in the background. A performance player turns the project's real structure into an evolving visual world and composes a project-specific score that develops as the software does. No Signal/3 dependency, cloud service, model API, GPU, or Docker is required.
 
-> **Maturity: v0.3 prototype.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2, Xvfb), in headless Chromium, and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** native Windows and macOS, GPU-accelerated browsers, OBS Studio itself, multi-hour real sessions, and human listening evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
+> **Maturity: v0.3 prototype.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, a completed multi-hour soak and multi-hour real sessions, and human listening evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
 
 ## What it does
 
@@ -144,5 +144,5 @@ See [SECURITY.md](SECURITY.md), [ARCHITECTURE.md](ARCHITECTURE.md), [docs/AUDIT.
 
 ## Platform notes
 
-- **Windows (PowerShell):** `npm ci --offline`, `npm run check`, `npm test`, `npm start`, `npm run package:vsix` (no Bash or `zip` needed). If PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. *Native Windows has not yet been qualified.*
+- **Windows (PowerShell):** `npm ci --offline`, `npm run check`, `npm test`, `npm start`, `npm run package:vsix` (no Bash or `zip` needed). If PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. On GitHub's Windows runners (no GPU): the unit and integration suite, the platform smoke test, the player in Chromium, a visual pack and the extension in a real VS Code all pass; a Windows desktop with a GPU has not been measured.
 - **Linux / WSL2:** qualified in VS Code 1.143 under Xvfb. Run the receiver in the same environment as the extension host.

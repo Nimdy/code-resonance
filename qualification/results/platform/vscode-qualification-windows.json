@@ -1,12 +1,12 @@
 {
-  "startedAt": "2026-10-24T20:36:31.009Z",
+  "startedAt": "2026-10-24T22:12:30.009Z",
   "extensionRef": "working-tree",
   "vscode": {
     "executable": "D:\\a\\code-resonance\\code-resonance\\qualification\\.vscode-test\\vscode-win32-x64-archive-1.143.1\\Code.exe",
     "version": "1.143.1"
   },
-  "root": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\cr-vscode-qual-XlNxh5",
-  "port": 58226,
+  "root": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\cr-vscode-qual-LBRjVH",
+  "port": 59240,
   "phases": {
     "main": {
       "phase": "main",
@@ -57,7 +57,7 @@
         {
           "name": "editor keystrokes are observed (document.change or document.edits)",
           "pass": true,
-          "detail": "document.change=0 document.edits=10"
+          "detail": "document.change=0 document.edits=5"
         },
         {
           "name": "file written outside the editor is observed (watcher snapshot)",
@@ -87,7 +87,7 @@
         {
           "name": "task npm test exit codes observed (pass then fail)",
           "pass": true,
-          "detail": "exit=0,1"
+          "detail": "exit=0,1; failing edit applied: true"
         },
         {
           "name": "passing task classified validation.test.passed",
@@ -102,7 +102,7 @@
         {
           "name": "terminal command start/finish observed",
           "pass": true,
-          "detail": "exit=0 started=3 finished=3"
+          "detail": "exit=0 started=3 finished=2"
         },
         {
           "name": "terminal command text NOT recorded by default",
@@ -153,7 +153,7 @@
         {
           "name": "journal preserves per-session event order",
           "pass": true,
-          "detail": "inversions=0 of 70"
+          "detail": "inversions=0 of 67"
         },
         {
           "name": "public Stage APIs never contain typed text or file paths",
@@ -172,49 +172,49 @@
         }
       ],
       "measurements": {
-        "workspaceUri": "file:///c%3A/Users/RUNNER~1/AppData/Local/Temp/cr-vscode-qual-XlNxh5/workspace/sample-app",
+        "workspaceUri": "file:///c%3A/Users/RUNNER~1/AppData/Local/Temp/cr-vscode-qual-LBRjVH/workspace/sample-app",
         "captureOff": {
           "keystroke": {
             "n": 275,
-            "p50": 13.26,
-            "p95": 54.01,
-            "p99": 161.13,
-            "max": 251.03
+            "p50": 4.94,
+            "p95": 50.19,
+            "p99": 143.95,
+            "max": 200.98
           },
           "eventLoopDelayMs": {
-            "p50": 3.77,
-            "p99": 113.9,
-            "max": 251
+            "p50": 2.23,
+            "p99": 91.82,
+            "max": 173.93
           },
-          "cpuMsPerKeystroke": 8.924,
+          "cpuMsPerKeystroke": 4.433,
           "outboxBatchFilesWritten": 0
         },
         "captureOn": {
           "keystroke": {
             "n": 294,
-            "p50": 11.02,
-            "p95": 25.23,
-            "p99": 144.62,
-            "max": 149.18
+            "p50": 3.3,
+            "p95": 11.87,
+            "p99": 108.02,
+            "max": 156.01
           },
           "eventLoopDelayMs": {
-            "p50": 3.57,
-            "p99": 29.34,
-            "max": 140.25
+            "p50": 1.71,
+            "p99": 13.49,
+            "max": 155.19
           },
-          "cpuMsPerKeystroke": 6.01,
-          "outboxBatchFilesWritten": 3
+          "cpuMsPerKeystroke": 2.548,
+          "outboxBatchFilesWritten": 1
         },
-        "extensionHostRssMB": 250.4,
+        "extensionHostRssMB": 223.3,
         "journal": {
-          "events": 82,
+          "events": 79,
           "duplicates": 0,
-          "bytes": 28760
+          "bytes": 27551
         },
         "receiverRssMB": null
       },
       "notes": [],
-      "projectId": "722b25f8e49ff627e2d42050f19853c5f883e7c1f3a8759b894b16ef27aeca41",
+      "projectId": "772aab509c74d2450bb562c302483f64aaa0e1cf7d1c3afa86a75860033f227e",
       "persistedWorkspaceState": {}
     },
     "resume": {
@@ -227,7 +227,7 @@
         {
           "name": "capture resumes after a normal VS Code restart, with no prompt (new session + baseline)",
           "pass": true,
-          "detail": "{\"session\":\"bd58781e-558b-4346-af57-e9890eaf949e\",\"kinds\":[\"workspace.started\",\"project.baseline\",\"document.snapshot\"]}"
+          "detail": "{\"session\":\"f13037b6-cbcc-43df-8aac-ebd2a252ba81\",\"kinds\":[\"workspace.started\",\"project.baseline\",\"document.snapshot\"]}"
         }
       ],
       "notes": []
@@ -235,7 +235,7 @@
   },
   "vsixInstall": {
     "exitCode": 0,
-    "output": "Installing extensions...\nExtension 'code-resonance.vsix' was successfully installed.\n(node:2696) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `Code --trace-deprecation ...` to show where the warning was created)",
+    "output": "Installing extensions...\nExtension 'code-resonance.vsix' was successfully installed.\n(node:1764) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `Code --trace-deprecation ...` to show where the warning was created)",
     "listed": "zerobandwidth.code-resonance@0.3.0"
   }
 }

@@ -1,0 +1,178 @@
+{
+ "at": "2026-10-24T22:35:25.059Z",
+ "gpu": "amd",
+ "note": "Local soak runs not completed: the first ran into the machine sound server stalling at about 70 minutes (recordings after it are environment-affected); the second was stopped at 24 minutes by decision. Samples once a minute.",
+ "runs": [
+  {
+   "run": "overnight run, interrupted at the sound server stall (PulseAudio output)",
+   "minutes": 110.3,
+   "samples": 104,
+   "events": {
+    "produced": 3869,
+    "accepted": 3869,
+    "outbox": 0,
+    "postFailures": 2
+   },
+   "fps": {
+    "Stellar Forge": 57.8,
+    "Cymatic Field (world pack)": 60.2,
+    "Blueprint Cathedral (shader pack)": 60.2,
+    "Fractal Biosphere": 41.9,
+    "Construct": 55.7,
+    "Ember Observatory (declarative)": 56.6
+   },
+   "heapMB": {
+    "min": 2.1,
+    "max": 81.5
+   },
+   "rendererMB": {
+    "first": 184,
+    "last": 577
+   },
+   "gpuMB": {
+    "first": 262,
+    "last": 349
+   },
+   "nodeMB": {
+    "first": 205,
+    "last": 263
+   },
+   "notices": [],
+   "geometries": [
+    "Stellar Forge:20",
+    "Cymatic Field (world pack):13",
+    "Blueprint Cathedral (shader pack):16",
+    "Blueprint Cathedral (shader pack):17",
+    "Fractal Biosphere:14",
+    "Construct:14",
+    "Ember Observatory (declarative):20"
+   ],
+   "recordings": [
+    {
+     "minute": 4.1,
+     "world": "Stellar Forge",
+     "fps": 29.59,
+     "sound": 60,
+     "video": 59.915,
+     "gaps": 1,
+     "pilotGapMs": 0,
+     "syncMaxMs": 48
+    },
+    {
+     "minute": 16.1,
+     "world": "Cymatic Field (world pack)",
+     "fps": 29.99,
+     "sound": 60,
+     "video": 59.977,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": 20
+    },
+    {
+     "minute": 28.1,
+     "world": "Blueprint Cathedral (shader pack)",
+     "fps": 30,
+     "sound": 60,
+     "video": 59.975,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": 36
+    },
+    {
+     "minute": 64.1,
+     "world": "Stellar Forge",
+     "fps": 29.18,
+     "sound": 60,
+     "video": 59.902,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": 13
+    },
+    {
+     "minute": 76.1,
+     "world": "Cymatic Field (world pack)",
+     "fps": 30,
+     "sound": 0.24,
+     "video": 43.131,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": null
+    },
+    {
+     "minute": 88.1,
+     "world": "Blueprint Cathedral (shader pack)",
+     "fps": 30,
+     "sound": 0.24,
+     "video": 46.497,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": null
+    }
+   ]
+  },
+  {
+   "run": "final run (Chromium audio output), stopped early",
+   "minutes": 24.1,
+   "samples": 23,
+   "events": {
+    "produced": 1061,
+    "accepted": 1061,
+    "outbox": 0,
+    "postFailures": 1
+   },
+   "fps": {
+    "Stellar Forge": 59.3,
+    "Cymatic Field (world pack)": 60.2,
+    "Blueprint Cathedral (shader pack)": 60.2
+   },
+   "heapMB": {
+    "min": 5,
+    "max": 17.2
+   },
+   "rendererMB": {
+    "first": 169,
+    "last": 342
+   },
+   "gpuMB": {
+    "first": 261,
+    "last": 285
+   },
+   "nodeMB": {
+    "first": 205,
+    "last": 241
+   },
+   "audioClock": [
+    0.999,
+    1
+   ],
+   "notices": [],
+   "geometries": [
+    "Stellar Forge:20",
+    "Cymatic Field (world pack):13",
+    "Blueprint Cathedral (shader pack):16"
+   ],
+   "recordings": [
+    {
+     "minute": 4.1,
+     "world": "Stellar Forge",
+     "fps": 28.35,
+     "sound": 60,
+     "video": 59.901,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": 172
+    },
+    {
+     "minute": 16.1,
+     "world": "Cymatic Field (world pack)",
+     "fps": 29.99,
+     "sound": 60,
+     "video": 59.982,
+     "gaps": 0,
+     "pilotGapMs": 0,
+     "syncMaxMs": 20
+    }
+   ]
+  }
+ ]
+}

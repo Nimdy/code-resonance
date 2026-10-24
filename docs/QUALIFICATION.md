@@ -417,7 +417,10 @@ timeout (one failure, the "receiver test" seen before). After the fix (`tests/he
   `vscode.Uri.file()` for a Windows path, the outbox queueing on disk and draining across a receiver outage, event
   order, privacy, and capture resuming after a normal VS Code restart without a prompt
   (`results/platform/vscode-qualification-windows.json`). Two Windows-only harness fixes were needed (Node runs
-  `code.cmd` only through the shell; Windows locks VS Code's files while it exits).
+  `code.cmd` only through the shell; Windows locks VS Code's files while it exits). Three runs: 32/32, then 29/32 (the
+  offline-period file reached the journal after the check looked, a race in the harness now fixed by waiting for it;
+  and once the deliberately failing `npm test` task reported exit code 0, not explained: the check now records that its
+  failing edit was applied), then 32/32 again with the edit confirmed applied.
 - **WSL2 → Windows:** documented in `docs/WSL.md` with a reproducible check; not run from the Windows side (no interop
   here, and nothing is run on the owner's desktop without permission).
 - **OBS Studio** (`obs/obs.qual.js`, in a disposable GitHub runner: OBS 32.2.0 from the official PPA, obs-websocket
@@ -436,7 +439,27 @@ timeout (one failure, the "receiver test" seen before). After the fix (`tests/he
 
 ### Soak
 
-PENDING: soak results.
+`visual/soak.qual.js`: the live player with sound at 1920×1080 on the AMD integrated GPU while a synthetic session posts
+events every 3 s through the receiver's real API; every hour the three built-in families, Cymatic Field, Blueprint
+Cathedral, Ember Observatory and the Construct, a 12-minute pause, three one-minute recordings; a receiver restart at 90
+minutes. **No local run reached its three hours** (`results/soak/soak-partial-amd.json`):
+
+- **Overnight run, 110 minutes**, stopped when this machine's sound server stalled at about 70 minutes (see *Sound lost
+  while recording*; the recordings after it are environment-affected). Events: 3,869 produced, 3,869 stored, none lost,
+  including across the receiver restart at minute 90, which happened while the shader pack ran: it was not stopped, and
+  the two posts refused during the outage were retried. No pack was stopped by the watchdog; no page errors. Frame rates
+  steady per world (Cymatic Field and Blueprint Cathedral 60 fps; built-in families 40-60). Page JS heap 2-82 MB (garbage
+  collected, no trend); GPU objects constant per world; the GPU process 262 → 349 MB; **the renderer processes grew from
+  184 to 577 MB**, more slowly in the second hour (+260 MB in the first, about +105 MB in the second). Whether this levels
+  off (allocator high-water marks after recordings and world switches) or keeps growing is not established.
+- **Final run, 24 minutes** (Chromium's own audio output, final code), stopped by decision: 1,061 of 1,061 events
+  stored, the music's audio clock at 1.00× real time in every sample, 56-60 fps, no pack stopped, no page errors; two
+  recordings with the full 60 s of sound, no frame gap, no pilot gap; one marker paired at 172 ms in the Stellar Forge
+  recording (the others within 48 ms), not investigated. Renderer processes 169 → 342 MB in those 24 minutes.
+- **CI, one hour** (4-vCPU software renderer, 1920×1080, before the CI options): every event stored exactly once (2,102),
+  page heap, DOM, GPU objects and process memory flat over the hour, sound continuous, no page errors; the shader pack
+  fell under 1 fps at 1080p there and was stopped by the watchdog, as designed. The CI soak now runs at 1280×720 with a
+  fixed lower level.
 
 ## Not verified
 
@@ -448,7 +471,8 @@ PENDING: soak results.
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
-- Multi-hour real development sessions (PENDING: soak).
+- A completed multi-hour soak (local runs reached 110 and 24 minutes; CI one hour), multi-hour real development sessions,
+  and whether the renderer processes' memory growth seen in the soak levels off.
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - AI agents other than Claude Code.
