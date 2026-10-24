@@ -30,8 +30,8 @@ function connect(port){
     ws.onmessage=e=>{const m=JSON.parse(e.data);
       if(m.op===0)ws.send(JSON.stringify({op:1,d:{rpcVersion:1,eventSubscriptions:(1<<16)|0x7FF}}));
       else if(m.op===2){clearTimeout(timer);resolve({
-        request:(requestType,requestData={})=>new Promise((res,rej)=>{const requestId=String(++id);pending.set(requestId,{res,rej});ws.send(JSON.stringify({op:6,d:{requestType,requestId,requestData}}));
-          setTimeout(()=>{if(pending.delete(requestId))rej(new Error(`${requestType}: no answer`));},30000);}),
+        request:(requestType,requestData={},timeout=30000)=>new Promise((res,rej)=>{const requestId=String(++id);pending.set(requestId,{res,rej});ws.send(JSON.stringify({op:6,d:{requestType,requestId,requestData}}));
+          setTimeout(()=>{if(pending.delete(requestId))rej(new Error(`${requestType}: no answer in ${timeout/1000} s`));},timeout);}),
         on:f=>listeners.push(f),close:()=>ws.close()});}
       else if(m.op===7){const p=pending.get(m.d.requestId);if(!p)return;pending.delete(m.d.requestId);
         m.d.requestStatus.result?p.res(m.d.responseData||{}):p.rej(new Error(`${m.d.requestType}: ${m.d.requestStatus.code} ${m.d.requestStatus.comment||''}`));}
@@ -40,7 +40,9 @@ function connect(port){
 }
 function obsConfig(home,port,recordings){
   const cfg=path.join(home,'obs-studio');
-  const general=`[General]\nFirstRun=false\nLastVersion=520093696\nEnableAutoUpdates=false\nConfirmOnExit=false\n[BasicWindow]\nSysTrayEnabled=false\nSysTrayWhenStarted=false\n`;
+  // This machine has no GPU: OBS's browser renders in software (Browser Source Hardware Acceleration off), as headless
+  // Chromium does. On a streaming machine with a GPU the default (on) applies.
+  const general=`[General]\nFirstRun=false\nLastVersion=520093696\nEnableAutoUpdates=false\nConfirmOnExit=false\nBrowserHWAccel=false\n[BasicWindow]\nSysTrayEnabled=false\nSysTrayWhenStarted=false\n`;
   fs.mkdirSync(path.join(cfg,'basic','profiles','Qualification'),{recursive:true});fs.mkdirSync(path.join(cfg,'basic','scenes'),{recursive:true});
   // OBS up to 30 reads global.ini, 31 and later user.ini: both are written.
   for(const f of ['global.ini','user.ini'])fs.writeFileSync(path.join(cfg,f),general+`[Basic]\nProfile=Qualification\nProfileDir=Qualification\nSceneCollection=Qualification\nSceneCollectionFile=Qualification\n`);
@@ -82,10 +84,10 @@ function obsConfig(home,port,recordings){
     const source='Code Resonance',overlay=`${url}/?overlay=1&sound=1&project=${projectId}&world=living`;
     await client.request('CreateInput',{sceneName:scene,inputName:source,inputKind:'browser_source',inputSettings:{url:overlay,width:1280,height:720,fps:30,fps_custom:true,reroute_audio:true,shutdown:false,restart_when_active:false},sceneItemEnabled:true});
     check('the player overlay added as a Browser Source (audio controlled by OBS)',true,overlay.replace(projectId,'<project>'));
-    await wait(25000);
+    await wait(40000);
     // Screenshots of the source: rendering, not black, moving.
     const shots=[];
-    for(let i=0;i<4;i++){const s=await client.request('GetSourceScreenshot',{sourceName:source,imageFormat:'png',imageWidth:640});
+    for(let i=0;i<4;i++){const s=await client.request('GetSourceScreenshot',{sourceName:source,imageFormat:'png',imageWidth:640},90000);
       const file=path.join(OUT,`obs-source-${i}.png`);fs.writeFileSync(file,Buffer.from(s.imageData.split(',')[1],'base64'));
       const f=media.frames(file)[0];shots.push({file:path.basename(file),luma:f?.luma??null,sum:f?.sum??null});await wait(4000);}
     measurements.screenshots=shots;
@@ -111,7 +113,9 @@ function obsConfig(home,port,recordings){
     try{const logs=path.join(cfg,'logs'),last=fs.readdirSync(logs).sort().at(-1),text=fs.readFileSync(path.join(logs,last),'utf8');
       fs.writeFileSync(path.join(OUT,'obs.log'),text);
       measurements.log={renderer:(/Loading up OpenGL on adapter (.*)/.exec(text)||[])[1]||null,opengl:(/OpenGL loaded successfully, version (.*)/.exec(text)||[])[1]||null,
-        cef:(/CEF Version: (.*)|obs-browser.*?(\d+\.\d+\.\d+[^\s]*)/.exec(text)||[])[0]||null};}catch{}
+        cef:(/CEF Version ([^\s]+)/.exec(text)||[])[1]||null,browserHardwareAcceleration:(/Browser Hardware Acceleration: (\w+)/.exec(text)||[])[1]||null,
+        // What the overlay page logged inside OBS's browser (its console errors).
+        overlayErrors:text.split('\n').filter(l=>/\[obs-browser: 'Code Resonance'\] Error/.test(l)).map(l=>l.replace(/^[\d:.]+: /,'').slice(0,240)).slice(0,20)};}catch{}
     await svc.stop();fs.rmSync(root,{recursive:true,force:true});
   }
   fs.writeFileSync(path.join(OUT,'obs-qualification.json'),JSON.stringify({at:new Date().toISOString(),environment:'isolated CI virtual machine (Xvfb, software OpenGL)',checks,measurements},null,2));

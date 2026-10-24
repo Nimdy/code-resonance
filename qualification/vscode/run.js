@@ -20,6 +20,8 @@ delete process.env.XDG_RUNTIME_DIR;delete process.env.WAYLAND_DISPLAY;
 
 // Native Windows: the home directory is USERPROFILE (os.homedir), Python is `python`, there are no process groups.
 const WIN=process.platform==='win32',PY=WIN?'python':'python3';
+// The VS Code CLI is code.cmd on Windows: Node runs .cmd files only through the shell (arguments quoted).
+const cliRun=(cli,args,opts)=>WIN?cp.spawnSync(`"${cli}"`,args.map(a=>`"${a}"`),{...opts,shell:true}):cp.spawnSync(cli,args,opts);
 const killTree=pid=>{try{if(WIN)cp.execFileSync('taskkill',['/pid',String(pid),'/T','/F'],{stdio:'ignore'});else process.kill(-pid,'SIGKILL');}catch{}};
 const log=(...a)=>console.log(`[qual ${new Date().toISOString().slice(11,19)}]`,...a);
 function freePort(){return new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const {port}=s.address();s.close(()=>resolve(port));});s.on('error',reject);});}
@@ -101,7 +103,7 @@ async function main(){
   const [cli,...defaults]=resolveCliArgsFromVSCodeExecutablePath(vscodePath);
   const cliArgs=defaults.filter(a=>!/^--(extensions-dir|user-data-dir)=/.test(a));
   const report={startedAt:new Date().toISOString(),extensionRef:process.env.CR_QUAL_EXTENSION_REF||'working-tree',vscode:{executable:vscodePath},root,port,phases:{}};
-  report.vscode.version=cp.execFileSync(cli,[...cliArgs,'--version'],{encoding:'utf8',timeout:60000}).split('\n')[0];
+  report.vscode.version=cliRun(cli,[...cliArgs,'--version'],{encoding:'utf8',timeout:60000}).stdout.split('\n')[0];
   log(`VS Code ${report.vscode.version} at ${vscodePath}; workspace ${dirs.workspace}`);
 
   // 1) The packaged VSIX installs through the real VS Code CLI.
@@ -109,8 +111,8 @@ async function main(){
   cp.execFileSync(process.execPath,[path.join(REPO,'scripts/package-vsix.js'),vsix],{stdio:'pipe'});
   const vsixExtDir=path.join(root,'vsix-install-check');
   log('installing packaged VSIX through the VS Code CLI');
-  const install=cp.spawnSync(cli,[...cliArgs,'--extensions-dir',vsixExtDir,'--user-data-dir',path.join(root,'vsix-user'),'--install-extension',vsix],{encoding:'utf8',timeout:120000});
-  const listed=cp.spawnSync(cli,[...cliArgs,'--extensions-dir',vsixExtDir,'--user-data-dir',path.join(root,'vsix-user'),'--list-extensions','--show-versions'],{encoding:'utf8',timeout:60000});
+  const install=cliRun(cli,[...cliArgs,'--extensions-dir',vsixExtDir,'--user-data-dir',path.join(root,'vsix-user'),'--install-extension',vsix],{encoding:'utf8',timeout:120000});
+  const listed=cliRun(cli,[...cliArgs,'--extensions-dir',vsixExtDir,'--user-data-dir',path.join(root,'vsix-user'),'--list-extensions','--show-versions'],{encoding:'utf8',timeout:60000});
   log(`VSIX install exit ${install.status}${install.error?` (${install.error.message})`:''}; listed ${listed.stdout.trim()||'(none)'}`);
   report.vsixInstall={exitCode:install.status,output:(install.stdout+install.stderr).trim(),listed:listed.stdout.trim()};
 

@@ -25,8 +25,12 @@
   (`platform/smoke.js`), unit-suite stress runner (`unit-stress.js`). CI: reference packs, runtime and native Windows in
   the required tier; an extended tier by label.
 - **First run:** `npm run doctor`, `docs/FIRST-RUN.md` (with troubleshooting), `docs/WSL.md`, `docs/OBS.md`.
-- **Fixes:** turning sound off while recording threw (a removed variable); a pack's stop reason was lost when the
-  identity without it loaded; the mood was posted to packs every frame (now on change).
+- **Fixes:** a receiver restart stopped a running pack ("removed") and, rebuilding the world while the receiver was
+  down, the player gave up the living world for the Construct for good (network failures now retry); turning sound off
+  while recording threw (a removed variable); a recording started during a world switch could take a hidden canvas's
+  size (320×180); a pack's stop reason was lost when the identity without it loaded; the mood was posted to packs every
+  frame (now on change); the two intermittent `npm test` failures (a planted secret colliding with random hex ids;
+  cleanup hooks removing a receiver's directory before stopping it).
 
 ## Unreleased — The Construct (candidate for visual review)
 

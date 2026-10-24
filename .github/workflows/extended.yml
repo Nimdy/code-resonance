@@ -1,7 +1,8 @@
 name: extended-qualification
 # The expensive tier, not required on every push: it costs about 4 runner-hours (Windows minutes count double).
-# Runs when a pull request carries the label `extended-qualification` (add the label to run it; new pushes re-run it
-# while the label stays), weekly on main, and by hand on main.
+# Runs when a pull request carries the label `extended-qualification` (every job), or `extended:<job>` for one job (e.g.
+# `extended:obs`, to re-run just that one after a fix); new pushes re-run them while the labels stay. Also weekly on main
+# and by hand on main.
 #   packs-full       each reference pack through the full compatibility tests (90 s idle, determinism, 4 switches, 1080p)
 #   runtime-full     the full robustness suite (context loss, hostile probe and flood, revocation, modified files,
 #                    navigation, hidden tab, film timeout) and live recording (lifecycle, a 3-minute recording)
@@ -18,7 +19,7 @@ on:
   workflow_dispatch:
 jobs:
   packs-full:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:packs-full')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -42,7 +43,7 @@ jobs:
           name: pack-full-${{ matrix.pack }}
           path: qualification/results/visual/pack-*.json
   runtime-full:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:runtime-full')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
@@ -56,7 +57,8 @@ jobs:
       - run: npm ci
       - run: npx playwright-core install --with-deps chromium
       - run: node visual/robustness.qual.js
-      - run: node visual/recording.qual.js
+      # The software renderer cannot meet real-hardware frame rates: mechanism thresholds, a fixed lower rendering level.
+      - run: node visual/recording.qual.js --mechanism --quality 3 --long 120
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -66,7 +68,7 @@ jobs:
             qualification/results/recording/*.json
             qualification/results/recording/*.jpg
   history:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:history')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     defaults:
@@ -87,7 +89,7 @@ jobs:
           name: history
           path: qualification/results/visual/history-qualification.json
   soak:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:soak')
     runs-on: ubuntu-latest
     timeout-minutes: 100
     defaults:
@@ -107,7 +109,7 @@ jobs:
           name: soak
           path: qualification/results/soak
   windows-browser:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:windows-browser')
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
@@ -132,7 +134,7 @@ jobs:
             qualification/results/visual/pack-*.json
             qualification/results/recording/*.json
   windows-vscode:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:windows-vscode')
     runs-on: windows-latest
     timeout-minutes: 40
     defaults:
@@ -151,7 +153,7 @@ jobs:
           name: windows-vscode
           path: qualification/results
   obs:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:obs')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:

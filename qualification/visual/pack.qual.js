@@ -195,10 +195,14 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
         await page.goto(`http://127.0.0.1:${svc.port}/?overlay=1&labels=off&project=${project}&world=living${query}`);
         await page.waitForFunction(()=>window.__worldStats?.()?.drawCalls>0,null,{timeout:90000});
         await page.waitForTimeout(label==='adaptive'?14000:4000);
-        const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(QUICK?4000:8000);const b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));
+        const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(QUICK?4000:8000);let b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));
+        // A machine far too slow for this world (a software renderer at 1080p) makes the watchdog stop the pack (under
+        // 1 fps for 20 s): the last statistics are used and the stop is reported.
+        const stopped=await page.evaluate(()=>document.getElementById('dnaNotice')?.textContent||'');
+        const lost=!b.s||(a.s?.rendered!==undefined&&b.s.rendered===undefined);if(lost)b={s:a.s,t:a.t};
         // Frame rate where the world renders: the pack frame counts its frames; the in-page host is measured by rAF.
-        const fps=b.s.rendered!==undefined?(b.s.rendered-a.s.rendered)/((b.s.now-a.s.now)/1000):await page.evaluate(()=>new Promise(r=>{let n=0;const s=performance.now();const f=()=>{n++;performance.now()-s<6000?requestAnimationFrame(f):r(n/6);};requestAnimationFrame(f);}));
-        const s=b.s;measurements.performance[label]={fps:+fps.toFixed(1),quality:s.quality,drawCalls:s.drawCalls,passes:s.passes,triangles:s.triangles,points:s.points,updateMs:s.updateMs,drawMs:s.drawMs,gpuMs:s.gpuMs??null,geometries:s.geometries,textures:s.textures,programs:s.programs,errors:errors.slice(0,2)};
+        const fps=lost?0:b.s.rendered!==undefined?(b.s.rendered-a.s.rendered)/((b.s.now-a.s.now)/1000):await page.evaluate(()=>new Promise(r=>{let n=0;const s=performance.now();const f=()=>{n++;performance.now()-s<6000?requestAnimationFrame(f):r(n/6);};requestAnimationFrame(f);}));
+        const s=b.s;measurements.performance[label]={stoppedByWatchdog:lost?stopped:null,fps:+fps.toFixed(1),quality:s.quality,drawCalls:s.drawCalls,passes:s.passes,triangles:s.triangles,points:s.points,updateMs:s.updateMs,drawMs:s.drawMs,gpuMs:s.gpuMs??null,geometries:s.geometries,textures:s.textures,programs:s.programs,errors:errors.slice(0,2)};
         await page.close();
       }
       const p=measurements.performance.full,budget=(m.world||m.shader||{}).budget||{drawCalls:40,passes:40,triangles:2000000,points:500000,updateMs:8};
@@ -206,7 +210,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       check('performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)',!over.length,
         over.length?over.map(([k,v])=>`${k} ${v} > ${budget[k]}`).join(', '):`${p.drawCalls} draw calls, ${p.passes} passes, ${p.triangles} triangles, ${p.points} points, update ${p.updateMs} ms`);
       const adaptive=measurements.performance.adaptive;
-      check('performance: frame rate, GPU time and adaptive quality measured',p.fps>0,`${p.fps} fps full quality (GPU ${p.gpuMs===null?'time not exposed by this driver':`${p.gpuMs} ms per frame`})${adaptive?`, ${adaptive.fps} fps adaptive (level ${adaptive.quality})`:''} on ${measurements.renderer}`);
+      check('performance: frame rate, GPU time and adaptive quality measured',p.fps>0||!!p.stoppedByWatchdog,`${p.stoppedByWatchdog?`at full quality this machine is too slow: the watchdog stopped the pack (“${p.stoppedByWatchdog}”)`:`${p.fps} fps full quality`} (GPU ${p.gpuMs===null?'time not exposed by this driver':`${p.gpuMs} ms per frame`})${adaptive?`, ${adaptive.fps} fps adaptive (level ${adaptive.quality})`:''} on ${measurements.renderer}`);
       check('no page errors in the live player',!p.errors.length&&!adaptive?.errors.length,[...p.errors,...(adaptive?.errors||[])].join(' | '));
     });
   }finally{await browser.close();}
