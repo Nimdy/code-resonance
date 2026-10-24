@@ -33,6 +33,8 @@ function analyse(file,{expectAudio=true}={}){
     out.videoDuration=+(f.at(-1).t-f[0].t).toFixed(3);out.fps=+((f.length-1)/out.videoDuration).toFixed(2);
     out.frameInterval={median:+(q(.5)*1000).toFixed(1),p95:+(q(.95)*1000).toFixed(1),max:+(sorted.at(-1)*1000).toFixed(1)};
     out.longGaps=iv.filter(x=>x>.25).length;
+    // Where the long gaps are (seconds into the video, and their length), the first ten.
+    out.gapsAt=f.slice(1).map((x,i)=>({t:+f[i].t.toFixed(2),ms:Math.round((x.t-f[i].t)*1000)})).filter(g=>g.ms>250).slice(0,10);
     // Share of frames whose picture differs from the previous one (a frozen picture repeats its checksum).
     out.changingFrames=+(f.slice(1).filter((x,i)=>x.sum!==f[i].sum).length/(f.length-1)).toFixed(3);
     out.meanLuma=+(f.reduce((a,x)=>a+x.luma,0)/f.length).toFixed(1);

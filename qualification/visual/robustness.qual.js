@@ -72,7 +72,7 @@ async function afterStop(label,page,svc,project,family,{expect,watchMs=12000}){
       {
         const {page,errors}=await playerPage(browser,svc,project);
         try{
-          await page.evaluate(PACING);await worldReady(page,fixture('slow-world'));
+          await page.evaluate(PACING);await worldReady(page,fixture('slow-world'));await page.evaluate(()=>window.__qual.replayFromStart());
           const from=(await state(page)).now,samples=[],seconds=QUICK?12:20;
           for(let i=0;i<seconds;i++){await wait(1000);const s=await state(page);const t=s.stats?.transport;
             samples.push({t:i+1,inFlight:t?.inFlight,queue:t?.queue,maxQueue:t?.maxQueue,sent:t?.sent,skippedHere:t?.skippedHere,skippedInFrame:t?.skippedInFrame,latencyMs:t?.latencyMs,

@@ -632,7 +632,10 @@
     }else if(selectedWorld==='construct'&&construct){g2.drawImage($('construct'),0,0,w,h);drawCaption(g2,w,h,now);}
     else g2.drawImage(canvas,0,0,w,h);
     // Qualification (?qual=1): a white flash at marked performance times, to measure picture/sound synchronisation.
-    for(let i=flashes.length-1;i>=0;i--){const age=(now-flashes[i])/replaySpeed();if(age>=0&&age<120){g2.fillStyle='#fff';g2.fillRect(0,0,w,h);}if(age>2000)flashes.splice(i,1);}
+    // A flash lasts 120 ms and at least three presented frames however slowly frames come (a slow machine's capture may
+    // keep only every other frame); synchronisation is measured from its first frame.
+    for(let i=flashes.length-1;i>=0;i--){const f=flashes[i],age=(now-f.at)/replaySpeed();
+      if(age>=0&&(age<120||f.shown<3)){g2.fillStyle='#fff';g2.fillRect(0,0,w,h);f.shown++;}if(age>2000)flashes.splice(i,1);}
   }
   function drawCaption(g2,w,h,t){
     const age=(t-caption.at)/Math.max(1,filmSpeed);
@@ -847,10 +850,12 @@
   if(params.has('qual'))window.__qual={
     record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
-    marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push(at);return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
+    marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
-    action:a=>recipeAction(a),setWorld:w=>setWorld(w)};
+    action:a=>recipeAction(a),setWorld:w=>setWorld(w),
+    // Replay from the beginning (a recording then covers the same moments however long the world took to load).
+    replayFromStart(){if(mode!=='replay'||!replay)return false;seek(history().start);playback=true;replayClock=performance.now();$('playBtn').textContent='Ⅱ';return true;}};
   if(FILM){
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
     document.body.classList.add('overlay');mode='replay';
