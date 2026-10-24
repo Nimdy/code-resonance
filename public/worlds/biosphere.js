@@ -427,7 +427,7 @@ export function createFamily(ctx){
       case 'validation.passed':return {text:`Tests pass · ${plural(n,'branch').replace('branchs','branches')} glow`,sub:'observed passing run',position:pos,color:'#9dffcf'};
       case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'branch').replace('branchs','branches')} green again`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
       case 'refactor.validated':return {text:'Refactor validated · the organism reshapes',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
-      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`A fractal bloom · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
+      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'glow-wave':'A glow wave',regreen:'Regreening',metamorphosis:'Metamorphosis'})[c.effect]||'A fractal bloom'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · spores of ${plural(n,'branch').replace('branchs','branches')} rise`:'Committed · the growth is set',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The ecosystem grows · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(2)};
       default:return null;}}

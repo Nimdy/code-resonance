@@ -59,6 +59,11 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const director=createDirector({recipe,intensity:recipe.overrides?.intensity??1}),agents=createAgents();
   const history=createHistory({step:i=>{agents.record(i);return director.process(i);},snapshot:()=>({d:director.snapshot(),a:agents.snapshot()}),restore:x=>{director.restore(x.d);agents.restore(x.a);}});
   const timing={update:0,draw:0},calls={scene:0,total:0,triangles:0,points:0},expressed={};
+  // GPU time of the whole frame (background, scene, post, bloom, grade) where the driver offers timer queries; results
+  // arrive a few frames later and feed a moving average. Null when unsupported (SwiftShader, many drivers).
+  const gl=renderer.getContext(),timer=gl.getExtension('EXT_disjoint_timer_query_webgl2'),queries=[];let gpuMs=null;
+  function gpuPoll(){while(queries.length&&gl.getQueryParameter(queries[0],gl.QUERY_RESULT_AVAILABLE)){const q=queries.shift(),ns=gl.getQueryParameter(q,gl.QUERY_RESULT);gl.deleteQuery(q);
+    if(!gl.getParameter(timer.GPU_DISJOINT_EXT)){const ms=ns/1e6;gpuMs=gpuMs===null?ms:gpuMs+(ms-gpuMs)*.1;}}}
   const contextFor=next=>({THREE,renderer,scene,camera,model,recipe:next,get director(){return director;},get agents(){return agents;},pipeline,film,
     speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id)});
   // A shader pack's slots: shared uniforms (time, beat, energy, palette, camera) plus the pack's own values.
@@ -116,11 +121,13 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     world.afterCamera?.(info);
     if(ext)updateExtension(info);
     const drawn=performance.now();
+    let query=null;if(timer){gpuPoll();if(queries.length<6){query=gl.createQuery();gl.beginQuery(timer.TIME_ELAPSED_EXT,query);}}
     const backgroundMaterial=ext?.background||(world.background?world.background(info):null);
     const bg=backgroundMaterial?pipeline.renderBackground(backgroundMaterial):null;
     pipeline.render(()=>{if(bg)pipeline.drawBackdrop(bg);const before=renderer.info.render.calls;renderer.render(scene,camera);
       calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(world.grade?.(info)||{},current.genome.technique)});
     calls.total=renderer.info.render.calls;
+    if(query){gl.endQuery(timer.TIME_ELAPSED_EXT);queries.push(query);}
     if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);}
     timing.update+=(drawn-began-timing.update)*.1;timing.draw+=(performance.now()-drawn-timing.draw)*.1;
   }
@@ -152,7 +159,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:history.count,history:history.stats(),
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
       quality:level,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
-      programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2)};},
-    dispose(){disposeExtension();world?.dispose();pipeline.dispose();renderer.dispose();}
+      programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2)};},
+    dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);world?.dispose();pipeline.dispose();renderer.dispose();}
   };
 }
