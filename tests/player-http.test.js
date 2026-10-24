@@ -1,21 +1,20 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const os=require('node:os'),path=require('node:path'),fs=require('node:fs/promises');
-const {createService}=require('../receiver/server');
+const path=require('node:path'),fs=require('node:fs/promises');
+const {tempDir,startService}=require('./helpers');
 const {sha}=require('../receiver/protocol');
 const projectId=sha('viewer-security');
 test('Standalone assets, OBS mode, derived performance API and privacy boundary',async t=>{
- const directory=await fs.mkdtemp(path.join(os.tmpdir(),'resonance-player-'));
- t.after(()=>fs.rm(directory,{recursive:true,force:true}));
- const service=await createService({port:0,dataDir:directory,sortIntervalMs:600000}).start();
- t.after(()=>service.stop());
+ const directory=tempDir(t,'resonance-player-');
+ const service=await startService(t,{port:0,dataDir:directory,sortIntervalMs:600000});
  const url=`http://127.0.0.1:${service.port}`;
- const requests=await Promise.all(['/', '/app.js','/music.js','/score.js','/style.css','/?overlay=1'].map(p=>fetch(url+p)));
+ const requests=await Promise.all(['/', '/app.js','/music.js','/score.js','/style.css','/?overlay=1','/recording.js'].map(p=>fetch(url+p)));
  for(const r of requests)assert.equal(r.status,200);
  const document=await requests[0].text(),js=await requests[1].text();
  assert.match(document,/CODE.*RESONANCE/);
  assert.match(document,/data-world="city"/);assert.match(document,/id="musicStyle"/);
- assert.match(js,/drawNebula/);assert.match(js,/MediaRecorder/);
+ assert.match(js,/drawNebula/);assert.match(js,/ResonanceRecording/);
+ assert.match(await requests[6].text(),/MediaRecorder[\s\S]*captureStream/);
  const secret='DO_NOT_EXPOSE_ME_IN_THE_PUBLIC_GRAPH_OR_EXPORT';
  const evt={id:'viewer-security-01',projectId,sessionId:'case',kind:'document.snapshot',origin:'test',ts:1750000000000,
    file:'src/internal.ts',content:`export const hidden = "${secret}";`,meta:{reason:'edit'}};

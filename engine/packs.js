@@ -11,7 +11,7 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {compile}=require('./schema');
 const catalog=require('./catalog');
-const SDK_VERSION='1.0.0';
+const SDK_VERSION='1.1.0';
 const SCHEMA=JSON.parse(fs.readFileSync(path.join(__dirname,'../packs/schema/pack.schema.json'),'utf8'));
 const validateSchema=compile(SCHEMA);
 const FILE=new RegExp(SCHEMA.$defs.file.pattern,'u');
@@ -155,11 +155,17 @@ function setTrust(id,dataDir,{digest=null,trusted=true,now=Date.now()}={}){
   return {...createRegistry(dataDir).get(id)};
 }
 // ---- Registry: installed packs as the receiver and the player see them ---------------------------------------------
+// Every file of an installed pack (size and modification time), so a file changed after installation is noticed.
+function signature(dir,rel=''){
+  let out=[];try{for(const d of fs.readdirSync(path.join(dir,rel),{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){const r=rel?`${rel}/${d.name}`:d.name;
+    if(d.isDirectory())out=out.concat(signature(dir,r));else{const st=fs.statSync(path.join(dir,r));out.push([r,st.size,st.mtimeMs]);}}}catch{}
+  return out;
+}
 function createRegistry(dataDir){
   const root=packsDir(dataDir);let cache=null,stamp='';
   function scan(){
     let names=[];try{names=fs.readdirSync(root,{withFileTypes:true}).filter(d=>d.isDirectory()&&!d.name.startsWith('.')).map(d=>d.name).sort();}catch{}
-    const records=names.map(n=>{try{const r=JSON.parse(fs.readFileSync(path.join(root,n,'.install.json'),'utf8'));return r.id===n?{n,r,m:fs.statSync(path.join(root,n,'.install.json')).mtimeMs}:null;}catch{return null;}}).filter(Boolean);
+    const records=names.map(n=>{try{const r=JSON.parse(fs.readFileSync(path.join(root,n,'.install.json'),'utf8'));return r.id===n?{n,r,m:signature(path.join(root,n))}:null;}catch{return null;}}).filter(Boolean);
     let trustStamp=0;try{trustStamp=fs.statSync(trustFile(dataDir)).mtimeMs;}catch{}
     const key=JSON.stringify([records.map(x=>[x.n,x.m]),trustStamp]);if(cache&&key===stamp)return cache;
     const trust=readTrust(dataDir);const packs=[];const families={};
@@ -173,7 +179,7 @@ function createRegistry(dataDir){
       const entry={id:m.id||n,name:m.name||n,version:m.version||'0.0.0',kind:m.kind||'unknown',sdk:m.sdk,author:m.author||null,description:m.description||'',license:m.license||null,
         digest:report.digest,files:report.files.map(f=>({path:f.path,size:f.size,sha256:f.sha256})),executable:exec,
         trusted:exec?!!approved&&approved.digest===report.digest&&!problems.length:true,compatible:compatible(m).ok,ok:!problems.length,problems,installedAt:r.installedAt,dir,
-        recorded:new Map((r.files||[]).map(f=>[f.path,f.sha256]))};
+        recorded:new Map((r.files||[]).map(f=>[f.path,f.sha256])),budget:m.world?.budget||m.shader?.budget||null};
       if(m.kind==='world'&&entry.ok){entry.family={id:m.id,name:m.world.family?.name||m.name,parameters:m.world.parameters||{},effects:m.world.effects,ambient:{base:m.world.ambient.base||[],unlocks:m.world.ambient.unlocks},palette:m.world.palette||null,budget:m.world.budget||null};families[m.id]=entry.family;}
       if(m.kind==='declarative'&&entry.ok)entry.overlay={base:m.declarative.base,overrides:m.declarative.overrides||{},effects:m.declarative.effects||{},unlocks:m.declarative.unlocks||null,technique:m.declarative.technique||null};
       if(m.kind==='shader'&&entry.ok)entry.overlay={base:m.shader.base,overrides:m.shader.overrides||{},effects:{},unlocks:null,technique:m.shader.technique||null,uniforms:m.shader.uniforms||{}};

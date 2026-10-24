@@ -5,7 +5,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
 const recipe=require('../engine/recipe');
-const EXAMPLES=path.join(__dirname,'../packs/examples'),TEMPLATES=path.join(__dirname,'../packs/template');
+const EXAMPLES=path.join(__dirname,'../packs/examples'),TEMPLATES=path.join(__dirname,'../packs/template'),TESTING=path.join(__dirname,'../packs/testing');
 const tmp=t=>{const d=fs.mkdtempSync(path.join(os.tmpdir(),'cr-packs-'));t.after(()=>fs.rmSync(d,{recursive:true,force:true}));return d;};
 function pack(t,manifest,files={}){const d=tmp(t);fs.writeFileSync(path.join(d,'pack.json'),JSON.stringify(manifest));
   for(const [f,c] of Object.entries(files)){fs.mkdirSync(path.dirname(path.join(d,f)),{recursive:true});fs.writeFileSync(path.join(d,f),c);}return d;}
@@ -14,8 +14,8 @@ const declarative=(d={})=>({...base,kind:'declarative',declarative:{base:'stella
 const errorsOf=(t,m,files)=>packs.inspect(pack(t,m,files)).errors.map(e=>`${e.at}: ${e.message}`);
 const WORLD_JS='export function createWorld(sdk){return {rebuild(){},update(){},cameraGoal(){return {target:new sdk.THREE.Vector3(),distance:10,azimuth:0,elevation:.5};},effect(){},dispose(){}};}';
 const world=(w={})=>({...base,kind:'world',world:{entry:'world.js',effects:{'validation.failed':'storm','milestone.achieved':'bloom'},ambient:{unlocks:['halo']},...w}});
-test('The examples and the starter templates are valid packs',()=>{
-  for(const dir of [...fs.readdirSync(EXAMPLES).map(d=>path.join(EXAMPLES,d)),...fs.readdirSync(TEMPLATES).map(d=>path.join(TEMPLATES,d))]){
+test('The examples, the starter templates and the testing fixtures are valid packs',()=>{
+  for(const dir of [EXAMPLES,TEMPLATES,TESTING].flatMap(root=>fs.readdirSync(root).map(d=>path.join(root,d)))){
     const r=packs.inspect(dir);assert.deepEqual(r.errors,[],dir);assert(r.digest&&r.files.length);}
 });
 test('The manifest schema rejects malformed packs with precise locations',t=>{
@@ -35,6 +35,9 @@ test('Compatibility: a pack runs on the SDK major it names, at or above the mino
   assert.equal(packs.compatible({sdk:'^1.2'},'1.0.0').ok,false);
   assert.equal(packs.compatible({sdk:'^2.0'},'1.9.0').ok,false);
   assert.equal(packs.compatible({},'1.0.0').ok,false);
+  // SDK 1.1 (pack code in a worker, sdk.util.canvas): packs written for 1.0 keep running; the examples declare ^1.0.
+  assert.equal(packs.SDK_VERSION,'1.1.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);
+  for(const d of fs.readdirSync(EXAMPLES))assert.equal(packs.compatible(JSON.parse(fs.readFileSync(path.join(EXAMPLES,d,'pack.json'),'utf8'))).ok,true,d);
 });
 test('Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers',t=>{
   assert(errorsOf(t,declarative({overrides:{'geometry.nonsense':1}})).some(e=>/not a parameter/.test(e)));
@@ -58,8 +61,10 @@ test('Code packs: one self-contained module with the right export; data packs co
   assert(errorsOf(t,declarative(),{'sneaky.js':'alert(1)'}).some(e=>/contain no code/.test(e)));
   assert(errorsOf(t,world({effects:{'milestone.achieved':'bloom'}}),{'world.js':WORLD_JS}).some(e=>/must express "validation.failed"/.test(e)));
   assert(errorsOf(t,world(),{'world.js':WORLD_JS,'big.txt':'x'.repeat(packs.LIMITS.fileBytes+1)}).some(e=>/larger than/.test(e)));
-  const d=pack(t,world(),{'world.js':WORLD_JS});fs.symlinkSync('/etc/hostname',path.join(d,'link.txt'));
-  assert(packs.inspect(d).errors.some(e=>/symbolic links/.test(e.message)));
+  const d=pack(t,world(),{'world.js':WORLD_JS,'target.txt':'x'});
+  // Windows allows symbolic links only with Developer Mode or administrator rights.
+  let linked=true;try{fs.symlinkSync(path.join(d,'target.txt'),path.join(d,'link.txt'));}catch(e){if(process.platform==='win32'&&e.code==='EPERM')linked=false;else throw e;}
+  if(linked)assert(packs.inspect(d).errors.some(e=>/symbolic links/.test(e.message)));
 });
 test('Installation lifecycle: install, approve the exact files, tampering revokes, reinstall and removal',t=>{
   const data=tmp(t),src=pack(t,world(),{'world.js':WORLD_JS,'README.md':'# x'});
@@ -69,10 +74,12 @@ test('Installation lifecycle: install, approve the exact files, tampering revoke
   assert.equal(registry.get('test.sample').trusted,false);assert.equal(registry.get('test.sample').family.name,'Sample');
   assert.throws(()=>packs.setTrust('test.sample',data,{digest:'0'.repeat(64)}),/changed/);
   packs.setTrust('test.sample',data,{digest:r.digest});assert.equal(registry.get('test.sample').trusted,true);
-  assert.equal((fs.statSync(path.join(data,'packs','trust.json')).mode&0o777),0o600);
+  if(process.platform!=='win32')assert.equal((fs.statSync(path.join(data,'packs','trust.json')).mode&0o777),0o600); // POSIX permissions only
   assert.equal(String(registry.read('test.sample','world.js')),WORLD_JS);assert.equal(registry.read('test.sample','../trust.json'),null);
   // Changing an installed file after approval: problems are reported and it no longer counts as approved.
   fs.appendFileSync(path.join(data,'packs','test.sample','world.js'),'\n// changed');
+  // The registry the receiver keeps notices too (the change is in its cache key), so a running pack is stopped.
+  assert.equal(registry.get('test.sample').ok,false);assert.equal(registry.get('test.sample').trusted,false);
   const tampered=packs.createRegistry(data).get('test.sample');
   assert.equal(tampered.trusted,false);assert(tampered.problems.some(p=>/differ/.test(p)));assert.equal(packs.createRegistry(data).read('test.sample','world.js'),null);
   // Reinstalling the same files keeps the approval; different files drop it.

@@ -20,10 +20,14 @@
   let firstBar=null;
   const queue=[];
   const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;setText('barCounter',`BAR ${String(index-firstBar+1).padStart(3,'0')}`);if(s)section=s;if(key)setText('seedLabel',key.toUpperCase());});
-  let selectedWorld='living',recorder=null,recordChunks=[],recordStreams=[];
+  let selectedWorld='living';
+  // Live recording of whatever is presented (recording.js): one player-owned compositor, every kind of world.
+  const recording=window.ResonanceRecording.create();let packFrame=null,lastRecording=null;const flashes=[];
   let living=null,livingLoading=null,livingFailed=false,livingFor='',recipe=null;
   // Visual packs installed with scripts/pack.js (GET /api/packs); code packs run only in the isolated pack frame.
-  let packs=[],packNotice='',reviewing=null;const stoppedPacks=new Set();
+  let packs=[],packNotice='',reviewing=null,stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
+  // Visual quality: AUTO adapts when frames are slow; a fixed level stays put (URL ?quality= / ?adapt=0 override).
+  const QUALITY=['auto','0','1','2','3'];let qualityChoice='auto';
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
   let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12},filmNote='';
@@ -35,8 +39,12 @@
     if(Number.isFinite(prefs.tempo)&&prefs.tempo>=58&&prefs.tempo<=160)music.setOptions({tempo:prefs.tempo});
     if(prefs.tempoMode==='manual'||prefs.tempoMode==='project')music.setOptions({tempoMode:prefs.tempoMode});
     if(Number.isFinite(prefs.texture)&&prefs.texture>=0&&prefs.texture<=1)music.setOptions({texture:prefs.texture});
+    if(QUALITY.includes(prefs.quality))qualityChoice=prefs.quality;
   }catch{}
   if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
+  if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
+  if(params.get('adapt')==='0'&&!params.has('quality'))qualityChoice='0';
+  const qualityLevel=()=>qualityChoice==='auto'?(Number(params.get('quality'))||0):Number(qualityChoice),qualityAdaptive=()=>qualityChoice==='auto';
   if(params.get('style')&&window.ResonanceScore.STYLES.includes(params.get('style')))music.setOptions({style:params.get('style')});
   const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
@@ -433,20 +441,42 @@
   // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
   function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
   function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;}
-  async function loadPacks(){try{packs=(await getJSON('/api/packs'))?.json?.packs||[];}catch{packs=[];}syncPackControls();return packs;}
+  async function loadPacks(){try{packs=(await getJSON('/api/packs'))?.json?.packs||[];}catch{packs=[];}
+    // A running pack whose approval was revoked, whose files changed or which was removed stops at once.
+    if(living?.remote){const p=packs.find(x=>x.id===living.pack.id);
+      if(!p)stopPack(living.pack,'the pack was removed');else if(!p.ok)stopPack(living.pack,'its files changed after approval');
+      else if(!p.trusted||p.digest!==living.pack.digest)stopPack(living.pack,'its approval was revoked');}
+    syncPackControls();return packs;}
+  // Stop a pack for this session (the recipe keeps it: RETRY or a new approval restores it), finishing any recording.
+  function stopPack(pack,reason){
+    if(stoppedPacks.has(pack.id)&&!living?.remote)return;
+    const began=performance.now();
+    stoppedPacks.set(pack.id,reason);stoppedPack=pack;packNotice=`${pack.name} stopped: ${reason}`;
+    if(recording.active)void finishRecording(`${pack.name} stopped`);
+    syncPackControls();
+    if(!FILM&&living?.remote&&living.pack.id===pack.id){disposeLiving();if(selectedWorld==='living')void ensureLiving();}
+    lastStop={at:began,pack:pack.id,reason,disposeMs:+(performance.now()-began).toFixed(1)};
+  }
+  function showNotice(text){packNotice=text;syncPackControls();}
   // What a recipe needs from a pack with code: its approved files for the isolated frame, or why it cannot run.
   async function packRuntime(r){
     const id=r.familyKind==='pack'?r.family:r.pack?.kind==='shader'?r.pack.id:null;if(!id)return null;
     const p=(await loadPacks()).find(x=>x.id===id);
     if(!p||!p.ok||!p.compatible)return {blocked:'unavailable',id,name:p?.name||id};
-    if(stoppedPacks.has(id))return {blocked:'stopped',id,name:p.name};
+    if(stoppedPacks.has(id))return {blocked:'stopped',id,name:p.name,reason:stoppedPacks.get(id)};
     if(!p.trusted)return {blocked:'approval',id,name:p.name};
-    const read=async file=>{const res=await fetch(`/api/packs/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(file)}`,{cache:'no-store'});
-      if(!res.ok)throw new Error(`${file}: HTTP ${res.status}`);return /\.(?:png|jpg)$/.test(file)?res.arrayBuffer():res.text();};
-    const manifest=JSON.parse(await read('pack.json')),files={};
-    for(const f of p.files)if(f.path!=='pack.json'&&!/^(?:README|LICENSE)/.test(f.path))files[f.path]=await read(f.path);
+    // Every file is checked here against the hash recorded at installation, and the set against the approved digest,
+    // before anything reaches the frame (the receiver checks too: a file changed after approval is never served).
+    const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+    const sha=async data=>hex(await crypto.subtle.digest('SHA-256',data));
+    const bytes={};
+    for(const f of p.files){const res=await fetch(`/api/packs/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(f.path)}`,{cache:'no-store'});
+      if(!res.ok)throw new Error(`${f.path}: HTTP ${res.status}`);const b=await res.arrayBuffer();if(await sha(b)!==f.sha256)throw new Error(`${f.path} does not match its approved hash`);bytes[f.path]=b;}
+    if(await sha(new TextEncoder().encode(p.files.map(f=>`${f.path}\0${f.sha256}`).join('\n')))!==p.digest)throw new Error('the pack does not match its approved digest');
+    const text=b=>new TextDecoder().decode(b),manifest=JSON.parse(text(bytes['pack.json'])),files={};
+    for(const f of p.files)if(f.path!=='pack.json'&&!/^(?:README|LICENSE)/.test(f.path))files[f.path]=/\.(?:png|jpg)$/.test(f.path)?bytes[f.path]:text(bytes[f.path]);
     const spec=manifest.kind==='world'?{entry:manifest.world.entry}:{background:manifest.shader.background||null,post:manifest.shader.post||[],effects:manifest.shader.effects||null};
-    return {pack:{id,name:p.name,kind:p.kind,...spec},files};
+    return {pack:{id,name:p.name,kind:p.kind,digest:p.digest,budget:p.budget||null,...spec},files};
   }
   function ensureLiving(){
     if(living&&livingFor===selected)return Promise.resolve(living);
@@ -458,18 +488,22 @@
         const plan=await packRuntime(r.json).catch(e=>({blocked:'unavailable',name:String(e.message)}));
         if(living)disposeLiving();
         recipe=r.json;packNotice='';
-        const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'};
+        // A pack the recipe names but the receiver cannot serve (removed, or its files changed after installation).
+        const missing=recipe.unavailable&&(recipe.unavailable.family||recipe.unavailable.pack);
+        if(missing){const p=packs.find(x=>x.id===missing),name=p?.name||missing,reason=stoppedPacks.get(missing);
+          packNotice=reason?`${name} stopped: ${reason}. Showing the identity without it.`:`${name} is not available${p&&!p.ok?' (its installed files changed)':''}: showing the identity without it.`;}
+        const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:FILM?0:qualityLevel(),adaptive:!FILM&&qualityAdaptive()};
         if(plan?.pack){
           // An approved pack with code: the same world host, inside the isolated frame.
           const m=await import('/worlds/remote.js');
           living=await m.createRemoteWorld($('world').parentElement,{...plan,recipe,...options,epoch:replay?.entries.length?replay.start:null});
-          // A pack that fails or misbehaves is stopped for this session; the identity without it takes over.
-          living.onError(message=>{stoppedPacks.add(plan.pack.id);packNotice=`${plan.pack.name} stopped: ${message}`;syncPackControls();
-            if(!FILM){disposeLiving();if(selectedWorld==='living')void ensureLiving();}});
+          // A pack that fails, hangs, loses its GPU context or is too slow is stopped; the identity without it takes over.
+          const pack=plan.pack;living.onError(message=>stopPack(pack,message));
+          if(recording.active)living.record(onPackFrame);overBudget={since:0,warned:false};
         }else{
           // A pack that needs approval (or is missing) is not run: the identity without it is shown instead.
           let shown=recipe;
-          if(plan?.blocked){packNotice=plan.blocked==='approval'?`${plan.name} contains code and is not approved: showing the identity without it.`:plan.blocked==='stopped'?(packNotice||`${plan.name} was stopped: showing the identity without it.`):`${plan.name} is not available: showing the identity without it.`;
+          if(plan?.blocked){packNotice=plan.blocked==='approval'?`${plan.name} contains code and is not approved: showing the identity without it.`:plan.blocked==='stopped'?`${plan.name} stopped: ${plan.reason}. Showing the identity without it.`:`${plan.name} is not available: showing the identity without it.`;
             shown=(await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}&fallback=1`))?.json||recipe;}
           const m=await import('/worlds/host.js');
           living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),recipe:shown,...options});
@@ -520,6 +554,9 @@
       list.append(row);
     }
     $('dnaNotice').textContent=packNotice;$('dnaNotice').classList.toggle('hidden',!packNotice);
+    if(stoppedPack&&stoppedPacks.has(stoppedPack.id)){const b=document.createElement('button');b.className='action';b.textContent='RETRY';
+      b.addEventListener('click',()=>{stoppedPacks.delete(stoppedPack.id);stoppedPack=null;packNotice='';disposeLiving();if(selectedWorld==='living')void ensureLiving();});$('dnaNotice').append(' ',b);}
+    if($('qualitySelect'))$('qualitySelect').value=qualityChoice;
   }
   // Approval of a pack with code: the user sees its author, files and digest, and the isolation limits, then decides.
   function review(p){
@@ -572,6 +609,7 @@
       living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
       // A pack frame in a film renders when the film captures the frame (__film.frame).
       if(!(FILM&&living.remote))living.render(now,dt,{phase:barPhase});
+      if(living.remote)watchBudget();
     }else if(selectedWorld==='construct'&&construct){
       const r=$('construct').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
@@ -581,17 +619,51 @@
       construct.render(now,dt,{phase:barPhase});
     }else if(scaledW&&scaledH){backdrop(clock);
       if(selectedWorld==='nexus')drawNexus(clock,dt,now,pulse);else if(selectedWorld==='city')drawCity(clock,dt,now,pulse);else drawNebula(clock,dt,now,pulse);}
+    if(recording.active)recording.frame((g2,w,h)=>composeFrame(g2,w,h,now));
+  }
+  // The presented frame, for the recording: the world and its labels as the viewer sees them (right after rendering,
+  // while the WebGL canvases still hold the frame).
+  function composeFrame(g2,w,h,now){
+    // While a world is being switched, the recording keeps the last frame it had.
+    if(selectedWorld==='living'&&!living)return;
+    if(selectedWorld==='living'){
+      if(living.remote){if(packFrame)g2.drawImage(packFrame,0,0,w,h);}
+      else{g2.drawImage($('world'),0,0,w,h);g2.drawImage($('worldOverlay'),0,0,w,h);}
+    }else if(selectedWorld==='construct'&&construct){g2.drawImage($('construct'),0,0,w,h);drawCaption(g2,w,h,now);}
+    else g2.drawImage(canvas,0,0,w,h);
+    // Qualification (?qual=1): a white flash at marked performance times, to measure picture/sound synchronisation.
+    for(let i=flashes.length-1;i>=0;i--){const age=(now-flashes[i])/replaySpeed();if(age>=0&&age<120){g2.fillStyle='#fff';g2.fillRect(0,0,w,h);}if(age>2000)flashes.splice(i,1);}
+  }
+  function drawCaption(g2,w,h,t){
+    const age=(t-caption.at)/Math.max(1,filmSpeed);
+    if(!caption.text||age>=4200||params.get('captions')==='0')return;
+    const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=w/1920;
+    g2.save();g2.globalAlpha=Math.max(0,a)*.92;g2.font=`500 ${Math.round(30*scale)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='center';
+    g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*scale;g2.fillStyle='#eef3fb';g2.fillText(caption.text,w/2,h-90*scale);g2.restore();
+  }
+  function onPackFrame(bitmap){packFrame?.close();packFrame=bitmap;}
+  // A pack well beyond its declared budget for ten seconds gets a warning (the pack keeps running; adaptive quality
+  // and the watchdog handle real trouble).
+  let budgetCheck=0;
+  function watchBudget(){
+    const now=performance.now();if(now-budgetCheck<2000||!living?.pack?.budget)return;budgetCheck=now;
+    const s=living.stats(),b=living.pack.budget;if(!s)return;
+    const over=['drawCalls','passes','triangles','points','updateMs'].filter(k=>Number.isFinite(b[k])&&Number.isFinite(s[k])&&s[k]>b[k]*1.25);
+    if(!over.length){overBudget.since=0;return;}
+    if(!overBudget.since)overBudget.since=now;
+    if(!overBudget.warned&&now-overBudget.since>10000){overBudget.warned=true;showNotice(`${living.pack.name} exceeds its declared budget (${over.map(k=>`${k} ${Math.round(s[k])} > ${b[k]}`).join(', ')})`);}
   }
   function paint(nowMs){
     resize();const dt=Math.min(.07,(nowMs-lastPaint)/1000);lastPaint=nowMs;
     if(mode==='replay'&&playback)tickReplay(nowMs);
     renderAt(dt,perfNow());
+    if(recording.active&&Math.floor(nowMs/500)!==Math.floor((nowMs-dt*1000)/500))updateRecordButton();
     requestAnimationFrame(paint);
   }
   // ---- Sound, preferences, recording -----------------------------------------------------------------------
   async function toggleSound(){
     if(soundEnabled){
-      if(recorder?.state==='recording')recorder.stop();
+      if(recording.active)await finishRecording('sound turned off');
       soundEnabled=false;await music.stop();setText('soundBtn','◌ ENABLE SOUND');
       dom.sound.classList.remove('on');dom.sound.setAttribute('aria-pressed','false');return;
     }
@@ -600,7 +672,7 @@
     setText('soundBtn','◉ SOUND ON');dom.sound.classList.add('on');dom.sound.setAttribute('aria-pressed','true');
   }
   function storePrefs(){
-    try{localStorage.setItem('code-resonance-player-v1',JSON.stringify({world:selectedWorld,...music.options}));}catch{}
+    try{localStorage.setItem('code-resonance-player-v1',JSON.stringify({world:selectedWorld,quality:qualityChoice,...music.options}));}catch{}
   }
   function syncPlayerControls(){
     for(const btn of document.querySelectorAll('[data-world]')){
@@ -623,29 +695,31 @@
     if(world==='living')void ensureLiving();
   }
   async function toggleRecord(){
-    if(recorder){if(recorder.state==='recording')recorder.stop();return;}
-    // A pack frame's canvas belongs to another (isolated) document: render a film instead (qualification/visual/film.js).
-    if(selectedWorld==='living'&&living?.remote){setText('recordBtn','FILMS ONLY');setTimeout(()=>setText('recordBtn','● RECORD'),2500);return;}
-    const source=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas;
-    if(!window.MediaRecorder||!source.captureStream){alert('WebM recording requires a browser with MediaRecorder and canvas.captureStream support.');return;}
-    if(!soundEnabled)await toggleSound();
-    const preferred=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-    const mimeType=preferred.find(t=>MediaRecorder.isTypeSupported(t));
-    if(!mimeType){alert('This browser cannot record WebM video.');return;}
-    const video=source.captureStream(30),audio=music.stream;
-    const combined=new MediaStream([...video.getVideoTracks(),...(audio?.getAudioTracks()||[])]);
-    recordStreams=[video,combined];recordChunks=[];
-    const capture=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:6000000});recorder=capture;
-    capture.ondataavailable=e=>{if(e.data?.size)recordChunks.push(e.data);};
-    capture.onstop=()=>{
-      const blob=new Blob(recordChunks,{type:mimeType});
-      if(blob.size>0){const url=URL.createObjectURL(blob),link=document.createElement('a');
-        link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
-      for(const stream of recordStreams)for(const track of stream.getTracks())track.stop();
-      recordStreams=[];recordChunks=[];recorder=null;$('recordBtn').classList.remove('recording');setText('recordBtn','● RECORD');
-    };
-    capture.onerror=()=>{capture.stop();};capture.start(1000);
-    $('recordBtn').classList.add('recording');setText('recordBtn','■ STOP');
+    if(recording.active){await finishRecording('stopped');return;}
+    const support=recording.supported();if(!support.ok){showNotice(support.reason);return;}
+    if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
+    const el=selectedWorld==='living'&&living?(living.remote?living.frame:$('world')):selectedWorld==='construct'&&construct?$('construct'):canvas;
+    const r=el.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
+    const started=recording.start({audioStream:music.stream,fps:30});
+    if(!started.ok){showNotice(started.reason);return;}
+    if(living?.remote)living.record(onPackFrame);
+    if(!started.audio)showNotice('Recording without sound: the music output could not be captured.');
+    $('recordBtn').classList.add('recording');updateRecordButton();
+  }
+  function updateRecordButton(){
+    if(!recording.active){$('recordBtn').classList.remove('recording');setText('recordBtn','● RECORD');return;}
+    const s=Math.floor(recording.stats().elapsedMs/1000);setText('recordBtn',`■ STOP ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}${recording.audio?'':' · NO SOUND'}`);
+  }
+  // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
+  async function finishRecording(reason){
+    if(living?.remote)living.record(null);
+    const result=await recording.stop(reason);packFrame?.close();packFrame=null;updateRecordButton();
+    if(!result)return null;
+    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,reason:result.reason};
+    if(result.blob.size>0){const url=URL.createObjectURL(result.blob),link=document.createElement('a');
+      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+    if(reason!=='stopped')showNotice(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`);
+    return lastRecording;
   }
   // ---- Offline audio export: the deterministic renderer turns the recorded performance into a WAV file ------
   function wav(buffer){
@@ -751,6 +825,7 @@
   $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
   $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
   $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
+  $('qualitySelect').addEventListener('change',()=>{qualityChoice=QUALITY.includes($('qualitySelect').value)?$('qualitySelect').value:'auto';living?.setQuality?.(qualityLevel(),qualityAdaptive());storePrefs();});
   // The public title is the only project name the Stage may show, and only once the user sets it here.
   $('dnaTitle').addEventListener('change',()=>recipeAction({type:'title',title:$('dnaTitle').value.trim()||null}).catch(console.error));
   $('musicStyle').addEventListener('change',()=>{music.setOptions({style:$('musicStyle').value});syncPlayerControls();storePrefs();});
@@ -768,6 +843,14 @@
   getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
   // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
   if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
+  // Qualification hooks (?qual=1 only): recording control and picture/sound markers.
+  if(params.has('qual'))window.__qual={
+    record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),recording:()=>({...recording.stats(),last:lastRecording}),
+    // A flash and a click at the same performance time, delayMs (real time) from now.
+    marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push(at);return music.marker(at);},perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
+    world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
+      frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
+    action:a=>recipeAction(a),setWorld:w=>setWorld(w)};
   if(FILM){
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
     document.body.classList.add('overlay');mode='replay';
@@ -791,12 +874,7 @@
           // A film can carry a persistent note (e.g. that a fixture is supplemental or a family was chosen by hand).
           if(filmNote){const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}
           return out.toDataURL('image/jpeg',.92);}
-        const age=(t-caption.at)/Math.max(1,filmSpeed);
-        if(caption.text&&age<4200&&params.get('captions')!=='0'){
-          const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=out.width/1920;
-          g2.globalAlpha=Math.max(0,a)*.92;g2.font=`500 ${Math.round(30*scale)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='center';
-          g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*scale;g2.fillStyle='#eef3fb';g2.fillText(caption.text,out.width/2,out.height-90*scale);
-        }
+        drawCaption(g2,out.width,out.height,t);
         return out.toDataURL('image/jpeg',.92);
       },
       stats(){return living?living.stats():construct?.stats();},
@@ -811,7 +889,7 @@
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
     window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();
-    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,10000);void loadPacks();
+    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,5000);void loadPacks();
     setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
     pollProjects().then(pollProject);requestAnimationFrame(paint);
     if(selectedWorld==='construct')void ensureConstruct();

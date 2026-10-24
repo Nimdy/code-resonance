@@ -150,6 +150,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
     async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
+    // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
+    setQuality(q,adapt){if(Number.isFinite(Number(q))){quality=Math.max(0,Math.min(LEVELS.length-1,Number(q)));level=quality;}if(typeof adapt==='boolean')adaptive=adapt;slowFor=0;fastFor=0;applyLevel();},
     pick(x,y){if(!world.pick)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info);selected=id;return id?world.inspect?.(id,info):null;},
     render,drawOverlay,
     // Every string currently on screen (qualification: the privacy boundary covers labels too).

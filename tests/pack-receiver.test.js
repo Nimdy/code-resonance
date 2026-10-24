@@ -2,14 +2,15 @@
 // The receiver's side of visual packs: what the player may read, approvals, the isolated frame's content policy, and
 // the one cross-origin exception (the opaque-origin frame loading the public world modules).
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createService}=require('../receiver/server');const {sha}=require('../receiver/protocol');
+const path=require('node:path');
+const {sha}=require('../receiver/protocol');
+const {tempDir,startService}=require('./helpers');
 const packs=require('../engine/packs');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 async function start(t){
-  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-pack-http-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-pack-http-');
   packs.install(path.join(EXAMPLES,'cymatic-field'),dir);packs.install(path.join(EXAMPLES,'ember-observatory'),dir);
-  const svc=await createService({port:0,dataDir:dir}).start();t.after(()=>svc.stop());
+  const svc=await startService(t,{port:0,dataDir:dir});
   const base=`http://127.0.0.1:${svc.port}`,origin={Origin:base};
   const projectId=sha('pack-http');let seq=0;
   const ev=(file,content)=>({v:1,id:`ph-${++seq}-xxxxxxxx`,ts:Date.now(),kind:'document.snapshot',projectId,sessionId:'s',origin:'test',file,content,meta:{reason:'edit'}});
@@ -45,9 +46,9 @@ test('The pack frame is served with a policy that allows no connection and only 
   const {base}=await start(t);
   const res=await fetch(`${base}/pack-frame.html`);const csp=res.headers.get('content-security-policy');
   assert.equal(res.status,200);
-  for(const rule of ["default-src 'none'","connect-src 'none'","worker-src 'none'","frame-src 'none'","form-action 'none'","object-src 'none'"])assert(csp.includes(rule),rule);
+  for(const rule of ["default-src 'none'","connect-src 'none'","worker-src blob:","frame-src 'none'","form-action 'none'","object-src 'none'","sandbox allow-scripts","frame-ancestors "])assert(csp.includes(rule),rule);
   assert.match(csp,/script-src http:\/\/localhost:\d+\/worlds\/ http:\/\/localhost:\d+\/vendor\/ http:\/\/127\.0\.0\.1:\d+\/worlds\/ http:\/\/127\.0\.0\.1:\d+\/vendor\/ blob:;/);
-  assert.match(csp,/frame-ancestors http:\/\/localhost:\d+ http:\/\/127\.0\.0\.1:\d+$/);
+  assert.match(csp,/frame-ancestors http:\/\/localhost:\d+ http:\/\/127\.0\.0\.1:\d+; sandbox allow-scripts$/);
   assert.match(res.headers.get('permissions-policy'),/camera=\(\).*microphone=\(\)/);
   assert.match(await res.text(),/\/worlds\/frame\.js/);
   // The opaque-origin frame may load public modules (CORS *), and nothing else.

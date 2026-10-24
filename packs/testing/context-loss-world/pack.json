@@ -1,0 +1,42 @@
+{
+  "schema": "code-resonance.pack.v1",
+  "id": "testing.context-loss-world",
+  "name": "Test fixture context loss world",
+  "version": "1.0.0",
+  "kind": "world",
+  "sdk": "^1.0",
+  "author": {
+    "name": "Code Resonance tests"
+  },
+  "description": "TEST FIXTURE, not a visual pack: loses its GPU context 10 s after it starts (as a driver reset or a GPU process crash would).",
+  "license": "MIT",
+  "world": {
+    "entry": "world.js",
+    "effects": {
+      "subsystem.created": "pulse",
+      "module.created": "pulse",
+      "structure.created": "pulse",
+      "structure.removed": "fade",
+      "subsystem.connected": "pulse",
+      "validation.failed": "alarm",
+      "validation.passed": "glow",
+      "validation.recovered": "glow",
+      "refactor.validated": "glow",
+      "milestone.achieved": "crown",
+      "repository.checkpoint": "pulse",
+      "world.expanded": "pulse"
+    },
+    "ambient": {
+      "unlocks": [
+        "halo"
+      ]
+    },
+    "budget": {
+      "drawCalls": 4,
+      "passes": 30,
+      "triangles": 5000,
+      "points": 100,
+      "updateMs": 2
+    }
+  }
+}

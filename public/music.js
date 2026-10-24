@@ -280,6 +280,15 @@
     }
     // Compatibility with the v0.2 player: an immediate cue becomes a quantized accent.
     accent(type,cue){if(this.ctx&&this.enabled)this.enqueue(cue||{id:type,type,weight:1,detail:{}},this.clock?this.clock():0);}
+    // Qualification only (recording synchronisation): a 2 kHz click at a performance time, mapped to the audio clock
+    // exactly as cues are, so a recording's picture and sound can be compared at a known moment.
+    marker(atMs){
+      if(!this.ctx||!this.output)return false;
+      const when=this.clock?this.ctx.currentTime+(atMs-this.clock())/1000/this.speed:this.ctx.currentTime+.05;if(when<this.ctx.currentTime)return false;
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=2000;
+      g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(.8,when+.002);g.gain.exponentialRampToValueAtTime(.001,when+.04);
+      o.connect(g);g.connect(this.output);o.start(when);o.stop(when+.05);return true;
+    }
     // Offline render of a recorded performance: [{atMs, frame?, cue?}] sorted by time, starting at startMs.
     // `speed` replays the performance faster than real time while the music keeps its tempo; onBar reports each bar's
     // audio time and the performance time it corresponds to (used to keep a rendered film's light in step with the score).

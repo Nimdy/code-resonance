@@ -19,7 +19,7 @@
 // Determinism: draw only from sdk.model, sdk.director, sdk.agents, the frame and sdk.random(key); time comes from the
 // frame (never Date.now, performance.now or animation-frame timestamps). See docs/packs/determinism.md.
 import {THREE,NOISE,ORBIT,BACKGROUND_VS,clamp,lerp,smooth,easeOut,easeInOut,hash,rand,rng,color,orbitPos,pool,instancedBuffers,pointBuffers} from './core.js';
-export const SDK_VERSION='1.0.0';
+export const SDK_VERSION='1.1.0';
 export const WORLD_API=1;
 export const REQUIRED=['rebuild','update','cameraGoal','effect','dispose'];
 export const OPTIONAL=['afterCamera','background','grade','describe','agentPosition','agentColor','subsystemLabels','status','pick','inspect','onPrime','onDelta','onCue','stats'];
@@ -48,7 +48,8 @@ export function createSdk(ctx,{assets={},quality=()=>0}={}){
       async image(path){const v=assets[path];if(!(v instanceof Blob))throw new Error(`No image asset ${path} (declare it in pack.json)`);return createImageBitmap(v);}
     }),
     glsl:Object.freeze({NOISE,ORBIT,BACKGROUND_VS}),
-    util:Object.freeze({clamp,lerp,smooth,easeOut,easeInOut,hash,rand,rng,color,orbitPos}),
+    // canvas(w, h) (SDK 1.1): a 2D drawing surface for textures (packs run in a worker: there is no document).
+    util:Object.freeze({clamp,lerp,smooth,easeOut,easeInOut,hash,rand,rng,color,orbitPos,canvas:(w,h)=>new OffscreenCanvas(Math.max(1,w|0),Math.max(1,h|0))}),
     buffers:Object.freeze({instanced:instancedBuffers,points:pointBuffers,pool})
   });
 }
