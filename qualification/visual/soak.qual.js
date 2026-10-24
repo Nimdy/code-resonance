@@ -89,18 +89,20 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         if(download)await download.saveAs(file);
         const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
-        recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,
+        recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
           sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
       // Receiver restart, once.
-      if(!restart&&minute>=RESTART_AT){
-        const before=await page.evaluate(()=>window.__qual.stats()?.intents??null);receiverDown=true;const t=Date.now();await svc.stop();
-        events.push({minute:+minute.toFixed(1),event:'receiver stopped'});await wait(15000);
+      if(!restart&&minute>=RESTART_AT&&Date.now()<END){
+        const before=await page.evaluate(()=>window.__qual.stats()?.intents??null),shown=await page.evaluate(()=>window.__qual.world());receiverDown=true;const t=Date.now();await svc.stop();
+        events.push({minute:+minute.toFixed(1),event:'receiver stopped'});
+        // While it is down, the world is rebuilt (as RETRY or a world switch would): it must wait, not give up.
+        await wait(7000);await page.evaluate(()=>window.__qual.rebuildWorld());await wait(8000);
         svc=await createService({port,dataDir:dir}).start();receiverDown=false;await deliver();
         events.push({minute:+minuteNow().toFixed(1),event:'receiver started again'});
-        await wait(60000);const after=await page.evaluate(()=>window.__qual.stats()?.intents??null);
-        restart={downMs:Date.now()-t-60000,intentsBefore:before,intentsAfter:after,outboxAfterRestart:outbox.length};}
+        await wait(60000);const after=await page.evaluate(()=>window.__qual.stats()?.intents??null),world=await page.evaluate(()=>window.__qual.world());
+        restart={downMs:Date.now()-t-60000,intentsBefore:before,intentsAfter:after,outboxAfterRestart:outbox.length,worldBefore:shown,worldAfter:world};}
       // Sample once a minute.
       if(Date.now()-lastSample>=Math.max(10000,60000*SCALE)){lastSample=Date.now();
         const {metrics}=await cdp.send('Performance.getMetrics');const m=Object.fromEntries(metrics.map(x=>[x.name,x.value]));
@@ -146,7 +148,9 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
       `${transport.length} samples on packs; max latency ${Math.max(0,...transport.map(s=>s.transport.latencyMs)).toFixed(1)} ms; notices: ${[...new Set(samples.map(s=>s.notice).filter(Boolean))].slice(0,3).join(' | ')||'none'}`);
     check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(r=>r.video&&r.audio&&r.longGaps===0&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&r.sync.maxAbsOffsetMs<=125),
       recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
-    check('receiver restart: the player picked up new events after the receiver came back',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0,restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s`:'no restart');
+    check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
+      restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),
+      restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s; world ${restart.worldBefore.selectedWorld}/${restart.worldBefore.family} → ${restart.worldAfter.selectedWorld}/${restart.worldAfter.family}`:'no restart');
     check('no page errors in the whole soak',!errors.length,errors.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||'none');
     fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));
   }finally{clearInterval(produce);await browser.close();await svc.stop().catch(()=>{});fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(recDir,{recursive:true,force:true});}

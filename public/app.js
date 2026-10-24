@@ -23,7 +23,9 @@
   let selectedWorld='living';
   // Live recording of whatever is presented (recording.js): one player-owned compositor, every kind of world.
   const recording=window.ResonanceRecording.create();let packFrame=null,lastRecording=null;const flashes=[];
-  let living=null,livingLoading=null,livingFailed=false,livingFor='',recipe=null;
+  let living=null,livingLoading=null,livingFailed=false,livingRetryAt=0,livingFor='',recipe=null;
+  // A failed request or module download means the receiver is unreachable (restarting, stopped): retry, never give up a world for it.
+  const unreachable=e=>e instanceof TypeError&&/fetch/i.test(e.message);
   // Visual packs installed with scripts/pack.js (GET /api/packs); code packs run only in the isolated pack frame.
   let packs=[],packNotice='',reviewing=null,stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
   // Visual quality: AUTO adapts when frames are slow; a fixed level stays put (URL ?quality= / ?adapt=0 override).
@@ -435,13 +437,17 @@
       try{construct=m.createConstruct($('construct'),{onCaption:showCaption,film:FILM,speed:replaySpeed()});construct.reset(constructGraph(),perfNow());}
       catch(e){console.error('Construct unavailable, using Monolith',e);constructFailed=true;construct=null;if(selectedWorld==='construct'){selectedWorld='city';syncPlayerControls();}}
       constructLoading=null;return construct;
-    });
+    },e=>{constructLoading=null;if(!unreachable(e))console.error(e);return null;});
     return constructLoading;
   }
   // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
   function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
   function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;}
-  async function loadPacks(){try{packs=(await getJSON('/api/packs'))?.json?.packs||[];}catch{packs=[];}
+  async function loadPacks(){
+    // A receiver that cannot be reached (restarting, or stopped) says nothing about the packs: keep what was known and
+    // leave a running pack alone.
+    let fresh;try{fresh=(await getJSON('/api/packs'))?.json?.packs;}catch{syncPackControls();return packs;}
+    packs=fresh||[];
     // A running pack whose approval was revoked, whose files changed or which was removed stops at once.
     if(living?.remote){const p=packs.find(x=>x.id===living.pack.id);
       if(!p)stopPack(living.pack,'the pack was removed');else if(!p.ok)stopPack(living.pack,'its files changed after approval');
@@ -480,12 +486,12 @@
   }
   function ensureLiving(){
     if(living&&livingFor===selected)return Promise.resolve(living);
-    if(livingFailed||!selected||!model)return Promise.resolve(null);
+    if(livingFailed||!selected||!model||performance.now()<livingRetryAt)return Promise.resolve(null);
     if(livingLoading)return livingLoading;
     livingLoading=(async()=>{
       try{
         const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
-        const plan=await packRuntime(r.json).catch(e=>({blocked:'unavailable',name:String(e.message)}));
+        const plan=await packRuntime(r.json).catch(e=>{if(unreachable(e))throw e;return {blocked:'unavailable',name:String(e.message)};});
         if(living)disposeLiving();
         recipe=r.json;packNotice='';
         // A pack the recipe names but the receiver cannot serve (removed, or its files changed after installation).
@@ -514,7 +520,9 @@
         if(replay&&(mode==='replay'||FILM))living.prime(replay.entries,perfNow());
         else if(mode==='live')void primeLive(living);
         syncRecipePanel();
-      }catch(e){console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;if(selectedWorld==='living'){selectedWorld='construct';syncPlayerControls();void ensureConstruct();}}
+      }catch(e){
+        if(unreachable(e)){if(living)disposeLiving();livingRetryAt=performance.now()+2000;return null;}
+        console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;if(selectedWorld==='living'){selectedWorld='construct';syncPlayerControls();void ensureConstruct();}}
       finally{livingLoading=null;}
       return living;
     })();
@@ -701,11 +709,12 @@
     if(recording.active){await finishRecording('stopped');return;}
     const support=recording.supported();if(!support.ok){showNotice(support.reason);return;}
     if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
-    const el=selectedWorld==='living'&&living?(living.remote?living.frame:$('world')):selectedWorld==='construct'&&construct?$('construct'):canvas;
-    const r=el.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
+    // The recording takes the stage's size (the canvas area, laid out whatever world is showing or loading).
+    const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
+    // A pack world: its worker starts compositing frames for the recording first, so the file starts on a real frame.
+    if(living?.remote){living.record(onPackFrame);const t0=performance.now();while(!packFrame&&living?.remote&&performance.now()-t0<2000)await new Promise(res=>setTimeout(res,16));}
     const started=recording.start({audioStream:music.stream,fps:30});
-    if(!started.ok){showNotice(started.reason);return;}
-    if(living?.remote)living.record(onPackFrame);
+    if(!started.ok){if(living?.remote)living.record(null);showNotice(started.reason);return;}
     if(!started.audio)showNotice('Recording without sound: the music output could not be captured.');
     $('recordBtn').classList.add('recording');updateRecordButton();
   }
@@ -854,6 +863,8 @@
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
     action:a=>recipeAction(a),setWorld:w=>setWorld(w),
+    // Rebuild the living world (what RETRY does), e.g. while the receiver is unreachable.
+    rebuildWorld(){disposeLiving();if(selectedWorld==='living')void ensureLiving();return true;},
     // Replay from the beginning (a recording then covers the same moments however long the world took to load).
     replayFromStart(){if(mode!=='replay'||!replay)return false;seek(history().start);playback=true;replayClock=performance.now();$('playBtn').textContent='Ⅱ';return true;}};
   if(FILM){

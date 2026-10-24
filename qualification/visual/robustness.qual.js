@@ -16,6 +16,7 @@ const os=require('node:os');
 const http=require('node:http');
 const {REPO,projectOf,launch,rendererOf,withService,recipeAction,playerPage,worldReady,filmPage,checker}=require('./harness');
 const packs=require(path.join(REPO,'engine/packs'));
+const {createService}=require(path.join(REPO,'receiver/server'));
 const {lumen}=require('./datasets');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const GPU=arg('gpu',null),QUICK=process.argv.includes('--quick');
@@ -234,6 +235,27 @@ async function afterStop(label,page,svc,project,family,{expect,watchMs=12000}){
           let t=info.start,error=null,frames=0;const began=Date.now();
           while(Date.now()-began<120000){try{await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/30]);frames++;t+=1000/30;}catch(e){error=String(e.message||e);break;}}
           check('film: a pack that stops answering makes the film call fail with an explicit error (no frame substituted)',/did not answer within 60 s/.test(error||''),`${frames} frames rendered, then: ${(error||'no error').split('\n')[0].slice(0,160)}`);
+        }finally{await page.close();}
+      }
+      // ---- 8. The receiver restarts while a pack runs (last: it stops this service). An unreachable receiver says
+      // nothing about the packs: the pack keeps running; a world rebuilt during the outage waits and comes back.
+      await recipeAction(svc,project,{type:'family',family:cymatic.family});
+      {
+        const {page,errors}=await playerPage(browser,svc,project);
+        try{
+          await worldReady(page,cymatic);await svc.stop();
+          await wait(7000);const during=await state(page);
+          await page.evaluate(()=>window.__qual.rebuildWorld());await wait(4000);const rebuilding=await state(page);
+          const again=await createService({port:svc.port,dataDir:data}).start();const back=Date.now();
+          try{
+            const ok=await worldReady(page,cymatic,30000).then(()=>true,()=>false);const after=await state(page);
+            check('receiver restart: a running pack is not stopped by the outage; a world rebuilt during it comes back when the receiver returns',
+              during.world.remote&&!/stopped/.test(during.world.notice)&&rebuilding.world.selectedWorld==='living'&&ok&&after.world.remote&&after.world.family===cymatic.family,
+              `7 s into the outage: ${during.world.remote?'pack running':'pack gone'} (“${during.world.notice}”); rebuilding: showing ${rebuilding.world.selectedWorld}; back ${ok?`${Date.now()-back} ms after the receiver returned`:'not within 30 s'} (${after.world.family})`);
+            // The browser logs each refused request while the receiver is down; anything else is a real error.
+            const real=errors.filter(e=>!/^Failed to load resource/.test(e));
+            check('receiver restart: no page errors (besides the browser logging refused requests while it was down)',!real.length,real.slice(0,2).join(' | ')||`none (${errors.length-real.length} refused requests logged)`);
+          }finally{await again.stop();}
         }finally{await page.close();}
       }
     });
