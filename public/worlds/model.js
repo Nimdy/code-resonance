@@ -19,7 +19,9 @@ export function createModel({speed=1,tempo=92}={}){
   let stepMs=60000/(tempo*4),epoch=null,order=0,version=0;
   const human={fileId:null,at:-Infinity};
   const snap=t=>Math.ceil(t/(stepMs*speed))*(stepMs*speed);
-  const touch=t=>{if(epoch===null&&Number.isFinite(t))epoch=t;version++;};
+  // The time origin for shaders (seconds since the first real timestamp). A replay first resets at time 0 before it
+  // seeks, so only plausible timestamps may set it; otherwise float32 shader time would lose all precision.
+  const touch=t=>{if(epoch===null&&Number.isFinite(t)&&t>1e11)epoch=t;version++;};
   function stateAt(m,t){let s=m.initial;for(const e of m.states){if(e.at<=t)s=e.state;else break;}return s;}
   function pushState(m,state,at){if(!STATES.has(state))return;let i=m.states.length;while(i>0&&m.states[i-1].at>at)i--;m.states.splice(i,0,{state,at});}
   function district(n,t){

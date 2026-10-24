@@ -98,7 +98,7 @@ export function createFamily(ctx){
   const planetMesh=new THREE.Mesh(planets.geometry,planetMat);planetMesh.frustumCulled=false;scene.add(planetMesh);
   // Polar jets for planets that expose API routes ("endpoints reaching out").
   const jets=instancedBuffers(new THREE.PlaneGeometry(1,1),{jOrbit:4,jTilt:3,jInfo:4,jColor:3},16);
-  const jetMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  const jetMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
     vertexShader:`${ORBIT}attribute vec4 jOrbit,jInfo;attribute vec3 jTilt,jColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uV,uSpeed;varying vec2 vUv;varying vec3 vC;varying float vA;
       void main(){vec4 sys=uSys[int(jTilt.z)];vec3 c=orbitPos(sys.xyz,jOrbit.x,jOrbit.y,jOrbit.z,jTilt.xy,uV);
         float age=(uT-jInfo.x)/uSpeed;vA=smoothstep(0.,2.5,age)*(jInfo.y<1e5?1.-clamp((uT-jInfo.y)/uSpeed,0.,1.):1.);
@@ -128,7 +128,7 @@ export function createFamily(ctx){
     for(let i=0;i<=SEG;i++){t.push(i/SEG,i/SEG);side.push(-1,1);if(i<SEG){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
     g.setAttribute('position',new THREE.Float32BufferAttribute(new Array((SEG+1)*2*3).fill(0),3));g.setAttribute('aT',new THREE.Float32BufferAttribute(t,1));g.setAttribute('aSide',new THREE.Float32BufferAttribute(side,1));g.setIndex(idx);return g;})();
   const links=instancedBuffers(ribbon,{iA:4,iAT:4,iB:4,iBT:4,iInfo:4,iColA:3,iColB:3},128);
-  const linkMat=new THREE.ShaderMaterial({uniforms:{...common,uFlow:{value:G.motion.turbulence}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  const linkMat=new THREE.ShaderMaterial({uniforms:{...common,uFlow:{value:G.motion.turbulence}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
     vertexShader:`${ORBIT}attribute float aT,aSide;attribute vec4 iA,iAT,iB,iBT,iInfo;attribute vec3 iColA,iColB;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uV,uSpeed,uPx;uniform vec2 uRes;
       varying float vT,vSide,vA,vCross,vSeed;varying vec3 vC;
       vec3 curve(vec3 a,vec3 b,float lift,float t){vec3 m=(a+b)*.5+vec3(0.,lift,0.);float u=1.-t;return u*u*a+2.*u*t*m+t*t*b;}
@@ -237,7 +237,7 @@ export function createFamily(ctx){
     fragmentShader:`varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*4.)*vA*2.,1.);}`});
   const burstPoints=new THREE.Points(burstPts.geometry,burstMat);burstPoints.frustumCulled=false;burstPoints.renderOrder=6;scene.add(burstPoints);let burstNext=0;
   const FLARES=8,flares=instancedBuffers(ribbon,{fP0:4,fP1:4,fInfo:4,fColor:3},FLARES);flares.commit(FLARES);for(let i=0;i<FLARES;i++)flares.write('fP0',i,0,0,0,-1e5);flares.flush();
-  const flareMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  const flareMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
     vertexShader:`attribute float aT,aSide;attribute vec4 fP0,fP1,fInfo;attribute vec3 fColor;uniform float uT,uSpeed,uPx,uV;uniform vec2 uRes;varying float vT,vSide,vA,vAge;varying vec3 vC;
       vec3 curve(vec3 a,vec3 b,float lift,float t){vec3 m=(a+b)*.5+vec3(0.,lift,0.);float u=1.-t;return u*u*a+2.*u*t*m+t*t*b;}
       void main(){float age=(uT-fP0.w)/uSpeed/fP1.w;vAge=age;float lift=fInfo.x*(1.+.15*sin(uV*2.+aT*9.));

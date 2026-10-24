@@ -701,7 +701,8 @@
         }
         return out.toDataURL('image/jpeg',.92);
       },
-      stats(){return living?living.stats():construct?.stats();}
+      stats(){return living?living.stats():construct?.stats();},
+      world(){return living?.world||null;}
     };
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
