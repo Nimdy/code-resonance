@@ -17,6 +17,11 @@ on:
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
+# One run per pull request: a newer push or label replaces the run in progress (several labels added at once would
+# otherwise start one run each).
+concurrency:
+  group: extended-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   packs-full:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:packs-full')
