@@ -1,0 +1,11 @@
+# Text files keep LF on every platform (Windows checkouts included), so a visual pack's files, and therefore its
+# digest and approvals, are byte-identical everywhere.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webm binary
+*.wav binary
+*.vsix binary
+*.zip binary
+# Vendored third-party files stay exactly as published.
+vendor/** -text
