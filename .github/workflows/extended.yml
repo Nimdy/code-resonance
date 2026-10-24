@@ -1,0 +1,178 @@
+name: extended-qualification
+# The expensive tier, not required on every push: it costs about 4 runner-hours (Windows minutes count double).
+# Runs when a pull request carries the label `extended-qualification` (add the label to run it; new pushes re-run it
+# while the label stays), weekly on main, and by hand on main.
+#   packs-full       each reference pack through the full compatibility tests (90 s idle, determinism, 4 switches, 1080p)
+#   runtime-full     the full robustness suite (context loss, hostile probe and flood, revocation, modified files,
+#                    navigation, hidden tab, film timeout) and live recording (lifecycle, a 3-minute recording)
+#   history          long-history reconstruction up to 1,000,000 intents
+#   soak             one hour of the live player with sound, worlds, packs, idle, recordings and a receiver restart
+#   windows-browser  native Windows: Chromium Stage, a reference pack, quick recording
+#   windows-vscode   native Windows: the extension in a real VS Code
+#   obs              OBS Studio itself, in the disposable runner (installed from the official PPA, Xvfb, software GL)
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+jobs:
+  packs-full:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [ember-observatory, blueprint-cathedral, cymatic-field]
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node ../scripts/pack.js test ../packs/examples/${{ matrix.pack }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pack-full-${{ matrix.pack }}
+          path: qualification/results/visual/pack-*.json
+  runtime-full:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node visual/robustness.qual.js
+      - run: node visual/recording.qual.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-full
+          path: |
+            qualification/results/robustness
+            qualification/results/recording/*.json
+            qualification/results/recording/*.jpg
+  history:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node visual/history.qual.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: history
+          path: qualification/results/visual/history-qualification.json
+  soak:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node visual/soak.qual.js --hours 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soak
+          path: qualification/results/soak
+  windows-browser:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install chromium
+      - run: node browser/stage.qual.js
+      - run: node ../scripts/pack.js test ../packs/examples/cymatic-field --quick
+      - run: node visual/recording.qual.js --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-browser
+          path: |
+            qualification/results/browser
+            qualification/results/visual/pack-*.json
+            qualification/results/recording/*.json
+  windows-vscode:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node vscode/run.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-vscode
+          path: qualification/results
+  obs:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Install OBS Studio (official PPA) in this disposable runner
+        run: |
+          sudo add-apt-repository -y ppa:obsproject/obs-studio
+          sudo apt-get update
+          sudo apt-get install -y obs-studio xvfb
+          # Ubuntu 24.04 restricts unprivileged user namespaces, which the Chromium inside OBS's browser source needs.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obs
+          path: qualification/results/obs
