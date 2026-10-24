@@ -1,0 +1,41 @@
+{
+  "$schema": "../../schema/pack.schema.json",
+  "schema": "code-resonance.pack.v1",
+  "id": "northlight.ember-observatory",
+  "name": "Ember Observatory",
+  "version": "1.0.0",
+  "kind": "declarative",
+  "sdk": "^1.0",
+  "author": {"name": "Northlight Works (fictional)"},
+  "description": "A Stellar Forge seen through an old observatory lens: a binary core, embers instead of plasma, slow orbits, warm film grade. Data only.",
+  "license": "CC0-1.0",
+  "declarative": {
+    "base": "stellar-forge",
+    "overrides": {
+      "geometry.arrangement": "binary-core",
+      "geometry.spiralArms": [2, 3],
+      "geometry.orbitTilt": [0.18, 0.32],
+      "geometry.starScale": 1.25,
+      "secondary.corona": 1.2,
+      "atmosphere.nebula": "veil",
+      "atmosphere.nebulaDensity": [0.7, 0.9],
+      "atmosphere.stars": 0.7,
+      "material.plasma": 0.85,
+      "motion.orbitSpeed": [0.45, 0.6],
+      "camera.personality": "drifting",
+      "camera.fov": 30,
+      "agents.form": "probe",
+      "palette.primary": "#ff9a5c",
+      "palette.secondary": "#ffc27a",
+      "palette.accent": "#ff6a3d",
+      "palette.highlight": "#ffe7c4",
+      "palette.deep": "#0d0806",
+      "palette.haze": "#3a1d12",
+      "light.bloom": 1.35,
+      "light.grain": 0.035
+    },
+    "effects": {"validation.passed": "calm-pulse", "milestone.achieved": "aurora"},
+    "unlocks": ["galactic-halo", "distant-pulsar", "aurora-veils", "plasma-currents"],
+    "technique": {"saturation": 0.82, "tint": [1.1, 0.97, 0.86], "lift": [0.012, 0.004, 0], "grain": 1.4, "aberration": 0.007, "vignette": 1.3}
+  }
+}

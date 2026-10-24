@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schema/pack.schema.json",
+  "schema": "code-resonance.pack.v1",
+  "id": "halcyon.cymatic-field",
+  "name": "Cymatic Field",
+  "version": "1.0.0",
+  "kind": "world",
+  "sdk": "^1.0",
+  "author": {"name": "Halcyon Visuals (fictional)"},
+  "description": "Every subsystem is a resonant plate. Sand gathers on its nodal lines as the code grows, failures make it dissonant, verified milestones leave golden halos, agents excite ripples, the beat drives the vibration.",
+  "license": "MIT",
+  "world": {
+    "entry": "world.js",
+    "family": {"name": "Cymatic Field"},
+    "parameters": {
+      "plateSpacing": {"type": "number", "min": 0.9, "max": 1.3, "from": {"trait": "crossDensity", "scale": -1.4, "offset": 1, "jitter": 0.15}, "description": "subsystems coupled to each other stand closer"},
+      "baseOrder": {"type": "integer", "min": 2, "max": 5, "from": {"trait": "depth", "scale": 0.12, "jitter": 0.1}, "description": "harmonic richness: more symbols per module, finer figures"},
+      "grainDensity": {"type": "number", "min": 0.7, "max": 1.3, "from": {"trait": "symbols", "scale": 0.004, "jitter": 0.1}},
+      "morphBars": {"type": "enum", "values": [8, 16, 32], "weights": [1, 2, 1], "description": "bars between modes while idle"},
+      "symmetry": {"type": "enum", "values": ["square", "radial"], "description": "square plates or round ones"},
+      "sandTone": {"type": "enum", "values": ["warm", "cool", "iridescent"]},
+      "shimmer": {"type": "number", "min": 0.3, "max": 1, "from": {"trait": "agentShare", "scale": 1.2, "offset": 0.1, "jitter": 0.15}, "description": "how strongly the sand dances to the beat"},
+      "arcHeight": {"type": "number", "min": 0.6, "max": 1.5, "from": {"trait": "dependencyDensity", "scale": 0.8, "jitter": 0.15}},
+      "cameraTilt": {"type": "number", "min": 0.6, "max": 0.95},
+      "drift": {"type": "number", "min": 0.3, "max": 1}
+    },
+    "effects": {
+      "subsystem.created": "plate-strike", "module.created": "pin-rise", "structure.created": "grain-shower", "structure.removed": "grain-scatter",
+      "subsystem.connected": "sympathetic-bridge", "validation.failed": "dissonance", "validation.passed": "clear-tone", "validation.recovered": "retune",
+      "refactor.validated": "mode-shift", "milestone.achieved": "resonance", "repository.checkpoint": "standing-wave", "world.expanded": "new-harmonic"
+    },
+    "ambient": {"base": ["mode-drift", "breathing", "shimmer"], "unlocks": ["golden-dust", "overtones", "aurora-field", "distant-plates"]},
+    "palette": {"hues": [32, 44, 188, 204, 276, 318]},
+    "shaders": ["shaders/common.glsl", "shaders/sand.vert", "shaders/sand.frag", "shaders/plate.vert", "shaders/plate.frag", "shaders/pin.vert", "shaders/pin.frag",
+      "shaders/arc.vert", "shaders/arc.frag", "shaders/ring.vert", "shaders/ring.frag", "shaders/point.vert", "shaders/point.frag", "shaders/sky.frag"],
+    "budget": {"drawCalls": 12, "passes": 32, "triangles": 250000, "points": 80000, "textures": 16, "updateMs": 6}
+  }
+}
