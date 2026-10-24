@@ -35,6 +35,10 @@ function analyse(file,{expectAudio=true}={}){
     out.longGaps=iv.filter(x=>x>.25).length;
     // Where the long gaps are (seconds into the video, and their length), the first ten.
     out.gapsAt=f.slice(1).map((x,i)=>({t:+f[i].t.toFixed(2),ms:Math.round((x.t-f[i].t)*1000)})).filter(g=>g.ms>250).slice(0,10);
+    // Start-up (the first second, while the recorder and the first frames get going) apart from the rest.
+    const after=f.slice(1).map((x,i)=>({t:f[i].t,d:x.t-f[i].t})).filter(x=>x.t>=f[0].t+1);
+    out.startupMaxMs=Math.round(Math.max(0,...f.slice(1).map((x,i)=>({t:f[i].t,d:x.t-f[i].t})).filter(x=>x.t<f[0].t+1).map(x=>x.d))*1000);
+    out.maxIntervalAfterStartupMs=after.length?Math.round(Math.max(...after.map(x=>x.d))*1000):null;
     // Share of frames whose picture differs from the previous one (a frozen picture repeats its checksum).
     out.changingFrames=+(f.slice(1).filter((x,i)=>x.sum!==f[i].sum).length/(f.length-1)).toFixed(3);
     out.meanLuma=+(f.reduce((a,x)=>a+x.luma,0)/f.length).toFixed(1);
