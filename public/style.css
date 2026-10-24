@@ -33,3 +33,4 @@ body.overlay .caption{bottom:56px;font-size:18px}
 .panel.left{overflow-y:auto}.panel.left::-webkit-scrollbar{width:4px}.panel.left::-webkit-scrollbar-thumb{background:#23374e}
 .dna{display:flex;flex-direction:column;gap:9px;margin:12px 0 4px}.dna-family{display:flex;flex-direction:column;gap:4px}.dna-family strong{font:13px var(--mono);letter-spacing:.12em;color:#e3ecfb}.dna-family span{font:9px var(--mono);letter-spacing:.1em;color:#6c7d98}
 .dna-actions{display:flex;gap:6px}.dna-actions .action{flex:1;padding:8px 6px}
+.dna-title{width:100%;box-sizing:border-box;padding:8px;font:10px var(--mono);letter-spacing:.04em;color:#e3ecfb;background:rgba(8,12,22,.7);border:1px solid rgba(120,150,200,.25);border-radius:3px}.dna-title::placeholder{color:#5d6d88}

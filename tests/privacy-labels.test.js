@@ -1,0 +1,57 @@
+'use strict';
+// Stage / OBS / film labels: the project folder name (shared by the extension for the player's project list) never
+// appears; a title appears only when the user explicitly set the recipe's public title.
+const test=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const recipe=require('../engine/recipe');
+const load=()=>import('../public/worlds/labels.js');
+const FOLDER='acme-secret-client-portal';
+const T0=1750000000000;
+const project={projectId:'p-123456789012',name:FOLDER,graph:{nodes:[],edges:[]},stats:{}};
+const world={
+  describe:c=>({text:'A new star ignites',sub:'subsystem',banner:c.tier>=3?'Integration validated':null,bannerSub:'verified',position:{x:0,y:0,z:0}}),
+  agentPosition:()=>({x:0,y:0,z:0}),agentColor:()=>'#fff',subsystemLabels:()=>[{position:{x:0,y:0,z:0},text:'Vauos',sub:'logic'}],status:()=>'2 validated'
+};
+function frame(r,mode,t=T0+2000){
+  return {mode,recipe:r,info:{t,phase:'active',agents:[{id:'a',number:1,label:'editing',busy:true,alpha:1,arrived:T0,since:100,display:'tool'}]},
+    commands:[{at:T0+1500,tier:3,subject:{fileId:'f1'}},{at:T0+1800,tier:2,subject:{groupId:'g1'}}],
+    agentName:a=>`Agent ${a.number}`,world,toScreen:()=>({x:600,y:400,visible:true}),size:[1920,1080],origin:T0};
+}
+test('No label in any mode contains the project folder name; without a public title the text is generic',async()=>{
+  const {composeLabels,labelStrings,LABEL_MODES,titleCard,lowerThirdTitle}=await load();
+  const r=recipe.generate(project,{family:'stellar-forge',now:0});
+  assert.equal(r.title,null,'a generated recipe has no title');
+  for(const mode of LABEL_MODES){
+    const text=labelStrings(composeLabels(frame(r,mode))).join(' | ');
+    assert(!text.toLowerCase().includes(FOLDER),`${mode}: ${text}`);
+    assert(!/acme|portal/i.test(text),`${mode}: ${text}`);
+  }
+  assert.equal(titleCard(r).text,'Stellar Forge');
+  assert.equal(lowerThirdTitle(r),'Code Resonance · Stellar Forge');
+  const stream=composeLabels(frame(r,'stream'));
+  assert.equal(stream.find(x=>x.kind==='lower-third').text,'Code Resonance · Stellar Forge');
+  const cinematic=composeLabels(frame(r,'cinematic'));
+  assert.equal(cinematic.find(x=>x.kind==='title').text,'Stellar Forge');
+});
+test('An explicitly approved public title is the only project name the Stage shows',async()=>{
+  const {composeLabels,labelStrings}=await load();
+  const r=recipe.update(recipe.generate(project,{family:'machine-cathedral',now:0}),{type:'title',title:'Night Build'},project);
+  const stream=composeLabels(frame(r,'stream'));
+  assert.equal(stream.find(x=>x.kind==='lower-third').text,'Night Build · Machine Cathedral');
+  assert.equal(composeLabels(frame(r,'cinematic')).find(x=>x.kind==='title').text,'Night Build');
+  assert(!labelStrings(stream).join(' ').includes(FOLDER));
+  // Clearing the title returns to generic text.
+  const cleared=recipe.update(r,{type:'title',title:null},project);
+  assert.equal(composeLabels(frame(cleared,'stream')).find(x=>x.kind==='lower-third').text,'Code Resonance · Machine Cathedral');
+  assert.throws(()=>recipe.update(r,{type:'title',title:'x'.repeat(41)},project));
+  assert.throws(()=>recipe.update(r,{type:'title',title:'<script>'},project));
+});
+test('Resolving a stored recipe never adopts the folder name, and the world host has no input for it',()=>{
+  const {recipe:resolved}=recipe.resolve(null,project,0);assert.equal(resolved.title,null);
+  const {recipe:again}=recipe.resolve({...resolved,founded:false,locked:false},{...project,name:'another-folder'},0);assert.equal(again.title,null);
+  const host=fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8');
+  assert(!/project\s*[:=]|setProject|\.name\s*\|\|/.test(host),'host.js takes no project name');
+  const app=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
+  const call=app.slice(app.indexOf('createWorld('),app.indexOf('createWorld(')+400);
+  assert(!/name/.test(call.split(');')[0]),'the player passes no project name to the world');
+});

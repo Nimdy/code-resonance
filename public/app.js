@@ -438,7 +438,7 @@
         const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
         const m=await import('/worlds/host.js');if(living)disposeLiving();
         recipe=r.json;
-        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null},quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'});
+        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'});
         livingFor=selected;livingSize='';
         if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());
@@ -472,6 +472,7 @@
     $('dnaLock').setAttribute('aria-pressed',String(!!recipe?.locked));setText('dnaLock',recipe?.locked?'UNLOCK':'LOCK');
     const k=Math.round((recipe?.overrides?.intensity??1)*100);$('intensitySlider').value=String(k);setText('intensityReadout',`${k}%`);
     $('labelsSelect').value=labelMode;
+    if(document.activeElement!==$('dnaTitle'))$('dnaTitle').value=recipe?.title||'';
   }
   function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();living.pick(e.clientX-r.left,e.clientY-r.top);});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
@@ -672,6 +673,8 @@
   $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
   $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
   $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
+  // The public title is the only project name the Stage may show, and only once the user sets it here.
+  $('dnaTitle').addEventListener('change',()=>recipeAction({type:'title',title:$('dnaTitle').value.trim()||null}).catch(console.error));
   $('musicStyle').addEventListener('change',()=>{music.setOptions({style:$('musicStyle').value});syncPlayerControls();storePrefs();});
   for(const [id,key,convert] of [['volumeSlider','volume',v=>v/100],['tempoSlider','tempo',v=>v],['textureSlider','texture',v=>v/100]]){
     $(id).addEventListener('input',()=>{music.setOptions({[key]:convert(Number($(id).value)),...(key==='tempo'?{tempoMode:'manual'}:{})});syncPlayerControls();storePrefs();});

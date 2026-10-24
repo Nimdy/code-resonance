@@ -63,9 +63,19 @@
       "detail": ""
     },
     {
+      "name": "live: opening the live view primes the whole intent history",
+      "pass": true,
+      "detail": "205 of 205 recorded intents"
+    },
+    {
+      "name": "no page errors in the live view",
+      "pass": true,
+      "detail": ""
+    },
+    {
       "name": "idle life: the image keeps changing for 90 s with no events",
       "pass": true,
-      "detail": "mean |Δluma| between samples 26.79, 25.45, 28.73 (0-255)"
+      "detail": "mean |\u0394luma| between samples 26.79, 25.45, 28.73 (0-255)"
     },
     {
       "name": "idle life: no structure or event appears while idle",
@@ -78,7 +88,7 @@
       "detail": "active,idle,idle,idle"
     },
     {
-      "name": "privacy: no label contains a path, file name or source identifier",
+      "name": "privacy: no label contains a path, file name, source identifier or the project folder name",
       "pass": true,
       "detail": "61 distinct label strings checked"
     },
@@ -86,16 +96,6 @@
       "name": "resources: switching worlds 9 times leaves GPU geometries and textures at their level",
       "pass": true,
       "detail": "geometries 20->20, textures 13->13"
-    },
-    {
-      "name": "live: opening the live view primes the whole intent history",
-      "pass": true,
-      "detail": "205 of 205 recorded intents"
-    },
-    {
-      "name": "no page errors in the live view",
-      "pass": true,
-      "detail": ""
     }
   ],
   "measurements": {
@@ -123,56 +123,56 @@
       "3 under strain",
       "5 under strain",
       "8 under strain",
+      "A generative world from this project's code",
       "A new star ignites",
-      "Agent 1 · disconnected",
-      "Agent 1 · editing",
-      "Agent 1 · working on a request",
-      "Agent 2 · disconnected",
-      "Agent 2 · working on a request",
-      "Agent 3 · connected",
-      "Agent 3 · disconnected",
-      "Agent 3 · editing",
-      "Agent 3 · running",
-      "Agent 3 · working on a request",
-      "Agent 4 · connected",
-      "Agent 4 · disconnected",
-      "Agent 4 · testing",
-      "Agent 4 · waiting for the next prompt",
-      "Agent 4 · working on a request",
+      "Agent 1 \u00b7 disconnected",
+      "Agent 1 \u00b7 editing",
+      "Agent 1 \u00b7 working on a request",
+      "Agent 2 \u00b7 disconnected",
+      "Agent 2 \u00b7 working on a request",
+      "Agent 3 \u00b7 connected",
+      "Agent 3 \u00b7 disconnected",
+      "Agent 3 \u00b7 editing",
+      "Agent 3 \u00b7 running",
+      "Agent 3 \u00b7 working on a request",
+      "Agent 4 \u00b7 connected",
+      "Agent 4 \u00b7 disconnected",
+      "Agent 4 \u00b7 testing",
+      "Agent 4 \u00b7 waiting for the next prompt",
+      "Agent 4 \u00b7 working on a request",
       "Agent 4: testing",
       "Agent 4: working on a request",
-      "Agent 5 · connected",
-      "Agent 5 · disconnected",
-      "Agent 5 · reading",
-      "Agent 5 · running",
-      "Agent 5 · searching",
-      "Agent 5 · waiting for the next prompt",
-      "Agent 5 · working on a request",
-      "Agent 6 · disconnected",
-      "Agent 6 · testing",
-      "Agent 6 · working on a request",
-      "Alyror ↔ Vauos",
+      "Agent 5 \u00b7 connected",
+      "Agent 5 \u00b7 disconnected",
+      "Agent 5 \u00b7 reading",
+      "Agent 5 \u00b7 running",
+      "Agent 5 \u00b7 searching",
+      "Agent 5 \u00b7 waiting for the next prompt",
+      "Agent 5 \u00b7 working on a request",
+      "Agent 6 \u00b7 disconnected",
+      "Agent 6 \u00b7 testing",
+      "Agent 6 \u00b7 working on a request",
+      "Alyror \u2194 Vauos",
       "Building",
-      "Committed · 1 world set in orbit",
-      "Committed · the work is set in place",
-      "Deen · tests",
+      "Code Resonance \u00b7 Stellar Forge",
+      "Committed \u00b7 1 world set in orbit",
+      "Committed \u00b7 the work is set in place",
+      "Deen \u00b7 tests",
       "Integration validated",
-      "Integration · two systems connect",
-      "Ioeoel · logic",
+      "Integration \u00b7 two systems connect",
+      "Ioeoel \u00b7 logic",
       "New structure enters orbit",
-      "Nova · Integration validated",
-      "Recovered · 8 worlds repaired",
+      "Nova \u00b7 Integration validated",
+      "Recovered \u00b7 8 worlds repaired",
       "Recovery",
-      "Stellar Forge · a generative world from this project's code",
-      "Tests fail · storms on 8 worlds",
-      "Tests pass · 2 worlds validated",
-      "The forge grows · chapter 2",
-      "The forge grows · chapter 3",
+      "Stellar Forge",
+      "Tests fail \u00b7 storms on 8 worlds",
+      "Tests pass \u00b7 2 worlds validated",
+      "The forge grows \u00b7 chapter 2",
+      "The forge grows \u00b7 chapter 3",
       "accumulated structure",
       "commit observed",
-      "lumen-recipes",
-      "lumen-recipes · Stellar Forge",
-      "milestone · verified by a passing test run",
+      "milestone \u00b7 verified by a passing test run",
       "observed failing run",
       "observed passing run",
       "the tests pass again",
@@ -182,61 +182,61 @@
       {
         "geometries": 20,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "stellar-forge",
         "geometries": 20,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "fractal-biosphere",
         "geometries": 14,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "machine-cathedral",
         "geometries": 15,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "stellar-forge",
         "geometries": 20,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "fractal-biosphere",
         "geometries": 14,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "machine-cathedral",
         "geometries": 15,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "stellar-forge",
         "geometries": 20,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "fractal-biosphere",
         "geometries": 14,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       },
       {
         "family": "machine-cathedral",
         "geometries": 15,
         "textures": 13,
-        "heap": 11200000
+        "heap": 11900000
       }
     ],
     "performance": {
@@ -319,12 +319,13 @@
         }
       }
     },
-    "privacyPatterns": 41,
+    "privacyPatterns": 44,
     "live": {
       "recorded": 205,
       "primed": 205,
       "phase": "idle"
-    }
+    },
+    "privacyFolderName": true
   },
   "reruns": [
     {
@@ -338,6 +339,12 @@
       "at": "2026-10-24T04:00:53.837Z",
       "sections": [
         "live"
+      ]
+    },
+    {
+      "at": "2026-10-24T13:36:11.143Z",
+      "sections": [
+        "idle"
       ]
     }
   ]

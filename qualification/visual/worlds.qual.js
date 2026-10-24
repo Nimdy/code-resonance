@@ -88,6 +88,10 @@ const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
       const GENERIC=new Set(['src','app','lib','test','tests','api','ui','data','index','main','utils','types','style','styles','public','server','client','components','pages','docs','readme','package','config','scripts']);
       const paths=new Set();for(const l of fs.readFileSync(path.join(sets.lumen.dir,'projects',fs.readdirSync(path.join(sets.lumen.dir,'projects'))[0],'events.jsonl'),'utf8').split('\n').filter(Boolean)){const e=JSON.parse(l);
         if(e.file){paths.add(e.file);for(const part of e.file.split('/')){const base=part.replace(/\.[^.]+$/,'');if(base.length>=4&&!GENERIC.has(base.toLowerCase())){paths.add(part);paths.add(base);}}}}
+      // The project folder name (the extension shares it for the player's project list) is never a label either.
+      const folder=(await (await fetch(`http://127.0.0.1:${svc.port}/api/projects`)).json()).projects.find(p=>p.id===project)?.name;
+      if(folder){paths.add(folder);for(const part of folder.split(/[-_ .]+/))if(part.length>=5)paths.add(part);}
+      measurements.privacyFolderName=!!folder;
       const seen=new Set();await page.evaluate(x=>window.__film.seek(x),info.start);
       for(let t=info.start;t<info.end;t+=1000/5){await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/5]);if(Math.round((t-info.start)/1000)%3===0)for(const s of await page.evaluate(()=>window.__film.labels()))seen.add(s);}
       await page.evaluate(()=>window.__film.setLabels('stream'));for(let t=info.start+90000;t<info.start+100000;t+=200){await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.2]);for(const s of await page.evaluate(()=>window.__film.labels()))seen.add(s);}
@@ -97,7 +101,7 @@ const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
       const identifier=/\b[a-z]+[A-Z]\w*\b|\b\w+_\w+\b/;
       const leaks=[...seen].filter(s=>/[\\/]|\.(?:[jt]sx?|json|css|md|py)\b/.test(s)||identifier.test(s)||pathWords.some(r=>r.test(s)));
       measurements.labels=[...seen].sort();measurements.privacyPatterns=paths.size;
-      check('privacy: no label contains a path, file name or source identifier',leaks.length===0,leaks.slice(0,3).join(' | ')||`${seen.size} distinct label strings checked`);
+      check('privacy: no label contains a path, file name, source identifier or the project folder name',leaks.length===0,leaks.slice(0,3).join(' | ')||`${seen.size} distinct label strings checked`);
       // 3. Resources: switch worlds repeatedly; geometries and textures must return to their level.
       const project2=await (await fetch(`http://127.0.0.1:${svc.port}/api/project?id=${project}`)).json();
       const mem=[];const t2=info.start+120000;await renderTo(page,t2-1000,t2,10);mem.push(await page.evaluate(()=>window.__film.memory()));

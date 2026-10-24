@@ -12,7 +12,7 @@
 | Command category (test, build, lint, …) and exit code | yes, classified inside the extension | journal | as cues |
 | AI prompts and assistant messages (hooks) | length + fingerprint; text only with `RESONANCE_CAPTURE_PROMPT_TEXT=1` | journal | never |
 | File paths | project-relative, secret patterns excluded | journal | **never** (salted hashed ids only) |
-| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | player project list only; never drawn on the Stage or OBS view |
+| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | player project list only; never drawn on the Stage, OBS view or films (their titles are generic unless you set a **public title** in the World DNA panel) |
 
 Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inserted text even if an old extension sends it; existing journals from v0.2 may still contain it — delete them (below) if that matters.
 

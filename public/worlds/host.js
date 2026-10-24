@@ -5,6 +5,7 @@ import {THREE,createPipeline,createCameraRig,createOverlay,clamp,hash,rng} from 
 import {createModel} from './model.js';
 import {createDirector} from './director.js';
 import {createAgents} from './agents.js';
+import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
 const FAMILIES={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
 const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
 const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
@@ -18,7 +19,8 @@ export function generatedName(id){
   for(let i=0;i<12;i++){const name=pick(ONSET)+pick(VOWEL)+pick(CODA)+pick(ENDING);if(!BLOCK.test(name))return name;}
   return 'Aurel';
 }
-export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',project={},quality=0,adaptive=true}={}){
+// Public labels never receive the project folder name: titles come only from the recipe's approved public title.
+export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',quality=0,adaptive=true}={}){
   if(!recipe||!FAMILIES[recipe.family])throw new Error('A visual recipe with a known family is required');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:film,powerPreference:'high-performance',alpha:false,stencil:false});
   if(!renderer.capabilities.isWebGL2)throw new Error('WebGL2 is required for the generative worlds');
@@ -39,7 +41,6 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const model=createModel({speed});
   const intents=[],intentIds=new Set();let director,agents,world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null;
   const timing={update:0,draw:0},calls={scene:0,total:0,triangles:0,points:0};
-  const meta={name:project.name||null};
   function prime(upTo){
     director=createDirector({recipe:current,intensity:current.overrides?.intensity??1});agents=createAgents();
     for(const i of intents){if(i.ts>upTo)break;agents.record(i);director.process(i);}
@@ -58,51 +59,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function addIntent(i){if(intentIds.has(i.id))return false;intentIds.add(i.id);let k=intents.length;while(k>0&&intents[k-1].ts>i.ts)k--;intents.splice(k,0,i);
     if(intents.length>30000)for(const x of intents.splice(0,intents.length-30000))intentIds.delete(x.id);return true;}
   // ---- Labels -------------------------------------------------------------------------------------------------
-  const CALLOUT_MS=5200,BANNER_MS=6500,CHIP_MS=6000;
   function labelItems(i){
-    if(mode==='off')return [];
-    const out=[],w=size[0],h=size[1],cut=current.genome.limits?.maxLabels||5;
-    const title=current.title||meta.name;
-    // The title belongs to the start of the performance (replays and films), or to the moment the world opened (live).
-    const origin=pinnedStart??startedAt,sinceStart=origin===null?Infinity:(i.t-origin)/speedK;
-    if(title&&sinceStart<9000&&mode!=='stream'){const a=Math.min(1,sinceStart/1200)*Math.min(1,(9000-sinceStart)/1500);out.push({kind:'title',text:title,sub:`${current.familyName} · a generative world from this project's code`,alpha:a});}
-    // Callouts for structural events and above, near what they changed; milestones also get a banner.
-    let n=0;const used=[],subjects=new Set();
-    const recent=director.commands.filter(c=>c.at<=i.t&&(i.t-c.at)/speedK<=BANNER_MS&&c.tier>=2).sort((a,b)=>b.tier-a.tier||b.at-a.at);
-    for(const c of recent){
-      if(n>=cut)break;const age=(i.t-c.at)/speedK;
-      // One callout per subject (a milestone replaces the validation it came from).
-      const key=c.subject?.fileId||c.subject?.groupId||(c.subject?.fileIds||[]).join(',');if(key&&subjects.has(key))continue;if(key)subjects.add(key);
-      const d=world.describe(c,i);if(!d)continue;
-      const fade=Math.min(1,age/400)*Math.min(1,(CALLOUT_MS-age)/900);
-      if(c.tier>=3&&d.banner&&age<BANNER_MS)out.push({kind:'banner',text:d.banner,sub:d.bannerSub,alpha:Math.min(1,age/600)*Math.min(1,(BANNER_MS-age)/1200)});
-      if(age<CALLOUT_MS&&d.text){
-        if(mode==='stream'){out.push({kind:'_event',text:d.text});n++;continue;}
-        const p=d.position?overlay.project(camera,d.position,w,h):null;
-        if(p&&p.visible&&p.x>40&&p.x<w-260&&p.y>60&&p.y<h-140){
-          let dy=-50;while(used.some(u=>Math.abs(u.x-p.x)<320&&Math.abs(u.y-(p.y+dy))<46)&&dy>-260)dy-=48;used.push({x:p.x,y:p.y+dy});
-          out.push({kind:'callout',x:p.x,y:p.y,text:d.text,sub:d.sub,color:d.color,alpha:fade,dx:p.x>w*.6?-70:46,dy});}
-        else if(!out.some(x=>x.kind==='caption'))out.push({kind:'caption',text:d.text,alpha:fade});
-        n++;
-      }
-    }
-    // Agents: a chip when an agent's activity changes (always in explorer and stream modes).
-    for(const a of i.agents){
-      const pos=world.agentPosition?.(a.id,i);if(!pos)continue;
-      const changed=(i.t-Math.max(a.arrived,i.t-a.since))/speedK;
-      if(mode==='cinematic'&&changed>CHIP_MS&&a.display!=='unknown')continue;
-      const p=overlay.project(camera,pos,w,h);if(!p.visible)continue;
-      out.push({kind:'chip',x:p.x,y:p.y,dx:16,dy:-22,text:`${agents.name(a)} · ${a.label}`,dot:world.agentColor?.(a)||'#fff',alpha:a.alpha*(mode==='cinematic'?Math.min(1,(CHIP_MS-changed)/900):1)});
-    }
-    if(mode==='explorer')for(const l of world.subsystemLabels?.(i)||[]){const p=overlay.project(camera,l.position,w,h);if(p.visible)out.push({kind:'label',x:p.x,y:p.y,text:l.text,sub:l.sub,alpha:.9});}
-    if(mode==='explorer'&&selected){const s=world.inspect?.(selected,i);if(s){const p=overlay.project(camera,s.position,w,h);if(p.visible)out.push({kind:'callout',x:p.x,y:p.y,text:s.text,sub:s.sub,alpha:1,color:'#fff'});}}
-    if(mode==='stream'){
-      const events=out.filter(x=>x.kind==='_event');const busy=i.agents.filter(a=>a.busy);
-      const status=world.status?.(i)||'';
-      out.push({kind:'lower-third',text:`${title||'Project'} · ${current.familyName}`,sub:events[0]?.text||(i.phase==='idle'?'Quiet — the world keeps moving':'Building'),
-        right:busy.length?busy.map(a=>`${agents.name(a)}: ${a.label}`).slice(0,2).join('   '):i.agents.length?`${i.agents.length} agent${i.agents.length>1?'s':''} present`:'',right2:status,alpha:1});
-    }
-    return out.filter(x=>x.kind!=='_event');
+    return composeLabels({mode,recipe:current,info:i,commands:director.commands,agentName:a=>agents.name(a),world,toScreen:pos=>overlay.project(camera,pos,size[0],size[1]),
+      size,speed:speedK,origin:pinnedStart??startedAt,selected});
   }
   let lastLabels=[];
   function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);g.restore();}
@@ -141,13 +100,12 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
-    setProject(p){if(p?.name!==undefined)meta.name=p.name;},
     async setRecipe(next){if(!next||!FAMILIES[next.family])return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
-    setLabels(m){if(['cinematic','explorer','stream','off'].includes(m))mode=m;},
+    setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     pick(x,y){if(!world.pick)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info);selected=id;return id?world.inspect?.(id,info):null;},
     render,drawOverlay,
     // Every string currently on screen (qualification: the privacy boundary covers labels too).
-    labels(){return lastLabels.flatMap(x=>[x.text,x.sub,x.right,x.right2]).filter(Boolean);},
+    labels(){return labelStrings(lastLabels);},
     resize(w,h,dpr=1){size=[w,h];pixelRatio=dpr;applyLevel();camera.aspect=w/h;camera.updateProjectionMatrix();
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:intents.length,agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
