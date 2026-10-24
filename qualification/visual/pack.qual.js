@@ -7,7 +7,8 @@
 // the world is switched away and back; and the performance budget the manifest declares (total rendering cost:
 // scene draw calls, all passes, triangles, points, CPU time, frame rate, adaptive quality).
 //
-// node visual/pack.qual.js <pack dir> [--gpu amd] [--datasets results/datasets] [--out results/visual]
+// node visual/pack.qual.js <pack dir> [--gpu amd] [--quick] [--datasets results/datasets] [--out results/visual]
+// --quick (CI): the session at 2 fps, 30 s of idle, two world switches, no determinism pair, performance at 1280×720 only.
 // Datasets: the Lumen Recipes recording (always available: copied from qualification/recordings), plus results/
 // datasets/self or excalidraw when built (visual/datasets.js) for a second, structurally different project.
 const path=require('node:path');
@@ -18,7 +19,7 @@ const packs=require(path.join(REPO,'engine/packs'));
 const {lumen}=require('./datasets');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const SOURCE=path.resolve(process.argv[2]||'');
-const GPU=arg('gpu',null);
+const GPU=arg('gpu',null),QUICK=process.argv.includes('--quick');
 const DATA=path.resolve(arg('datasets',path.join(__dirname,'..','results','datasets')));
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual')));
 const {checks,check}=checker();const measurements={};
@@ -76,33 +77,59 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
             localStorage:await attempt(()=>window.localStorage.length),
             cookie:await attempt(()=>document.cookie),
             webrtc:typeof RTCPeerConnection==='undefined'?'blocked':'reached',
-            worker:await attempt(()=>new Promise((res,rej)=>{const w=new Worker(URL.createObjectURL(new Blob(['postMessage("ran")'],{type:'text/javascript'})));
-              w.onmessage=e=>res(e.data);w.onerror=()=>rej(new Error('blocked'));setTimeout(()=>rej(new Error('blocked')),1500);})),
+            // The frame starts workers (that is how packs run); a worker inherits the frame's policy, so it cannot connect.
+            workerNetwork:await attempt(()=>new Promise((res,rej)=>{const w=new Worker(URL.createObjectURL(new Blob([`fetch('${out}/nested').then(()=>postMessage('reached'),()=>postMessage('blocked'))`],{type:'text/javascript'})));
+              w.onmessage=e=>e.data==='reached'?res('reached'):rej(new Error('blocked'));w.onerror=()=>rej(new Error('blocked'));setTimeout(()=>rej(new Error('blocked')),2000);})),
             popup:window.open(`${out}/popup`)?'reached':'blocked'
           };
           // Fire-and-forget channels: their effect is checked at the listener.
           navigator.sendBeacon(`${out}/beacon`,'x');const img=new Image();img.src=`${out}/image`;
           const link=document.createElement('link');link.rel='prefetch';link.href=`${out}/prefetch`;document.head.append(link);
           await new Promise(res=>setTimeout(res,2000));return r;},[svc.port,sinkPort]):null;
+        // Where pack code actually runs: the pack worker (SDK 1.1). The same attempts, from its global scope.
+        const worker=probe.page.workers().find(w=>w.url().startsWith('blob:null/'));
+        const workerProbes=worker?await worker.evaluate(async([port,sinkPort])=>{
+          const out=`http://127.0.0.1:${sinkPort}`;
+          const attempt=async f=>{try{const r=await f();return r===undefined?'reached':`reached: ${String(r).slice(0,40)}`;}catch(e){return 'blocked';}};
+          return {
+            fetchReceiver:await attempt(()=>fetch(`http://127.0.0.1:${port}/api/projects`).then(r=>r.status)),
+            fetchOutside:await attempt(()=>fetch(`${out}/worker-fetch`).then(r=>r.status)),
+            xhr:await attempt(()=>new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open('GET',`${out}/worker-xhr`);x.onload=()=>res(x.status);x.onerror=()=>rej(new Error('blocked'));x.send();})),
+            websocket:await attempt(()=>new Promise((res,rej)=>{const w=new WebSocket(`ws://127.0.0.1:${sinkPort}/worker-ws`);w.onopen=()=>res('open');w.onerror=()=>rej(new Error('blocked'));setTimeout(()=>rej(new Error('blocked')),1500);})),
+            scriptReceiverApi:await attempt(()=>importScripts(`http://127.0.0.1:${port}/api/projects`)),
+            scriptOutside:await attempt(()=>importScripts(`${out}/worker-script.js`)),
+            moduleOutside:await attempt(()=>import(`${out}/worker-module.js`)),
+            indexedDB:await new Promise(res=>{try{const r=indexedDB.open('probe');r.onsuccess=()=>res('reached');r.onerror=()=>res('blocked');}catch(e){res('blocked');}}),
+            cacheStorage:await attempt(()=>caches.open('probe').then(()=>'opened')),
+            document:typeof document==='undefined'?'blocked':'reached',
+            parentWindow:typeof parent==='undefined'&&typeof window==='undefined'?'blocked':'reached',
+            webrtc:typeof RTCPeerConnection==='undefined'?'blocked':'reached',
+            navigation:typeof location.assign==='function'?'reached':'blocked',
+            nestedWorkerNetwork:await attempt(()=>new Promise((res,rej)=>{const w=new Worker(URL.createObjectURL(new Blob([`fetch('${out}/worker-nested').then(()=>postMessage('reached'),()=>postMessage('blocked'))`],{type:'text/javascript'})));
+              w.onmessage=e=>e.data==='reached'?res('reached'):rej(new Error('blocked'));w.onerror=()=>rej(new Error('blocked'));setTimeout(()=>rej(new Error('blocked')),2000);}))
+          };},[svc.port,sinkPort]):null;
         await new Promise(r=>setTimeout(r,500));
-        measurements.isolation={probes,outsideRequests:[...hits]};
-        check('isolation: from the pack frame nothing reaches the receiver or an outside listener; no storage, cookies, player, WebRTC, workers or popups',
+        measurements.isolation={probes,workerProbes,outsideRequests:[...hits]};
+        check('isolation (pack worker, where pack code runs): no receiver, network, sockets, outside scripts, storage, DOM, parent, WebRTC or navigation',
+          workerProbes&&Object.values(workerProbes).every(v=>v==='blocked'),workerProbes?JSON.stringify(workerProbes):'pack worker not found');
+        check('isolation (pack frame): nothing reaches the receiver or an outside listener; no storage, cookies, player, WebRTC, networked workers or popups',
           probes&&Object.values(probes).every(v=>v==='blocked')&&!hits.length,`${JSON.stringify(probes)} · outside listener received ${hits.length}`);
         const origin=frame?await frame.evaluate(()=>window.origin):null;
         check('isolation: the pack frame has an opaque origin',origin==='null',String(origin));
-        // The one way out a browser cannot close: the frame navigating itself. The player must stop the pack at once.
+        // The frame document navigating itself (pack code runs in the worker and cannot; the test does it directly):
+        // the player must still stop the pack at once.
         await frame.evaluate(o=>{location.href=o;},`http://127.0.0.1:${sinkPort}/navigate`).catch(()=>{});
         await probe.page.waitForTimeout(1500);
         const stopped=await probe.page.evaluate(()=>document.querySelectorAll('iframe.pack-frame').length===0||!!window.__film.stats()?.remote===false);
         const notice=await probe.page.evaluate(()=>document.getElementById('dnaNotice')?.textContent||'');
         measurements.isolation.selfNavigation={reachedListener:hits.some(h=>h.includes('/navigate')),noticed:notice};
-        check('isolation: a pack that navigates its frame away is stopped by the player (the navigation request itself is a documented residual risk)',/navigated/.test(notice)||stopped,
+        check('isolation: a pack frame that navigates away is stopped by the player (pack code cannot navigate: it runs in a worker)',/navigated/.test(notice)||stopped,
           `navigation request ${measurements.isolation.selfNavigation.reachedListener?'reached':'did not reach'} the listener; player: ${notice||'(no notice)'}`);
         await probe.page.close();sink.close();
       }
       // ---- The whole recorded session at 4 fps: events, labels, privacy.
       const labels=new Set();let frames=0;
-      await play(page,info.start,info.end,4,async t=>{frames++;if(frames%12===0)for(const s of await page.evaluate(()=>window.__film.labels()))labels.add(s);});
+      await play(page,info.start,info.end,QUICK?2:4,async t=>{frames++;if(frames%(QUICK?6:12)===0)for(const s of await page.evaluate(()=>window.__film.labels()))labels.add(s);});
       const stats=await page.evaluate(()=>window.__film.stats());
       measurements.session={frames,effects:stats?.effects||{},world:Object.fromEntries(Object.entries(stats||{}).filter(([k,v])=>typeof v!=='object'))};
       const expressed=Object.keys(stats?.effects||{});
@@ -115,10 +142,10 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       check('privacy: no label shows the folder name, a path, a file name, an identifier or a raw id',labels.size>0&&!leaks.length,leaks.slice(0,3).join(' | ')||`${labels.size} label strings`);
       // ---- Idle: after the last event the image keeps changing while structure and history stay the same.
       const end=info.end,samples=[];await page.evaluate(x=>window.__film.seek(x),end+2000);let t=end+2000;
-      for(const at of [10,40,70,100]){let img;for(;t<=end+at*1000;t+=1000/4)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.25]);samples.push({img:await thumb(page,img),stats:await page.evaluate(()=>window.__film.stats())});}
+      for(const at of QUICK?[10,25,40]:[10,40,70,100]){let img;for(;t<=end+at*1000;t+=1000/4)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.25]);samples.push({img:await thumb(page,img),stats:await page.evaluate(()=>window.__film.stats())});}
       const motion=samples.slice(1).map((s,i)=>+diff(samples[i].img,s.img).toFixed(2));
       measurements.idle={motion,phases:samples.map(s=>s.stats?.phase)};
-      check('idle: the image keeps moving for 90 s without events',motion.every(x=>x>.5),`mean |Δluma| ${motion.join(', ')}`);
+      check(`idle: the image keeps moving for ${QUICK?30:90} s without events`,motion.every(x=>x>.5),`mean |Δluma| ${motion.join(', ')}`);
       check('idle: nothing new happens (history unchanged, director idle)',samples.every(s=>s.stats?.intents===samples[0].stats?.intents)&&samples.slice(1).every(s=>s.stats?.phase==='idle'),samples.map(s=>`${s.stats?.intents}/${s.stats?.phase}`).join(', '));
       // ---- Music: the same moment rendered on and off the beat.
       const beatAt=info.start+120000;await page.evaluate(x=>window.__film.seek(x),beatAt-1000);
@@ -129,13 +156,13 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       check('no page errors during the session',!errors.length,errors.slice(0,2).join(' | '));
       // ---- Determinism: two sessions, the second first plays another moment.
       const moment=info.start+150000,shots=[];
-      for(let k=0;k<2;k++){const f=await filmPage(browser,svc,project,{width:960,height:540});if(k===1)await play(f.page,info.end-4000,info.end,4);
+      for(let k=0;k<(QUICK?0:2);k++){const f=await filmPage(browser,svc,project,{width:960,height:540});if(k===1)await play(f.page,info.end-4000,info.end,4);
         shots.push(await play(f.page,moment-3000,moment,8));await f.page.close();}
-      check('determinism: the same moment renders the same frame regardless of seek history',shots[0]===shots[1],`${sha(shots[0])} / ${sha(shots[1])}`);
+      if(!QUICK)check('determinism: the same moment renders the same frame regardless of seek history',shots[0]===shots[1],`${sha(shots[0])} / ${sha(shots[1])}`);
       // ---- Resources: switch to a built-in family and back, four times.
       const cycles=[];const heap=()=>page.evaluate(()=>performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null);
       const away=m.kind==='world'?{type:'family',family:'stellar-forge'}:{type:'pack',pack:null},back=m.kind==='world'?{type:'family',family:m.id}:{type:'pack',pack:m.id};
-      for(let k=0;k<4;k++){
+      for(let k=0;k<(QUICK?2:4);k++){
         const a=await page.evaluate(x=>window.__film.recipeAction(x),away);await play(page,moment,moment+500,4);
         const b=await page.evaluate(x=>window.__film.recipeAction(x),back);await play(page,moment,moment+500,4);
         const s=await page.evaluate(()=>window.__film.stats());cycles.push({awayFrames:a.frames,backFrames:b.frames,geometries:s?.geometries,textures:s?.textures,programs:s?.programs,heapMB:await heap()});
@@ -143,7 +170,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       measurements.resources=cycles;
       const first=cycles[0],last=cycles.at(-1);
       check('resources: switching away removes the pack frame and switching back creates exactly one',cycles.every(c=>c.awayFrames===0&&c.backFrames===(code?1:0)),cycles.map(c=>`${c.awayFrames}/${c.backFrames}`).join(' '));
-      check('resources: GPU objects return to their level after four switches',last.geometries<=first.geometries&&last.textures<=first.textures,`geometries ${first.geometries}->${last.geometries}, textures ${first.textures}->${last.textures}, programs ${first.programs}->${last.programs}`);
+      check(`resources: GPU objects return to their level after ${cycles.length} switches`,last.geometries<=first.geometries&&last.textures<=first.textures,`geometries ${first.geometries}->${last.geometries}, textures ${first.textures}->${last.textures}, programs ${first.programs}->${last.programs}`);
       check('resources: the player\'s heap does not grow with switches (within 25 MB)',first.heapMB===null||last.heapMB-first.heapMB<25,`${first.heapMB} -> ${last.heapMB} MB`);
       await page.close();
     });
@@ -163,12 +190,12 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
     const perfDir=big?dataset(big):lumenDir;if(big){packs.install(SOURCE,perfDir);if(code)packs.setTrust(m.id,perfDir,{trusted:true});}
     await withService(perfDir,async svc=>{
       const project=projectOf(perfDir);await choose(svc,project,m);measurements.performance={dataset:big||'lumen'};
-      for(const [label,query] of [['full','&adapt=0'],['adaptive','']]){
-        const page=await browser.newPage({viewport:{width:1920,height:1080}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+      for(const [label,query] of QUICK?[['full','&adapt=0']]:[['full','&adapt=0'],['adaptive','']]){
+        const page=await browser.newPage({viewport:QUICK?{width:1280,height:720}:{width:1920,height:1080}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
         await page.goto(`http://127.0.0.1:${svc.port}/?overlay=1&labels=off&project=${project}&world=living${query}`);
         await page.waitForFunction(()=>window.__worldStats?.()?.drawCalls>0,null,{timeout:90000});
         await page.waitForTimeout(label==='adaptive'?14000:4000);
-        const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(8000);const b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));
+        const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(QUICK?4000:8000);const b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));
         // Frame rate where the world renders: the pack frame counts its frames; the in-page host is measured by rAF.
         const fps=b.s.rendered!==undefined?(b.s.rendered-a.s.rendered)/((b.s.now-a.s.now)/1000):await page.evaluate(()=>new Promise(r=>{let n=0;const s=performance.now();const f=()=>{n++;performance.now()-s<6000?requestAnimationFrame(f):r(n/6);};requestAnimationFrame(f);}));
         const s=b.s;measurements.performance[label]={fps:+fps.toFixed(1),quality:s.quality,drawCalls:s.drawCalls,passes:s.passes,triangles:s.triangles,points:s.points,updateMs:s.updateMs,drawMs:s.drawMs,gpuMs:s.gpuMs??null,geometries:s.geometries,textures:s.textures,programs:s.programs,errors:errors.slice(0,2)};
@@ -178,15 +205,16 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       const over=Object.entries({drawCalls:p.drawCalls,passes:p.passes,triangles:p.triangles,points:p.points,updateMs:p.updateMs}).filter(([k,v])=>budget[k]!==undefined&&v>budget[k]);
       check('performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)',!over.length,
         over.length?over.map(([k,v])=>`${k} ${v} > ${budget[k]}`).join(', '):`${p.drawCalls} draw calls, ${p.passes} passes, ${p.triangles} triangles, ${p.points} points, update ${p.updateMs} ms`);
-      check('performance: frame rate, GPU time and adaptive quality measured',p.fps>0,`${p.fps} fps full quality (GPU ${p.gpuMs===null?'time not exposed by this driver':`${p.gpuMs} ms per frame`}), ${measurements.performance.adaptive.fps} fps adaptive (level ${measurements.performance.adaptive.quality}) on ${measurements.renderer}`);
-      check('no page errors in the live player',!p.errors.length&&!measurements.performance.adaptive.errors.length,[...p.errors,...measurements.performance.adaptive.errors].join(' | '));
+      const adaptive=measurements.performance.adaptive;
+      check('performance: frame rate, GPU time and adaptive quality measured',p.fps>0,`${p.fps} fps full quality (GPU ${p.gpuMs===null?'time not exposed by this driver':`${p.gpuMs} ms per frame`})${adaptive?`, ${adaptive.fps} fps adaptive (level ${adaptive.quality})`:''} on ${measurements.renderer}`);
+      check('no page errors in the live player',!p.errors.length&&!adaptive?.errors.length,[...p.errors,...(adaptive?.errors||[])].join(' | '));
     });
   }finally{await browser.close();}
   finish();
 })().catch(e=>{console.error(e);process.exitCode=1;});
 function finish(){
   fs.mkdirSync(OUT,{recursive:true});
-  const id=measurements.pack?.id||'invalid',file=path.join(OUT,`pack-${id}${GPU?`-${GPU}`:''}.json`);
+  const id=measurements.pack?.id||'invalid',file=path.join(OUT,`pack-${id}${GPU?`-${GPU}`:''}${QUICK?'-quick':''}.json`);
   fs.writeFileSync(file,JSON.stringify({at:new Date().toISOString(),sdk:packs.SDK_VERSION,gpu:GPU||'swiftshader',checks,measurements},null,2));
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed · ${path.relative(process.cwd(),file)}`);
   process.exitCode=checks.every(c=>c.pass)?0:1;

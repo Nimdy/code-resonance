@@ -18,6 +18,9 @@ process.env.DONT_PROMPT_WSL_INSTALL='1'; // the Linux `code` launcher otherwise 
 // is removed so the test window renders on Xvfb and never on the user's desktop.
 delete process.env.XDG_RUNTIME_DIR;delete process.env.WAYLAND_DISPLAY;
 
+// Native Windows: the home directory is USERPROFILE (os.homedir), Python is `python`, there are no process groups.
+const WIN=process.platform==='win32',PY=WIN?'python':'python3';
+const killTree=pid=>{try{if(WIN)cp.execFileSync('taskkill',['/pid',String(pid),'/T','/F'],{stdio:'ignore'});else process.kill(-pid,'SIGKILL');}catch{}};
 const log=(...a)=>console.log(`[qual ${new Date().toISOString().slice(11,19)}]`,...a);
 function freePort(){return new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const {port}=s.address();s.close(()=>resolve(port));});s.on('error',reject);});}
 function git(cwd,...args){cp.execFileSync('git',args,{cwd,stdio:'pipe',env:{...process.env,GIT_AUTHOR_NAME:'Qualification',GIT_AUTHOR_EMAIL:'qual@example.invalid',GIT_COMMITTER_NAME:'Qualification',GIT_COMMITTER_EMAIL:'qual@example.invalid'}});}
@@ -27,7 +30,7 @@ function readWorkspaceState(userData){
   const root=path.join(userData,'User','workspaceStorage');const out={};
   try{for(const dir of fs.readdirSync(root)){
     const db=path.join(root,dir,'state.vscdb');if(!fs.existsSync(db))continue;
-    const r=cp.spawnSync('python3',['-c','import sqlite3,sys;c=sqlite3.connect(sys.argv[1]);r=c.execute("select value from ItemTable where key=?",("zerobandwidth.code-resonance",)).fetchone();print(r[0] if r else "")',db],{encoding:'utf8',timeout:10000});
+    const r=cp.spawnSync(PY,['-c','import sqlite3,sys;c=sqlite3.connect(sys.argv[1]);r=c.execute("select value from ItemTable where key=?",("zerobandwidth.code-resonance",)).fetchone();print(r[0] if r else "")',db],{encoding:'utf8',timeout:10000});
     out[dir]=r.stdout.trim()||null;
   }}catch(e){out.error=e.message;}
   return out;
@@ -42,14 +45,14 @@ async function resumePhase({dirs,port,vscodePath}){
   const storage=path.join(dirs.userData,'User','workspaceStorage');
   const id=fs.readdirSync(storage).find(d=>{try{return JSON.parse(fs.readFileSync(path.join(storage,d,'meta.json'),'utf8')).name===path.basename(dirs.workspace);}catch{return false;}});
   if(!id){check('workspace storage located',false);return result;}
-  const seeded=cp.spawnSync('python3',['-c','import sqlite3,sys;c=sqlite3.connect(sys.argv[1]);c.execute("create table if not exists ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");c.execute("insert into ItemTable values(?,?)",("zerobandwidth.code-resonance",\'{"resonanceRecording":true}\'));c.commit()',path.join(storage,id,'state.vscdb')],{encoding:'utf8'});
+  const seeded=cp.spawnSync(PY,['-c','import sqlite3,sys;c=sqlite3.connect(sys.argv[1]);c.execute("create table if not exists ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");c.execute("insert into ItemTable values(?,?)",("zerobandwidth.code-resonance",\'{"resonanceRecording":true}\'));c.commit()',path.join(storage,id,'state.vscdb')],{encoding:'utf8'});
   check('persisted resume flag seeded in state.vscdb',seeded.status===0,seeded.stderr);
   const data=path.join(dirs.home,'.code-resonance');
   const receiver=cp.spawn(process.execPath,[path.join(REPO,'receiver','server.js')],{env:{...process.env,RESONANCE_DATA:data,RESONANCE_PORT:String(port)},stdio:'ignore'});
   const journalFile=fs.readdirSync(path.join(data,'projects')).map(d=>path.join(data,'projects',d,'events.jsonl')).find(f=>fs.existsSync(f));
   const sessionsBefore=new Set(fs.readFileSync(journalFile,'utf8').split('\n').filter(Boolean).map(l=>JSON.parse(l).sessionId));
   const code=cp.spawn(vscodePath,[dirs.workspace,`--user-data-dir=${dirs.userData}`,`--extensions-dir=${dirs.extensions}`,`--extensionDevelopmentPath=${dirs.ext}`,'--no-sandbox','--disable-gpu','--skip-welcome','--skip-release-notes','--disable-workspace-trust'],
-    {env:{...process.env,HOME:dirs.home},stdio:'ignore',detached:true});
+    {env:{...process.env,HOME:dirs.home,USERPROFILE:dirs.home},stdio:'ignore',detached:!WIN});
   let resumed=null;const deadline=Date.now()+90000;
   while(Date.now()<deadline&&!resumed){
     await new Promise(r=>setTimeout(r,1000));
@@ -58,8 +61,8 @@ async function resumePhase({dirs,port,vscodePath}){
     if(started&&events.some(e=>e.kind==='project.baseline'))resumed={session:started.sessionId,kinds:[...new Set(events.map(e=>e.kind))]};
   }
   check('capture resumes after a normal VS Code restart, with no prompt (new session + baseline)',!!resumed,JSON.stringify(resumed));
-  try{process.kill(-code.pid,'SIGTERM');}catch{}
-  await new Promise(r=>setTimeout(r,2000));try{process.kill(-code.pid,'SIGKILL');}catch{}
+  if(!WIN)try{process.kill(-code.pid,'SIGTERM');}catch{}
+  await new Promise(r=>setTimeout(r,2000));killTree(code.pid);
   receiver.kill('SIGTERM');
   return result;
 }
@@ -91,7 +94,7 @@ async function main(){
     'extensions.autoUpdate':false,'update.mode':'none','workbench.startupEditor':'none','git.autofetch':false,
     'terminal.integrated.shellIntegration.enabled':true,'editor.autoClosingBrackets':'never','editor.autoClosingQuotes':'never',
     'editor.autoIndent':'none','editor.formatOnType':false,'editor.quickSuggestions':{other:false,comments:false,strings:false},'editor.suggestOnTriggerCharacters':false,
-    'editor.acceptSuggestionOnEnter':'off','editor.autoClosingOvertype':'never','editor.autoSurround':'never','files.autoSave':'off','terminal.integrated.defaultProfile.linux':'bash'
+    'editor.acceptSuggestionOnEnter':'off','editor.autoClosingOvertype':'never','editor.autoSurround':'never','files.autoSave':'off','terminal.integrated.defaultProfile.linux':'bash','terminal.integrated.defaultProfile.windows':'PowerShell'
   },null,2));
 
   const vscodePath=await downloadAndUnzipVSCode(VERSION);
@@ -111,7 +114,7 @@ async function main(){
   log(`VSIX install exit ${install.status}${install.error?` (${install.error.message})`:''}; listed ${listed.stdout.trim()||'(none)'}`);
   report.vsixInstall={exitCode:install.status,output:(install.stdout+install.stderr).trim(),listed:listed.stdout.trim()};
 
-  const env={HOME:dirs.home,CR_QUAL_REAL_HOME:os.homedir(),...(process.env.CR_QUAL_AGENT?{CR_QUAL_AGENT:process.env.CR_QUAL_AGENT}:{}),CR_QUAL_REPO:REPO,CR_QUAL_PORT:String(port),CR_QUAL_NODE:process.execPath,CR_QUAL_ROOT:root,CR_QUAL_WORKSPACE:dirs.workspace};
+  const env={HOME:dirs.home,...(WIN?{USERPROFILE:dirs.home}:{}),CR_QUAL_REAL_HOME:os.homedir(),...(process.env.CR_QUAL_AGENT?{CR_QUAL_AGENT:process.env.CR_QUAL_AGENT}:{}),CR_QUAL_REPO:REPO,CR_QUAL_PORT:String(port),CR_QUAL_NODE:process.execPath,CR_QUAL_ROOT:root,CR_QUAL_WORKSPACE:dirs.workspace};
   // runTests moves every argument not starting with `--` to the end, so options must use --flag=value.
   const launchArgs=[dirs.workspace,`--user-data-dir=${dirs.userData}`,`--extensions-dir=${dirs.extensions}`,'--skip-welcome','--skip-release-notes','--disable-gpu','--disable-workspace-trust'];
   for(const phase of scenario==='construct'?['construct']:['main']){
@@ -119,7 +122,7 @@ async function main(){
     let error=null;
     log(`phase ${phase}: launching VS Code`);
     // A hung VS Code must not hang the harness: kill everything using this phase's user-data-dir after the deadline.
-    const deadline=setTimeout(()=>{log(`phase ${phase}: deadline reached, killing VS Code`);try{cp.execFileSync('pkill',['-f',dirs.userData]);}catch{}},Number(process.env.CR_QUAL_PHASE_TIMEOUT_MS)||420000);
+    const deadline=setTimeout(()=>{log(`phase ${phase}: deadline reached, killing VS Code`);try{if(!WIN)cp.execFileSync('pkill',['-f',dirs.userData]);}catch{}},Number(process.env.CR_QUAL_PHASE_TIMEOUT_MS)||420000);
     try{
       await runTests({vscodeExecutablePath:vscodePath,extensionDevelopmentPath:dirs.ext,extensionTestsPath:path.join(dirs.ext,'qualification-suite','index.js'),
         launchArgs,extensionTestsEnv:{...env,CR_QUAL_PHASE:phase,CR_QUAL_RESULT:resultFile}});
