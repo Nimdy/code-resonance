@@ -152,6 +152,40 @@ words) and user aliases. No path, file name, prompt or source identifier is ever
 The score is unchanged. The synthesis is rebalanced for small speakers (see `qualification/results/audio/balance.json`)
 and the energy relaxes after 15 s without a new frame.
 
+## Frames and films
+
+Frames from the rendered films (the real renderer, frame-exact from the recorded timelines and the pinned recipes in
+`docs/worlds/recipes/`). The films themselves are rendered locally by `qualification/visual/film.js` and are not
+committed (too large for git).
+
+![Four worlds](worlds/three-projects.jpg)
+
+*Three families from three projects, and the same project (Excalidraw) under its generated identity and a chosen one.*
+
+| | |
+|---|---|
+| ![Opening](worlds/lumen-01-opening.jpg) | ![Early growth](worlds/lumen-02-early.jpg) |
+| 0:03 Lumen Recipes begins: the core star, a forming galaxy | 0:24 new structure enters orbit; draft planets are molten |
+| ![Agents](worlds/lumen-03-agents.jpg) | ![Failure](worlds/lumen-04-failure.jpg) |
+| 0:40 agents at work (comets) while subsystems ignite | 1:16 a failing test run: storms on the eight worlds it covers |
+| ![Recovery](worlds/lumen-05-recovery.jpg) | ![Integration](worlds/lumen-06-integration.jpg) |
+| 1:36 the tests pass again: recovery and first validation (a milestone) | 2:00 integration: a plasma bridge between two systems |
+| ![Milestone](worlds/lumen-07-milestone.jpg) | ![Commit](worlds/lumen-08-commit.jpg) |
+| 2:38 integration validated (milestone, verified by a passing run) | 3:03 committed: a gravity wave through the galaxy |
+| ![End](worlds/lumen-09-end.jpg) | ![Idle](worlds/lumen-10-idle.jpg) |
+| 3:58 the end of the session | 5:20, 80 s after the last event: orbits, coronae, nebula and disc keep moving; nothing new appears |
+| ![Quiet](worlds/pause-01-quiet.jpg) | ![Resumed](worlds/pause-02-resumed.jpg) |
+| Supplemental fixture: mid-project, 60 s into a 100 s pause | the work resumes: an agent returns, a new star ignites |
+| ![Code Resonance start](worlds/code-resonance-01-start.jpg) | ![Code Resonance end](worlds/code-resonance-02-end.jpg) |
+| Code Resonance's own history (8×): the first towers in scaffold | after 38 commits: districts, bridges, towers set in stone |
+| ![Excalidraw Biosphere](worlds/excalidraw-biosphere.jpg) | ![Excalidraw Cathedral](worlds/excalidraw-cathedral-generated.jpg) |
+| Excalidraw (450 files) as a Fractal Biosphere (chosen by hand) | the same snapshot with its generated identity, Machine Cathedral |
+
+Films (local, `qualification/results/visual/`): `living-lumen-recipes.webm` (5:40, the whole session and 100 s after
+its last event), `living-lumen-recipes-idle.webm` (1:38 idle excerpt), `living-lumen-pause.webm` (2:50, supplemental
+pause and resumption), `living-excalidraw-biosphere.webm` (1:15), `living-code-resonance.webm` (2:31, 8×). Each has its
+`.recipe.json` and `.wav` next to it.
+
 ## Qualification
 
 See `docs/QUALIFICATION.md` for commands and measured results.

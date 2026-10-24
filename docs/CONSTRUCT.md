@@ -70,5 +70,7 @@ From the film of `qualification/recordings/lumen-recipes` (the full film is rend
 
 ## Status
 
+The living worlds ([WORLDS.md](WORLDS.md)) are now the default; Machine Cathedral carries this visual language on the
+new engine (instanced, 8 draw calls at 450 files). The Construct stays available unchanged for comparison.
 A candidate for artistic review, not an accepted design. Technical checks (it renders, it is deterministic, it is
 private) are not artistic acceptance.

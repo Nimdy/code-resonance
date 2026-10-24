@@ -12,3 +12,4 @@ results/visual/*.jpg
 results/visual/*.png
 results/datasets/
 results/visual/dev/
+results/visual/*.recipe.json
