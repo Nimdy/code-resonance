@@ -222,7 +222,8 @@ export function createFamily(ctx){
       void main(){float age=(uT-rC.w)/uSpeed/rP.x;vAge=age;vP=rP;vC=rColor;float R=rP.y*(age<0.||age>1.?0.:pow(age,.6));
         vec3 p=vec3(position.x,0.,position.y)*R;float ca=cos(rTilt.x),sa=sin(rTilt.x);p=vec3(p.x,p.y*ca-p.z*sa,p.y*sa+p.z*ca);float cb=cos(rTilt.y),sb=sin(rTilt.y);p=vec3(p.x*cb-p.y*sb,p.x*sb+p.y*cb,p.z);
         vUv=position.xy;gl_Position=projectionMatrix*viewMatrix*vec4(rC.xyz+p,1.);}`,
-    fragmentShader:`varying vec2 vUv;varying vec3 vC;varying float vAge;varying vec4 vP;void main(){if(vAge<0.||vAge>1.)discard;float r=length(vUv);float band=exp(-pow((r-.92)/(.04*vP.z),2.))+exp(-pow((r-.86)/(.12*vP.z),2.))*.35;
+    fragmentShader:`varying vec2 vUv;varying vec3 vC;varying float vAge;varying vec4 vP;void main(){if(vAge<0.||vAge>1.)discard;float r=length(vUv);if(r>1.)discard;
+      float band=(exp(-pow((r-.92)/(.04*vP.z),2.))+exp(-pow((r-.86)/(.12*vP.z),2.))*.35)*(1.-smoothstep(.95,1.,r));
       gl_FragColor=vec4(vC*band*(1.-vAge)*vP.w*1.1,1.);}`});
   const ringMesh=new THREE.Mesh(rings.geometry,ringMat);ringMesh.frustumCulled=false;ringMesh.renderOrder=5;scene.add(ringMesh);let ringNext=0;
   const BURSTS=24,PER=48,burstPts=pointBuffers({bDir:4},BURSTS*PER);
@@ -523,7 +524,7 @@ export function createFamily(ctx){
       case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'world')} repaired`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
       case 'refactor.validated':return {text:'Refactor validated · the system consolidates',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
       case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`Nova · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
-      case 'repository.checkpoint':return {text:`Committed · ${plural(n,'world')} set in orbit`,sub:'commit observed',position:pos};
+      case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'world')} set in orbit`:'Committed · the work is set in place',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The forge grows · chapter ${d.chapter}`,sub:'accumulated structure',position:new THREE.Vector3()};
       default:return null;}}
   function agentPosition(id){return agentState.get(id)?.pos||null;}

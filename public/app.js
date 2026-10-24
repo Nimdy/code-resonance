@@ -24,7 +24,7 @@
   let living=null,livingLoading=null,livingFailed=false,livingFor='',recipe=null;
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
-  let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12};
+  let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12},filmNote='';
   let soundEnabled=false;
   try {const prefs=JSON.parse(localStorage.getItem('code-resonance-player-v1')||'{}');
     if(WORLDS.includes(prefs.world))selectedWorld=prefs.world;
@@ -690,7 +690,7 @@
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
     document.body.classList.add('overlay');mode='replay';
     window.__film={
-      async open({project,speed=1}){selected=project;filmSpeed=speed;await pollProject();await loadReplay();
+      async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
         if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
         return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null};},
       sections(list){filmSections=list;},
@@ -702,7 +702,10 @@
         // Composite the stage with the caption layer so the film carries the narration.
         const src=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas,out=document.createElement('canvas');out.width=src.width;out.height=src.height;
         const g2=out.getContext('2d');g2.drawImage(src,0,0);
-        if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);return out.toDataURL('image/jpeg',.92);}
+        if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);
+          // A film can carry a persistent note (e.g. that a fixture is supplemental or a family was chosen by hand).
+          if(filmNote){const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}
+          return out.toDataURL('image/jpeg',.92);}
         const age=(t-caption.at)/Math.max(1,filmSpeed);
         if(caption.text&&age<4200&&params.get('captions')!=='0'){
           const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=out.width/1920;

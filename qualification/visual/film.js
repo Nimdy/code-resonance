@@ -5,6 +5,7 @@
 // node visual/film.js --data <receiver-data> --project <id> [--from ms] [--to ms] [--speed 2] [--fps 30]
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
 //        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
+//        [--note "text shown on every frame"]
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
 // The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly.
 const path=require('node:path');
@@ -35,7 +36,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=${world}&labels=${labels}&style=${style}&project=${arg('project')}`);
     await page.waitForFunction(()=>!!window.__film);
-    const info=await page.evaluate(([project,speed])=>window.__film.open({project,speed}),[arg('project'),speed]);
+    const info=await page.evaluate(([project,speed,note])=>window.__film.open({project,speed,note}),[arg('project'),speed,arg('note','')]);
     if(!info.webgl)throw new Error('WebGL unavailable; the Construct cannot render');
     if(info.recipe)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.recipe.json',JSON.stringify(info.recipe,null,1));
     console.log(`world ${info.world}${info.recipe?` · ${info.recipe.familyName} (${info.recipe.source}, variant ${info.recipe.variant})`:''}`);

@@ -1,0 +1,168 @@
+{
+ "schema": "code-resonance.recipe.v1",
+ "recipeVersion": 1,
+ "rendererVersion": 1,
+ "projectSeed": 3034007758,
+ "variant": 0,
+ "source": "generated",
+ "locked": false,
+ "founded": true,
+ "createdAt": 1792785415000,
+ "traits": {
+  "modules": 17,
+  "districts": 5,
+  "symbols": 31,
+  "ui": 0.161,
+  "uiModules": 0.294,
+  "routes": 0,
+  "model": 0,
+  "functions": 0.516,
+  "languages": {
+   "js": 0.667,
+   "jsx": 0.333
+  },
+  "dependencyDensity": 0.706,
+  "crossDensity": 0.176,
+  "hubness": 0.125,
+  "branching": 0.353,
+  "depth": 1.824,
+  "tests": 0.059,
+  "agents": 6,
+  "agentShare": 0.713,
+  "validations": {
+   "passed": 4,
+   "failed": 1
+  }
+ },
+ "family": "stellar-forge",
+ "familyName": "Stellar Forge",
+ "familyScores": {
+  "stellar-forge": 1.739,
+  "fractal-biosphere": 1.545,
+  "machine-cathedral": 0.425
+ },
+ "genome": {
+  "geometry": {
+   "arrangement": "spiral",
+   "spiralArms": 2,
+   "spiralTwist": 1.287,
+   "orbitSpacing": 0.918,
+   "orbitTilt": 0.142,
+   "planetStyles": {
+    "gas": 0.483,
+    "rock": 0.407,
+    "ice": 0.331
+   },
+   "ringChance": 0.503,
+   "starScale": 0.984
+  },
+  "secondary": {
+   "corona": 0.505,
+   "loops": 4,
+   "granulation": 1.377,
+   "moonsAsRings": true
+  },
+  "space": {
+   "spread": 0.94,
+   "vertical": 0.272,
+   "coreBody": "protostar"
+  },
+  "atmosphere": {
+   "nebula": "billowing",
+   "nebulaDensity": 0.841,
+   "dustLanes": 1,
+   "dust": 0.41,
+   "stars": 0.67
+  },
+  "material": {
+   "plasma": 0.961,
+   "surfaceContrast": 0.745,
+   "atmosphereGlow": 0.601
+  },
+  "motion": {
+   "orbitSpeed": 1.235,
+   "convection": 1.187,
+   "breath": 4,
+   "turbulence": 0.504
+  },
+  "camera": {
+   "personality": "drifting",
+   "distance": 1.064,
+   "elevation": 0.508,
+   "fov": 36,
+   "drift": 0.977
+  },
+  "agents": {
+   "form": "comet",
+   "tail": 1.079
+  },
+  "effects": {
+   "subsystem.created": "ignition",
+   "module.created": "planet-birth",
+   "structure.created": "accretion-spark",
+   "structure.removed": "ablation",
+   "subsystem.connected": "flare-bridge",
+   "validation.failed": "stellar-storm",
+   "validation.passed": "aurora",
+   "validation.recovered": "calm-pulse",
+   "refactor.validated": "accretion-collapse",
+   "milestone.achieved": "nova",
+   "repository.checkpoint": "gravity-wave",
+   "world.expanded": "expansion"
+  },
+  "palette": {
+   "scheme": "analogous",
+   "hue": 255,
+   "primary": "#6f4ade",
+   "secondary": "#ab45d3",
+   "accent": "#5278ea",
+   "highlight": "#dbcfe8",
+   "deep": "#060510",
+   "haze": "#20143d",
+   "warning": "#ef5139",
+   "valid": "#e8d37d"
+  },
+  "light": {
+   "exposure": 0.97,
+   "bloom": 0.986,
+   "bloomThreshold": 0.632,
+   "contrast": 1.116,
+   "grain": 0.029,
+   "vignette": 0.279
+  },
+  "ambient": {
+   "base": [
+    "nebula",
+    "starfield",
+    "convection",
+    "orbits",
+    "corona-loops",
+    "dust-lanes"
+   ],
+   "unlocks": [
+    "aurora-veils",
+    "plasma-currents",
+    "distant-pulsar",
+    "galactic-halo"
+   ]
+  },
+  "music": {
+   "reactivity": 0.537,
+   "beatPulse": 0.61
+  },
+  "agentProminence": 1,
+  "limits": {
+   "detail": 0.771,
+   "maxParticles": 20998,
+   "maxLabels": 4
+  }
+ },
+ "overrides": {
+  "intensity": 1,
+  "motion": 1,
+  "atmosphere": 1,
+  "labels": "cinematic"
+ },
+ "aliases": {},
+ "title": null
+}

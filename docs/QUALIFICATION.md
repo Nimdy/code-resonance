@@ -138,11 +138,51 @@ Technical results only; whether it is good to watch is a human judgement that ha
   browsers (Windows ANGLE D3D11, macOS Metal) were not measured.
 - **Privacy:** no file paths in the page (a real path from the sample is checked), no page errors.
 
+## Living worlds (Phase 3, artistic candidates)
+
+Technical results only; artistic acceptance is a human judgement that has not been made. Datasets are built by
+`visual/datasets.js`: the committed Lumen Recipes recording; a **supplemental** copy of it with a 100 s pause inserted
+after the first commit (real events, timestamps after the pause shifted; labelled in its README, its project name and
+on every frame of its film); the first 450 source files of an Excalidraw checkout indexed as an existing project; and
+Code Resonance's own first-parent git history (38 commits) replayed as a 20-minute session.
+
+- **Identities** (`visual/recipes.js`, pinned in `docs/worlds/recipes/`): Lumen Recipes generates Stellar Forge
+  (scores 1.74 / 1.55 / 0.43 for Stellar / Biosphere / Cathedral), Code Resonance generates Machine Cathedral
+  (0.97 / 0.78 / 1.14), Excalidraw generates Machine Cathedral by a narrow margin (1.28 / 1.49 / 1.52, decided by the
+  seeded share); for the comparison Excalidraw is also shown with Fractal Biosphere chosen by hand (`source: "user"`).
+- **Draw calls** (scene pass): Stellar Forge 13, Fractal Biosphere 7, Machine Cathedral 8 on the 450-file Excalidraw
+  snapshot (the Construct: 3,622). The full frame adds the background, bloom chain and grade (21-27 passes).
+- **Frame rate**, live player, 1920×1080, Excalidraw 450 files, 8 s after settling (`visual/worlds.qual.js`):
+
+  | Renderer | Stellar Forge | Fractal Biosphere | Machine Cathedral |
+  |---|---|---|---|
+  | AMD Radeon integrated GPU, WSL2 (ANGLE GL → Mesa d3d12), full quality | 28.1 fps | 25.5 fps (27.3 adaptive) | 34.5 fps |
+  | SwiftShader (CPU), full quality | SWIFT_STELLAR | SWIFT_BIO | SWIFT_CATHEDRAL |
+
+  Scene update is 0.2-0.6 ms and command submission 0.3-0.4 ms per frame; the remaining time is GPU fill (HDR,
+  4× MSAA, bloom, full-screen sky). Live playback lowers MSAA and resolution when frames are slow (films never do).
+  The RTX 5090 was not used. Native browsers (Windows ANGLE D3D11, macOS Metal) were not measured.
+- **Film rendering** is frame-exact and independent of machine speed: about 0.27 s per 1080p frame on SwiftShader.
+- **Determinism:** the same recording, recipe and moment render byte-identical frames in two browser sessions, also
+  when one session first played another moment (Lumen / Stellar Forge, Excalidraw / Biosphere, Code Resonance /
+  Cathedral).
+- **Idle life:** 10, 40, 70 and 100 s after the last Lumen event the mean absolute luminance change between samples
+  is IDLE_MOTION (0-255) while the structure (17 planets, 31 moons, 12 links, 6 systems) and the 205 recorded intents
+  stay exactly the same and the director reports idle.
+- **Resources:** RESOURCES
+- **Privacy:** PRIVACY
+- **Agents in Lumen Recipes:** 142 lifecycle intents from 6 agents; each presence appears with its session, follows
+  its tool activity (reading, searching, editing, running, testing) and departs when its session ends.
+- **Music balance** (`audio/balance.js`, the real Lumen timeline through the PR #2 and the current `music.js`):
+  integrated loudness -23.1 → -23.5 LUFS, true peak -12.1 → -11.1 dBFS, energy below 120 Hz -1.5 dB relative,
+  above 200 Hz +4.2 dB, above 2 kHz +10 dB, stereo phase correlation 0.79 → 0.52. Not yet reviewed by ear.
+
 ## Not verified
 
 - Native Windows and macOS (no Windows Node, and WSL interop is disabled in this environment). VS Code Remote-SSH.
 - Native GPU browsers (GPU numbers above are through WSL2's translation layer); Firefox and Safari.
-- Artistic acceptance of the Construct, and whether people who do not code understand it without explanation.
+- Artistic acceptance of the Construct and of the living worlds (Stellar Forge, Fractal Biosphere, Machine Cathedral),
+  and whether people who do not code understand them without explanation.
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
