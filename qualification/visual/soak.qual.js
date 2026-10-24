@@ -8,7 +8,9 @@
 // timings, the pack transport, the sound level, the CPU of every browser process, the memory of the whole process
 // tree, and the events produced, accepted and stored (none may be lost).
 //
-// node visual/soak.qual.js [--hours 3] [--gpu amd] [--scale 1] [--out results/soak]
+// node visual/soak.qual.js [--hours 3] [--gpu amd] [--scale 1] [--viewport 1920x1080] [--quality 0-3] [--mechanism] [--out results/soak]
+// --viewport/--quality/--mechanism: for a software-rendered CI machine (a fixed lower rendering level; recordings and
+// frame rates held to the mechanism thresholds of visual/recording.qual.js).
 // --scale 0.1 runs the programme ten times faster (an hour in 6 minutes; recordings stay one minute): a smoke test.
 const path=require('node:path');
 const fs=require('node:fs');
@@ -19,7 +21,8 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
 const packs=require(path.join(REPO,'engine/packs'));
 const media=require('./media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
-const HOURS=+arg('hours',3),GPU=arg('gpu',null),SCALE=+arg('scale',1);
+const HOURS=+arg('hours',3),GPU=arg('gpu',null),SCALE=+arg('scale',1),MECH=process.argv.includes('--mechanism');
+const [VW,VH]=arg('viewport','1920x1080').split('x').map(Number),QUALITY=arg('quality',null);
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','soak')));
 const {checks,check}=checker();
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -27,7 +30,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const SEGMENTS=[[0,{world:'living',action:{type:'family',family:'stellar-forge'},label:'Stellar Forge'}],[12,{world:'living',action:{type:'family',family:'halcyon.cymatic-field'},label:'Cymatic Field (world pack)',remote:true}],
   [24,{world:'living',action:{type:'pack',pack:'northlight.blueprint-cathedral'},label:'Blueprint Cathedral (shader pack)',remote:true}],[36,{world:'living',action:{type:'family',family:'fractal-biosphere'},label:'Fractal Biosphere'}],
   [48,{world:'construct',label:'Construct'}],[54,{world:'living',action:{type:'pack',pack:'northlight.ember-observatory'},label:'Ember Observatory (declarative)'}]];
-const IDLE=[40,52],RECORD_AT=[3,15,27],RESTART_AT=90;
+const IDLE=[40,52],RECORD_AT=[3,15,27],RESTART_AT=Math.min(90,HOURS*60/2);
 const TAP=`(()=>{const orig=AudioNode.prototype.connect;window.__taps=[];
 AudioNode.prototype.connect=function(dest,...r){if(dest instanceof AudioDestinationNode){const a=this.context.createAnalyser();a.fftSize=2048;orig.call(this,a);window.__taps.push(a);}return orig.call(this,dest,...r);};
 window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32Array(a.fftSize);a.getFloatTimeDomainData(b);for(const v of b){s+=v*v;n++;}}return n?Math.sqrt(s/n):0;};})();`;
@@ -66,12 +69,12 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const renderer=await rendererOf(browser);
     if(GPU==='amd'&&!/AMD|Radeon/i.test(renderer))throw new Error(`Requested the AMD GPU but got ${renderer}`);
     const browserCdp=await browser.newBrowserCDPSession();
-    const page=await browser.newPage({viewport:{width:1920,height:1080},acceptDownloads:true});const errors=[];
+    const page=await browser.newPage({viewport:{width:VW,height:VH},acceptDownloads:true});const errors=[];
     page.on('pageerror',e=>errors.push({minute:+minuteNow().toFixed(1),error:String(e).slice(0,300)}));
     page.on('console',m=>{if(m.type()==='error')errors.push({minute:+minuteNow().toFixed(1),error:m.text().slice(0,300)});});
     await page.addInitScript(TAP);
     await recipe(SEGMENTS[0][1].action);
-    await page.goto(`${url}/?project=${projectId}&world=living&qual=1`);await page.waitForFunction(()=>!!window.__qual);
+    await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}`);await page.waitForFunction(()=>!!window.__qual);
     await page.waitForTimeout(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
     let segment=-1,cpuBefore=null,lastSample=0;started=Date.now();const END=started+HOURS*3600000*SCALE;const done=new Set();
@@ -89,7 +92,7 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         if(download)await download.saveAs(file);
         const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
-        recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,
+        recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,maxIntervalAfterStartupMs:a?.maxIntervalAfterStartupMs??null,frameIntervalMedianMs:a?.frameInterval?.median??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
           sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
@@ -147,7 +150,12 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const transport=samples.filter(s=>s.transport);
     check('pack transport: never more than one render in flight; no pack stopped during the soak',transport.every(s=>s.transport.inFlight<=1)&&!samples.some(s=>/stopped/.test(s.notice)),
       `${transport.length} samples on packs; max latency ${Math.max(0,...transport.map(s=>s.transport.latencyMs)).toFixed(1)} ms; notices: ${[...new Set(samples.map(s=>s.notice).filter(Boolean))].slice(0,3).join(' | ')||'none'}`);
-    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(r=>r.video&&r.audio&&r.longGaps===0&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&r.sync.maxAbsOffsetMs<=125),
+    // Full: no frame gap over 250 ms anywhere, markers within 125 ms. Mechanism (CI): after start-up no gap over 500 ms or
+    // 2.5 frame intervals, markers within 250 ms plus a frame interval.
+    const recOk=r=>r.video&&r.audio&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&(MECH?
+      r.maxIntervalAfterStartupMs!==null&&r.maxIntervalAfterStartupMs<=Math.max(500,2.5*r.frameIntervalMedianMs)&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=250+r.frameIntervalMedianMs:
+      r.longGaps===0&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=125);
+    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(recOk),
       recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
     check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
       restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),
@@ -156,7 +164,7 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     // refused requests while the receiver was down): counted, not errors of the player.
     const network=errors.filter(e=>/^Failed to load resource/.test(e.error)),real=errors.filter(e=>!/^Failed to load resource/.test(e.error));
     check('no page errors in the whole soak',!real.length,real.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||`none (${network.length} failed requests logged by the browser)`);
-    fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));
+    fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,viewport:`${VW}x${VH}`,quality:QUALITY===null?'auto':Number(QUALITY),thresholds:MECH?'mechanism':'full',gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));
   }finally{clearInterval(produce);await browser.close();await svc.stop().catch(()=>{});fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(recDir,{recursive:true,force:true});}
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);
   process.exitCode=checks.every(c=>c.pass)?0:1;

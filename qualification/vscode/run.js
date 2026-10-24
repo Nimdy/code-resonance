@@ -146,7 +146,8 @@ async function main(){
   console.log(`VSIX install via VS Code CLI: exit ${report.vsixInstall.exitCode}; listed: ${report.vsixInstall.listed||'(none)'}`);
   console.log(`VS Code ${report.vscode.version}; report: ${out}`);
   const failed=checks.filter(c=>!c.pass&&!c.unverified).length+(report.vsixInstall.exitCode===0?0:1)+Object.values(report.phases).filter(r=>r.runnerError&&!(r.checks||[]).length).length;
-  if(!process.env.CR_QUAL_KEEP)fs.rmSync(root,{recursive:true,force:true});
+  // Windows keeps files locked while VS Code finishes exiting: retry, and never fail the run over a temporary directory.
+  if(!process.env.CR_QUAL_KEEP)try{fs.rmSync(root,{recursive:true,force:true,maxRetries:10,retryDelay:500});}catch(e){log(`temporary directory left behind: ${e.code}`);}
   process.exitCode=failed?1:0;
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

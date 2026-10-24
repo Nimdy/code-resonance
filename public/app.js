@@ -600,7 +600,9 @@
   function showWorldCanvas(){const l=selectedWorld==='living'&&!!living,c=!l&&selectedWorld==='construct'&&construct,remote=!!living?.remote;
     $('world').classList.toggle('hidden',!l||remote);$('worldOverlay').classList.toggle('hidden',!l||remote);$('caption').classList.toggle('hidden',l);
     if(remote)living.frame.classList.toggle('hidden',!l);
-    $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));}
+    $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));
+    // In the OBS view the living worlds draw their own lower third: the page's corner captions would overlap it.
+    document.body.classList.toggle('living-world',l);}
   let lastPaint=performance.now(),clock=0,constructSize='',livingSize='';
   function renderAt(dt,now){
     clock+=dt;

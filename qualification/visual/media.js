@@ -8,7 +8,8 @@ const run=(args,opts={})=>cp.spawnSync(ffmpeg,['-hide_banner','-nostats',...args
 // Streams and container facts from ffmpeg's own description of the file.
 function streams(file){
   const out=String(run(['-i',file]).stderr);
-  const video=/Stream #\d+:\d+.*?: Video: (\w+)[^\n]*?, (\d+)x(\d+)/.exec(out),audio=/Stream #\d+:\d+.*?: Audio: (\w+), (\d+) Hz, (\w+)/.exec(out);
+  // Codec names may carry a profile in parentheses ("aac (LC), 48000 Hz", "h264 (High), …").
+  const video=/Stream #\d+:\d+.*?: Video: (\w+)[^\n]*?, (\d+)x(\d+)/.exec(out),audio=/Stream #\d+:\d+.*?: Audio: (\w+)[^,\n]*, (\d+) Hz, ([\w.]+)/.exec(out);
   return {container:/Input #0, ([\w,]+)/.exec(out)?.[1]||null,video:video?{codec:video[1],width:+video[2],height:+video[3]}:null,
     audio:audio?{codec:audio[1],sampleRate:+audio[2],layout:audio[3]}:null};
 }

@@ -17,7 +17,7 @@
 .stage-watermark{position:absolute;top:18px;left:22px;color:rgba(157,211,242,.56);font:10px var(--mono);letter-spacing:.13em;pointer-events:none;display:flex;gap:14px}
 .stage-watermark span{color:rgba(128,230,211,.7)}
 body.overlay{background:#060a12}body.overlay .toolbar,body.overlay .panel,body.overlay .transport,body.overlay .stage-top{display:none !important}body.overlay .layout{grid-template-columns:1fr !important}body.overlay .stage-section{height:100vh !important}body.overlay .canvas-wrap{height:100vh !important;min-height:100vh !important}
-body.overlay .stage-empty{display:none !important}body.overlay .stage-lower-left,body.overlay .stage-lower-right{opacity:.45}
+body.overlay .stage-empty{display:none !important}body.overlay .stage-lower-left,body.overlay .stage-lower-right{opacity:.45}body.overlay.living-world .stage-lower-left,body.overlay.living-world .stage-lower-right{display:none}
 @media(max-height:730px){.panel.left{padding-top:15px}.studio-label{margin-top:11px}.world{min-height:40px}.sound-controls{gap:3px;padding:8px}.identity{padding:12px 0}.fineprint{display:none}}
 @media(max-width:1190px){.brand-title{font-size:17px}.toolbar-center{display:none}.action{font-size:9px}.panel.left{padding:14px 12px}}
 
