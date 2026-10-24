@@ -438,7 +438,7 @@
         const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
         const m=await import('/worlds/host.js');if(living)disposeLiving();
         recipe=r.json;
-        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null}});
+        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null},quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'});
         livingFor=selected;livingSize='';
         if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());

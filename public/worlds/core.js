@@ -31,6 +31,7 @@ function pass(fragmentShader,uniforms){
 }
 // Bloom: soft-threshold prefilter, then a dual-filter downsample/upsample chain (cheap and wide), all half-float.
 export function createPipeline(renderer,{samples=4}={}){
+  let msaa=samples;
   const ortho=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
   const rtOpts={type:THREE.HalfFloatType,depthBuffer:false};
   const scene=new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,samples});
@@ -66,6 +67,7 @@ export function createPipeline(renderer,{samples=4}={}){
     {src:{value:null},bloom:{value:null},exposure:{value:1},bloomStrength:{value:1},contrast:{value:1},saturation:{value:1.05},vignette:{value:.3},grain:{value:.025},
      time:{value:0},aberration:{value:.004},flash:{value:0},waves:{value:[0,1,2,3].map(()=>new THREE.Vector4())},aspect:{value:new THREE.Vector2(1,1)},lift:{value:new THREE.Vector3()},tint:{value:new THREE.Vector3(1,1,1)}});
   let width=4,height=4;
+  function setSamples(n){if(n===msaa)return;msaa=n;scene.samples=n;scene.dispose();}
   function setSize(w,h){
     width=w;height=h;scene.setSize(w,h);background.setSize(Math.max(1,w>>1),Math.max(1,h>>1));
     let x=Math.max(1,w>>1),y=Math.max(1,h>>1);for(let i=0;i<LEVELS;i++){down[i].setSize(x,y);up[i].setSize(x,y);x=Math.max(1,x>>1);y=Math.max(1,y>>1);}
@@ -86,14 +88,12 @@ export function createPipeline(renderer,{samples=4}={}){
     renderer.setRenderTarget(null);renderer.render(composite.scene,ortho);
   }
   // A background pass (nebula, sky) rendered at half resolution into its own target and drawn first into the scene.
-  function renderBackground(material){
-    if(!material.__quad){const s=new THREE.Scene();s.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),material));material.__quad=s;}
-    renderer.setRenderTarget(background);renderer.render(material.__quad,ortho);return background.texture;
-  }
+  const bgScene=new THREE.Scene(),bgMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2));bgMesh.frustumCulled=false;bgScene.add(bgMesh);
+  function renderBackground(material){bgMesh.material=material;renderer.setRenderTarget(background);renderer.render(bgScene,ortho);return background.texture;}
   const backdrop=pass('varying vec2 vUv;uniform sampler2D src;void main(){gl_FragColor=vec4(texture2D(src,vUv).rgb,1.);}',{src:{value:null}});
   function drawBackdrop(texture){backdrop.uniforms.src.value=texture;renderer.render(backdrop.scene,ortho);}
-  function dispose(){for(const t of [scene,background,...down,...up])t.dispose();for(const p of [prefilter,downPass,upPass,composite,backdrop])p.material.dispose();}
-  return {setSize,render,renderBackground,drawBackdrop,dispose,get size(){return [width,height];}};
+  function dispose(){for(const t of [scene,background,...down,...up])t.dispose();for(const p of [prefilter,downPass,upPass,composite,backdrop])p.material.dispose();bgMesh.geometry.dispose();}
+  return {setSize,setSamples,render,renderBackground,drawBackdrop,dispose,get size(){return [width,height];}};
 }
 export const BACKGROUND_VS='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';
 // ---- Camera ---------------------------------------------------------------------------------------------------

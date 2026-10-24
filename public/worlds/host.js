@@ -18,7 +18,7 @@ export function generatedName(id){
   for(let i=0;i<12;i++){const name=pick(ONSET)+pick(VOWEL)+pick(CODA)+pick(ENDING);if(!BLOCK.test(name))return name;}
   return 'Aurel';
 }
-export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',project={}}={}){
+export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',project={},quality=0,adaptive=true}={}){
   if(!recipe||!FAMILIES[recipe.family])throw new Error('A visual recipe with a known family is required');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:film,powerPreference:'high-performance',alpha:false,stencil:false});
   if(!renderer.capabilities.isWebGL2)throw new Error('WebGL2 is required for the generative worlds');
@@ -26,10 +26,18 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const pipeline=createPipeline(renderer,{samples:4});
   const overlay=createOverlay();
   let speedK=speed,mode=labels,mood={section:'home',energy:0,tempo:92},beatPhase=0,size=[16,9],pixelRatio=1;
+  // Live playback adapts when frames are slow: first no MSAA, then 75 %, then 55 % resolution. Films keep full quality.
+  const LEVELS=[{samples:4,scale:1},{samples:0,scale:1},{samples:0,scale:.75},{samples:0,scale:.55}];
+  let level=Math.max(0,Math.min(LEVELS.length-1,Number(quality)||0)),frameEma=1/60,slowFor=0,fastFor=0;
+  function applyLevel(){pipeline.setSamples(LEVELS[level].samples);const k=LEVELS[level].scale;renderer.setPixelRatio(pixelRatio*k);renderer.setSize(size[0],size[1],false);pipeline.setSize(Math.round(size[0]*pixelRatio*k),Math.round(size[1]*pixelRatio*k));}
+  function adapt(dt){if(film||!adaptive||dt<=0)return;frameEma+=(dt-frameEma)*.05;
+    if(frameEma>1/28){slowFor+=dt;fastFor=0;}else if(frameEma<1/55){fastFor+=dt;slowFor=0;}else{slowFor=0;fastFor=0;}
+    if(slowFor>3&&level<LEVELS.length-1){level++;slowFor=0;frameEma=1/45;applyLevel();}
+    else if(fastFor>20&&level>Math.max(0,Number(quality)||0)){level--;fastFor=0;applyLevel();}}
   const camera=new THREE.PerspectiveCamera(36,16/9,.1,4000);
   const rig=createCameraRig(camera);
   const model=createModel({speed});
-  const intents=[],intentIds=new Set();let director,agents,world=null,scene=null,current=null,snapCamera=true,startedAt=null,info=null,selected=null;
+  const intents=[],intentIds=new Set();let director,agents,world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null;
   const timing={update:0,draw:0},calls={scene:0,total:0,triangles:0,points:0};
   const meta={name:project.name||null};
   function prime(upTo){
@@ -55,7 +63,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     if(mode==='off')return [];
     const out=[],w=size[0],h=size[1],cut=current.genome.limits?.maxLabels||5;
     const title=current.title||meta.name;
-    const sinceStart=startedAt===null?Infinity:(i.t-startedAt)/speedK;
+    // The title belongs to the start of the performance (replays and films), or to the moment the world opened (live).
+    const origin=pinnedStart??startedAt,sinceStart=origin===null?Infinity:(i.t-origin)/speedK;
     if(title&&sinceStart<9000&&mode!=='stream'){const a=Math.min(1,sinceStart/1200)*Math.min(1,(9000-sinceStart)/1500);out.push({kind:'title',text:title,sub:`${current.familyName} · a generative world from this project's code`,alpha:a});}
     // Callouts for structural events and above, near what they changed; milestones also get a banner.
     let n=0;const used=[],subjects=new Set();
@@ -99,7 +108,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);g.restore();}
   // ---- Frame ----------------------------------------------------------------------------------------------------
   function render(t,dt,{phase=0}={}){
-    const began=performance.now();renderer.info.reset();
+    const began=performance.now();renderer.info.reset();adapt(dt);
     if(startedAt===null)startedAt=t;
     dt=Math.min(.1,Math.max(0,dt));
     const tsec=(t-model.epoch)/1000;
@@ -123,12 +132,15 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     cue(c,t){model.cue(c,t);world.onCue?.(c,t);},
     intent(i,t){if(!addIntent(i))return;agents.record(i);const cmd=director.process(i);if(cmd)world.effect(cmd,info);},
     // After a seek: intents before t set the director (cooldowns, unlocks) and agent lifecycles, without effects.
-    prime(entries,t){for(const e of entries)for(const i of e.intents||[])if(i.ts<t)addIntent(i);prime(t);
+    prime(entries,t){
+      // Intents at or after the seek point are forgotten, so the schedule delivers them again as fresh events.
+      for(let k=intents.length-1;k>=0;k--)if(intents[k].ts>=t){intentIds.delete(intents[k].id);intents.splice(k,1);}
+      for(const e of entries)for(const i of e.intents||[])if(i.ts<t)addIntent(i);prime(t);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
       world.onPrime?.(t,(t-model.epoch)/1000);},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
-    setEpoch(t){const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
+    setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
     setProject(p){if(p?.name!==undefined)meta.name=p.name;},
     async setRecipe(next){if(!next||!FAMILIES[next.family])return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
     setLabels(m){if(['cinematic','explorer','stream','off'].includes(m))mode=m;},
@@ -136,10 +148,10 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     render,drawOverlay,
     // Every string currently on screen (qualification: the privacy boundary covers labels too).
     labels(){return lastLabels.flatMap(x=>[x.text,x.sub,x.right,x.right2]).filter(Boolean);},
-    resize(w,h,dpr=1){size=[w,h];pixelRatio=dpr;renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);pipeline.setSize(Math.round(w*dpr),Math.round(h*dpr));camera.aspect=w/h;camera.updateProjectionMatrix();
+    resize(w,h,dpr=1){size=[w,h];pixelRatio=dpr;applyLevel();camera.aspect=w/h;camera.updateProjectionMatrix();
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:intents.length,agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
-      drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
+      quality:level,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2)};},
     dispose(){world?.dispose();pipeline.dispose();renderer.dispose();}
   };

@@ -46,14 +46,14 @@ export function createFamily(ctx){
         float spots=smoothstep(.62,.8,gnoise(vP*2.+vec3(t*.3)))*vS.w;
         vec3 hot=mix(vC,vec3(1.,.95,.85),.25);vec3 c=mix(vC*.32,hot,smoothstep(.2,1.,g*.6+cells*.55));
         c*=(.25+.75*pow(mu,.7));c*=1.-spots*.85;c+=vC*pow(1.-mu,4.)*.35;
-        c*=.95+vFlash*6.+vS.w*.5*sin(uV*9.+vP.x*7.);gl_FragColor=vec4(c,1.);}`});
+        c*=.95+vFlash*3.+vS.w*.5*sin(uV*9.+vP.x*7.);gl_FragColor=vec4(c,1.);}`});
   const starMesh=new THREE.Mesh(stars.geometry,starMat);starMesh.frustumCulled=false;scene.add(starMesh);
   // Coronae: camera-facing billboards sharing the star instances (rays, loops, a soft glow far into space).
   const coronaGeo=new THREE.InstancedBufferGeometry();const quad=new THREE.PlaneGeometry(2,2);coronaGeo.index=quad.index;coronaGeo.setAttribute('position',quad.attributes.position);coronaGeo.setAttribute('uv',quad.attributes.uv);
   const coronaMat=new THREE.ShaderMaterial({uniforms:{...common,uCorona:{value:G.secondary.corona},uLoops:{value:G.secondary.loops}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     vertexShader:`attribute vec4 iStar;attribute vec3 iStarColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uSpeed,uBeat;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow;
       void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;vGrow=clamp(age/1.6,0.,1.);float flare=iStar.z>-1e4&&uT>=iStar.z?exp(-(uT-iStar.z)/uSpeed*.7):0.;vFlash=flare;
-        float s=sys.w*(2.4+2.2*flare+.1*uBeat)*vGrow;vec3 right=vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]),up=vec3(viewMatrix[0][1],viewMatrix[1][1],viewMatrix[2][1]);
+        float s=sys.w*(2.4+1.2*flare+.1*uBeat)*vGrow;vec3 right=vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]),up=vec3(viewMatrix[0][1],viewMatrix[1][1],viewMatrix[2][1]);
         vec3 w=sys.xyz+(right*position.x+up*position.y)*s;vUv=position.xy;vC=iStarColor;vS=iStar;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
     fragmentShader:`${NOISE}uniform float uV,uCorona,uLoops;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow;
       void main(){float r=length(vUv);if(r>1.)discard;float a=atan(vUv.y,vUv.x);float rs=1./2.4;float fall=(1.-r)*(1.-r);
@@ -223,7 +223,7 @@ export function createFamily(ctx){
         vec3 p=vec3(position.x,0.,position.y)*R;float ca=cos(rTilt.x),sa=sin(rTilt.x);p=vec3(p.x,p.y*ca-p.z*sa,p.y*sa+p.z*ca);float cb=cos(rTilt.y),sb=sin(rTilt.y);p=vec3(p.x*cb-p.y*sb,p.x*sb+p.y*cb,p.z);
         vUv=position.xy;gl_Position=projectionMatrix*viewMatrix*vec4(rC.xyz+p,1.);}`,
     fragmentShader:`varying vec2 vUv;varying vec3 vC;varying float vAge;varying vec4 vP;void main(){if(vAge<0.||vAge>1.)discard;float r=length(vUv);float band=exp(-pow((r-.92)/(.04*vP.z),2.))+exp(-pow((r-.86)/(.12*vP.z),2.))*.35;
-      gl_FragColor=vec4(vC*band*(1.-vAge)*vP.w*2.2,1.);}`});
+      gl_FragColor=vec4(vC*band*(1.-vAge)*vP.w*1.1,1.);}`});
   const ringMesh=new THREE.Mesh(rings.geometry,ringMat);ringMesh.frustumCulled=false;ringMesh.renderOrder=5;scene.add(ringMesh);let ringNext=0;
   const BURSTS=24,PER=48,burstPts=pointBuffers({bDir:4},BURSTS*PER);
   {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*6.283,s=Math.sqrt(1-u*u);burstPts.write('position',b*PER+k,0,0,0);burstPts.write('bDir',b*PER+k,Math.cos(a)*s,u*.35,Math.sin(a)*s,b+r()*.9);}burstPts.commit(BURSTS*PER);}
@@ -424,17 +424,17 @@ export function createFamily(ctx){
         if(big){starFlares.set(sa.index,info.tsec);starFlares.set(sb.index,info.tsec);ring(sa.pos,sa.tilt,sa.sysR*1.6,sa.color,2.6);ring(sb.pos,sb.tilt,sb.sysR*1.6,sb.color,2.6);wave(centroid([sa.pos,sb.pos]),.45*scaleK);}
         break;}
       case 'stellar-storm':{const list=planetsOf(subj.fileIds);for(const x of list.slice(0,10))burst(bodyPos(new THREE.Vector3(),x.b,tv),pal.warning,{radius:1.8,duration:2.4,size:1});
-        const groups=new Set(list.map(x=>x.m.group));for(const g of groups){const st=starOf(g);if(st){ring(st.pos,st.tilt,st.sysR*1.8,pal.warning,3.4,1.4,.9);}}flash(.12*scaleK);break;}
+        const groups=new Set(list.map(x=>x.m.group));for(const g of groups){const st=starOf(g);if(st){ring(st.pos,st.tilt,st.sysR*1.8,pal.warning,3.4,1.4,.75);}}flash(.05*scaleK);break;}
       case 'aurora':{const list=planetsOf(subj.fileIds);for(const x of list.slice(0,12))burst(bodyPos(new THREE.Vector3(),x.b,tv),pal.valid,{radius:1.2,duration:2,size:.8});
         const groups=new Set(list.map(x=>x.m.group));for(const g of groups){const st=starOf(g);if(st)ring(st.pos,st.tilt,st.sysR*1.5,pal.valid,3,1,.7);}break;}
       case 'calm-pulse':{const list=planetsOf(subj.fileIds);const groups=new Set(list.map(x=>x.m.group));
-        for(const g of groups){const st=starOf(g);if(!st)continue;ring(st.pos,st.tilt,st.sysR*3*scaleK,pal.valid,5,1.6,1.2);burst(st.pos,pal.valid,{radius:st.sysR*1.4,duration:2.6,size:1.3});starFlares.set(st.index,info.tsec);}
+        for(const g of groups){const st=starOf(g);if(!st)continue;ring(st.pos,st.tilt,st.sysR*1.7*scaleK,pal.valid,4.5,1.2,.45);burst(st.pos,pal.valid,{radius:st.sysR*1.4,duration:2.6,size:1});starFlares.set(st.index,info.tsec);}
         for(const x of list.slice(0,14))burst(bodyPos(new THREE.Vector3(),x.b,tv),pal.valid,{radius:1.4,duration:2.2,size:.9});
-        wave(centroid([...groups].map(g=>starOf(g)?.pos).filter(Boolean)),.6*scaleK);flash(.25*scaleK);break;}
+        wave(centroid([...groups].map(g=>starOf(g)?.pos).filter(Boolean)),.45*scaleK);flash(.1*scaleK);break;}
       case 'accretion-collapse':{for(const x of planetsOf(subj.fileIds).slice(0,12))burst(bodyPos(new THREE.Vector3(),x.b,tv),pal.highlight,{radius:2.4,duration:2.4,size:1,inward:true});flash(.15);break;}
       case 'nova':{const list=planetsOf(subj.fileIds);const groups=[...new Set(list.map(x=>x.m.group))];const stars=groups.map(starOf).filter(Boolean);const where=stars.length?centroid(stars.map(x=>x.pos)):new THREE.Vector3();
-        for(const st of stars){starFlares.set(st.index,info.tsec);burst(st.pos,st.color.clone().lerp(new THREE.Color(1,1,1),.4),{radius:st.sysR*2.4,duration:3.4,size:2});ring(st.pos,st.tilt,st.sysR*3.2,new THREE.Color(1,.95,.85),4.5,2,1.3);}
-        ring(where,[0,0],extent*(cmd.tier>=4?2.6:1.5)*scaleK,pal.highlight,cmd.tier>=4?9:6.5,cmd.tier>=4?3:2,1.4);wave(where,(cmd.tier>=4?1.2:.85)*scaleK,cmd.tier>=4?4:3);flash((cmd.tier>=4?1.1:.6)*scaleK);
+        for(const st of stars){starFlares.set(st.index,info.tsec);burst(st.pos,st.color.clone().lerp(new THREE.Color(1,1,1),.4),{radius:st.sysR*2.2,duration:3.4,size:1.3});}
+        ring(where,[0,0],extent*(cmd.tier>=4?2.6:1.4)*scaleK,pal.highlight,cmd.tier>=4?9:6.5,cmd.tier>=4?2.4:1.6,cmd.tier>=4?1:.7);wave(where,(cmd.tier>=4?1.1:.75)*scaleK,cmd.tier>=4?4:3);flash((cmd.tier>=4?.55:.22)*scaleK);
         if(stars.length>1)for(let k=1;k<stars.length;k++)flare(stars[0].pos,stars[k].pos,pal.highlight,{lift:3,width:10,duration:6,intensity:2.6});break;}
       case 'gravity-wave':{const o=new THREE.Vector3();ring(o,[0,0],extent*1.9*scaleK,pal.highlight.clone().lerp(pal.primary,.3),5,.8,.8);wave(o,.55*scaleK,3.2);dustMat.uniforms.uWave.value.set(0,0,info.tview,1.2*scaleK);break;}
       case 'expansion':{const o=new THREE.Vector3();ring(o,[0,0],extent*2.2,pal.accent,7,1.2,.8);wave(o,.35,3.5);break;}
