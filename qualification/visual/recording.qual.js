@@ -100,11 +100,11 @@ function verify(label,rec,{seconds,sync=true,minChanging=.3}){
   if(sync){
     // A flash can only appear on a captured frame: the measurement resolution is the recording's median frame interval.
     const res=Math.round(a.frameInterval?.median||33);
-    // Quick runs (CI's loaded software renderer delays canvas capture) check that markers pair within ±250 ms; full runs
-    // hold every marker to ITU-R BT.1359 acceptability.
-    const range=QUICK?[-250,250]:[SYNC.acceptable[0]-res,SYNC.acceptable[1]+res];
+    // Quick runs (CI's loaded software renderer delays canvas capture) check that markers pair within ±250 ms plus the
+    // measurement resolution; full runs hold every marker to ITU-R BT.1359 acceptability (± the resolution).
+    const range=QUICK?[-250-res,250+res]:[SYNC.acceptable[0]-res,SYNC.acceptable[1]+res];
     const s=media.sync(rec.file);a.sync=s;const ok=s.pairs.length>0&&s.pairs.every(p=>p.offsetMs!==null&&p.offsetMs>=range[0]&&p.offsetMs<=range[1]);
-    check(QUICK?`${label}: picture and sound markers pair up within ±250 ms`:`${label}: picture and sound in sync (every marker within ITU-R BT.1359 acceptability, ± one frame interval)`,ok&&s.flashes>=rec.markers&&rec.markers>0,
+    check(QUICK?`${label}: picture and sound markers pair up within ±250 ms (± one frame interval)`:`${label}: picture and sound in sync (every marker within ITU-R BT.1359 acceptability, ± one frame interval)`,ok&&s.flashes>=rec.markers&&rec.markers>0,
       `${rec.markers} markers, ${s.flashes} flashes, ${s.clicks} clicks; offset (sound − picture) mean ${s.meanOffsetMs} ms, max |${s.maxAbsOffsetMs}| ms, spread ${s.spreadMs} ms; resolution ${res} ms; ${s.pairs.filter(p=>p.offsetMs!==null&&p.offsetMs>=SYNC.detectable[0]&&p.offsetMs<=SYNC.detectable[1]).length}/${s.pairs.length} within detectability`);
   }
   return a;
