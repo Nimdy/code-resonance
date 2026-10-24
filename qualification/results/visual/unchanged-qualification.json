@@ -1,25 +1,25 @@
 {
-  "at": "2026-10-24T15:50:16.663Z",
-  "baseline": "a7c8cfe",
+  "at": "2026-10-24T19:03:18.705Z",
+  "baseline": "14fbe6d",
   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
   "checks": [
     {
-      "name": "unchanged: lumen as stellar-forge renders the same frames as a7c8cfe",
+      "name": "unchanged: lumen as stellar-forge renders the same frames as 14fbe6d",
       "pass": true,
       "detail": "40s same, 96s same, 158s same, 238s same"
     },
     {
-      "name": "unchanged: excalidraw as fractal-biosphere renders the same frames as a7c8cfe",
+      "name": "unchanged: excalidraw as fractal-biosphere renders the same frames as 14fbe6d",
       "pass": true,
       "detail": "5s same, 30s same"
     },
     {
-      "name": "unchanged: self as machine-cathedral renders the same frames as a7c8cfe",
+      "name": "unchanged: self as machine-cathedral renders the same frames as 14fbe6d",
       "pass": true,
       "detail": "300s same, 900s same"
     },
     {
-      "name": "unchanged: lumen as fractal-biosphere renders the same frames as a7c8cfe",
+      "name": "unchanged: lumen as fractal-biosphere renders the same frames as 14fbe6d",
       "pass": true,
       "detail": "100s same, 170s same, 238s same"
     }

@@ -1,0 +1,546 @@
+{
+  "at": "2026-10-24T20:02:37.225Z",
+  "gpu": "swiftshader",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "slow pack: at most one render request in flight, ever",
+      "pass": true,
+      "detail": "max 1"
+    },
+    {
+      "name": "slow pack: presentation frames are skipped, not queued (the worker queue stays short and drains)",
+      "pass": true,
+      "detail": "56 renders sent, 1356 skipped in the player, 0 obsolete in the worker; worker queue max 0, now 0; render 400.3 ms, latency 400.3 ms (max 527.4)"
+    },
+    {
+      "name": "slow pack: every semantic event reaches the pack (none lost while frames are skipped)",
+      "pass": true,
+      "detail": "346 sent by T0, 346 handled by T0 + 3 s (346 sent by then)"
+    },
+    {
+      "name": "slow pack: the player stays responsive (its own frame pacing and script round trips)",
+      "pass": true,
+      "detail": "player 60 fps, p95 interval 16.7 ms, max 16.8 ms; round trip max 2 ms"
+    },
+    {
+      "name": "slow pack: still running (slow, not stuck: above the 1 frame/s floor) and the user is warned it exceeds its declared budget",
+      "pass": true,
+      "detail": "“Test fixture slow world exceeds its declared budget (updateMs 371 > 2)”"
+    },
+    {
+      "name": "slow pack: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "world switching while renders are pending (6 round trips): one pack frame left, no errors, memory bounded",
+      "pass": true,
+      "detail": "1 pack frame, JS heap 9.5 → 9.5 MB"
+    },
+    {
+      "name": "hanging pack: the watchdog stops it within the live timeout (6 s + one 0.5 s watchdog tick) of its last answer",
+      "pass": true,
+      "detail": "stopped 6394 ms after the last acknowledgement seen (polled every 100 ms); disposal took 1.4 ms; built-in world running 953 ms after the stop"
+    },
+    {
+      "name": "hanging pack: the player kept running during the hang (its frame pacing and script round trips)",
+      "pass": true,
+      "detail": "player 60 fps, p95 16.7 ms, max 16.8 ms over 383 frames; round trip max 2 ms; stop and recovery: max frame 650 ms"
+    },
+    {
+      "name": "hanging pack: its stuck worker is terminated (by the browser, within 10 s of the stop)",
+      "pass": true,
+      "detail": "gone 2189 ms after the stop"
+    },
+    {
+      "name": "hanging pack: stopped with its reason shown; the built-in world took over; the recipe keeps the pack",
+      "pass": true,
+      "detail": "“Test fixture hanging world stopped: the pack stopped answering (no frame for 6 s). Showing the identity without it.”; showing stellar-forge (built-in); recipe family testing.hanging-world"
+    },
+    {
+      "name": "hanging pack: no automatic restart (12 s later still stopped)",
+      "pass": true,
+      "detail": "0 pack frames"
+    },
+    {
+      "name": "hanging pack: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "failing pack: stopped with its reason shown; the built-in world took over; the recipe keeps the pack",
+      "pass": true,
+      "detail": "“Test fixture failing world stopped: deliberate failure (test fixture). Showing the identity without it.”; showing stellar-forge (built-in); recipe family testing.failing-world"
+    },
+    {
+      "name": "failing pack: no automatic restart (12 s later still stopped)",
+      "pass": true,
+      "detail": "0 pack frames"
+    },
+    {
+      "name": "failing pack: RETRY runs it again; when it fails again it is stopped again (no loop)",
+      "pass": true,
+      "detail": "“Test fixture failing world stopped: deliberate failure (test fixture). Showing the identity without it.”"
+    },
+    {
+      "name": "failing pack: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "GPU context loss: stopped with its reason shown; the built-in world took over; the recipe keeps the pack",
+      "pass": true,
+      "detail": "“Test fixture context loss world stopped: the GPU context was lost. Showing the identity without it.”; showing stellar-forge (built-in); recipe family testing.context-loss-world"
+    },
+    {
+      "name": "GPU context loss: no automatic restart (6 s later still stopped)",
+      "pass": true,
+      "detail": "0 pack frames"
+    },
+    {
+      "name": "GPU context loss: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "isolation (from the pack worker): receiver, outside network, sockets, scripts, eval, DOM, parent, WebRTC, storage, nested workers, navigation all blocked",
+      "pass": true,
+      "detail": "14 probes; reached: none; outside listener hits: 0; origin “null”"
+    },
+    {
+      "name": "message flood: the relay terminates a worker posting thousands of spoofed messages, and the pack is stopped",
+      "pass": true,
+      "detail": "“Test fixture probe world stopped: the pack flooded the player with messages. Showing the identity without it.”"
+    },
+    {
+      "name": "probe: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "approval revoked while running: stopped within the pack list refresh (5 s)",
+      "pass": true,
+      "detail": "4527 ms · “Cymatic Field stopped: its approval was revoked. Showing the identity without it.”"
+    },
+    {
+      "name": "files modified while running: stopped within the refresh, and the modified file is never served",
+      "pass": true,
+      "detail": "3733 ms · “Cymatic Field stopped: its files changed after approval. Showing the identity without it.” · file request HTTP 403"
+    },
+    {
+      "name": "frame navigation: a pack frame that navigates is stopped at once",
+      "pass": true,
+      "detail": "“Cymatic Field stopped: the pack frame navigated away. Showing the identity without it.”"
+    },
+    {
+      "name": "inactive tab: no verdict while hidden (12 s into a hang), stopped once visible again",
+      "pass": true,
+      "detail": "hidden: still running; visible: stopped after 7150 ms (“Test fixture hanging world stopped: the pack stopped answering (no frame for 6 s). Showing the identity without it.”)"
+    },
+    {
+      "name": "revocation, modification, navigation, hidden tab: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "film: a pack that stops answering makes the film call fail with an explicit error (no frame substituted)",
+      "pass": true,
+      "detail": "333 frames rendered, then: page.evaluate: Error: Visual pack testing.hanging-world did not answer within 60 s"
+    },
+    {
+      "name": "receiver restart: a running pack is not stopped by the outage; a world rebuilt during it comes back when the receiver returns",
+      "pass": true,
+      "detail": "7 s into the outage: pack running (“”); rebuilding: showing living; back 201 ms after the receiver returned (halcyon.cymatic-field)"
+    },
+    {
+      "name": "receiver restart: no page errors (besides the browser logging refused requests while it was down)",
+      "pass": true,
+      "detail": "none (9 refused requests logged)"
+    }
+  ],
+  "measurements": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "slow": {
+      "samples": [
+        {
+          "t": 1,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 4,
+          "skippedHere": 83,
+          "skippedInFrame": 0,
+          "latencyMs": 125.7,
+          "semanticSent": 10,
+          "semanticHandled": 5,
+          "rendered": 1,
+          "renderMs": 427.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 2,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 6,
+          "skippedHere": 141,
+          "skippedInFrame": 0,
+          "latencyMs": 181.8,
+          "semanticSent": 10,
+          "semanticHandled": 10,
+          "rendered": 4,
+          "renderMs": 400.8,
+          "roundTripMs": 1
+        },
+        {
+          "t": 3,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 8,
+          "skippedHere": 200,
+          "skippedInFrame": 0,
+          "latencyMs": 228,
+          "semanticSent": 55,
+          "semanticHandled": 10,
+          "rendered": 7,
+          "renderMs": 400.9,
+          "roundTripMs": 2
+        },
+        {
+          "t": 4,
+          "inFlight": 0,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 10,
+          "skippedHere": 258,
+          "skippedInFrame": 0,
+          "latencyMs": 283.2,
+          "semanticSent": 58,
+          "semanticHandled": 55,
+          "rendered": 10,
+          "renderMs": 400.8,
+          "roundTripMs": 1
+        },
+        {
+          "t": 5,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 13,
+          "skippedHere": 315,
+          "skippedInFrame": 0,
+          "latencyMs": 309.2,
+          "semanticSent": 99,
+          "semanticHandled": 55,
+          "rendered": 10,
+          "renderMs": 400.8,
+          "roundTripMs": 1
+        },
+        {
+          "t": 6,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 15,
+          "skippedHere": 373,
+          "skippedInFrame": 0,
+          "latencyMs": 331,
+          "semanticSent": 147,
+          "semanticHandled": 76,
+          "rendered": 13,
+          "renderMs": 400.8,
+          "roundTripMs": 1
+        },
+        {
+          "t": 7,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 17,
+          "skippedHere": 431,
+          "skippedInFrame": 0,
+          "latencyMs": 348.1,
+          "semanticSent": 202,
+          "semanticHandled": 167,
+          "rendered": 16,
+          "renderMs": 400.7,
+          "roundTripMs": 1
+        },
+        {
+          "t": 8,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 20,
+          "skippedHere": 489,
+          "skippedInFrame": 0,
+          "latencyMs": 363.9,
+          "semanticSent": 227,
+          "semanticHandled": 210,
+          "rendered": 19,
+          "renderMs": 400.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 9,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 22,
+          "skippedHere": 547,
+          "skippedInFrame": 0,
+          "latencyMs": 371.3,
+          "semanticSent": 237,
+          "semanticHandled": 210,
+          "rendered": 19,
+          "renderMs": 400.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 10,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 25,
+          "skippedHere": 604,
+          "skippedInFrame": 0,
+          "latencyMs": 379.9,
+          "semanticSent": 240,
+          "semanticHandled": 237,
+          "rendered": 22,
+          "renderMs": 400.5,
+          "roundTripMs": 1
+        },
+        {
+          "t": 11,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 27,
+          "skippedHere": 662,
+          "skippedInFrame": 0,
+          "latencyMs": 384.2,
+          "semanticSent": 274,
+          "semanticHandled": 237,
+          "rendered": 25,
+          "renderMs": 400.6,
+          "roundTripMs": 2
+        },
+        {
+          "t": 12,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 30,
+          "skippedHere": 720,
+          "skippedInFrame": 0,
+          "latencyMs": 389,
+          "semanticSent": 282,
+          "semanticHandled": 278,
+          "rendered": 28,
+          "renderMs": 400.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 13,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 32,
+          "skippedHere": 778,
+          "skippedInFrame": 0,
+          "latencyMs": 391.4,
+          "semanticSent": 293,
+          "semanticHandled": 282,
+          "rendered": 31,
+          "renderMs": 400.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 14,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 34,
+          "skippedHere": 836,
+          "skippedInFrame": 0,
+          "latencyMs": 393.3,
+          "semanticSent": 312,
+          "semanticHandled": 282,
+          "rendered": 31,
+          "renderMs": 400.6,
+          "roundTripMs": 1
+        },
+        {
+          "t": 15,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 37,
+          "skippedHere": 893,
+          "skippedInFrame": 0,
+          "latencyMs": 395.5,
+          "semanticSent": 320,
+          "semanticHandled": 301,
+          "rendered": 34,
+          "renderMs": 400.5,
+          "roundTripMs": 1
+        },
+        {
+          "t": 16,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 39,
+          "skippedHere": 951,
+          "skippedInFrame": 0,
+          "latencyMs": 396.6,
+          "semanticSent": 320,
+          "semanticHandled": 320,
+          "rendered": 37,
+          "renderMs": 400.5,
+          "roundTripMs": 1
+        },
+        {
+          "t": 17,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 42,
+          "skippedHere": 1009,
+          "skippedInFrame": 0,
+          "latencyMs": 397.9,
+          "semanticSent": 320,
+          "semanticHandled": 320,
+          "rendered": 40,
+          "renderMs": 401,
+          "roundTripMs": 1
+        },
+        {
+          "t": 18,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 44,
+          "skippedHere": 1067,
+          "skippedInFrame": 0,
+          "latencyMs": 398.7,
+          "semanticSent": 327,
+          "semanticHandled": 320,
+          "rendered": 43,
+          "renderMs": 402,
+          "roundTripMs": 1
+        },
+        {
+          "t": 19,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 46,
+          "skippedHere": 1125,
+          "skippedInFrame": 0,
+          "latencyMs": 399.2,
+          "semanticSent": 341,
+          "semanticHandled": 320,
+          "rendered": 43,
+          "renderMs": 402,
+          "roundTripMs": 2
+        },
+        {
+          "t": 20,
+          "inFlight": 1,
+          "queue": 0,
+          "maxQueue": 0,
+          "sent": 49,
+          "skippedHere": 1182,
+          "skippedInFrame": 0,
+          "latencyMs": 399.8,
+          "semanticSent": 346,
+          "semanticHandled": 339,
+          "rendered": 46,
+          "renderMs": 400.3,
+          "roundTripMs": 2
+        }
+      ],
+      "pacing": {
+        "frames": 1205,
+        "fps": 60,
+        "p95Ms": 16.7,
+        "maxMs": 16.8
+      },
+      "final": {
+        "transport": {
+          "semantic": 346,
+          "sent": 56,
+          "acknowledged": 55,
+          "skippedHere": 1356,
+          "skippedInFrame": 0,
+          "latencyMs": 400.3,
+          "maxLatencyMs": 527.4,
+          "renderMs": 399.25,
+          "maxRenderMs": 427.6,
+          "queue": 0,
+          "maxQueue": 0,
+          "films": 0,
+          "inFlight": 1
+        },
+        "workerSemantic": 346,
+        "workerRendered": 55,
+        "workerSkipped": 0
+      },
+      "notice": "Test fixture slow world exceeds its declared budget (updateMs 371 > 2)"
+    },
+    "switching": {
+      "heapMb": [
+        9.5,
+        9.5
+      ],
+      "frames": 1
+    },
+    "hang": {
+      "detectMs": 6394,
+      "recoverMs": 953,
+      "disposeMs": 1.4,
+      "workerGoneMs": 2189,
+      "pacingDuringHang": {
+        "frames": 383,
+        "fps": 60,
+        "p95Ms": 16.7,
+        "maxMs": 16.8
+      },
+      "pacingDuringStopAndRecovery": {
+        "frames": 8,
+        "fps": 8.4,
+        "p95Ms": 650,
+        "maxMs": 650
+      },
+      "roundTripMaxMs": 2,
+      "workersBefore": 1
+    },
+    "failure": {
+      "failedAfterS": 10.7
+    },
+    "probe": {
+      "probes": {
+        "origin": "null",
+        "fetchReceiver": "blocked",
+        "fetchAbsolute": "blocked",
+        "fetchOutside": "blocked",
+        "websocket": "blocked",
+        "scriptOutside": "blocked",
+        "scriptApi": "blocked",
+        "eval": "blocked",
+        "document": "blocked",
+        "parentWindow": "blocked",
+        "webrtc": "blocked",
+        "indexedDB": "blocked",
+        "caches": "blocked",
+        "nestedWorker": "blocked",
+        "navigation": "blocked"
+      },
+      "hits": []
+    }
+  }
+}

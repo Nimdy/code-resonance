@@ -1,0 +1,331 @@
+{
+  "at": "2026-10-24T18:03:01.953Z",
+  "node": "v22.22.2",
+  "cpus": 24,
+  "load": 0,
+  "io": 0,
+  "runs": 30,
+  "failedRuns": 3,
+  "byTest": {
+    "Claude Code hook payloads become privacy-preserving, valid events": 2,
+    "whenOnline resolves only after a successful delivery": 1,
+    "tests/outbox.test.js": 1,
+    "One invalid event does not discard the valid events in its batch": 1,
+    "tests/receiver.test.js": 1
+  },
+  "durationMs": {
+    "min": 13072,
+    "max": 120149
+  },
+  "results": [
+    {
+      "run": 1,
+      "exitCode": 0,
+      "ms": 13311,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 2,
+      "exitCode": 0,
+      "ms": 13147,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 3,
+      "exitCode": 0,
+      "ms": 13444,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 4,
+      "exitCode": 1,
+      "ms": 13099,
+      "tests": 115,
+      "pass": 114,
+      "fail": 1,
+      "cancelled": 0,
+      "failed": [
+        "Claude Code hook payloads become privacy-preserving, valid events"
+      ]
+    },
+    {
+      "run": 5,
+      "exitCode": 0,
+      "ms": 13072,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 6,
+      "exitCode": 0,
+      "ms": 13255,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 7,
+      "exitCode": 0,
+      "ms": 13083,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 8,
+      "exitCode": 0,
+      "ms": 13102,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 9,
+      "exitCode": 0,
+      "ms": 13073,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 10,
+      "exitCode": 0,
+      "ms": 13093,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 11,
+      "exitCode": 0,
+      "ms": 13085,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 12,
+      "exitCode": 1,
+      "ms": 120149,
+      "tests": 117,
+      "pass": 113,
+      "fail": 2,
+      "cancelled": 2,
+      "failed": [
+        "whenOnline resolves only after a successful delivery",
+        "tests/outbox.test.js",
+        "One invalid event does not discard the valid events in its batch",
+        "tests/receiver.test.js"
+      ]
+    },
+    {
+      "run": 13,
+      "exitCode": 0,
+      "ms": 13216,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 14,
+      "exitCode": 0,
+      "ms": 13089,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 15,
+      "exitCode": 0,
+      "ms": 13074,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 16,
+      "exitCode": 0,
+      "ms": 13129,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 17,
+      "exitCode": 0,
+      "ms": 13117,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 18,
+      "exitCode": 0,
+      "ms": 13139,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 19,
+      "exitCode": 0,
+      "ms": 13164,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 20,
+      "exitCode": 0,
+      "ms": 13183,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 21,
+      "exitCode": 0,
+      "ms": 13127,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 22,
+      "exitCode": 0,
+      "ms": 13170,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 23,
+      "exitCode": 0,
+      "ms": 13135,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 24,
+      "exitCode": 0,
+      "ms": 13238,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 25,
+      "exitCode": 0,
+      "ms": 13140,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 26,
+      "exitCode": 0,
+      "ms": 13131,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 27,
+      "exitCode": 0,
+      "ms": 13143,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 28,
+      "exitCode": 0,
+      "ms": 13218,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    },
+    {
+      "run": 29,
+      "exitCode": 1,
+      "ms": 13168,
+      "tests": 115,
+      "pass": 114,
+      "fail": 1,
+      "cancelled": 0,
+      "failed": [
+        "Claude Code hook payloads become privacy-preserving, valid events"
+      ]
+    },
+    {
+      "run": 30,
+      "exitCode": 0,
+      "ms": 13267,
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "failed": []
+    }
+  ]
+}

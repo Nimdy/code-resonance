@@ -1,0 +1,775 @@
+TAP version 13
+# Subtest: Project identity matches VS Code Uri.file().toString() encoding
+ok 1 - Project identity matches VS Code Uri.file().toString() encoding
+  ---
+  duration_ms: 1.322999
+  type: 'test'
+  ...
+# Subtest: Claude Code hook payloads become privacy-preserving, valid events
+not ok 2 - Claude Code hook payloads become privacy-preserving, valid events
+  ---
+  duration_ms: 8.43649
+  type: 'test'
+  location: '<snapshot>/tests/agent-hooks.test.js:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert(!JSON.stringify(bash).includes('abc'))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (<snapshot>/tests/agent-hooks.test.js:24:86)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Hook installer is idempotent and preserves existing settings
+ok 3 - Hook installer is idempotent and preserves existing settings
+  ---
+  duration_ms: 0.506361
+  type: 'test'
+  ...
+# Subtest: Audio controller can switch project without inheriting old musical identity
+ok 4 - Audio controller can switch project without inheriting old musical identity
+  ---
+  duration_ms: 4.156942
+  type: 'test'
+  ...
+# Subtest: Palette changes are applied at the next musical bar rather than rewriting current bar
+ok 5 - Palette changes are applied at the next musical bar rather than rewriting current bar
+  ---
+  duration_ms: 1.109142
+  type: 'test'
+  ...
+# Subtest: Audio mix controls are clamped before oscillator scheduling
+ok 6 - Audio mix controls are clamped before oscillator scheduling
+  ---
+  duration_ms: 0.748801
+  type: 'test'
+  ...
+# Subtest: Queued cues are quantized with per-step and per-bar budgets, highest priority first
+ok 7 - Queued cues are quantized with per-step and per-bar budgets, highest priority first
+  ---
+  duration_ms: 2.065054
+  type: 'test'
+  ...
+# Subtest: Voice budget frees voices by scheduled end time, so long offline renders keep every soft pad
+ok 8 - Voice budget frees voices by scheduled end time, so long offline renders keep every soft pad
+  ---
+  duration_ms: 27.201504
+  type: 'test'
+  ...
+# Subtest: Tiers stack in the order symbols appear; removing one lets the rest settle
+ok 9 - Tiers stack in the order symbols appear; removing one lets the rest settle
+  ---
+  duration_ms: 11.437265
+  type: 'test'
+  ...
+# Subtest: Material states: draft on change, stressed by a failing run, validated by a passing one, committed by a commit
+ok 10 - Material states: draft on change, stressed by a failing run, validated by a passing one, committed by a commit
+  ---
+  duration_ms: 5.41623
+  type: 'test'
+  ...
+# Subtest: A renamed file keeps its identity and its plot, explicitly or by close match after a delete
+ok 11 - A renamed file keeps its identity and its plot, explicitly or by close match after a delete
+  ---
+  duration_ms: 1.994993
+  type: 'test'
+  ...
+# Subtest: Cues say where things happen: editing, dependencies (and whether they cross districts)
+ok 12 - Cues say where things happen: editing, dependencies (and whether they cross districts)
+  ---
+  duration_ms: 2.581667
+  type: 'test'
+  ...
+# Subtest: Districts come from the architecture; public ids are salted and cannot be matched to guessed paths
+ok 13 - Districts come from the architecture; public ids are salted and cannot be matched to guessed paths
+  ---
+  duration_ms: 2.843285
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45897
+# [CODE RESONANCE] Local data: /tmp/cr-doctor-A026G4
+# Subtest: doctor: reports a running receiver, its token and packs waiting for approval; problems when nothing runs
+ok 14 - doctor: reports a running receiver, its token and packs waiting for approval; problems when nothing runs
+  ---
+  duration_ms: 317.731012
+  type: 'test'
+  ...
+# Subtest: Extension never emits a path the receiver would reject (shared exclusion rules)
+ok 15 - Extension never emits a path the receiver would reject (shared exclusion rules)
+  ---
+  duration_ms: 1.540613
+  type: 'test'
+  ...
+# Subtest: Hidden files are opt-in; secrets and long paths are always excluded
+ok 16 - Hidden files are opt-in; secrets and long paths are always excluded
+  ---
+  duration_ms: 0.227881
+  type: 'test'
+  ...
+# Subtest: Command lines are classified locally into categories only
+ok 17 - Command lines are classified locally into categories only
+  ---
+  duration_ms: 2.154154
+  type: 'test'
+  ...
+# Subtest: Receiver drops inserted text from legacy document.change events
+ok 18 - Receiver drops inserted text from legacy document.change events
+  ---
+  duration_ms: 0.914932
+  type: 'test'
+  ...
+# Subtest: Streaming a long history with late arrivals equals a plain fold, with bounded memory
+ok 19 - Streaming a long history with late arrivals equals a plain fold, with bounded memory
+  ---
+  duration_ms: 593.693074
+  type: 'test'
+  ...
+# Subtest: Seeks forward and back, before the window and inside it, restore exactly the fold before the seek point
+ok 20 - Seeks forward and back, before the window and inside it, restore exactly the fold before the seek point
+  ---
+  duration_ms: 352.813654
+  type: 'test'
+  ...
+# Subtest: A parked checkpoint is reused only when the intents leading to it are exactly the same
+ok 21 - A parked checkpoint is reused only when the intents leading to it are exactly the same
+  ---
+  duration_ms: 166.207603
+  type: 'test'
+  ...
+# Subtest: Decisions do not depend on the world drawing them; a recipe switch relabels effects without replaying history
+ok 22 - Decisions do not depend on the world drawing them; a recipe switch relabels effects without replaying history
+  ---
+  duration_ms: 5.321514
+  type: 'test'
+  ...
+# Subtest: Agent numbers survive any history length; departed agents are forgotten and never renumber the others
+ok 23 - Agent numbers survive any history length; departed agents are forgotten and never renumber the others
+  ---
+  duration_ms: 15.971539
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45905
+# [CODE RESONANCE] Local data: /tmp/s3code-GynKcB
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46139
+# [CODE RESONANCE] Local data: /tmp/s3code-GynKcB
+# Subtest: End-to-end receiver -> durable journal -> AST sorter -> versioned performance frames -> restart
+ok 24 - End-to-end receiver -> durable journal -> AST sorter -> versioned performance frames -> restart
+  ---
+  duration_ms: 380.732527
+  type: 'test'
+  ...
+# Subtest: A failing run is a verified failure, never a success; recovery needs an observed pass
+ok 25 - A failing run is a verified failure, never a success; recovery needs an observed pass
+  ---
+  duration_ms: 12.281394
+  type: 'test'
+  ...
+# Subtest: Unverified AI events cannot claim validated work
+ok 26 - Unverified AI events cannot claim validated work
+  ---
+  duration_ms: 1.575083
+  type: 'test'
+  ...
+# Subtest: Volume is not significance: typing and newlines make no structure; re-running green tests is micro
+ok 27 - Volume is not significance: typing and newlines make no structure; re-running green tests is micro
+  ---
+  duration_ms: 32.86715
+  type: 'test'
+  ...
+# Subtest: New subsystems and the first connection between two subsystems are structural; repeats are routine
+ok 28 - New subsystems and the first connection between two subsystems are structural; repeats are routine
+  ---
+  duration_ms: 4.838679
+  type: 'test'
+  ...
+# Subtest: Milestones need a verified run plus a structural reason; several reasons together are rare
+ok 29 - Milestones need a verified run plus a structural reason; several reasons together are rare
+  ---
+  duration_ms: 1.708813
+  type: 'test'
+  ...
+# Subtest: Agent lifecycle follows hook events; reading is activity, not authorship
+ok 30 - Agent lifecycle follows hook events; reading is activity, not authorship
+  ---
+  duration_ms: 2.918766
+  type: 'test'
+  ...
+# Subtest: Intents carry salted ids only, and a chapter change enlarges the world without claiming completion
+ok 31 - Intents carry salted ids only, and a chapter change enlarges the world without claiming completion
+  ---
+  duration_ms: 6.993073
+  type: 'test'
+  ...
+# Subtest: The registry picks an adapter per language; unsupported files yield no structure
+ok 32 - The registry picks an adapter per language; unsupported files yield no structure
+  ---
+  duration_ms: 1.725523
+  type: 'test'
+  ...
+# Subtest: Python: classes, methods, nested functions, decorated routes, fields and imports
+ok 33 - Python: classes, methods, nested functions, decorated routes, fields and imports
+  ---
+  duration_ms: 2.728464
+  type: 'test'
+  ...
+# Subtest: Python: no structure from strings or comments, and inserting lines changes nothing
+ok 34 - Python: no structure from strings or comments, and inserting lines changes nothing
+  ---
+  duration_ms: 2.325094
+  type: 'test'
+  ...
+# Subtest: Python: run-time definitions are not invented (honest unsupported cases)
+ok 35 - Python: run-time definitions are not invented (honest unsupported cases)
+  ---
+  duration_ms: 0.24138
+  type: 'test'
+  ...
+# Subtest: Python modules connect through relative and resolvable absolute imports, including packages
+ok 36 - Python modules connect through relative and resolvable absolute imports, including packages
+  ---
+  duration_ms: 5.60017
+  type: 'test'
+  ...
+# Subtest: Groups follow the architecture: first two folders under a conventional root, else the top folder
+ok 37 - Groups follow the architecture: first two folders under a conventional root, else the top folder
+  ---
+  duration_ms: 0.733282
+  type: 'test'
+  ...
+# Subtest: Placed files never move as the project grows, and the plan is deterministic
+ok 38 - Placed files never move as the project grows, and the plan is deterministic
+  ---
+  duration_ms: 17.563543
+  type: 'test'
+  ...
+# Subtest: Districts are separated by streets; same-folder files sit together
+ok 39 - Districts are separated by streets; same-folder files sit together
+  ---
+  duration_ms: 2.357143
+  type: 'test'
+  ...
+# Subtest: Removing a file frees its cell; re-adding it returns to the same place
+ok 40 - Removing a file frees its cell; re-adding it returns to the same place
+  ---
+  duration_ms: 0.298351
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46577
+# [CODE RESONANCE] Local data: /tmp/s3-outbox-gIIoKY/receiver
+# Subtest: Outbox persists while offline, then replays without blocking event handlers
+ok 41 - Outbox persists while offline, then replays without blocking event handlers
+  ---
+  duration_ms: 229.733046
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:44827
+# [CODE RESONANCE] Local data: /tmp/cr-outbox-kElgQD/receiver
+# Subtest: A permanently rejected batch is quarantined and no longer blocks later events
+ok 42 - A permanently rejected batch is quarantined and no longer blocks later events
+  ---
+  duration_ms: 141.915698
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46557
+# [CODE RESONANCE] Local data: /tmp/cr-outbox-x7N6sQ/receiver
+# Subtest: Concurrent deliveries share one in-flight attempt and close() flushes what is pending
+ok 43 - Concurrent deliveries share one in-flight attempt and close() flushes what is pending
+  ---
+  duration_ms: 126.354536
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45093
+# [CODE RESONANCE] Local data: /tmp/cr-outbox-fEEbhb/receiver
+# Subtest: Outbox refuses new content snapshots over its disk budget but keeps lightweight events
+ok 44 - Outbox refuses new content snapshots over its disk budget but keeps lightweight events
+  ---
+  duration_ms: 124.12368
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46641
+# [CODE RESONANCE] Local data: /tmp/cr-outbox-F6AbPK/receiver
+# Subtest: whenOnline resolves only after a successful delivery
+ok 45 - whenOnline resolves only after a successful delivery
+  ---
+  duration_ms: 121.763112
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45465
+# [CODE RESONANCE] Local data: /tmp/cr-pack-http-ncHpA6
+# Subtest: The player can list packs and read approved files only; files are inert text; approvals need the same origin and the exact digest
+ok 46 - The player can list packs and read approved files only; files are inert text; approvals need the same origin and the exact digest
+  ---
+  duration_ms: 302.994955
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45953
+# [CODE RESONANCE] Local data: /tmp/cr-pack-http-kc5aE7
+# Subtest: The pack frame is served with a policy that allows no connection and only the public world modules
+ok 47 - The pack frame is served with a policy that allows no connection and only the public world modules
+  ---
+  duration_ms: 166.423012
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45035
+# [CODE RESONANCE] Local data: /tmp/cr-pack-http-0ETpdI
+# Subtest: Recipes: an installed world pack can be chosen; the fallback identity never stores anything
+ok 48 - Recipes: an installed world pack can be chosen; the fallback identity never stores anything
+  ---
+  duration_ms: 161.163088
+  type: 'test'
+  ...
+# Subtest: Graph nodes and edges keep only typed public fields; anything path-like is dropped
+ok 49 - Graph nodes and edges keep only typed public fields; anything path-like is dropped
+  ---
+  duration_ms: 4.869488
+  type: 'test'
+  ...
+# Subtest: Cues lose project, session, tool and any unknown detail; intents get opaque ids and whitelisted subject and detail
+ok 50 - Cues lose project, session, tool and any unknown detail; intents get opaque ids and whitelisted subject and detail
+  ---
+  duration_ms: 1.716693
+  type: 'test'
+  ...
+# Subtest: Recipes keep the genome, traits, settings and only the public strings the user approved
+ok 51 - Recipes keep the genome, traits, settings and only the public strings the user approved
+  ---
+  duration_ms: 4.702808
+  type: 'test'
+  ...
+# Subtest: VSIX packager needs only Node and produces a valid, versioned extension archive
+ok 52 - VSIX packager needs only Node and produces a valid, versioned extension archive
+  ---
+  duration_ms: 6.703712
+  type: 'test'
+  ...
+# Subtest: The examples, the starter templates and the testing fixtures are valid packs
+ok 53 - The examples, the starter templates and the testing fixtures are valid packs
+  ---
+  duration_ms: 19.674035
+  type: 'test'
+  ...
+# Subtest: The manifest schema rejects malformed packs with precise locations
+ok 54 - The manifest schema rejects malformed packs with precise locations
+  ---
+  duration_ms: 11.327055
+  type: 'test'
+  ...
+# Subtest: Compatibility: a pack runs on the SDK major it names, at or above the minor it needs
+ok 55 - Compatibility: a pack runs on the SDK major it names, at or above the minor it needs
+  ---
+  duration_ms: 0.478571
+  type: 'test'
+  ...
+# Subtest: Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers
+ok 56 - Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers
+  ---
+  duration_ms: 8.030477
+  type: 'test'
+  ...
+# Subtest: Code packs: one self-contained module with the right export; data packs contain no code
+ok 57 - Code packs: one self-contained module with the right export; data packs contain no code
+  ---
+  duration_ms: 10.648369
+  type: 'test'
+  ...
+# Subtest: Installation lifecycle: install, approve the exact files, tampering revokes, reinstall and removal
+ok 58 - Installation lifecycle: install, approve the exact files, tampering revokes, reinstall and removal
+  ---
+  duration_ms: 20.508771
+  type: 'test'
+  ...
+# Subtest: Recipes: a world pack is a family with seeded, trait-derived parameters; overlays tune their base; missing packs fall back without rewriting
+ok 59 - Recipes: a world pack is a family with seeded, trait-derived parameters; overlays tune their base; missing packs fall back without rewriting
+  ---
+  duration_ms: 11.880303
+  type: 'test'
+  ...
+# Subtest: Catalogues cover every value the built-in generator produces, and the effect intents match the director
+ok 60 - Catalogues cover every value the built-in generator produces, and the effect intents match the director
+  ---
+  duration_ms: 69.54792
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45467
+# [CODE RESONANCE] Local data: /tmp/resonance-player-WGsPrZ
+# Subtest: Standalone assets, OBS mode, derived performance API and privacy boundary
+ok 61 - Standalone assets, OBS mode, derived performance API and privacy boundary
+  ---
+  duration_ms: 244.452264
+  type: 'test'
+  ...
+# Subtest: No label in any mode contains the project folder name; without a public title the text is generic
+ok 62 - No label in any mode contains the project folder name; without a public title the text is generic
+  ---
+  duration_ms: 6.220291
+  type: 'test'
+  ...
+# Subtest: An explicitly approved public title is the only project name the Stage shows
+ok 63 - An explicitly approved public title is the only project name the Stage shows
+  ---
+  duration_ms: 1.292131
+  type: 'test'
+  ...
+# Subtest: Resolving a stored recipe never adopts the folder name, and the world host has no input for it
+ok 64 - Resolving a stored recipe never adopts the folder name, and the world host has no input for it
+  ---
+  duration_ms: 1.733664
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46235
+# [CODE RESONANCE] Local data: /tmp/cr-receiver-FM4Cxj
+# Subtest: One invalid event does not discard the valid events in its batch
+ok 65 - One invalid event does not discard the valid events in its batch
+  ---
+  duration_ms: 218.276351
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45657
+# [CODE RESONANCE] Local data: /tmp/cr-receiver-u0je68
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46183
+# [CODE RESONANCE] Local data: /tmp/cr-receiver-u0je68
+# Subtest: A journal truncated mid-line by a crash is terminated before new records are appended
+ok 66 - A journal truncated mid-line by a crash is terminated before new records are appended
+  ---
+  duration_ms: 258.832731
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45087
+# [CODE RESONANCE] Local data: /tmp/cr-receiver-4FnuJr
+# Subtest: Write endpoints reject wrong or missing tokens
+ok 67 - Write endpoints reject wrong or missing tokens
+  ---
+  duration_ms: 116.568288
+  type: 'test'
+  ...
+# Subtest: Recipes are deterministic: same project and traits, same identity, regardless of wall-clock
+ok 68 - Recipes are deterministic: same project and traits, same identity, regardless of wall-clock
+  ---
+  duration_ms: 5.014979
+  type: 'test'
+  ...
+# Subtest: Different projects become structurally different worlds, not recoloured ones
+ok 69 - Different projects become structurally different worlds, not recoloured ones
+  ---
+  duration_ms: 3.272675
+  type: 'test'
+  ...
+# Subtest: A tiny project stays provisional; once founded its identity never re-derives as the code changes
+ok 70 - A tiny project stays provisional; once founded its identity never re-derives as the code changes
+  ---
+  duration_ms: 0.854092
+  type: 'test'
+  ...
+# Subtest: Artist control: choose a family, regenerate, lock, adjust and name; inputs are validated
+ok 71 - Artist control: choose a family, regenerate, lock, adjust and name; inputs are validated
+  ---
+  duration_ms: 1.632863
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:44873
+# [CODE RESONANCE] Local data: /tmp/cr-recipe-UPGMbs
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45383
+# [CODE RESONANCE] Local data: /tmp/cr-recipe-UPGMbs
+# Subtest: The receiver persists the recipe across restarts and accepts edits only from its own origin
+ok 72 - The receiver persists the recipe across restarts and accepts edits only from its own origin
+  ---
+  duration_ms: 395.383065
+  type: 'test'
+  ...
+# Subtest: Choosing "automatic" returns to the identity the code would generate, keeping the viewer's settings
+ok 73 - Choosing "automatic" returns to the identity the code would generate, keeping the viewer's settings
+  ---
+  duration_ms: 0.436521
+  type: 'test'
+  ...
+# Subtest: Identities generated before visual packs existed are unchanged (genome fingerprint pinned)
+ok 74 - Identities generated before visual packs existed are unchanged (genome fingerprint pinned)
+  ---
+  duration_ms: 0.384331
+  type: 'test'
+  ...
+# Subtest: Baseline is not credited as newly created work; later changes are
+ok 75 - Baseline is not credited as newly created work; later changes are
+  ---
+  duration_ms: 9.705738
+  type: 'test'
+  ...
+# Subtest: AI visible thinking is not hidden reasoning; prompt does not count as validated progress
+ok 76 - AI visible thinking is not hidden reasoning; prompt does not count as validated progress
+  ---
+  duration_ms: 0.267951
+  type: 'test'
+  ...
+# Subtest: Failing test increases tension, passing test resolves and contributes growth
+ok 77 - Failing test increases tension, passing test resolves and contributes growth
+  ---
+  duration_ms: 0.379301
+  type: 'test'
+  ...
+# Subtest: Journal event IDs are idempotent and 10-second output is contract bounded
+ok 78 - Journal event IDs are idempotent and 10-second output is contract bounded
+  ---
+  duration_ms: 0.39903
+  type: 'test'
+  ...
+# Subtest: Path traversal and secret filenames rejected at ingestion
+ok 79 - Path traversal and secret filenames rejected at ingestion
+  ---
+  duration_ms: 0.766632
+  type: 'test'
+  ...
+# Subtest: Deterministic interpretations from identical journal inputs
+ok 80 - Deterministic interpretations from identical journal inputs
+  ---
+  duration_ms: 1.766763
+  type: 'test'
+  ...
+# Subtest: Meaningful activity outweighs volume: line shifts earn nothing, components do, re-running green tests earns nothing
+ok 81 - Meaningful activity outweighs volume: line shifts earn nothing, components do, re-running green tests earns nothing
+  ---
+  duration_ms: 4.939459
+  type: 'test'
+  ...
+# Subtest: A huge generated file saturates; a validated refactor that removes code is credited
+ok 82 - A huge generated file saturates; a validated refactor that removes code is credited
+  ---
+  duration_ms: 21.243369
+  type: 'test'
+  ...
+# Subtest: Tension reflects current state: open errors and failing validations, not accumulated nudges
+ok 83 - Tension reflects current state: open errors and failing validations, not accumulated nudges
+  ---
+  duration_ms: 0.675331
+  type: 'test'
+  ...
+# Subtest: Agents get stable distinct voices; file changes are attributed only when correlated with that agent
+ok 84 - Agents get stable distinct voices; file changes are attributed only when correlated with that agent
+  ---
+  duration_ms: 1.325502
+  type: 'test'
+  ...
+# Subtest: Public graph shows every module and fills its budget with the most meaningful symbols first
+ok 85 - Public graph shows every module and fills its budget with the most meaningful symbols first
+  ---
+  duration_ms: 14.886398
+  type: 'test'
+  ...
+# Subtest: Project name labels the local project list but never enters the recorded performance
+ok 86 - Project name labels the local project list but never enters the recorded performance
+  ---
+  duration_ms: 0.38968
+  type: 'test'
+  ...
+# Subtest: Score identity is deterministic across repeated runs and does not depend on wall-clock
+ok 87 - Score identity is deterministic across repeated runs and does not depend on wall-clock
+  ---
+  duration_ms: 2.669345
+  type: 'test'
+  ...
+# Subtest: Chapters unlock arrangement layers; baseline remains quiet
+ok 88 - Chapters unlock arrangement layers; baseline remains quiet
+  ---
+  duration_ms: 1.665858
+  type: 'test'
+  ...
+# Subtest: Four score palettes have distinct deterministic orchestrations
+ok 89 - Four score palettes have distinct deterministic orchestrations
+  ---
+  duration_ms: 0.445251
+  type: 'test'
+  ...
+# Subtest: No musical event can exceed safe MIDI/velocity/duration bounds
+ok 90 - No musical event can exceed safe MIDI/velocity/duration bounds
+  ---
+  duration_ms: 2.184974
+  type: 'test'
+  ...
+# Subtest: Each project has a stable, distinctive identity (key, mode, progressions, motif)
+ok 91 - Each project has a stable, distinctive identity (key, mode, progressions, motif)
+  ---
+  duration_ms: 4.723009
+  type: 'test'
+  ...
+# Subtest: Outside tension sections every pitched note stays in the project key
+ok 92 - Outside tension sections every pitched note stays in the project key
+  ---
+  duration_ms: 57.563385
+  type: 'test'
+  ...
+# Subtest: Tension changes the harmony; calm sections cycle home/away with breathing room
+ok 93 - Tension changes the harmony; calm sections cycle home/away with breathing room
+  ---
+  duration_ms: 0.770531
+  type: 'test'
+  ...
+# Subtest: Early chapters develop instead of looping one bar
+ok 94 - Early chapters develop instead of looping one bar
+  ---
+  duration_ms: 12.738729
+  type: 'test'
+  ...
+# Subtest: Engineering events become bounded figures; agents keep distinct voices
+ok 95 - Engineering events become bounded figures; agents keep distinct voices
+  ---
+  duration_ms: 2.539765
+  type: 'test'
+  ...
+# Subtest: AST classifier recognizes real structures and ignores fake symbols in strings
+ok 96 - AST classifier recognizes real structures and ignores fake symbols in strings
+  ---
+  duration_ms: 7.969855
+  type: 'test'
+  ...
+# Subtest: Next.js exported GET arrow is a route, not generic function
+ok 97 - Next.js exported GET arrow is a route, not generic function
+  ---
+  duration_ms: 1.139592
+  type: 'test'
+  ...
+# Subtest: AST diff identifies create / modify / remove and dependency changes
+ok 98 - AST diff identifies create / modify / remove and dependency changes
+  ---
+  duration_ms: 1.163307
+  type: 'test'
+  ...
+# Subtest: Non-TypeScript files are not misclassified as TS AST
+ok 99 - Non-TypeScript files are not misclassified as TS AST
+  ---
+  duration_ms: 0.437211
+  type: 'test'
+  ...
+# Subtest: Inserting lines above code changes nothing structurally (no line-keyed churn)
+ok 100 - Inserting lines above code changes nothing structurally (no line-keyed churn)
+  ---
+  duration_ms: 5.670919
+  type: 'test'
+  ...
+# Subtest: CommonJS require and dynamic import are dependencies
+ok 101 - CommonJS require and dynamic import are dependencies
+  ---
+  duration_ms: 1.327252
+  type: 'test'
+  ...
+# Subtest: Wrapped components, router endpoints, class properties and local scope are recognised
+ok 102 - Wrapped components, router endpoints, class properties and local scope are recognised
+  ---
+  duration_ms: 3.642781
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:44691
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-RNL3TH
+# Subtest: Re-interpreting the journal reproduces the recorded performance exactly
+ok 103 - Re-interpreting the journal reproduces the recorded performance exactly
+  ---
+  duration_ms: 735.999387
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45005
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-TfZS4R
+# Subtest: Graph deltas replayed from the timeline reconstruct the live graph
+ok 104 - Graph deltas replayed from the timeline reconstruct the live graph
+  ---
+  duration_ms: 623.511037
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:46551
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-n4OqLq
+# Subtest: The intents view of the timeline carries every window's intents and nothing else
+ok 105 - The intents view of the timeline carries every window's intents and nothing else
+  ---
+  duration_ms: 607.18334
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:44749
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-jpjigi
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45751
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-jpjigi
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45903
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-jpjigi
+# [sorter] Rebuilding 6fa0e36e interpretation v1 -> v7
+# Subtest: An older interpretation is rebuilt from the journal on start; frames after the last checkpoint are regenerated
+ok 106 - An older interpretation is rebuilt from the journal on start; frames after the last checkpoint are regenerated
+  ---
+  duration_ms: 932.403328
+  type: 'test'
+  ...
+# [CODE RESONANCE] Receiver listening: http://127.0.0.1:45651
+# [CODE RESONANCE] Local data: /tmp/cr-timeline-hHWQrs
+# Subtest: Project view supports conditional requests
+ok 107 - Project view supports conditional requests
+  ---
+  duration_ms: 127.121118
+  type: 'test'
+  ...
+# (node:3080183) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file://<snapshot>/public/vendor/three.module.min.js is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to <snapshot>/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: A new subsystem appears from its data: a district, a module on the step grid, symbols at their own cues
+ok 108 - A new subsystem appears from its data: a district, a module on the step grid, symbols at their own cues
+  ---
+  duration_ms: 7.559333
+  type: 'test'
+  ...
+# Subtest: Material state follows validation cues for exactly the modules they cover
+ok 109 - Material state follows validation cues for exactly the modules they cover
+  ---
+  duration_ms: 1.546623
+  type: 'test'
+  ...
+# Subtest: The director never shows success for a failure, and the same intents always give the same effects
+ok 110 - The director never shows success for a failure, and the same intents always give the same effects
+  ---
+  duration_ms: 2.791421
+  type: 'test'
+  ...
+# Subtest: Spectacle is rare: milestones spend tokens, rare effects need a long gap, routine bursts coalesce
+ok 111 - Spectacle is rare: milestones spend tokens, rare effects need a long gap, routine bursts coalesce
+  ---
+  duration_ms: 0.582481
+  type: 'test'
+  ...
+# Subtest: Idle is quiet, not dead: activity decays without events and no effect is ever generated by time alone
+ok 112 - Idle is quiet, not dead: activity decays without events and no effect is ever generated by time alone
+  ---
+  duration_ms: 1.253147
+  type: 'test'
+  ...
+# Subtest: Agent presences follow observed lifecycles and never linger or claim work after silence
+ok 113 - Agent presences follow observed lifecycles and never linger or claim work after silence
+  ---
+  duration_ms: 1.183652
+  type: 'test'
+  ...
+# Subtest: Generated subsystem names are stable and reveal nothing; user aliases replace them
+ok 114 - Generated subsystem names are stable and reveal nothing; user aliases replace them
+  ---
+  duration_ms: 40.019662
+  type: 'test'
+  ...
+# Subtest: The shader time origin is a real timestamp, never the replay's initial reset at time 0
+ok 115 - The shader time origin is a real timestamp, never the replay's initial reset at time 0
+  ---
+  duration_ms: 0.537321
+  type: 'test'
+  ...
+1..115
+# tests 115
+# suites 0
+# pass 114
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13144.545333
