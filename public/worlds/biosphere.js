@@ -180,7 +180,7 @@ export function createFamily(ctx){
   const crownMesh=new THREE.Mesh(crowns.geometry,crownMat);crownMesh.frustumCulled=false;crownMesh.renderOrder=3;scene.add(crownMesh);
   const crownLevel=new Map();
   // ---- Background: water or night air, deeper above, with soft light shafts ------------------------------------
-  const sky=new THREE.ShaderMaterial({uniforms:{...common,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uTop:{value:pal.deep.clone().multiplyScalar(.35)},uHorizon:{value:fogColor.clone().multiplyScalar(1.3)},uGlow:{value:pal.accent.clone().lerp(pal.valid,.3)},
+  const sky=new THREE.ShaderMaterial({uniforms:{...common,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uTop:{value:pal.deep.clone().multiplyScalar(.35)},uHorizon:{value:fogColor.clone()},uGlow:{value:pal.accent.clone().lerp(pal.valid,.3)},
       uShafts:{value:G.atmosphere.lightShafts*(terrain==='abyss'?1.4:terrain==='cavern'?.4:.8)},uAbyss:{value:terrain==='abyss'?1:0}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
     fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uTop,uHorizon,uGlow;uniform float uV,uShafts,uAbyss;uniform vec4 uUnlock;
       void main(){vec4 p=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(p.xyz/p.w-uCam);float h=clamp(d.y,-1.,1.);
@@ -282,7 +282,7 @@ export function createFamily(ctx){
     for(const o of orgs.values()){if(k<24)ground.material.uniforms.uRoots.value[k++].set(o.root.x,0,o.root.z,Math.min(1.5,.4+o.members.length*.05));centre.add(o.root);n++;}
     for(;k<24;k++)ground.material.uniforms.uRoots.value[k].set(0,0,0,0);
     if(n)centre.multiplyScalar(1/n);extent=4;for(const o of orgs.values())extent=Math.max(extent,o.root.distanceTo(centre)+o.radius);
-    ground.material.uniforms.uScale.value=Math.max(60,extent*6);sporeMat.uniforms.uBox.value.set(extent*2.2,Math.max(10,extent*.7),extent*2.2);
+    ground.material.uniforms.uScale.value=Math.max(900,extent*40);sporeMat.uniforms.uBox.value.set(extent*2.2,Math.max(10,extent*.7),extent*2.2);
     // Vines: dependencies between branch tips.
     // Many dependencies between the same two organisms read as one braided vine, not a wall of arches: at most four
     // representative strands per pair, brighter the more links they stand for. Internal tendrils quieten as they multiply.
