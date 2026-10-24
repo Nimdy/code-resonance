@@ -1,76 +1,76 @@
 {
-  "at": "2026-10-23T18:48:12.537Z",
+  "at": "2026-10-24T04:37:12.113Z",
   "seconds": 180,
   "styles": {
     "ambient": {
-      "peak": 0.287,
+      "peak": 0.308,
       "clips": 0,
-      "rmsDb": -22.082,
+      "rmsDb": -23.466,
       "shortTermDb": {
-        "p10": -28.9,
-        "median": -21.5,
-        "p95": -20.6
+        "p10": -28.1,
+        "median": -23.4,
+        "p95": -21.4
       },
-      "loudnessRangeDb": 8.268,
+      "loudnessRangeDb": 6.691,
       "silentWindows": 1,
       "silentAt": [
         0
       ],
       "windows": 60,
-      "beforeTensionDb": -22.815,
-      "tensionDb": -21.397,
-      "renderSeconds": 44.4
+      "beforeTensionDb": -24.641,
+      "tensionDb": -23.597,
+      "renderSeconds": 40.1
     },
     "pulse": {
-      "peak": 0.302,
+      "peak": 0.331,
       "clips": 0,
-      "rmsDb": -23.211,
+      "rmsDb": -23.756,
       "shortTermDb": {
-        "p10": -25.7,
-        "median": -22.6,
-        "p95": -21.9
+        "p10": -25.1,
+        "median": -23.5,
+        "p95": -22.6
       },
-      "loudnessRangeDb": 3.755,
+      "loudnessRangeDb": 2.431,
       "silentWindows": 0,
       "silentAt": [],
       "windows": 60,
-      "beforeTensionDb": -24.278,
-      "tensionDb": -22.398,
-      "renderSeconds": 75.3
+      "beforeTensionDb": -24.547,
+      "tensionDb": -23.306,
+      "renderSeconds": 52.9
     },
     "cinematic": {
-      "peak": 0.302,
+      "peak": 0.307,
       "clips": 0,
-      "rmsDb": -23.077,
+      "rmsDb": -23.541,
       "shortTermDb": {
-        "p10": -28,
-        "median": -22.6,
+        "p10": -26.8,
+        "median": -23.5,
         "p95": -21.5
       },
-      "loudnessRangeDb": 6.512,
+      "loudnessRangeDb": 5.276,
       "silentWindows": 0,
       "silentAt": [],
       "windows": 60,
-      "beforeTensionDb": -23.678,
-      "tensionDb": -22.448,
-      "renderSeconds": 42.5
+      "beforeTensionDb": -24.526,
+      "tensionDb": -23.388,
+      "renderSeconds": 45.6
     },
     "chip": {
-      "peak": 0.271,
+      "peak": 0.274,
       "clips": 0,
-      "rmsDb": -23.499,
+      "rmsDb": -24.041,
       "shortTermDb": {
-        "p10": -29.9,
-        "median": -22.7,
-        "p95": -22.3
+        "p10": -29,
+        "median": -23.4,
+        "p95": -22.8
       },
-      "loudnessRangeDb": 7.657,
+      "loudnessRangeDb": 6.205,
       "silentWindows": 0,
       "silentAt": [],
       "windows": 60,
-      "beforeTensionDb": -24.159,
-      "tensionDb": -22.599,
-      "renderSeconds": 204.4
+      "beforeTensionDb": -24.807,
+      "tensionDb": -23.179,
+      "renderSeconds": 118.6
     }
   },
   "checks": [
