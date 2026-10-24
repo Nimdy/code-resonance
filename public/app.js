@@ -440,14 +440,23 @@
         recipe=r.json;
         living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null}});
         livingFor=selected;livingSize='';
+        if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());
         if(replay&&(mode==='replay'||FILM))living.prime(replay.entries,perfNow());
+        else if(mode==='live')void primeLive(living);
         syncRecipePanel();
       }catch(e){console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;if(selectedWorld==='living'){selectedWorld='construct';syncPlayerControls();void ensureConstruct();}}
       finally{livingLoading=null;}
       return living;
     })();
     return livingLoading;
+  }
+  // Live: the world learns the session so far (agent lifecycles, verified milestones) from the recorded intents only.
+  async function primeLive(world){
+    const intents=[];let after=-1;
+    for(let page=0;page<20;page++){const r=(await getJSON(`/api/timeline?id=${encodeURIComponent(selected)}&after=${after}&limit=500`))?.json;if(!r||!r.entries.length)break;
+      for(const e of r.entries)if(e.intents?.length)intents.push({intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
+    if(world===living&&mode==='live')living.prime(intents,perfNow());
   }
   async function recipeAction(action){
     if(!selected)return;
@@ -598,6 +607,7 @@
     const birth=new Map();
     for(const e of entries)for(const n of e.graph.keyframe?e.graph.nodes:e.graph.add)if(n.type==='module'&&!birth.has(n.id))birth.set(n.id,birth.size);
     replay={entries,cues:entries.flatMap(e=>e.cues),start:entries[0]?.start||0,end:entries.at(-1)?.end||0,birth};
+    if(entries.length)living?.setEpoch(replay.start);
   }
   function graphAt(i){
     const entries=replay.entries;let k=i;while(k>0&&!entries[k].graph.keyframe)k--;
@@ -702,7 +712,11 @@
         return out.toDataURL('image/jpeg',.92);
       },
       stats(){return living?living.stats():construct?.stats();},
-      world(){return living?.world||null;}
+      world(){return living?.world||null;},
+      labels(){return living?.labels()||[];},
+      async setRecipe(r){await living?.setRecipe(r);return living?.recipe?.family;},
+      setLabels(m){living?.setLabels(m);},
+      memory(){const s=living?.stats();return {geometries:s?.geometries,textures:s?.textures,heap:performance.memory?performance.memory.usedJSHeapSize:null};}
     };
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.

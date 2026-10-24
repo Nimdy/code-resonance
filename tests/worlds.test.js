@@ -82,3 +82,9 @@ test('Generated subsystem names are stable and reveal nothing; user aliases repl
   assert.notEqual(generatedName('0123456789abcd'),generatedName('fedcba98765432'));
   assert.match(generatedName('0123456789abcd'),/^[A-Z][a-z]+$/);
 });
+test('The shader time origin is a real timestamp, never the replay\'s initial reset at time 0',async()=>{
+  const {createModel}=await load('model');const m=createModel();
+  m.reset({nodes:[],edges:[]},0);
+  m.applyDelta({add:[group('g'),mod('m','g')],remove:[],addEdges:[],removeEdges:[]},T0,T0+5000);
+  assert.equal(m.epoch,T0,'seconds since the origin stay small, so float32 shader time keeps its precision');
+});

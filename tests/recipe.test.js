@@ -79,3 +79,9 @@ test('The receiver persists the recipe across restarts and accepts edits only fr
   await svc.stop();svc=await createService({port:0,dataDir:dir}).start();t.after(()=>svc.stop());
   const after=await (await fetch(url())).json();assert.equal(after.family,'stellar-forge');assert.equal(after.source,'user');
 });
+test('Choosing "automatic" returns to the identity the code would generate, keeping the viewer\'s settings',()=>{
+  const p=project('auto',{modules:30,ui:20,dirs:20});const generated=recipe.generate(p);
+  const chosen=recipe.update(recipe.update(generated,{type:'family',family:'machine-cathedral'},p),{type:'overrides',intensity:.4},p);
+  const back=recipe.update(chosen,{type:'automatic'},p);
+  assert.equal(back.family,generated.family);assert.equal(back.source,'generated');assert.equal(back.overrides.intensity,.4);
+});

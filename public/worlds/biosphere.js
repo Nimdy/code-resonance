@@ -405,7 +405,7 @@ export function createFamily(ctx){
     if(since<14&&att){const a=subjectOf(att,i);if(a){const k=smooth(1-Math.max(0,since-9)/5);target.lerp(a.pos,.7*k);distance=lerp(distance,Math.min(distance,Math.max(6,a.radius/tanHalf*1.3)),k);}}
     else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&branchOf.has(a.fileId));
       if(busy){const b=branchOf.get(busy.fileId);const o=orgs.get(b.org);target.lerp(b.tip,.35);distance=lerp(distance,Math.max(6,(o?.radius||3)*1.6/tanHalf),.35);}
-      else if(i.phase==='idle'&&orgs.size>1){const list=[...orgs.values()].sort((a,b)=>a.index-b.index);const o=list[Math.floor(i.tview/28)%list.length];target.lerp(o.root.clone().setY(o.canopy*.5),.5);distance=lerp(distance,Math.max(7,o.radius*1.9/tanHalf),.45);}}
+      else if(i.phase==='idle'&&orgs.size>1){const list=[...orgs.values()].sort((a,b)=>a.index-b.index);const o=list[((Math.floor(i.tview/28)%list.length)+list.length)%list.length];target.lerp(o.root.clone().setY(o.canopy*.5),.5);distance=lerp(distance,Math.max(7,o.radius*1.9/tanHalf),.45);}}
     return {target,distance,azimuth:az,elevation:el,fov,omega:.7};
   }
   function subjectOf(c,i){const s=c.subject||{};
@@ -442,5 +442,11 @@ export function createFamily(ctx){
     return {position:swayed(b.tip,b.flex,i.tview),text:`A branch · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'leaf').replace('leafs','leaves')} · ${plural(deps,'vine')} · ${ctx.name(m.group)}`};}
   function stats(){return {organisms:orgs.size,segments:segCount,leaves:leafCount,vines:vineCount,spores:sporeCount,species,terrain,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
   function dispose(){for(const o of [ground,barkMesh,leafMesh,vineMesh,sporePoints,agentPoints,burstPoints,crownMesh]){scene.remove(o);o.geometry.dispose();o.material.dispose();}sky.dispose();cyl.dispose();ribbon.dispose();}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose};
+  // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified milestones before t.
+  function onPrime(t,tsec){for(const v of common.uWaves.value)v.w=-1e5;for(const v of ground.material.uniforms.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;flashes.length=0;
+    crownCount=0;crownLevel.clear();crowns.commit(0);const keep=info;
+    for(const c of ctx.director.commands){if(c.effect!=='fractal-bloom'||c.at>t)continue;info={...keep,tsec:(c.at-model.epoch)/1000};
+      if(model.version!==builtVersion)build(t);const list=orgsOf(c.subject?.fileIds);for(const o of (list.length?list:[...orgs.values()].slice(0,1))){const lvl=(crownLevel.get(o.id)||0)+1;crownLevel.set(o.id,lvl);crown(o,lvl,pal.secondary,pal.valid);}}
+    info=keep;}
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }

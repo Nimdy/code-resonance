@@ -36,7 +36,7 @@ export function createFamily(ctx){
       varying vec3 vN,vP,vC,vW;varying vec4 vS;varying float vFlash;
       void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;
         float grow=age<0.?0.:(age<2.2?1.18*smoothstep(0.,1.4,age)-.18*smoothstep(1.4,2.2,age):1.);
-        float flare=iStar.z>-1e4?exp(-max(0.,(uT-iStar.z)/uSpeed)*.9):0.;
+        float flare=iStar.z>-1e4&&uT>=iStar.z?exp(-(uT-iStar.z)/uSpeed*.9):0.;
         float r=sys.w*grow*(1.+.03*uBeat+.12*flare);vP=position;vN=normal;vC=iStarColor;vS=iStar;vFlash=flare+(age<1.5&&age>0.?1.-age/1.5:0.);
         vec3 w=sys.xyz+position*r;vW=w;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
     fragmentShader:`${NOISE}uniform float uV,uGran;varying vec3 vN,vP,vC,vW;varying vec4 vS;varying float vFlash;
@@ -52,7 +52,7 @@ export function createFamily(ctx){
   const coronaGeo=new THREE.InstancedBufferGeometry();const quad=new THREE.PlaneGeometry(2,2);coronaGeo.index=quad.index;coronaGeo.setAttribute('position',quad.attributes.position);coronaGeo.setAttribute('uv',quad.attributes.uv);
   const coronaMat=new THREE.ShaderMaterial({uniforms:{...common,uCorona:{value:G.secondary.corona},uLoops:{value:G.secondary.loops}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     vertexShader:`attribute vec4 iStar;attribute vec3 iStarColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uSpeed,uBeat;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow;
-      void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;vGrow=clamp(age/1.6,0.,1.);float flare=iStar.z>-1e4?exp(-max(0.,(uT-iStar.z)/uSpeed)*.7):0.;vFlash=flare;
+      void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;vGrow=clamp(age/1.6,0.,1.);float flare=iStar.z>-1e4&&uT>=iStar.z?exp(-(uT-iStar.z)/uSpeed*.7):0.;vFlash=flare;
         float s=sys.w*(2.4+2.2*flare+.1*uBeat)*vGrow;vec3 right=vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]),up=vec3(viewMatrix[0][1],viewMatrix[1][1],viewMatrix[2][1]);
         vec3 w=sys.xyz+(right*position.x+up*position.y)*s;vUv=position.xy;vC=iStarColor;vS=iStar;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
     fragmentShader:`${NOISE}uniform float uV,uCorona,uLoops;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow;
@@ -493,7 +493,7 @@ export function createFamily(ctx){
     else{
       const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&bodies.has(a.fileId));
       if(busy){const b=bodies.get(busy.fileId);target.lerp(bodyPos(tmp,b,i.tview),.35);distance=lerp(distance,Math.max(7,(b.r+2)/tanHalf*1.3),.35);}
-      else if(i.phase==='idle'&&live.length>1){const list=live.slice().sort((a,b)=>a.index-b.index);const stop=Math.floor(i.tview/26)%list.length;target.lerp(list[stop].pos,.5);distance=lerp(distance,Math.max(8,list[stop].sysR*1.6/tanHalf),.45);az+=Math.sin(i.tview/40)*.25;}
+      else if(i.phase==='idle'&&live.length>1){const list=live.slice().sort((a,b)=>a.index-b.index);const stop=((Math.floor(i.tview/26)%list.length)+list.length)%list.length;target.lerp(list[stop].pos,.5);distance=lerp(distance,Math.max(8,list[stop].sysR*1.6/tanHalf),.45);az+=Math.sin(i.tview/40)*.25;}
     }
     return {target,distance,azimuth:az,elevation:el,fov,omega:.7};
   }
@@ -539,5 +539,7 @@ export function createFamily(ctx){
   function stats(){return {systems:sys.size,planets:moduleIds.length,moons:symbolIds.length,links:linkKeys.length,dust:dustCount,galaxy:+(ringR||0).toFixed(2),arrangement:ARR,
     camera:camera.position.toArray().map(x=>+x.toFixed(1)),stars:[...sys.values()].filter(x=>x.pos).map(x=>[x.index,x.role,...x.pos.toArray().map(v=>+v.toFixed(1)),+x.sysR.toFixed(1)])};}
   function dispose(){for(const o of [starMesh,coronaMesh,planetMesh,jetMesh,moonPoints,linkMesh,dustPoints,gasPoints,skyPoints,coreGlow,agentPoints,ringMesh,burstPoints,flareMesh]){scene.remove(o);o.geometry.dispose();o.material.dispose();}nebula.dispose();starBase.dispose();ribbon.dispose();quad.dispose();}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose};
+  function onPrime(){starFlares.clear();waves.length=0;flashes.length=0;for(let i=0;i<RINGS;i++)rings.write('rC',i,0,0,0,-1e5);rings.flush();
+    for(const v of burstU.uBA.value)v.w=-1e5;for(let i=0;i<FLARES;i++)flares.write('fP0',i,0,0,0,-1e5);flares.flush();dustMat.uniforms.uWave.value.set(0,0,-100,0);}
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }

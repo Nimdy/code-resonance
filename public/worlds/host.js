@@ -95,7 +95,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     }
     return out.filter(x=>x.kind!=='_event');
   }
-  function drawOverlay(g,w,h){if(!info)return;g.save();overlay.draw(g,w,h,labelItems(info),w/1920);g.restore();}
+  let lastLabels=[];
+  function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);g.restore();}
   // ---- Frame ----------------------------------------------------------------------------------------------------
   function render(t,dt,{phase=0}={}){
     const began=performance.now();renderer.info.reset();
@@ -112,7 +113,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     pipeline.render(()=>{if(bg)pipeline.drawBackdrop(bg);const before=renderer.info.render.calls;renderer.render(scene,camera);
       calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...world.grade(info)});
     calls.total=renderer.info.render.calls;
-    if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,labelItems(info),overlayCanvas.width/1920);}
+    if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);}
     timing.update+=(drawn-began-timing.update)*.1;timing.draw+=(performance.now()-drawn-timing.draw)*.1;
   }
   return {
@@ -122,14 +123,19 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     cue(c,t){model.cue(c,t);world.onCue?.(c,t);},
     intent(i,t){if(!addIntent(i))return;agents.record(i);const cmd=director.process(i);if(cmd)world.effect(cmd,info);},
     // After a seek: intents before t set the director (cooldowns, unlocks) and agent lifecycles, without effects.
-    prime(entries,t){for(const e of entries)for(const i of e.intents||[])if(i.ts<t)addIntent(i);prime(t);},
+    prime(entries,t){for(const e of entries)for(const i of e.intents||[])if(i.ts<t)addIntent(i);prime(t);
+      // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
+      world.onPrime?.(t,(t-model.epoch)/1000);},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
+    setEpoch(t){const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
     setProject(p){if(p?.name!==undefined)meta.name=p.name;},
     async setRecipe(next){if(!next||!FAMILIES[next.family])return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
     setLabels(m){if(['cinematic','explorer','stream','off'].includes(m))mode=m;},
     pick(x,y){if(!world.pick)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info);selected=id;return id?world.inspect?.(id,info):null;},
     render,drawOverlay,
+    // Every string currently on screen (qualification: the privacy boundary covers labels too).
+    labels(){return lastLabels.flatMap(x=>[x.text,x.sub,x.right,x.right2]).filter(Boolean);},
     resize(w,h,dpr=1){size=[w,h];pixelRatio=dpr;renderer.setPixelRatio(dpr);renderer.setSize(w,h,false);pipeline.setSize(Math.round(w*dpr),Math.round(h*dpr));camera.aspect=w/h;camera.updateProjectionMatrix();
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:intents.length,agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,

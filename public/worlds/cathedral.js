@@ -311,7 +311,7 @@ export function createFamily(ctx){
     if(since<14&&att){const a=subjectOf(att);if(a){const k=smooth(1-Math.max(0,since-9)/5);target.lerp(a.pos,.65*k);distance=lerp(distance,Math.min(distance,Math.max(7,a.radius/tanHalf*1.3)),k);}}
     else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&towers.has(a.fileId));
       if(busy){const tw=towers.get(busy.fileId);const d=districts.get(tw.district);target.lerp(tw.pos.clone().setY(tw.top*.5),.35);distance=lerp(distance,Math.max(7,(d?.radius||3)*1.8/tanHalf),.35);}
-      else if(i.phase==='idle'&&districts.size>1){const list=[...districts.values()].sort((a,b)=>a.index-b.index);const s=list[Math.floor(i.tview/26)%list.length];target.lerp(s.centre,.5);distance=lerp(distance,Math.max(8,s.radius*2/tanHalf),.45);}}
+      else if(i.phase==='idle'&&districts.size>1){const list=[...districts.values()].sort((a,b)=>a.index-b.index);const s=list[((Math.floor(i.tview/26)%list.length)+list.length)%list.length];target.lerp(s.centre,.5);distance=lerp(distance,Math.max(8,s.radius*2/tanHalf),.45);}}
     return {target,distance,azimuth:az,elevation:el,fov,omega:.7};
   }
   function subjectOf(c){const s=c.subject||{};
@@ -346,5 +346,6 @@ export function createFamily(ctx){
     return {position:tw.pos.clone().setY(tw.top),text:`A tower · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'storey')} · ${plural(deps,'link')} · ${ctx.name(m.group)}`};}
   function stats(){return {districts:districts.size,towers:towers.size,blocks:blockCount,spires:spireCount,links:linkCount,mechanisms:mechCount,architecture:arch,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
   function dispose(){for(const o of [ground,blockMesh,spireMesh,linkMesh,mechMesh,motePoints,lightMesh,agentPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}sky.dispose();prism.dispose();spireGeo.dispose();ribbon.dispose();}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose};
+  function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;flashes.length=0;}
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }
