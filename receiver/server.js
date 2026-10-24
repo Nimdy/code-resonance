@@ -192,8 +192,11 @@ function createService(options={}) {
         const f=path.join(PUBLIC,worldFile||FILENAMES.get(pathname));
         if(worldFile&&!fss.existsSync(f)){response(res,404,{error:'Not found'});return;}
         const source=await fs.readFile(f);
+        // The OBS view (?overlay=1) also allows inline styles: OBS applies a Browser Source's custom CSS (by default a
+        // transparent background) as an inline style. The page renders no untrusted markup.
+        const styles=pathname==='/'&&u.searchParams.has('overlay')?"'self' 'unsafe-inline'":"'self'";
         res.writeHead(200,{'Content-Type':MIME[path.extname(f)],'Cache-Control':'no-store',
-          'Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
+          'Content-Security-Policy':`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`,
           'X-Content-Type-Options':'nosniff',...(frameAsset?{'Access-Control-Allow-Origin':'*'}:{})});
         res.end(source);return;
       }

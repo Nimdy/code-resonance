@@ -10,6 +10,10 @@ test('Standalone assets, OBS mode, derived performance API and privacy boundary'
  const url=`http://127.0.0.1:${service.port}`;
  const requests=await Promise.all(['/', '/app.js','/music.js','/score.js','/style.css','/?overlay=1','/recording.js'].map(p=>fetch(url+p)));
  for(const r of requests)assert.equal(r.status,200);
+ // OBS applies a Browser Source's custom CSS inline: allowed in the OBS view only; scripts stay 'self' everywhere.
+ const csp=r=>r.headers.get('content-security-policy');
+ assert.match(csp(requests[5]),/style-src 'self' 'unsafe-inline';/);assert.match(csp(requests[0]),/style-src 'self';/);
+ for(const r of requests)assert.match(csp(r),/script-src 'self';/);
  const document=await requests[0].text(),js=await requests[1].text();
  assert.match(document,/CODE.*RESONANCE/);
  assert.match(document,/data-world="city"/);assert.match(document,/id="musicStyle"/);
