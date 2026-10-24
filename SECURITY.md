@@ -25,6 +25,7 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - HTTP responses send `no-store` and `nosniff`; the player uses a self-only CSP and no CDNs.
 - The Claude Code adapter never writes to stdout and always exits 0, so it cannot alter Claude's decisions. It is installed per project in `.claude/settings.local.json`, which is not committed.
 - No analytics, telemetry, accounts, cloud APIs or remote model calls.
+- **Visual packs.** Declarative packs are validated data. Packs with code (GLSL, JavaScript) are installed unapproved, run only after you approve their exact files (approval bound to a content digest), are served to the player as inert text, and execute only in an isolated frame (`sandbox="allow-scripts"`, opaque origin, `connect-src 'none'`, no workers, frames, popups or WebRTC) fed with a whitelisted, privacy-safe performance view. Browsers cannot fully sandbox GPU shaders (hangs, driver crashes, timing side channels) or stop a frame from navigating itself: approve only packs you trust. Details: [docs/packs/security.md](docs/packs/security.md).
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data

@@ -215,6 +215,13 @@ its last event), `living-lumen-recipes-idle.webm` (1:38 idle excerpt), `living-l
 pause and resumption), `living-excalidraw-biosphere.webm` (1:15), `living-code-resonance.webm` (2:31, 8×). Each has its
 `.recipe.json` and `.wav` next to it.
 
+## Visual packs
+
+The three families implement the World API of the Visual Pack SDK (`public/worlds/sdk.js`), and the same host runs a
+pack's world inside an isolated frame. Declarative packs tune a family's genome within its catalogue
+(`engine/catalog.js`), shader packs add a background, post passes and procedural effects, world packs add families.
+See [docs/packs/README.md](packs/README.md).
+
 ## Qualification
 
 See `docs/QUALIFICATION.md` for commands and measured results.

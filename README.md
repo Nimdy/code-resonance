@@ -63,6 +63,22 @@ The overlay hides every control and shows only the stage. OBS's browser allows a
 - **AUDIO ↓** renders up to 10 minutes of the recorded performance offline to WAV, from the replay position (or the latest 10 minutes). The render is deterministic: the same performance and palette give the same audio.
 - **DATA ↗** exports the derived performance timeline as JSON (no source, paths or prompts).
 
+### Make your own visuals (Visual Pack SDK)
+
+A visual pack changes how a project looks without changing Code Resonance: **declarative** packs (JSON: parameters,
+palette, light, technique, effect mapping on a built-in family), **shader** packs (GLSL background and post passes,
+procedural effects) and **world** packs (a complete world family). Packs with code run only in an isolated frame and
+only after you approve their exact files. Start with [docs/packs/README.md](docs/packs/README.md):
+
+```bash
+node scripts/pack.js new my-world --kind world --id yourname.my-world
+node scripts/pack.js test my-world        # real browser, real recording
+node scripts/pack.js install my-world && node scripts/pack.js approve yourname.my-world
+```
+
+`packs/examples/` holds the reference packs: Cymatic Field (a fourth world family), Blueprint Cathedral (shader) and
+Ember Observatory (declarative).
+
 ## How it fits together
 
 ```text
@@ -79,11 +95,12 @@ receiver/    loopback HTTP API, journal + content blobs, cached views
 engine/      AST analysis, interpretation (reducer), windowing worker
 public/      player: score (composition), music (synthesis), app (worlds, clock)
 sdk/         performance-frame contract, project identity shared with hooks
-scripts/     VSIX packager, demo, generic event CLI, Claude Code hooks
+scripts/     VSIX packager, demo, generic event CLI, Claude Code hooks, visual pack CLI (pack.js)
+packs/       visual pack schema, reference packs, starter templates
 qualification/  real VS Code, browser, audio and 30-minute session harnesses
 ```
 
-Data lives under `~/.code-resonance/` on the machine running the receiver (`RESONANCE_DATA` overrides it, `RESONANCE_PORT` the port). Per project: `events.jsonl` (raw observations, append-only), `blobs/` (compressed snapshots), `performance.jsonl` (recorded timeline, rebuildable), `state.json` and `public.json` (checkpoints).
+Data lives under `~/.code-resonance/` on the machine running the receiver (`RESONANCE_DATA` overrides it, `RESONANCE_PORT` the port); installed visual packs and their approvals under `packs/`. Per project: `events.jsonl` (raw observations, append-only), `blobs/` (compressed snapshots), `performance.jsonl` (recorded timeline, rebuildable), `state.json` and `public.json` (checkpoints).
 
 | Endpoint | Use |
 |---|---|
@@ -95,6 +112,11 @@ Data lives under `~/.code-resonance/` on the machine running the receiver (`RESO
 | `GET /api/export?id=` | Streamed derived export |
 | `POST /v1/events` | Authenticated ingestion (valid events kept, rejections listed) |
 | `POST /v1/flush?id=` / `POST /v1/rebuild?id=` | Authenticated: close the open window / re-interpret from the journal |
+| `GET /api/recipe?id=[&fallback=1]` / `POST /api/recipe?id=` | The project's Visual Recipe; same-origin edits (family, look pack, regenerate, lock, public title, aliases); `fallback=1` is the identity without packs |
+| `GET /api/packs` | Installed visual packs: kind, version, digest, files, approval, problems |
+| `GET /api/packs/file?id=&path=` | A pack file as inert text (code packs only once approved) |
+| `POST /api/packs/trust` | Same-origin: approve or revoke a code pack's exact files (by digest) |
+| `GET /pack-frame.html` | The isolated frame code packs run in (no connections allowed) |
 
 `POST` requires the token in `~/.code-resonance/receiver-auth.json`. Never expose it in a stream or commit it.
 
