@@ -4,6 +4,10 @@
 // OffscreenCanvas, and relays messages between the player and the worker. A pack that hangs blocks only its worker;
 // this page keeps relaying, so the player's watchdog sees the silence and removes the frame (which ends the worker).
 const send=(message,transfer=[])=>window.parent.postMessage(message,'*',transfer);
+// WebRTC is outside the content policy's reach in Chromium. Pack code runs in the worker, which has none; this page
+// removes it as well (defence in depth), before anything else runs.
+for(const k of ['RTCPeerConnection','webkitRTCPeerConnection','RTCDataChannel','RTCSessionDescription','RTCIceCandidate','RTCRtpSender','RTCRtpReceiver']){
+  try{delete window[k];Object.defineProperty(window,k,{value:undefined,writable:false,configurable:false});}catch{}}
 const canvas=document.getElementById('world'),overlay=document.getElementById('overlay');
 let worker=null,mode='cinematic';
 const fail=(message,kind='exception')=>send({type:'error',kind,message:String(message||'error').slice(0,300)});

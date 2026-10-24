@@ -8,7 +8,7 @@
 // scene draw calls, all passes, triangles, points, CPU time, frame rate, adaptive quality).
 //
 // node visual/pack.qual.js <pack dir> [--gpu amd] [--quick] [--datasets results/datasets] [--out results/visual]
-// --quick (CI): the session at 2 fps, 30 s of idle, two world switches, no determinism pair, performance at 1280×720 only.
+// --quick (CI): the session at 2 fps and 640×360, 45 s of idle, two world switches, no determinism pair, performance at 1280×720 only.
 // Datasets: the Lumen Recipes recording (always available: copied from qualification/recordings), plus results/
 // datasets/self or excalidraw when built (visual/datasets.js) for a second, structurally different project.
 const path=require('node:path');
@@ -52,7 +52,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       const project=projectOf(lumenDir);const recipe=await choose(svc,project,m);
       measurements.recipe={family:recipe.family,pack:recipe.pack,params:recipe.genome.params||null,uniforms:recipe.genome.uniforms||null};
       const unavailable=(await (await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}&fallback=1`)).json()).family;
-      const {page,info,errors}=await filmPage(browser,svc,project,{width:1280,height:720});
+      const {page,info,errors}=await filmPage(browser,svc,project,QUICK?{width:640,height:360}:{width:1280,height:720});
       const folder=(await (await fetch(`http://127.0.0.1:${svc.port}/api/projects`)).json()).projects.find(p=>p.id===project)?.name||'lumen-recipes';
       check('runtime: the player runs the pack '+(code?'inside the isolated pack frame':'in the built-in world it tunes'),code?info.recipe&&(await page.evaluate(()=>document.querySelectorAll('iframe.pack-frame').length))===1:!!info.webgl,
         code?`fallback while unapproved: ${unavailable}`:'no frame needed');
@@ -142,10 +142,10 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       check('privacy: no label shows the folder name, a path, a file name, an identifier or a raw id',labels.size>0&&!leaks.length,leaks.slice(0,3).join(' | ')||`${labels.size} label strings`);
       // ---- Idle: after the last event the image keeps changing while structure and history stay the same.
       const end=info.end,samples=[];await page.evaluate(x=>window.__film.seek(x),end+2000);let t=end+2000;
-      for(const at of QUICK?[10,25,40]:[10,40,70,100]){let img;for(;t<=end+at*1000;t+=1000/4)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.25]);samples.push({img:await thumb(page,img),stats:await page.evaluate(()=>window.__film.stats())});}
+      for(const at of QUICK?[10,40,55]:[10,40,70,100]){let img;for(;t<=end+at*1000;t+=1000/4)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,.25]);samples.push({img:await thumb(page,img),stats:await page.evaluate(()=>window.__film.stats())});}
       const motion=samples.slice(1).map((s,i)=>+diff(samples[i].img,s.img).toFixed(2));
       measurements.idle={motion,phases:samples.map(s=>s.stats?.phase)};
-      check(`idle: the image keeps moving for ${QUICK?30:90} s without events`,motion.every(x=>x>.5),`mean |Δluma| ${motion.join(', ')}`);
+      check(`idle: the image keeps moving for ${QUICK?45:90} s without events`,motion.every(x=>x>.5),`mean |Δluma| ${motion.join(', ')}`);
       check('idle: nothing new happens (history unchanged, director idle)',samples.every(s=>s.stats?.intents===samples[0].stats?.intents)&&samples.slice(1).every(s=>s.stats?.phase==='idle'),samples.map(s=>`${s.stats?.intents}/${s.stats?.phase}`).join(', '));
       // ---- Music: the same moment rendered on and off the beat.
       const beatAt=info.start+120000;await page.evaluate(x=>window.__film.seek(x),beatAt-1000);

@@ -122,7 +122,7 @@ jobs:
       - run: npx playwright-core install chromium
       - run: node browser/stage.qual.js
       - run: node ../scripts/pack.js test ../packs/examples/cymatic-field --quick
-      - run: node visual/recording.qual.js --quick
+      - run: node visual/recording.qual.js --quick --quality 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -847,7 +847,7 @@
   if(params.has('qual'))window.__qual={
     record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
-    marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push(at);return music.marker(at);},perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
+    marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push(at);return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
     action:a=>recipeAction(a),setWorld:w=>setWorld(w)};

@@ -85,12 +85,12 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
       const idle=inHour>=IDLE[0]&&inHour<IDLE[1];if(idle!==paused){paused=idle;events.push({minute:+minute.toFixed(1),event:idle?'session paused (idle)':'session resumed'});}
       for(const at of RECORD_AT){const k=`rec:${hour}:${at}`;if(inHour>=at&&!done.has(k)){done.add(k);
         const file=path.join(recDir,`h${hour}-m${at}.webm`),began=Date.now();
-        const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(()=>window.__qual.record());
+        const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(async()=>{await window.__qual.record();window.__qual.pilot(true);});
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         if(download)await download.saveAs(file);
-        const a=download?media.analyse(file):null,s=download?media.sync(file):null;
+        const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
         recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,
-          frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,changingFrames:a?.changingFrames,
+          frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
           sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
       // Receiver restart, once.
@@ -144,8 +144,8 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const transport=samples.filter(s=>s.transport);
     check('pack transport: never more than one render in flight; no pack stopped during the soak',transport.every(s=>s.transport.inFlight<=1)&&!samples.some(s=>/stopped/.test(s.notice)),
       `${transport.length} samples on packs; max latency ${Math.max(0,...transport.map(s=>s.transport.latencyMs)).toFixed(1)} ms; notices: ${[...new Set(samples.map(s=>s.notice).filter(Boolean))].slice(0,3).join(' | ')||'none'}`);
-    check('recordings: every one-minute recording has video and sound, no gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(r=>r.video&&r.audio&&r.longGaps===0&&r.longestSilenceMs<=2000&&r.sync&&r.sync.markers>=4&&r.sync.maxAbsOffsetMs<=125),
-      recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, gaps ${r.longGaps}, silence ${r.longestSilenceMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
+    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(r=>r.video&&r.audio&&r.longGaps===0&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&r.sync.maxAbsOffsetMs<=125),
+      recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
     check('receiver restart: the player picked up new events after the receiver came back',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0,restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s`:'no restart');
     check('no page errors in the whole soak',!errors.length,errors.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||'none');
     fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));

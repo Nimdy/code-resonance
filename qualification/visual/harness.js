@@ -41,11 +41,11 @@ const diff=(a,b)=>a.reduce((s,v,i)=>s+Math.abs(v-b[i]),0)/a.length;
 const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
 // The live player (?qual=1 test hooks), replaying the recorded performance at `speed` so the picture and the music
 // have real events. `init` runs before the page's own scripts (e.g. to remove a browser feature).
-async function playerPage(browser,svc,project,{speed=4,init=null,width=1280,height=720}={}){
+async function playerPage(browser,svc,project,{speed=4,init=null,width=1280,height=720,query=''}={}){
   const page=await browser.newPage({viewport:{width,height},acceptDownloads:true});const errors=[];
   if(init)await page.addInitScript(init);
   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text().slice(0,300));});
-  await page.goto(`http://127.0.0.1:${svc.port}/?world=living&project=${project}&qual=1`);await page.waitForFunction(()=>!!window.__qual);
+  await page.goto(`http://127.0.0.1:${svc.port}/?world=living&project=${project}&qual=1${query}`);await page.waitForFunction(()=>!!window.__qual);
   await page.evaluate(()=>document.getElementById('replayBtn').click());
   await page.waitForFunction(()=>!document.getElementById('playBtn').disabled,null,{timeout:30000});
   await page.evaluate(s=>{const sel=document.getElementById('speedSelect');sel.value=String(s);sel.dispatchEvent(new Event('change'));document.getElementById('playBtn').click();},speed);

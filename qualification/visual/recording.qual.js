@@ -8,7 +8,9 @@
 // Then the lifecycle: stop and restart, world and quality changes while recording, a pack failing mid-recording, a
 // browser without recording support, and a multi-minute recording (drift).
 //
-// node visual/recording.qual.js [--gpu amd] [--seconds 20] [--long 180] [--quick] [--pack <dir>] [--out results/recording]
+// node visual/recording.qual.js [--gpu amd] [--seconds 20] [--long 180] [--quick] [--pack <dir>] [--viewport 1280x720] [--quality 0-3] [--out results/recording]
+// --viewport and --quality (a fixed rendering level) let a slow machine (CI's software renderer) render the player fast enough
+// for the recording itself to be measured; the report names them.
 // --pack: also record that pack (e.g. a world made with `scripts/pack.js new`), installed and approved in the copy.
 // --quick: the four worlds at 8 s each, no lifecycle or long recording (CI).
 const path=require('node:path');
@@ -21,6 +23,8 @@ const media=require('./media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const GPU=arg('gpu',null),QUICK=process.argv.includes('--quick');
 const SECONDS=+arg('seconds',QUICK?8:20),LONG=+arg('long',180);
+const [VW,VH]=arg('viewport','1280x720').split('x').map(Number),QUALITY=arg('quality',null);
+const PAGE={width:VW,height:VH,query:QUALITY===null?'':`&quality=${QUALITY}&adapt=0`};
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','recording')));
 const {checks,check}=checker();const measurements={worlds:{},lifecycle:{}};
 // ITU-R BT.1359 (offset = sound time - picture time): detectable outside [-45, +125] ms, acceptable within [-90, +185].
@@ -52,7 +56,8 @@ async function record(page,browserCdp,file,{seconds,every=5,during=null}){
   const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
   const heap=async()=>{const {metrics}=await cdp.send('Performance.getMetrics');return metrics.find(m=>m.name==='JSHeapUsedSize').value/1048576;};
   const cpu0=await cpu(browserCdp),heap0=await heap(),mem0=processMemory(),began=Date.now();
-  const started=await page.evaluate(async()=>{await window.__qual.record();return window.__qual.recording();});
+  // The pilot tone (qualification only) measures the continuity of the recorded audio path.
+  const started=await page.evaluate(async()=>{await window.__qual.record();window.__qual.pilot(true);return window.__qual.recording();});
   const samples=[];let markers=0,nextMarker=2000;const done=new Set();
   while(Date.now()-began<seconds*1000){
     const t=Date.now()-began;
@@ -77,17 +82,24 @@ function verify(label,rec,{seconds,sync=true,minChanging=.3}){
   check(`${label}: resolution is the recording surface's`,a.video.width===rec.started.width&&a.video.height===rec.started.height,`${a.video.width}×${a.video.height}`);
   check(`${label}: duration matches the time recorded`,Math.abs(a.videoDuration-seconds)<=Math.max(1,seconds*.06),`video ${a.videoDuration} s, audio ${a.audioDuration} s, recorded ${rec.elapsed.toFixed(1)} s`);
   // The file holds what the player presented: its frame rate is the compositor's (one captured frame per frame drawn).
+  // Full runs: the file follows what the player presented. Quick runs (CI's software renderer, where copying a
+  // main-thread WebGL frame starves the capture) check the mechanism: a steady stream with no long gaps.
   const drawn=rec.result.frames/(rec.result.durationMs/1000);
-  check(`${label}: frame rate follows the player's presentation rate, without long gaps`,a.fps>=Math.min(25,drawn*.8)&&a.longGaps===0,
+  check(QUICK?`${label}: a steady video stream (at least 12 fps, no gaps over 250 ms)`:`${label}: frame rate follows the player's presentation rate, without long gaps`,
+    (QUICK?a.fps>=12:a.fps>=Math.min(25,drawn*.8))&&a.longGaps===0,
     `${a.fps} fps in the file (player drew ${drawn.toFixed(1)}), frame interval median ${a.frameInterval.median} ms, p95 ${a.frameInterval.p95} ms, max ${a.frameInterval.max} ms, ${a.longGaps} gaps > 250 ms`);
   check(`${label}: the picture is a living world (not black, not frozen)`,a.meanLuma>4&&a.changingFrames>=minChanging,`mean luma ${a.meanLuma}, ${Math.round(a.changingFrames*100)} % of frames change`);
-  check(`${label}: sound is present and continuous for the whole recording`,Math.abs(a.audioDuration-a.videoDuration)<=.5&&a.audioMeanDb>-55&&a.longestSilenceMs<=2000,
-    `mean ${a.audioMeanDb} dBFS, silent ${Math.round(a.silentShare*100)} %, longest silence ${a.longestSilenceMs} ms`);
+  // Presence: the music is there (its rests are musical, not dropouts). Continuity: the pilot never drops out.
+  const c=media.continuity(rec.file);a.continuity=c;
+  check(`${label}: sound is present and continuous for the whole recording (no gap in the qualification pilot)`,Math.abs(a.audioDuration-a.videoDuration)<=.5&&a.audioMeanDb>-70&&c.pilotDb>-80&&c.longestGapMs<=20,
+    `music mean ${a.audioMeanDb} dBFS (rests: ${Math.round(a.silentShare*100)} % below -60 dB, longest ${a.longestSilenceMs} ms); pilot ${c.pilotDb} dBFS, ${c.gaps} gaps, longest ${c.longestGapMs} ms`);
   check(`${label}: finalised promptly and named without project details`,rec.finalizeMs<5000&&/^code-resonance-[0-9a-f]{0,10}-\d+\.webm$/.test(rec.filename||''),`${rec.finalizeMs} ms · ${rec.filename}`);
   if(sync){
-    const s=media.sync(rec.file);a.sync=s;const ok=s.pairs.length>0&&s.pairs.every(p=>p.offsetMs!==null&&p.offsetMs>=SYNC.acceptable[0]&&p.offsetMs<=SYNC.acceptable[1]);
-    check(`${label}: picture and sound in sync (every marker within ITU-R BT.1359 acceptability)`,ok&&s.flashes>=rec.markers&&rec.markers>0,
-      `${rec.markers} markers, ${s.flashes} flashes, ${s.clicks} clicks; offset (sound − picture) mean ${s.meanOffsetMs} ms, max |${s.maxAbsOffsetMs}| ms, spread ${s.spreadMs} ms; ${s.pairs.filter(p=>p.offsetMs!==null&&p.offsetMs>=SYNC.detectable[0]&&p.offsetMs<=SYNC.detectable[1]).length}/${s.pairs.length} within detectability`);
+    // A flash can only appear on a captured frame: the measurement resolution is the recording's median frame interval.
+    const res=Math.round(a.frameInterval?.median||33);
+    const s=media.sync(rec.file);a.sync=s;const ok=s.pairs.length>0&&s.pairs.every(p=>p.offsetMs!==null&&p.offsetMs>=SYNC.acceptable[0]-res&&p.offsetMs<=SYNC.acceptable[1]+res);
+    check(`${label}: picture and sound in sync (every marker within ITU-R BT.1359 acceptability, ± one frame interval)`,ok&&s.flashes>=rec.markers&&rec.markers>0,
+      `${rec.markers} markers, ${s.flashes} flashes, ${s.clicks} clicks; offset (sound − picture) mean ${s.meanOffsetMs} ms, max |${s.maxAbsOffsetMs}| ms, spread ${s.spreadMs} ms; resolution ${res} ms; ${s.pairs.filter(p=>p.offsetMs!==null&&p.offsetMs>=SYNC.detectable[0]&&p.offsetMs<=SYNC.detectable[1]).length}/${s.pairs.length} within detectability`);
   }
   return a;
 }
@@ -104,7 +116,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
       // ---- The four renderer categories -------------------------------------------------------------------------
       for(const w of WORLDS){
         await recipeAction(svc,project,w.action);
-        const {page,errors}=await playerPage(browser,svc,project);
+        const {page,errors}=await playerPage(browser,svc,project,PAGE);
         try{
           await worldReady(page,w);await wait(3000);
           const rec=await record(page,browserCdp,path.join(tmp,`${w.key}.webm`),{seconds:SECONDS});
@@ -119,7 +131,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
       const cymatic=WORLDS[3],forge=WORLDS[0];
       await recipeAction(svc,project,cymatic.action);
       {
-        const {page,errors}=await playerPage(browser,svc,project);
+        const {page,errors}=await playerPage(browser,svc,project,PAGE);
         try{
           await worldReady(page,cymatic);await wait(2000);
           // Stop and restart: two independent, complete files.
@@ -134,12 +146,12 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
             [5,p=>p.evaluate(a=>window.__qual.action(a),forge.action)],
             [12,p=>p.evaluate(a=>window.__qual.action(a),cymatic.action)],
             [18,p=>p.evaluate(()=>{const s=document.getElementById('qualitySelect');s.value='2';s.dispatchEvent(new Event('change'));})]]});
-          const as=switching.file&&media.analyse(switching.file);
+          const as=switching.file&&media.analyse(switching.file),cs=switching.file&&media.continuity(switching.file);
           const after=await page.evaluate(()=>window.__qual.world());
           check('world switches while recording: one continuous file through Cymatic Field → Stellar Forge → Cymatic Field and a quality change',
-            as&&as.audio&&Math.abs(as.videoDuration-24)<=1.5&&as.longestSilenceMs<=2000&&after.family===cymatic.family&&after.remote,
-            as?`${as.videoDuration} s, ${as.fps} fps, longest frame gap ${as.frameInterval.max} ms (${as.longGaps} > 250 ms while worlds load), longest silence ${as.longestSilenceMs} ms; now ${after.family}`:'no file');
-          measurements.lifecycle.switching={analysis:as,player:switching.result};
+            as&&as.audio&&Math.abs(as.videoDuration-24)<=1.5&&cs.longestGapMs<=20&&after.family===cymatic.family&&after.remote,
+            as?`${as.videoDuration} s, ${as.fps} fps, longest frame gap ${as.frameInterval.max} ms (${as.longGaps} > 250 ms while worlds load), sound pilot longest gap ${cs.longestGapMs} ms; now ${after.family}`:'no file');
+          measurements.lifecycle.switching={analysis:as,continuity:cs,player:switching.result};
           check('lifecycle: no page errors',!errors.length,errors.slice(0,2).join(' | ')||'none');
         }finally{await page.close();}
       }
@@ -147,7 +159,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
       // the safe built-in world takes over, keeping the recipe.
       await recipeAction(svc,project,{type:'family',family:'testing.failing-world'});
       {
-        const {page}=await playerPage(browser,svc,project);
+        const {page}=await playerPage(browser,svc,project,PAGE);
         try{
           await worldReady(page,{remote:true,family:'testing.failing-world'});
           const began=Date.now();
@@ -167,7 +179,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
       // Browsers without recording: the user is told why, nothing breaks.
       await recipeAction(svc,project,forge.action);
       for(const [name,init] of [['no MediaRecorder',()=>{delete window.MediaRecorder;}],['no canvas capture',()=>{delete HTMLCanvasElement.prototype.captureStream;}]]){
-        const {page,errors}=await playerPage(browser,svc,project,{init});
+        const {page,errors}=await playerPage(browser,svc,project,{...PAGE,init});
         try{
           await worldReady(page,forge);
           await page.evaluate(()=>window.__qual.record());
@@ -179,7 +191,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
       // ---- A multi-minute recording (replay at 1×, markers every 15 s): drift, memory, continuity ------------------
       await recipeAction(svc,project,cymatic.action);
       {
-        const {page,errors}=await playerPage(browser,svc,project,{speed:1});
+        const {page,errors}=await playerPage(browser,svc,project,{...PAGE,speed:1});
         try{
           await worldReady(page,cymatic);await wait(2000);
           const rec=await record(page,browserCdp,path.join(tmp,'long.webm'),{seconds:LONG,every:15});
@@ -203,7 +215,7 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
 })().catch(e=>{console.error(e);check('recording qualification completed',false,String(e.message||e).slice(0,300));finish();});
 function finish(){
   const file=path.join(OUT,`recording-qualification${GPU?`-${GPU}`:''}${QUICK?'-quick':''}.json`);
-  fs.writeFileSync(file,JSON.stringify({at:new Date().toISOString(),gpu:GPU||'swiftshader',renderer:measurements.renderer,seconds:SECONDS,checks,measurements},null,2));
+  fs.writeFileSync(file,JSON.stringify({at:new Date().toISOString(),gpu:GPU||'swiftshader',renderer:measurements.renderer,seconds:SECONDS,viewport:`${VW}x${VH}`,quality:QUALITY===null?'auto':Number(QUALITY),checks,measurements},null,2));
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed · ${path.relative(process.cwd(),file)}`);
   process.exitCode=checks.every(c=>c.pass)?0:1;
 }

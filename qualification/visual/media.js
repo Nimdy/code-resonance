@@ -48,6 +48,15 @@ function analyse(file,{expectAudio=true}={}){
   }else if(expectAudio)out.audioMissing=true;
   return out;
 }
+// Continuity of the audio path from the qualification pilot (a steady 12 kHz tone): 10 ms windows of the band around
+// it; a window far below the pilot's median level is a gap. The first and last 300 ms are ignored (start and stop).
+function continuity(file){
+  const rate=48000,x=pcm(file,rate,'highpass=f=11000,lowpass=f=13000'),win=rate/100,rms=[];
+  for(let i=0;i+win<=x.length;i+=win){let e=0;for(let k=i;k<i+win;k++)e+=x[k]*x[k];rms.push(Math.sqrt(e/win));}
+  const body=rms.slice(30,Math.max(30,rms.length-30)),median=[...body].sort((a,b)=>a-b)[Math.floor(body.length/2)]||0;
+  let run=0,longest=0,gaps=0;for(const v of body){if(v<median*.3){run++;if(run===1)gaps++;longest=Math.max(longest,run);}else run=0;}
+  return {pilotDb:+(20*Math.log10(median+1e-12)).toFixed(1),gaps,longestGapMs:longest*10,windows:body.length};
+}
 // Flash markers in the picture (frames far brighter than their neighbours) and click markers in the sound (2 kHz
 // bursts after band-pass filtering); each flash is paired with the nearest click within 0.6 s.
 function sync(file){
@@ -62,4 +71,4 @@ function sync(file){
   return {flashes:flashes.length,clicks:clicks.length,pairs,meanOffsetMs:offsets.length?Math.round(offsets.reduce((a,b)=>a+b,0)/offsets.length):null,
     maxAbsOffsetMs:offsets.length?Math.max(...offsets.map(Math.abs)):null,spreadMs:offsets.length?Math.max(...offsets)-Math.min(...offsets):null};
 }
-module.exports={streams,frames,still,pcm,analyse,sync};
+module.exports={streams,frames,still,pcm,analyse,continuity,sync};

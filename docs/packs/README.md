@@ -86,7 +86,7 @@ including failures and verified milestones; that no label shows a folder name, p
 life; that the image follows the beat; project-specific recipes; deterministic replay across seek histories; resource
 release when the world is switched away and back four times; and the performance budget your manifest declares. The
 report is written to `qualification/results/visual/pack-<id>.json`. `--quick` runs a shorter version (the session at
-2 fps, 30 s of idle, two switches, no determinism pair, performance at 1280×720): what CI runs for the reference packs.
+2 fps and 640×360, 45 s of idle, two switches, no determinism pair, performance at 1280×720): what CI runs for the reference packs.
 
 Live recording (the player's RECORD button) works for every kind of pack with nothing to do on your side: the worker
 composites your world and its labels into each acknowledged frame, and the player records those frames with the music.
