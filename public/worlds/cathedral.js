@@ -195,11 +195,17 @@ export function createFamily(ctx){
     blockCount=list.length;blocks.commit(blockCount);
     spires.ensure(spireList.length);spireList.forEach((s,i)=>{spires.write('pLife',i,s.born,s.removed,0,0);spires.write('pColor',i,s.color.r*2,s.color.g*2,s.color.b*2);});spireCount=spireList.length;spires.commit(spireCount);spireRefs=spireList;
     // Links between towers: conduits within a district (quieter the more there are), bridges between districts.
-    const ll=[...model.links.values()].filter(l=>towers.has(l.a)&&towers.has(l.b));const internal=ll.filter(l=>!l.cross).length;const quiet=Math.min(1,3/Math.sqrt(internal+1)+.15);
-    links.ensure(ll.length);ll.forEach((l,i)=>{const a=towers.get(l.a),b=towers.get(l.b);const born=model.bornAt(l);
+    // Conduits inside a district rest quieter the more there are; between two districts at most four representative
+    // bridges stand for all their links, brighter the more links they carry (hundreds of arches would read as noise).
+    const all=[...model.links.values()].filter(l=>towers.has(l.a)&&towers.has(l.b));const internal=all.filter(l=>!l.cross);const quiet=Math.min(1,3/Math.sqrt(internal.length+1)+.15);
+    const pairs=new Map();for(const l of all.filter(l=>l.cross)){const key=[towers.get(l.a).district,towers.get(l.b).district].sort().join('|');if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push(l);}
+    const ll=internal.map(l=>({l,k:.8*quiet}));
+    for(const list of pairs.values()){list.sort((x,y)=>(model.bornAt(x)-model.bornAt(y))||rand(hash(x.key))-rand(hash(y.key)));const k=Math.min(2.2,1+.35*Math.log2(list.length))/Math.min(4,list.length)**.35;
+      for(const l of list.slice(0,4))ll.push({l,k:1.2*k});}
+    links.ensure(ll.length);ll.forEach(({l,k},i)=>{const a=towers.get(l.a),b=towers.get(l.b);const born=model.bornAt(l);
       links.write('kInfo',i,Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,l.removed===null?1e6:secs(l.removed,epoch),l.cross?1:0,rand(hash(l.key)));
-      const k2=l.cross?1.2:.8*quiet;links.write('kColA',i,a.color.r*k2,a.color.g*k2,a.color.b*k2);links.write('kColB',i,b.color.r*k2,b.color.g*k2,b.color.b*k2);});
-    linkCount=ll.length;links.commit(linkCount);linkRefs=ll;
+      links.write('kColA',i,a.color.r*k,a.color.g*k,a.color.b*k);links.write('kColB',i,b.color.r*k,b.color.g*k,b.color.b*k);});
+    linkCount=ll.length;links.commit(linkCount);linkRefs=ll.map(x=>x.l);
     builtVersion=model.version;
   }
   let spireRefs=[],linkRefs=[];
