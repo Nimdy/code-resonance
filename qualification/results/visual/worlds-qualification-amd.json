@@ -1,0 +1,119 @@
+{
+  "at": "2026-10-24T01:19:44.218Z",
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "checks": [
+    {
+      "name": "performance: stellar-forge on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "13 draw calls; 28.1 fps full quality, 27.1 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+    },
+    {
+      "name": "no page errors in the live player: stellar-forge",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "performance: fractal-biosphere on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "7 draw calls; 25.5 fps full quality, 27.3 fps adaptive (level 1) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+    },
+    {
+      "name": "no page errors in the live player: fractal-biosphere",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "performance: machine-cathedral on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "8 draw calls; 34.5 fps full quality, 34.2 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+    },
+    {
+      "name": "no page errors in the live player: machine-cathedral",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+    "performance": {
+      "stellar-forge": {
+        "full": {
+          "fps": 28.1,
+          "quality": 0,
+          "drawCalls": 13,
+          "passes": 27,
+          "triangles": 308000,
+          "points": 23568,
+          "updateMs": 0.22,
+          "drawMs": 0.41,
+          "geometries": 20,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 27.1,
+          "quality": 0,
+          "drawCalls": 13,
+          "passes": 27,
+          "triangles": 308000,
+          "points": 23568,
+          "updateMs": 0.18,
+          "drawMs": 0.33,
+          "geometries": 20,
+          "textures": 13
+        }
+      },
+      "fractal-biosphere": {
+        "full": {
+          "fps": 25.5,
+          "quality": 0,
+          "drawCalls": 7,
+          "passes": 21,
+          "triangles": 90984,
+          "points": 7326,
+          "updateMs": 0.2,
+          "drawMs": 0.35,
+          "geometries": 14,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 27.3,
+          "quality": 1,
+          "drawCalls": 7,
+          "passes": 21,
+          "triangles": 90984,
+          "points": 7326,
+          "updateMs": 0.2,
+          "drawMs": 0.35,
+          "geometries": 14,
+          "textures": 13
+        }
+      },
+      "machine-cathedral": {
+        "full": {
+          "fps": 34.5,
+          "quality": 0,
+          "drawCalls": 8,
+          "passes": 22,
+          "triangles": 105894,
+          "points": 5403,
+          "updateMs": 0.35,
+          "drawMs": 0.36,
+          "geometries": 15,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 34.2,
+          "quality": 0,
+          "drawCalls": 8,
+          "passes": 22,
+          "triangles": 105894,
+          "points": 5403,
+          "updateMs": 0.42,
+          "drawMs": 0.3,
+          "geometries": 15,
+          "textures": 13
+        }
+      }
+    }
+  }
+}

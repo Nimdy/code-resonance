@@ -157,7 +157,7 @@ Code Resonance's own first-parent git history (38 commits) replayed as a 20-minu
   | Renderer | Stellar Forge | Fractal Biosphere | Machine Cathedral |
   |---|---|---|---|
   | AMD Radeon integrated GPU, WSL2 (ANGLE GL → Mesa d3d12), full quality | 28.1 fps | 25.5 fps (27.3 adaptive) | 34.5 fps |
-  | SwiftShader (CPU), full quality | SWIFT_STELLAR | SWIFT_BIO | SWIFT_CATHEDRAL |
+  | SwiftShader (CPU), full quality | 2.3 fps | 2.2 fps | 2.2 fps |
 
   Scene update is 0.2-0.6 ms and command submission 0.3-0.4 ms per frame; the remaining time is GPU fill (HDR,
   4× MSAA, bloom, full-screen sky). Live playback lowers MSAA and resolution when frames are slow (films never do).
@@ -166,11 +166,24 @@ Code Resonance's own first-parent git history (38 commits) replayed as a 20-minu
 - **Determinism:** the same recording, recipe and moment render byte-identical frames in two browser sessions, also
   when one session first played another moment (Lumen / Stellar Forge, Excalidraw / Biosphere, Code Resonance /
   Cathedral).
-- **Idle life:** 10, 40, 70 and 100 s after the last Lumen event the mean absolute luminance change between samples
-  is IDLE_MOTION (0-255) while the structure (17 planets, 31 moons, 12 links, 6 systems) and the 205 recorded intents
-  stay exactly the same and the director reports idle.
-- **Resources:** RESOURCES
-- **Privacy:** PRIVACY
+- **Idle life** (Stellar Forge): between samples taken 10, 40, 70 and 100 s after the last Lumen event the mean
+  absolute luminance change is 26.8, 25.5 and 28.7 (0-255), while the structure (17 planets, 31 moons, 12 links,
+  6 systems) and the 205 recorded intents stay exactly the same; the director reports idle from the 40 s sample on.
+  The idle check runs on Stellar Forge only; the other families' idle motion is visible in the films, not measured.
+- **Resources:** switching the recipe 9 times through the three families (Stellar → Biosphere → Cathedral, three
+  rounds) brings Stellar Forge back to 20 geometries and 13 textures, the same as on its first build.
+- **Privacy:** 61 distinct label strings, collected every 3 s through the whole Lumen session in cinematic mode and for
+  10 s in stream mode, contain no path, file name (with or without extension), distinctive folder name or camelCase /
+  snake_case identifier (41 patterns from the recording's real files). An earlier version of this check matched path
+  segments as substrings and flagged "Agent 5 · searching" (search.js) and "Integration validated" (validate.js); it
+  now matches whole words, and deliberate leaks such as "RecipeCard", "models.js" or "src/data/store.js" are caught.
+- **Films against the PR #2 baseline** (`construct-lumen-recipes.webm` vs `living-lumen-recipes.webm`, both decoded to
+  320×180 grey at 10 fps; "lit" = more than 25 levels above the frame's median, "changing" = more than 6 levels between
+  frames 0.1 s apart): lit pixels 13.9 % → 25.9 % (median), pixels changing per 0.1 s 2.33 % → 6.06 % (median) and
+  7.29 % → 24.84 % (p90); in the quiet 60-70 s window 0.34 % → 1.11 %; in the 90 s idle tail after the session 3.07 %.
+  These say the new film is brighter, fuller and more animated, not that it is better art.
+- **Film audio** (same films, ffmpeg ebur128): the Lumen session -23.9 LUFS integrated, the idle tail -24.2 LUFS with no
+  silent stretch.
 - **Agents in Lumen Recipes:** 142 lifecycle intents from 6 agents; each presence appears with its session, follows
   its tool activity (reading, searching, editing, running, testing) and departs when its session ends.
 - **Music balance** (`audio/balance.js`, the real Lumen timeline through the PR #2 and the current `music.js`):
@@ -190,5 +203,7 @@ Code Resonance's own first-parent git history (38 commits) replayed as a 20-minu
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - `npm test` failed once (one receiver test) while the machine was saturated by parallel renders; it did not
-  reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured.
+  reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured. On this branch one run in 13
+  failed one test (89/90) right after a full browser qualification; that output was not captured either, and the 12
+  later runs (5 of them during two parallel film renders) passed 90/90. The flaky test is not identified.
 - AI agents other than Claude Code.
