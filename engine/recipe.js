@@ -17,6 +17,11 @@
 //    tests favour Machine Cathedral (engineered architecture). A seeded share keeps similar projects distinct.
 //  - project size sets complexity limits; dependency density sets connective atmosphere; test share sets order;
 //    agent collaboration sets how prominent agent presences are.
+//
+// Visual packs (engine/packs.js): an installed world pack is a family the user can choose (never chosen
+// automatically); its genome is drawn from the parameters its manifest declares. A declarative or shader pack is an
+// overlay on its base family (parameters, palette, light, technique, effect mapping). A recipe that names a pack which
+// is no longer installed is served without it (flagged `unavailable`) and kept as stored, so reinstalling restores it.
 const {sha}=require('../receiver/protocol');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
 const RECIPE_VERSION=1;      // generator: bump when the same inputs would produce a different genome
@@ -78,9 +83,16 @@ function familyScores(traits,seed,variant){
 // ---- Palette: harmonious, seeded, with temperature from the data ---------------------------------------------------
 function hsl(h,s,l){h=((h%360)+360)%360;s=clamp(s);l=clamp(l);const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));
   return '#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');}
-function palette(r,family,traits){
+const HUES={'stellar-forge':[20,35,200,215,265,285,320,170],'fractal-biosphere':[140,165,180,190,95,300,330,50],'machine-cathedral':[30,40,205,220,190,15,260]};
+const WHEEL=[0,30,60,120,180,210,240,280,320];
+function palette(r,family,traits,hues=null){
   const scheme=weighted(r,[['analogous',3],['complementary',2],['split',2],['triad',1]]);
-  const base={'stellar-forge':pick(r,[20,35,200,215,265,285,320,170]),'fractal-biosphere':pick(r,[140,165,180,190,95,300,330,50]),'machine-cathedral':pick(r,[30,40,205,220,190,15,260])}[family]+between(r,-14,14);
+  // Built-in families draw one hue per family table (in this order) and keep their own: the draw sequence, and so every
+  // existing identity, stays exactly as it was generated before packs existed.
+  let base;
+  if(!hues&&HUES[family]){const drawn={};for(const [f,list] of Object.entries(HUES))drawn[f]=pick(r,list);base=drawn[family];}
+  else base=pick(r,hues||WHEEL);
+  base+=between(r,-14,14);
   const offset={analogous:[28,-30],complementary:[180,150],split:[150,210],triad:[120,240]}[scheme];
   const sat=between(r,.55,.85)*(1-.2*clamp(traits.tests*2)),deepHue=base+offset[1]*.35;
   return {scheme,hue:round(base,1),
@@ -146,47 +158,116 @@ const AMBIENT={
   'fractal-biosphere':{base:['spores','sway','nutrient-flow','light-shafts','breathing-glow'],unlocks:['fireflies','blossom-drift','canopy-veins','bioluminescent-tide']},
   'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']}
 };
-function genome(family,seed,variant,traits){
-  const r=rng('genome',family,seed,variant);
-  const g=GENOMES[family](r,traits);
+function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);
-  return {...g,palette:palette(rng('palette',family,seed,variant),family,traits),
-    light:{exposure:between(r,.95,1.25),bloom:between(r,.7,1.25),bloomThreshold:between(r,.55,.8),contrast:between(r,.9,1.15),grain:between(r,.015,.04),vignette:between(r,.2,.45)},
-    ambient:AMBIENT[family],
+  return {light:{exposure:between(r,.95,1.25),bloom:between(r,.7,1.25),bloomThreshold:between(r,.55,.8),contrast:between(r,.9,1.15),grain:between(r,.015,.04),vignette:between(r,.2,.45)},
     music:{reactivity:between(r,.3,.9),beatPulse:between(r,.2,.7)},
     agentProminence:round(.6+.4*clamp(traits.agentShare*2+traits.agents/8)),
     limits:{detail:round(1-.55*size),maxParticles:Math.round(6000+18000*(1-size*.4)),maxLabels:pick(r,[4,5,6])}};
 }
+function genome(family,seed,variant,traits){
+  const r=rng('genome',family,seed,variant);
+  const g=GENOMES[family](r,traits);
+  const {light,music,agentProminence,limits}=common(r,traits);
+  return {...g,palette:palette(rng('palette',family,seed,variant),family,traits),light,ambient:AMBIENT[family],music,agentProminence,limits};
+}
+// A world pack's genome: its declared parameters (seeded, optionally derived from a project trait), a palette from its
+// preferred hues, and the shared light / music / limits; its effect vocabulary and ambient layers come from the manifest.
+function drawParameter(r,p,traits){
+  if(p.type==='enum'){return p.weights?weighted(r,p.values.map((v,i)=>[v,p.weights[i]??1])):pick(r,p.values);}
+  if(p.type==='boolean')return r()<(p.p??.5);
+  let x;
+  if(p.from){const t=Number(traits[p.from.trait])||0,j=p.from.jitter??.15;x=clamp(clamp(t*(p.from.scale??1)+(p.from.offset??0))+(r()-.5)*2*j);}
+  else x=r();
+  const v=p.min+(p.max-p.min)*x;return p.type==='integer'?Math.round(v):round(v);
+}
+function packGenome(def,seed,variant,traits){
+  const r=rng('genome',def.id,seed,variant);const params={};
+  for(const [k,p] of Object.entries(def.parameters||{}).sort(([a],[b])=>a.localeCompare(b)))params[k]=drawParameter(r,p,traits);
+  return {params,palette:palette(rng('palette',def.id,seed,variant),def.id,traits,def.palette?.hues),...common(r,traits),
+    ambient:{base:def.ambient?.base||[],unlocks:def.ambient?.unlocks||[]},effects:{...def.effects}};
+}
+const setPath=(o,p,v)=>{const ks=p.split('.');let x=o;for(const k of ks.slice(0,-1)){if(!x[k]||typeof x[k]!=='object')x[k]={};x=x[k];}x[ks.at(-1)]=v;};
+// A declarative or shader pack over its base family: values, or [min, max] ranges drawn per project from the seed.
+function applyOverlay(g,overlay,r,traits){
+  const out=JSON.parse(JSON.stringify(g));
+  for(const [k,v] of Object.entries(overlay.overrides||{}).sort(([a],[b])=>a.localeCompare(b))){
+    const range=Array.isArray(v)&&v.length===2&&!k.startsWith('technique.');
+    setPath(out,k,range?(Number.isInteger(v[0])&&Number.isInteger(v[1])&&/\.(?:spiralArms|loops|dustLanes|fov|swarm|maxLabels)$/.test(k)?Math.round(between(r,v[0],v[1])):between(r,v[0],v[1])):v);
+  }
+  if(overlay.effects)out.effects={...out.effects,...overlay.effects};
+  if(overlay.unlocks)out.ambient={...out.ambient,unlocks:[...overlay.unlocks]};
+  if(overlay.technique)out.technique={...(out.technique||{}),...overlay.technique};
+  // A shader pack's own uniforms, drawn per project like a world pack's parameters.
+  if(overlay.uniforms){out.uniforms={};for(const [k,p] of Object.entries(overlay.uniforms).sort(([a],[b])=>a.localeCompare(b)))out.uniforms[k]=drawParameter(r,p,traits);}
+  return out;
+}
 const DEFAULT_OVERRIDES={intensity:1,motion:1,atmosphere:1,labels:'cinematic'};
-function generate(project,{seed,variant=0,family=null,source='generated',locked=false,traits=null,now=Date.now()}={}){
+const usable=(registry,id)=>{const p=registry?.byId?.[id];return p&&p.ok&&p.compatible?p:null;};
+const packFamily=(registry,id)=>registry?.families?.[id]&&usable(registry,id)?registry.families[id]:null;
+// `registry` (engine/packs.js createRegistry().snapshot()) makes installed world packs choosable and overlays usable.
+function generate(project,{seed,variant=0,family=null,pack=null,source='generated',locked=false,traits=null,now=Date.now(),registry=null}={}){
   const s=(seed??project?.performance?.identity?.seed??parseInt(sha(project?.projectId||'').slice(0,8),16))>>>0;
   const t=traits||traitsOf(project);
   const scores=familyScores(t,s,variant);
-  const chosen=family&&FAMILIES.includes(family)?family:FAMILIES.slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
+  const world=family&&!FAMILIES.includes(family)?packFamily(registry,family):null;
+  const chosen=family&&(FAMILIES.includes(family)||world)?family:FAMILIES.slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
+  let g=world?packGenome(world,s,variant,t):genome(chosen,s,variant,t);
+  const overlay=pack?usable(registry,pack):null;
+  const applied=overlay?.overlay&&overlay.overlay.base===chosen?overlay:null;
+  if(applied)g=applyOverlay(g,applied.overlay,rng('pack',applied.id,s,variant),t);
+  const user=!!family||!!applied;
   return {schema:RECIPE_SCHEMA,recipeVersion:RECIPE_VERSION,rendererVersion:RENDERER_VERSION,projectSeed:s,variant,
-    source:family?'user':source,locked:!!locked||!!family,founded:!!family||!!locked||t.modules>=FOUNDING_MODULES,
-    createdAt:now,traits:t,family:chosen,familyName:FAMILY_NAMES[chosen],familyScores:scores,genome:genome(chosen,s,variant,t),
+    source:user?'user':source,locked:!!locked||user,founded:user||!!locked||t.modules>=FOUNDING_MODULES,
+    createdAt:now,traits:t,family:chosen,familyName:world?world.name:FAMILY_NAMES[chosen],familyKind:world?'pack':'builtin',familyScores:scores,genome:g,
+    pack:applied?{id:applied.id,version:applied.version,kind:applied.kind}:null,
     overrides:{...DEFAULT_OVERRIDES},aliases:{},title:null};
 }
+// What a stored recipe needs from the installed packs, and whether they are there.
+function availability(stored,registry){
+  const missing={};
+  if(stored?.familyKind==='pack'&&!packFamily(registry,stored.family))missing.family=stored.family;
+  if(stored?.pack&&!usable(registry,stored.pack.id))missing.pack=stored.pack.id;
+  return Object.keys(missing).length?missing:null;
+}
 // A stored recipe is kept unless it is still provisional and unlocked; user edits never touch the genome's inputs.
-function resolve(stored,project,now=Date.now()){
+// A recipe whose pack is missing is served without it and not rewritten; one whose overlay pack was updated is redrawn.
+function resolve(stored,project,now=Date.now(),registry=null){
+  const missing=availability(stored,registry);
+  if(stored&&missing){
+    const keep=x=>Object.assign(x,{overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,unavailable:missing});
+    if(missing.family)return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,traits:stored.founded?stored.traits:null,now,registry})),changed:false};
+    return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,traits:stored.traits,now,registry})),changed:false};
+  }
+  if(stored?.pack){const p=usable(registry,stored.pack.id);
+    if(p&&p.version!==stored.pack.version){const next=Object.assign(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,pack:p.id,traits:stored.traits,now,registry}),
+      {overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,locked:stored.locked,source:stored.source});return {recipe:next,changed:true};}}
   if(stored&&stored.schema===RECIPE_SCHEMA&&(stored.founded||stored.locked))return {recipe:stored,changed:false};
-  const next=generate(project,{seed:stored?.projectSeed,variant:stored?.variant||0,now});
+  const next=generate(project,{seed:stored?.projectSeed,variant:stored?.variant||0,now,registry});
   if(stored){next.overrides={...DEFAULT_OVERRIDES,...stored.overrides};next.aliases=stored.aliases||{};next.title=stored.title??null;}
   const changed=!stored||JSON.stringify({...stored,createdAt:0})!==JSON.stringify({...next,createdAt:0});
   return {recipe:changed?next:stored,changed};
 }
 const ALIAS=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
-// User actions: choose a family, regenerate, lock, adjust overrides, name subsystems. Inputs are validated strictly.
-function update(recipe,action,project,now=Date.now()){
+// User actions: choose a family or a pack, regenerate, lock, adjust overrides, name subsystems. Inputs are validated.
+function update(recipe,action,project,now=Date.now(),registry=null){
   const keep=r=>Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title});
+  const pack=recipe.pack?.id||null;
   switch(action?.type){
-    case 'family':if(!FAMILIES.includes(action.family))throw new Error('Unknown family');
-      return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:action.family,traits:recipe.traits,now}));
-    case 'regenerate':{const r=generate(project,{seed:recipe.projectSeed,variant:(recipe.variant||0)+1,traits:recipe.founded?recipe.traits:null,now});
-      if(action.keepFamily)return keep(generate(project,{seed:recipe.projectSeed,variant:r.variant,family:recipe.family,traits:r.traits,now}));
+    case 'family':{if(!FAMILIES.includes(action.family)&&!packFamily(registry,action.family))throw new Error('Unknown family');
+      // A pack overlay stays when it belongs to the new family.
+      const keepPack=pack&&usable(registry,pack)?.overlay?.base===action.family?pack:null;
+      return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:action.family,pack:keepPack,traits:recipe.traits,now,registry}));}
+    case 'pack':{
+      if(action.pack===null)return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:recipe.family,traits:recipe.traits,now,registry}));
+      const p=typeof action.pack==='string'?usable(registry,action.pack):null;
+      if(!p||!p.overlay)throw new Error('Unknown or unusable pack');
+      // Choosing a look chooses its family too.
+      return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:p.overlay.base,pack:p.id,traits:recipe.traits,now,registry}));}
+    case 'regenerate':{const r=generate(project,{seed:recipe.projectSeed,variant:(recipe.variant||0)+1,traits:recipe.founded?recipe.traits:null,now,registry});
+      if(action.keepFamily)return keep(generate(project,{seed:recipe.projectSeed,variant:r.variant,family:recipe.family,pack,traits:r.traits,now,registry}));
       return keep(Object.assign(r,{locked:true,founded:true,source:'user'}));}
-    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now}));
+    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now,registry}));
     case 'lock':return {...recipe,locked:action.locked!==false,founded:recipe.founded||action.locked!==false};
     case 'overrides':{const o={...recipe.overrides};
       for(const k of ['intensity','motion','atmosphere'])if(action[k]!==undefined){const v=Number(action[k]);if(!Number.isFinite(v))throw new Error(`Invalid ${k}`);o[k]=round(clamp(v,0,2));}

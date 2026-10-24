@@ -1,0 +1,18 @@
+{
+  "$schema": "https://code-resonance.invalid/pack.schema.json",
+  "schema": "code-resonance.pack.v1",
+  "id": "you.my-variant",
+  "name": "My Variant",
+  "version": "0.1.0",
+  "kind": "declarative",
+  "sdk": "^1.0",
+  "author": {"name": "Your Name"},
+  "description": "A starter declarative pack: Machine Cathedral re-tuned with data only.",
+  "license": "CC0-1.0",
+  "declarative": {
+    "base": "machine-cathedral",
+    "overrides": {"geometry.architecture": "deco", "atmosphere.weather": "steam", "motion.mechanism": [0.8, 1.2], "palette.accent": "#7fd7ff"},
+    "effects": {"milestone.achieved": "illumination"},
+    "technique": {"contrast": 1.08, "tint": [0.95, 1, 1.08]}
+  }
+}
