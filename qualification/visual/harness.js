@@ -11,10 +11,13 @@ const projectOf=dir=>fs.readFileSync(path.join(dir,'projects',fs.readdirSync(pat
 // The NVIDIA GPU is never used: callers abort when the renderer string is not the requested adapter.
 // Audio may start without a user gesture (recordings and the audio qualification need the music running).
 const AUTOPLAY='--autoplay-policy=no-user-gesture-required';
+// Chromium's own audio output, never the machine's sound server: the tests measure the recorded stream, and a host
+// sound server that stalls (WSLg's did, overnight) stops every audio clock in the browser.
+const {PULSE_SERVER,...BASE_ENV}=process.env;
 function launch(gpu=null){
   if(gpu==='amd')return chromium.launch({args:['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu',AUTOPLAY],
-    env:{...process.env,GALLIUM_DRIVER:'d3d12',MESA_D3D12_DEFAULT_ADAPTER_NAME:'AMD',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}});
-  return chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist',AUTOPLAY]});
+    env:{...BASE_ENV,GALLIUM_DRIVER:'d3d12',MESA_D3D12_DEFAULT_ADAPTER_NAME:'AMD',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}});
+  return chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist',AUTOPLAY],env:BASE_ENV});
 }
 async function rendererOf(browser){const probe=await browser.newPage();await probe.goto('about:blank');
   const r=await probe.evaluate(()=>{const gl=document.createElement('canvas').getContext('webgl2'),d=gl&&gl.getExtension('WEBGL_debug_renderer_info');return gl?gl.getParameter(d?d.UNMASKED_RENDERER_WEBGL:gl.RENDERER):'none';});

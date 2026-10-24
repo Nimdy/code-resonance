@@ -168,6 +168,19 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
             as&&as.audio&&Math.abs(as.videoDuration-24)<=1.5&&cs.longestGapMs<=20&&after.family===cymatic.family&&after.remote,
             as?`${as.videoDuration} s, ${as.fps} fps, longest frame gap ${as.frameInterval.max} ms (${as.longGaps} > 250 ms while worlds load), sound pilot longest gap ${cs.longestGapMs} ms; now ${after.family}`:'no file');
           measurements.lifecycle.switching={analysis:as,continuity:cs,player:switching.result};
+          // The recorded sound lost mid-recording (as a lost audio device would): the recording is finished and saved at
+          // once with the reason, and the player says so (never a silent or stalled file passed as good).
+          await page.evaluate(()=>window.__qual.replayFromStart());
+          const dlLost=page.waitForEvent('download',{timeout:20000}).catch(()=>null);
+          await page.evaluate(async()=>{await window.__qual.record();window.__qual.pilot(true);});await wait(3000);
+          const brokeAt=Date.now();await page.evaluate(()=>window.__qual.breakRecordingAudio());
+          await page.waitForFunction(()=>!window.__qual.recording().active,null,{timeout:15000}).catch(()=>{});const finishedMs=Date.now()-brokeAt;
+          const afterLoss=await page.evaluate(()=>({rec:window.__qual.recording(),notice:window.__qual.world().notice}));
+          const dl=await dlLost;let al=null;if(dl){const f=path.join(tmp,'audio-lost.webm');await dl.saveAs(f);al=media.analyse(f);}
+          check('sound lost while recording: the recording is finished and saved at once with the reason, and the player says so',
+            !afterLoss.rec.active&&afterLoss.rec.last?.audioLost===true&&/sound stopped/i.test(afterLoss.notice)&&finishedMs<5000&&(al?al.video&&al.videoDuration>=2:/could not be saved/.test(afterLoss.notice)),
+            `finished ${finishedMs} ms after the sound was cut; notice “${afterLoss.notice.slice(0,110)}”; ${al?`file: video ${al.videoDuration} s, sound ${al.audioDuration} s`:'no file'}`);
+          measurements.lifecycle.audioLost={analysis:al,player:afterLoss.rec.last,finishedMs};
           check('lifecycle: no page errors',!errors.length,errors.slice(0,2).join(' | ')||'none');
         }finally{await page.close();}
       }

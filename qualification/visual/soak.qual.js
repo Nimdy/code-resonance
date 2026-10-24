@@ -77,7 +77,7 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}`);await page.waitForFunction(()=>!!window.__qual);
     await page.waitForTimeout(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
-    let segment=-1,cpuBefore=null,lastSample=0;started=Date.now();const END=started+HOURS*3600000*SCALE;const done=new Set();
+    let segment=-1,cpuBefore=null,lastSample=0,clockBefore=null;started=Date.now();const END=started+HOURS*3600000*SCALE;const done=new Set();
     while(Date.now()<END){
       const minute=minuteNow(),inHour=minute%60,hour=Math.floor(minute/60);
       // Programme.
@@ -90,11 +90,12 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
         const file=path.join(recDir,`h${hour}-m${at}.webm`),began=Date.now();
         const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(async()=>{await window.__qual.record();window.__qual.pilot(true);});
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
+        const player=await page.evaluate(()=>window.__qual.recording().last);
         if(download)await download.saveAs(file);
         const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
         recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,maxIntervalAfterStartupMs:a?.maxIntervalAfterStartupMs??null,frameIntervalMedianMs:a?.frameInterval?.median??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
-          sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0});
+          sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0,audioLostReported:player?.audioLost??null});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
       // Receiver restart, once.
       if(!restart&&minute>=RESTART_AT&&Date.now()<END){
@@ -112,12 +113,15 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
         const {processInfo}=await browserCdp.send('SystemInfo.getProcessInfo');const cpu={};for(const p of processInfo)cpu[p.type]=(cpu[p.type]||0)+p.cpuTime;
         const cpuPct=cpuBefore?Object.fromEntries(Object.keys(cpu).map(k=>[k,+(((cpu[k]-(cpuBefore.v[k]||0))/((Date.now()-cpuBefore.t)/1000))*100).toFixed(1)])):null;cpuBefore={v:cpu,t:Date.now()};
         const fps=await page.evaluate(()=>new Promise(r=>{let k=0;const s=performance.now();const f=()=>{k++;performance.now()-s<2000?requestAnimationFrame(f):r(k/((performance.now()-s)/1000));};requestAnimationFrame(f);}));
-        const w=await page.evaluate(()=>({world:window.__qual.world(),stats:window.__qual.stats(),rms:window.__rms(),selected:document.querySelector('[data-world].active')?.dataset.world||null}));
+        const w=await page.evaluate(()=>({world:window.__qual.world(),stats:window.__qual.stats(),rms:window.__rms(),clock:window.__qual.audioClock(),selected:document.querySelector('[data-world].active')?.dataset.world||null}));
+        // The music's audio clock against the wall clock: about 1 while sound is actually produced (0 when the audio device
+        // stalls, which a level probe inside the audio graph does not show).
+        const clockRate=clockBefore&&w.clock!==null?+((w.clock-clockBefore.audio)/((Date.now()-clockBefore.wall)/1000)).toFixed(3):null;clockBefore={audio:w.clock,wall:Date.now()};
         const st=w.stats||{},t=st.transport||null;
         const sample={minute:+minuteNow().toFixed(1),segment:SEGMENTS[segment][1].label,shown:w.selected,idle:paused,heapMB:+(m.JSHeapUsedSize/1048576).toFixed(1),nodes:m.Nodes,listeners:m.JSEventListeners,documents:m.Documents,frames:m.Frames,
           playerFps:+fps.toFixed(1),family:st.family||null,remote:w.world.remote,quality:st.quality??null,drawCalls:st.drawCalls??null,geometries:st.geometries??null,textures:st.textures??null,programs:st.programs??null,
           updateMs:st.updateMs??null,gpuMs:st.gpuMs??null,transport:t?{inFlight:t.inFlight,sent:t.sent,acknowledged:t.acknowledged,skippedHere:t.skippedHere,latencyMs:t.latencyMs,maxQueue:t.maxQueue,semantic:t.semantic}:null,
-          workerRendered:st.rendered??null,workerSemantic:st.semantic??null,rms:+w.rms.toFixed(4),notice:w.world.notice||'',cpuPercent:cpuPct,rssMB:processMemory(),
+          workerRendered:st.rendered??null,workerSemantic:st.semantic??null,rms:+w.rms.toFixed(4),audioClockRate:clockRate,notice:w.world.notice||'',cpuPercent:cpuPct,rssMB:processMemory(),
           events:{produced:n,accepted,outbox:outbox.length,postFailures}};
         samples.push(sample);console.log(JSON.stringify(sample));
       }
@@ -145,18 +149,20 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const gpu=Object.entries(bySegment).map(([seg,xs])=>{const g=xs.map(s=>s.geometries).filter(v=>v!==null),t=xs.map(s=>s.textures).filter(v=>v!==null);return {seg,geometries:g.length?[g[0],Math.max(...g),g.at(-1)]:null,textures:t.length?[t[0],Math.max(...t),t.at(-1)]:null};});
     check('GPU objects: geometries and textures stay bounded per world (not growing with time)',gpu.every(x=>!x.geometries||x.geometries[2]<=x.geometries[0]*1.5+50),
       gpu.filter(x=>x.geometries).map(x=>`${x.seg}: geometries ${x.geometries.join('/')} textures ${x.textures?.join('/')} (first/max/last)`).join('; '));
-    const silent=samples.filter(s=>s.rms<0.0005);
-    check('sound: the music keeps playing (sampled level above silence)',silent.length<=samples.length*.05,`${silent.length}/${samples.length} silent samples${silent.length?` at minutes ${silent.slice(0,6).map(s=>s.minute).join(', ')}`:''}`);
+    const silent=samples.filter(s=>s.rms<0.0005),rates=samples.map(s=>s.audioClockRate).filter(v=>v!==null),stalled=samples.filter(s=>s.audioClockRate!==null&&(s.audioClockRate<.95||s.audioClockRate>1.05));
+    check('sound: the music keeps playing (its audio clock runs at real time; sampled level above silence)',rates.length>0&&!stalled.length&&silent.length<=samples.length*.05,
+      `audio clock ${Math.min(...rates).toFixed(3)}-${Math.max(...rates).toFixed(3)}× real time${stalled.length?`, off at minutes ${stalled.slice(0,6).map(s=>s.minute).join(', ')}`:''}; ${silent.length}/${samples.length} silent samples`);
     const transport=samples.filter(s=>s.transport);
     check('pack transport: never more than one render in flight; no pack stopped during the soak',transport.every(s=>s.transport.inFlight<=1)&&!samples.some(s=>/stopped/.test(s.notice)),
       `${transport.length} samples on packs; max latency ${Math.max(0,...transport.map(s=>s.transport.latencyMs)).toFixed(1)} ms; notices: ${[...new Set(samples.map(s=>s.notice).filter(Boolean))].slice(0,3).join(' | ')||'none'}`);
     // Full: no frame gap over 250 ms anywhere, markers within 125 ms. Mechanism (CI): after start-up no gap over 500 ms or
     // 2.5 frame intervals, markers within 250 ms plus a frame interval.
-    const recOk=r=>r.video&&r.audio&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&(MECH?
+    // The sound must cover the whole recording (a pilot check over a few hundred milliseconds of sound proves nothing).
+    const recOk=r=>r.video&&r.audio&&r.audioDuration>=r.videoDuration-2&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&(MECH?
       r.maxIntervalAfterStartupMs!==null&&r.maxIntervalAfterStartupMs<=Math.max(500,2.5*r.frameIntervalMedianMs)&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=250+r.frameIntervalMedianMs:
       r.longGaps===0&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=125);
     check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(recOk),
-      recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
+      recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, sound ${r.audioDuration}/${r.videoDuration} s${r.audioLostReported?' (loss reported to the user)':''}, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
     check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
       restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),
       restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s; world ${restart.worldBefore.selectedWorld}/${restart.worldBefore.family} → ${restart.worldAfter.selectedWorld}/${restart.worldAfter.family}`:'no restart');
