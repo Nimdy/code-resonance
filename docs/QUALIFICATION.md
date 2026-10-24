@@ -184,6 +184,10 @@ Code Resonance's own first-parent git history (38 commits) replayed as a 20-minu
   These say the new film is brighter, fuller and more animated, not that it is better art.
 - **Film audio** (same films, ffmpeg ebur128): the Lumen session -23.9 LUFS integrated, the idle tail -24.2 LUFS with no
   silent stretch.
+- **Live priming:** opening the live view (not a replay) on Lumen Recipes primes the director with 205 of 205 recorded
+  intents, read through the timeline's intents view (`/api/timeline?fields=intents`) without a page limit. The
+  previous client read at most 10,000 windows from the start; no recording that long was available, so the
+  difference itself is covered by a unit test of the intents view, not by a long live session.
 - **Agents in Lumen Recipes:** 142 lifecycle intents from 6 agents; each presence appears with its session, follows
   its tool activity (reading, searching, editing, running, testing) and departs when its session ends.
 - **Music balance** (`audio/balance.js`, the real Lumen timeline through the PR #2 and the current `music.js`):

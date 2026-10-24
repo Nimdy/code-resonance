@@ -190,7 +190,9 @@ function createService(options={}) {
         if(!await projection(id)){response(res,404,{error:'Project not found'});return;}
         const after=Number(u.searchParams.get('after')??-1),limit=Math.max(1,Math.min(2000,Number(u.searchParams.get('limit'))||(pathname==='/api/replay'?2000:200)));
         const {entries,total}=await readTimeline(id,Number.isFinite(after)?after:-1,limit);
-        response(res,200,{schema:'code-resonance.timeline.v1',projectId:id,total,entries});return;
+        // fields=intents: only each window's sequence number and intents, so a client can read a long history cheaply.
+        const view=u.searchParams.get('fields')==='intents'?entries.map(x=>x.intents?.length?{seq:x.seq,intents:x.intents}:{seq:x.seq}):entries;
+        response(res,200,{schema:'code-resonance.timeline.v1',projectId:id,total,entries:view});return;
       }
       if(req.method==='GET'&&pathname==='/v1/performance/frames'){
         if(!await projection(id)){response(res,404,{error:'Project not found'});return;}

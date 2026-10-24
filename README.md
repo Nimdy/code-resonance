@@ -90,7 +90,7 @@ Data lives under `~/.code-resonance/` on the machine running the receiver (`RESO
 | `GET /health` | Status and timing (window, grace, scan interval) |
 | `GET /api/projects` | Projects, most recent first |
 | `GET /api/project?id=` | Anonymised graph, stats and recent frames (ETag) |
-| `GET /api/timeline?id=&after=&limit=` | Recorded performance, paged (`/api/replay` is an alias) |
+| `GET /api/timeline?id=&after=&limit=[&fields=intents]` | Recorded performance, paged (`/api/replay` is an alias); `fields=intents` returns only each window's intents |
 | `GET /v1/performance/frames?id=&after=` | Versioned performance frames |
 | `GET /api/export?id=` | Streamed derived export |
 | `POST /v1/events` | Authenticated ingestion (valid events kept, rejections listed) |

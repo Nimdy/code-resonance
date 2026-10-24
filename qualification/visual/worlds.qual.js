@@ -4,8 +4,10 @@
 //  2. idle life    - after the last event the image keeps moving while structure and effects stay exactly the same;
 //  3. resources    - switching worlds repeatedly returns GPU geometries and textures to their baseline;
 //  4. privacy      - no label on screen (cinematic or stream mode) contains a path, file name or source identifier;
-//  5. performance  - frame rate, draw calls and frame time of each family on a 450-file project (live player).
-// node visual/worlds.qual.js [--datasets results/datasets] [--gpu amd]
+//  5. performance  - frame rate, draw calls and frame time of each family on a 450-file project (live player);
+//  6. live         - opening the live view primes the director with the project's whole intent history.
+// node visual/worlds.qual.js [--datasets results/datasets] [--gpu amd] [--only determinism,idle,live,performance]
+// --only re-runs some sections and replaces their checks in the existing results file (noted under "reruns").
 // --gpu amd renders on the AMD integrated GPU under WSL2 (ANGLE GL -> Mesa d3d12); the default is SwiftShader (CPU).
 // The NVIDIA GPU is never used: the run aborts if the renderer string is not the requested adapter.
 const path=require('node:path');
@@ -105,6 +107,19 @@ const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
       check('resources: switching worlds 9 times leaves GPU geometries and textures at their level',last.geometries<=first.geometries&&last.textures<=first.textures,`geometries ${first.geometries}->${last.geometries}, textures ${first.textures}->${last.textures}`);
       await page.close();
     });
+    // 6. Live priming: the live view (not a replay) must know every recorded intent, however long the history.
+    if(!GPU&&run('live'))await withService(sets.lumen.dir,async svc=>{
+      const project=projectOf(sets.lumen.dir);await setFamily(svc,project,'stellar-forge');
+      let recorded=0;for(let after=-1;;){const r=await (await fetch(`http://127.0.0.1:${svc.port}/api/timeline?id=${project}&after=${after}&limit=2000&fields=intents`)).json();
+        if(!r.entries.length)break;for(const e of r.entries)recorded+=e.intents?.length||0;after=r.entries.at(-1).seq;}
+      const page=await browser.newPage({viewport:{width:1280,height:720}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+      await page.goto(`http://127.0.0.1:${svc.port}/?labels=off&project=${project}&world=living`);
+      await page.waitForFunction(()=>window.__worldStats?.()?.intents>0,null,{timeout:60000}).catch(()=>{});await page.waitForTimeout(2000);
+      const st=await page.evaluate(()=>window.__worldStats?.()||{});await page.close();
+      measurements.live={recorded,primed:st.intents,phase:st.phase};
+      check('live: opening the live view primes the whole intent history',recorded>0&&st.intents===recorded,`${st.intents} of ${recorded} recorded intents`);
+      check('no page errors in the live view',!errors.length,errors.slice(0,2).join(' | '));
+    });
     // 5. Performance on the 450-file Excalidraw snapshot, live player at 1920x1080, each family.
     if(run('performance'))await withService(sets.excalidraw.dir,async svc=>{
       const project=projectOf(sets.excalidraw.dir);measurements.performance={};
@@ -127,8 +142,12 @@ const sha=s=>crypto.createHash('sha256').update(s).digest('hex').slice(0,16);
       }
     });
   }finally{await browser.close();}
-  const tag=GPU?`-${GPU}`:'';
-  fs.writeFileSync(path.join(OUT,`worlds-qualification${tag}.json`),JSON.stringify({at:new Date().toISOString(),renderer:measurements.renderer,checks,measurements},null,2));
-  console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);
+  const tag=GPU?`-${GPU}`:'',file=path.join(OUT,`worlds-qualification${tag}.json`);
+  let result={at:new Date().toISOString(),renderer:measurements.renderer,checks,measurements};
+  if(ONLY&&fs.existsSync(file)){const prev=JSON.parse(fs.readFileSync(file,'utf8')),names=new Set(checks.map(c=>c.name));
+    result={...prev,checks:[...prev.checks.filter(c=>!names.has(c.name)),...checks],measurements:{...prev.measurements,...measurements},
+      reruns:[...(prev.reruns||[]),{at:result.at,sections:[...ONLY]}]};}
+  fs.writeFileSync(file,JSON.stringify(result,null,2));
+  console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed in this run; ${result.checks.filter(c=>c.pass).length}/${result.checks.length} in ${path.basename(file)}`);
   process.exitCode=checks.every(c=>c.pass)?0:1;
 })().catch(e=>{console.error(e);process.exitCode=1;});

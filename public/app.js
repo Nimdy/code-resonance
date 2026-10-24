@@ -453,10 +453,11 @@
   }
   // Live: the world learns the session so far (agent lifecycles, verified milestones) from the recorded intents only.
   async function primeLive(world){
-    const intents=[];let after=-1;
-    for(let page=0;page<20;page++){const r=(await getJSON(`/api/timeline?id=${encodeURIComponent(selected)}&after=${after}&limit=500`))?.json;if(!r||!r.entries.length)break;
+    // The whole history's intents (the intents view is small), so unlocks and lasting blooms match a full replay.
+    const id=selected,intents=[];let after=-1;
+    for(let page=0;page<1000;page++){const r=(await getJSON(`/api/timeline?id=${encodeURIComponent(id)}&after=${after}&limit=2000&fields=intents`))?.json;if(!r||!r.entries.length||selected!==id)break;
       for(const e of r.entries)if(e.intents?.length)intents.push({intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
-    if(world===living&&mode==='live')living.prime(intents,perfNow());
+    if(world===living&&mode==='live'&&selected===id)living.prime(intents,perfNow());
   }
   async function recipeAction(action){
     if(!selected)return;
