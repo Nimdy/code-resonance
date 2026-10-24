@@ -27,7 +27,23 @@ node visual/long.qual.js                              # long-history replay in t
 node visual/unchanged.qual.js [--baseline <ref>]      # built-in worlds render the same frames as a baseline commit
 node visual/pack.qual.js <pack dir> [--gpu amd]       # visual pack compatibility (= node scripts/pack.js test)
 node visual/catalogue.qual.js                         # every family at the extremes of its parameter catalogue
+node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
+node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
+node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart
+xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
+node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
+node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
 ```
+
+**Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):
+modules and the receiver's HTTP API in-process. *Platform smoke* (`platform/smoke.js`, every push, both platforms): the
+product as real processes. *Browser qualification* (headless Chromium, software rendering): the Stage, audio, visual
+pack compatibility (each reference pack), the pack runtime's robustness, live recording; quick variants on every pull
+request, full variants in the extended tier. *Extension host* (real VS Code under Xvfb): every pull request on Linux,
+extended tier on native Windows. *Long-running* (soak, long history, 3-minute recording): extended tier. *OBS*: extended
+tier, in the disposable runner. *Local GPU runs* (`--gpu amd`): the AMD integrated GPU of the development machine, by
+hand. The extended tier runs when a pull request carries the label `extended-qualification`, weekly on main, or by
+hand on main; it costs about four runner-hours, which is why it is not on every push.
 
 The real-agent scenario uses your Claude Code login and is capped with `--max-budget-usd 0.50`.
 

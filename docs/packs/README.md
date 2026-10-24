@@ -1,4 +1,4 @@
-# Visual Pack SDK 1
+# Visual Pack SDK 1 (current: 1.1)
 
 Make your own Code Resonance visuals without touching Code Resonance. A visual pack is a folder with a `pack.json`
 manifest; you install it locally with `scripts/pack.js` and choose it in the player's World DNA panel. Nothing is
@@ -7,8 +7,8 @@ downloaded or published: there is no marketplace.
 | Kind | What you write | Runs | Needs approval |
 |---|---|---|---|
 | **declarative** | JSON only: parameters, palette, light, rendering technique and effect mapping for an existing family | in the player, inside the built-in world it tunes | no |
-| **shader** | GLSL for a background and up to four post passes, an optional procedural effects module, on a built-in family | in the isolated pack frame | yes |
-| **world** | a complete world family: a JavaScript module implementing the [World API](world-api.md), plus GLSL and textures | in the isolated pack frame | yes |
+| **shader** | GLSL for a background and up to four post passes, an optional procedural effects module, on a built-in family | in a worker inside the isolated pack frame | yes |
+| **world** | a complete world family: a JavaScript module implementing the [World API](world-api.md), plus GLSL and textures | in a worker inside the isolated pack frame | yes |
 
 The reference packs in `packs/examples/` were written the way an outside developer would write them, from these pages
 only: **Cymatic Field** (a world: every subsystem is a resonant plate whose sand settles on its nodal lines),
@@ -73,14 +73,20 @@ timings. Never file names, paths, source, prompts, the project's folder name, cr
 - [Security](security.md): isolation, approvals, what the browser cannot sandbox.
 - [Performance](performance.md): budgets, adaptive quality, what the tests measure.
 - [Parameter catalogue](catalogue.md): what declarative packs may set on the built-in families.
+- [SDK 1.1](migration.md): what changed from 1.0 (code runs in a worker), and how to migrate.
 
 ## Compatibility tests
 
 `node scripts/pack.js test <dir>` installs the pack into temporary copies of recorded projects (your receiver is not
 touched) and checks, in a real browser: the manifest; installation (code packs start unapproved); isolation of code
-packs (from inside the frame nothing reaches the receiver or an outside listener, no storage, cookies, WebRTC, workers
-or popups, and a frame that navigates itself away is stopped); that the world expresses the recording's events,
+packs (from the pack worker, where your code runs, and from the frame around it: nothing reaches the receiver or an
+outside listener; no storage, cookies, DOM, WebRTC, outside scripts, networked workers or popups; a frame that
+navigates is stopped); that the world expresses the recording's events,
 including failures and verified milestones; that no label shows a folder name, path, file name or identifier; idle
 life; that the image follows the beat; project-specific recipes; deterministic replay across seek histories; resource
 release when the world is switched away and back four times; and the performance budget your manifest declares. The
-report is written to `qualification/results/visual/pack-<id>.json`.
+report is written to `qualification/results/visual/pack-<id>.json`. `--quick` runs a shorter version (the session at
+2 fps, 30 s of idle, two switches, no determinism pair, performance at 1280×720): what CI runs for the reference packs.
+
+Live recording (the player's RECORD button) works for every kind of pack with nothing to do on your side: the worker
+composites your world and its labels into each acknowledged frame, and the player records those frames with the music.

@@ -51,9 +51,27 @@ Window 5 s, grace 1.5 s, worker scan 1 s. Measured from posting to the recorded 
 - The receiver main thread serves cached projections and byte-indexed timeline pages; parsing, AST analysis and projection happen in the worker. Measured on a real 448-file project after an hour of simulated edits: `GET /api/project` 3 ms, sort per window 61 ms, `state.json` 7.6 MB.
 - The public graph shows every module (up to 700) and fills a 1400-node budget with the most meaningful symbols. Canvas2D with pre-rendered glow sprites and batched edge paths.
 
+## Visual packs and recording
+
+- **Pack runtime.** A pack with code never runs in the player's origin. The player verifies every approved file's SHA-256
+  and the pack digest, then creates `<iframe sandbox="allow-scripts">` (`public/worlds/frame.js`: opaque origin, a
+  content policy with no connections). The frame runs no pack code: it starts a dedicated worker
+  (`public/worlds/pack-worker.js`), transfers the canvases to it as `OffscreenCanvas`, and relays known message types.
+  The worker runs the same world host as the player, fed only with the privacy-safe view (`public/worlds/view.js`).
+- **Bounded delivery** (`public/worlds/remote.js`). Every render request is acknowledged; at most one is in flight, so a
+  slow pack gets presentation frames skipped, never a backlog. Semantic messages (structure, cues, intents, recipe) are
+  always sent, in order, and counted on both sides. Films await each exact frame (60 s, then an explicit error). A
+  watchdog stops a pack that stops answering (6 s), delivers under 1 fps for 20 s, throws, loses its GPU context, floods
+  the relay, navigates, is revoked or modified; the player falls back to the built-in identity and keeps the recipe.
+- **Recording** (`public/recording.js`). One player-owned 2D canvas receives each presented frame: the built-in worlds'
+  canvases, or the bitmap a pack's worker composited (world and labels) and returned with its acknowledgement. That
+  canvas's `captureStream()` and the music's own output (a `MediaStreamDestination` on the same audio graph and clock)
+  go to `MediaRecorder` (VP9/VP8 + Opus). No second clock; isolation is untouched. Deterministic films remain a separate
+  path (`qualification/visual/film.js`).
+
 ## Next technical milestones
 
-1. Native Windows and macOS qualification; OBS Studio browser-source test with audio.
+1. macOS qualification; OBS Studio on Windows and macOS with a GPU (native Windows and OBS on Linux run in CI).
 2. More agent adapters (where products expose hooks) and correlation by tool-use ids.
 3. Language coverage beyond JS/TS (Python, Go, Rust parsers or LSP symbols).
 4. A WebGL/WebGPU renderer with bloom behind the same graph contract, keeping Canvas2D as fallback.

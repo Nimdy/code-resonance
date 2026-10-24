@@ -1,7 +1,13 @@
-# World API (SDK 1)
+# World API (SDK 1.1)
 
 A world pack's entry module (`world.entry` in the manifest) is one self-contained ES module. It must not import
 anything (the frame refuses it, and validation rejects it): everything comes through `sdk`.
+
+**Where it runs.** In a dedicated worker inside the isolated pack frame (SDK 1.1). There is no `document` and no
+`window`: the renderer draws into an `OffscreenCanvas`, images arrive as `ImageBitmap` (`sdk.assets.image`), and a 2D
+surface for a texture is `sdk.util.canvas(w, h)` (an `OffscreenCanvas`; `new THREE.CanvasTexture(canvas)` takes it).
+Each frame you render is acknowledged to the player; if your world is slow the player skips presentation frames (your
+events are never skipped), and a world that stops answering is stopped (see [Performance](performance.md#live-delivery-and-the-watchdog)).
 
 ```js
 export function createWorld(sdk){
@@ -53,9 +59,9 @@ interface; read them for complete examples of instancing, shaders, labels and la
 
 | Member | What it is |
 |---|---|
-| `version`, `api` | `'1.0.0'`, `1` |
+| `version`, `api` | `'1.1.0'`, `1` |
 | `THREE` | three.js r170 |
-| `scene`, `camera`, `renderer`, `film` | your scene, the camera the rig drives, the renderer (inside the frame), whether a film is rendering |
+| `scene`, `camera`, `renderer`, `film` | your scene, the camera the rig drives, the renderer (in the pack worker, on an `OffscreenCanvas`), whether a film is rendering |
 | `recipe`, `params`, `palette` | the recipe; your declared parameters drawn for this project; palette colours as `THREE.Color` (`primary`, `secondary`, `accent`, `highlight`, `deep`, `haze`, `warning`, `valid`) |
 | `model` | `districts`, `modules`, `symbols`, `links` (Maps), `stateAt(module, t)`, `bornAt(x)`, `alive(x, t)`, `districtBorn(d)`, `symbolsAt(module, t)`, `totals(t)`, `epoch`, `version`. Treat as read-only |
 | `director` | `commands` (recent), `lasting()`, `attentionAt(t, minTier)`, `unlockedAt(t)`, `activityAt(t)`, `phaseAt(t)` |
@@ -64,7 +70,7 @@ interface; read them for complete examples of instancing, shaders, labels and la
 | `random(key)` | a seeded generator: the same project, variant and key always give the same sequence |
 | `assets.text(path)`, `assets.image(path)` | files you declared in the manifest (`shaders`, `textures`) |
 | `glsl` | `NOISE` (gradient noise, `fbm3`, `fbm5`, `h11`), `ORBIT`, `BACKGROUND_VS` |
-| `util` | `clamp`, `lerp`, `smooth`, `easeOut`, `easeInOut`, `hash`, `rand`, `rng`, `color`, `orbitPos` |
+| `util` | `clamp`, `lerp`, `smooth`, `easeOut`, `easeInOut`, `hash`, `rand`, `rng`, `color`, `orbitPos`; `canvas(w, h)` (1.1): an `OffscreenCanvas` for textures |
 | `buffers` | `instanced(geometry, layout, capacity)`, `points(layout, capacity)`: attribute storage that grows by doubling and disposes old GPU buffers; `pool(n, make)` |
 
 ## Director commands
