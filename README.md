@@ -55,7 +55,7 @@ Use **OBS VIEW ↗** in the player, or point a Browser Source (1920×1080) at:
 http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient
 ```
 
-The overlay hides every control and shows only the stage. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio via OBS**). The Stage never shows source, file names, prompts or command text. *OBS Studio itself has not been tested yet.*
+The overlay hides every control and shows only the stage. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio via OBS**). The Stage never shows source, file names, prompts or command text. OBS Studio 32 itself was qualified on Linux in a disposable CI machine (the overlay renders and moves, the music reaches OBS's mixer, OBS records both); on Windows or macOS, follow the acceptance procedure in [docs/OBS.md](docs/OBS.md).
 
 ### Record and export
 

@@ -25,6 +25,10 @@
   (`platform/smoke.js`), unit-suite stress runner (`unit-stress.js`). CI: reference packs, runtime and native Windows in
   the required tier; an extended tier by label.
 - **First run:** `npm run doctor`, `docs/FIRST-RUN.md` (with troubleshooting), `docs/WSL.md`, `docs/OBS.md`.
+- **Recording and lost sound:** an audio device that disconnects or stalls stops the music's audio clock, and the
+  browser's recorder then stalls the whole file (its WebM muxer waits for sound). The recorder watches its sound (track
+  ended or muted, audio clock stopped, digital silence while the music plays) and then finishes and saves the recording
+  at once, with the reason.
 - **Fixes:** a receiver restart stopped a running pack ("removed") and, rebuilding the world while the receiver was
   down, the player gave up the living world for the Construct for good (network failures now retry); turning sound off
   while recording threw (a removed variable); a recording started during a world switch could take a hidden canvas's

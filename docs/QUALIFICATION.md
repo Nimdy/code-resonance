@@ -42,8 +42,9 @@ pack compatibility (each reference pack), the pack runtime's robustness, live re
 request, full variants in the extended tier. *Extension host* (real VS Code under Xvfb): every pull request on Linux,
 extended tier on native Windows. *Long-running* (soak, long history, 3-minute recording): extended tier. *OBS*: extended
 tier, in the disposable runner. *Local GPU runs* (`--gpu amd`): the AMD integrated GPU of the development machine, by
-hand. The extended tier runs when a pull request carries the label `extended-qualification`, weekly on main, or by
-hand on main; it costs about four runner-hours, which is why it is not on every push.
+hand. The extended tier runs when a pull request carries the label `extended-qualification` (or `extended:<job>` for one
+job, to re-run it after a fix), weekly on main, or by hand on main; it costs about four runner-hours, which is why it is
+not on every push.
 
 The real-agent scenario uses your Claude Code login and is capped with `--max-budget-usd 0.50`.
 
@@ -325,28 +326,39 @@ Raw results: `qualification/results/recording/`, `results/robustness/`, `results
 `visual/recording.qual.js` on the AMD integrated GPU (ANGLE → D3D12 under WSL2), the player at 1280×720 replaying the
 Lumen Recipes recording at 4×, 20 s per world with a flash/click marker every 5 s, the file downloaded as a user gets it
 and measured with ffmpeg. Audio continuity is measured with a 12 kHz pilot tone fed into the recorded output (`?qual=1`
-only): a gap in the pilot is a dropout, whatever the music is doing. 63/63 checks.
+only): a gap in the pilot is a dropout, whatever the music is doing. 64/64 checks (final code, Chromium's own audio
+output; GPU time from the world's timer query).
 
-| World | Video | fps (frame interval median / p95 / max) | Gaps > 250 ms | Pilot gaps | Marker offsets, sound − picture | CPU: renderer / GPU process |
-|---|---|---|---|---|---|---|
-| Stellar Forge (built-in) | VP9 746×512 + Opus 48 kHz | 30.0 (33 / 50 / 51 ms) | 0 | 0 | +15, −19, −3, +19 ms | 51 % / 23 % |
-| Ember Observatory (declarative) | same | 30.0 (33 / 36 / 45) | 0 | 0 | −30, −14, −32, −15 | 53 % / 23 % |
-| Blueprint Cathedral (shader, pack worker) | same | 30.0 (33 / 34 / 51) | 0 | 0 | −3, +26, +9, −8 | 64 % / 30 % |
-| Cymatic Field (world, pack worker) | same | 30.0 (33 / 51 / 51) | 0 | 0 | +45, +28, −6, +10 | 62 % / 29 % |
-| Starter world (`scripts/pack.js new`, SDK ^1.1) | same | 30.0 (33 / 36 / 42) | 0 | 0 | +43, +25, +8, −10 | 61 % / 30 % |
+| World | Video | fps (frame interval median / p95 / max) | Gaps > 250 ms | Pilot gaps | Marker offsets, sound − picture | CPU renderer / GPU process | GPU time |
+|---|---|---|---|---|---|---|---|
+| Stellar Forge (built-in) | VP9 746×512 + Opus 48 kHz | 30.0 (33 / 51 / 52 ms) | 0 | 0 | +27, +9, −24, −1 ms | 50 % / 23 % | 5.5 ms |
+| Ember Observatory (declarative) | same | 30.0 (33 / 34 / 43) | 0 | 0 | +19, 0, −16, +23 | 53 % / 22 % | 5.4 ms |
+| Blueprint Cathedral (shader, pack worker) | same | 30.0 (33 / 53 / 54) | 0 | 0 | +13, +13, −5, +18 | 61 % / 28 % | 3.8 ms |
+| Cymatic Field (world, pack worker) | same | 30.0 (33 / 34 / 41) | 0 | 0 | 0, +6, −12, +11 | 59 % / 28 % | 2.3 ms |
+| Starter world (`scripts/pack.js new`, SDK ^1.1) | same | 30.0 (33 / 50 / 51) | 0 | 0 | −15, +6, +22, −38 | 56 % / 27 % | 1.8 ms |
 
-Every marker is within ITU-R BT.1359 acceptability (−90 to +185 ms); 17 of 20 within detectability (−45 to +125 ms).
-The player presents 60 fps; the recording is captured at 30. Finalisation took 5-8 ms. Lifecycle, same run: stop and
-record again gives two complete files with sound (the first version stopped the music's own audio track, so the second
-recording was silent: fixed by giving each recording its own clone); switching Cymatic Field → Stellar Forge → Cymatic
-Field and changing quality while recording gives one continuous 24 s file (one 347 ms frame gap while a world loads, no
-sound gap); a pack failing while recording finishes and saves the file (9.9 s, with sound) and the built-in identity
-takes over; without MediaRecorder or canvas capture the player explains and nothing breaks. **Three minutes** (Cymatic
-Field, replay at 1×, 12 markers): 30 fps, no gap, no pilot gap; offsets −37 to +12 ms (mean −14), trend −2.8 ms/min
-(−9 ms over the recording), jitter 13 ms; the page heap stays at 3.5 MB; browser and renderer memory grow by 212 MB
-while holding the 133 MB recording (6.2 Mbit/s), the GPU process stays flat. An earlier three-minute run on the same
-machine measured a mean of −55 ms (trend −5 ms/min, jitter 19 ms): picture/sound offset varies between runs within
-acceptability.
+All 20 markers within ITU-R BT.1359 detectability (−45 to +125 ms). The player presents 60 fps; the recording is
+captured at 30. Finalisation took 5-6 ms. Lifecycle, same run: stop and record again gives two complete files with sound
+(the first version stopped the music's own audio track, so a second recording was silent: fixed by giving each
+recording its own clone); switching Cymatic Field → Stellar Forge → Cymatic Field and changing quality while recording
+gives one continuous 24 s file (one 312 ms frame gap while a world loads, no sound gap); the recorded sound cut
+mid-recording (as a lost audio device does) finishes and saves the recording 20 ms later with what it had (3 s) and the
+reason, see below; a pack failing while recording finishes and saves the file (9.9 s, with sound) and the built-in
+identity takes over; without MediaRecorder or canvas capture the player explains and nothing breaks. **Three minutes**
+(Cymatic Field, replay at 1×, 12 markers): 30 fps, no gap, no pilot gap; offsets −21 to +30 ms (mean +3), all within
+detectability; trend +9.8 ms/min (+29 ms over the recording), jitter 11 ms; page heap 3.5 MB throughout; browser and
+renderer memory grow by 208 MB while holding the 132 MB recording (6.2 Mbit/s), the GPU process stays flat. Three
+three-minute runs on this machine measured trends of −2.8, −5.2 and +9.8 ms/min: no consistent direction, but drift over
+recordings longer than three minutes has not been measured.
+
+**Sound lost while recording.** The soak (below) ran into this machine's sound server stalling (WSLg's PulseAudio, around
+21:40): every audio clock in the browser stopped, and two recordings came out with 43-46 s of picture and 0.24 s of
+sound, because the browser's recorder (its WebM muxer) waits for sound to interleave with the picture. A test that ends
+the recorded track showed worse: Chrome's recorder then produced no file at all. The recorder now watches its sound (track
+ended or muted, the music's audio clock not advancing, digital silence while the music is audible) and finishes and saves
+the recording at once with the reason. A device-less audio context for the recording (`sinkId: none`) was tried and
+rejected: in this environment it stalled with the sound server too. Qualification runs now use Chromium's own audio
+output, never the host's sound server.
 
 **On slow machines** (CI's 4-vCPU software renderer, and this machine limited to 2-4 cores): built-in worlds render on
 the player's main thread and present 6-14 fps there; recordings of them keep about half of those frames (copying the
@@ -393,10 +405,34 @@ timeout (one failure, the "receiver test" seen before). After the fix (`tests/he
   project identity of a workspace path with spaces and non-ASCII characters, token refused/accepted, projection,
   restart keeping project and token, pack CLI validate/install/approve/list, a file changed after approval reported
   and refused, loopback-only bind). Line endings are fixed to LF (`.gitattributes`) so a pack's digest is the same on
-  every platform. PENDING: extended tier (Windows browser, Windows VS Code).
+  every platform. Extended tier on the same runner: `browser/stage.qual.js` 14/14 in Chromium on Windows (live view,
+  stats, audio, worlds at 56-60 fps at 1920×1080 in software rendering, replay, scrubbing, a WebM recording, WAV
+  export, the OBS overlay, no file paths, no page errors) and Cymatic Field's compatibility tests 20/20 (isolation probes
+  from the pack worker and the frame, privacy, idle, beat, resources, budget). The quick recording run there showed the
+  slow-machine limits above (built-in worlds recorded at 2.5-3 fps; the video track ending up to 1.5 s before the sound,
+  which has no gap). The extension in a real VS Code 1.143.1 on the same Windows runner (`vscode/run.js`): 32 checks
+  passed, 0 failed, 1 unverified by design (the real AI agent, which needs credentials): the VSIX installed through the
+  VS Code CLI, consent, baseline, typing classification, the file watcher seeing writes made outside the editor,
+  create/rename/delete, tasks, the integrated terminal with shell integration, diagnostics, git, the project id equal to
+  `vscode.Uri.file()` for a Windows path, the outbox queueing on disk and draining across a receiver outage, event
+  order, privacy, and capture resuming after a normal VS Code restart without a prompt
+  (`results/platform/vscode-qualification-windows.json`). Two Windows-only harness fixes were needed (Node runs
+  `code.cmd` only through the shell; Windows locks VS Code's files while it exits).
 - **WSL2 → Windows:** documented in `docs/WSL.md` with a reproducible check; not run from the Windows side (no interop
   here, and nothing is run on the owner's desktop without permission).
-- **OBS Studio:** PENDING: extended tier.
+- **OBS Studio** (`obs/obs.qual.js`, in a disposable GitHub runner: OBS 32.2.0 from the official PPA, obs-websocket
+  5.7.4, its browser source on CEF 127.0.6533.120, Ubuntu 24.04 under Xvfb, OpenGL 4.5 through Mesa llvmpipe, no GPU):
+  the player's overlay added as a Browser Source with *Control audio via OBS*; source screenshots show the living world
+  with its stream lower third, rendering and moving (4 of 4 screenshots distinct, mean luma about 135); the music reaches
+  OBS's mixer (197 meter samples, peak −14.5 dBFS); the overlay logged no errors inside OBS. Running OBS itself found
+  three things Chromium did not: OBS applies a Browser Source's custom CSS (its default transparent background) as an
+  inline style, which the page's policy refused (fixed: allowed in the OBS view only); the page's corner captions
+  overlapped the living world's lower third in the overlay (fixed: hidden there); without a GPU, OBS's default browser
+  hardware acceleration gives the page no WebGL, and the player falls back to the Construct (on this machine OBS's
+  browser runs in software: Browser Source Hardware Acceleration off). OBS's own recording of the overlay
+  (`results/obs/`): H.264 1280×720 at 29.9 fps and AAC stereo 48 kHz, 20 s, no frame gap, 95 % of frames changing, the
+  music at −28.4 dBFS with its longest rest 250 ms; OBS reported about 10 % of frames lagged by software rendering.
+  6/6 checks. Not run: OBS on Windows or macOS, with a GPU, or OBS's own streaming output.
 
 ### Soak
 
@@ -404,7 +440,8 @@ PENDING: soak results.
 
 ## Not verified
 
-- macOS. Native Windows beyond CI's runners (the required tier; PENDING: extended tier). VS Code Remote-SSH. A Windows browser or OBS on Windows reaching a receiver in WSL2.
+- macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A
+  Windows browser or OBS on Windows reaching a receiver in WSL2.
 - Native GPU browsers (GPU numbers above are through WSL2's translation layer); Firefox and Safari.
 - Artistic acceptance of the Construct and of the living worlds (Stellar Forge, Fractal Biosphere, Machine Cathedral),
   and whether people who do not code understand them without explanation.

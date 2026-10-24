@@ -56,7 +56,9 @@ with the music, to a WebM file, until you press **■ STOP** (the button shows t
 music could not be captured). The file downloads when you stop, or when a pack is stopped while recording. Chromium-based
 browsers (Chrome, Edge) and OBS support it; elsewhere the player says recording is unavailable. The browser keeps the
 recording in memory until you stop (about 45 MB per minute: 6 Mbit/s measured); for sessions longer than about half an
-hour, record with OBS instead.
+hour, record with OBS instead. If the sound stops reaching the recording (an audio device disconnected or stalled), the
+browser's recorder would stall the whole file, so the player finishes and saves the recording at that moment and says
+why.
 
 The recording contains the stage only: no source, file names, paths, prompts, command text or the receiver's token.
 The stage shows the project's public title (your project's folder name is never shown) and subsystem names you chose.
@@ -79,11 +81,13 @@ with that URL at 1920×1080 and tick **Control audio via OBS**. Acceptance proce
 | No sound | the browser needs a click; or the tab is muted | **ENABLE SOUND**; check the tab's audio |
 | Recording says *NO SOUND* | sound was off or the audio output could not be captured | enable sound first, then record |
 | ● RECORD says recording is unavailable | the browser lacks MediaRecorder or canvas capture | use Chrome or Edge |
+| *Recording finished early (the sound stopped …)* | the audio device was disconnected or stopped working | reconnect it, check that you hear the music, record again |
 | *… stopped: the pack stopped answering* | a visual pack hung or was too slow for this machine | lower **Quality**, then **RETRY**; or choose another look |
 | *… exceeds its declared budget* | the pack draws more than its author declared | it keeps running; lower Quality if frames are slow |
 | *… contains code and is not approved* | a shader or world pack waits for your approval | **REVIEW** in World DNA, or `node scripts/pack.js approve <id>` |
 | *… files changed after approval* | an installed pack's files were modified | reinstall it (`node scripts/pack.js install <folder>`) and approve again |
 | Black or frozen world | no WebGL2 (the player falls back), or a GPU driver problem | try another browser; set Quality to Low |
 | Windows cannot open the player of a receiver in WSL | localhost forwarding off | [WSL.md](WSL.md) |
+| In OBS the Construct shows instead of the living world | OBS's browser has no WebGL (typically no usable GPU with hardware acceleration on) | OBS → Settings → Advanced → turn off *Browser Source Hardware Acceleration*, restart OBS |
 
 Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder or its token.

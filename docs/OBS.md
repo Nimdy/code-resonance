@@ -32,5 +32,9 @@ Run on the machine and OBS version you will stream with; record the answers.
 - **OBS Studio itself:** `qualification/obs/obs.qual.js` runs OBS (official PPA build) in a disposable GitHub Actions
   virtual machine under Xvfb with software OpenGL: it adds the overlay as a Browser Source through obs-websocket, checks
   the source renders and moves (source screenshots), that the music reaches OBS's mixer (audio meters), and records with
-  OBS and measures the file. It never installs anything on a working machine. Results and what passed are in
+  OBS and measures the file. It never installs anything on a working machine. Result: 6/6 with OBS 32.2.0 (overlay
+  rendering and moving, music in OBS's mixer, an OBS recording with H.264 video and AAC sound); details in
   [QUALIFICATION.md](QUALIFICATION.md). OBS on Windows and macOS, with a GPU, has not been run.
+- **On a machine without a GPU**, OBS's default browser hardware acceleration leaves the page without WebGL and the
+  player shows the Construct instead of the living world: turn off *Settings → Advanced → Browser Source Hardware
+  Acceleration* there.
