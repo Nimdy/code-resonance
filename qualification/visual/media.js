@@ -112,8 +112,11 @@ function markers(file,{threshold=.6}={}){
   const flashes=[];for(let i=1;i<f.length;i++)if(green(f[i])&&!green(f[i-1]))flashes.push({t:f[i].t,prev:f[i-1].t,frame:i});
   const rate=48000,x=pcm(file,rate),c=correlate(x,chirp(rate)),chirps=[];
   for(let i=1;i<c.length-1;i++)if(c[i]>threshold&&c[i]>=c[i-1]&&c[i]>=c[i+1]&&(!chirps.length||i/rate-chirps.at(-1).t>.3))chirps.push({t:i/rate,r:+c[i].toFixed(3)});
-  const pairs=flashes.map(fl=>{const ch=chirps.reduce((b,a)=>!b||Math.abs(a.t-fl.t)<Math.abs(b.t-fl.t)?a:b,null);
-    if(!ch||Math.abs(ch.t-fl.t)>.6)return {flash:+fl.t.toFixed(4),prevFrame:+fl.prev.toFixed(4),chirp:null};
+  // The flash occurred after the previous captured frame and by the flash frame: a chirp is paired by its distance to
+  // that interval (at a few frames a second the flash frame can come long after the chirp).
+  const gap=(a,fl)=>a.t<fl.prev?fl.prev-a.t:a.t>fl.t?a.t-fl.t:0;
+  const pairs=flashes.map(fl=>{const ch=chirps.reduce((b,a)=>!b||gap(a,fl)<gap(b,fl)?a:b,null);
+    if(!ch||gap(ch,fl)>.6)return {flash:+fl.t.toFixed(4),prevFrame:+fl.prev.toFixed(4),chirp:null};
     // offset = sound − picture; the flash occurred in (prev, t]: offset lies in [ch−t, ch−prev].
     return {flash:+fl.t.toFixed(4),prevFrame:+fl.prev.toFixed(4),chirp:+ch.t.toFixed(4),r:ch.r,offsetMs:Math.round((ch.t-fl.t)*1000),offsetRangeMs:[Math.round((ch.t-fl.t)*1000),Math.round((ch.t-fl.prev)*1000)]};});
   const offsets=pairs.filter(p=>p.chirp!==null).map(p=>p.offsetMs);

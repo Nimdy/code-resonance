@@ -124,8 +124,9 @@ function verify(label,rec,{seconds,sync=true,minChanging=.3,gateQuality=true}){
     // Markers v2 (green flash + chirp, matched filter): each marker's offset is an interval bounded by frame quantization.
     const res=Math.round(a.frameInterval?.median||33);
     const s=media.markers(rec.file);a.sync=s;const paired=s.pairs.filter(p=>p.chirp!==null);
-    check(`${label}: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)`,
-      rec.markers>0&&s.flashes>=rec.markers&&paired.length===s.pairs.length&&paired.every(p=>Math.abs(p.offsetMs)<=250+res),
+    check(`${label}: functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)`,
+      // The offset is an interval (the flash happened between two captured frames): its nearest bound is judged.
+      rec.markers>0&&s.flashes>=rec.markers&&paired.length===s.pairs.length&&paired.every(p=>(p.offsetRangeMs[0]<=0&&p.offsetRangeMs[1]>=0?0:Math.min(Math.abs(p.offsetRangeMs[0]),Math.abs(p.offsetRangeMs[1])))<=250+res),
       `${rec.markers} markers, ${s.flashes} flashes, ${s.chirps} chirps; offsets ${paired.map(p=>`${p.offsetRangeMs[0]}…${p.offsetRangeMs[1]}`).join(', ')} ms (sound − picture)`);
     const median=paired.length?[...paired.map(p=>p.offsetMs)].sort((x,y)=>x-y)[Math.floor(paired.length/2)]:null;
     quality(`${label}: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)`,
