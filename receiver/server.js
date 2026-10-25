@@ -189,7 +189,7 @@ function createService(options={}) {
   const port=Number(options.port??process.env.RESONANCE_PORT??4174);
   const host=options.host||'127.0.0.1';
   if(!LOOPBACK_HOSTS.includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');
-  let server,worker,token,actualPort,closing=false,startedAt=null,packPoll=null,lastPacks=null;
+  let server,worker,token,pairing=null,actualPort,closing=false,startedAt=null,packPoll=null,lastPacks=null;
   const flight=new Map();let cursor=0;
   const writes=new Map();const checkedJournals=new Set();
   let lastReceivedAt=0,lastProjectionAt=null,workerErrors=0;
@@ -310,7 +310,10 @@ function createService(options={}) {
   // recipes, and put back (+1) on every write.
   const recipeLocks=new Map();
   function withRecipeLock(id,fn){const prev=recipeLocks.get(id)||Promise.resolve();const next=prev.catch(()=>{}).then(fn);recipeLocks.set(id,next);return next;}
-  async function readRecipe(id){try{return JSON.parse(await fs.readFile(path.join(projectDir(id),'recipe.json'),'utf8'));}catch{return null;}}
+  // Recipes written before 0.5 (no revision) carry the generated information mode 'cinematic', which no interface could
+  // choose then: it becomes "follow the global setting", as it is for recipes generated now.
+  async function readRecipe(id){try{const r=JSON.parse(await fs.readFile(path.join(projectDir(id),'recipe.json'),'utf8'));
+    if(r&&r.revision===undefined&&r.overrides?.labels==='cinematic')r.overrides={...r.overrides,labels:null};return r;}catch{return null;}}
   async function storedRecipe(id){const raw=await readRecipe(id);if(!isPlain(raw))return {stored:null,revision:0};const {revision,...stored}=raw;return {stored,revision:Number.isInteger(revision)&&revision>0?revision:0};}
   async function writeRecipe(id,recipe,revision){
     await store.writeAtomic(path.join(projectDir(id),'recipe.json'),JSON.stringify({...recipe,revision},null,1));
@@ -431,7 +434,9 @@ function createService(options={}) {
       }
       // ---- Control sessions and change notifications
       if(req.method==='POST'&&pathname==='/api/session'){
-        const r=control.issue(req,expectedOrigins);
+        // The pairing key travels in a small JSON body; a request without one is simply not paired (refused below).
+        const body=(req.headers['content-type']||'').split(';')[0]==='application/json'?await readBody(req,res,1024):{};if(!body)return;
+        const r=control.issue(req,expectedOrigins,{pairing,offered:body.pairing});
         if(!r.ok){response(res,r.status,{error:r.error,code:r.code});return;}
         response(res,200,{capability:r.capability,expiresAt:r.expiresAt,scopes:r.scopes});return;
       }
@@ -623,12 +628,16 @@ function createService(options={}) {
     }catch(error){if(!res.headersSent)response(res,500,{error:'Receiver failure'});else res.destroy();console.error('[resonance receiver]',error);}
   }
   return {
-    get dataDir(){return dataDir;},get port(){return actualPort;},get token(){return token;},
+    get dataDir(){return dataDir;},get port(){return actualPort;},get token(){return token;},get pairing(){return pairing;},
     async start(){
       await fs.mkdir(dataDir,{recursive:true,mode:0o700});
       const authFile=path.join(dataDir,'receiver-auth.json');
-      try{const a=JSON.parse(await fs.readFile(authFile,'utf8'));token=String(a.token||'');if(token.length<40)throw Error('Invalid token');}
-      catch{token=crypto.randomBytes(32).toString('hex');await fs.writeFile(authFile,JSON.stringify({version:1,token,port}),{mode:0o600});}
+      // The ingestion token (extension, agent hooks) and the pairing key (browsers that may change configuration).
+      try{const a=JSON.parse(await fs.readFile(authFile,'utf8'));token=String(a.token||'');if(token.length<40)throw Error('Invalid token');
+        pairing=/^[0-9a-f]{64}$/.test(a.pairing||'')?a.pairing:null;}
+      catch{token=crypto.randomBytes(32).toString('hex');pairing=null;}
+      pairing||=crypto.randomBytes(32).toString('hex');
+      await fs.writeFile(authFile,JSON.stringify({version:1,token,port,pairing}),{mode:0o600});
       await fs.chmod(authFile,0o600).catch(()=>{});
       // Nothing waits in quarantine across runs: an import is reviewed and installed within one receiver's lifetime.
       imports.clear();
@@ -649,7 +658,7 @@ function createService(options={}) {
       await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});
       actualPort=server.address().port;startedAt=Date.now();
       // Auth hint stores port for VS Code extension, not an invitation to bind outside loopback.
-      await fs.writeFile(authFile,JSON.stringify({version:1,token,port:actualPort}),{mode:0o600});
+      await fs.writeFile(authFile,JSON.stringify({version:1,token,port:actualPort,pairing}),{mode:0o600});
       // Packs installed or approved from the command line reach open windows too: the registry's stamp, every 5 s.
       lastPacks=registry.snapshot();
       packPoll=setInterval(()=>{try{const s=registry.snapshot();if(s!==lastPacks){lastPacks=s;usage=null;usageEpoch++;changes.emit('packs');}}catch(e){console.warn('[resonance packs]',e.message);}},5000);packPoll.unref();
@@ -657,6 +666,8 @@ function createService(options={}) {
       listProjects().then(list=>{for(const p of list)if(!closing)evidence.get(p.id).catch(()=>{});}).catch(()=>{});
       console.log(`[CODE RESONANCE] Receiver listening: http://${host}:${actualPort}`);
       console.log(`[CODE RESONANCE] Local data: ${dataDir}`);
+      // The private link pairs a browser (once) so it may change settings, packs and integrations; keep it to yourself.
+      if(options.quiet!==true)console.log(`[CODE RESONANCE] Control Center (private link, pairs this browser): http://127.0.0.1:${actualPort}/#pair=${pairing}`);
       return this;
     },
     flush,

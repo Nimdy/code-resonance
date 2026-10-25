@@ -47,12 +47,13 @@ async function start(t,{events=true}={}){
     await post([ev('workspace.started',{name:NAME}),...Array.from({length:7},(_,i)=>ev('document.snapshot',{file:i?`src/part${i%2}/m${i}.ts`:FILE,content:`export function f${i}(){ return ${i}; }\n`,meta:{reason:'edit'}}))]);
     await svc.flush(projectId);
   }
-  const session=async(origin=base)=>{const r=await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:origin}});assert.equal(r.status,200);return (await r.json()).capability;};
+  const paired={'Content-Type':'application/json'},pairBody=()=>JSON.stringify({pairing:svc.pairing});
+  const session=async(origin=base)=>{const r=await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:origin,...paired},body:pairBody()});assert.equal(r.status,200);return (await r.json()).capability;};
   const capability=await session();
   const send=(route,body,{cap=capability,headers={}}={})=>fetch(base+route,{method:'POST',
     headers:{'Content-Type':'application/json',Origin:base,...(cap?{'X-Resonance-Capability':cap}:{}),...headers},body:Buffer.isBuffer(body)||typeof body==='string'?body:JSON.stringify(body)});
   const get=async(route,headers={})=>{const r=await fetch(base+route,{headers});assert.equal(r.status,200,`${route}: ${r.status}`);return r.json();};
-  return {svc,dir,base,projectId,ev,post,session,capability,send,get};
+  return {pairBody,svc,dir,base,projectId,ev,post,session,capability,send,get};
 }
 // The change stream, read with fetch and a reader: every `data:` message and the `hello` event, parsed.
 async function changeStream(base){
@@ -66,20 +67,29 @@ async function changeStream(base){
   return {messages,until,close:()=>ac.abort()};
 }
 test('Control sessions are issued only to the receiver\'s own page; every administrative route refuses without a valid capability',async t=>{
-  const {base,projectId,send,capability}=await start(t,{events:false});
+  const {base,projectId,send,capability,pairBody,svc,dir}=await start(t,{events:false});
   assert.match(capability,/^[0-9a-f]{64}$/);
-  const issued=await (await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base}})).json();
+  const issued=await (await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:base}})).json();
   assert(issued.expiresAt>Date.now());assert.deepEqual(issued.scopes,['configure','packs','integrations']);
   assert.notEqual(issued.capability,capability,'each session is its own capability');
   const port=new URL(base).port;
-  assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:`http://localhost:${port}`}})).status,200,'the localhost origin is the same receiver');
-  assert.equal((await fetch(`${base}/api/session`,{method:'POST'})).status,403,'no Origin');
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:`http://localhost:${port}`}})).status,200,'the localhost origin is the same receiver');
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json'}})).status,403,'no Origin');
   for(const origin of ['http://evil.example',`http://127.0.0.1:${Number(port)+1}`,'null'])
-    assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:origin}})).status,403,origin);
-  const cross=await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base,'Sec-Fetch-Site':'cross-site'}});
+    assert.equal((await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:origin}})).status,403,origin);
+  const cross=await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:base,'Sec-Fetch-Site':'cross-site'}});
   assert.equal(cross.status,403);assert.equal((await cross.json()).code,'cross-site-refused');
-  assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base,'Sec-Fetch-Dest':'iframe'}})).status,403,'a frame navigation');
-  assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base,'Sec-Fetch-Site':'same-origin','Sec-Fetch-Dest':'empty'}})).status,200,'a fetch from the page');
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:base,'Sec-Fetch-Dest':'iframe'}})).status,403,'a frame navigation');
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',body:pairBody(),headers:{'Content-Type':'application/json',Origin:base,'Sec-Fetch-Site':'same-origin','Sec-Fetch-Dest':'empty'}})).status,200,'a fetch from the page');
+  // Pairing: loopback and Origin are not enough (any local process can send them); the key from receiver-auth.json is.
+  for(const [what,body] of [['no key',undefined],['no body',null],['a wrong key','0'.repeat(64)],['a short key',svc.pairing.slice(0,10)]]){
+    const r=await fetch(`${base}/api/session`,{method:'POST',...(body===null?{headers:{Origin:base}}:{headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({pairing:body})})});
+    assert.equal(r.status,403,what);assert.equal((await r.json()).code,'pairing-required',what);}
+  assert.match(svc.pairing,/^[0-9a-f]{64}$/);assert.notEqual(svc.pairing,svc.token);
+  const auth=JSON.parse(fs.readFileSync(path.join(dir,'receiver-auth.json'),'utf8'));assert.equal(auth.pairing,svc.pairing);
+  if(process.platform!=='win32')assert.equal(fs.statSync(path.join(dir,'receiver-auth.json')).mode&0o077,0,'the key file is private');
+  for(const route of ['/api/status','/api/integrations','/api/settings','/health','/api/projects']){
+    const text=await (await fetch(base+route,{headers:{'X-Resonance-Capability':issued.capability}})).text();assert(!text.includes(svc.pairing),route);}
   for(const route of ADMIN){
     const r=`${route}${route.startsWith('/api/recipe')||route==='/api/preferences'?`?id=${projectId}`:''}`;
     const none=await send(r,{},{cap:null});assert.equal(none.status,401,`${route} without a capability`);assert.equal((await none.json()).code,'capability-required');

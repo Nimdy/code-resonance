@@ -242,10 +242,14 @@ async function recordPrompt(){
   const meta={fingerprint:hash(content).slice(0,20),length:content.length,source:'manual'};
   send(recording,'agent.prompt.submitted',{meta,...(conf().get('capturePromptText',false)?{text:content}:{})});
 }
+// The Control Center opens paired (its private link carries the receiver's pairing key, readable by this account only);
+// the OBS view never needs it.
+function pairingFragment(){try{const a=JSON.parse(require('node:fs').readFileSync(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));
+  return /^[0-9a-f]{64}$/.test(a.pairing||'')?`#pair=${a.pairing}`:'';}catch{return '';}}
 async function openStage(overlay=false){
   const port=conf().get('receiverPort',4174);
   const project=recording?`?project=${recording.projectId}`:'';
-  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}`));
+  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}${pairingFragment()}`));
 }
 // One click from the status bar to everything a performer needs while coding.
 async function menu(context){

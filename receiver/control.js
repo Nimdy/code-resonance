@@ -3,6 +3,9 @@
 // (POST /api/session) and sends it back in X-Resonance-Capability. A custom header forces a CORS preflight for any
 // cross-origin page and the receiver never answers one, so another site cannot make the browser send it (CSRF-proof).
 // Capabilities live in memory only, keyed by their sha256 (the raw value is never kept): a restart invalidates them all.
+// Pairing: a capability is issued only for the receiver's pairing key (receiver-auth.json, readable by its owner only),
+// which the page receives once in a link (`npm start`, `npm run doctor`, VS Code's Open Stage) and keeps. Loopback and
+// Origin alone would admit any local process, including another account on the same computer.
 const crypto=require('node:crypto');
 const SCOPES=Object.freeze(['configure','packs','integrations']);
 // The socket address, not a header: a LAN client of a receiver started with RESONANCE_ALLOW_REMOTE=1 cannot forge it.
@@ -15,13 +18,15 @@ function originOk(req,expectedOrigins){const o=req?.headers?.origin;return typeo
 function createControl({ttlMs=12*3600*1000,max=64,now=Date.now}={}){
   // Insertion order is recency order (a verified use re-inserts), so the first entry is the least recently used.
   const live=new Map();
-  function issue(req,expectedOrigins){
+  function issue(req,expectedOrigins,{pairing=null,offered=null}={}){
     if(!loopback(req))return refuse(403,'remote-refused','Control sessions are issued to loopback clients only');
     if(!originOk(req,expectedOrigins))return refuse(403,'origin-refused','Same-origin request required');
     // Fetch metadata, when the browser sends it: a fetch() from the player page itself, never a navigation or a frame.
     const site=req.headers['sec-fetch-site'],dest=req.headers['sec-fetch-dest'];
     if(site!==undefined&&site!=='same-origin')return refuse(403,'cross-site-refused','Same-origin fetch required');
     if(dest!==undefined&&dest!=='empty')return refuse(403,'cross-site-refused','Unexpected request destination');
+    if(pairing&&!(typeof offered==='string'&&offered.length===pairing.length&&crypto.timingSafeEqual(Buffer.from(offered),Buffer.from(pairing))))
+      return refuse(403,'pairing-required','This browser is not paired with the receiver: open the link that npm start (or npm run doctor) prints');
     const t=now();
     // Room first from expired entries, then from the least recently used live ones.
     if(live.size>=max)for(const [k,v] of live)if(v.expiresAt<=t)live.delete(k);

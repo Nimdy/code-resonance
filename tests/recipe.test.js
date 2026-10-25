@@ -75,7 +75,7 @@ test('The receiver persists the recipe across restarts and accepts edits only fr
   assert.equal((await post({Origin:'http://evil.example'},{type:'family',family:'stellar-forge'})).status,403,'foreign origin: refused');
   const origin=`http://127.0.0.1:${svc.port}`;
   assert.equal((await post({Origin:origin},{type:'family',family:'stellar-forge'})).status,401,'same origin without a control capability: refused');
-  const {capability}=await (await fetch(`${origin}/api/session`,{method:'POST',headers:{Origin:origin}})).json();
+  const {capability}=await (await fetch(`${origin}/api/session`,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({pairing:svc.pairing})})).json();
   const ok=await post({Origin:origin,'X-Resonance-Capability':capability},{type:'family',family:'stellar-forge'});
   assert.equal(ok.status,200);assert.equal((await ok.json()).family,'stellar-forge');
   await svc.stop();svc=await startService(t,{port:0,dataDir:dir});

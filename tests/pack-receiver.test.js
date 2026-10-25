@@ -12,8 +12,8 @@ async function start(t){
   packs.install(path.join(EXAMPLES,'cymatic-field'),dir);packs.install(path.join(EXAMPLES,'ember-observatory'),dir);
   const svc=await startService(t,{port:0,dataDir:dir});
   const base=`http://127.0.0.1:${svc.port}`;
-  // Administrative requests carry the page's origin and a control capability (POST /api/session).
-  const {capability}=await (await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base}})).json();
+  // Administrative requests carry the page's origin and a control capability (POST /api/session, for the pairing key).
+  const {capability}=await (await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({pairing:svc.pairing})})).json();
   const origin={Origin:base,'X-Resonance-Capability':capability};
   const projectId=sha('pack-http');let seq=0;
   const ev=(file,content)=>({v:1,id:`ph-${++seq}-xxxxxxxx`,ts:Date.now(),kind:'document.snapshot',projectId,sessionId:'s',origin:'test',file,content,meta:{reason:'edit'}});
