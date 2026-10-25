@@ -81,7 +81,14 @@
   function kindClass(type){return type.startsWith('agent.')?'ai':type.startsWith('validation.')||type.startsWith('milestone.')||type==='source.parse.diagnostics'?'validation':type.startsWith('symbol.')||type.startsWith('dependency.')?'structure':'system';}
   function eventLabel(c){if(c.detail?.symbolType)return `${readable(c.type)} · ${c.detail.symbolType.toUpperCase()}`;return readable(c.type);}
   // ---- Performance clock and scheduling ------------------------------------------------------------------
-  function perfNow(){return FILM?filmTime:mode==='replay'?replayPos:Date.now()-delayMs;}
+  // Replay: the playhead advances once per animation frame; between frames it is extrapolated, so sound is scheduled
+  // from the current position (from the last frame's, a cue scheduled after a 150 ms main-thread stall sounded 150 ms
+  // late: qualification/results/sync/).
+  function perfNow(){
+    if(FILM)return filmTime;if(mode!=='replay')return Date.now()-delayMs;
+    if(!playback||!replay)return replayPos;
+    return Math.min(replay.end,replayPos+Math.min(300,Math.max(0,performance.now()-replayClock))*(Number($('speedSelect').value)||4));
+  }
   function at(time,fn){let i=queue.length;while(i>0&&queue[i-1].time>time)i--;queue.splice(i,0,{time,fn});}
   function runQueue(){const now=perfNow();while(queue.length&&queue[0].time<=now)queue.shift().fn();}
   const cueTime=(cue,entry)=>clamp(cue.ts,entry.start,Math.max(entry.start,entry.end-1));
