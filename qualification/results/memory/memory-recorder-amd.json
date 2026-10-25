@@ -1,0 +1,582 @@
+{
+ "at": "2026-10-25T00:09:14.076Z",
+ "gpu": "amd",
+ "variants": {
+  "fresh-stream": {
+   "recordings": 20,
+   "seconds": 5,
+   "size": "1280x720",
+   "rendererMB": {
+    "start": 94,
+    "after2": 111,
+    "end": 111,
+    "perRecordingAfter2": 0
+   },
+   "gpuMB": {
+    "start": 205,
+    "after2": 210,
+    "end": 211,
+    "perRecordingAfter2": 0.06
+   },
+   "series": [
+    {
+     "n": 0,
+     "renderer": 94,
+     "gpu": 205
+    },
+    {
+     "n": 1,
+     "bytes": 1392717,
+     "renderer": 109,
+     "gpu": 210
+    },
+    {
+     "n": 2,
+     "bytes": 1478492,
+     "renderer": 111,
+     "gpu": 210
+    },
+    {
+     "n": 3,
+     "bytes": 1503452,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 4,
+     "bytes": 1434259,
+     "renderer": 113,
+     "gpu": 210
+    },
+    {
+     "n": 5,
+     "bytes": 1404923,
+     "renderer": 116,
+     "gpu": 210
+    },
+    {
+     "n": 6,
+     "bytes": 1252055,
+     "renderer": 117,
+     "gpu": 210
+    },
+    {
+     "n": 7,
+     "bytes": 1312419,
+     "renderer": 117,
+     "gpu": 210
+    },
+    {
+     "n": 8,
+     "bytes": 1486467,
+     "renderer": 117,
+     "gpu": 211
+    },
+    {
+     "n": 9,
+     "bytes": 1422083,
+     "renderer": 113,
+     "gpu": 210
+    },
+    {
+     "n": 10,
+     "bytes": 1420890,
+     "renderer": 111,
+     "gpu": 210
+    },
+    {
+     "n": 11,
+     "bytes": 1303536,
+     "renderer": 111,
+     "gpu": 210
+    },
+    {
+     "n": 12,
+     "bytes": 1223822,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 13,
+     "bytes": 1271109,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 14,
+     "bytes": 1431748,
+     "renderer": 110,
+     "gpu": 210
+    },
+    {
+     "n": 15,
+     "bytes": 1610879,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 16,
+     "bytes": 1374429,
+     "renderer": 111,
+     "gpu": 210
+    },
+    {
+     "n": 17,
+     "bytes": 1380112,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 18,
+     "bytes": 1399162,
+     "renderer": 112,
+     "gpu": 210
+    },
+    {
+     "n": 19,
+     "bytes": 1329264,
+     "renderer": 111,
+     "gpu": 210
+    },
+    {
+     "n": 20,
+     "bytes": 1459766,
+     "renderer": 111,
+     "gpu": 211
+    }
+   ]
+  },
+  "fresh-canvas": {
+   "recordings": 20,
+   "seconds": 5,
+   "size": "1280x720",
+   "rendererMB": {
+    "start": 95,
+    "after2": 113,
+    "end": 112,
+    "perRecordingAfter2": -0.06
+   },
+   "gpuMB": {
+    "start": 205,
+    "after2": 210,
+    "end": 211,
+    "perRecordingAfter2": 0.06
+   },
+   "series": [
+    {
+     "n": 0,
+     "renderer": 95,
+     "gpu": 205
+    },
+    {
+     "n": 1,
+     "bytes": 1271769,
+     "renderer": 110,
+     "gpu": 210
+    },
+    {
+     "n": 2,
+     "bytes": 1302740,
+     "renderer": 113,
+     "gpu": 210
+    },
+    {
+     "n": 3,
+     "bytes": 1588780,
+     "renderer": 114,
+     "gpu": 210
+    },
+    {
+     "n": 4,
+     "bytes": 1437759,
+     "renderer": 114,
+     "gpu": 210
+    },
+    {
+     "n": 5,
+     "bytes": 1443346,
+     "renderer": 117,
+     "gpu": 211
+    },
+    {
+     "n": 6,
+     "bytes": 1330411,
+     "renderer": 117,
+     "gpu": 210
+    },
+    {
+     "n": 7,
+     "bytes": 1440986,
+     "renderer": 118,
+     "gpu": 211
+    },
+    {
+     "n": 8,
+     "bytes": 1602198,
+     "renderer": 119,
+     "gpu": 211
+    },
+    {
+     "n": 9,
+     "bytes": 1396169,
+     "renderer": 115,
+     "gpu": 210
+    },
+    {
+     "n": 10,
+     "bytes": 1505173,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 11,
+     "bytes": 1456049,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 12,
+     "bytes": 1237587,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 13,
+     "bytes": 1453494,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 14,
+     "bytes": 1456638,
+     "renderer": 112,
+     "gpu": 211
+    },
+    {
+     "n": 15,
+     "bytes": 1483330,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 16,
+     "bytes": 1452764,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 17,
+     "bytes": 1305479,
+     "renderer": 112,
+     "gpu": 211
+    },
+    {
+     "n": 18,
+     "bytes": 1265031,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 19,
+     "bytes": 1446262,
+     "renderer": 112,
+     "gpu": 211
+    },
+    {
+     "n": 20,
+     "bytes": 1467111,
+     "renderer": 112,
+     "gpu": 211
+    }
+   ]
+  },
+  "reused-track": {
+   "recordings": 20,
+   "seconds": 5,
+   "size": "1280x720",
+   "rendererMB": {
+    "start": 95,
+    "after2": 113,
+    "end": 113,
+    "perRecordingAfter2": 0
+   },
+   "gpuMB": {
+    "start": 205,
+    "after2": 211,
+    "end": 212,
+    "perRecordingAfter2": 0.06
+   },
+   "series": [
+    {
+     "n": 0,
+     "renderer": 95,
+     "gpu": 205
+    },
+    {
+     "n": 1,
+     "bytes": 1280361,
+     "renderer": 110,
+     "gpu": 211
+    },
+    {
+     "n": 2,
+     "bytes": 1346568,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 3,
+     "bytes": 1519622,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 4,
+     "bytes": 1482092,
+     "renderer": 115,
+     "gpu": 211
+    },
+    {
+     "n": 5,
+     "bytes": 1379338,
+     "renderer": 117,
+     "gpu": 211
+    },
+    {
+     "n": 6,
+     "bytes": 1425495,
+     "renderer": 117,
+     "gpu": 211
+    },
+    {
+     "n": 7,
+     "bytes": 1447312,
+     "renderer": 118,
+     "gpu": 212
+    },
+    {
+     "n": 8,
+     "bytes": 1377859,
+     "renderer": 119,
+     "gpu": 212
+    },
+    {
+     "n": 9,
+     "bytes": 1423123,
+     "renderer": 114,
+     "gpu": 211
+    },
+    {
+     "n": 10,
+     "bytes": 1530187,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 11,
+     "bytes": 1464216,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 12,
+     "bytes": 1276349,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 13,
+     "bytes": 1308251,
+     "renderer": 114,
+     "gpu": 211
+    },
+    {
+     "n": 14,
+     "bytes": 1347413,
+     "renderer": 112,
+     "gpu": 211
+    },
+    {
+     "n": 15,
+     "bytes": 1446087,
+     "renderer": 114,
+     "gpu": 211
+    },
+    {
+     "n": 16,
+     "bytes": 1455690,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 17,
+     "bytes": 1306208,
+     "renderer": 113,
+     "gpu": 211
+    },
+    {
+     "n": 18,
+     "bytes": 1288207,
+     "renderer": 114,
+     "gpu": 211
+    },
+    {
+     "n": 19,
+     "bytes": 1405322,
+     "renderer": 113,
+     "gpu": 212
+    },
+    {
+     "n": 20,
+     "bytes": 1362849,
+     "renderer": 113,
+     "gpu": 212
+    }
+   ]
+  },
+  "no-recorder": {
+   "recordings": 20,
+   "seconds": 5,
+   "size": "1280x720",
+   "rendererMB": {
+    "start": 95,
+    "after2": 100,
+    "end": 100,
+    "perRecordingAfter2": 0
+   },
+   "gpuMB": {
+    "start": 206,
+    "after2": 211,
+    "end": 211,
+    "perRecordingAfter2": 0
+   },
+   "series": [
+    {
+     "n": 0,
+     "renderer": 95,
+     "gpu": 206
+    },
+    {
+     "n": 1,
+     "bytes": 0,
+     "renderer": 98,
+     "gpu": 211
+    },
+    {
+     "n": 2,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 3,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 4,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 5,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 6,
+     "bytes": 0,
+     "renderer": 101,
+     "gpu": 211
+    },
+    {
+     "n": 7,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 8,
+     "bytes": 0,
+     "renderer": 101,
+     "gpu": 211
+    },
+    {
+     "n": 9,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 10,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 11,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 12,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 13,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 14,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 15,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 16,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 17,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 18,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 19,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    },
+    {
+     "n": 20,
+     "bytes": 0,
+     "renderer": 100,
+     "gpu": 211
+    }
+   ]
+  }
+ }
+}

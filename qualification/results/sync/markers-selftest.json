@@ -1,0 +1,121 @@
+{
+ "at": "2026-10-25T06:07:37.451Z",
+ "fps": 30,
+ "markers": [
+  {
+   "flashFrame": 45,
+   "trueOffsetMs": 0,
+   "reported": {
+    "offsetMs": -7,
+    "rangeMs": [
+     -7,
+     26
+    ],
+    "r": 0.812
+   },
+   "inside": true
+  },
+  {
+   "flashFrame": 120,
+   "trueOffsetMs": -60,
+   "reported": {
+    "offsetMs": -67,
+    "rangeMs": [
+     -67,
+     -34
+    ],
+    "r": 0.813
+   },
+   "inside": true
+  },
+  {
+   "flashFrame": 195,
+   "trueOffsetMs": 40,
+   "reported": {
+    "offsetMs": 33,
+    "rangeMs": [
+     33,
+     66
+    ],
+    "r": 0.813
+   },
+   "inside": true
+  },
+  {
+   "flashFrame": 270,
+   "trueOffsetMs": 100,
+   "reported": {
+    "offsetMs": 93,
+    "rangeMs": [
+     93,
+     126
+    ],
+    "r": 0.711
+   },
+   "inside": true
+  },
+  {
+   "flashFrame": 345,
+   "trueOffsetMs": -20,
+   "reported": {
+    "offsetMs": -27,
+    "rangeMs": [
+     -27,
+     6
+    ],
+    "r": 0.813
+   },
+   "inside": true
+  }
+ ],
+ "flashesFound": 5,
+ "chirpsFound": 5,
+ "distractors": {
+  "white": 2,
+  "cyan": 1,
+  "tones": 5
+ },
+ "firstMethod": {
+  "flashesFound": 7,
+  "clicksFound": 7,
+  "markers": 5,
+  "pairs": [
+   {
+    "video": 1.507,
+    "audio": 1.5,
+    "offsetMs": -7
+   },
+   {
+    "video": 3.007,
+    "audio": null,
+    "offsetMs": null
+   },
+   {
+    "video": 4.007,
+    "audio": 3.94,
+    "offsetMs": -67
+   },
+   {
+    "video": 6.507,
+    "audio": 6.54,
+    "offsetMs": 33
+   },
+   {
+    "video": 8.007,
+    "audio": null,
+    "offsetMs": null
+   },
+   {
+    "video": 9.007,
+    "audio": 9.1,
+    "offsetMs": 93
+   },
+   {
+    "video": 11.507,
+    "audio": 11.344,
+    "offsetMs": -163
+   }
+  ]
+ },
+ "pass": true
+}

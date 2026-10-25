@@ -1,0 +1,2739 @@
+{
+ "at": "2026-10-25T05:49:03.835Z",
+ "gpu": "amd",
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "reps": 3,
+ "seconds": 20,
+ "checks": [
+  {
+   "name": "stellar-720p: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-1080p: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-1080p-fixed: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "cymatic-720p: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "cymatic-1080p: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "cymatic-1080p-fixed: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-1080p-switching: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-1080p-load: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-1080p-live: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "cymatic-1080p-live: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  },
+  {
+   "name": "stellar-720p-stall: every scheduled marker found and paired",
+   "pass": true,
+   "detail": "12/12"
+  }
+ ],
+ "results": {
+  "stellar-720p": {
+   "condition": {
+    "key": "stellar-720p",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "720p"
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.99,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 42
+     },
+     "maxIntervalAfterStartupMs": 36,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.34,
+        "prevFrame": 2.307,
+        "chirp": 2.3071,
+        "r": 0.811,
+        "offsetMs": -33,
+        "offsetRangeMs": [
+         -33,
+         0
+        ]
+       },
+       {
+        "flash": 6.841,
+        "prevFrame": 6.808,
+        "chirp": 6.835,
+        "r": 0.753,
+        "offsetMs": -6,
+        "offsetRangeMs": [
+         -6,
+         27
+        ]
+       },
+       {
+        "flash": 11.374,
+        "prevFrame": 11.34,
+        "chirp": 11.3396,
+        "r": 0.772,
+        "offsetMs": -34,
+        "offsetRangeMs": [
+         -34,
+         0
+        ]
+       },
+       {
+        "flash": 15.873,
+        "prevFrame": 15.841,
+        "chirp": 15.8676,
+        "r": 0.749,
+        "offsetMs": -5,
+        "offsetRangeMs": [
+         -5,
+         27
+        ]
+       }
+      ],
+      "meanOffsetMs": -19,
+      "maxAbsOffsetMs": 34,
+      "spreadMs": 29,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 36,
+      "max": 49
+     },
+     "maxIntervalAfterStartupMs": 39,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.315,
+        "prevFrame": 2.281,
+        "chirp": 2.3044,
+        "r": 0.806,
+        "offsetMs": -11,
+        "offsetRangeMs": [
+         -11,
+         23
+        ]
+       },
+       {
+        "flash": 6.848,
+        "prevFrame": 6.815,
+        "chirp": 6.8323,
+        "r": 0.761,
+        "offsetMs": -16,
+        "offsetRangeMs": [
+         -16,
+         17
+        ]
+       },
+       {
+        "flash": 11.348,
+        "prevFrame": 11.315,
+        "chirp": 11.3368,
+        "r": 0.772,
+        "offsetMs": -11,
+        "offsetRangeMs": [
+         -11,
+         22
+        ]
+       },
+       {
+        "flash": 15.882,
+        "prevFrame": 15.848,
+        "chirp": 15.8561,
+        "r": 0.776,
+        "offsetMs": -26,
+        "offsetRangeMs": [
+         -26,
+         8
+        ]
+       }
+      ],
+      "meanOffsetMs": -16,
+      "maxAbsOffsetMs": 26,
+      "spreadMs": 15,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 49
+     },
+     "maxIntervalAfterStartupMs": 36,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.314,
+        "prevFrame": 2.281,
+        "chirp": 2.3352,
+        "r": 0.792,
+        "offsetMs": 21,
+        "offsetRangeMs": [
+         21,
+         54
+        ]
+       },
+       {
+        "flash": 6.848,
+        "prevFrame": 6.815,
+        "chirp": 6.8398,
+        "r": 0.759,
+        "offsetMs": -8,
+        "offsetRangeMs": [
+         -8,
+         25
+        ]
+       },
+       {
+        "flash": 11.348,
+        "prevFrame": 11.315,
+        "chirp": 11.3445,
+        "r": 0.75,
+        "offsetMs": -3,
+        "offsetRangeMs": [
+         -3,
+         30
+        ]
+       },
+       {
+        "flash": 15.848,
+        "prevFrame": 15.815,
+        "chirp": 15.8724,
+        "r": 0.764,
+        "offsetMs": 24,
+        "offsetRangeMs": [
+         24,
+         57
+        ]
+       }
+      ],
+      "meanOffsetMs": 9,
+      "maxAbsOffsetMs": 24,
+      "spreadMs": 32,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -8,
+    "p5Ms": -34,
+    "p95Ms": 24,
+    "minMs": -34,
+    "maxMs": 24,
+    "worstAbsMs": 34,
+    "fps": [
+     29.99,
+     29.98,
+     29.98
+    ],
+    "widestFrameIntervalAtFlashMs": 34
+   }
+  },
+  "stellar-1080p": {
+   "condition": {
+    "key": "stellar-1080p",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "1080p"
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.23,
+     "frameInterval": {
+      "median": 33,
+      "p95": 60,
+      "max": 85
+     },
+     "maxIntervalAfterStartupMs": 85,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.334,
+        "prevFrame": 2.302,
+        "chirp": 2.3069,
+        "r": 0.814,
+        "offsetMs": -27,
+        "offsetRangeMs": [
+         -27,
+         5
+        ]
+       },
+       {
+        "flash": 6.851,
+        "prevFrame": 6.817,
+        "chirp": 6.8146,
+        "r": 0.735,
+        "offsetMs": -36,
+        "offsetRangeMs": [
+         -36,
+         -2
+        ]
+       },
+       {
+        "flash": 11.359,
+        "prevFrame": 11.303,
+        "chirp": 11.3397,
+        "r": 0.766,
+        "offsetMs": -19,
+        "offsetRangeMs": [
+         -19,
+         37
+        ]
+       },
+       {
+        "flash": 15.862,
+        "prevFrame": 15.83,
+        "chirp": 15.8443,
+        "r": 0.768,
+        "offsetMs": -18,
+        "offsetRangeMs": [
+         -18,
+         14
+        ]
+       }
+      ],
+      "meanOffsetMs": -25,
+      "maxAbsOffsetMs": 36,
+      "spreadMs": 18,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 26.02,
+     "frameInterval": {
+      "median": 33,
+      "p95": 63,
+      "max": 81
+     },
+     "maxIntervalAfterStartupMs": 69,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.321,
+        "prevFrame": 2.289,
+        "chirp": 2.3327,
+        "r": 0.772,
+        "offsetMs": 12,
+        "offsetRangeMs": [
+         12,
+         44
+        ]
+       },
+       {
+        "flash": 6.828,
+        "prevFrame": 6.795,
+        "chirp": 6.8374,
+        "r": 0.748,
+        "offsetMs": 9,
+        "offsetRangeMs": [
+         9,
+         42
+        ]
+       },
+       {
+        "flash": 11.347,
+        "prevFrame": 11.314,
+        "chirp": 11.3652,
+        "r": 0.766,
+        "offsetMs": 18,
+        "offsetRangeMs": [
+         18,
+         51
+        ]
+       },
+       {
+        "flash": 15.867,
+        "prevFrame": 15.804,
+        "chirp": 15.8699,
+        "r": 0.75,
+        "offsetMs": 3,
+        "offsetRangeMs": [
+         3,
+         66
+        ]
+       }
+      ],
+      "meanOffsetMs": 11,
+      "maxAbsOffsetMs": 18,
+      "spreadMs": 15,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 23.83,
+     "frameInterval": {
+      "median": 34,
+      "p95": 65,
+      "max": 69
+     },
+     "maxIntervalAfterStartupMs": 69,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.366,
+        "prevFrame": 2.3,
+        "chirp": 2.3085,
+        "r": 0.777,
+        "offsetMs": -57,
+        "offsetRangeMs": [
+         -57,
+         9
+        ]
+       },
+       {
+        "flash": 6.826,
+        "prevFrame": 6.764,
+        "chirp": 6.8363,
+        "r": 0.746,
+        "offsetMs": 10,
+        "offsetRangeMs": [
+         10,
+         72
+        ]
+       },
+       {
+        "flash": 11.364,
+        "prevFrame": 11.331,
+        "chirp": 11.3411,
+        "r": 0.767,
+        "offsetMs": -23,
+        "offsetRangeMs": [
+         -23,
+         10
+        ]
+       },
+       {
+        "flash": 15.876,
+        "prevFrame": 15.844,
+        "chirp": 15.8689,
+        "r": 0.77,
+        "offsetMs": -7,
+        "offsetRangeMs": [
+         -7,
+         25
+        ]
+       }
+      ],
+      "meanOffsetMs": -19,
+      "maxAbsOffsetMs": 57,
+      "spreadMs": 67,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -7,
+    "p5Ms": -57,
+    "p95Ms": 18,
+    "minMs": -57,
+    "maxMs": 18,
+    "worstAbsMs": 57,
+    "fps": [
+     29.23,
+     26.02,
+     23.83
+    ],
+    "widestFrameIntervalAtFlashMs": 66
+   }
+  },
+  "stellar-1080p-fixed": {
+   "condition": {
+    "key": "stellar-1080p-fixed",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "1080p",
+    "quality": 0
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 24.96,
+     "frameInterval": {
+      "median": 34,
+      "p95": 64,
+      "max": 104
+     },
+     "maxIntervalAfterStartupMs": 104,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.328,
+        "prevFrame": 2.269,
+        "chirp": 2.307,
+        "r": 0.816,
+        "offsetMs": -21,
+        "offsetRangeMs": [
+         -21,
+         38
+        ]
+       },
+       {
+        "flash": 6.834,
+        "prevFrame": 6.802,
+        "chirp": 6.835,
+        "r": 0.752,
+        "offsetMs": 1,
+        "offsetRangeMs": [
+         1,
+         33
+        ]
+       },
+       {
+        "flash": 11.346,
+        "prevFrame": 11.314,
+        "chirp": 11.3397,
+        "r": 0.767,
+        "offsetMs": -6,
+        "offsetRangeMs": [
+         -6,
+         26
+        ]
+       },
+       {
+        "flash": 15.867,
+        "prevFrame": 15.835,
+        "chirp": 15.8444,
+        "r": 0.783,
+        "offsetMs": -23,
+        "offsetRangeMs": [
+         -23,
+         9
+        ]
+       }
+      ],
+      "meanOffsetMs": -12,
+      "maxAbsOffsetMs": 23,
+      "spreadMs": 24,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 25.06,
+     "frameInterval": {
+      "median": 33,
+      "p95": 64,
+      "max": 83
+     },
+     "maxIntervalAfterStartupMs": 83,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.316,
+        "prevFrame": 2.299,
+        "chirp": 2.3234,
+        "r": 0.789,
+        "offsetMs": 7,
+        "offsetRangeMs": [
+         7,
+         24
+        ]
+       },
+       {
+        "flash": 6.843,
+        "prevFrame": 6.809,
+        "chirp": 6.8279,
+        "r": 0.745,
+        "offsetMs": -15,
+        "offsetRangeMs": [
+         -15,
+         19
+        ]
+       },
+       {
+        "flash": 11.355,
+        "prevFrame": 11.322,
+        "chirp": 11.3559,
+        "r": 0.783,
+        "offsetMs": 1,
+        "offsetRangeMs": [
+         1,
+         34
+        ]
+       },
+       {
+        "flash": 15.87,
+        "prevFrame": 15.81,
+        "chirp": 15.8606,
+        "r": 0.772,
+        "offsetMs": -9,
+        "offsetRangeMs": [
+         -9,
+         51
+        ]
+       }
+      ],
+      "meanOffsetMs": -4,
+      "maxAbsOffsetMs": 15,
+      "spreadMs": 22,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 25.71,
+     "frameInterval": {
+      "median": 33,
+      "p95": 64,
+      "max": 69
+     },
+     "maxIntervalAfterStartupMs": 69,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.322,
+        "prevFrame": 2.289,
+        "chirp": 2.3296,
+        "r": 0.792,
+        "offsetMs": 8,
+        "offsetRangeMs": [
+         8,
+         41
+        ]
+       },
+       {
+        "flash": 6.873,
+        "prevFrame": 6.812,
+        "chirp": 6.8342,
+        "r": 0.747,
+        "offsetMs": -39,
+        "offsetRangeMs": [
+         -39,
+         22
+        ]
+       },
+       {
+        "flash": 11.341,
+        "prevFrame": 11.309,
+        "chirp": 11.3534,
+        "r": 0.77,
+        "offsetMs": 12,
+        "offsetRangeMs": [
+         12,
+         44
+        ]
+       },
+       {
+        "flash": 15.875,
+        "prevFrame": 15.844,
+        "chirp": 15.8667,
+        "r": 0.746,
+        "offsetMs": -8,
+        "offsetRangeMs": [
+         -8,
+         23
+        ]
+       }
+      ],
+      "meanOffsetMs": -7,
+      "maxAbsOffsetMs": 39,
+      "spreadMs": 51,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -6,
+    "p5Ms": -39,
+    "p95Ms": 12,
+    "minMs": -39,
+    "maxMs": 12,
+    "worstAbsMs": 39,
+    "fps": [
+     24.96,
+     25.06,
+     25.71
+    ],
+    "widestFrameIntervalAtFlashMs": 61
+   }
+  },
+  "cymatic-720p": {
+   "condition": {
+    "key": "cymatic-720p",
+    "world": {
+     "type": "family",
+     "family": "halcyon.cymatic-field"
+    },
+    "size": "720p",
+    "remote": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 47
+     },
+     "maxIntervalAfterStartupMs": 35,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.312,
+        "prevFrame": 2.279,
+        "chirp": 2.3334,
+        "r": 0.803,
+        "offsetMs": 21,
+        "offsetRangeMs": [
+         21,
+         54
+        ]
+       },
+       {
+        "flash": 6.846,
+        "prevFrame": 6.812,
+        "chirp": 6.8383,
+        "r": 0.772,
+        "offsetMs": -8,
+        "offsetRangeMs": [
+         -8,
+         26
+        ]
+       },
+       {
+        "flash": 11.346,
+        "prevFrame": 11.312,
+        "chirp": 11.3428,
+        "r": 0.742,
+        "offsetMs": -3,
+        "offsetRangeMs": [
+         -3,
+         31
+        ]
+       },
+       {
+        "flash": 15.845,
+        "prevFrame": 15.812,
+        "chirp": 15.8476,
+        "r": 0.753,
+        "offsetMs": 3,
+        "offsetRangeMs": [
+         3,
+         36
+        ]
+       }
+      ],
+      "meanOffsetMs": 3,
+      "maxAbsOffsetMs": 21,
+      "spreadMs": 29,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.97,
+     "frameInterval": {
+      "median": 33,
+      "p95": 50,
+      "max": 52
+     },
+     "maxIntervalAfterStartupMs": 52,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.35,
+        "prevFrame": 2.3,
+        "chirp": 2.3275,
+        "r": 0.77,
+        "offsetMs": -22,
+        "offsetRangeMs": [
+         -22,
+         28
+        ]
+       },
+       {
+        "flash": 6.851,
+        "prevFrame": 6.8,
+        "chirp": 6.8323,
+        "r": 0.754,
+        "offsetMs": -19,
+        "offsetRangeMs": [
+         -19,
+         32
+        ]
+       },
+       {
+        "flash": 11.351,
+        "prevFrame": 11.317,
+        "chirp": 11.3601,
+        "r": 0.763,
+        "offsetMs": 9,
+        "offsetRangeMs": [
+         9,
+         43
+        ]
+       },
+       {
+        "flash": 15.85,
+        "prevFrame": 15.817,
+        "chirp": 15.8648,
+        "r": 0.776,
+        "offsetMs": 15,
+        "offsetRangeMs": [
+         15,
+         48
+        ]
+       }
+      ],
+      "meanOffsetMs": -4,
+      "maxAbsOffsetMs": 22,
+      "spreadMs": 37,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 50,
+      "max": 52
+     },
+     "maxIntervalAfterStartupMs": 52,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.35,
+        "prevFrame": 2.3,
+        "chirp": 2.3119,
+        "r": 0.789,
+        "offsetMs": -38,
+        "offsetRangeMs": [
+         -38,
+         12
+        ]
+       },
+       {
+        "flash": 6.85,
+        "prevFrame": 6.816,
+        "chirp": 6.8398,
+        "r": 0.757,
+        "offsetMs": -10,
+        "offsetRangeMs": [
+         -10,
+         24
+        ]
+       },
+       {
+        "flash": 11.35,
+        "prevFrame": 11.317,
+        "chirp": 11.3445,
+        "r": 0.742,
+        "offsetMs": -5,
+        "offsetRangeMs": [
+         -5,
+         28
+        ]
+       },
+       {
+        "flash": 15.85,
+        "prevFrame": 15.817,
+        "chirp": 15.8492,
+        "r": 0.769,
+        "offsetMs": -1,
+        "offsetRangeMs": [
+         -1,
+         32
+        ]
+       }
+      ],
+      "meanOffsetMs": -13,
+      "maxAbsOffsetMs": 38,
+      "spreadMs": 37,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -3,
+    "p5Ms": -38,
+    "p95Ms": 21,
+    "minMs": -38,
+    "maxMs": 21,
+    "worstAbsMs": 38,
+    "fps": [
+     29.98,
+     29.97,
+     29.98
+    ],
+    "widestFrameIntervalAtFlashMs": 51
+   }
+  },
+  "cymatic-1080p": {
+   "condition": {
+    "key": "cymatic-1080p",
+    "world": {
+     "type": "family",
+     "family": "halcyon.cymatic-field"
+    },
+    "size": "1080p",
+    "remote": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 49
+     },
+     "maxIntervalAfterStartupMs": 35,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.314,
+        "prevFrame": 2.281,
+        "chirp": 2.3104,
+        "r": 0.802,
+        "offsetMs": -4,
+        "offsetRangeMs": [
+         -4,
+         29
+        ]
+       },
+       {
+        "flash": 6.847,
+        "prevFrame": 6.814,
+        "chirp": 6.8381,
+        "r": 0.752,
+        "offsetMs": -9,
+        "offsetRangeMs": [
+         -9,
+         24
+        ]
+       },
+       {
+        "flash": 11.347,
+        "prevFrame": 11.314,
+        "chirp": 11.3429,
+        "r": 0.763,
+        "offsetMs": -4,
+        "offsetRangeMs": [
+         -4,
+         29
+        ]
+       },
+       {
+        "flash": 15.88,
+        "prevFrame": 15.847,
+        "chirp": 15.8708,
+        "r": 0.781,
+        "offsetMs": -9,
+        "offsetRangeMs": [
+         -9,
+         24
+        ]
+       }
+      ],
+      "meanOffsetMs": -6,
+      "maxAbsOffsetMs": 9,
+      "spreadMs": 5,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.88,
+     "frameInterval": {
+      "median": 33,
+      "p95": 36,
+      "max": 144
+     },
+     "maxIntervalAfterStartupMs": 144,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.313,
+        "prevFrame": 2.281,
+        "chirp": 2.3355,
+        "r": 0.793,
+        "offsetMs": 22,
+        "offsetRangeMs": [
+         22,
+         54
+        ]
+       },
+       {
+        "flash": 6.846,
+        "prevFrame": 6.814,
+        "chirp": 6.8402,
+        "r": 0.767,
+        "offsetMs": -6,
+        "offsetRangeMs": [
+         -6,
+         26
+        ]
+       },
+       {
+        "flash": 11.346,
+        "prevFrame": 11.313,
+        "chirp": 11.3681,
+        "r": 0.758,
+        "offsetMs": 22,
+        "offsetRangeMs": [
+         22,
+         55
+        ]
+       },
+       {
+        "flash": 15.846,
+        "prevFrame": 15.813,
+        "chirp": 15.8727,
+        "r": 0.769,
+        "offsetMs": 27,
+        "offsetRangeMs": [
+         27,
+         60
+        ]
+       }
+      ],
+      "meanOffsetMs": 16,
+      "maxAbsOffsetMs": 27,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 49
+     },
+     "maxIntervalAfterStartupMs": 35,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.314,
+        "prevFrame": 2.282,
+        "chirp": 2.3074,
+        "r": 0.77,
+        "offsetMs": -7,
+        "offsetRangeMs": [
+         -7,
+         25
+        ]
+       },
+       {
+        "flash": 6.848,
+        "prevFrame": 6.815,
+        "chirp": 6.8353,
+        "r": 0.754,
+        "offsetMs": -13,
+        "offsetRangeMs": [
+         -13,
+         20
+        ]
+       },
+       {
+        "flash": 11.347,
+        "prevFrame": 11.314,
+        "chirp": 11.3401,
+        "r": 0.763,
+        "offsetMs": -7,
+        "offsetRangeMs": [
+         -7,
+         26
+        ]
+       },
+       {
+        "flash": 15.848,
+        "prevFrame": 15.814,
+        "chirp": 15.8447,
+        "r": 0.739,
+        "offsetMs": -3,
+        "offsetRangeMs": [
+         -3,
+         31
+        ]
+       }
+      ],
+      "meanOffsetMs": -7,
+      "maxAbsOffsetMs": 13,
+      "spreadMs": 10,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -4,
+    "p5Ms": -13,
+    "p95Ms": 27,
+    "minMs": -13,
+    "maxMs": 27,
+    "worstAbsMs": 27,
+    "fps": [
+     29.98,
+     29.88,
+     29.98
+    ],
+    "widestFrameIntervalAtFlashMs": 34
+   }
+  },
+  "cymatic-1080p-fixed": {
+   "condition": {
+    "key": "cymatic-1080p-fixed",
+    "world": {
+     "type": "family",
+     "family": "halcyon.cymatic-field"
+    },
+    "size": "1080p",
+    "quality": 0,
+    "remote": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 36,
+      "max": 47
+     },
+     "maxIntervalAfterStartupMs": 37,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.313,
+        "prevFrame": 2.28,
+        "chirp": 2.3335,
+        "r": 0.816,
+        "offsetMs": 20,
+        "offsetRangeMs": [
+         20,
+         53
+        ]
+       },
+       {
+        "flash": 6.846,
+        "prevFrame": 6.813,
+        "chirp": 6.8383,
+        "r": 0.775,
+        "offsetMs": -8,
+        "offsetRangeMs": [
+         -8,
+         25
+        ]
+       },
+       {
+        "flash": 11.347,
+        "prevFrame": 11.313,
+        "chirp": 11.3428,
+        "r": 0.744,
+        "offsetMs": -4,
+        "offsetRangeMs": [
+         -4,
+         30
+        ]
+       },
+       {
+        "flash": 15.846,
+        "prevFrame": 15.813,
+        "chirp": 15.8707,
+        "r": 0.765,
+        "offsetMs": 25,
+        "offsetRangeMs": [
+         25,
+         58
+        ]
+       }
+      ],
+      "meanOffsetMs": 8,
+      "maxAbsOffsetMs": 25,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 49,
+      "max": 51
+     },
+     "maxIntervalAfterStartupMs": 51,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.317,
+        "prevFrame": 2.283,
+        "chirp": 2.3356,
+        "r": 0.782,
+        "offsetMs": 19,
+        "offsetRangeMs": [
+         19,
+         53
+        ]
+       },
+       {
+        "flash": 6.85,
+        "prevFrame": 6.817,
+        "chirp": 6.8402,
+        "r": 0.767,
+        "offsetMs": -10,
+        "offsetRangeMs": [
+         -10,
+         23
+        ]
+       },
+       {
+        "flash": 11.35,
+        "prevFrame": 11.317,
+        "chirp": 11.3681,
+        "r": 0.757,
+        "offsetMs": 18,
+        "offsetRangeMs": [
+         18,
+         51
+        ]
+       },
+       {
+        "flash": 15.85,
+        "prevFrame": 15.816,
+        "chirp": 15.8727,
+        "r": 0.769,
+        "offsetMs": 23,
+        "offsetRangeMs": [
+         23,
+         57
+        ]
+       }
+      ],
+      "meanOffsetMs": 13,
+      "maxAbsOffsetMs": 23,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 48
+     },
+     "maxIntervalAfterStartupMs": 37,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.314,
+        "prevFrame": 2.281,
+        "chirp": 2.3274,
+        "r": 0.769,
+        "offsetMs": 13,
+        "offsetRangeMs": [
+         13,
+         46
+        ]
+       },
+       {
+        "flash": 6.847,
+        "prevFrame": 6.814,
+        "chirp": 6.8322,
+        "r": 0.746,
+        "offsetMs": -15,
+        "offsetRangeMs": [
+         -15,
+         18
+        ]
+       },
+       {
+        "flash": 11.348,
+        "prevFrame": 11.314,
+        "chirp": 11.3368,
+        "r": 0.779,
+        "offsetMs": -11,
+        "offsetRangeMs": [
+         -11,
+         23
+        ]
+       },
+       {
+        "flash": 15.847,
+        "prevFrame": 15.814,
+        "chirp": 15.8648,
+        "r": 0.742,
+        "offsetMs": 18,
+        "offsetRangeMs": [
+         18,
+         51
+        ]
+       }
+      ],
+      "meanOffsetMs": 1,
+      "maxAbsOffsetMs": 18,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": 18,
+    "p5Ms": -15,
+    "p95Ms": 25,
+    "minMs": -15,
+    "maxMs": 25,
+    "worstAbsMs": 25,
+    "fps": [
+     29.98,
+     29.98,
+     29.98
+    ],
+    "widestFrameIntervalAtFlashMs": 34
+   }
+  },
+  "stellar-1080p-switching": {
+   "condition": {
+    "key": "stellar-1080p-switching",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "1080p",
+    "switching": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 25.38,
+     "frameInterval": {
+      "median": 38,
+      "p95": 58,
+      "max": 325
+     },
+     "maxIntervalAfterStartupMs": 325,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.31,
+        "prevFrame": 2.277,
+        "chirp": 2.307,
+        "r": 0.813,
+        "offsetMs": -3,
+        "offsetRangeMs": [
+         -3,
+         30
+        ]
+       },
+       {
+        "flash": 6.829,
+        "prevFrame": 6.797,
+        "chirp": 6.8174,
+        "r": 0.768,
+        "offsetMs": -12,
+        "offsetRangeMs": [
+         -12,
+         20
+        ]
+       },
+       {
+        "flash": 11.419,
+        "prevFrame": 11.379,
+        "chirp": 11.386,
+        "r": 0.768,
+        "offsetMs": -33,
+        "offsetRangeMs": [
+         -33,
+         7
+        ]
+       },
+       {
+        "flash": 15.868,
+        "prevFrame": 15.813,
+        "chirp": 15.8211,
+        "r": 0.753,
+        "offsetMs": -47,
+        "offsetRangeMs": [
+         -47,
+         8
+        ]
+       }
+      ],
+      "meanOffsetMs": -24,
+      "maxAbsOffsetMs": 47,
+      "spreadMs": 44,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 24.81,
+     "frameInterval": {
+      "median": 34,
+      "p95": 59,
+      "max": 264
+     },
+     "maxIntervalAfterStartupMs": 264,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.346,
+        "prevFrame": 2.293,
+        "chirp": 2.3297,
+        "r": 0.784,
+        "offsetMs": -16,
+        "offsetRangeMs": [
+         -16,
+         37
+        ]
+       },
+       {
+        "flash": 6.851,
+        "prevFrame": 6.769,
+        "chirp": 6.8345,
+        "r": 0.746,
+        "offsetMs": -17,
+        "offsetRangeMs": [
+         -17,
+         65
+        ]
+       },
+       {
+        "flash": 11.479,
+        "prevFrame": 11.426,
+        "chirp": 11.4552,
+        "r": 0.765,
+        "offsetMs": -24,
+        "offsetRangeMs": [
+         -24,
+         29
+        ]
+       },
+       {
+        "flash": 15.916,
+        "prevFrame": 15.882,
+        "chirp": 15.9135,
+        "r": 0.762,
+        "offsetMs": -3,
+        "offsetRangeMs": [
+         -3,
+         31
+        ]
+       }
+      ],
+      "meanOffsetMs": -15,
+      "maxAbsOffsetMs": 24,
+      "spreadMs": 21,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 28.38,
+     "frameInterval": {
+      "median": 33,
+      "p95": 50,
+      "max": 262
+     },
+     "maxIntervalAfterStartupMs": 262,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.333,
+        "prevFrame": 2.301,
+        "chirp": 2.3241,
+        "r": 0.798,
+        "offsetMs": -9,
+        "offsetRangeMs": [
+         -9,
+         23
+        ]
+       },
+       {
+        "flash": 6.829,
+        "prevFrame": 6.795,
+        "chirp": 6.8346,
+        "r": 0.77,
+        "offsetMs": 6,
+        "offsetRangeMs": [
+         6,
+         40
+        ]
+       },
+       {
+        "flash": 11.399,
+        "prevFrame": 11.348,
+        "chirp": 11.3857,
+        "r": 0.78,
+        "offsetMs": -13,
+        "offsetRangeMs": [
+         -13,
+         38
+        ]
+       },
+       {
+        "flash": 15.848,
+        "prevFrame": 15.815,
+        "chirp": 15.8207,
+        "r": 0.76,
+        "offsetMs": -27,
+        "offsetRangeMs": [
+         -27,
+         6
+        ]
+       }
+      ],
+      "meanOffsetMs": -11,
+      "maxAbsOffsetMs": 27,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -13,
+    "p5Ms": -47,
+    "p95Ms": 6,
+    "minMs": -47,
+    "maxMs": 6,
+    "worstAbsMs": 47,
+    "fps": [
+     25.38,
+     24.81,
+     28.38
+    ],
+    "widestFrameIntervalAtFlashMs": 82
+   }
+  },
+  "stellar-1080p-load": {
+   "condition": {
+    "key": "stellar-1080p-load",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "1080p",
+    "load": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 27.22,
+     "frameInterval": {
+      "median": 34,
+      "p95": 64,
+      "max": 78
+     },
+     "maxIntervalAfterStartupMs": 78,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.33,
+        "prevFrame": 2.288,
+        "chirp": 2.3335,
+        "r": 0.816,
+        "offsetMs": 3,
+        "offsetRangeMs": [
+         3,
+         45
+        ]
+       },
+       {
+        "flash": 6.867,
+        "prevFrame": 6.839,
+        "chirp": 6.8499,
+        "r": 0.761,
+        "offsetMs": -17,
+        "offsetRangeMs": [
+         -17,
+         11
+        ]
+       },
+       {
+        "flash": 11.378,
+        "prevFrame": 11.311,
+        "chirp": 11.3661,
+        "r": 0.775,
+        "offsetMs": -12,
+        "offsetRangeMs": [
+         -12,
+         55
+        ]
+       },
+       {
+        "flash": 15.889,
+        "prevFrame": 15.852,
+        "chirp": 15.8708,
+        "r": 0.775,
+        "offsetMs": -18,
+        "offsetRangeMs": [
+         -18,
+         19
+        ]
+       }
+      ],
+      "meanOffsetMs": -11,
+      "maxAbsOffsetMs": 18,
+      "spreadMs": 21,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 25.73,
+     "frameInterval": {
+      "median": 35,
+      "p95": 64,
+      "max": 87
+     },
+     "maxIntervalAfterStartupMs": 72,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.317,
+        "prevFrame": 2.284,
+        "chirp": 2.3323,
+        "r": 0.784,
+        "offsetMs": 15,
+        "offsetRangeMs": [
+         15,
+         48
+        ]
+       },
+       {
+        "flash": 6.844,
+        "prevFrame": 6.809,
+        "chirp": 6.8369,
+        "r": 0.761,
+        "offsetMs": -7,
+        "offsetRangeMs": [
+         -7,
+         28
+        ]
+       },
+       {
+        "flash": 11.34,
+        "prevFrame": 11.308,
+        "chirp": 11.3415,
+        "r": 0.743,
+        "offsetMs": 2,
+        "offsetRangeMs": [
+         2,
+         34
+        ]
+       },
+       {
+        "flash": 15.896,
+        "prevFrame": 15.837,
+        "chirp": 15.8695,
+        "r": 0.79,
+        "offsetMs": -27,
+        "offsetRangeMs": [
+         -27,
+         33
+        ]
+       }
+      ],
+      "meanOffsetMs": -4,
+      "maxAbsOffsetMs": 27,
+      "spreadMs": 42,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 25.34,
+     "frameInterval": {
+      "median": 35,
+      "p95": 67,
+      "max": 99
+     },
+     "maxIntervalAfterStartupMs": 99,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.349,
+        "prevFrame": 2.318,
+        "chirp": 2.3281,
+        "r": 0.775,
+        "offsetMs": -21,
+        "offsetRangeMs": [
+         -21,
+         10
+        ]
+       },
+       {
+        "flash": 6.853,
+        "prevFrame": 6.821,
+        "chirp": 6.856,
+        "r": 0.759,
+        "offsetMs": 3,
+        "offsetRangeMs": [
+         3,
+         35
+        ]
+       },
+       {
+        "flash": 11.381,
+        "prevFrame": 11.31,
+        "chirp": 11.3605,
+        "r": 0.755,
+        "offsetMs": -20,
+        "offsetRangeMs": [
+         -20,
+         51
+        ]
+       },
+       {
+        "flash": 15.887,
+        "prevFrame": 15.848,
+        "chirp": 15.8885,
+        "r": 0.775,
+        "offsetMs": 2,
+        "offsetRangeMs": [
+         2,
+         41
+        ]
+       }
+      ],
+      "meanOffsetMs": -9,
+      "maxAbsOffsetMs": 21,
+      "spreadMs": 24,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -7,
+    "p5Ms": -27,
+    "p95Ms": 15,
+    "minMs": -27,
+    "maxMs": 15,
+    "worstAbsMs": 27,
+    "fps": [
+     27.22,
+     25.73,
+     25.34
+    ],
+    "widestFrameIntervalAtFlashMs": 71
+   }
+  },
+  "stellar-1080p-live": {
+   "condition": {
+    "key": "stellar-1080p-live",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "1080p",
+    "live": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 22.9,
+     "frameInterval": {
+      "median": 42,
+      "p95": 62,
+      "max": 84
+     },
+     "maxIntervalAfterStartupMs": 84,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.35,
+        "prevFrame": 2.294,
+        "chirp": 2.3049,
+        "r": 0.731,
+        "offsetMs": -45,
+        "offsetRangeMs": [
+         -45,
+         11
+        ]
+       },
+       {
+        "flash": 6.877,
+        "prevFrame": 6.817,
+        "chirp": 6.8328,
+        "r": 0.762,
+        "offsetMs": -44,
+        "offsetRangeMs": [
+         -44,
+         16
+        ]
+       },
+       {
+        "flash": 11.351,
+        "prevFrame": 11.294,
+        "chirp": 11.3375,
+        "r": 0.751,
+        "offsetMs": -14,
+        "offsetRangeMs": [
+         -14,
+         43
+        ]
+       },
+       {
+        "flash": 15.897,
+        "prevFrame": 15.833,
+        "chirp": 15.8421,
+        "r": 0.72,
+        "offsetMs": -55,
+        "offsetRangeMs": [
+         -55,
+         9
+        ]
+       }
+      ],
+      "meanOffsetMs": -39,
+      "maxAbsOffsetMs": 55,
+      "spreadMs": 41,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 26.42,
+     "frameInterval": {
+      "median": 32,
+      "p95": 62,
+      "max": 65
+     },
+     "maxIntervalAfterStartupMs": 65,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.312,
+        "prevFrame": 2.28,
+        "chirp": 2.3115,
+        "r": 0.761,
+        "offsetMs": -1,
+        "offsetRangeMs": [
+         -1,
+         31
+        ]
+       },
+       {
+        "flash": 6.835,
+        "prevFrame": 6.772,
+        "chirp": 6.8393,
+        "r": 0.714,
+        "offsetMs": 4,
+        "offsetRangeMs": [
+         4,
+         67
+        ]
+       },
+       {
+        "flash": 11.373,
+        "prevFrame": 11.312,
+        "chirp": 11.344,
+        "r": 0.665,
+        "offsetMs": -29,
+        "offsetRangeMs": [
+         -29,
+         32
+        ]
+       },
+       {
+        "flash": 15.87,
+        "prevFrame": 15.837,
+        "chirp": 15.8487,
+        "r": 0.745,
+        "offsetMs": -21,
+        "offsetRangeMs": [
+         -21,
+         12
+        ]
+       }
+      ],
+      "meanOffsetMs": -12,
+      "maxAbsOffsetMs": 29,
+      "spreadMs": 33,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 24.12,
+     "frameInterval": {
+      "median": 33,
+      "p95": 62,
+      "max": 65
+     },
+     "maxIntervalAfterStartupMs": 65,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.348,
+        "prevFrame": 2.302,
+        "chirp": 2.337,
+        "r": 0.761,
+        "offsetMs": -11,
+        "offsetRangeMs": [
+         -11,
+         35
+        ]
+       },
+       {
+        "flash": 6.819,
+        "prevFrame": 6.759,
+        "chirp": 6.8416,
+        "r": 0.688,
+        "offsetMs": 23,
+        "offsetRangeMs": [
+         23,
+         83
+        ]
+       },
+       {
+        "flash": 11.337,
+        "prevFrame": 11.306,
+        "chirp": 11.3463,
+        "r": 0.695,
+        "offsetMs": 9,
+        "offsetRangeMs": [
+         9,
+         40
+        ]
+       },
+       {
+        "flash": 15.875,
+        "prevFrame": 15.844,
+        "chirp": 15.8742,
+        "r": 0.744,
+        "offsetMs": -1,
+        "offsetRangeMs": [
+         -1,
+         30
+        ]
+       }
+      ],
+      "meanOffsetMs": 5,
+      "maxAbsOffsetMs": 23,
+      "spreadMs": 34,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -11,
+    "p5Ms": -55,
+    "p95Ms": 23,
+    "minMs": -55,
+    "maxMs": 23,
+    "worstAbsMs": 55,
+    "fps": [
+     22.9,
+     26.42,
+     24.12
+    ],
+    "widestFrameIntervalAtFlashMs": 64
+   }
+  },
+  "cymatic-1080p-live": {
+   "condition": {
+    "key": "cymatic-1080p-live",
+    "world": {
+     "type": "family",
+     "family": "halcyon.cymatic-field"
+    },
+    "size": "1080p",
+    "remote": true,
+    "live": true
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 49
+     },
+     "maxIntervalAfterStartupMs": 36,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.315,
+        "prevFrame": 2.281,
+        "chirp": 2.3113,
+        "r": 0.683,
+        "offsetMs": -4,
+        "offsetRangeMs": [
+         -4,
+         30
+        ]
+       },
+       {
+        "flash": 6.849,
+        "prevFrame": 6.815,
+        "chirp": 6.816,
+        "r": 0.727,
+        "offsetMs": -33,
+        "offsetRangeMs": [
+         -33,
+         1
+        ]
+       },
+       {
+        "flash": 11.348,
+        "prevFrame": 11.315,
+        "chirp": 11.3439,
+        "r": 0.764,
+        "offsetMs": -4,
+        "offsetRangeMs": [
+         -4,
+         29
+        ]
+       },
+       {
+        "flash": 15.848,
+        "prevFrame": 15.814,
+        "chirp": 15.8486,
+        "r": 0.683,
+        "offsetMs": 1,
+        "offsetRangeMs": [
+         1,
+         35
+        ]
+       }
+      ],
+      "meanOffsetMs": -10,
+      "maxAbsOffsetMs": 33,
+      "spreadMs": 34,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.98,
+     "frameInterval": {
+      "median": 33,
+      "p95": 50,
+      "max": 52
+     },
+     "maxIntervalAfterStartupMs": 52,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.317,
+        "prevFrame": 2.267,
+        "chirp": 2.3294,
+        "r": 0.768,
+        "offsetMs": 12,
+        "offsetRangeMs": [
+         12,
+         62
+        ]
+       },
+       {
+        "flash": 6.85,
+        "prevFrame": 6.816,
+        "chirp": 6.8341,
+        "r": 0.743,
+        "offsetMs": -16,
+        "offsetRangeMs": [
+         -16,
+         18
+        ]
+       },
+       {
+        "flash": 11.35,
+        "prevFrame": 11.316,
+        "chirp": 11.362,
+        "r": 0.677,
+        "offsetMs": 12,
+        "offsetRangeMs": [
+         12,
+         46
+        ]
+       },
+       {
+        "flash": 15.883,
+        "prevFrame": 15.849,
+        "chirp": 15.8666,
+        "r": 0.724,
+        "offsetMs": -16,
+        "offsetRangeMs": [
+         -16,
+         18
+        ]
+       }
+      ],
+      "meanOffsetMs": -2,
+      "maxAbsOffsetMs": 16,
+      "spreadMs": 28,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1920,
+      "height": 1080
+     },
+     "fps": 29.97,
+     "frameInterval": {
+      "median": 33,
+      "p95": 50,
+      "max": 51
+     },
+     "maxIntervalAfterStartupMs": 51,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.35,
+        "prevFrame": 2.3,
+        "chirp": 2.3307,
+        "r": 0.788,
+        "offsetMs": -19,
+        "offsetRangeMs": [
+         -19,
+         31
+        ]
+       },
+       {
+        "flash": 6.85,
+        "prevFrame": 6.8,
+        "chirp": 6.8354,
+        "r": 0.679,
+        "offsetMs": -15,
+        "offsetRangeMs": [
+         -15,
+         35
+        ]
+       },
+       {
+        "flash": 11.35,
+        "prevFrame": 11.3,
+        "chirp": 11.3633,
+        "r": 0.664,
+        "offsetMs": 13,
+        "offsetRangeMs": [
+         13,
+         63
+        ]
+       },
+       {
+        "flash": 15.85,
+        "prevFrame": 15.816,
+        "chirp": 15.8679,
+        "r": 0.767,
+        "offsetMs": 18,
+        "offsetRangeMs": [
+         18,
+         52
+        ]
+       }
+      ],
+      "meanOffsetMs": -1,
+      "maxAbsOffsetMs": 19,
+      "spreadMs": 37,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -4,
+    "p5Ms": -33,
+    "p95Ms": 18,
+    "minMs": -33,
+    "maxMs": 18,
+    "worstAbsMs": 33,
+    "fps": [
+     29.98,
+     29.98,
+     29.97
+    ],
+    "widestFrameIntervalAtFlashMs": 50
+   }
+  },
+  "stellar-720p-stall": {
+   "condition": {
+    "key": "stellar-720p-stall",
+    "world": {
+     "type": "family",
+     "family": "stellar-forge"
+    },
+    "size": "720p",
+    "stall": 150
+   },
+   "reps": [
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.28,
+     "frameInterval": {
+      "median": 33,
+      "p95": 36,
+      "max": 175
+     },
+     "maxIntervalAfterStartupMs": 175,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.481,
+        "prevFrame": 2.447,
+        "chirp": 2.4667,
+        "r": 0.795,
+        "offsetMs": -14,
+        "offsetRangeMs": [
+         -14,
+         20
+        ]
+       },
+       {
+        "flash": 7.048,
+        "prevFrame": 7.014,
+        "chirp": 7.0208,
+        "r": 0.761,
+        "offsetMs": -27,
+        "offsetRangeMs": [
+         -27,
+         7
+        ]
+       },
+       {
+        "flash": 11.481,
+        "prevFrame": 11.447,
+        "chirp": 11.479,
+        "r": 0.775,
+        "offsetMs": -2,
+        "offsetRangeMs": [
+         -2,
+         32
+        ]
+       },
+       {
+        "flash": 16.047,
+        "prevFrame": 16.014,
+        "chirp": 16.0418,
+        "r": 0.773,
+        "offsetMs": -5,
+        "offsetRangeMs": [
+         -5,
+         28
+        ]
+       }
+      ],
+      "meanOffsetMs": -12,
+      "maxAbsOffsetMs": 27,
+      "spreadMs": 25,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.28,
+     "frameInterval": {
+      "median": 33,
+      "p95": 34,
+      "max": 174
+     },
+     "maxIntervalAfterStartupMs": 174,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.483,
+        "prevFrame": 2.447,
+        "chirp": 2.4507,
+        "r": 0.761,
+        "offsetMs": -32,
+        "offsetRangeMs": [
+         -32,
+         4
+        ]
+       },
+       {
+        "flash": 7.048,
+        "prevFrame": 7.014,
+        "chirp": 7.025,
+        "r": 0.74,
+        "offsetMs": -23,
+        "offsetRangeMs": [
+         -23,
+         11
+        ]
+       },
+       {
+        "flash": 11.514,
+        "prevFrame": 11.482,
+        "chirp": 11.4834,
+        "r": 0.778,
+        "offsetMs": -31,
+        "offsetRangeMs": [
+         -31,
+         1
+        ]
+       },
+       {
+        "flash": 16.047,
+        "prevFrame": 16.015,
+        "chirp": 16.0577,
+        "r": 0.785,
+        "offsetMs": 11,
+        "offsetRangeMs": [
+         11,
+         43
+        ]
+       }
+      ],
+      "meanOffsetMs": -19,
+      "maxAbsOffsetMs": 32,
+      "spreadMs": 43,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    },
+    {
+     "markers": 4,
+     "video": {
+      "codec": "vp9",
+      "width": 1280,
+      "height": 720
+     },
+     "fps": 29.23,
+     "frameInterval": {
+      "median": 33,
+      "p95": 36,
+      "max": 174
+     },
+     "maxIntervalAfterStartupMs": 174,
+     "sync": {
+      "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+      "flashes": 4,
+      "chirps": 4,
+      "pairs": [
+       {
+        "flash": 2.483,
+        "prevFrame": 2.448,
+        "chirp": 2.4652,
+        "r": 0.793,
+        "offsetMs": -18,
+        "offsetRangeMs": [
+         -18,
+         17
+        ]
+       },
+       {
+        "flash": 7.048,
+        "prevFrame": 7.016,
+        "chirp": 7.0395,
+        "r": 0.762,
+        "offsetMs": -8,
+        "offsetRangeMs": [
+         -8,
+         24
+        ]
+       },
+       {
+        "flash": 11.481,
+        "prevFrame": 11.448,
+        "chirp": 11.4976,
+        "r": 0.765,
+        "offsetMs": 17,
+        "offsetRangeMs": [
+         17,
+         50
+        ]
+       },
+       {
+        "flash": 16.047,
+        "prevFrame": 16.014,
+        "chirp": 16.0721,
+        "r": 0.788,
+        "offsetMs": 25,
+        "offsetRangeMs": [
+         25,
+         58
+        ]
+       }
+      ],
+      "meanOffsetMs": 4,
+      "maxAbsOffsetMs": 25,
+      "spreadMs": 43,
+      "unpaired": 0,
+      "extraChirps": 0
+     }
+    }
+   ],
+   "summary": {
+    "markersScheduled": 12,
+    "flashes": 12,
+    "paired": 12,
+    "medianMs": -8,
+    "p5Ms": -32,
+    "p95Ms": 25,
+    "minMs": -32,
+    "maxMs": 25,
+    "worstAbsMs": 32,
+    "fps": [
+     29.28,
+     29.28,
+     29.23
+    ],
+    "widestFrameIntervalAtFlashMs": 36
+   }
+  }
+ }
+}
