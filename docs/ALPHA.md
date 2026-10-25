@@ -57,6 +57,8 @@ Visual packs: [packs/README.md](packs/README.md). Security and privacy: [../SECU
 - **Long sessions:** sessions of many hours have not been completed with the final code (the longest runs: 110
   minutes locally, one hour in CI, and a 30-minute activity soak with the final code). Memory growth seen in earlier
   soaks is explained and its cause fixed (`docs/QUALIFICATION.md`); a world or pack switch still leaves about 0.3 MB.
+- **Labels at the edge:** a label that follows a moving object (an agent's chip, a callout) can be cut by the frame's
+  edge while the object is near it, on screen and in recordings, at every size.
 - **Artistic and listening acceptance** of the worlds, packs and music has not been done by people yet: that is what
   this alpha is for.
 - **Interpretation:** TypeScript/JavaScript are analysed in depth, Python and manifests partly, other languages at file

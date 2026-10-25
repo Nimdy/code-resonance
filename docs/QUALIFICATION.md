@@ -669,6 +669,36 @@ was evaluated and not implemented: it needs a file chosen by the user before eve
 automated tests, and OBS already covers long sessions.
 
 
+### Regression: local and CI
+
+Local (this machine): `npm run check`; `npm test` 115/115; `npm run package:vsix` builds `code-resonance-0.4.0.vsix`;
+the built-in worlds render the same frames as PR #5's head, labels off (`visual/unchanged.qual.js --baseline 0a71c5a`,
+4/4 sets, 11 moments, byte-identical); recording 119/120 (above); sync matrix 11/11; marker self-test; memory matrices
+and the short soak (above).
+
+CI on GitHub's runners (software rendering), PR #6:
+
+| Job | Result |
+|---|---|
+| validation: Linux, native Windows (`npm test`, platform smoke) | 115/115 and 14/14 on each |
+| qualification: Stage (Chromium), reference packs quick, runtime quick, VS Code | Stage 14/14; Blueprint Cathedral 19/19, Ember Observatory 15/15, Cymatic Field 20/20; robustness 15/15, recording 45/45 (stage size, plus Cymatic Field at 720p); VS Code passed |
+| extended: full pack suites | 20/20, 16/16, 21/21 |
+| extended: runtime-full | robustness 31/31, recording 81/81 (mechanism thresholds) |
+| extended: history, Windows VS Code | passed |
+| extended: OBS Studio 32.2 | 6/6 |
+| extended: Windows browser | 45/45 on the rerun |
+| extended: one-hour soak (1280×720, quality 3, recordings at the stage's size) | 11/11: 2,102 of 2,102 events stored once across a receiver restart, no pack stopped, sound at 1.000× real time, no page errors |
+
+What CI found and what was corrected (no threshold was changed): the first run (8187762) failed the quick recording,
+because with 720p as the player's default the software renderer drew the built-in worlds at 2 fps (the software-rendered
+jobs now name the stage's size, as PR #5's CI tested, and quick mode adds a world pack at 720p), and OBS, because the
+marker change had made the frame parser require three plane means where an RGBA screenshot has one (fixed). The second
+(23f793e) failed the Windows browser job (a marker whose flash frame came more than 0.6 s after its chirp at 2.9 fps;
+pairing and the functional check now use the interval in which the flash occurred; the rerun ran on a faster runner,
+5.8 fps, and would have passed either way) and the one-hour soak (8/11: at 720p a shader pack fell under 1 fps while
+recording on the software renderer and the watchdog stopped it, as designed; events, memory, sound and page errors
+passed; the CI soak now records the stage).
+
 ## Not verified
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A

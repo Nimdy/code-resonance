@@ -86,4 +86,6 @@ The first marker method (white flash, 2 kHz click found by band energy) could pa
   Streaming to disk (the File System Access API) is possible in Chromium but needs a file chosen by the user before
   each recording and cannot be exercised by the automated tests; it is not implemented. Use OBS for long sessions.
 - Chromium-based browsers only (MediaRecorder with VP9/VP8 + Opus and canvas capture).
+- A label that follows a moving object near the frame's edge can be cut by it (as on screen; the layout is the
+  world's).
 - On machines without a capable GPU the built-in worlds render slowly and recordings stutter (the player warns).
