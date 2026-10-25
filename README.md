@@ -30,7 +30,7 @@ Open **http://127.0.0.1:4174/** and click **ENABLE SOUND** (browsers require a g
 
 ```bash
 npm run package:vsix                       # Node only; works on Windows, Linux and macOS
-code --install-extension code-resonance-0.4.0.vsix
+code --install-extension code-resonance-0.5.0.vsix
 ```
 
 Open a trusted workspace, click the **CR** status-bar item (or run **Code Resonance: Start Code Performance**) and accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes automatically when VS Code restarts until you stop it.

@@ -2,7 +2,7 @@
   "name": "code-resonance",
   "displayName": "Code Resonance",
   "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "zerobandwidth",
   "license": "UNLICENSED",
   "engines": {
@@ -24,7 +24,8 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onUri"
   ],
   "contributes": {
     "commands": [

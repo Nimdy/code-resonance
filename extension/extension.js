@@ -5,13 +5,42 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const {DurableOutbox}=require('./outbox');
 const {SOURCE_GLOB,EXCLUDE_GLOB,isFileEligible,countNewlines,classifyCommand}=require('./filters');
+const VERSION=require('./package.json').version;
+const SETTINGS_QUERY='@ext:zerobandwidth.code-resonance';
 let recording=null;
 let statusBar=null;
 const EDIT_WINDOW_MS=1000;
+const SETTINGS_DEBOUNCE_MS=500;
 function hash(s){return crypto.createHash('sha256').update(String(s)).digest('hex');}
 function conf(){return vscode.workspace.getConfiguration('resonance');}
 function decorateStatus(text){if(statusBar){statusBar.text=`$(pulse) CR ${text}`;statusBar.tooltip='Code Resonance';statusBar.show();}}
 function createEvent(rec,kind,fields={}){return {v:1,id:crypto.randomUUID(),ts:Date.now(),kind,projectId:rec.projectId,sessionId:rec.sessionId,origin:fields.origin||'unknown',...fields};}
+// What this capture is configured to do, reported in workspace events so the Control Center can show facts instead of
+// guessing. Values only, never paths or names. receiverPort is the port this capture delivers to (a changed setting
+// applies at the next start); the other settings are read live by the handlers, so the current value is the effective one.
+function settingsMeta(rec){
+  const c=conf(),num=v=>typeof v==='number'&&Number.isFinite(v)?v:undefined;
+  return {extensionVersion:VERSION,remote:vscode.env.remoteName||'',includeHidden:!!c.get('includeHidden',false),
+    captureDocumentContents:!!c.get('captureDocumentContents',true),captureTerminalCommands:!!c.get('captureTerminalCommands',false),
+    capturePromptText:!!c.get('capturePromptText',false),shareProjectName:!!c.get('shareProjectName',true),
+    baselineFileLimit:num(c.get('baselineFileLimit',450)),receiverPort:num(rec.outbox?.port??c.get('receiverPort',4174))};
+}
+// A settings edit fires once per changed key (and settings.json saves can fire in bursts): one event per quiet 500 ms,
+// and none when the reported values end up unchanged.
+function watchSettings(rec){
+  let timer=null;
+  rec.listeners.push(vscode.workspace.onDidChangeConfiguration(e=>{
+    if(!e.affectsConfiguration('resonance'))return;
+    clearTimeout(timer);
+    timer=setTimeout(()=>{
+      timer=null;if(!rec.active)return;
+      const meta=settingsMeta(rec),key=JSON.stringify(meta);
+      if(key===rec.reported)return;
+      rec.reported=key;send(rec,'workspace.settings',{meta});
+    },SETTINGS_DEBOUNCE_MS);
+  }));
+  rec.listeners.push({dispose:()=>clearTimeout(timer)});
+}
 function relative(rec,uri){
   if(!uri||uri.scheme!=='file')return null;
   const folder=vscode.workspace.getWorkspaceFolder(uri);
@@ -72,7 +101,7 @@ function flushEdits(rec,file){
 }
 function flushAllEdits(rec){for(const file of [...rec.editWindows.keys()])flushEdits(rec,file);}
 function listen(rec){
-  watchExternalFiles(rec);
+  watchExternalFiles(rec);watchSettings(rec);
   const attach=(disposable)=>rec.listeners.push(disposable);
   attach(vscode.workspace.onDidChangeTextDocument(event=>{
     const file=relative(rec,event.document.uri);if(!file||event.contentChanges.length===0)return;
@@ -180,7 +209,7 @@ async function start(context,showConsent=true){
   }
   const projectId=hash(folder.uri.toString());
   const directory=path.join(context.globalStorageUri.fsPath,'outbox',projectId);
-  const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null};
+  const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null,reported:null};
   rec.outbox=new DurableOutbox({directory,port:conf().get('receiverPort',4174),onStatus:(kind)=>{
     if(recording!==rec)return;
     decorateStatus({online:'recording',offline:'queued offline','disk-error':'storage error','queue-full':'queue full','rejected':'recording (events rejected)'}[kind]||'recording');
@@ -189,7 +218,8 @@ async function start(context,showConsent=true){
   recording=rec;
   listen(rec);
   // The folder name labels the project in the local player's project list; it is never drawn on the Stage.
-  send(rec,'workspace.started',conf().get('shareProjectName',true)?{name:folder.name.slice(0,100)}:{});
+  const meta=settingsMeta(rec);rec.reported=JSON.stringify(meta);
+  send(rec,'workspace.started',{...(conf().get('shareProjectName',true)?{name:folder.name.slice(0,100)}:{}),meta});
   await context.workspaceState.update('resonanceRecording',true);
   decorateStatus('indexing');
   void baseline(rec).then(()=>{if(recording===rec)decorateStatus('recording');}).catch(e=>vscode.window.showWarningMessage(`CODE RESONANCE indexing limited: ${e.message}`));
@@ -225,6 +255,11 @@ async function menu(context){
   const pick=await vscode.window.showQuickPick(items,{title:'Code Resonance'});
   if(pick)await pick.run();
 }
+// vscode://zerobandwidth.code-resonance/settings (linked from the Control Center) only opens this extension's settings:
+// a link from a web page must never start capture or change anything.
+function handleUri(uri){
+  if(uri?.path==='/settings')return vscode.commands.executeCommand('workbench.action.openSettings',SETTINGS_QUERY);
+}
 function activate(context){
   statusBar=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,45);
   statusBar.command='resonance.menu';context.subscriptions.push(statusBar);
@@ -235,6 +270,7 @@ function activate(context){
   context.subscriptions.push(vscode.commands.registerCommand('resonance.openOverlay',()=>openStage(true)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.menu',()=>menu(context)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.recordPrompt',recordPrompt));
+  context.subscriptions.push(vscode.window.registerUriHandler({handleUri}));
   if(context.workspaceState.get('resonanceRecording',false))void start(context,false);
 }
 async function deactivate(){if(recording){const rec=recording;flushAllEdits(rec);rec.active=false;for(const t of rec.documentTimers.values())clearTimeout(t);for(const d of rec.listeners)d.dispose();await rec.outbox.close();recording=null;}}
