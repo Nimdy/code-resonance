@@ -5,6 +5,7 @@ name: qualification
 #   packs     each reference visual pack (declarative, shader, world) through the compatibility tests, quick mode
 #   runtime   the pack runtime's robustness (slow, hanging and failing test fixtures; quick mode) and live recording
 #             of the four renderer categories (real WebM files measured with ffmpeg; quick mode)
+#   ui        the Control Center and Stage: every workspace's browser suite and the cross-view acceptance suite
 #   vscode    the extension in a real VS Code
 # The expensive tier (full pack suites, long recordings, soak, native Windows browser and VS Code, OBS) is in
 # extended.yml. The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
@@ -81,6 +82,25 @@ jobs:
           path: |
             qualification/results/robustness
             qualification/results/recording
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node ui/run-all.js --jobs 2 --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-qualification
+          path: qualification/results/ui
   vscode:
     runs-on: ubuntu-latest
     timeout-minutes: 30

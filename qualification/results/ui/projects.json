@@ -1,0 +1,247 @@
+{
+  "at": "2026-10-25T14:44:24.993Z",
+  "passed": 48,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "the list shows the three projects the receiver knows",
+      "pass": true,
+      "detail": "2a59c1d4,36bf9b09,c6c876a5"
+    },
+    {
+      "name": "only the demonstration carries the \"Demonstration (fictional)\" badge",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the active project is marked Active (and only it)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sorted by recent activity",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: capture stopped, from its evidence",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "names are private workspace names or \"Project <id8>\"",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "filter: typing narrows the list",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "filter: typed text is not kept in browser storage (it may be a private name)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "filter: no match shows an empty state with a way back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "filter: clearing shows all projects again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "keyboard: ArrowDown moves to the next project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "keyboard: Enter opens the project’s detail",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "overview statistics equal /api/project",
+      "pass": true,
+      "detail": "{\"Modules\":17,\"Symbols\":31,\"Created\":32,\"Modified\":6,\"Removed\":1,\"Imports\":17,\"Commands\":0,\"Tests passed\":4,\"Tests failed\":1,\"Agent events\":164,\"Milestones\":0,\"Agents\":6}"
+    },
+    {
+      "name": "chapter equals /api/project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "not active yet: \"Make active\" offered, music export only for the active project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "timeline: one marker per validation/milestone/commit/chapter intent",
+      "pass": true,
+      "detail": "11 markers, 11 intents"
+    },
+    {
+      "name": "timeline: failed, passed, milestone and commit markers present",
+      "pass": true,
+      "detail": "chapter,failed,recovered,milestone,passed,checkpoint"
+    },
+    {
+      "name": "timeline: one session band per session",
+      "pass": true,
+      "detail": "7 sessions"
+    },
+    {
+      "name": "timeline: hovering a marker shows its time and meaning",
+      "pass": true,
+      "detail": "03:58:09 PMTest failed"
+    },
+    {
+      "name": "Replay from here: lands on the Stage in replay mode",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Replay from here: the lumen project at the marker’s time ±2 s",
+      "pass": true,
+      "detail": "Δ=0 ms"
+    },
+    {
+      "name": "keyboard: arrows move the timeline cursor between moments (announced)",
+      "pass": true,
+      "detail": "Oct 23 03:57:05 PM · Session began · 19 events · 34 s → Oct 23 03:57:05 PM · Session began · 10 events · 18 s"
+    },
+    {
+      "name": "keyboard: Enter opens the replay menu with focus on \"Replay from here\"",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Escape closes it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "header: no stray text among the actions",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "agents: providers observed through hooks, with no claim about reasoning",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "validation outcomes: the last ones from the projection, newest first",
+      "pass": true,
+      "detail": "5 cues"
+    },
+    {
+      "name": "export: performance data JSON downloads for this project",
+      "pass": true,
+      "detail": "code-resonance-c6c876a59a.json"
+    },
+    {
+      "name": "after Replay from here, lumen is the active project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "export: \"Render music (WAV)\" downloads a WAV of the active project",
+      "pass": true,
+      "detail": "code-resonance-c6c876a59a-ambient.wav (42336044 bytes)"
+    },
+    {
+      "name": "receiver: lumen’s world preference changed, sample’s did not",
+      "pass": true,
+      "detail": "lumen=nexus sample=null"
+    },
+    {
+      "name": "receiver: lumen’s recipe has its own information mode, sample’s is untouched",
+      "pass": true,
+      "detail": "lumen=explorer sample=null"
+    },
+    {
+      "name": "Projects: lumen shows its own world and where it comes from",
+      "pass": true,
+      "detail": "NexusThis project"
+    },
+    {
+      "name": "Projects: sample keeps the global world",
+      "pass": true,
+      "detail": "Living worldGlobal default"
+    },
+    {
+      "name": "Projects: lumen’s information mode comes from its identity",
+      "pass": true,
+      "detail": "ExplorerSaved with this project’s identity"
+    },
+    {
+      "name": "Projects: sample’s information mode is not lumen’s",
+      "pass": true,
+      "detail": "CinematicGlobal default"
+    },
+    {
+      "name": "\"Make active\" selects sample (the shell and the engine follow)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "\"Make active\" confirms without the private name",
+      "pass": true,
+      "detail": "This project is now the active project."
+    },
+    {
+      "name": "a second window converges after a preference change made in the first",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "receiver: sample’s world saved, lumen’s unchanged",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "World \"Use global\": the row shows the global default again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "receiver: sample’s world preference is cleared, lumen’s kept",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the engine plays the global world for sample again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a second window follows \"Use global\"",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "demo: its agents are labelled fictional, not \"observed through hooks\"",
+      "pass": true,
+      "detail": "ConfigurationWorldLiving worldGlobal defaultChangeVisual identityNot generated yetGenerated when first shownChangeInformationCinematicGlobal defaultChangeMusic "
+    },
+    {
+      "name": "900 px: the detail has no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "900 px: the list has no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "no console errors or failed requests",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

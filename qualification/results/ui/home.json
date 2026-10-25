@@ -1,0 +1,232 @@
+{
+  "at": "2026-10-25T14:41:39.912Z",
+  "passed": 45,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "first run: the guide shows five steps",
+      "pass": true,
+      "detail": "receiver,vscode,project,sound,stage"
+    },
+    {
+      "name": "first run: only \"receiver running\" is done (derived from /api/status)",
+      "pass": true,
+      "detail": "{\"receiver\":true,\"vscode\":false,\"project\":false,\"sound\":false,\"stage\":false}"
+    },
+    {
+      "name": "the receiver step names the real version and port",
+      "pass": true,
+      "detail": "0.5.0:46123"
+    },
+    {
+      "name": "the VS Code step gives the exact commands for this version",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the demo is offered as optional and clearly fictional",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "nothing claims the page can start the receiver",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "first run: no stage slot is shown",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "first run: \"waiting for the first project\" is listening on the change feed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "\"Enable sound\" turns on the engine’s sound and completes its step",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "\"Hide this guide\" saves onboarding.dismissed on the receiver",
+      "pass": true,
+      "detail": "{\"dismissed\":true,\"migrated\":false}"
+    },
+    {
+      "name": "a second window hides the guide too (change feed)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "after a reload the guide stays hidden; the empty state says Settings can show it again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the guide reappears when Settings turns it back on (no reload)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "steps 2 and 3 complete live when the first project’s capture arrives",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the new project becomes the active project on Home",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: \"Capture stopped at …\" from its evidence (state stopped)",
+      "pass": true,
+      "detail": "Receiver availableChanges arrive as they happenCapture stopped at Oct 23, 2026, 04:00 PMVS Code capture observed · this extension version do"
+    },
+    {
+      "name": "lumen: old events are shown as idle, never as running",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: Claude Code activity is reported as observed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: its extension did not report settings, and Home says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: capture state matches the evidence (running only with activity in the last 2 min)",
+      "pass": true,
+      "detail": "fresh=true; Receiver availableChanges arrive as they happenVS Code capture running · editor activity just nowVS Code capture observed · extension 0.5.0 reported its setting"
+    },
+    {
+      "name": "sample: extension 0.5.0 reported its settings",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: Claude Code observed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: the private name is labelled as private",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: no public title is stated honestly",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "demo: labelled \"Demonstration (fictional)\" in the project area",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "demo: labelled in Recent projects",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Recent projects lists the three projects, most recent first",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: with the guide shown, sound is offered by its step only",
+      "pass": true,
+      "detail": "guide=true"
+    },
+    {
+      "name": "one primary action on Home: \"Open Stage\" in the project area",
+      "pass": true,
+      "detail": "Open Stage"
+    },
+    {
+      "name": "empty regions cost no space",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: no pack item without packs awaiting approval",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: recording item only if recording is unsupported",
+      "pass": true,
+      "detail": "supported=true"
+    },
+    {
+      "name": "attention: WebGL item only if WebGL2 is missing or the world failed",
+      "pass": true,
+      "detail": "webgl2=true failed=false"
+    },
+    {
+      "name": "attention: no receiver item while it answers",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: the most recent capture uses 0.5, so no extension-update item",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: \"sound is off\" listed once the guide is hidden",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: \"Enable sound\" turns sound on and the item goes away",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: a capture without reported settings asks to update the extension (live)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "attention: its action opens Connections",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the 16:9 stage slot shows the live stage",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "900 px: no horizontal overflow; Open Stage stays visible",
+      "pass": true,
+      "detail": "overflow=0px"
+    },
+    {
+      "name": "keyboard: Enter on a recent project makes it active",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "\"Open in new window\" opens the Stage of the active project",
+      "pass": true,
+      "detail": "http://127.0.0.1:45231/?project=c6c876a59a661b8d8772059a2f3bd44255110676c4ad7f9d11e60328395f117b#/stage"
+    },
+    {
+      "name": "\"Open Stage\" (keyboard) opens the Performance Stage",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no console errors, page errors or failed requests",
+      "pass": true,
+      "detail": "(6 expected 404 \"not yet sorted\" polls by the engine for the brand-new project)"
+    }
+  ]
+}

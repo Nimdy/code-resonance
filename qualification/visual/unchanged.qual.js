@@ -22,7 +22,7 @@ async function render(root,browser,set){
   const svc=await createService({port:0,dataDir:dir}).start();
   try{
     await svc.flush();const project=projectOf(dir);
-    const r=await adminPost(`http://127.0.0.1:${svc.port}`,`/api/recipe?id=${project}`,{action:{type:'family',family:set.family}});
+    const r=await adminPost(svc,`/api/recipe?id=${project}`,{action:{type:'family',family:set.family}});
     if(!r.ok)throw new Error(await r.text());
     const page=await browser.newPage({viewport:{width:960,height:540}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&labels=off&project=${project}`);await page.waitForFunction(()=>!!window.__film);

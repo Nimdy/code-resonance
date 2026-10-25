@@ -47,7 +47,7 @@ const slope=(xs,ys)=>{const n=xs.length;if(n<3)return null;const mx=xs.reduce((a
     const ev=(kind,x={})=>({v:1,id:`det-${String(++n).padStart(8,'0')}`,ts:Date.now(),kind,projectId,sessionId:'det',origin:'unknown',...x});
     const post=events=>fetch(url+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${svc.token}`},body:JSON.stringify({events})}).catch(()=>{});
     await post([ev('workspace.started',{name:'memory-detached'}),ev('document.snapshot',{file:'src/a.ts',content:'export function a(){ return 1; }\n',meta:{reason:'edit'}})]);await svc.flush(projectId);
-    await adminPost(url,`/api/recipe?id=${projectId}`,{action:{type:'family',family:'stellar-forge'}});
+    await adminPost(svc,`/api/recipe?id=${projectId}`,{action:{type:'family',family:'stellar-forge'}});
     // The memory experiment's 'churn' stream: 20 modules of 5 functions, each event rewrites one between two versions.
     const stream=setInterval(()=>{let m;if(modules.length<20){m={name:`c${modules.length}`};modules.push(m);}else m=modules[churn++%20];const v=(m.v=(m.v||0)+1)%2;
       const content=Array.from({length:5},(_,i)=>`export function part${i}(x: number){ return x ${v?'+':'-'} ${i}; }`).join('\n')+'\n';

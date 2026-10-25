@@ -44,10 +44,11 @@ async function untilStopped(page,timeout=40000){
 }
 async function recipeOf(svc,project){return (await (await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}`)).json());}
 async function trust(svc,id,digest,trusted){
-  const r=await adminPost(`http://127.0.0.1:${svc.port}`,'/api/packs/trust',{id,digest,trusted});
+  const r=await adminPost(svc,'/api/packs/trust',{id,digest,trusted});
   if(!r.ok)throw new Error(await r.text());return r.json();
 }
-const pressRetry=page=>page.evaluate(()=>[...document.querySelectorAll('#dnaNotice button')].find(b=>b.textContent==='RETRY')?.click());
+// The Stage's Retry button (shown with the stop reason), or the engine's retry when no Stage view is open.
+const pressRetry=page=>page.evaluate(()=>{const b=document.getElementById('retryPack');if(b)b.click();else window.ResonancePlayer.retryPack();});
 // Workers the browser reports (dedicated workers of every frame), to show a stopped pack's worker is gone.
 async function workers(browserCdp){try{const {targetInfos}=await browserCdp.send('Target.getTargets');return targetInfos.filter(t=>t.type==='worker').length;}catch{return null;}}
 // After a stop: the user is told, a built-in world runs, the recipe still names the pack, and nothing restarts by itself.

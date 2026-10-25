@@ -1,0 +1,229 @@
+{
+  "at": "2026-10-25T14:42:49.077Z",
+  "browser": "chromium (playwright-core, headless, --enable-unsafe-swiftshader --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required)",
+  "checks": [
+    {
+      "name": "Default world is saved by the receiver",
+      "pass": true,
+      "detail": "nebula"
+    },
+    {
+      "name": "Information mode (keyboard: arrows) is saved by the receiver",
+      "pass": true,
+      "detail": "stream"
+    },
+    {
+      "name": "a project without its own information mode follows the global default (the engine shows Stream)",
+      "pass": true,
+      "detail": "{\"engine\":\"stream\",\"text\":\"Used where a project’s visual identity sets no information mode of its own. The selected project follows this default. The OBS view uses Stream unless its URL says otherwise.\"}"
+    },
+    {
+      "name": "once the project has its own mode, the row says so and the engine keeps it over the default",
+      "pass": true,
+      "detail": "{\"own\":\"explorer\",\"engine\":\"explorer\",\"text\":\"Used where a project’s visual identity sets no information mode of its own. The selected project’s identity sets Explorer, so this default does not change it: change it on the Stage (Information) or in Visual Studio. The OBS view uses Stream unless its URL says otherwise.\"}"
+    },
+    {
+      "name": "Captions off is saved by the receiver",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Recording profile is saved and applied to the engine",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Motion: Reduce is saved and applied to the page at once (html[data-motion])",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reduce shortens the interface transitions",
+      "pass": true,
+      "detail": "--t-3=1ms"
+    },
+    {
+      "name": "Motion: Full applies (html[data-motion=\"full\"])",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Motion: Follow system removes the override",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Hiding the setup guide saves onboarding.dismissed = true",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a saved change says so next to the control",
+      "pass": true,
+      "detail": "Saved"
+    },
+    {
+      "name": "a refused change is reported and the control returns to the saved value",
+      "pass": true,
+      "detail": "Not saved: Invalid value for stage.world"
+    },
+    {
+      "name": "a second window shows every change without reloading (and applies the motion)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "every global setting is shown as saved after a reload",
+      "pass": true,
+      "detail": "{\"world\":\"nebula\",\"labels\":\"stream\",\"captions\":false,\"profile\":\"1080p\",\"motion\":\"reduce\",\"html\":\"reduce\",\"guide\":false,\"engine\":{\"world\":\"nebula\",\"size\":\"1080p\",\"captions\":false}}"
+    },
+    {
+      "name": "the engine plays the saved defaults (recording size, captions)",
+      "pass": true,
+      "detail": "{\"world\":\"nebula\",\"size\":\"1080p\",\"captions\":false}"
+    },
+    {
+      "name": "Showing the setup guide again saves onboarding.dismissed = false (round trip)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Rendering quality is kept in this browser and applied to the engine",
+      "pass": true,
+      "detail": "{\"quality\":\"2\"}"
+    },
+    {
+      "name": "the quality is still chosen and applied after a reload",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Reset this device’s preferences restores Auto (storage and engine)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Copy diagnostics puts JSON with the receiver’s version and the browser’s capabilities on the clipboard",
+      "pass": true,
+      "detail": "{ \"schema\": \"code-resonance.diagnostics.v1\", \"at\": \"2026-10-25T14:42:44.320Z\", \"receiver\": { \"version\": \"0.5.0"
+    },
+    {
+      "name": "the diagnostics contain no token, no 64-hex value, no path and no project name or id",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "browser capabilities are detected live (8 listed)",
+      "pass": true,
+      "detail": "WebGL 2 the living worlds and the Construct (without it: the 2D worlds)Available | MediaRecorder live recordingAvailable | WebM video recording formatwebm;codecs=vp9,opus | Web Audio the musicAvailable | Server-sent events changes from other windows and the receiverAvailable | BroadcastChannel one r"
+    },
+    {
+      "name": "the change feed state is shown",
+      "pass": true,
+      "detail": "Change feed open: other windows’ changes arrive at once"
+    },
+    {
+      "name": "the receiver status is shown (version, address)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the data folder shown is the one the receiver reports to this page (capability-only)",
+      "pass": true,
+      "detail": "/tmp/cr-ui-Fb4cMG"
+    },
+    {
+      "name": "the selected project’s own folder is named (labelled as its private name)",
+      "pass": true,
+      "detail": "The selected project, sample-app (test project) (private name), is kept in /tmp/cr-ui-Fb4cMG/projects/b23241948b39c1f71ec2336341d591e16e6ead3cea04356918c004d4fe349c4e."
+    },
+    {
+      "name": "the storage table names every authority (10 kinds of configuration)",
+      "pass": true,
+      "detail": "10 rows"
+    },
+    {
+      "name": "erasing is explained as steps, with no delete button",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "SECURITY.md opens in the documentation viewer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Escape closes it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "About shows the receiver and SDK versions",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "every linked document exists on the receiver",
+      "pass": true,
+      "detail": "FIRST-RUN.md:200 OBS.md:200 RECORDING.md:200 WSL.md:200 ALPHA.md:200 SECURITY.md:200 packs/README.md:200"
+    },
+    {
+      "name": "a document opens from the keyboard and focus returns to its button",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "with Motion set to Reduce, the section index jumps at once (no smooth scrolling)",
+      "pass": true,
+      "detail": "motion=reduce before=2271 at once=1118 settled=1118"
+    },
+    {
+      "name": "with Motion set to Full, the same jump is animated (contrast)",
+      "pass": true,
+      "detail": "{\"once\":0,\"end\":1118}"
+    },
+    {
+      "name": "a “Set elsewhere” link shows its focus ring inside its clipped list",
+      "pass": true,
+      "detail": "{\"link\":true,\"visible\":true,\"offset\":\"-2px\",\"style\":\"solid\"}"
+    },
+    {
+      "name": "the page title sits where it does on the other workspaces (no narrower page)",
+      "pass": true,
+      "detail": "settings 138px, output 138px"
+    },
+    {
+      "name": "the section index moves to its section",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "at 900 px wide nothing overflows sideways",
+      "pass": true,
+      "detail": "overflow 0px"
+    },
+    {
+      "name": "no console or page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "afterReload": {
+      "world": "nebula",
+      "labels": "stream",
+      "captions": false,
+      "profile": "1080p",
+      "motion": "reduce",
+      "html": "reduce",
+      "guide": false,
+      "engine": {
+        "world": "nebula",
+        "size": "1080p",
+        "captions": false
+      }
+    },
+    "diagnosticsBytes": 2071,
+    "dataDirShown": "/tmp/cr-ui-Fb4cMG"
+  }
+}

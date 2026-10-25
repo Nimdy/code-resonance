@@ -1,0 +1,84 @@
+{
+  "at": "2026-10-25T14:48:42.014Z",
+  "node": "v22.22.2",
+  "quick": false,
+  "suites": [
+    {
+      "suite": "acceptance",
+      "exitCode": 0,
+      "pass": 70,
+      "fail": 0,
+      "failures": [],
+      "seconds": 247
+    },
+    {
+      "suite": "connections",
+      "exitCode": 0,
+      "pass": 48,
+      "fail": 0,
+      "failures": [],
+      "seconds": 16
+    },
+    {
+      "suite": "home",
+      "exitCode": 0,
+      "pass": 45,
+      "fail": 0,
+      "failures": [],
+      "seconds": 41
+    },
+    {
+      "suite": "music",
+      "exitCode": 0,
+      "pass": 68,
+      "fail": 0,
+      "failures": [],
+      "seconds": 425
+    },
+    {
+      "suite": "output",
+      "exitCode": 0,
+      "pass": 41,
+      "fail": 0,
+      "failures": [],
+      "seconds": 75
+    },
+    {
+      "suite": "packs",
+      "exitCode": 0,
+      "pass": 52,
+      "fail": 0,
+      "failures": [],
+      "seconds": 39
+    },
+    {
+      "suite": "projects",
+      "exitCode": 0,
+      "pass": 48,
+      "fail": 0,
+      "failures": [],
+      "seconds": 126
+    },
+    {
+      "suite": "settings",
+      "exitCode": 0,
+      "pass": 41,
+      "fail": 0,
+      "failures": [],
+      "seconds": 19
+    },
+    {
+      "suite": "visual",
+      "exitCode": 0,
+      "pass": 60,
+      "fail": 0,
+      "failures": [],
+      "seconds": 292
+    }
+  ],
+  "passed": true,
+  "checks": {
+    "pass": 473,
+    "fail": 0
+  }
+}

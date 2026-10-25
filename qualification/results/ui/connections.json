@@ -1,0 +1,256 @@
+{
+  "at": "2026-10-25T14:41:15.461Z",
+  "passed": 48,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "receiver version equals GET /api/status",
+      "pass": true,
+      "detail": "0.5.0 / 0.5.0"
+    },
+    {
+      "name": "receiver address is this page’s origin with the status port",
+      "pass": true,
+      "detail": "http://127.0.0.1:4185"
+    },
+    {
+      "name": "projects count equals GET /api/status",
+      "pass": true,
+      "detail": "4 projects / 4"
+    },
+    {
+      "name": "visual packs equal GET /api/status",
+      "pass": true,
+      "detail": "0 installed"
+    },
+    {
+      "name": "loopback-only stated as in GET /api/status",
+      "pass": true,
+      "detail": "This computer only (loopback)"
+    },
+    {
+      "name": "worker errors shown as reported",
+      "pass": true,
+      "detail": "Last update just now · no errors"
+    },
+    {
+      "name": "data location appears, labelled on this computer",
+      "pass": true,
+      "detail": "/tmp/cr-ui-ApMKmk"
+    },
+    {
+      "name": "no token-like string (64 hex) in the page text",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: state from its journal (stopped)",
+      "pass": true,
+      "detail": "Stopped; Capture stopped at Oct 23, 2026, 04:00 PM."
+    },
+    {
+      "name": "lumen: extension version not reported (older than 0.5)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "lumen: no reported settings claimed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: capture state follows the evidence",
+      "pass": true,
+      "detail": "running (expected running)"
+    },
+    {
+      "name": "sample: extension 0.5.0 reported",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: reported settings match what the environment posted",
+      "pass": true,
+      "detail": "{\"receiverPort\":\"4185\",\"baselineFileLimit\":\"450\",\"includeHidden\":\"Off\",\"captureDocumentContents\":\"On\",\"captureTerminalCommands\":\"Off\",\"capturePromptText\":\"Off\",\"shareProjectName\":\"On\"}"
+    },
+    {
+      "name": "sample: report time and kind shown (at capture start)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sample: privacy-sensitive settings explained",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Claude Code observed for the sample project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "VS Code section has no control that edits a setting",
+      "pass": true,
+      "detail": "0 inputs"
+    },
+    {
+      "name": "Open settings link is the extension’s URI",
+      "pass": true,
+      "detail": "vscode://zerobandwidth.code-resonance/settings"
+    },
+    {
+      "name": "never claims a change in VS Code",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "agent-only project: \"No VS Code capture observed\"",
+      "pass": true,
+      "detail": "none: No VS Code capture observed"
+    },
+    {
+      "name": "agent-only project: provider listed from evidence",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "demonstration labelled fictional, in the warning colour",
+      "pass": true,
+      "detail": "pill warn | pill warn"
+    },
+    {
+      "name": "overview strip moves focus to the section (keyboard)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "section jump follows the app’s motion setting",
+      "pass": true,
+      "detail": "[\"auto\",\"smooth\"]"
+    },
+    {
+      "name": "both windows show a newly observed provider without reload",
+      "pass": true,
+      "detail": "true,true"
+    },
+    {
+      "name": "second window: capture start and reported setting converge",
+      "pass": true,
+      "detail": "running"
+    },
+    {
+      "name": "second window: remote window kind shown as reported",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "relative path refused in place",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "missing folder: the receiver’s refusal shown at the field",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Show the change: file path shown",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "install diff adds lines and is computed from the real file",
+      "pass": true,
+      "detail": "{\"add\":97,\"del\":0}"
+    },
+    {
+      "name": "nothing written before \"Write this change\"",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "plan view renders no stray null/undefined text",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "write: hooks for every event on disk",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "write: the file’s other settings untouched",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "write: result states the file written",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "action switched to remove with the keyboard",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "remove: the file equals the original again",
+      "pass": true,
+      "detail": "{\"permissions\":{\"allow\":[\"Bash(ls:*)\"],\"deny\":[]},\"env\":{\"QUAL_KEEP\":\"1\"},\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash\",\"hooks\":[{\"type\":\"command\",\"command\":\"echo ke"
+    },
+    {
+      "name": "changed meanwhile: refused with \"show the change again\"",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "changed meanwhile: nothing written",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "after showing again: written, keeping the meanwhile change",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the typed project folder is not kept in browser storage",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "after reload: the focused project is kept, the folder field starts empty",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no stray null/undefined text rendered",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no token-like string after all actions",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "900 px: no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no console or page errors (besides the 2 refusals provoked on purpose)",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "screenshots": [
+    "qualification/results/ui/connections-overview-1440.png",
+    "qualification/results/ui/connections-vscode-sample-1440.png",
+    "qualification/results/ui/connections-vscode-converged-1280.png",
+    "qualification/results/ui/connections-claude-plan-1440.png",
+    "qualification/results/ui/connections-overview-1280.png",
+    "qualification/results/ui/connections-overview-900.png",
+    "qualification/results/ui/connections-vscode-900.png"
+  ]
+}
