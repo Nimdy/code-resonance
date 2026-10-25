@@ -18,7 +18,7 @@
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
-const {REPO,launch,rendererOf,processMemory,checker}=require('./harness');
+const {REPO,launch,rendererOf,processMemory,checker,adminPost}=require('./harness');
 const {createService}=require(path.join(REPO,'receiver/server'));
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const packs=require(path.join(REPO,'engine/packs'));
@@ -64,7 +64,7 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     if(tick%97===0)outbox.push(ev('repository.commit.observed',{meta:{files:3}}));
     void deliver();
   },3000);
-  const recipe=action=>fetch(`${url}/api/recipe?id=${projectId}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:url},body:JSON.stringify({action})}).then(r=>r.ok);
+  const recipe=action=>adminPost(url,`/api/recipe?id=${projectId}`,{action}).then(r=>r.ok);
   const browser=await launch(GPU);const samples=[],recordings=[],events=[];let restart=null,started=Date.now();
   // Programme time in minutes (real minutes unless --scale).
   const minuteNow=()=>(Date.now()-started)/60000/SCALE;

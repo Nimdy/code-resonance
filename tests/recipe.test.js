@@ -59,7 +59,7 @@ test('Artist control: choose a family, regenerate, lock, adjust and name; inputs
   // Overrides and names survive a family change.
   assert.equal(recipe.update(r,{type:'family',family:'stellar-forge'},p).aliases['0123456789abcd'],'Recipe Book');
 });
-test('The receiver persists the recipe across restarts and accepts edits only from its own origin',async t=>{
+test('The receiver persists the recipe across restarts and accepts edits only from its own page (origin and control capability)',async t=>{
   const dir=tempDir(t,'cr-recipe-');
   let svc=await startService(t,{port:0,dataDir:dir});
   const projectId=sha('recipe-http');let seq=0;
@@ -71,9 +71,12 @@ test('The receiver persists the recipe across restarts and accepts edits only fr
   const first=await (await fetch(url())).json();assert.equal(first.schema,'code-resonance.recipe.v1');assert.equal(first.founded,true);
   assert(!/src\/|part\d|C\d/.test(JSON.stringify(first)),'no paths or identifiers in the recipe');
   const post=(headers,action)=>fetch(url(),{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify({action})});
-  assert.equal((await post({},{type:'family',family:'stellar-forge'})).status,403,'no Origin: refused');
+  assert.equal((await post({},{type:'family',family:'stellar-forge'})).status,401,'no Origin: refused');
   assert.equal((await post({Origin:'http://evil.example'},{type:'family',family:'stellar-forge'})).status,403,'foreign origin: refused');
-  const ok=await post({Origin:`http://127.0.0.1:${svc.port}`},{type:'family',family:'stellar-forge'});
+  const origin=`http://127.0.0.1:${svc.port}`;
+  assert.equal((await post({Origin:origin},{type:'family',family:'stellar-forge'})).status,401,'same origin without a control capability: refused');
+  const {capability}=await (await fetch(`${origin}/api/session`,{method:'POST',headers:{Origin:origin}})).json();
+  const ok=await post({Origin:origin,'X-Resonance-Capability':capability},{type:'family',family:'stellar-forge'});
   assert.equal(ok.status,200);assert.equal((await ok.json()).family,'stellar-forge');
   await svc.stop();svc=await startService(t,{port:0,dataDir:dir});
   const after=await (await fetch(url())).json();assert.equal(after.family,'stellar-forge');assert.equal(after.source,'user');

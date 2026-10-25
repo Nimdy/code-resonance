@@ -11,14 +11,17 @@ async function start(t){
   const dir=tempDir(t,'cr-pack-http-');
   packs.install(path.join(EXAMPLES,'cymatic-field'),dir);packs.install(path.join(EXAMPLES,'ember-observatory'),dir);
   const svc=await startService(t,{port:0,dataDir:dir});
-  const base=`http://127.0.0.1:${svc.port}`,origin={Origin:base};
+  const base=`http://127.0.0.1:${svc.port}`;
+  // Administrative requests carry the page's origin and a control capability (POST /api/session).
+  const {capability}=await (await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base}})).json();
+  const origin={Origin:base,'X-Resonance-Capability':capability};
   const projectId=sha('pack-http');let seq=0;
   const ev=(file,content)=>({v:1,id:`ph-${++seq}-xxxxxxxx`,ts:Date.now(),kind:'document.snapshot',projectId,sessionId:'s',origin:'test',file,content,meta:{reason:'edit'}});
   await fetch(`${base}/v1/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${svc.token}`},body:JSON.stringify({events:Array.from({length:7},(_,i)=>ev(`src/p${i%2}/m${i}.ts`,`export function f${i}(){}`))})});
   await svc.flush(projectId);
   return {svc,dir,base,origin,projectId};
 }
-test('The player can list packs and read approved files only; files are inert text; approvals need the same origin and the exact digest',async t=>{
+test('The player can list packs and read approved files only; files are inert text; approvals need the same origin, a control capability and the exact digest',async t=>{
   const {base,origin,dir}=await start(t);
   const list=await (await fetch(`${base}/api/packs`)).json();
   assert.equal(list.sdk,packs.SDK_VERSION);
@@ -29,8 +32,9 @@ test('The player can list packs and read approved files only; files are inert te
   assert.equal((await file('halcyon.cymatic-field','world.js')).status,403,'unapproved code is not handed out');
   assert.equal((await file('northlight.ember-observatory','pack.json')).status,200,'data packs need no approval');
   const trust=(headers,body)=>fetch(`${base}/api/packs/trust`,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
-  assert.equal((await trust({},{id:world.id,digest:world.digest,trusted:true})).status,403,'no Origin: refused');
+  assert.equal((await trust({},{id:world.id,digest:world.digest,trusted:true})).status,401,'no Origin: refused');
   assert.equal((await trust({Origin:'http://evil.example'},{id:world.id,digest:world.digest,trusted:true})).status,403);
+  assert.equal((await trust({Origin:base},{id:world.id,digest:world.digest,trusted:true})).status,401,'same origin without a capability: refused');
   assert.equal((await trust(origin,{id:world.id,digest:'0'.repeat(64),trusted:true})).status,400,'a different digest is not the reviewed pack');
   assert.equal((await trust(origin,{id:look.id,digest:look.digest,trusted:true})).status,400,'data packs need no approval');
   const ok=await trust(origin,{id:world.id,digest:world.digest,trusted:true});assert.equal(ok.status,200);assert.equal((await ok.json()).trusted,true);

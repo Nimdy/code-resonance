@@ -14,7 +14,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
 const http=require('node:http');
-const {REPO,projectOf,launch,rendererOf,withService,recipeAction,playerPage,worldReady,filmPage,checker}=require('./harness');
+const {REPO,projectOf,launch,rendererOf,withService,adminPost,recipeAction,playerPage,worldReady,filmPage,checker}=require('./harness');
 const packs=require(path.join(REPO,'engine/packs'));
 const {createService}=require(path.join(REPO,'receiver/server'));
 const {lumen}=require('./datasets');
@@ -44,7 +44,7 @@ async function untilStopped(page,timeout=40000){
 }
 async function recipeOf(svc,project){return (await (await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}`)).json());}
 async function trust(svc,id,digest,trusted){
-  const r=await fetch(`http://127.0.0.1:${svc.port}/api/packs/trust`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({id,digest,trusted})});
+  const r=await adminPost(`http://127.0.0.1:${svc.port}`,'/api/packs/trust',{id,digest,trusted});
   if(!r.ok)throw new Error(await r.text());return r.json();
 }
 const pressRetry=page=>page.evaluate(()=>[...document.querySelectorAll('#dnaNotice button')].find(b=>b.textContent==='RETRY')?.click());

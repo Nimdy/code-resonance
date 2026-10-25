@@ -42,8 +42,12 @@ function catalogueOf(base,registry){
   for(const [k,p] of Object.entries(world.parameters||{}))parameters[`params.${k}`]=p.type==='enum'?{type:'enum',values:p.values}:p.type==='boolean'?{type:'boolean'}:{type:p.type,min:p.min,max:p.max};
   return {parameters,effects:[...new Set(Object.values(world.effects||{}))],unlocks:world.ambient?.unlocks||[],builtin:false,world};
 }
+// Ids that would name something else in the packs directory: the approval store, or (the part before the first dot) a
+// Windows device name, whatever follows it.
+const RESERVED_ID=/^(?:trust\.json(?:\.|$)|(?:con|prn|aux|nul|com[0-9]|lpt[0-9])\.)/;
 function semantic(m,registry){
   const errors=[];const err=(at,message)=>errors.push({at,message});
+  if(RESERVED_ID.test(m.id))err('/id',`"${m.id}" is reserved (it names a receiver file or a Windows device): choose another id`);
   const overrides=(at,o,cat)=>{for(const [k,v] of Object.entries(o||{})){const spec=cat.parameters[k];
     if(!spec)err(`${at}/${k}`,'is not a parameter of the base family');else if(!catalog.accepts(spec,v))err(`${at}/${k}`,`must be ${describe(spec)}`);}};
   if(m.kind==='declarative'){

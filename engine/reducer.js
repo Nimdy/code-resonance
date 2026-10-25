@@ -329,6 +329,9 @@ function apply(state,event) {
     }
     case 'workspace.started':case 'workspace.stopped':if(event.name)state.name=event.name;c(event.kind,'observed',0);break;
     case 'instrument.note':c('instrument.note','observed',0);break;
+    // Reported capture settings are facts about the editor, not development activity: no cue, no intent, no growth
+    // (the receiver's evidence records them). Still counted in stats.raw and in its session, like any accepted event.
+    case 'workspace.settings':break;
     default:break;
   }
   const growth=cues.reduce((a,x)=>a+x.weight,0);

@@ -13,7 +13,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
 const cp=require('node:child_process');
-const {REPO,projectOf,launch,rendererOf,recipeAction,playerPage,worldReady,checker}=require('./harness');
+const {REPO,projectOf,launch,rendererOf,adminPost,recipeAction,playerPage,worldReady,checker}=require('./harness');
 const {createService}=require(path.join(REPO,'receiver/server'));
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const packs=require(path.join(REPO,'engine/packs'));
@@ -48,7 +48,7 @@ const {checks,check}=checker();
     const renderer=await rendererOf(browser);
     for(const c of CONDITIONS){
       const project=c.live?liveProject:replayProject;
-      await fetch(`${url}/api/recipe?id=${project}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:url},body:JSON.stringify({action:c.world})});
+      await adminPost(url,`/api/recipe?id=${project}`,{action:c.world});
       const query=c.quality!==undefined?`&quality=${c.quality}&adapt=0`:'';
       let page,errors=[];
       if(c.live){page=await browser.newPage({viewport:{width:1280,height:720},acceptDownloads:true});page.on('pageerror',e=>errors.push(String(e).slice(0,200)));

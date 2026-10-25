@@ -22,7 +22,13 @@
 // automatically); its genome is drawn from the parameters its manifest declares. A declarative or shader pack is an
 // overlay on its base family (parameters, palette, light, technique, effect mapping). A recipe that names a pack which
 // is no longer installed is served without it (flagged `unavailable`) and kept as stored, so reinstalling restores it.
+//
+// Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
+// families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
+// value each one replaced, so a reset restores the generated genome exactly; a regenerated genome on the same family
+// gets them again, a family change drops them.
 const {sha}=require('../receiver/protocol');
+const catalog=require('./catalog');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
 const RECIPE_VERSION=1;      // generator: bump when the same inputs would produce a different genome
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
@@ -188,6 +194,9 @@ function packGenome(def,seed,variant,traits){
     ambient:{base:def.ambient?.base||[],unlocks:def.ambient?.unlocks||[]},effects:{...def.effects}};
 }
 const setPath=(o,p,v)=>{const ks=p.split('.');let x=o;for(const k of ks.slice(0,-1)){if(!x[k]||typeof x[k]!=='object')x[k]={};x=x[k];}x[ks.at(-1)]=v;};
+// Removes a path and the objects it leaves empty (a tuned path the genome did not have, e.g. technique.tint).
+const unsetPath=(o,p)=>{const ks=p.split('.'),chain=[o];for(const k of ks.slice(0,-1)){const x=chain.at(-1)[k];if(!x||typeof x!=='object')return;chain.push(x);}
+  delete chain.at(-1)[ks.at(-1)];for(let i=chain.length-1;i>0&&!Object.keys(chain[i]).length;i--)delete chain[i-1][ks[i-1]];};
 // A declarative or shader pack over its base family: values, or [min, max] ranges drawn per project from the seed.
 function applyOverlay(g,overlay,r,traits){
   const out=JSON.parse(JSON.stringify(g));
@@ -205,6 +214,78 @@ function applyOverlay(g,overlay,r,traits){
 const DEFAULT_OVERRIDES={intensity:1,motion:1,atmosphere:1,labels:'cinematic'};
 const usable=(registry,id)=>{const p=registry?.byId?.[id];return p&&p.ok&&p.compatible?p:null;};
 const packFamily=(registry,id)=>registry?.families?.[id]&&usable(registry,id)?registry.families[id]:null;
+// ---- Tuning ---------------------------------------------------------------------------------------------------------
+const clone=x=>x===undefined?null:JSON.parse(JSON.stringify(x));
+const HEX=/^#[0-9a-f]{6}$/i;
+const sorted=o=>Object.fromEntries(Object.entries(o).sort(([a],[b])=>a.localeCompare(b)));
+// Every genome path the recipe can be tuned on, with its type, range and documentation; group = first path segment.
+function tunable(recipe,registry=null){
+  const out={};
+  const add=(p,s,name)=>{out[p]={type:s.type,...(s.type==='number'||s.type==='integer'||s.type==='vec3'?{min:s.min,max:s.max}:{}),...(s.type==='enum'?{values:[...s.values]}:{}),
+    doc:s.doc||s.description||name,group:p.split('.')[0]};};
+  if(catalog.FAMILIES[recipe?.family])for(const [p,s] of Object.entries(catalog.FAMILIES[recipe.family].parameters))add(p,s,p);
+  else{const world=recipe?.familyKind==='pack'?packFamily(registry,recipe.family):null;if(!world)return out;
+    for(const [p,s] of Object.entries(catalog.COMMON))add(p,s,p);
+    for(const [k,s] of Object.entries(world.parameters||{}))add(`params.${k}`,s,k);}
+  // A shader look's uniforms (a declarative look only shifts the family's own values, already listed).
+  const look=recipe?.pack?.kind==='shader'?usable(registry,recipe.pack.id)?.overlay:null;
+  if(look?.base===recipe.family)for(const [k,s] of Object.entries(look.uniforms||{}))add(`uniforms.${k}`,s,k);
+  return out;
+}
+// Exact values only: the [min, max] ranges pack authors may write are draws, not settings.
+const inRange=(s,x)=>typeof x==='number'&&Number.isFinite(x)&&x>=s.min&&x<=s.max;
+function exact(s,v){
+  switch(s.type){
+    case 'number':return inRange(s,v);
+    case 'integer':return inRange(s,v)&&Number.isInteger(v);
+    case 'enum':return s.values.includes(v);
+    case 'boolean':return typeof v==='boolean';
+    case 'color':return typeof v==='string'&&HEX.test(v);
+    case 'vec3':return Array.isArray(v)&&v.length===3&&v.every(x=>inRange(s,x));
+    default:return false;
+  }
+}
+const expected=s=>s.type==='enum'?`one of ${s.values.join(', ')}`:s.type==='color'?'a #rrggbb colour':s.type==='boolean'?'true or false':s.type==='vec3'?`three numbers in [${s.min}, ${s.max}]`:`a single ${s.type} in [${s.min}, ${s.max}]`;
+const canonical=(s,v)=>s.type==='color'?v.toLowerCase():clone(v);
+const restore=(g,p,v)=>v===null?unsetPath(g,p):setPath(g,p,clone(v));
+// The generated value of every tunable path (what a tuned path returns to).
+function baseValues(recipe,registry=null){
+  const t=recipe?.tuning?.family===recipe?.family?recipe.tuning:null;
+  return Object.fromEntries(Object.keys(tunable(recipe,registry)).map(p=>[p,t&&Object.hasOwn(t.base,p)?t.base[p]:clone(catalog.get(recipe.genome,p))]));
+}
+// Validates every value first (nothing is applied when one is wrong), then applies them over a copy of the genome. A
+// tuned recipe is a deliberate identity: it is locked and founded (never re-derived), its source unchanged.
+function tune(recipe,values,registry){
+  if(!values||typeof values!=='object'||Array.isArray(values))throw new Error('Invalid tuning: values must be an object of path: value');
+  const keys=Object.keys(values).sort();if(keys.length>128)throw new Error('Invalid tuning: at most 128 values at once');
+  // Nothing to tune is no change: an empty batch must not make a provisional identity permanent.
+  if(!keys.length)return recipe;
+  // Own keys only: "constructor" or "__proto__" are not parameters.
+  const spec=tunable(recipe,registry),prior=recipe.tuning?.family===recipe.family?recipe.tuning:null;
+  for(const k of keys){const v=values[k];
+    if(!Object.hasOwn(spec,k)&&!(v===null&&prior&&Object.hasOwn(prior.values,k)))throw new Error(`Unknown tunable parameter "${k}"`);
+    if(v!==null&&!exact(spec[k],v))throw new Error(`Invalid value for "${k}": must be ${expected(spec[k])}`);}
+  const genome=clone(recipe.genome),vals={...prior?.values},base={...prior?.base};
+  for(const k of keys){const v=values[k];
+    if(v===null){if(Object.hasOwn(vals,k)){restore(genome,k,base[k]);delete vals[k];delete base[k];}continue;}
+    if(!Object.hasOwn(base,k))base[k]=clone(catalog.get(genome,k));
+    vals[k]=canonical(spec[k],v);setPath(genome,k,clone(vals[k]));}
+  return {...recipe,genome,tuning:Object.keys(vals).length?{family:recipe.family,values:sorted(vals),base:sorted(base)}:null,locked:true,founded:true};
+}
+function untune(recipe){
+  const t=recipe.tuning;if(!t)return {...recipe,tuning:null};
+  const genome=clone(recipe.genome);if(t.family===recipe.family)for(const k of Object.keys(t.base))restore(genome,k,t.base[k]);
+  return {...recipe,genome,tuning:null};
+}
+// A regenerated genome on the same family gets the tuning again (values still tunable and valid, base recomputed from
+// the new draw); another family drops it. Absent stays absent, so recipes that were never tuned keep their exact shape.
+function retune(next,t,registry){
+  if(t===undefined)return next;
+  if(!t||t.family!==next.family)return Object.assign(next,{tuning:null});
+  const spec=tunable(next,registry),genome=clone(next.genome),values={},base={};
+  for(const k of Object.keys(t.values||{}).sort())if(Object.hasOwn(spec,k)&&exact(spec[k],t.values[k])){base[k]=clone(catalog.get(genome,k));values[k]=canonical(spec[k],t.values[k]);setPath(genome,k,clone(values[k]));}
+  return Object.assign(next,{genome,tuning:Object.keys(values).length?{family:next.family,values,base}:null});
+}
 // `registry` (engine/packs.js createRegistry().snapshot()) makes installed world packs choosable and overlays usable.
 function generate(project,{seed,variant=0,family=null,pack=null,source='generated',locked=false,traits=null,now=Date.now(),registry=null}={}){
   const s=(seed??project?.performance?.identity?.seed??parseInt(sha(project?.projectId||'').slice(0,8),16))>>>0;
@@ -235,23 +316,27 @@ function availability(stored,registry){
 function resolve(stored,project,now=Date.now(),registry=null){
   const missing=availability(stored,registry);
   if(stored&&missing){
-    const keep=x=>Object.assign(x,{overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,unavailable:missing});
+    // Tuning applies to the family it was made on: kept over a missing look, inactive (null) on a fallback family.
+    const keep=x=>Object.assign(retune(x,stored.tuning,registry),{overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,unavailable:missing});
     if(missing.family)return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,traits:stored.founded?stored.traits:null,now,registry})),changed:false};
     return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,traits:stored.traits,now,registry})),changed:false};
   }
   if(stored?.pack){const p=usable(registry,stored.pack.id);
-    if(p&&p.version!==stored.pack.version){const next=Object.assign(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,pack:p.id,traits:stored.traits,now,registry}),
-      {overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,locked:stored.locked,source:stored.source});return {recipe:next,changed:true};}}
+    if(p&&p.version!==stored.pack.version){const next=retune(Object.assign(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,pack:p.id,traits:stored.traits,now,registry}),
+      {overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,locked:stored.locked,source:stored.source}),stored.tuning,registry);return {recipe:next,changed:true};}}
   if(stored&&stored.schema===RECIPE_SCHEMA&&(stored.founded||stored.locked))return {recipe:stored,changed:false};
   const next=generate(project,{seed:stored?.projectSeed,variant:stored?.variant||0,now,registry});
-  if(stored){next.overrides={...DEFAULT_OVERRIDES,...stored.overrides};next.aliases=stored.aliases||{};next.title=stored.title??null;}
+  if(stored){next.overrides={...DEFAULT_OVERRIDES,...stored.overrides};next.aliases=stored.aliases||{};next.title=stored.title??null;retune(next,stored.tuning,registry);}
   const changed=!stored||JSON.stringify({...stored,createdAt:0})!==JSON.stringify({...next,createdAt:0});
   return {recipe:changed?next:stored,changed};
 }
 const ALIAS=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
-// User actions: choose a family or a pack, regenerate, lock, adjust overrides, name subsystems. Inputs are validated.
+// User actions: choose a family or a pack, regenerate, lock, adjust overrides, name subsystems, tune genome values.
+// Inputs are validated. A regenerated genome keeps the tuning when the family stays (retune checks the family);
+// `automatic` and a full `regenerate` are new identities and drop it.
 function update(recipe,action,project,now=Date.now(),registry=null){
-  const keep=r=>Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title});
+  const drop=recipe.tuning===undefined?undefined:null;
+  const keep=(r,tuning=recipe.tuning)=>retune(Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title}),tuning,registry);
   const pack=recipe.pack?.id||null;
   switch(action?.type){
     case 'family':{if(!FAMILIES.includes(action.family)&&!packFamily(registry,action.family))throw new Error('Unknown family');
@@ -266,8 +351,8 @@ function update(recipe,action,project,now=Date.now(),registry=null){
       return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:p.overlay.base,pack:p.id,traits:recipe.traits,now,registry}));}
     case 'regenerate':{const r=generate(project,{seed:recipe.projectSeed,variant:(recipe.variant||0)+1,traits:recipe.founded?recipe.traits:null,now,registry});
       if(action.keepFamily)return keep(generate(project,{seed:recipe.projectSeed,variant:r.variant,family:recipe.family,pack,traits:r.traits,now,registry}));
-      return keep(Object.assign(r,{locked:true,founded:true,source:'user'}));}
-    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now,registry}));
+      return keep(Object.assign(r,{locked:true,founded:true,source:'user'}),drop);}
+    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now,registry}),drop);
     case 'lock':return {...recipe,locked:action.locked!==false,founded:recipe.founded||action.locked!==false};
     case 'overrides':{const o={...recipe.overrides};
       for(const k of ['intensity','motion','atmosphere'])if(action[k]!==undefined){const v=Number(action[k]);if(!Number.isFinite(v))throw new Error(`Invalid ${k}`);o[k]=round(clamp(v,0,2));}
@@ -278,8 +363,15 @@ function update(recipe,action,project,now=Date.now(),registry=null){
       else{if(typeof action.name!=='string'||!ALIAS.test(action.name))throw new Error('Invalid name');aliases[action.id]=action.name;}
       return {...recipe,aliases};}
     case 'title':{if(action.title!==null&&(typeof action.title!=='string'||!ALIAS.test(action.title)))throw new Error('Invalid title');return {...recipe,title:action.title||null};}
+    case 'tune':return tune(recipe,action.values,registry);
+    case 'tune-reset':return untune(recipe);
     default:throw new Error('Unknown action');
   }
+}
+// A batch of actions, applied in order (each validated against the result of the previous one); all or nothing.
+function applyActions(recipe,actions,project,now=Date.now(),registry=null){
+  if(!Array.isArray(actions)||actions.length>16)throw new Error('Invalid actions: a list of at most 16');
+  return actions.reduce((r,a)=>update(r,a,project,now,registry),recipe);
 }
 // Structural distance between two recipes, ignoring palette: how differently two worlds are built and move.
 function structuralDifferences(a,b){
@@ -294,4 +386,4 @@ function structuralDifferences(a,b){
   walk(a.genome,b.genome,'');
   return diffs;
 }
-module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,FAMILY_NAMES,FOUNDING_MODULES,traitsOf,familyScores,generate,resolve,update,structuralDifferences};
+module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,FAMILY_NAMES,FOUNDING_MODULES,traitsOf,familyScores,generate,resolve,update,applyActions,tunable,baseValues,structuralDifferences};

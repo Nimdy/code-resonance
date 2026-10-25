@@ -12,7 +12,7 @@
 const path=require('node:path');
 const fs=require('node:fs');
 const cp=require('node:child_process');
-const {launch,rendererOf}=require('./harness');
+const {launch,rendererOf,adminPost}=require('./harness');
 const ffmpeg=require('ffmpeg-static');
 const REPO=path.resolve(__dirname,'../..');
 const {createService}=require(path.join(REPO,'receiver/server'));
@@ -31,8 +31,8 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   const svc=await createService({port:0,dataDir}).start();
   // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
   await svc.flush();
-  if(arg('look')){const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${arg('project')}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'pack',pack:arg('look')}})});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
-  if(arg('family')){const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${arg('project')}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'family',family:arg('family')}})});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
+  if(arg('look')){const r=await adminPost(`http://127.0.0.1:${svc.port}`,`/api/recipe?id=${arg('project')}`,{action:{type:'pack',pack:arg('look')}});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
+  if(arg('family')){const r=await adminPost(`http://127.0.0.1:${svc.port}`,`/api/recipe?id=${arg('project')}`,{action:{type:'family',family:arg('family')}});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
   const browser=await launch(arg('gpu',null));
   const renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
   if(arg('gpu')==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}

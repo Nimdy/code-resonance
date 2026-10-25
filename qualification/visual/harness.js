@@ -23,8 +23,25 @@ async function rendererOf(browser){const probe=await browser.newPage();await pro
   const r=await probe.evaluate(()=>{const gl=document.createElement('canvas').getContext('webgl2'),d=gl&&gl.getExtension('WEBGL_debug_renderer_info');return gl?gl.getParameter(d?d.UNMASKED_RENDERER_WEBGL:gl.RENDERER):'none';});
   await probe.close();return r;}
 async function withService(dir,fn,options={}){const svc=await createService({port:0,dataDir:dir,...options}).start();try{await svc.flush();return await fn(svc);}finally{await svc.stop();}}
+// Administrative requests (recipe edits, pack approvals) carry the page's origin and a control capability from
+// POST /api/session. A receiver from before capabilities (a baseline checkout) has no session route: the origin is enough.
+// A refused capability (a receiver restarted on the same port) is asked for again, once.
+const capabilities=new Map();
+async function adminHeaders(base){
+  if(!capabilities.has(base)){
+    const r=await fetch(`${base}/api/session`,{method:'POST',headers:{Origin:base}});
+    if(!r.ok&&r.status!==404)throw new Error(`control session: HTTP ${r.status} ${await r.text()}`);
+    capabilities.set(base,r.ok?(await r.json()).capability:null);
+  }
+  const c=capabilities.get(base);return {'Content-Type':'application/json',Origin:base,...(c?{'X-Resonance-Capability':c}:{})};
+}
+async function adminPost(base,route,body){
+  const send=async()=>fetch(`${base}${route}`,{method:'POST',headers:await adminHeaders(base),body:JSON.stringify(body)});
+  let r=await send();if(r.status===401&&capabilities.get(base)!==undefined){capabilities.delete(base);r=await send();}
+  return r;
+}
 async function recipeAction(svc,project,action){
-  const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action})});
+  const r=await adminPost(`http://127.0.0.1:${svc.port}`,`/api/recipe?id=${project}`,{action});
   if(!r.ok)throw new Error(await r.text());return r.json();
 }
 const setFamily=(svc,project,family)=>recipeAction(svc,project,{type:'family',family});
@@ -72,4 +89,4 @@ function processMemory(){
   return Object.fromEntries(Object.entries(out).map(([k,v])=>[k,Math.round(v)]));
 }
 function checker(){const checks=[];return {checks,check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(detail)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${detail}`:''}`);}};}
-module.exports={REPO,projectOf,launch,rendererOf,withService,recipeAction,setFamily,filmPage,playerPage,worldReady,processMemory,renderTo,thumb,diff,sha,checker};
+module.exports={REPO,projectOf,launch,rendererOf,withService,adminPost,recipeAction,setFamily,filmPage,playerPage,worldReady,processMemory,renderTo,thumb,diff,sha,checker};

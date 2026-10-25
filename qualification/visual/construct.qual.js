@@ -37,8 +37,8 @@ function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(
   try{
     const page=await browser.newPage({viewport:{width:1920,height:1080}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-    await page.goto(`${url}/?project=${projectId}&world=construct`);
-    await page.waitForFunction(()=>document.getElementById('connection').textContent==='SESSION CONNECTED',null,{timeout:20000});
+    await page.goto(`${url}/?project=${projectId}&world=construct#/stage`);
+    await page.waitForFunction(()=>document.body.dataset.receiver==='connected'&&!!window.ResonancePlayer?.state.model,null,{timeout:20000});
     await page.waitForTimeout(6000);
     const visible=await page.$eval('#construct',e=>!e.classList.contains('hidden')&&e.width>0);
     check('the Construct renders with WebGL in the player',visible);

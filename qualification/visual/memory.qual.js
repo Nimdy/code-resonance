@@ -34,7 +34,7 @@
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
-const {REPO:HERE,launch,rendererOf}=require('./harness');
+const {REPO:HERE,launch,rendererOf,adminPost}=require('./harness');
 const {launchLean}=require('./lean');
 const media=require('./media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
@@ -116,7 +116,7 @@ const slope=(xs,ys)=>{const n=xs.length;if(n<3)return null;const mx=xs.reduce((a
     const events=[ev('document.snapshot',{file:`src/${m.name}.ts`,content,meta:{reason:'edit'}})];
     if(k%23===0)events.push(ev('terminal.command.finished',{meta:{category:'test',exitCode:k%46===0?1:0}}));if(k%11===0)events.push(ev('agent.tool.completed',{file:`src/${m.name}.ts`,meta:{provider:'mem',agent:'agent-1',tool:'Edit'}}));
     void post(events);},3000);
-  const recipe=action=>fetch(`${url}/api/recipe?id=${projectId}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:url},body:JSON.stringify({action})});
+  const recipe=action=>adminPost(url,`/api/recipe?id=${projectId}`,{action});
   const FAMILY={stellar:{type:'family',family:'stellar-forge'},biosphere:{type:'family',family:'fractal-biosphere'},cathedral:{type:'family',family:'machine-cathedral'},
     cymatic:{type:'family',family:'halcyon.cymatic-field'},blueprint:{type:'pack',pack:'northlight.blueprint-cathedral'}};
   const results={};
