@@ -282,12 +282,14 @@
     accent(type,cue){if(this.ctx&&this.enabled)this.enqueue(cue||{id:type,type,weight:1,detail:{}},this.clock?this.clock():0);}
     // Qualification only (recording synchronisation): a 2 kHz click at a performance time, mapped to the audio clock
     // exactly as cues are, so a recording's picture and sound can be compared at a known moment.
+    // The marker is a 40 ms linear chirp from 3 to 6 kHz (Hann window), found by a matched filter: musical notes are not
+    // mistaken for it, and its start is located to the sample.
     marker(atMs){
       if(!this.ctx||!this.output)return false;
       const when=this.clock?this.ctx.currentTime+(atMs-this.clock())/1000/this.speed:this.ctx.currentTime+.05;if(when<this.ctx.currentTime)return false;
-      const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=2000;
-      g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(.8,when+.002);g.gain.exponentialRampToValueAtTime(.001,when+.04);
-      o.connect(g);g.connect(this.output);o.start(when);o.stop(when+.05);return true;
+      if(!this.chirp||this.chirp.sampleRate!==this.ctx.sampleRate){const rate=this.ctx.sampleRate,n=Math.round(rate*.04),b=this.ctx.createBuffer(1,n,rate),d=b.getChannelData(0),k=3000/.04;
+        for(let i=0;i<n;i++){const t=i/rate;d[i]=.8*Math.sin(2*Math.PI*(3000*t+k*t*t/2))*(.5-.5*Math.cos(2*Math.PI*i/(n-1)));}this.chirp=b;}
+      const src=this.ctx.createBufferSource();src.buffer=this.chirp;src.connect(this.output);src.start(when);return true;
     }
     // Qualification only (recording continuity): a steady 12 kHz pilot tone at -40 dBFS into the same output, so any
     // gap in a recording's audio path shows as a gap in the pilot, whatever the music is doing.

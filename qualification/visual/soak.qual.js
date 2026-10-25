@@ -92,10 +92,10 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         const player=await page.evaluate(()=>window.__qual.recording().last);
         if(download)await download.saveAs(file);
-        const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
+        const a=download?media.analyse(file):null,s=download?media.markers(file):null,c=download?media.continuity(file):null;
         recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,maxIntervalAfterStartupMs:a?.maxIntervalAfterStartupMs??null,frameIntervalMedianMs:a?.frameInterval?.median??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
-          sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0,audioLostReported:player?.audioLost??null});
+          sync:s?{markers:s.flashes,chirps:s.chirps,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs,pairs:s.pairs}:null,bytes:download?fs.statSync(file).size:0,audioLostReported:player?.audioLost??null});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
       // Receiver restart, once.
       if(!restart&&minute>=RESTART_AT&&Date.now()<END){

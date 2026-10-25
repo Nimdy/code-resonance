@@ -16,7 +16,7 @@ function streams(file){
 // Every decoded video frame: presentation time, checksum and mean luma (showinfo), on a small scaled copy.
 function frames(file){
   const r=run(['-i',file,'-an','-vf','scale=64:36,showinfo','-f','null','-']);const list=[];
-  for(const m of String(r.stderr).matchAll(/pts_time:([\d.]+).*?checksum:([0-9A-F]+).*?mean:\[(\d+)/g))list.push({t:+m[1],sum:m[2],luma:+m[3]});
+  for(const m of String(r.stderr).matchAll(/pts_time:([\d.]+).*?checksum:([0-9A-F]+).*?mean:\[(\d+) (\d+) (\d+)\]/g))list.push({t:+m[1],sum:m[2],luma:+m[3],u:+m[4],v:+m[5]});
   return list;
 }
 // A still from the recording (JPEG), for the evidence.
@@ -78,4 +78,46 @@ function sync(file){
   return {flashes:flashes.length,clicks:clicks.length,pairs,meanOffsetMs:offsets.length?Math.round(offsets.reduce((a,b)=>a+b,0)/offsets.length):null,
     maxAbsOffsetMs:offsets.length?Math.max(...offsets.map(Math.abs)):null,spreadMs:offsets.length?Math.max(...offsets)-Math.min(...offsets):null};
 }
-module.exports={streams,frames,still,pcm,analyse,continuity,sync};
+// ---- Marker synchronisation, second method (qualification markers v2) -----------------------------------------
+// Picture: a full-frame pure green flash (Y≈145, U≈54, V≈34 in BT.601), found by its colour, so a world's own white
+// flashes cannot be mistaken for it. Sound: a 40 ms linear chirp from 3 to 6 kHz (Hann window), found by normalised
+// cross-correlation with the same chirp (a matched filter), so musical notes are not mistaken for it, with
+// sample-accurate timing. Each marker's offset is an interval: the flash happened after the previous frame and by the
+// frame that shows it.
+const CHIRP={f0:3000,f1:6000,ms:40};
+function chirp(rate=48000){const n=Math.round(rate*CHIRP.ms/1000),out=new Float64Array(n),k=(CHIRP.f1-CHIRP.f0)/(CHIRP.ms/1000);
+  for(let i=0;i<n;i++){const t=i/rate;out[i]=Math.sin(2*Math.PI*(CHIRP.f0*t+k*t*t/2))*(.5-.5*Math.cos(2*Math.PI*i/(n-1)));}return out;}
+// In-place iterative radix-2 FFT (inverse with inv=true, unscaled).
+function fft(re,im,inv=false){
+  const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b>>=1)j^=b;j|=b;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}
+  for(let len=2;len<=n;len<<=1){const a=(inv?2:-2)*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a);
+    for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let j=0;j<len/2;j++){const ur=re[i+j],ui=im[i+j],k=i+j+len/2,vr=re[k]*cr-im[k]*ci,vi=re[k]*ci+im[k]*cr;
+      re[i+j]=ur+vr;im[i+j]=ui+vi;re[k]=ur-vr;im[k]=ui-vi;const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t;}}}
+}
+// Normalised cross-correlation of x with template h (overlap-save), as a coefficient in [-1, 1] per lag.
+function correlate(x,h){
+  const N=1<<16,M=h.length,step=N-M+1,out=new Float32Array(Math.max(0,x.length-M+1));
+  const hr=new Float64Array(N),hi=new Float64Array(N);for(let i=0;i<M;i++)hr[i]=h[i];fft(hr,hi);
+  const he=Math.sqrt(h.reduce((a,v)=>a+v*v,0)),cum=new Float64Array(x.length+1);for(let i=0;i<x.length;i++)cum[i+1]=cum[i]+x[i]*x[i];
+  for(let pos=0;pos<out.length;pos+=step){
+    const re=new Float64Array(N),im=new Float64Array(N);for(let i=0;i<N&&pos+i<x.length;i++)re[i]=x[pos+i];fft(re,im);
+    for(let i=0;i<N;i++){const a=re[i],b=im[i],c=hr[i],d=-hi[i];re[i]=a*c-b*d;im[i]=a*d+b*c;}fft(re,im,true);
+    for(let k=0;k<step&&pos+k<out.length;k++){const e=Math.sqrt(cum[pos+k+M]-cum[pos+k]);out[pos+k]=e>1e-9?re[k]/N/(e*he):0;}
+  }
+  return out;
+}
+function markers(file,{threshold=.6}={}){
+  const f=frames(file),green=x=>x.luma>100&&x.luma<190&&x.u<100&&x.v<90;
+  const flashes=[];for(let i=1;i<f.length;i++)if(green(f[i])&&!green(f[i-1]))flashes.push({t:f[i].t,prev:f[i-1].t,frame:i});
+  const rate=48000,x=pcm(file,rate),c=correlate(x,chirp(rate)),chirps=[];
+  for(let i=1;i<c.length-1;i++)if(c[i]>threshold&&c[i]>=c[i-1]&&c[i]>=c[i+1]&&(!chirps.length||i/rate-chirps.at(-1).t>.3))chirps.push({t:i/rate,r:+c[i].toFixed(3)});
+  const pairs=flashes.map(fl=>{const ch=chirps.reduce((b,a)=>!b||Math.abs(a.t-fl.t)<Math.abs(b.t-fl.t)?a:b,null);
+    if(!ch||Math.abs(ch.t-fl.t)>.6)return {flash:+fl.t.toFixed(4),prevFrame:+fl.prev.toFixed(4),chirp:null};
+    // offset = sound − picture; the flash occurred in (prev, t]: offset lies in [ch−t, ch−prev].
+    return {flash:+fl.t.toFixed(4),prevFrame:+fl.prev.toFixed(4),chirp:+ch.t.toFixed(4),r:ch.r,offsetMs:Math.round((ch.t-fl.t)*1000),offsetRangeMs:[Math.round((ch.t-fl.t)*1000),Math.round((ch.t-fl.prev)*1000)]};});
+  const offsets=pairs.filter(p=>p.chirp!==null).map(p=>p.offsetMs);
+  return {method:'v2: green flash + 3-6 kHz chirp, matched filter',flashes:flashes.length,chirps:chirps.length,pairs,
+    meanOffsetMs:offsets.length?Math.round(offsets.reduce((a,b)=>a+b,0)/offsets.length):null,maxAbsOffsetMs:offsets.length?Math.max(...offsets.map(Math.abs)):null,
+    spreadMs:offsets.length?Math.max(...offsets)-Math.min(...offsets):null,unpaired:pairs.filter(p=>p.chirp===null).length,extraChirps:Math.max(0,chirps.length-flashes.length)};
+}
+module.exports={streams,frames,still,pcm,analyse,continuity,sync,markers,chirp,correlate};

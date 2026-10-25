@@ -657,11 +657,12 @@
       else{drawFit(g2,$('world'),w,h);drawFit(g2,$('worldOverlay'),w,h,false);}
     }else if(selectedWorld==='construct'&&construct){drawFit(g2,$('construct'),w,h);drawCaption(g2,w,h,now);}
     else drawFit(g2,canvas,w,h);
-    // Qualification (?qual=1): a white flash at marked performance times, to measure picture/sound synchronisation.
+    // Qualification (?qual=1): a pure green flash at marked performance times, to measure picture/sound synchronisation
+    // (found by its colour, so a world's own white flashes cannot be mistaken for it).
     // A flash lasts 120 ms and at least three presented frames however slowly frames come (a slow machine's capture may
     // keep only every other frame); synchronisation is measured from its first frame.
     for(let i=flashes.length-1;i>=0;i--){const f=flashes[i],age=(now-f.at)/replaySpeed();
-      if(age>=0&&(age<120||f.shown<3)){g2.fillStyle='#fff';g2.fillRect(0,0,w,h);f.shown++;}if(age>2000)flashes.splice(i,1);}
+      if(age>=0&&(age<120||f.shown<3)){g2.fillStyle='#00ff00';g2.fillRect(0,0,w,h);f.shown++;}if(age>2000)flashes.splice(i,1);}
   }
   // A source drawn into the recording at its own aspect ratio: exact when it matches, otherwise fitted with black bars
   // (never stretched). `clear` paints the bars (false for a transparent layer over the picture).
@@ -911,7 +912,7 @@
   if(params.has('qual'))window.__qual={
     record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),breakRecordingAudio:()=>recording.breakAudio(),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
-    audioClock:()=>music.ctx?music.ctx.currentTime:null,setRecordSize:v=>{recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';$('recordSize').value=recordSize;return recordSize;},
+    audioClock:()=>music.ctx?music.ctx.currentTime:null,structure:()=>model?{nodes:model.graph?.nodes?.length||0,edges:model.graph?.edges?.length||0}:null,setRecordSize:v=>{recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';$('recordSize').value=recordSize;return recordSize;},
     marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
