@@ -24,8 +24,18 @@
     // waits for sound to interleave with the picture). Lost: the recorded track ended or muted, the music's context not
     // running or its clock not advancing, or the recorded sound digitally silent for two seconds while the music is
     // audible. The player is told at once (it finishes and saves the recording): never a silent file passed as good.
-    function watchAudio(input,ctx,musicLevel){
-      let an=null,src=null;try{src=ctx.createMediaStreamSource(new MediaStream([input]));an=ctx.createAnalyser();an.fftSize=2048;src.connect(an);}catch{}
+    // The silence check listens to the music's output through one tap for the page's lifetime (the recording's own
+    // track is a clone of the same output): the browser never released a source node created per recording, and each
+    // kept about 3 MB in the renderer and the GPU process (qualification/results/memory/memory-rec-bisect-*.json).
+    let tap=null;
+    function tapFor(track,ctx){
+      if(tap&&tap.track===track&&tap.ctx===ctx&&track.readyState==='live')return tap;
+      tap=null;
+      try{const src=ctx.createMediaStreamSource(new MediaStream([track])),an=ctx.createAnalyser();an.fftSize=2048;src.connect(an);tap={track,ctx,an};}catch{}
+      return tap;
+    }
+    function watchAudio(input,output,ctx,musicLevel){
+      const an=output?tapFor(output,ctx)?.an:null;
       const buf=new Float32Array(2048);let silentFor=0,lastClock=ctx.currentTime,stalledFor=0;
       const lose=()=>{lostMs+=500;if(!audioLost){audioLost=true;onAudioLost?.();}};
       const timer=setInterval(()=>{
@@ -34,7 +44,7 @@
         if(!an)return;an.getFloatTimeDomainData(buf);let e=0;for(const v of buf)e+=v*v;const rms=Math.sqrt(e/buf.length);
         if(rms<1e-6&&(musicLevel?.()||0)>.003){silentFor+=500;if(silentFor>=2000)lose();}else silentFor=0;
       },500);
-      return {stop(){clearInterval(timer);try{src?.disconnect();}catch{}}};
+      return {stop(){clearInterval(timer);}};
     }
     const even=n=>Math.max(2,Math.round(n/2)*2);
     return {
@@ -50,10 +60,11 @@
         const video=canvas.captureStream(fps);
         // The recording owns clones of the music's tracks: stopping it never ends the music output itself (a second
         // recording, or the speakers, keep working).
-        inputs=(audioStream?.getAudioTracks().filter(t=>t.readyState==='live')||[]).map(t=>t.clone());audio=inputs.length>0;
+        const outputs=audioStream?.getAudioTracks().filter(t=>t.readyState==='live')||[];
+        inputs=outputs.map(t=>t.clone());audio=inputs.length>0;
         const combined=new MediaStream([...video.getVideoTracks(),...inputs]);
         streams=[video,combined];chunks=[];bytes=0;frames=0;mimeType=s.mimeType;audioLost=false;lostMs=0;onAudioLost=audioLostListener;
-        watch=audio&&audioContext?watchAudio(inputs[0],audioContext,musicLevel):null;
+        watch=audio&&audioContext?watchAudio(inputs[0],outputs[0],audioContext,musicLevel):null;
         recorder=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:bitsPerSecond,audioBitsPerSecond:160000});
         recorder.ondataavailable=e=>{if(e.data?.size){chunks.push(e.data);bytes+=e.data.size;}};
         finishing=new Promise(resolve=>{recorder.onstop=()=>{

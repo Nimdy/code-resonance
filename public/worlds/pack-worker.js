@@ -15,7 +15,7 @@ const send=(message,transfer=[])=>self.postMessage(message,transfer);
 let frameTime=0,seed=1,random=rng(1);
 Math.random=()=>random();
 Date.now=()=>Math.floor(frameTime);
-let host=null,canvas=null,overlay=null,rendered=0,skipped=0,semantic=0,lastRenderMs=0,lastStats=0;
+let host=null,canvas=null,overlay=null,rendered=0,skipped=0,semantic=0,lastRenderMs=0,lastStats=0,disposing=false,out=null,outG=null;
 const fail=(e,kind='exception')=>send({type:'error',kind,message:String(e?.message||e||'error').slice(0,300)});
 self.addEventListener('error',e=>{e.preventDefault?.();fail(e.error||e.message);});
 self.addEventListener('unhandledrejection',e=>fail(e.reason));
@@ -26,7 +26,7 @@ async function moduleFrom(source){
 }
 async function init(m){
   canvas=m.canvas;overlay=m.overlay;seed=hash(`${m.recipe.projectSeed}/${m.recipe.variant}`);
-  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fail('the GPU context was lost','context-lost');});
+  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(!disposing)fail('the GPU context was lost','context-lost');});
   const assets={};for(const [p,v] of Object.entries(m.files||{}))assets[p]=typeof v==='string'?v:new Blob([v]);
   const families={};let extension=null;
   if(m.pack.kind==='world')families[m.recipe.family]=await moduleFrom(m.files[m.pack.entry]);
@@ -37,9 +37,10 @@ async function init(m){
   send({type:'loaded',sdk:SDK_VERSION});
 }
 // Films and recordings: the world and its labels composited into one bitmap (transferred, never copied twice).
+// One compositing canvas, reused (a new canvas and context per frame left their memory to the garbage collector).
 function composite(film){
-  const out=new OffscreenCanvas(canvas.width,canvas.height),g=out.getContext('2d');
-  g.drawImage(canvas,0,0);if(film)host.drawOverlay(g,out.width,out.height);else if(overlay.width)g.drawImage(overlay,0,0);
+  if(!out||out.width!==canvas.width||out.height!==canvas.height){out=new OffscreenCanvas(canvas.width,canvas.height);outG=out.getContext('2d');}
+  outG.clearRect(0,0,out.width,out.height);outG.drawImage(canvas,0,0);if(film)host.drawOverlay(outG,out.width,out.height);else if(overlay.width)outG.drawImage(overlay,0,0);
   return out.transferToImageBitmap();
 }
 const queue=[];let running=false;
@@ -70,7 +71,7 @@ function handle(m){
       send({type:'rendered',id:m.id,ms:+lastRenderMs.toFixed(2),queue:queue.length,bitmap},bitmap?[bitmap]:[]);
       if(m.mode==='film'||rendered%15===1||began-lastStats>1000){lastStats=began;send({type:'stats',stats:{...host.stats(),rendered,skipped,semantic,renderMs:+lastRenderMs.toFixed(2),now:performance.now()},labels:host.labels()});}
       break;}
-    case 'dispose':host.dispose();host=null;break;
+    case 'dispose':disposing=true;host.dispose();host=null;out=null;outG=null;break;
   }
 }
 // Messages are handled strictly in order; an await (init, a recipe switch) never lets a later message overtake.

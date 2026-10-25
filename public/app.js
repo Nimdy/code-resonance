@@ -735,7 +735,8 @@
     lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason};
     if(!result.blob.size){showNotice(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`);return lastRecording;}
     if(result.blob.size>0){const url=URL.createObjectURL(result.blob),link=document.createElement('a');
-      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+      // The download holds its own reference once started: the URL (which kept the whole file in memory) goes at once.
+      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
     if(reason!=='stopped')showNotice(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`);
 
     return lastRecording;
