@@ -548,10 +548,10 @@ as PR #5 recorded):
 | Live session, music, events every 3 s | — | −0.02 MB/min | flat |
 | Events rewriting 20 fixed modules | 3.29 MB/min under Playwright | 0.07 MB/min | flat (the DevTools effect) |
 
-**Residual risk.** A world or pack switch leaves 0.2-0.4 MB after collection, not shown to level off within 21-27
-switches: at the soak's rate (seven switches an hour) about 3 MB an hour. The browser holds a recording in memory until
-it stops (see `docs/RECORDING.md`). Not measured: sessions of many hours under the lean driver (see the short soak
-below), and other browsers.
+**Residual risk.** A world or pack switch leaves 0.2-0.4 MB after collection within 21-27 switches; in the short soak
+below each world's post-collection level stops rising after two or three visits. The browser holds a recording in memory
+until it stops (see `docs/RECORDING.md`). Not measured: sessions of many hours under the lean driver, and other
+browsers.
 
 ### Recording synchronisation: method replaced, one clock defect fixed, the 172 ms outlier not reproduced
 
@@ -600,10 +600,35 @@ the frame rate dropped below 30. Before the fix (`sync-matrix-before-clockfix-am
 medians were +4…+32 ms; now −13…−6 ms, as in live mode. Drift over three minutes: see *Recording sizes* below.
 
 **The 172 ms outlier** (soak, live Stellar Forge, stage size, first method) was not reproduced: 24 live Stellar Forge
-markers across the two matrix runs fell within −55…+23 ms, and the short soak below adds more. Its file was not kept.
+markers across the two matrix runs fell within −55…+23 ms, and the short soak below adds 177 live markers across all
+five worlds (−64…+18 ms). Its file was not kept.
 The first method's ambiguity is a plausible cause, not a proven one: its flash detector took any bright full frame
 (Stellar Forge flashes white), and in the self-test it produced a fake −163 ms offset from exactly such a flash. The
 replay clock defect cannot explain it (the soak was live). It stays an unresolved historical observation.
+
+### Short soak: 30 minutes of activity with the final code
+
+`visual/memory.qual.js --experiments activity --minutes 30` (lean driver, the player at 1920×1080 with music): a live
+session whose project grows with every event (from 3 to 528 structures), and every minute a world switch (Stellar
+Forge, Fractal Biosphere, Machine Cathedral, Cymatic Field, Blueprint Cathedral in turn) followed by a 20 s recording
+at 720p with three markers, measured from the file before it is deleted. Run twice:
+
+| Run | Recordings | Markers | Offsets | fps in the files | Renderer | GPU process |
+|---|---|---|---|---|---|---|
+| Natural garbage collection (`memory-activity-soak-amd.json`) | 30 | 90/90 | −55…+18 ms | 27.95-30 | 168 → 287 MB; 226 MB after a forced collection at the end | 266 → 278 MB |
+| A collection after every operation (`memory-activity-soak-gc-each-amd.json`) | 29 | 87/87 | −64…+13 ms | 28.9-30 | after collection: +1.49 MB per operation in the first half, +0.04 in the second | 265 → 275 MB |
+
+No recording failed, no page error, no WebGL context left alive, one renderer process throughout. With a collection
+after every operation the renderer's level depends on the world showing and, per world, stops rising after two or three
+visits (Stellar Forge 185 → 201 MB, Fractal Biosphere 183 → 203, Machine Cathedral 188 → 193, Cymatic Field 201 → 217,
+Blueprint Cathedral 200 → 226, while the project grew to 528 structures): high-water marks, not retention. With natural
+collection the renderer carried up to 61 MB of collectable memory before the final forced collection. Live-mode
+markers in the soak (Stellar Forge included, 177 in all) stayed within −64…+18 ms.
+
+**Is a longer soak still needed?** For the questions of this milestone, no: the growth seen in the earlier soaks is
+explained (the DevTools connection, the watchdog leak) and the remaining behaviour levels off within 30 minutes. A
+multi-hour run with the lean driver would still be the way to confirm hours-long sessions (allocator behaviour over
+hours, many hundreds of recordings); it is not part of this milestone and would need the owner's approval.
 
 ### Recording sizes: 720p and 1080p as encoded dimensions
 

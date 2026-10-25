@@ -35,8 +35,8 @@ Visual packs: [packs/README.md](packs/README.md). Security and privacy: [../SECU
 
 | Environment | Receiver, tests | Extension in VS Code | Player and worlds | Recording | OBS |
 |---|---|---|---|---|---|
-| Linux / WSL2 (Ubuntu 24.04), AMD integrated GPU via WSL2 | ✓ | ✓ (VS Code 1.143, Xvfb) | ✓ 60 fps (Chromium) | ✓ quality-qualified | — |
-| Linux, software rendering (GitHub runners) | ✓ | ✓ | functional (packs ~60 fps, built-in worlds slow) | functional only | ✓ OBS 32.2 (no GPU) |
+| Linux / WSL2 (Ubuntu 24.04), AMD integrated GPU via WSL2 | ✓ | ✓ (VS Code 1.143, Xvfb) | ✓ 60 fps (Chromium) | ✓ 720p qualified (30 fps, sync); 1080p: packs 30 fps, built-in worlds 25-28 (not qualified) | — |
+| Linux, software rendering (GitHub runners) | ✓ | ✓ | functional (packs ~60 fps, built-in worlds slow) | functional only (stage size; a pack at 720p) | ✓ OBS 32.2 (no GPU) |
 | Windows (GitHub runners, no GPU) | ✓ | ✓ (VS Code 1.143.1) | functional | functional only | — |
 | Windows or macOS desktop with a GPU | not tested | not tested | not tested | not tested | not tested |
 | Firefox, Safari | — | — | not tested | no (Chromium only) | — |
