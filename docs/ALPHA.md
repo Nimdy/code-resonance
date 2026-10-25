@@ -49,7 +49,8 @@ Visual packs: [packs/README.md](packs/README.md). Security and privacy: [../SECU
 - **Recording at 1080p** needs a capable GPU: on the AMD integrated GPU used for testing, the built-in worlds record at
   about 23-29 frames a second at 1080p (visual packs at 30); 720p, the default, holds 30 for every world. The player
   says so when a recording cannot keep up and suggests 720p or a lower Quality. On software rendering (machines without
-  a GPU) the built-in worlds record at a few frames a second.
+  a GPU) the built-in worlds record at a few frames a second, and at 720p a shader pack can fall under one frame a
+  second, which stops it (the built-in identity takes over, as designed): record at the stage's size there.
 - **Recording memory:** the browser keeps the recording in memory until you stop it: about 60 MB a minute at 720p and
   90 MB at 1080p (1.5-1.7 times the file, which grows 35-37 and 50-61 MB a minute). For sessions longer than about half
   an hour, record with OBS.
