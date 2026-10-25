@@ -1,53 +1,86 @@
 'use strict';
-// Code Resonance is a fully independent local performance player.
+// Code Resonance performance engine: the one player behind the Control Center, the Performance Stage and the OBS view.
 // One performance clock drives both the music and the visuals: live = wall time minus the interpretation delay,
 // replay = the playhead. Recorded cues are scheduled at their true times within each window, so sound and image
 // coincide and follow the rhythm of the actual work rather than the arrival of network polls.
+// The engine owns the stage (its canvases, the worlds, the music, the recorder) and exposes window.ResonancePlayer:
+// commands plus change notifications. It renders no controls: the interface (public/ui/) drives it, and any number of
+// interface views in this page share this one engine, so there is never a second renderer, scheduler or clock here.
 (() => {
   const $=id=>document.getElementById(id);
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
-  const dom={project:$('projectSelect'),feed:$('feed'),scrub:$('scrub'),sound:$('soundBtn'),chapter:$('chapter')};
   const params=new URLSearchParams(location.search);
   // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages.
   const WORLDS=['living','construct','nexus','city','nebula'];
   // Film mode: the clock is driven frame by frame (window.__film), so a recorded performance renders deterministically.
   const FILM=params.has('film');
   const overlay=params.has('overlay');
-  let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0;
-  let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,feedDirty=false;
+  // ---- Change notifications ----------------------------------------------------------------------------------
+  // Listeners receive the set of changed topics, batched per task, so a burst of updates costs one interface pass.
+  const listeners=new Set(),dirty=new Set();let flushing=false;
+  function changed(...topics){for(const t of topics)dirty.add(t);if(flushing)return;flushing=true;
+    queueMicrotask(()=>{flushing=false;const topics=new Set(dirty);dirty.clear();for(const f of listeners){try{f(topics);}catch(e){console.error(e);}}});}
+  // Administrative requests carry a control capability (POST /api/session, bound to this page's origin and to the
+  // loopback socket); it is requested on the first administrative call and renewed once when the receiver restarted.
+  // Capabilities are issued only to a paired browser: one that received the receiver's pairing key once, in the private
+  // link `npm run pair` (or `npm start`, or VS Code's Open Stage) gives. The key stays in this origin's storage; the link's
+  // fragment is removed at once (fragments never reach the server).
+  const PAIR_KEY='code-resonance-pairing',readPairing=()=>{try{return localStorage.getItem(PAIR_KEY)||null;}catch{return null;}};
+  {const m=/(?:^#|[#&?])pair=([0-9a-f]{64})/.exec(location.hash);
+    if(m){try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}const rest=location.hash.replace(/[#&?]?pair=[0-9a-f]{64}/,'').replace(/^#?&/,'#');
+      window.history.replaceState(null,'',location.pathname+location.search+(rest&&rest!=='#'?rest:''));}}
+  let pairing=readPairing()?'unknown':'unpaired';
+  const api=(()=>{let capability=null,pending=null;
+    function failure(status,data){const e=new Error(data?.error||`HTTP ${status}`);e.status=status;e.code=data?.code||null;e.data=data||null;return e;}
+    function session(){if(!pending)pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pairing:readPairing()||undefined})})
+      .then(async r=>{const data=await r.json().catch(()=>null);
+        if(!r.ok){if(data?.code==='pairing-required'){pairing='unpaired';changed('pairing');}throw failure(r.status,data);}
+        capability=data.capability;if(pairing!=='paired'){pairing='paired';changed('pairing');}return capability;}).finally(()=>{pending=null;});
+      return pending;}
+    async function request(method,url,body,{retry=true,type=null}={}){
+      if(!capability)await session();
+      const init={method,headers:{'X-Resonance-Capability':capability},cache:'no-store'};
+      if(body!==undefined){if(type){init.headers['Content-Type']=type;init.body=body;}else{init.headers['Content-Type']='application/json';init.body=JSON.stringify(body);}}
+      const r=await fetch(url,init);
+      if(r.status===401&&retry){capability=null;return request(method,url,body,{retry:false,type});}
+      const data=await r.json().catch(()=>null);
+      if(!r.ok)throw failure(r.status,data);
+      return data;}
+    // Pair with a key, or with the private link that carries it; false when the receiver does not accept it.
+    async function pair(input){const m=/([0-9a-f]{64})/.exec(String(input||''));if(!m)return false;try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}capability=null;
+      try{await session();return true;}catch{return false;}}
+    return {request,post:(url,body,o)=>request('POST',url,body,o),session,pair,get capability(){return capability;}};})();
+  let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0,speedChoice=4;
+  let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,receiverOk=null;
   // World coordinates are centred on (0,0); the camera eases to frame the structure as it grows.
   const scene={nodes:new Map(),edges:new Map(),groups:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
-  let firstBar=null;
+  let firstBar=null,barNumber=0,musicKey='';
   const queue=[];
-  const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;setText('barCounter',`BAR ${String(index-firstBar+1).padStart(3,'0')}`);if(s)section=s;if(key)setText('seedLabel',key.toUpperCase());});
+  const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;barNumber=index-firstBar+1;if(s)section=s;if(key)musicKey=key;});
   let selectedWorld='living';
   // Live recording of whatever is presented (recording.js): one player-owned compositor, every kind of world.
   const recording=window.ResonanceRecording.create();let packFrame=null,lastRecording=null;const flashes=[];
-  let living=null,livingLoading=null,livingFailed=false,livingRetryAt=0,livingFor='',recipe=null;
+  let living=null,livingLoading=null,livingFailed=false,livingRetryAt=0,livingFor='',recipe=null,previewRecipe=null,previewNotice='';
   // A failed request or module download means the receiver is unreachable (restarting, stopped): retry, never give up a world for it.
   const unreachable=e=>e instanceof TypeError&&/fetch/i.test(e.message);
-  // Visual packs installed with scripts/pack.js (GET /api/packs); code packs run only in the isolated pack frame.
-  let packs=[],packNotice='',reviewing=null,stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
+  // Visual packs (GET /api/packs); code packs run only in the isolated pack frame.
+  let packs=[],packNotice='',stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
   // Visual quality: AUTO adapts when frames are slow; a fixed level stays put (URL ?quality= / ?adapt=0 override).
   const QUALITY=['auto','0','1','2','3'];let qualityChoice='auto';
   // Recording size: the encoded video's dimensions. At a fixed size the world renders at exactly that size (16:9), and
   // the stage shows the same picture letterboxed; "stage" records the stage as it is on screen.
   const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720]},RECORD_BITRATE={'1080p':8000000,'720p':5000000};
-  let recordSize='720p',recordFrame=null,recordPace={frames:0,at:0,slowSince:0,warned:false};
+  let recordSize='720p',recordFrame=null,recordPace={frames:0,at:0,slowSince:0,warned:false},recordNotice='';
   const LABEL_MODES=['cinematic','explorer','stream','off'];
-  let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
+  let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):overlay?'stream':'cinematic';
+  let captions=params.get('captions')!=='0';
   let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12},filmNote='';
-  let soundEnabled=false;
-  try {const prefs=JSON.parse(localStorage.getItem('code-resonance-player-v1')||'{}');
-    if(WORLDS.includes(prefs.world))selectedWorld=prefs.world;
-    if(window.ResonanceScore.STYLES.includes(prefs.style))music.setOptions({style:prefs.style});
-    if(Number.isFinite(prefs.volume)&&prefs.volume>=0&&prefs.volume<=1)music.setOptions({volume:prefs.volume});
-    if(Number.isFinite(prefs.tempo)&&prefs.tempo>=58&&prefs.tempo<=160)music.setOptions({tempo:prefs.tempo});
-    if(prefs.tempoMode==='manual'||prefs.tempoMode==='project')music.setOptions({tempoMode:prefs.tempoMode});
-    if(Number.isFinite(prefs.texture)&&prefs.texture>=0&&prefs.texture<=1)music.setOptions({texture:prefs.texture});
-    if(QUALITY.includes(prefs.quality))qualityChoice=prefs.quality;
-    if(prefs.recordSize&&(prefs.recordSize==='stage'||RECORD_SIZES[prefs.recordSize]))recordSize=prefs.recordSize;
-  }catch{}
+  let soundEnabled=false,soundError='';
+  // The stage is drawn only while some view shows it (or a recording needs it); the clock and schedule always run.
+  let visible=true;
+  // Transient messages for the interface (recording finished early, a pack over budget, …).
+  const notices=[];let noticeSeq=0;
+  function notify(text,kind='info'){notices.push({id:++noticeSeq,text:String(text),kind,at:Date.now()});if(notices.length>20)notices.shift();changed('notice');}
   if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
   if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
   if(params.get('adapt')==='0'&&!params.has('quality'))qualityChoice='0';
@@ -73,18 +106,16 @@
     'agent.tool.started':'An agent used a tool','agent.tool.completed':'Agent tool finished','agent.file.modified':'Agent modified a file',
     'agent.response.completed':'Agent completed a response','agent.message.visible':'AI message observed','agent.session.started':'Agent session began','agent.session.ended':'Agent session ended',
     'agent.subagent.started':'Subagent started','agent.subagent.stopped':'Subagent finished',
-    'agent.plan.visible':'AI plan observed','workspace.started':'Capture started','workspace.stopped':'Capture stopped','instrument.note':'Manual cue'
+    'agent.plan.visible':'AI plan observed','workspace.started':'Capture started','workspace.stopped':'Capture stopped','instrument.note':'Manual cue','module.renamed':'A module was renamed'
   };
   const QUIET=new Set(['editor.change.observed','editor.newline.inserted','document.baseline.indexed','validation.diagnostics','execution.command.started','agent.tool.started']);
   function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
   function rand(seed){let t=seed+0x6D2B79F5;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}
   function opacity(color,opacity){const a=Math.floor(Math.min(1,Math.max(0,opacity))*255).toString(16).padStart(2,'0');return color+a;}
   const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
-  function setText(id,s){const e=$(id);if(e)e.textContent=String(s);}
-  function timeText(n){if(!n)return '—';return new Date(n).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
   function readable(type){return labels[type]||type.replaceAll('.',' · ');}
   function kindClass(type){return type.startsWith('agent.')?'ai':type.startsWith('validation.')||type.startsWith('milestone.')||type==='source.parse.diagnostics'?'validation':type.startsWith('symbol.')||type.startsWith('dependency.')?'structure':'system';}
-  function eventLabel(c){if(c.detail?.symbolType)return `${readable(c.type)} · ${c.detail.symbolType.toUpperCase()}`;return readable(c.type);}
+  function eventLabel(c){if(c.detail?.symbolType)return `${readable(c.type)} · ${c.detail.symbolType}`;return readable(c.type);}
   // ---- Performance clock and scheduling ------------------------------------------------------------------
   // Replay: the playhead advances once per animation frame; between frames it is extrapolated, so sound is scheduled
   // from the current position (from the last frame's, a cue scheduled after a 150 ms main-thread stall sounded 150 ms
@@ -92,7 +123,7 @@
   function perfNow(){
     if(FILM)return filmTime;if(mode!=='replay')return Date.now()-delayMs;
     if(!playback||!replay)return replayPos;
-    return Math.min(replay.end,replayPos+Math.min(300,Math.max(0,performance.now()-replayClock))*(Number($('speedSelect').value)||4));
+    return Math.min(replay.end,replayPos+Math.min(300,Math.max(0,performance.now()-replayClock))*speedChoice);
   }
   function at(time,fn){let i=queue.length;while(i>0&&queue[i-1].time>time)i--;queue.splice(i,0,{time,fn});}
   function runQueue(){const now=perfNow();while(queue.length&&queue[0].time<=now)queue.shift().fn();}
@@ -107,10 +138,10 @@
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
-      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);living?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
+      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);living?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);changed('feed');});
     }
   }
-  function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);if(model)setStats(model);}
+  function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);changed('frame');}
   // ---- Scene graph: stable growth layout -------------------------------------------------------------------
   function placeModule(node){
     // Phyllotaxis by birth order: each module keeps its place and the structure grows outward like a sunflower.
@@ -183,29 +214,19 @@
   }
   // ---- Data -----------------------------------------------------------------------------------------------
   async function getJSON(url,headers){const r=await fetch(url,{cache:'no-store',headers});if(r.status===304||r.status===404)return null;if(!r.ok)throw Error(`HTTP ${r.status}`);return {json:await r.json(),etag:r.headers.get('etag')||''};}
-  async function pollProjects(){
-    try{
-      const list=(await getJSON('/api/projects'))?.json.projects||[];
-      const ids=new Set(list.map(p=>p.id));const choice=dom.project.value;
-      if(dom.project.options.length!==list.length+1||list.some(p=>![...dom.project.options].some(o=>o.value===p.id))){
-        dom.project.replaceChildren(new Option('SELECT PROJECT',''));
-        for(const p of list)dom.project.add(new Option(p.name?p.name.toUpperCase():`PROJECT ${p.id.slice(0,8).toUpperCase()}`,p.id));
-      }
-      if(!selected||!ids.has(selected)){const next=ids.has(choice)?choice:list[0]?.id||'';if(next!==selected)selectProject(next);}
-      dom.project.value=selected;
-      setConnection(true);
-    }catch{setConnection(false);}
-  }
+  function setReceiver(ok){if(receiverOk===ok)return;receiverOk=ok;document.body.dataset.receiver=ok?'connected':'offline';changed('receiver');}
   async function pollProject(){
     if(!selected)return;
+    const id=selected;
     try{
-      const r=await getJSON(`/api/project?id=${encodeURIComponent(selected)}`,etag?{'If-None-Match':etag}:undefined);
-      if(!r)return;etag=r.etag;model=r.json;
+      const r=await getJSON(`/api/project?id=${encodeURIComponent(id)}`,etag?{'If-None-Match':etag}:undefined);
+      setReceiver(true);if(!r||id!==selected)return;etag=r.etag;model=r.json;
       if(!scene.nodes.size&&mode==='live'){resetScene(model.graph);frame=model.frames.at(-1)||frame;music.setFrame(frame);
         lastSeq=Math.max(lastSeq,(model.timelineFrames||0)-1);feedCues=model.timeline.slice(-60);}
       music.setProject(selected,model.performance?.identity);
-      setStats(model);renderFeed();setConnection(true);
-    }catch{setConnection(false);}
+      $('stageEmpty')?.classList.toggle('hidden',true);
+      changed('model','feed','frame');
+    }catch{setReceiver(false);}
   }
   async function pollTimeline(){
     if(!selected||mode!=='live'||!model)return;
@@ -215,51 +236,22 @@
     }catch{}
   }
   function selectProject(id){
-    selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];disposeLiving();resetScene({nodes:[],edges:[]});
-    scene.pulses.length=0;scene.comets.clear();music.resync();
+    id=typeof id==='string'?id:'';if(id===selected&&(model||!id))return;
+    selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];previewRecipe=null;previewNotice='';disposeLiving();resetScene({nodes:[],edges:[]});
+    scene.pulses.length=0;scene.comets.clear();music.resync();frame=null;firstBar=null;barNumber=0;
+    $('stageEmpty')?.classList.toggle('hidden',!!id);
+    changed('project','model','feed','frame','recipe','preview','position');
     if(mode==='replay')changeMode('replay');else{pollProject();}
   }
-  function setConnection(ok){$('statusDot').classList.toggle('active',!!ok);setText('connection',ok?'SESSION CONNECTED':'RECEIVER OFFLINE');$('stageEmpty').classList.toggle('hidden',!!model);}
   function history(){
     if(mode==='replay'&&replay)return replay;
     return {cues:feedCues,start:feedCues.at(0)?.ts||0,end:feedCues.at(-1)?.ts||0};
   }
-  function setStats(m){
-    const p=m.performance||{};const controls=frame?.controls||m.frames.at(-1)?.controls||{};
-    setText('projectName',(m.name||m.projectId.slice(0,12)).toUpperCase());
-    const chapter=frame?.chapter||p.chapter||1;
-    setText('chapter',String(chapter).padStart(2,'0'));
-    const names=['ORIGIN','FORMATION','STRUCTURE','CONNECTION','INTEGRATION','EVOLUTION','COMPOSITION','RESONANCE'];
-    setText('chapterName',names[Math.min(names.length-1,Math.max(0,chapter-1))]);
-    // Progress through the current chapter (chapter n begins at progress 12*(2^(n-1)-1); see engine/reducer.js).
-    const lo=12*(2**(chapter-1)-1),hi=12*(2**chapter-1);
-    $('chapterFill').style.width=`${(clamp(((p.progress||0)-lo)/(hi-lo))*100).toFixed(1)}%`;
-    for(const [name,value] of [['energy',controls.energy||0],['tension',controls.tension||0],['complexity',controls.complexity||0]]){
-      const n=Math.round(clamp(value)*100);$(`${name}Bar`).style.width=n+'%';setText(`${name}Number`,String(n).padStart(2,'0'));
-    }
-    setText('files',m.stats.files);setText('symbols',m.stats.symbols);setText('events',m.stats.raw);setText('tests',m.stats.testsPassed);
-    const h=history();
-    setText('eventCount',h.cues.length);
-    setText('confidence','OBSERVED + INFERRED');
-    setText('scrubStart',timeText(h.start));setText('scrubEnd',mode==='live'?'NOW':timeText(h.end));
-    $('stageEmpty').classList.toggle('hidden',true);
-    $('playBtn').disabled=!h.cues.length||mode!=='replay';
-  }
-  function renderFeed(){if(!model)return;
+  // Recent meaningful events (the feed): newest first, as of the playhead in a replay.
+  function feed(limit=28){
     const filtered=history().cues.filter(c=>!QUIET.has(c.type));
     const source=mode==='replay'?filtered.filter(c=>c.ts<=replayPos):filtered;
-    const recent=source.slice(-28).reverse();
-    const fragment=document.createDocumentFragment();
-    for(const c of recent){
-      const d=document.createElement('div');d.className='feed-entry';
-      const marker=document.createElement('span');marker.className=`feed-marker ${kindClass(c.type)}`;
-      const content=document.createElement('div');content.className='feed-copy';
-      const title=document.createElement('strong');title.textContent=eventLabel(c);
-      const detail=document.createElement('div');detail.textContent=`${timeText(c.ts)}  /  ${c.category.toUpperCase()}  /  ${c.weight?'STRUCTURAL':'ACTIVITY'}${c.detail?.attribution==='correlated'?'  /  AGENT':''}`;
-      content.append(title,detail);d.append(marker,content);fragment.append(d);
-    }
-    dom.feed.replaceChildren(fragment);
-    if(!recent.length){const none=document.createElement('div');none.className='feed-empty';none.textContent='No classified events yet.';dom.feed.append(none);}
+    return source.slice(-limit).reverse().map(c=>({id:c.id,ts:c.ts,type:c.type,label:eventLabel(c),kind:kindClass(c.type),category:c.category,structural:!!c.weight,agent:c.detail?.attribution==='correlated',voice:Number.isInteger(c.detail?.voice)?c.detail.voice:null}));
   }
   // ---- Rendering ------------------------------------------------------------------------------------------
   const sprites=new Map();
@@ -441,41 +433,42 @@
     drawPulses(dt,n=>positions.get(n.parent||n.id)||fallback(n));
   }
   // ---- The Construct (WebGL), loaded on demand; Monolith is the fallback where WebGL is unavailable ----------
-  function replaySpeed(){return FILM?filmSpeed:mode==='replay'?Number($('speedSelect').value)||1:1;}
+  function replaySpeed(){return FILM?filmSpeed:mode==='replay'?speedChoice||1:1;}
   let filmSpeed=1;
   function ensureConstruct(){
     if(construct||constructFailed)return Promise.resolve(construct);
     if(!constructLoading)constructLoading=import('/construct.js').then(m=>{
       try{construct=m.createConstruct($('construct'),{onCaption:showCaption,film:FILM,speed:replaySpeed()});construct.reset(constructGraph(),perfNow());}
-      catch(e){console.error('Construct unavailable, using Monolith',e);constructFailed=true;construct=null;if(selectedWorld==='construct'){selectedWorld='city';syncPlayerControls();}}
+      catch(e){console.error('Construct unavailable, using Monolith',e);constructFailed=true;construct=null;if(selectedWorld==='construct'){selectedWorld='city';changed('world');}notify('The Construct needs WebGL, which is not available here: showing Monolith instead.','warning');}
       constructLoading=null;return construct;
     },e=>{constructLoading=null;if(!unreachable(e))console.error(e);return null;});
     return constructLoading;
   }
   // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
   function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
-  function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;}
+  function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;changed('world','recipe');}
   async function loadPacks(){
     // A receiver that cannot be reached (restarting, or stopped) says nothing about the packs: keep what was known and
     // leave a running pack alone.
-    let fresh;try{fresh=(await getJSON('/api/packs'))?.json?.packs;}catch{syncPackControls();return packs;}
+    let fresh;try{fresh=(await getJSON('/api/packs'))?.json?.packs;}catch{return packs;}
     packs=fresh||[];
     // A running pack whose approval was revoked, whose files changed or which was removed stops at once.
     if(living?.remote){const p=packs.find(x=>x.id===living.pack.id);
       if(!p)stopPack(living.pack,'the pack was removed');else if(!p.ok)stopPack(living.pack,'its files changed after approval');
       else if(!p.trusted||p.digest!==living.pack.digest)stopPack(living.pack,'its approval was revoked');}
-    syncPackControls();return packs;}
+    changed('packs');return packs;}
   // Stop a pack for this session (the recipe keeps it: RETRY or a new approval restores it), finishing any recording.
   function stopPack(pack,reason){
     if(stoppedPacks.has(pack.id)&&!living?.remote)return;
     const began=performance.now();
     stoppedPacks.set(pack.id,reason);stoppedPack=pack;packNotice=`${pack.name} stopped: ${reason}`;
     if(recording.active)void finishRecording(`${pack.name} stopped`);
-    syncPackControls();
+    changed('notice','world');
     if(!FILM&&living?.remote&&living.pack.id===pack.id){disposeLiving();if(selectedWorld==='living')void ensureLiving();}
     lastStop={at:began,pack:pack.id,reason,disposeMs:+(performance.now()-began).toFixed(1)};
   }
-  function showNotice(text){packNotice=text;syncPackControls();}
+  // The manual retry after a pack was stopped (nothing restarts on its own).
+  function retryPack(){if(!stoppedPack)return false;stoppedPacks.delete(stoppedPack.id);stoppedPack=null;packNotice='';disposeLiving();if(selectedWorld==='living')void ensureLiving();changed('notice');return true;}
   // What a recipe needs from a pack with code: its approved files for the isolated frame, or why it cannot run.
   async function packRuntime(r){
     const id=r.familyKind==='pack'?r.family:r.pack?.kind==='shader'?r.pack.id:null;if(!id)return null;
@@ -496,45 +489,56 @@
     const spec=manifest.kind==='world'?{entry:manifest.world.entry}:{background:manifest.shader.background||null,post:manifest.shader.post||[],effects:manifest.shader.effects||null};
     return {pack:{id,name:p.name,kind:p.kind,digest:p.digest,budget:p.budget||null,...spec},files};
   }
+  const runtimeOf=r=>r?.familyKind==='pack'?`world:${r.family}`:r?.pack?.kind==='shader'?`shader:${r.pack.id}`:'builtin';
   function ensureLiving(){
     if(living&&livingFor===selected)return Promise.resolve(living);
     if(livingFailed||!selected||!model||performance.now()<livingRetryAt)return Promise.resolve(null);
     if(livingLoading)return livingLoading;
     livingLoading=(async()=>{
+      const id=selected;
       try{
-        const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
-        const plan=await packRuntime(r.json).catch(e=>{if(unreachable(e))throw e;return {blocked:'unavailable',name:String(e.message)};});
+        const r=await getJSON(`/api/recipe?id=${encodeURIComponent(id)}`);if(!r||id!==selected)return null;
+        // A preview shows a candidate recipe (never stored) in place of the saved one, through the same host.
+        const candidate=previewRecipe;
+        const plan=await packRuntime(candidate||r.json).catch(e=>{if(unreachable(e))throw e;return {blocked:'unavailable',name:String(e.message)};});
+        if(id!==selected)return null;
         if(living)disposeLiving();
-        recipe=r.json;packNotice='';
+        recipe=r.json;packNotice='';previewNotice='';
         // A pack the recipe names but the receiver cannot serve (removed, or its files changed after installation).
         const missing=recipe.unavailable&&(recipe.unavailable.family||recipe.unavailable.pack);
-        if(missing){const p=packs.find(x=>x.id===missing),name=p?.name||missing,reason=stoppedPacks.get(missing);
+        if(missing&&!candidate){const p=packs.find(x=>x.id===missing),name=p?.name||missing,reason=stoppedPacks.get(missing);
           packNotice=reason?`${name} stopped: ${reason}. Showing the identity without it.`:`${name} is not available${p&&!p.ok?' (its installed files changed)':''}: showing the identity without it.`;}
         const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:FILM?0:qualityLevel(),adaptive:!FILM&&qualityAdaptive()};
         if(plan?.pack){
           // An approved pack with code: the same world host, inside the isolated frame.
           const m=await import('/worlds/remote.js');
-          living=await m.createRemoteWorld($('world').parentElement,{...plan,recipe,...options,epoch:replay?.entries.length?replay.start:null});
+          living=await m.createRemoteWorld($('world').parentElement,{...plan,recipe:candidate||recipe,...options,epoch:replay?.entries.length?replay.start:null});
           // A pack that fails, hangs, loses its GPU context or is too slow is stopped; the identity without it takes over.
           const pack=plan.pack;living.onError(message=>stopPack(pack,message));
           if(recording.active)living.record(onPackFrame);overBudget={since:0,warned:false};
         }else{
-          // A pack that needs approval (or is missing) is not run: the identity without it is shown instead.
-          let shown=recipe;
-          if(plan?.blocked){packNotice=plan.blocked==='approval'?`${plan.name} contains code and is not approved: showing the identity without it.`:plan.blocked==='stopped'?`${plan.name} stopped: ${plan.reason}. Showing the identity without it.`:`${plan.name} is not available: showing the identity without it.`;
-            shown=(await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}&fallback=1`))?.json||recipe;}
+          // A pack that needs approval (or is missing) is not run: the identity without it is shown instead. A preview of
+          // such a pack shows nothing of it (an unapproved pack never runs because it is previewed).
+          let shown=candidate||recipe;
+          if(plan?.blocked){const why=plan.blocked==='approval'?`${plan.name} contains code and is not approved`:plan.blocked==='stopped'?`${plan.name} stopped: ${plan.reason}`:`${plan.name} is not available`;
+            if(candidate){previewNotice=`${why}: the preview shows the saved identity instead.`;shown=recipe;}
+            else packNotice=`${why}: showing the identity without it.`;
+            if(!candidate||runtimeOf(recipe)!=='builtin')shown=(await getJSON(`/api/recipe?id=${encodeURIComponent(id)}&fallback=1`))?.json||recipe;}
           const m=await import('/worlds/host.js');
           living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),recipe:shown,...options});
         }
+        if(id!==selected){disposeLiving();return null;}
         livingFor=selected;livingSize='';
         if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());
         if(replay&&(mode==='replay'||FILM))living.prime(replay.entries,perfNow());
         else if(mode==='live')void primeLive(living);
-        syncRecipePanel();
+        changed('recipe','world','notice','preview');
       }catch(e){
         if(unreachable(e)){if(living)disposeLiving();livingRetryAt=performance.now()+2000;return null;}
-        console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;if(selectedWorld==='living'){selectedWorld='construct';syncPlayerControls();void ensureConstruct();}}
+        console.error('Living world unavailable, using the Construct',e);livingFailed=true;living=null;
+        if(selectedWorld==='living'){selectedWorld='construct';changed('world');void ensureConstruct();}
+        notify(`The living world could not start here (${e.message}): showing the Construct.`,'warning');}
       finally{livingLoading=null;}
       return living;
     })();
@@ -548,74 +552,54 @@
       for(const e of r.entries)if(e.intents?.length)intents.push({seq:e.seq,intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
     if(world===living&&mode==='live'&&selected===id)living.prime(intents,perfNow());
   }
-  async function recipeAction(action){
-    if(!selected)return;
-    const res=await fetch(`/api/recipe?id=${encodeURIComponent(selected)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
-    if(!res.ok)return;const before=recipe;recipe=await res.json();
-    // A change of runtime (built-in family, pack world, shader look) builds a new world; otherwise the recipe updates it.
-    const runtime=r=>r?.familyKind==='pack'?`world:${r.family}`:r?.pack?.kind==='shader'?`shader:${r.pack.id}`:'builtin';
-    if(runtime(before)!==runtime(recipe)||living?.remote){disposeLiving();recipe=null;if(selectedWorld==='living')await ensureLiving();}
-    else await living?.setRecipe(recipe);
-    syncRecipePanel();
+  // A saved recipe (after an edit here, or another window's edit announced by the receiver): a change of runtime
+  // (built-in family, pack world, shader look) builds a new world; otherwise the recipe updates the running one.
+  async function showSaved(next){
+    if(!next)return;const before=recipe;recipe=next;changed('recipe');
+    if(previewRecipe)return;
+    if(!living)return;
+    if(runtimeOf(before)!==runtimeOf(next)||living.remote||next.unavailable||before?.unavailable){disposeLiving();if(selectedWorld==='living')await ensureLiving();}
+    else await living.setRecipe(next);
   }
-  function syncPackControls(){
-    if(!$('dnaPackSelect'))return;
-    const family=$('dnaFamilySelect'),look=$('dnaPackSelect');
-    for(const o of [...family.options])if(o.dataset.pack)o.remove();
-    for(const p of packs.filter(p=>p.kind==='world'&&p.ok&&p.compatible)){const o=new Option(`${p.name.toUpperCase()} · PACK${p.trusted?'':' · NEEDS APPROVAL'}`,p.id);o.dataset.pack='1';family.add(o);}
-    look.replaceChildren(new Option('NO LOOK PACK',''));
-    for(const p of packs.filter(p=>(p.kind==='declarative'||p.kind==='shader')&&p.ok&&p.compatible))look.add(new Option(`${p.name.toUpperCase()} · ${p.base.toUpperCase()}${p.kind==='shader'?' · CODE':''}`,p.id));
-    look.value=recipe?.pack?.id||'';if(recipe?.source==='user')family.value=recipe.family;
-    const list=$('dnaPacks');list.replaceChildren();
-    for(const p of packs.filter(p=>p.executable)){
-      const row=document.createElement('div');row.className='dna-pack';const label=document.createElement('span');
-      label.textContent=`${p.name} · ${p.ok?(p.trusted?'approved':'not approved'):'problems'}`;label.title=p.ok?`${p.id} ${p.version}`:p.problems.join('\n');row.append(label);
-      if(p.ok){const b=document.createElement('button');b.className='action';b.textContent=p.trusted?'REVOKE':'REVIEW';b.addEventListener('click',()=>p.trusted?setTrust(p,false):review(p));row.append(b);}
-      list.append(row);
-    }
-    $('dnaNotice').textContent=packNotice;$('dnaNotice').classList.toggle('hidden',!packNotice);
-    if(stoppedPack&&stoppedPacks.has(stoppedPack.id)){const b=document.createElement('button');b.className='action';b.textContent='RETRY';
-      b.addEventListener('click',()=>{stoppedPacks.delete(stoppedPack.id);stoppedPack=null;packNotice='';disposeLiving();if(selectedWorld==='living')void ensureLiving();});$('dnaNotice').append(' ',b);}
-    if($('qualitySelect'))$('qualitySelect').value=qualityChoice;
+  async function recipeAction(action,{ifRevision}={}){
+    if(!selected)return null;
+    const body=Array.isArray(action)?{actions:action}:{action};if(Number.isInteger(ifRevision))body.ifRevision=ifRevision;
+    const next=await api.post(`/api/recipe?id=${encodeURIComponent(selected)}`,body);
+    await showSaved(next);return next;
   }
-  // Approval of a pack with code: the user sees its author, files and digest, and the isolation limits, then decides.
-  function review(p){
-    reviewing=p;setText('packReviewTitle',`${p.name} ${p.version}`);
-    setText('packReviewMeta',`${p.kind==='world'?'World family':'Shader pack'} · ${p.author?.name||'unknown author'} · ${p.id} · digest ${p.digest.slice(0,16)}`);
-    setText('packReviewDescription',p.description||'');
-    const files=$('packReviewFiles');files.replaceChildren(...p.files.map(f=>{const li=document.createElement('li');li.textContent=`${f.path}  ${f.size} B  ${f.sha256.slice(0,12)}`;return li;}));
-    $('packReview').classList.remove('hidden');$('packReviewCancel').focus();
+  // Reload the saved recipe (the receiver announced a change made elsewhere).
+  async function reloadRecipe(){
+    if(!selected)return null;const id=selected;
+    const r=await getJSON(`/api/recipe?id=${encodeURIComponent(id)}`).catch(()=>null);if(!r||id!==selected)return null;
+    if(recipe&&r.json.revision===recipe.revision&&JSON.stringify(r.json)===JSON.stringify(recipe))return recipe;
+    await showSaved(r.json);return r.json;
   }
-  async function setTrust(p,trusted){
-    const res=await fetch('/api/packs/trust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:p.id,digest:p.digest,trusted})});
-    if(!res.ok){packNotice=(await res.json().catch(()=>({}))).error||'Approval failed';syncPackControls();return;}
-    await loadPacks();disposeLiving();if(selectedWorld==='living')void ensureLiving();
-  }
-  function syncRecipePanel(){
-    syncPackControls();
-    if(!$('dnaFamily'))return;
-    setText('dnaFamily',recipe?recipe.familyName.toUpperCase():'—');
-    setText('dnaSource',recipe?`${recipe.source==='user'?'CHOSEN':'FROM THE CODE'}${recipe.locked?' · LOCKED':recipe.founded?'':' · PROVISIONAL'} · V${recipe.variant}`:'');
-    $('dnaFamilySelect').value=recipe&&recipe.source==='user'?recipe.family:'';
-    $('dnaLock').setAttribute('aria-pressed',String(!!recipe?.locked));setText('dnaLock',recipe?.locked?'UNLOCK':'LOCK');
-    const k=Math.round((recipe?.overrides?.intensity??1)*100);$('intensitySlider').value=String(k);setText('intensityReadout',`${k}%`);
-    $('labelsSelect').value=labelMode;
-    if(document.activeElement!==$('dnaTitle'))$('dnaTitle').value=recipe?.title||'';
+  // ---- Preview: a candidate recipe shown on this stage only (other windows and the OBS view keep the saved one) -----
+  async function preview(candidate){
+    if(recording.active&&candidate)throw new Error('Previews are unavailable while recording: the recording would capture the unsaved preview.');
+    const before=previewRecipe||recipe;previewRecipe=candidate||null;previewNotice='';changed('preview');
+    if(!living&&!livingLoading){if(selectedWorld==='living')void ensureLiving();return;}
+    if(livingLoading)await livingLoading;
+    const shown=previewRecipe||recipe;
+    if(!living||!shown)return;
+    if(runtimeOf(before)!==runtimeOf(shown)||living.remote||(!previewRecipe&&recipe?.unavailable)){disposeLiving();if(selectedWorld==='living')await ensureLiving();}
+    else{await living.setRecipe(shown);changed('preview');}
   }
   // Explorer clicks, in the world's own coordinates (letterboxed while recording at a fixed size).
-  function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();
-    if(!recordFrame){living.pick(e.clientX-r.left,e.clientY-r.top);return;}
-    const k=Math.min(r.width/recordFrame.w,r.height/recordFrame.h),ox=(r.width-recordFrame.w*k)/2,oy=(r.height-recordFrame.h*k)/2;
-    living.pick((e.clientX-r.left-ox)/k,(e.clientY-r.top-oy)/k);});}
+  let picked=null;
+  function bindWorldCanvas(el){el.addEventListener('click',async e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();
+    let x=e.clientX-r.left,y=e.clientY-r.top;
+    if(recordFrame){const k=Math.min(r.width/recordFrame.w,r.height/recordFrame.h),ox=(r.width-recordFrame.w*k)/2,oy=(r.height-recordFrame.h*k)/2;x=(x-ox)/k;y=(y-oy)/k;}
+    picked=await living.pick(x,y);changed('picked');});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
   let captionTimer=null;
   function showCaption(text){
-    caption={text,at:perfNow()};if(params.get('captions')==='0')return;
+    caption={text,at:perfNow()};if(!captions)return;
     const el=$('caption');el.textContent=text;el.classList.add('show');clearTimeout(captionTimer);if(!FILM)captionTimer=setTimeout(()=>el.classList.remove('show'),3800);
   }
   function showWorldCanvas(){const l=selectedWorld==='living'&&!!living,c=!l&&selectedWorld==='construct'&&construct,remote=!!living?.remote;
     $('world').classList.toggle('hidden',!l||remote);$('worldOverlay').classList.toggle('hidden',!l||remote);$('caption').classList.toggle('hidden',l);
-    if(remote)living.frame.classList.toggle('hidden',!l);
+    if(living?.remote)living.frame.classList.toggle('hidden',!l);
     $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));
     // In the OBS view the living worlds draw their own lower third: the page's corner captions would overlap it.
     document.body.classList.toggle('living-world',l);}
@@ -627,6 +611,11 @@
     stepScene(dt,now);
     showWorldCanvas();
     if(selectedWorld==='living'&&(!living||livingFor!==selected)&&model)void ensureLiving();
+    // Nothing is drawn while no view shows the stage and nothing records it (a pack's frame is told so, so its
+    // watchdog does not mistake the pause for a slow pack).
+    const draw=FILM||visible||recording.active;
+    living?.setPaused?.(!draw);
+    if(!draw)return;
     if(selectedWorld==='living'&&living){
       const r=recordFrame?{width:recordFrame.w,height:recordFrame.h}:(living.remote?living.frame:$('world')).getBoundingClientRect(),dpr=recordFrame?1:Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
@@ -674,7 +663,7 @@
   }
   function drawCaption(g2,w,h,t){
     const age=(t-caption.at)/Math.max(1,filmSpeed);
-    if(!caption.text||age>=4200||params.get('captions')==='0')return;
+    if(!caption.text||age>=4200||!captions)return;
     const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=w/1920;
     g2.save();g2.globalAlpha=Math.max(0,a)*.92;g2.font=`500 ${Math.round(30*scale)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='center';
     g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*scale;g2.fillStyle='#eef3fb';g2.fillText(caption.text,w/2,h-90*scale);g2.restore();
@@ -689,52 +678,37 @@
     const over=['drawCalls','passes','triangles','points','updateMs'].filter(k=>Number.isFinite(b[k])&&Number.isFinite(s[k])&&s[k]>b[k]*1.25);
     if(!over.length){overBudget.since=0;return;}
     if(!overBudget.since)overBudget.since=now;
-    if(!overBudget.warned&&now-overBudget.since>10000){overBudget.warned=true;showNotice(`${living.pack.name} exceeds its declared budget (${over.map(k=>`${k} ${Math.round(s[k])} > ${b[k]}`).join(', ')})`);}
+    if(!overBudget.warned&&now-overBudget.since>10000){overBudget.warned=true;packNotice=`${living.pack.name} exceeds its declared budget (${over.map(k=>`${k} ${Math.round(s[k])} > ${b[k]}`).join(', ')})`;notify(packNotice,'warning');}
   }
+  let lastPositionAt=0;
   function paint(nowMs){
     resize();const dt=Math.min(.07,(nowMs-lastPaint)/1000);lastPaint=nowMs;
     if(mode==='replay'&&playback)tickReplay(nowMs);
     renderAt(dt,perfNow());
-    if(recording.active&&Math.floor(nowMs/500)!==Math.floor((nowMs-dt*1000)/500))updateRecordButton();
+    // The playhead, the recording clock and the bar counter reach the interface four times a second.
+    if(nowMs-lastPositionAt>250){lastPositionAt=nowMs;changed('position');if(recording.active){updateRecordPace();changed('recording');}}
     requestAnimationFrame(paint);
   }
-  // ---- Sound, preferences, recording -----------------------------------------------------------------------
+  // ---- Sound, recording -----------------------------------------------------------------------------------
   async function toggleSound(){
     if(soundEnabled){
       if(recording.active)await finishRecording('sound turned off');
-      soundEnabled=false;await music.stop();setText('soundBtn','◌ ENABLE SOUND');
-      dom.sound.classList.remove('on');dom.sound.setAttribute('aria-pressed','false');return;
+      soundEnabled=false;await music.stop();changed('sound');return false;
     }
-    music.setProject(selected,model?.performance?.identity);music.setFrame(frame);music.setClock(perfNow,mode==='replay'?Number($('speedSelect').value)||1:1);
-    await music.start();soundEnabled=true;
-    setText('soundBtn','◉ SOUND ON');dom.sound.classList.add('on');dom.sound.setAttribute('aria-pressed','true');
+    music.setProject(selected,model?.performance?.identity);music.setFrame(frame);music.setClock(perfNow,mode==='replay'?speedChoice||1:1);
+    try{await music.start();soundError='';}catch(e){soundError=String(e.message||e);changed('sound');throw e;}
+    soundEnabled=true;changed('sound');return true;
   }
-  function storePrefs(){
-    try{localStorage.setItem('code-resonance-player-v1',JSON.stringify({world:selectedWorld,quality:qualityChoice,recordSize,...music.options}));}catch{}
-  }
-  function syncPlayerControls(){
-    for(const btn of document.querySelectorAll('[data-world]')){
-      const active=btn.dataset.world===selectedWorld;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
-    }
-    const tempo=music.options.tempoMode==='project'&&(frame?.projectSeed||selected)?window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]:music.options.tempo;
-    $('musicStyle').value=music.options.style;
-    $('volumeSlider').value=String(Math.round(music.options.volume*100));
-    $('tempoSlider').value=String(tempo);
-    $('textureSlider').value=String(Math.round(music.options.texture*100));
-    setText('volumeReadout',`${Math.round(music.options.volume*100)}%`);
-    setText('tempoReadout',`${Math.round(tempo)} BPM${music.options.tempoMode==='project'?' · PROJECT':''}`);
-    setText('textureReadout',`${Math.round(music.options.texture*100)}%`);
-    setText('styleReadout',music.options.style.toUpperCase());
-    setText('stageMode',`${selectedWorld==='city'?'MONOLITH':selectedWorld.toUpperCase()} / ${mode==='live'?'GENERATIVE STAGE':'RECORDED PERFORMANCE'}`);
-  }
-  function setWorld(world){if(!WORLDS.includes(world))return;
-    selectedWorld=world;syncPlayerControls();storePrefs();
+  function setWorld(world){if(!WORLDS.includes(world)||world===selectedWorld)return;
+    selectedWorld=world;changed('world');
     if(world==='construct')void ensureConstruct();
     if(world==='living')void ensureLiving();
   }
+  function setRecordSize(v){if(recording.active)return recordSize;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';changed('recording');return recordSize;}
   async function toggleRecord(){
     if(recording.active){await finishRecording('stopped');return;}
-    const support=recording.supported();if(!support.ok){showNotice(support.reason);return;}
+    const support=recording.supported();if(!support.ok){notify(support.reason,'error');return;}
+    if(previewRecipe){notify('Apply or cancel the preview before recording: a recording shows the saved identity.','warning');return;}
     if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
     // A fixed size: the world renders at that size from now on (the stage shows it letterboxed). "stage": the stage's own
     // size (the canvas area, laid out whatever world is showing or loading).
@@ -743,7 +717,7 @@
       await new Promise(res=>requestAnimationFrame(()=>requestAnimationFrame(res)));}
     else{const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
       bitrate=Math.round(Math.min(8000000,Math.max(2500000,8000000*recording.canvas.width*recording.canvas.height/(1920*1080))));}
-    recordPace={frames:0,at:performance.now(),slowSince:0,warned:false};
+    recordPace={frames:0,at:performance.now(),slowSince:0,warned:false};recordNotice='';
     // A pack world: its worker starts compositing frames for the recording first, so the file starts on a real frame of
     // the recording's shape (the first may still have the stage's).
     if(living?.remote){living.record(onPackFrame);const t0=performance.now(),aspect=recording.canvas.width/recording.canvas.height;
@@ -752,36 +726,36 @@
       // The sound lost (an audio device lost or stalled): the browser's recorder would stall the file, so it is finished
       // and saved now, with the reason.
       audioLostListener:()=>{void finishRecording('the sound stopped: an audio device was lost or stalled');}});
-    if(!started.ok){if(living?.remote)living.record(null);endRecordFrame();showNotice(started.reason);return;}
-    if(!started.audio)showNotice('Recording without sound: the music output could not be captured.');
-    $('recordBtn').classList.add('recording');$('recordSize').disabled=true;updateRecordButton();
+    if(!started.ok){if(living?.remote)living.record(null);endRecordFrame();notify(started.reason,'error');changed('recording');return;}
+    if(!started.audio)notify('Recording without sound: the music output could not be captured.','warning');
+    changed('recording');
   }
   function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed');livingSize='';constructSize='';}
-  function updateRecordButton(){
-    if(!recording.active){$('recordBtn').classList.remove('recording');$('recordSize').disabled=false;setText('recordBtn','● RECORD');return;}
-    // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
-    // capture keeps fewer frames than are drawn when drawing is near 30 a second (31 drawn gave 26-28 in the file), so
-    // under 28 drawn the file is likely under 25.
+  // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
+  // capture keeps fewer frames than are drawn when drawing is near 30 a second (31 drawn gave 26-28 in the file), so
+  // under 28 drawn the file is likely under 25.
+  function updateRecordPace(){
     const now=performance.now(),st=recording.stats();
-    if(now-recordPace.at>=5000){const fps=(st.frames-recordPace.frames)/((now-recordPace.at)/1000);recordPace.frames=st.frames;recordPace.at=now;recordPace.fps=fps;
-      if(fps<28){recordPace.slowSince||=now;if(!recordPace.warned&&now-recordPace.slowSince>=10000){recordPace.warned=true;
-        showNotice(`Recording ${recordSize==='stage'?'':`at ${recordSize} `}is not keeping up on this machine (${fps.toFixed(0)} frames per second): choose ${recordSize==='1080p'?'720p or ':''}a lower Quality.`);}}
-      else recordPace.slowSince=0;}
-    const s=Math.floor(recording.stats().elapsedMs/1000);setText('recordBtn',`■ STOP ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}${recording.audio&&!recording.audioLost?'':' · NO SOUND'}`);
+    if(now-recordPace.at<5000)return;
+    const fps=(st.frames-recordPace.frames)/((now-recordPace.at)/1000);recordPace.frames=st.frames;recordPace.at=now;recordPace.fps=fps;
+    if(fps<28){recordPace.slowSince||=now;if(!recordPace.warned&&now-recordPace.slowSince>=10000){recordPace.warned=true;
+      recordNotice=`Recording ${recordSize==='stage'?'':`at ${recordSize} `}is not keeping up on this machine (${fps.toFixed(0)} frames per second): choose ${recordSize==='1080p'?'720p or ':''}a lower Quality.`;notify(recordNotice,'warning');}}
+    else recordPace.slowSince=0;
   }
   // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
   async function finishRecording(reason){
     if(living?.remote)living.record(null);
-    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();updateRecordButton();
+    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();changed('recording');
     if(!result)return null;
+    const file=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;
     lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
-      size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned};
-    if(!result.blob.size){showNotice(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`);return lastRecording;}
-    if(result.blob.size>0){const url=URL.createObjectURL(result.blob),link=document.createElement('a');
-      // The download holds its own reference once started: the URL (which kept the whole file in memory) goes at once.
-      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
-    if(reason!=='stopped')showNotice(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`);
-
+      size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned,file:result.blob.size?file:null,at:Date.now()};
+    if(!result.blob.size){notify(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`,'error');changed('recording');return lastRecording;}
+    const url=URL.createObjectURL(result.blob),link=document.createElement('a');
+    // The download holds its own reference once started: the URL (which kept the whole file in memory) goes at once.
+    link.href=url;link.download=file;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    if(reason!=='stopped')notify(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`,'warning');
+    changed('recording');
     return lastRecording;
   }
   // ---- Offline audio export: the deterministic renderer turns the recorded performance into a WAV file ------
@@ -793,35 +767,41 @@
     for(let i=0;i<frames;i++){view.setInt16(44+i*4,clamp(L[i],-1,1)*32767,true);view.setInt16(46+i*4,clamp(R[i],-1,1)*32767,true);}
     return new Blob([view.buffer],{type:'audio/wav'});
   }
+  let exporting=false;
   async function exportAudio(){
-    if(!selected)return;
-    const button=$('audioBtn');button.disabled=true;setText('audioBtn','RENDERING…');
+    if(!selected||exporting)return null;
+    exporting=true;changed('export');
     try{
       if(!replay)await loadReplay();
-      if(!replay?.entries.length)return;
+      if(!replay?.entries.length)return null;
       const from=mode==='replay'?replayPos:Math.max(replay.start,replay.end-600000),to=Math.min(replay.end,from+600000);
       const timeline=[];
       for(const e of replay.entries){if(e.end<from-60000||e.start>to)continue;timeline.push({atMs:Math.max(from,e.start),frame:e.frame});
         for(const c of e.cues)if(!QUIET.has(c.type))timeline.push({atMs:cueTime(c,e),cue:c});}
       const buffer=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:Math.max(5,(to-from)/1000),
-        style:music.options.style,texture:music.options.texture,volume:Math.max(.4,music.options.volume),projectId:selected});
+        style:music.options.style,texture:music.options.texture,tempoMode:music.options.tempoMode,tempo:music.options.tempo,volume:Math.max(.4,music.options.volume),projectId:selected});
+      // The file name never carries the project's folder name (only its public title, or a short id).
+      const name=(recipe?.title||selected.slice(0,10)).replace(/[^a-z0-9-]+/gi,'-');
       const url=URL.createObjectURL(wav(buffer)),link=document.createElement('a');
-      link.href=url;link.download=`code-resonance-${(model?.name||selected.slice(0,10)).replace(/[^a-z0-9-]+/gi,'-')}-${music.options.style}.wav`;
+      link.href=url;link.download=`code-resonance-${name}-${music.options.style}.wav`;
       document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
-    }finally{button.disabled=false;setText('audioBtn','AUDIO ↓');}
+      return {seconds:(to-from)/1000,file:link.download};
+    }finally{exporting=false;changed('export');}
   }
   // ---- Replay: the whole recorded performance, played on the same clock -----------------------------------
   async function loadReplay(){
     if(!selected)return;
-    const entries=[];let after=-1;
+    const id=selected,entries=[];let after=-1;
     try{
-      for(;;){const page=(await getJSON(`/api/timeline?id=${encodeURIComponent(selected)}&after=${after}&limit=500`))?.json;if(!page)break;
+      for(;;){const page=(await getJSON(`/api/timeline?id=${encodeURIComponent(id)}&after=${after}&limit=500`))?.json;if(!page)break;
         entries.push(...page.entries);if(!page.entries.length||entries.length>=page.total)break;after=page.entries.at(-1).seq;}
     }catch{}
+    if(id!==selected)return;
     const birth=new Map();
     for(const e of entries)for(const n of e.graph.keyframe?e.graph.nodes:e.graph.add)if(n.type==='module'&&!birth.has(n.id))birth.set(n.id,birth.size);
     replay={entries,cues:entries.flatMap(e=>e.cues),start:entries[0]?.start||0,end:entries.at(-1)?.end||0,birth};
     if(entries.length)living?.setEpoch(replay.start);
+    changed('position','feed');
   }
   function graphAt(i){
     const entries=replay.entries;let k=i;while(k>0&&!entries[k].graph.keyframe)k--;
@@ -840,90 +820,89 @@
     feedCues=replay.cues.filter(c=>c.ts<ts&&c.ts<replay.entries[i].start);
     for(const entry of replay.entries.slice(i))if(entry.start<=ts+60000)schedule(entry,{animate:true,from:ts});else break;
     replay.scheduledTo=i;
-    const h=history();dom.scrub.value=String(Math.round(((ts-h.start)/(h.end-h.start||1))*1000));
-    if(model){renderFeed();setStats(model);}
+    changed('position','feed');
   }
   function tickReplay(now){
     const h=history();if(!replay?.entries.length)return;
-    const speed=Number($('speedSelect').value)||4,dt=Math.min(300,now-replayClock);
-    replayPos+=dt*speed;replayClock=now;
+    const dt=Math.min(300,now-replayClock);
+    replayPos+=dt*speedChoice;replayClock=now;
     // Keep a minute of upcoming windows scheduled.
     while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=replayPos+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
-    if(replayPos>=h.end){replayPos=h.end;playback=false;$('playBtn').textContent='▶';}
-    dom.scrub.value=String(Math.round(((replayPos-h.start)/(h.end-h.start||1))*1000));
-    if(Math.floor(now/500)!==Math.floor((now-dt)/500)&&model){renderFeed();setStats(model);}
+    if(replayPos>=h.end){replayPos=h.end;playback=false;changed('position');}
   }
   function changeMode(value){
-    mode=value;playback=false;$('playBtn').textContent='▶';queue.length=0;
-    $('liveBtn').classList.toggle('selected',value==='live');$('replayBtn').classList.toggle('selected',value==='replay');
-    $('liveBtn').setAttribute('aria-pressed',String(value==='live'));$('replayBtn').setAttribute('aria-pressed',String(value==='replay'));
-    dom.scrub.disabled=value==='live';$('playBtn').disabled=value==='live';
-    syncPlayerControls();
-    $('liveIndicator').textContent=value==='live'?'LIVE':'REPLAY';
-    music.setClock(perfNow,value==='replay'?Number($('speedSelect').value)||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
-    if(value==='replay'){dom.scrub.value='0';
-      void loadReplay().then(()=>{if(mode!=='replay')return;seek(replay.start);});}
-    else{dom.scrub.value='1000';replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
+    if(value!=='live'&&value!=='replay')return;
+    mode=value;playback=false;queue.length=0;
+    music.setClock(perfNow,value==='replay'?speedChoice||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
+    changed('mode','position');
+    if(value==='replay'){void loadReplay().then(()=>{if(mode!=='replay'||!replay)return;seek(replay.start);});}
+    else{replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
   }
-  function timestampFromScrub(v){const h=history();return h.start+(h.end-h.start)*(Number(v)/1000);}
-  dom.project.addEventListener('change',()=>selectProject(dom.project.value));
-  $('liveBtn').addEventListener('click',()=>changeMode('live'));
-  $('replayBtn').addEventListener('click',()=>changeMode('replay'));
-  $('playBtn').addEventListener('click',()=>{
-    const h=history();if(mode!=='replay'||!h.cues.length)return;
-    if(replayPos>=h.end)seek(h.start);
-    playback=!playback;replayClock=performance.now();$('playBtn').textContent=playback?'Ⅱ':'▶';
-  });
-  $('speedSelect').addEventListener('change',()=>{if(mode==='replay'){music.setClock(perfNow,Number($('speedSelect').value)||1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());seek(replayPos);}});
-  dom.scrub.addEventListener('input',()=>{if(mode==='replay'){playback=false;$('playBtn').textContent='▶';seek(timestampFromScrub(dom.scrub.value));}});
-  dom.sound.addEventListener('click',()=>toggleSound().catch(e=>{console.error(e);setText('soundBtn','AUDIO ERROR');}));
-  for(const btn of document.querySelectorAll('[data-world]'))btn.addEventListener('click',()=>setWorld(btn.dataset.world));
-  bindWorldCanvas($('world'));
-  $('dnaPackSelect').addEventListener('change',()=>recipeAction({type:'pack',pack:$('dnaPackSelect').value||null}).catch(console.error));
-  $('packReviewCancel').addEventListener('click',()=>{reviewing=null;$('packReview').classList.add('hidden');});
-  $('packReviewAllow').addEventListener('click',()=>{const p=reviewing;reviewing=null;$('packReview').classList.add('hidden');if(p)setTrust(p,true).catch(console.error);});
-  $('dnaFamilySelect').addEventListener('change',()=>{const v=$('dnaFamilySelect').value;recipeAction(v?{type:'family',family:v}:{type:'automatic'}).catch(console.error);});
-  $('dnaRegenerate').addEventListener('click',()=>recipeAction({type:'regenerate',keepFamily:recipe?.source==='user'}).catch(console.error));
-  $('dnaLock').addEventListener('click',()=>recipeAction({type:'lock',locked:!recipe?.locked}).catch(console.error));
-  $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
-  $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
-  $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
-  $('recordSize').value=recordSize;
-  $('recordSize').addEventListener('change',()=>{const v=$('recordSize').value;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';storePrefs();});
-  $('qualitySelect').addEventListener('change',()=>{qualityChoice=QUALITY.includes($('qualitySelect').value)?$('qualitySelect').value:'auto';living?.setQuality?.(qualityLevel(),qualityAdaptive());storePrefs();});
-  // The public title is the only project name the Stage may show, and only once the user sets it here.
-  $('dnaTitle').addEventListener('change',()=>recipeAction({type:'title',title:$('dnaTitle').value.trim()||null}).catch(console.error));
-  $('musicStyle').addEventListener('change',()=>{music.setOptions({style:$('musicStyle').value});syncPlayerControls();storePrefs();});
-  for(const [id,key,convert] of [['volumeSlider','volume',v=>v/100],['tempoSlider','tempo',v=>v],['textureSlider','texture',v=>v/100]]){
-    $(id).addEventListener('input',()=>{music.setOptions({[key]:convert(Number($(id).value)),...(key==='tempo'?{tempoMode:'manual'}:{})});syncPlayerControls();storePrefs();});
-  }
-  $('tempoReadout').addEventListener('dblclick',()=>{music.setOptions({tempoMode:'project'});syncPlayerControls();storePrefs();});
-  $('recordBtn').addEventListener('click',()=>toggleRecord().catch(e=>{console.error(e);setText('recordBtn','RECORD ERROR');}));
-  $('overlayBtn').addEventListener('click',()=>window.open(`/?overlay=1&sound=1&project=${encodeURIComponent(selected)}&world=${selectedWorld}&style=${music.options.style}`,'_blank','noopener'));
-  if(overlay)document.body.classList.add('overlay');
-  syncPlayerControls();
-  $('exportBtn').addEventListener('click',()=>{if(selected)window.open(`/api/export?id=${encodeURIComponent(selected)}`,'_blank','noopener');});
-  $('audioBtn').addEventListener('click',()=>exportAudio().catch(e=>{console.error(e);setText('audioBtn','EXPORT ERROR');}));
-  // Delay = window + grace + scan + 3 s for outbox delivery (<=2.5 s) and polling (<=1 s). Measured worst case: ~9.9 s.
-  getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
-  // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
-  if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
+  function play(){const h=history();if(mode!=='replay'||!h.cues.length&&!replay?.entries.length)return false;if(replayPos>=h.end)seek(h.start);playback=true;replayClock=performance.now();changed('position');return true;}
+  function pause(){if(!playback)return;replayPos=perfNow();playback=false;changed('position');}
+  function setSpeed(k){k=Number(k);if(![1,4,16].includes(k)||k===speedChoice)return;const pos=perfNow();speedChoice=k;
+    if(mode==='replay'){music.setClock(perfNow,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());replayPos=pos;replayClock=performance.now();seek(pos);}changed('position');}
+  // ---- The engine's interface ---------------------------------------------------------------------------------
+  const PROFILE_SIZES={'720p':[1280,720],'1080p':[1920,1080]};
+  const player={
+    WORLDS,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
+    on(f){listeners.add(f);return ()=>listeners.delete(f);},
+    // A snapshot of everything a view may show (cheap: no copies of large structures).
+    get state(){const h=history();return {
+      receiver:receiverOk,delayMs,project:selected,model,frame,mode,playing:playback,speed:speedChoice,
+      position:{start:h.start||0,end:mode==='live'?Date.now()-delayMs:h.end||0,now:perfNow(),loaded:mode==='live'||!!replay,windows:replay?.entries.length||0,events:h.cues.length},
+      bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.stats?.()?.quality??null,
+      sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0},
+      recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:PROFILE_SIZES[recordSize]},
+      recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
+      worldStatus:{loading:!!livingLoading,running:!!living,remote:!!living?.remote,pack:living?.pack?{id:living.pack.id,name:living.pack.name}:null,failed:livingFailed,construct:!!construct,constructFailed,
+        notice:packNotice,stopped:stoppedPack&&stoppedPacks.has(stoppedPack.id)?{id:stoppedPack.id,name:stoppedPack.name,reason:stoppedPacks.get(stoppedPack.id)}:null},
+      exporting,picked,notices:notices.slice()};},
+    selectProject,setWorld,
+    setLabels(m){if(!LABEL_MODES.includes(m)||m===labelMode)return;labelMode=m;living?.setLabels(m);picked=null;changed('labels');},
+    setCaptions(on){captions=!!on;if(!captions)$('caption')?.classList.remove('show');changed('labels');},
+    setQuality(q){q=String(q);if(!QUALITY.includes(q)||q===qualityChoice)return;qualityChoice=q;living?.setQuality?.(qualityLevel(),qualityAdaptive());changed('quality');},
+    // Music options (style, volume, tempo, tempoMode, texture) apply on the next bar; nothing restarts.
+    setMusic(options){music.setOptions(options);changed('sound');},
+    toggleSound,
+    setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;seek(ts);},
+    seekFraction(f){const h=history();if(mode!=='replay'||!replay)return;playback=false;seek(h.start+(h.end-h.start)*clamp(Number(f)||0));},setSpeed,
+    setVisible(v){visible=!!v;},
+    record:{toggle:toggleRecord,setSize:setRecordSize,get active(){return recording.active;}},
+    exportAudio,
+    recipeAction,reloadRecipe,preview,
+    reloadPacks:loadPacks,retryPack,
+    setTrust(p,trusted){return api.post('/api/packs/trust',{id:p.id,digest:p.digest,trusted}).then(async r=>{await loadPacks();if(living?.remote||runtimeOf(recipe)!=='builtin'){disposeLiving();if(selectedWorld==='living')void ensureLiving();}return r;});},
+    feed,describe:readable,
+    graph:constructGraph,
+    // A short-lived renderer for gallery thumbnails: the same world host on a detached canvas, disposed after use.
+    async thumbnail(candidate,{width=384,height=216,frames=24}={}){
+      if(!candidate||candidate.familyKind==='pack'||candidate.pack?.kind==='shader')return null;
+      const m=await import('/worlds/host.js'),c=document.createElement('canvas');c.width=width;c.height=height;
+      const w=await m.createWorld(c,{recipe:candidate,labels:'off',quality:1,adaptive:false,film:true});
+      try{w.resize(width,height,1);w.reset(constructGraph(),0);let t=12000;for(let i=0;i<frames;i++){w.render(t,1/30,{phase:(i%30)/30});t+=1000/30;}return c.toDataURL('image/jpeg',.82);}
+      finally{w.dispose();}
+    },
+    dismissNotice(id){const i=notices.findIndex(n=>n.id===id);if(i>=0){notices.splice(i,1);changed('notice');}}
+  };
+  window.ResonancePlayer=player;
   // Qualification hooks (?qual=1 only): recording control and picture/sound markers.
   if(params.has('qual'))window.__qual={
     record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),breakRecordingAudio:()=>recording.breakAudio(),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
-    audioClock:()=>music.ctx?music.ctx.currentTime:null,structure:()=>model?{nodes:model.graph?.nodes?.length||0,edges:model.graph?.edges?.length||0}:null,setRecordSize:v=>{recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';$('recordSize').value=recordSize;return recordSize;},
+    audioClock:()=>music.ctx?music.ctx.currentTime:null,structure:()=>model?{nodes:model.graph?.nodes?.length||0,edges:model.graph?.edges?.length||0}:null,setRecordSize:v=>setRecordSize(v),
     marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
     action:a=>recipeAction(a),setWorld:w=>setWorld(w),
     // Rebuild the living world (what RETRY does), e.g. while the receiver is unreachable.
     rebuildWorld(){disposeLiving();if(selectedWorld==='living')void ensureLiving();return true;},
+    retry:()=>retryPack(),
     // Replay from the beginning (a recording then covers the same moments however long the world took to load).
-    replayFromStart(){if(mode!=='replay'||!replay)return false;seek(history().start);playback=true;replayClock=performance.now();$('playBtn').textContent='Ⅱ';return true;}};
+    replayFromStart(){if(mode!=='replay'||!replay)return false;seek(history().start);playback=true;replayClock=performance.now();changed('position');return true;}};
   if(FILM){
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
-    document.body.classList.add('overlay');mode='replay';
+    document.body.classList.add('overlay','film');mode='replay';
     window.__film={
       async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
         if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
@@ -959,9 +938,14 @@
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
     window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();
-    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,5000);void loadPacks();
-    setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
-    pollProjects().then(pollProject);requestAnimationFrame(paint);
+    setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,15000);void loadPacks();
+    // Delay = window + grace + scan + 3 s for outbox delivery (<=2.5 s) and polling (<=1 s). Measured worst case: ~9.9 s.
+    getJSON('/health').then(r=>{setReceiver(true);const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;changed('receiver');}).catch(()=>setReceiver(false));
+    if(selected)pollProject();
+    requestAnimationFrame(paint);
     if(selectedWorld==='construct')void ensureConstruct();
+    bindWorldCanvas($('world'));
+    // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
+    if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
   }
 })();

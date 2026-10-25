@@ -1,0 +1,71 @@
+// One stroke icon set (24-unit grid, 1.6 stroke), built as SVG elements: no markup is parsed.
+const P={
+  home:'M4 11 12 4l8 7M6 10v9h4v-5h4v5h4v-9',
+  projects:'M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z',
+  visual:'M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.6-.9 1.2-1.8-.5-1-.1-2.2 1.2-2.2H17a3.5 3.5 0 0 0 3.5-3.5c0-5.3-3.8-9.5-8.5-9.5zM7.5 12h.01M9.5 8h.01M14.5 8h.01M16.5 11.5h.01',
+  music:'M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0',
+  packs:'M12 3 20 7.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9',
+  connections:'M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5',
+  record:'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  settings:'M4 7h10M18 7h2M4 17h4M12 17h8M14 4.5v5M8 14.5v5',
+  stage:'M3.5 5.5h17v11h-17zM9 20h6M10 9v4l3.5-2z',
+  info:'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 11v5M12 8h.01',
+  warn:'M12 4 21 19H3zM12 10v4M12 16.5h.01',
+  close:'M6 6l12 12M18 6 6 18',
+  copy:'M9 9h10v11H9zM5 15V4h10',
+  reset:'M5 12a7 7 0 1 0 2.1-5M5 4v4h4',
+  check:'M5 12.5 10 17l9-10',
+  chevron:'M7 10l5 5 5-5',
+  'chevron-right':'M10 7l5 5-5 5',
+  back:'M15 6l-6 6 6 6',
+  play:'M8 5.5v13l10.5-6.5z',
+  pause:'M8 5h3v14H8zM13 5h3v14h-3z',
+  live:'M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 19a10 10 0 0 1 0-14M19 5a10 10 0 0 1 0 14',
+  replay:'M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2',
+  'sound-on':'M4 9.5h3.5L12 6v12l-4.5-3.5H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
+  'sound-off':'M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l5 5M21 9.5l-5 5',
+  fullscreen:'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
+  'exit-fullscreen':'M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5',
+  spark:'M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3',
+  external:'M14 4h6v6M20 4l-9 9M18 14v5H5V6h5',
+  upload:'M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v5h16v-5',
+  folder:'M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z',
+  shield:'M12 3.5 19 6v6c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5V6z',
+  'shield-check':'M12 3.5 19 6v6c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5V6zM8.8 12l2.2 2.2 4.4-4.4',
+  trash:'M4.5 7h15M10 7V4.5h4V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5',
+  refresh:'M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4',
+  eye:'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  plus:'M12 5v14M5 12h14',
+  lock:'M6.5 11h11v9h-11zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
+  unlock:'M6.5 11h11v9h-11zM8.5 11V8a3.5 3.5 0 0 1 6.8-1.2',
+  dice:'M5 5h14v14H5zM9 9h.01M15 9h.01M12 12h.01M9 15h.01M15 15h.01',
+  layers:'M12 4 21 9l-9 5-9-5zM3 14l9 5 9-5',
+  agent:'M12 3.5l2.2 5.3 5.3 2.2-5.3 2.2L12 18.5l-2.2-5.3L4.5 11l5.3-2.2z',
+  clock:'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 8v4.5l3 1.8',
+  cpu:'M7 7h10v10H7zM10 10h4v4h-4zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4',
+  doc:'M7 3.5h7l4 4V20.5H7zM14 3.5V8h4M9.5 12h6M9.5 15.5h6',
+  terminal:'M4 5.5h16v13H4zM7.5 10l2.5 2-2.5 2M12 14.5h4',
+  code:'M8.5 8 4.5 12l4 4M15.5 8l4 4-4 4M13.5 5.5l-3 13',
+  broadcast:'M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8',
+  film:'M4 5h16v14H4zM8 5v14M16 5v14M4 9h4M4 15h4M16 9h4M16 15h4',
+  download:'M12 4v11M7.5 10.5 12 15l4.5-4.5M4 19.5h16',
+  wave:'M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0',
+  history:'M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2',
+  monitor:'M3.5 5h17v11h-17zM8 20h8M12 16v4',
+  globe:'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM3.5 12h17M12 3.5c2.5 2.3 3.5 5.2 3.5 8.5s-1 6.2-3.5 8.5c-2.5-2.3-3.5-5.2-3.5-8.5s1-6.2 3.5-8.5z',
+  key:'M14.5 9.5a4 4 0 1 0-3.2 3.9L13 15h2v2h2v2h3.5v-3l-6.3-6.3',
+  sliders:'M4 7h10M18 7h2M4 17h4M12 17h8M14 4.5v5M8 14.5v5',
+  bolt:'M13 3 5 13.5h6L10 21l8-10.5h-6z',
+  star:'M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7l5.6-.7z',
+  save:'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
+  grid:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'
+};
+export function icon(name,size=null){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.6');
+  svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+  if(size){svg.setAttribute('width',size);svg.setAttribute('height',size);}
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',P[name]||P.info);svg.append(path);
+  return svg;
+}
+export const ICONS=Object.keys(P);

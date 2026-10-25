@@ -303,10 +303,10 @@
     // Offline render of a recorded performance: [{atMs, frame?, cue?}] sorted by time, starting at startMs.
     // `speed` replays the performance faster than real time while the music keeps its tempo; onBar reports each bar's
     // audio time and the performance time it corresponds to (used to keep a rendered film's light in step with the score).
-    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,sampleRate=44100,projectId='offline',onBar,speed=1}){
+    static async renderOffline({timeline,startMs,durationSec,style='ambient',texture=.58,volume=.7,tempoMode='project',tempo=92,sampleRate=44100,projectId='offline',onBar,speed=1}){
       const ctx=new OfflineAudioContext(2,Math.ceil(durationSec*sampleRate),sampleRate);
       let t=0;
-      const m=new ResonanceMusic(onBar?(info=>onBar({...info,layers:m.bar?.layers,chord:m.bar?.chord,time:t,perfMs:startMs+t*1000*speed})):undefined);m.setProject(projectId);m.setOptions({style,texture,volume});m.appliedOptions={...m.options};
+      const m=new ResonanceMusic(onBar?(info=>onBar({...info,layers:m.bar?.layers,chord:m.bar?.chord,time:t,perfMs:startMs+t*1000*speed})):undefined);m.setProject(projectId);m.setOptions({style,texture,volume,tempoMode,tempo});m.appliedOptions={...m.options};
       m.ctx=ctx;const g=m.buildGraph(ctx,ctx.destination);m.graph=g;
       const stepDur=m.stepSeconds(),barMs=stepDur*STEPS*1000;
       let i=0;const events=timeline.slice().sort((a,b)=>a.atMs-b.atMs);

@@ -152,6 +152,8 @@ function remove(id,dataDir){
 function setTrust(id,dataDir,{digest=null,trusted=true,now=Date.now()}={}){
   const entry=createRegistry(dataDir).get(id);if(!entry)throw new Error(`Pack ${id} is not installed`);
   if(!entry.executable)throw new Error(`Pack ${id} contains no code and needs no approval`);
+  // A pack whose files differ from their installation record (or that fails validation) can be revoked, never approved.
+  if(trusted&&!entry.ok)throw new Error(`Pack ${id} has problems and cannot be approved`);
   if(digest&&digest!==entry.digest)throw new Error('The pack changed since it was shown; review it again');
   const trust=readTrust(dataDir);
   if(trusted)trust.approvals[id]={digest:entry.digest,version:entry.version,approvedAt:now};else delete trust.approvals[id];
@@ -192,10 +194,10 @@ function createRegistry(dataDir){
     cache={packs,families,byId:Object.fromEntries(packs.map(p=>[p.id,p]))};stamp=key;return cache;
   }
   return {
-    snapshot:scan,list:()=>scan().packs,get:id=>scan().byId[id]||null,
+    snapshot:scan,list:()=>scan().packs,get:id=>Object.hasOwn(scan().byId,id)?scan().byId[id]:null,
     // A file of an installed pack: only files recorded at installation, read fresh and checked against the hash
     // recorded then (a file changed afterwards is never served).
-    read(id,file){const p=scan().byId[id];const expected=p?.recorded.get(file);if(!expected)return null;
+    read(id,file){const p=Object.hasOwn(scan().byId,id)?scan().byId[id]:null;const expected=p?.recorded.get(file);if(!expected)return null;
       const buf=fs.readFileSync(path.join(p.dir,file));return sha256(buf)===expected?buf:null;}
   };
 }

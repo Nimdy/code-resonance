@@ -211,7 +211,8 @@ function applyOverlay(g,overlay,r,traits){
   if(overlay.uniforms){out.uniforms={};for(const [k,p] of Object.entries(overlay.uniforms).sort(([a],[b])=>a.localeCompare(b)))out.uniforms[k]=drawParameter(r,p,traits);}
   return out;
 }
-const DEFAULT_OVERRIDES={intensity:1,motion:1,atmosphere:1,labels:'cinematic'};
+// labels null: the project follows the global information mode (Settings) until one is chosen for it.
+const DEFAULT_OVERRIDES={intensity:1,motion:1,atmosphere:1,labels:null};
 const usable=(registry,id)=>{const p=registry?.byId?.[id];return p&&p.ok&&p.compatible?p:null;};
 const packFamily=(registry,id)=>registry?.families?.[id]&&usable(registry,id)?registry.families[id]:null;
 // ---- Tuning ---------------------------------------------------------------------------------------------------------
@@ -356,7 +357,7 @@ function update(recipe,action,project,now=Date.now(),registry=null){
     case 'lock':return {...recipe,locked:action.locked!==false,founded:recipe.founded||action.locked!==false};
     case 'overrides':{const o={...recipe.overrides};
       for(const k of ['intensity','motion','atmosphere'])if(action[k]!==undefined){const v=Number(action[k]);if(!Number.isFinite(v))throw new Error(`Invalid ${k}`);o[k]=round(clamp(v,0,2));}
-      if(action.labels!==undefined){if(!['cinematic','explorer','stream','off'].includes(action.labels))throw new Error('Invalid labels');o.labels=action.labels;}
+      if(action.labels!==undefined){if(action.labels!==null&&!['cinematic','explorer','stream','off'].includes(action.labels))throw new Error('Invalid labels');o.labels=action.labels;}
       return {...recipe,overrides:o};}
     case 'alias':{if(typeof action.id!=='string'||!/^[a-f0-9]{14}$/.test(action.id))throw new Error('Invalid id');
       const aliases={...recipe.aliases};if(action.name===null||action.name==='')delete aliases[action.id];

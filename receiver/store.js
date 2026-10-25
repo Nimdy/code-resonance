@@ -138,7 +138,7 @@ function visualPayload(p,key='payload'){
   onlyKeys(key+'.overrides.',overrides,['intensity','motion','labels']);
   const o={};
   for(const k of ['intensity','motion'])if(overrides[k]!==undefined){const v=overrides[k];if(typeof v!=='number'||!Number.isFinite(v)||v<0||v>2)throw invalid(`${key}.overrides.${k}`);o[k]=v;}
-  if(overrides.labels!==undefined)o.labels=oneOf(key+'.overrides.labels',overrides.labels,LABELS);
+  if(overrides.labels!==undefined)o.labels=overrides.labels===null?null:oneOf(key+'.overrides.labels',overrides.labels,LABELS);
   return {family:packRef(key+'.family',p.family),look:packRef(key+'.look',p.look),tuning:t,overrides:o};
 }
 function musicPayload(p,key='payload'){

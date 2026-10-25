@@ -66,11 +66,13 @@ export async function createRemoteWorld(container,{pack,files,recipe,film=false,
   window.addEventListener('message',onMessage);
   // Watchdog: a render unanswered for LIVE_TIMEOUT, or almost no frames delivered for SLOW_WINDOW, stops the pack.
   // Hidden pages are exempt (browsers throttle them); becoming visible again restarts the clocks.
-  let watchedSince=performance.now();
-  const onVisibility=()=>{if(!document.hidden){const now=performance.now();watchedSince=now;for(const k of inFlight.keys())inFlight.set(k,now);delivered.length=0;}};
+  // The player pauses drawing while no view shows the stage (setPaused): the same exemption, the same restart.
+  let watchedSince=performance.now(),paused=false;
+  const restartClocks=()=>{const now=performance.now();watchedSince=now;for(const k of inFlight.keys())inFlight.set(k,now);delivered.length=0;};
+  const onVisibility=()=>{if(!document.hidden&&!paused)restartClocks();};
   document.addEventListener('visibilitychange',onVisibility);
   const watchdog=setInterval(()=>{
-    if(disposed||failed||film||document.hidden)return;const now=performance.now();
+    if(disposed||failed||film||document.hidden||paused)return;const now=performance.now();
     for(const sent of inFlight.values())if(now-sent>LIVE_TIMEOUT){stop(`the pack stopped answering (no frame for ${Math.round((now-sent)/1000)} s)`,'unresponsive');return;}
     while(delivered.length&&delivered[0]<now-SLOW_WINDOW)delivered.shift();
     if(now-watchedSince>SLOW_WINDOW&&transport.sent>0&&delivered.length<SLOW_FPS*SLOW_WINDOW/1000)stop(`the pack is too slow for live playback (${(delivered.length/(SLOW_WINDOW/1000)).toFixed(1)} frames per second)`,'slow');
@@ -117,6 +119,7 @@ export async function createRemoteWorld(container,{pack,files,recipe,film=false,
       const id=nextId++;inFlight.set(id,now);transport.sent++;post({type:'render',id,t,dt:elapsed,phase,mode:onFrame?'record':'live'});return true;
     },
     record(sink){onFrame=sink||null;},
+    setPaused(p){p=!!p;if(p===paused)return;paused=p;if(!p&&!document.hidden)restartClocks();},
     // Films: one exact frame at time t, composited with its labels in the worker; never skipped.
     capture(t,dt,{phase=0}={}){transport.films++;return request({type:'render',t,dt,phase,mode:'film'},FILM_TIMEOUT);},
     drawOverlay(){},
