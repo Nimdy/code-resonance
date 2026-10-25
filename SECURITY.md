@@ -12,25 +12,48 @@
 | Command category (test, build, lint, …) and exit code | yes, classified inside the extension | journal | as cues |
 | AI prompts and assistant messages (hooks) | length + fingerprint; text only with `RESONANCE_CAPTURE_PROMPT_TEXT=1` | journal | never |
 | File paths | project-relative, secret patterns excluded | journal | **never** (salted hashed ids only) |
-| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | player project list only; never drawn on the Stage, OBS view or films (their titles are generic unless you set a **public title** in the World DNA panel) |
+| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | the Control Center only (labelled as private); never drawn on the Stage, OBS view, films or file names (their titles are generic unless you set a **public title** in Visual Studio) |
 
 Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inserted text even if an old extension sends it; existing journals from v0.2 may still contain it — delete them (below) if that matters.
 
 ## Boundaries
 
 - The receiver binds to loopback by default and refuses other interfaces unless `RESONANCE_ALLOW_REMOTE=1`. Requests need a localhost `Host` header; cross-origin requests are refused (DNS-rebinding protection).
-- Writes require the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time.
+- Ingestion (`/v1/*`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time.
+- **Administrative changes** (settings, project preferences, presets, recipes, pack import/install/approval/removal, the
+  Claude Code hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
+  request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
+  whatever headers it forges), with the page's own Origin and fetch metadata, that presents the receiver's **pairing
+  key** (also in `receiver-auth.json`, so only your account can read it). A browser receives the key once, in the
+  private link `npm start` / `npm run pair` prints (or VS Code's *Open Code Stage* opens), keeps it in that origin's
+  storage, and removes it from the address bar at once. Without it a browser can watch, play and record but change
+  nothing; another program or account on this computer cannot obtain a capability by forging an Origin header. A
+  cross-origin page cannot send the custom header without a CORS preflight, which the receiver never answers.
+  Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS view never requests one. The ingestion
+  token and the pairing key are never returned by any API route.
+- **Pack import** (Visual Packs) accepts a `.zip` or a folder from your disk, never a URL. Archives are read by the
+  receiver's own bounded reader (no symbolic links, encryption, ZIP64, traversal, absolute, device or duplicate names;
+  declared sizes and CRCs are verified; the SDK's limits on file count, file size and total size apply before anything
+  is written) into a quarantine directory, validated by the same code as `scripts/pack.js`, and installed only on an
+  explicit Install. Code packs are always installed unapproved; an approval is bound to the exact files (digest), a
+  pack whose files changed cannot be approved, and the reserved names `trust.json` and Windows device names are refused.
+- **Claude Code hooks from the Control Center** write only `<project>/.claude/settings.local.json`, only the adapter's
+  hook entries, after showing you the exact before/after, and only if the file did not change meanwhile; links
+  (`.claude` or the file itself), network paths and folders inside the data directory are refused.
+- **Capture evidence** (Connections) is derived from the journal: session times, the extension's *reported* capture
+  settings (values only, no paths), agent providers. VS Code settings are never changed by the receiver.
 - Read endpoints return only derived data: hashed module, folder-group and symbol ids, symbol types, cue types, counts, controls and plot coordinates. Since interpretation v5 the ids are salted with a per-project secret kept in the receiver's data (`projects/<hash>/salt`, never published), so an exported or displayed id cannot be matched against a guessed path such as `src/index.ts`. Tests check that typed text, file paths and secrets planted in source never appear in any public endpoint or in the page.
 - Paths with traversal, absolute paths, excluded directories (`node_modules`, `.git`, `dist`, …) and secret-like names (`.env*`, keys, credentials, `*.pem`, …) are rejected by both extension and receiver, which share one rule set. Dot-paths are excluded unless `resonance.includeHidden` is on. Filtering is not proof that content is clean: **do not capture repositories you have not reviewed.**
 - HTTP responses send `no-store` and `nosniff`; the player uses a self-only CSP and no CDNs.
 - The Claude Code adapter never writes to stdout and always exits 0, so it cannot alter Claude's decisions. It is installed per project in `.claude/settings.local.json`, which is not committed.
 - No analytics, telemetry, accounts, cloud APIs or remote model calls.
 - **Visual packs.** Declarative packs are validated data. Packs with code (GLSL, JavaScript) are installed unapproved, run only after you approve their exact files (approval bound to a content digest), are served to the player as inert text, and execute only in a dedicated worker inside an isolated frame (`sandbox="allow-scripts"`, opaque origin, `connect-src 'none'`, no frames or popups; the worker has no DOM, cannot navigate and has no WebRTC) fed with a whitelisted, privacy-safe performance view. Frames are acknowledged and bounded; a pack that throws, stops answering, is far too slow, loses its GPU context, floods messages, navigates, is revoked or whose files change is stopped. Browsers cannot fully sandbox GPU shaders (hangs, driver crashes, timing side channels), and an approved pack can still waste CPU, memory or GPU time until it is stopped: approve only packs you trust. Details: [docs/packs/security.md](docs/packs/security.md).
-- **Recordings** (● RECORD) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded.
+- **This browser** keeps the pairing key, the active project's id, the last view and rendering quality in its storage for the receiver's origin; nothing else (no names, paths or tokens).
+- **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded.
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data
 
-Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Nothing is copied anywhere else.
+Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key; paired browsers then need the new link). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Nothing is copied anywhere else.
 
 Report vulnerabilities privately to the repository owner; do not attach recordings that may contain secrets.

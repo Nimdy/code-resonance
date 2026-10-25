@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.5.0 — the Creative Control Center (not released)
+
+Code Resonance becomes an application: a Control Center to configure and operate it, and an immersive Performance
+Stage, on the same engine and the same authoritative state. Built on 0.4.0 alpha 1; not stable, not released.
+
+### The application
+
+- **Workspaces:** Home (is it running, is capture really active, what needs attention, a resumable setup guide),
+  Projects (browser, statistics, timeline with replay from any moment, agents, validations, exports), Visual Studio,
+  Music Studio, Visual Packs, Connections, Record & Broadcast, Settings, and the **Performance Stage** (`#/stage`:
+  controls fade, full screen, a second window for another monitor). Replaces the three-column player. The OBS view
+  (`?overlay=1`) and existing bookmarks keep working.
+- **One engine:** `public/app.js` exposes `window.ResonancePlayer`; the stage is placed over whichever view shows it
+  (never a second renderer, scheduler or clock in a window) and pauses drawing while no view shows it.
+- **Visual Studio:** choose → preview (never saved, shown in this window only) → customise → apply (checked against
+  the recipe revision; a change made elsewhere meanwhile is reported). Parameters are generated from the parameter
+  catalogue and from pack manifests (world-pack parameters, shader-pack uniforms), validated by the receiver;
+  customising locks the identity; *Reset customisations* restores the generated values. Real thumbnails of the
+  built-in families rendered from the project. Visual presets.
+- **Music Studio:** style, tempo (the project's or manual), texture and volume per project or globally, heard live as a
+  preview before applying; the project's musical identity (key, mode, tempo per style, motif); music presets. The WAV
+  export now uses a manual tempo when one is chosen.
+- **Visual Packs:** import from a `.zip` or a folder through the browser (quarantined, validated by the SDK's own
+  checks, installed unapproved), review files and digest, approve, revoke, remove, read READMEs and the SDK guides.
+- **Connections:** the receiver's health; per project, what VS Code capture was really observed and the capture
+  settings the extension reported; Claude Code activity, and adding or removing its hooks after showing the exact change.
+- **Record & Broadcast:** recording profiles (720p, 1080p, stage size), one recorder shared by every control and one
+  recording at a time across windows, the OBS URL builder, exports.
+- **Settings:** global preferences, this device's quality, where each kind of configuration lives, diagnostics.
+
+### Receiver
+
+- **Configuration authorities:** `settings.json` (global), per-project `preferences.json`, `presets.json`; versioned,
+  validated, written atomically; field-level patches; `409` for a stale revision. The player's previous browser
+  preferences move to the receiver once.
+- **Change feed** (`GET /api/changes`, server-sent events): every window, the Stage and the OBS view converge.
+- **Capture evidence** per project from the journal (`GET /api/evidence`).
+- **Control capabilities and pairing:** administrative routes need a capability, issued only to a loopback request
+  of the page's origin that presents the pairing key from `receiver-auth.json` (`npm run pair`). Previously recipe edits
+  and pack approvals needed only the page's Origin, which any local process can forge.
+- **Recipes:** revisions, batches, previews, `tune` / `tune-reset`; a project's information mode follows the global
+  setting until one is chosen for it (recipes from before 0.5 are read that way).
+- **Packs:** `/api/packs/{import,install,discard,remove,readme,templates}`; a pack with problems cannot be approved;
+  reserved ids (`trust.json`, Windows device names) are refused; the registry no longer answers for `constructor`.
+
+### Extension 0.5.0
+
+- Reports its capture settings at capture start and when they change (`workspace.settings`), values only.
+- `vscode://zerobandwidth.code-resonance/settings` opens its settings; *Open Code Stage* opens a paired link.
+
+### Qualification
+
+- `qualification/ui/`: an isolated seeded environment (`serve.js`), one browser suite per workspace and a cross-view
+  acceptance suite (first run, two projects and a receiver restart, recording across windows, OBS updates, previews
+  that stay local, responsive layouts), run by `ui/run-all.js`; the existing harnesses drive the new Stage.
+
 ## 0.4.0 alpha 1 — controlled-alpha candidate (not released)
 
 The first version meant for real developers on real projects, with the limitations in `docs/ALPHA.md`. Not stable,
