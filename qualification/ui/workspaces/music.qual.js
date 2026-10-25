@@ -209,12 +209,17 @@ async function enter(page,rangeSelector,value){const box=page.locator(`${rangeSe
     // The offline render competes for the CPU with every open page: the Stage window is closed first.
     await B.close();
     await A.goto(`${url}/?project=${L}#/music`);await ready(A);
+    // The export renders up to ten minutes from the replay position (the last ten in live mode): from 30 s before the
+    // end, the render is short enough for a two-core machine without a GPU (CI), where four minutes took over eight.
+    await A.evaluate(()=>window.ResonancePlayer.setMode('replay'));
+    await A.waitForFunction(()=>window.ResonancePlayer.state.position.loaded&&window.ResonancePlayer.state.position.end>0,null,{timeout:60000});
+    await A.evaluate(()=>{const p=window.ResonancePlayer.state.position;window.ResonancePlayer.seek(p.end-30000);});
     const t0=Date.now(),download=A.waitForEvent('download',{timeout:480000}).catch(()=>null);
     await A.click('#musicExport');
     check('export: shows that it is rendering',await until(A,()=>/Rendering/.test(document.getElementById('musicExport').textContent),null,3000));
     const file=await download;
     if(file){const saved=path.join(OUT,'music-export.wav');await file.saveAs(saved);const head=fs.readFileSync(saved).subarray(0,12).toString('latin1'),size=fs.statSync(saved).size;
-      measurements.export={file:file.suggestedFilename(),bytes:size,renderMs:Date.now()-t0};check('export: a WAV of the recorded performance',head.startsWith('RIFF')&&head.endsWith('WAVE')&&size>100000,`${file.suggestedFilename()} ${size} bytes`);
+      measurements.export={file:file.suggestedFilename(),bytes:size,renderMs:Date.now()-t0};check('export: a WAV of the recorded performance',head.startsWith('RIFF')&&head.endsWith('WAVE')&&size>1000000,`${file.suggestedFilename()} ${size} bytes in ${Date.now()-t0} ms`);
       await fsp.rm(saved,{force:true});}
     else check('export: a WAV of the recorded performance',false,`no download after ${Date.now()-t0} ms; toasts: ${await A.evaluate(()=>[...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' / '))}`);
     check('export: names no private folder',!file||!/lumen-recipes/i.test(file.suggestedFilename()),file?.suggestedFilename()||'');

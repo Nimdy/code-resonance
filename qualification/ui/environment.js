@@ -24,10 +24,14 @@ const LUMEN=path.join(REPO,'qualification/recordings/lumen-recipes/projects');
 const pairings=new Map();
 {const pw=require('playwright-core'),launch=pw.chromium.launch.bind(pw.chromium);
   // A page that sets sessionStorage 'qual-unpaired' stays unpaired (to test what an unpaired browser sees).
-  const seed=keys=>{try{if(sessionStorage.getItem('qual-unpaired'))return;const k=keys[location.origin];if(k)localStorage.setItem('code-resonance-pairing',k);}catch{}};
+  // CR_UI_QUALITY (CI): the rendering quality a user of a slow machine would choose, unless a test chose one itself.
+  const seed=([keys,quality])=>{try{
+    if(quality&&!localStorage.getItem('code-resonance-device-v1'))localStorage.setItem('code-resonance-device-v1',JSON.stringify({quality}));
+    if(sessionStorage.getItem('qual-unpaired'))return;const k=keys[location.origin];if(k)localStorage.setItem('code-resonance-pairing',k);}catch{}};
+  const QUALITY=['0','1','2','3'].includes(process.env.CR_UI_QUALITY)?process.env.CR_UI_QUALITY:null;
   pw.chromium.launch=async(...a)=>{const b=await launch(...a),newContext=b.newContext.bind(b),newPage=b.newPage.bind(b);
-    b.newContext=async(...o)=>{const c=await newContext(...o);await c.addInitScript(seed,Object.fromEntries(pairings));return c;};
-    b.newPage=async(...o)=>{const p=await newPage(...o);await p.addInitScript(seed,Object.fromEntries(pairings));return p;};
+    b.newContext=async(...o)=>{const c=await newContext(...o);await c.addInitScript(seed,[Object.fromEntries(pairings),QUALITY]);return c;};
+    b.newPage=async(...o)=>{const p=await newPage(...o);await p.addInitScript(seed,[Object.fromEntries(pairings),QUALITY]);return p;};
     return b;};}
 const EXT=/\.(ts|tsx|js|jsx|mjs|cjs|json|css|md)$/;
 function walk(d,acc=[]){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','.git','dist'].includes(e.name))continue;const f=path.join(d,e.name);if(e.isDirectory())walk(f,acc);else if(EXT.test(e.name))acc.push(f);}return acc;}

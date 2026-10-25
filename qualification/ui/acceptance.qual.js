@@ -27,6 +27,9 @@ async function open(context,url,{width=1440,height=900}={}){
   await page.goto(url);return {page,errors,requests};
 }
 const engine=(page,fn,arg)=>page.evaluate(fn,arg);
+// The Stage's controls fade while the pointer rests; they are operated from the keyboard here (focus keeps them shown),
+// which a starved machine cannot turn into a race between the fade and a click.
+async function press(page,selector){await page.focus(selector);await page.keyboard.press('Enter');}
 async function ready(page,timeout=30000){await page.waitForFunction(()=>document.body.dataset.receiver==='connected'&&!!window.ResonancePlayer,null,{timeout});}
 async function capability(url,pairing){const r=await fetch(url+'/api/session',{method:'POST',headers:{'Content-Type':'application/json',Origin:url},body:JSON.stringify({pairing})});if(!r.ok)throw new Error(`session ${r.status}`);return (await r.json()).capability;}
 async function admin(url,cap,p,body){const r=await fetch(url+p,{method:'POST',headers:{'Content-Type':'application/json',Origin:url,'X-Resonance-Capability':cap},body:JSON.stringify(body)});const data=await r.json().catch(()=>null);if(!r.ok)throw new Error(`${p} ${r.status} ${JSON.stringify(data)}`);return data;}
@@ -142,7 +145,7 @@ const getJSON=async u=>(await fetch(u)).json();
       const {page:stage,errors:stageErrors}=await open(windows,`${url}/?project=${sample}#/stage`);await ready(stage);
       const {page:obs,errors:obsErrors,requests:obsRequests}=await open(windows,`${url}/?overlay=1&sound=1&project=${sample}`,{width:1920,height:1080});
       await obs.waitForFunction(()=>window.__worldStats?.()?.family==='stellar-forge',null,{timeout:45000}).catch(()=>{});
-      await stage.click('#stageSoundBtn');await wait(2500);
+      await press(stage,'#stageSoundBtn');await wait(2500);
       const barBefore=await engine(stage,()=>window.ResonancePlayer.state.bar);
       // A local preview in the Control Center is never seen by the OBS view or the Stage window.
       const candidate=await control.evaluate(async id=>(await window.ResonancePlayer.api.post(`/api/recipe/preview?id=${id}`,{actions:[{type:'family',family:'fractal-biosphere'}]})).recipe,sample);
@@ -175,11 +178,11 @@ const getJSON=async u=>(await fetch(u)).json();
       check('H: the OBS view never requests a control capability',!obsRequests.some(r=>r==='POST /api/session'),obsRequests.filter(r=>r.startsWith('POST')).join(','));
       await obs.screenshot({path:path.join(OUT,'acceptance-h-obs.png')});
       // G: recording state is one across the views of a window and announced to other windows.
-      await stage.click('#stageRecordBtn');await wait(1500);
+      await press(stage,'#stageRecordBtn');await wait(1500);
       const recState=await Promise.all([engine(stage,()=>({active:window.ResonancePlayer.state.recording.active,topbar:document.getElementById('recordBtn').getAttribute('aria-pressed')})),engine(control,()=>({disabled:document.getElementById('recordBtn').disabled,label:document.getElementById('recordBtn').textContent}))]);
       check('G: one recorder: the Stage and the top bar agree, and another window cannot start a second recording',recState[0].active&&recState[0].topbar==='true'&&recState[1].disabled,JSON.stringify(recState));
       const download=stage.waitForEvent('download',{timeout:20000}).catch(()=>null);
-      await wait(QUICK?2500:5000);await stage.click('#stageRecordBtn');
+      await wait(QUICK?2500:5000);await press(stage,'#stageRecordBtn');
       const file=await download;let size=0;if(file){const p=path.join(OUT,'acceptance-g-recording.webm');await file.saveAs(p);size=fs.statSync(p).size;}
       const last=await engine(stage,()=>window.ResonancePlayer.state.recording.last);
       check('G: the recording finishes as a WebM file with sound',size>20000&&last?.audio===true&&!last?.audioLost,JSON.stringify({size,...(last||{})}));
