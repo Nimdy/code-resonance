@@ -22,7 +22,7 @@ const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
 // Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
 const FRAME_HTML='<!doctype html><html><head><meta charset="utf-8"><title>Code Resonance visual pack</title>'+
-  '<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}</style></head>'+
+  '<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain}</style></head>'+
   '<body><canvas id="world"></canvas><canvas id="overlay"></canvas><script type="module" src="/worlds/frame.js"></script></body></html>';
 const FRAME_PERMISSIONS='camera=(), microphone=(), geolocation=(), display-capture=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), hid=(), bluetooth=(), payment=(), fullscreen=()';
 const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
