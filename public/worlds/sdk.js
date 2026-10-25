@@ -11,7 +11,8 @@
 //             effect(cmd, frame)     a director command: {effect, intent, tier, scale, duration, at, subject, detail}
 //             dispose()              release every GPU resource you created
 //   optional  afterCamera(frame), background(frame) -> ShaderMaterial (full-screen, half resolution),
-//             grade(frame) -> {bloom, threshold, exposure, contrast, saturation, vignette, grain, flash, waves, lift, tint},
+//             grade(frame) -> {bloom, threshold, exposure, contrast, saturation, vignette, grain, flash, waves, lift, tint,
+//                                  tonemap: "aces"|"agx", streak, streakTint, bloomTint, rays: [{x, y, strength, color}], rayDecay},
 //             describe(cmd, frame) -> {text, sub, position, color, banner, bannerSub}, agentPosition(id, frame),
 //             agentColor(agent), subsystemLabels(frame), status(frame), pick(x, y, camera, frame), inspect(id, frame),
 //             onPrime(t, tsec) (after a seek: clear transients, rebuild lasting state from sdk.director.lasting()),
