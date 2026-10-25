@@ -16,7 +16,8 @@ function streams(file){
 // Every decoded video frame: presentation time, checksum and mean luma (showinfo), on a small scaled copy.
 function frames(file){
   const r=run(['-i',file,'-an','-vf','scale=64:36,showinfo','-f','null','-']);const list=[];
-  for(const m of String(r.stderr).matchAll(/pts_time:([\d.]+).*?checksum:([0-9A-F]+).*?mean:\[(\d+) (\d+) (\d+)\]/g))list.push({t:+m[1],sum:m[2],luma:+m[3],u:+m[4],v:+m[5]});
+  // mean: the planes' means, [Y U V] for video (u and v find the green marker), or [R G B A] for an RGBA image.
+  for(const m of String(r.stderr).matchAll(/pts_time:([\d.]+).*?checksum:([0-9A-F]+).*?mean:\[(\d+)(?: (\d+))?(?: (\d+))?(?: \d+)?\]/g))list.push({t:+m[1],sum:m[2],luma:+m[3],u:+(m[4]??128),v:+(m[5]??128)});
   return list;
 }
 // A still from the recording (JPEG), for the evidence.

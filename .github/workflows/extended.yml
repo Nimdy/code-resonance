@@ -64,7 +64,7 @@ jobs:
       - run: npx playwright-core install --with-deps chromium
       - run: node visual/robustness.qual.js
       # The software renderer cannot meet real-hardware frame rates: mechanism thresholds, a fixed lower rendering level.
-      - run: node visual/recording.qual.js --mechanism --quality 3 --long 120
+      - run: node visual/recording.qual.js --mechanism --quality 3 --long 120 --size stage
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -131,7 +131,7 @@ jobs:
       - run: npx playwright-core install chromium
       - run: node browser/stage.qual.js
       - run: node ../scripts/pack.js test ../packs/examples/cymatic-field --quick
-      - run: node visual/recording.qual.js --quick --quality 3
+      - run: node visual/recording.qual.js --quick --quality 3 --size stage
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -12,7 +12,7 @@
 // --viewport and --quality (a fixed rendering level) let a slow machine (CI's software renderer) render the player fast enough
 // for the recording itself to be measured; the report names them.
 // --pack: also record that pack (e.g. a world made with `scripts/pack.js new`), installed and approved in the copy.
-// --quick: the four worlds at 8 s each, no lifecycle or long recording (CI).
+// --quick: the four worlds at 8 s each, then Cymatic Field at 720p; no lifecycle or long recording (CI, with --size stage).
 // --mechanism: CI thresholds for a full run (quality assertions reported, not gating).
 // --size 720p|1080p|stage: the player's recording size for the main recordings (default 720p, the player's default).
 // The recording-size section measures every size; quality assertions gate the main size only and are reported (QUALIFIED
@@ -160,11 +160,23 @@ function stills(file,key,duration){for(const f of [.25,.75]){const t=+(duration*
           if(a){stills(rec.file,w.key,a.videoDuration);fs.copyFileSync(rec.file,path.join(OUT,`${w.key}${GPU?`-${GPU}`:''}.webm`));}
         }finally{await page.close();}
       }
-      if(QUICK)return;
+      // Quick runs (CI's software renderer, main recordings at the stage's size): the fixed-size path on a world rendered in
+      // its worker, 8 s at 720p (encoded dimensions and the functional checks gate).
+      if(QUICK){
+        const w=WORLDS[3];await recipeAction(svc,project,w.action);const {page,errors}=await playerPage(browser,svc,project,PAGE);
+        try{await worldReady(page,w);await page.evaluate(()=>window.__qual.replayFromStart());await wait(2500);
+          const rec=await record(page,browserCdp,path.join(tmp,`${w.key}-720p.webm`),{seconds:SECONDS,size:'720p'});
+          const a=verify(`${w.name} at 720p`,rec,{seconds:SECONDS,gateQuality:false});
+          if(a)measurements.sizes={[`${w.key}-720p`]:{video:a.video,fps:a.fps,frameInterval:a.frameInterval,maxAbsOffsetMs:a.sync?.maxAbsOffsetMs,player:rec.result}};
+          check(`${w.name} at 720p: no page errors`,!errors.length,errors.slice(0,2).join(' | ')||'none');}finally{await page.close();}
+        return;
+      }
       // ---- Recording sizes: the same worlds at 720p, 1080p and the stage's size; encoded dimensions, frame rate, sync,
       // cost and composition (stills).
       measurements.sizes={};
-      for(const w of [WORLDS[0],WORLDS[3]]){
+      // Under mechanism thresholds (a software renderer) the pack world only: built-in worlds render on the main thread and
+      // fall below the mechanism floor at fixed sizes there (about 1 fps at 720p); they are measured on GPU runs.
+      for(const w of MECH?[WORLDS[3]]:[WORLDS[0],WORLDS[3]]){
         await recipeAction(svc,project,w.action);
         const {page,errors}=await playerPage(browser,svc,project,PAGE);
         try{
