@@ -4,7 +4,7 @@
 
 Code Resonance is a completely independent, local-first audiovisual instrument for software creation. An opt-in VS Code extension (and, optionally, an AI agent's hooks) reports observable activity. A loopback receiver records it and interprets it in the background. A performance player turns the project's real structure into an evolving visual world and composes a project-specific score that develops as the software does. No Signal/3 dependency, cloud service, model API, GPU, or Docker is required.
 
-> **Maturity: v0.3 prototype.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, a completed multi-hour soak and multi-hour real sessions, and human listening evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
+> **Maturity: 0.4.0 alpha 1, a controlled-alpha candidate (not released): for real developers on real projects, with the limitations in [docs/ALPHA.md](docs/ALPHA.md); not stable, not production-ready.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, multi-hour soaks and real sessions with the final code, and human listening and viewing evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
 
 ## What it does
 
@@ -30,7 +30,7 @@ Open **http://127.0.0.1:4174/** and click **ENABLE SOUND** (browsers require a g
 
 ```bash
 npm run package:vsix                       # Node only; works on Windows, Linux and macOS
-code --install-extension code-resonance-0.3.0.vsix
+code --install-extension code-resonance-0.4.0.vsix
 ```
 
 Open a trusted workspace, click the **CR** status-bar item (or run **Code Resonance: Start Code Performance**) and accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes automatically when VS Code restarts until you stop it.
@@ -59,7 +59,7 @@ The overlay hides every control and shows only the stage. OBS's browser allows a
 
 ### Record and export
 
-- **● RECORD** records what the stage shows (the world and its labels, for every world including visual packs, which composite their frames in their isolated worker) with the music, to WebM in real time (Chromium-based browsers; elsewhere the player says recording is unavailable). The file contains the stage only: no source, paths, prompts, commands or credentials.
+- **● RECORD** records what the stage shows (the world and its labels, for every world including visual packs, which composite their frames in their isolated worker) with the music, to WebM in real time (Chromium-based browsers; elsewhere the player says recording is unavailable). Choose the size next to the button: **720p** (1280×720, the default) or **1080p** (1920×1080, for a GPU that keeps up), rendered at exactly that size and never stretched, or the stage's own size. The browser holds the recording in memory until you stop; for long sessions use OBS. The file contains the stage only: no source, paths, prompts, commands or credentials. Details: [docs/RECORDING.md](docs/RECORDING.md).
 - **AUDIO ↓** renders up to 10 minutes of the recorded performance offline to WAV, from the replay position (or the latest 10 minutes). The render is deterministic: the same performance and palette give the same audio.
 - **DATA ↗** exports the derived performance timeline as JSON (no source, paths or prompts).
 

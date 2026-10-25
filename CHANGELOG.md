@@ -1,6 +1,32 @@
 # Changelog
 
-## Unreleased — Product hardening: recording, bounded pack runtime, qualification
+## 0.4.0 alpha 1 — controlled-alpha candidate (not released)
+
+The first version meant for real developers on real projects, with the limitations in `docs/ALPHA.md`. Not stable,
+not production-ready. Everything since 0.3.0:
+
+### Alpha candidate: memory, synchronisation, recording sizes
+
+- **Recording size:** choose 720p (1280×720, the default), 1080p (1920×1080) or the stage's size next to ● RECORD. At
+  720p and 1080p the world renders at exactly that size with a 16:9 camera (packs too), so the file has those encoded
+  dimensions with nothing stretched or cut; the stage shows the same picture letterboxed while recording. Video bitrate
+  5 Mbit/s at 720p, 8 at 1080p. A recording that cannot keep up (under 28 frames drawn per second for ten seconds) is
+  reported once, with advice. 720p is the default because it holds 30 fps on modest GPUs.
+- **Memory leak fixed:** the recording's sound watchdog created an audio source node per recording that the browser
+  never released (about 2-3 MB per recording in the renderer and the GPU process); it now uses one for the page.
+  A finished recording is no longer held in memory for a minute after it is saved. A disposed world releases its GPU
+  context at once; the pack worker reuses its compositing canvas.
+- **Synchronisation fix:** in replay, sound was scheduled from the playhead of the last animation frame, so a cue
+  scheduled after a main-thread stall sounded that much late (+136 to +166 ms after a 150 ms stall, reproduced); the
+  playhead is now extrapolated between frames.
+- **Qualification:** renderer memory forensics with a lean browser driver (Playwright's DevTools connection keeps every
+  fetched response in the renderer, which had made the soak's memory unreadable), in-player bisection, blank-page
+  isolation of the recorder and of worker/WebGL lifecycles; synchronisation markers v2 (a green flash and a 3-6 kHz
+  chirp found by a matched filter, offsets as frame-bounded intervals, a self-test with distractors) and a matrix of
+  conditions (worlds, sizes, quality, switching, CPU load, live, stalls); recording sizes measured from the files.
+- **Version 0.4.0** for the first controlled alpha (`docs/ALPHA.md`).
+
+### Product hardening: recording, bounded pack runtime, qualification
 
 - **Live recording for every world:** ● RECORD records the presented stage (built-in worlds, declarative, shader and world
   packs) with the music through one player-owned compositor canvas and the music's own output stream; packs composite
@@ -36,7 +62,31 @@
   frame (now on change); the two intermittent `npm test` failures (a planted secret colliding with random hex ids;
   cleanup hooks removing a receiver's directory before stopping it).
 
-## Unreleased — The Construct (candidate for visual review)
+### Visual Pack SDK 1, long histories, privacy
+
+- **Visual packs** change how a project looks without changing Code Resonance: declarative (data only), shader (GLSL
+  background and post passes) and world (a complete world family). A JSON schema shared by editors and the receiver,
+  parameter catalogues with effect polarity (a failure can never be shown as a success), installation with per-file
+  hashes and a digest, approvals bound to that digest, tamper detection; `scripts/pack.js` (new, validate, install,
+  list, approve, revoke, remove, test, catalogue). Packs with code run in an isolated frame with no network, never in
+  the player's origin; the player's REVIEW dialog shows author, files, digest and the isolation limits.
+- **Reference packs** written from the documentation only: Cymatic Field (a fourth world family), Blueprint Cathedral
+  (shader), Ember Observatory (declarative); starter templates; SDK documentation in `docs/packs/`.
+- **Long histories:** exact replay of histories up to 1,000,000 intents with bounded, checkpointed state (early
+  milestones, agent numbers and departed sessions were lost before).
+- **Privacy:** the Stage never shows the project's folder name; public titles come only from a title the user sets.
+
+### Living worlds (artistic candidates)
+
+- **Visual Recipe (World DNA):** a persistent, versioned artistic identity per project, generated from the project's
+  founding traits; keep it, regenerate it, choose another family, lock it.
+- **Living-world engine** (WebGL2, HDR pipeline) with three families: Stellar Forge, Fractal Biosphere, Machine
+  Cathedral. Interpretation v7: canonical performance intents, agent lifecycles, language adapters (TypeScript, Python,
+  manifests). A director maps intents to effects in proportion to evidence; labels in cinematic, explorer, stream and
+  off modes; adaptive quality; deterministic films; live priming with the session's history.
+- **Music:** lighter low end, wider stereo, evolving pads, relaxing when the work goes quiet (same loudness).
+
+### The Construct (candidate for visual review)
 
 - Interpretation v5/v6: architectural districts from folder structure, a persisted site plan (nothing ever moves), stable storey order per file, building states (draft, committed, validated, stressed) localized to the files a test run or commit covers, rename-preserving identities, location on cues, salted public ids.
 - The Construct: an illuminated architectural model built as the work happens (docs/CONSTRUCT.md), WebGL with a Canvas2D fallback, captions for viewers who do not code, deterministic film rendering with music.
