@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T15:00:17.615Z",
+  "at": "2026-10-25T16:20:07.801Z",
   "browser": "chromium (playwright-core, headless, SwiftShader)",
   "quick": false,
   "checks": [
@@ -16,7 +16,7 @@
     {
       "name": "A: the project appears without a reload (change feed)",
       "pass": true,
-      "detail": "after 417 ms"
+      "detail": "after 426 ms"
     },
     {
       "name": "A: the Stage opens on the project with the living world running",
@@ -44,9 +44,14 @@
       "detail": "{\"state\":\"paired\",\"button\":true,\"saved\":false}"
     },
     {
-      "name": "A: opening the private link pairs a fresh browser and removes the key from the address",
+      "name": "A: opening a pairing link (single-use code) pairs a fresh browser, removes the code from the address, and the code cannot be used twice",
       "pass": true,
-      "detail": "{\"hash\":\"#/home\",\"saved\":\"saved\",\"state\":\"paired\"}"
+      "detail": "{\"hash\":\"#/home\",\"stored\":true,\"saved\":\"saved\",\"state\":\"paired\"}"
+    },
+    {
+      "name": "A: a pairing link opened in an already open tab pairs it and leaves no code in the address or stored routes",
+      "pass": true,
+      "detail": "{\"state\":\"paired\",\"hash\":\"\",\"ui\":\"{\\\"lastRoute\\\":\\\"\\\",\\\"project\\\":\\\"bce82a73ed44cd109328c28935fc7543f0998b752cc18f88f2a963a1f398b39e\\\"}\"}"
     },
     {
       "name": "B: project one plays its own identity and music",
@@ -57,6 +62,11 @@
       "name": "B: switching projects switches identity and music, independently",
       "pass": true,
       "detail": "{\"project\":\"36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf\",\"family\":\"stellar-forge\",\"style\":\"chip\",\"texture\":0.3,\"intensity\":0.6}"
+    },
+    {
+      "name": "B: a project's own information mode applies in a non-living world after switching projects",
+      "pass": true,
+      "detail": "{\"world\":\"construct\",\"labels\":\"explorer\"}"
     },
     {
       "name": "B: the other project was not touched",
@@ -81,12 +91,12 @@
     {
       "name": "H: a saved visual change reaches the OBS view and the Stage window",
       "pass": true,
-      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 15383 ms, new world running in 21809 ms"
+      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 23555 ms, new world running in 31288 ms"
     },
     {
       "name": "I: the Stage window kept playing through the change (music not restarted)",
       "pass": true,
-      "detail": "bar 2 → 25"
+      "detail": "bar 2 → 32"
     },
     {
       "name": "I: a global setting changed in one window reaches the other",
@@ -116,7 +126,7 @@
     {
       "name": "G: the recording finishes as a WebM file with sound",
       "pass": true,
-      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":9250,\"frames\":27,\"bytes\":375123,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1792940341148.webm\",\"at\":1792940341148}"
+      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":12725,\"frames\":20,\"bytes\":370319,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1792945132768.webm\",\"at\":1792945132768}"
     },
     {
       "name": "G: the other window can record again once it stopped",
@@ -360,8 +370,8 @@
     }
   ],
   "measurements": {
-    "firstProjectMs": 417,
-    "savedChangeReceivedMs": 15383,
-    "savedChangeToViewsMs": 21809
+    "firstProjectMs": 426,
+    "savedChangeReceivedMs": 23555,
+    "savedChangeToViewsMs": 31288
   }
 }

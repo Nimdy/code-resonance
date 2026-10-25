@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T15:02:36.834Z",
+  "at": "2026-10-25T15:56:37.342Z",
   "gpu": "swiftshader",
   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
   "checks": [
@@ -11,7 +11,7 @@
     {
       "name": "slow pack: presentation frames are skipped, not queued (the worker queue stays short and drains)",
       "pass": true,
-      "detail": "35 renders sent, 895 skipped in the player, 0 obsolete in the worker; worker queue max 0, now 0; render 400.4 ms, latency 414.5 ms (max 580.7)"
+      "detail": "35 renders sent, 895 skipped in the player, 0 obsolete in the worker; worker queue max 0, now 0; render 400.6 ms, latency 415.7 ms (max 569.6)"
     },
     {
       "name": "slow pack: every semantic event reaches the pack (none lost while frames are skipped)",
@@ -36,17 +36,17 @@
     {
       "name": "hanging pack: the watchdog stops it within the live timeout (6 s + one 0.5 s watchdog tick) of its last answer",
       "pass": true,
-      "detail": "stopped 6379 ms after the last acknowledgement seen (polled every 100 ms); disposal took 1.1 ms; built-in world running 1360 ms after the stop"
+      "detail": "stopped 6381 ms after the last acknowledgement seen (polled every 100 ms); disposal took 1.4 ms; built-in world running 1339 ms after the stop"
     },
     {
       "name": "hanging pack: the player kept running during the hang (its frame pacing and script round trips)",
       "pass": true,
-      "detail": "player 60 fps, p95 16.8 ms, max 16.8 ms over 382 frames; round trip max 2 ms; stop and recovery: max frame 783.3 ms"
+      "detail": "player 60 fps, p95 16.8 ms, max 16.8 ms over 383 frames; round trip max 2 ms; stop and recovery: max frame 766.7 ms"
     },
     {
       "name": "hanging pack: its stuck worker is terminated (by the browser, within 10 s of the stop)",
       "pass": true,
-      "detail": "gone 2356 ms after the stop"
+      "detail": "gone 2472 ms after the stop"
     },
     {
       "name": "hanging pack: stopped with its reason shown; the built-in world took over; the recipe keeps the pack",
@@ -88,29 +88,29 @@
           "inFlight": 1,
           "queue": 0,
           "maxQueue": 0,
-          "sent": 4,
-          "skippedHere": 83,
+          "sent": 3,
+          "skippedHere": 84,
           "skippedInFrame": 0,
-          "latencyMs": 127.2,
+          "latencyMs": 95.5,
           "semanticSent": 10,
-          "semanticHandled": 9,
-          "rendered": 3,
-          "renderMs": 400.9,
+          "semanticHandled": 5,
+          "rendered": 1,
+          "renderMs": 425,
           "roundTripMs": 1
         },
         {
           "t": 2,
-          "inFlight": 1,
+          "inFlight": 0,
           "queue": 0,
           "maxQueue": 0,
           "sent": 5,
           "skippedHere": 142,
           "skippedInFrame": 0,
-          "latencyMs": 169.4,
+          "latencyMs": 197.1,
           "semanticSent": 10,
           "semanticHandled": 9,
           "rendered": 3,
-          "renderMs": 400.9,
+          "renderMs": 401,
           "roundTripMs": 1
         },
         {
@@ -119,13 +119,13 @@
           "queue": 0,
           "maxQueue": 0,
           "sent": 8,
-          "skippedHere": 200,
+          "skippedHere": 199,
           "skippedInFrame": 0,
-          "latencyMs": 252,
+          "latencyMs": 248.6,
           "semanticSent": 55,
           "semanticHandled": 10,
-          "rendered": 5,
-          "renderMs": 400.7,
+          "rendered": 6,
+          "renderMs": 400.8,
           "roundTripMs": 1
         },
         {
@@ -136,11 +136,11 @@
           "sent": 10,
           "skippedHere": 258,
           "skippedInFrame": 0,
-          "latencyMs": 293.3,
+          "latencyMs": 291.8,
           "semanticSent": 58,
           "semanticHandled": 55,
-          "rendered": 8,
-          "renderMs": 401,
+          "rendered": 9,
+          "renderMs": 400.9,
           "roundTripMs": 1
         },
         {
@@ -151,11 +151,11 @@
           "sent": 12,
           "skippedHere": 316,
           "skippedInFrame": 0,
-          "latencyMs": 326.4,
+          "latencyMs": 325,
           "semanticSent": 99,
-          "semanticHandled": 64,
-          "rendered": 11,
-          "renderMs": 400.7,
+          "semanticHandled": 55,
+          "rendered": 9,
+          "renderMs": 400.9,
           "roundTripMs": 1
         },
         {
@@ -168,9 +168,9 @@
           "skippedInFrame": 0,
           "latencyMs": 353.6,
           "semanticSent": 147,
-          "semanticHandled": 64,
-          "rendered": 11,
-          "renderMs": 400.7,
+          "semanticHandled": 76,
+          "rendered": 12,
+          "renderMs": 400.6,
           "roundTripMs": 1
         },
         {
@@ -181,11 +181,11 @@
           "sent": 16,
           "skippedHere": 432,
           "skippedInFrame": 0,
-          "latencyMs": 376.4,
+          "latencyMs": 375.1,
           "semanticSent": 202,
-          "semanticHandled": 147,
-          "rendered": 14,
-          "renderMs": 400.7,
+          "semanticHandled": 174,
+          "rendered": 15,
+          "renderMs": 400.8,
           "roundTripMs": 1
         },
         {
@@ -196,11 +196,11 @@
           "sent": 18,
           "skippedHere": 491,
           "skippedInFrame": 0,
-          "latencyMs": 386.3,
+          "latencyMs": 385.4,
           "semanticSent": 227,
           "semanticHandled": 202,
           "rendered": 16,
-          "renderMs": 400.8,
+          "renderMs": 400.6,
           "roundTripMs": 1
         },
         {
@@ -211,11 +211,11 @@
           "sent": 21,
           "skippedHere": 548,
           "skippedInFrame": 0,
-          "latencyMs": 397.1,
+          "latencyMs": 397.6,
           "semanticSent": 237,
           "semanticHandled": 227,
           "rendered": 19,
-          "renderMs": 400.6,
+          "renderMs": 400.8,
           "roundTripMs": 1
         },
         {
@@ -226,12 +226,12 @@
           "sent": 23,
           "skippedHere": 606,
           "skippedInFrame": 0,
-          "latencyMs": 404,
+          "latencyMs": 403.7,
           "semanticSent": 240,
           "semanticHandled": 237,
           "rendered": 22,
           "renderMs": 400.4,
-          "roundTripMs": 1
+          "roundTripMs": 0
         },
         {
           "t": 11,
@@ -241,7 +241,7 @@
           "sent": 25,
           "skippedHere": 664,
           "skippedInFrame": 0,
-          "latencyMs": 407.5,
+          "latencyMs": 407.2,
           "semanticSent": 274,
           "semanticHandled": 237,
           "rendered": 22,
@@ -253,14 +253,14 @@
           "inFlight": 1,
           "queue": 0,
           "maxQueue": 0,
-          "sent": 27,
-          "skippedHere": 723,
+          "sent": 28,
+          "skippedHere": 721,
           "skippedInFrame": 0,
-          "latencyMs": 411.2,
+          "latencyMs": 412.7,
           "semanticSent": 282,
           "semanticHandled": 274,
           "rendered": 25,
-          "renderMs": 400.5,
+          "renderMs": 400.6,
           "roundTripMs": 1
         }
       ],
@@ -277,10 +277,10 @@
           "acknowledged": 34,
           "skippedHere": 895,
           "skippedInFrame": 0,
-          "latencyMs": 414.5,
-          "maxLatencyMs": 580.7,
+          "latencyMs": 415.7,
+          "maxLatencyMs": 569.6,
           "renderMs": 389.64,
-          "maxRenderMs": 425.5,
+          "maxRenderMs": 425,
           "queue": 0,
           "maxQueue": 0,
           "films": 0,
@@ -293,21 +293,21 @@
       "notice": "Test fixture slow world exceeds its declared budget (updateMs 371 > 2)"
     },
     "hang": {
-      "detectMs": 6379,
-      "recoverMs": 1360,
-      "disposeMs": 1.1,
-      "workerGoneMs": 2356,
+      "detectMs": 6381,
+      "recoverMs": 1339,
+      "disposeMs": 1.4,
+      "workerGoneMs": 2472,
       "pacingDuringHang": {
-        "frames": 382,
+        "frames": 383,
         "fps": 60,
         "p95Ms": 16.8,
         "maxMs": 16.8
       },
       "pacingDuringStopAndRecovery": {
-        "frames": 9,
-        "fps": 6.6,
-        "p95Ms": 783.3,
-        "maxMs": 783.3
+        "frames": 8,
+        "fps": 6,
+        "p95Ms": 766.7,
+        "maxMs": 766.7
       },
       "roundTripMaxMs": 2,
       "workersBefore": 1

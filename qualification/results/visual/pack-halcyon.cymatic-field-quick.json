@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:54:48.940Z",
+  "at": "2026-10-25T15:55:27.901Z",
   "sdk": "1.1.0",
   "gpu": "swiftshader",
   "checks": [
@@ -96,12 +96,12 @@
     {
       "name": "performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)",
       "pass": true,
-      "detail": "7 draw calls, 21 passes, 15364 triangles, 71897 points, update 0.29 ms"
+      "detail": "7 draw calls, 21 passes, 15364 triangles, 71897 points, update 0.19 ms"
     },
     {
       "name": "performance: frame rate, GPU time and adaptive quality measured",
       "pass": true,
-      "detail": "5.8 fps full quality (GPU time not exposed by this driver) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      "detail": "7 fps full quality (GPU time not exposed by this driver) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
     },
     {
       "name": "no page errors in the live player",
@@ -211,13 +211,13 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "updateMs": 0.43,
-        "drawMs": 0.42,
+        "updateMs": 0.34,
+        "drawMs": 0.35,
         "rendered": 481,
         "skipped": 0,
         "semantic": 707,
-        "renderMs": 41.2,
-        "now": 27539.699999928474,
+        "renderMs": 36.7,
+        "now": 24229,
         "remote": true,
         "pack": "halcyon.cymatic-field"
       }
@@ -312,14 +312,14 @@
       "dataset": "excalidraw",
       "full": {
         "stoppedByWatchdog": null,
-        "fps": 5.8,
+        "fps": 7,
         "quality": 0,
         "drawCalls": 7,
         "passes": 21,
         "triangles": 15364,
         "points": 71897,
-        "updateMs": 0.29,
-        "drawMs": 0.78,
+        "updateMs": 0.19,
+        "drawMs": 0.49,
         "gpuMs": null,
         "geometries": 13,
         "textures": 13,

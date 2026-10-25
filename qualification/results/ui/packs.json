@@ -1,6 +1,6 @@
 {
  "suite": "ui/workspaces/packs",
- "at": "2026-10-25T14:42:18.915Z",
+ "at": "2026-10-25T16:15:15.336Z",
  "passed": 52,
  "failed": 0,
  "checks": [
@@ -202,7 +202,7 @@
   {
    "name": "modified file: listed with problems (GET /api/packs ok:false, trusted:false)",
    "pass": true,
-   "detail": "258 ms; installed files differ from the installation record (modified after install)"
+   "detail": "253 ms; installed files differ from the installation record (modified after install)"
   },
   {
    "name": "modified file: a running pack stops (no pack frame)",
@@ -266,7 +266,7 @@
   }
  ],
  "measurements": {
-  "modifiedNoticedMs": 258,
+  "modifiedNoticedMs": 253,
   "expectedImportRefusalsLogged": 2,
   "otherWorkspaceErrors": []
  },

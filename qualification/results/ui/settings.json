@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:42:49.077Z",
+  "at": "2026-10-25T16:15:36.743Z",
   "browser": "chromium (playwright-core, headless, --enable-unsafe-swiftshader --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required)",
   "checks": [
     {
@@ -105,7 +105,7 @@
     {
       "name": "Copy diagnostics puts JSON with the receiver’s version and the browser’s capabilities on the clipboard",
       "pass": true,
-      "detail": "{ \"schema\": \"code-resonance.diagnostics.v1\", \"at\": \"2026-10-25T14:42:44.320Z\", \"receiver\": { \"version\": \"0.5.0"
+      "detail": "{ \"schema\": \"code-resonance.diagnostics.v1\", \"at\": \"2026-10-25T16:15:32.114Z\", \"receiver\": { \"version\": \"0.5.0"
     },
     {
       "name": "the diagnostics contain no token, no 64-hex value, no path and no project name or id",
@@ -130,12 +130,12 @@
     {
       "name": "the data folder shown is the one the receiver reports to this page (capability-only)",
       "pass": true,
-      "detail": "/tmp/cr-ui-Fb4cMG"
+      "detail": "/tmp/cr-ui-tmYkhw"
     },
     {
       "name": "the selected project’s own folder is named (labelled as its private name)",
       "pass": true,
-      "detail": "The selected project, sample-app (test project) (private name), is kept in /tmp/cr-ui-Fb4cMG/projects/b23241948b39c1f71ec2336341d591e16e6ead3cea04356918c004d4fe349c4e."
+      "detail": "The selected project, sample-app (test project) (private name), is kept in /tmp/cr-ui-tmYkhw/projects/b23241948b39c1f71ec2336341d591e16e6ead3cea04356918c004d4fe349c4e."
     },
     {
       "name": "the storage table names every authority (10 kinds of configuration)",
@@ -224,6 +224,6 @@
       }
     },
     "diagnosticsBytes": 2071,
-    "dataDirShown": "/tmp/cr-ui-Fb4cMG"
+    "dataDirShown": "/tmp/cr-ui-tmYkhw"
   }
 }

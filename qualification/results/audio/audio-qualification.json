@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:37:12.067Z",
+  "at": "2026-10-25T15:51:49.947Z",
   "seconds": 60,
   "styles": {
     "ambient": {
@@ -19,7 +19,7 @@
       "windows": 20,
       "beforeTensionDb": -22.146,
       "tensionDb": -120,
-      "renderSeconds": 7.2
+      "renderSeconds": 5.5
     },
     "pulse": {
       "peak": 0.329,
@@ -36,7 +36,7 @@
       "windows": 20,
       "beforeTensionDb": -23.607,
       "tensionDb": -120,
-      "renderSeconds": 7.3
+      "renderSeconds": 5.5
     },
     "cinematic": {
       "peak": 0.296,
@@ -53,7 +53,7 @@
       "windows": 20,
       "beforeTensionDb": -21.97,
       "tensionDb": -120,
-      "renderSeconds": 8.2
+      "renderSeconds": 6.2
     },
     "chip": {
       "peak": 0.257,
@@ -70,7 +70,7 @@
       "windows": 20,
       "beforeTensionDb": -23.399,
       "tensionDb": -120,
-      "renderSeconds": 10.4
+      "renderSeconds": 8
     }
   },
   "checks": [

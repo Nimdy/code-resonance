@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:48:04.083Z",
+  "at": "2026-10-25T16:19:04.776Z",
   "browser": "chromium (playwright-core, headless)",
   "checks": [
     {
@@ -50,7 +50,7 @@
     {
       "name": "music is audible",
       "pass": true,
-      "detail": "{\"rms\":0.04934,\"peak\":0.1644}"
+      "detail": "{\"rms\":0.04368,\"peak\":0.1469}"
     },
     {
       "name": "live read-outs follow the engine",
@@ -80,7 +80,7 @@
     {
       "name": "preview is audible",
       "pass": true,
-      "detail": "{\"rms\":0.04707,\"peak\":0.2285}"
+      "detail": "{\"rms\":0.04985,\"peak\":0.2231}"
     },
     {
       "name": "cancel restores the saved style",
@@ -355,12 +355,12 @@
       "swing": 0.08
     },
     "ambient": {
-      "rms": 0.04934,
-      "peak": 0.1644
+      "rms": 0.04368,
+      "peak": 0.1469
     },
     "pulsePreview": {
-      "rms": 0.04707,
-      "peak": 0.2285
+      "rms": 0.04985,
+      "peak": 0.2231
     },
     "secondWindow": {
       "before": {
@@ -379,7 +379,7 @@
     "export": {
       "file": "code-resonance-c6c876a59a-chip.wav",
       "bytes": 42336044,
-      "renderMs": 329138
+      "renderMs": 222628
     }
   }
 }

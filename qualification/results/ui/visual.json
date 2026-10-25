@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:47:40.649Z",
+  "at": "2026-10-25T16:19:18.829Z",
   "passed": 60,
   "failed": 0,
   "checks": [
@@ -116,7 +116,7 @@
     {
       "name": "a subsystem name is saved",
       "pass": true,
-      "detail": "Rydira → Core Engine"
+      "detail": "Aeethar → Core Engine"
     },
     {
       "name": "after a reload the name is shown",

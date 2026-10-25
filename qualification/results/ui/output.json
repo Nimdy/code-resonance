@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:42:30.242Z",
+  "at": "2026-10-25T16:15:18.852Z",
   "browser": "chromium (playwright-core, headless, --enable-unsafe-swiftshader --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required)",
   "ffmpeg": true,
   "checks": [
@@ -66,12 +66,12 @@
     {
       "name": "this page shows the live recording state (elapsed, size, frames, data, sound)",
       "pass": true,
-      "detail": "{\"pressed\":\"true\",\"label\":\"Stop and save\",\"elapsed\":\"00:03\",\"size\":\"1280×720\",\"frames\":\"15\",\"bytes\":\"86.4 KB\",\"sound\":\"Music\"}"
+      "detail": "{\"pressed\":\"true\",\"label\":\"Stop and save\",\"elapsed\":\"00:03\",\"size\":\"1280×720\",\"frames\":\"21\",\"bytes\":\"159.7 KB\",\"sound\":\"Music\"}"
     },
     {
       "name": "the 720p recording is a WebM file with video and sound",
       "pass": true,
-      "detail": "{\"ebml\":true,\"size\":467303,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1280,\"height\":720},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-15.7,\"name\":\"code-resonance-36bf9b09d6-1792939307414.webm\"}"
+      "detail": "{\"ebml\":true,\"size\":551167,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1280,\"height\":720},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16,\"name\":\"code-resonance-36bf9b09d6-1792944884014.webm\"}"
     },
     {
       "name": "the 720p file is 1280 × 720, VP9 + Opus",
@@ -81,17 +81,17 @@
     {
       "name": "the recorded sound carries the music (not silent)",
       "pass": true,
-      "detail": "max_volume -15.7 dB"
+      "detail": "max_volume -16 dB"
     },
     {
       "name": "the file name carries no private name",
       "pass": true,
-      "detail": "code-resonance-36bf9b09d6-1792939307414.webm"
+      "detail": "code-resonance-36bf9b09d6-1792944884014.webm"
     },
     {
       "name": "the last recording is described (file, length, size, sound) with the downloads note",
       "pass": true,
-      "detail": "Last recording10:41:47 AMFilecode-resonance-36bf9b09d6-1792939307414.webmLength10 sSize1280 × 720Data456.4 KBSoundThe music is includedRecordings are saved by the browser to its downloads folder. Code"
+      "detail": "Last recording12:14:44 PMFilecode-resonance-36bf9b09d6-1792944884014.webmLength9 sSize1280 × 720Data538.2 KBSoundThe music is includedRecordings are saved by the browser to its downloads folder. Code "
     },
     {
       "name": "the second window can record again once the first stopped",
@@ -111,7 +111,7 @@
     {
       "name": "the 1080p recording is 1920 × 1080 with video and sound",
       "pass": true,
-      "detail": "{\"ebml\":true,\"size\":261406,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1920,\"height\":1080},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-15.3}"
+      "detail": "{\"ebml\":true,\"size\":244571,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1920,\"height\":1080},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16.7}"
     },
     {
       "name": "back to 720p (saved)",
@@ -121,7 +121,7 @@
     {
       "name": "when the sound is lost the file is saved early and the page shows the engine’s message",
       "pass": true,
-      "detail": "Last recording10:42:09 AMFinished earlyRecording finished early (the sound stopped: an audio device was lost or stalled); 3 s saved.Filecode-resonance-36bf9b09d"
+      "detail": "Last recording12:15:01 PMFinished earlyRecording finished early (the sound stopped: an audio device was lost or stalled); 3 s saved.Filecode-resonance-36bf9b09d"
     },
     {
       "name": "the OBS URL carries exactly the chosen options",
@@ -156,7 +156,7 @@
     {
       "name": "the OBS presentation profile sets up the recommended URL (stream, following the project) and records nothing",
       "pass": true,
-      "detail": "http://127.0.0.1:45307/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf"
+      "detail": "http://127.0.0.1:45097/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf"
     },
     {
       "name": "the OBS information control is as wide as its buttons (not stretched)",
@@ -186,7 +186,7 @@
     {
       "name": "the film command is the real one (film.js after npm ci in qualification, with this data folder and project)",
       "pass": true,
-      "detail": "cd qualification && npm ciCopynode visual/film.js --data \"/tmp/cr-ui-RbAW6S\" --project 36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf --out results/visual/film.webmCopy"
+      "detail": "cd qualification && npm ciCopynode visual/film.js --data \"/tmp/cr-ui-gqOPSn\" --project 36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf --out results/visual/film.webmCopy"
     },
     {
       "name": "the record control and the profile are reachable with Tab",
@@ -212,7 +212,7 @@
   "measurements": {
     "rec720": {
       "ebml": true,
-      "size": 467303,
+      "size": 551167,
       "tool": "ffmpeg",
       "video": {
         "codec": "vp9",
@@ -222,12 +222,12 @@
       "audio": {
         "codec": "opus"
       },
-      "maxVolumeDb": -15.7,
-      "name": "code-resonance-36bf9b09d6-1792939307414.webm"
+      "maxVolumeDb": -16,
+      "name": "code-resonance-36bf9b09d6-1792944884014.webm"
     },
     "rec1080": {
       "ebml": true,
-      "size": 261406,
+      "size": 244571,
       "tool": "ffmpeg",
       "video": {
         "codec": "vp9",
@@ -237,7 +237,7 @@
       "audio": {
         "codec": "opus"
       },
-      "maxVolumeDb": -15.3
+      "maxVolumeDb": -16.7
     },
     "obs": [
       {

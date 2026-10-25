@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T14:41:15.461Z",
+  "at": "2026-10-25T16:14:15.479Z",
   "passed": 48,
   "failed": 0,
   "checks": [
@@ -36,7 +36,7 @@
     {
       "name": "data location appears, labelled on this computer",
       "pass": true,
-      "detail": "/tmp/cr-ui-ApMKmk"
+      "detail": "/tmp/cr-ui-vyZGZE"
     },
     {
       "name": "no token-like string (64 hex) in the page text",

@@ -1,15 +1,15 @@
 {
-  "at": "2026-10-25T14:48:42.014Z",
+  "at": "2026-10-25T16:20:17.764Z",
   "node": "v22.22.2",
   "quick": false,
   "suites": [
     {
       "suite": "acceptance",
       "exitCode": 0,
-      "pass": 70,
+      "pass": 73,
       "fail": 0,
       "failures": [],
-      "seconds": 247
+      "seconds": 208
     },
     {
       "suite": "connections",
@@ -17,7 +17,7 @@
       "pass": 48,
       "fail": 0,
       "failures": [],
-      "seconds": 16
+      "seconds": 15
     },
     {
       "suite": "home",
@@ -25,7 +25,7 @@
       "pass": 45,
       "fail": 0,
       "failures": [],
-      "seconds": 41
+      "seconds": 37
     },
     {
       "suite": "music",
@@ -33,7 +33,7 @@
       "pass": 68,
       "fail": 0,
       "failures": [],
-      "seconds": 425
+      "seconds": 305
     },
     {
       "suite": "output",
@@ -41,7 +41,7 @@
       "pass": 41,
       "fail": 0,
       "failures": [],
-      "seconds": 75
+      "seconds": 63
     },
     {
       "suite": "packs",
@@ -49,7 +49,7 @@
       "pass": 52,
       "fail": 0,
       "failures": [],
-      "seconds": 39
+      "seconds": 38
     },
     {
       "suite": "projects",
@@ -57,7 +57,7 @@
       "pass": 48,
       "fail": 0,
       "failures": [],
-      "seconds": 126
+      "seconds": 85
     },
     {
       "suite": "settings",
@@ -65,7 +65,7 @@
       "pass": 41,
       "fail": 0,
       "failures": [],
-      "seconds": 19
+      "seconds": 18
     },
     {
       "suite": "visual",
@@ -73,12 +73,12 @@
       "pass": 60,
       "fail": 0,
       "failures": [],
-      "seconds": 292
+      "seconds": 222
     }
   ],
   "passed": true,
   "checks": {
-    "pass": 473,
+    "pass": 476,
     "fail": 0
   }
 }
