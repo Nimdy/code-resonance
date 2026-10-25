@@ -70,7 +70,7 @@ const getJSON=async u=>(await fetch(u)).json();
         await page.waitForSelector('.modal-backdrop',{timeout:5000}).catch(()=>{});
         const dialog=await page.evaluate(()=>document.querySelector('.modal h2')?.textContent||'');
         check('A: an unpaired browser is told so and its changes are refused',shown&&refused==='pairing-required'&&/Pair this browser/.test(dialog),JSON.stringify({shown,refused,dialog}));
-        await page.fill('.modal input',env.pairUrl);await page.click('.modal .field-row .btn');await wait(1500);
+        await page.fill('.modal input',await env.pairLink());await page.click('.modal .field-row .btn');await wait(1500);
         const paired=await page.evaluate(async()=>({state:window.ResonancePlayer.pairing,button:document.getElementById('pairBtn').hidden,
           saved:await window.ResonancePlayer.api.post('/api/settings',{patch:{stage:{captions:false}}}).then(r=>r.stage.captions,e=>e.code)}));
         check('A: pasting the private link pairs the browser, and changes are accepted',paired.state==='paired'&&paired.button&&paired.saved===false,JSON.stringify(paired));
@@ -79,9 +79,16 @@ const getJSON=async u=>(await fetch(u)).json();
         // the address bar at once.
         const linkCtx=await fresh(),viaLink=await linkCtx.newPage();await viaLink.evaluate(()=>{});
         await viaLink.goto(env.url+'/');await viaLink.evaluate(()=>{sessionStorage.setItem('qual-unpaired','1');localStorage.clear();});
-        await viaLink.goto(env.pairUrl);await viaLink.reload();await ready(viaLink);
-        const linked=await viaLink.evaluate(async()=>({hash:location.hash,saved:await window.ResonancePlayer.api.post('/api/settings',{patch:{interface:{motion:'system'}}}).then(()=>'saved',e=>e.code),state:window.ResonancePlayer.pairing}));
-        check('A: opening the private link pairs a fresh browser and removes the key from the address',linked.saved==='saved'&&linked.state==='paired'&&!/pair=/.test(linked.hash),JSON.stringify(linked));
+        const link=await env.pairLink();await viaLink.goto('about:blank');await viaLink.goto(link);await ready(viaLink);
+        await viaLink.waitForFunction(()=>window.ResonancePlayer.pairing!=='unknown',null,{timeout:8000}).catch(()=>{});
+        const linked=await viaLink.evaluate(async()=>({hash:location.hash,stored:/^[0-9a-f]{64}$/.test(localStorage.getItem('code-resonance-pairing')||''),saved:await window.ResonancePlayer.api.post('/api/settings',{patch:{interface:{motion:'system'}}}).then(()=>'saved',e=>e.code),state:window.ResonancePlayer.pairing}));
+        check('A: opening a pairing link (single-use code) pairs a fresh browser, removes the code from the address, and the code cannot be used twice',linked.saved==='saved'&&linked.state==='paired'&&linked.stored&&!/pair=/.test(linked.hash)&&(await fetch(env.url+'/api/session',{method:'POST',headers:{'Content-Type':'application/json',Origin:env.url},body:JSON.stringify({code:link.split('pair=')[1]})})).status===403,JSON.stringify(linked));
+        // The same, opened in a tab that already shows the application (only the fragment changes, no reload).
+        await viaLink.evaluate(()=>localStorage.removeItem('code-resonance-pairing'));await viaLink.reload();await ready(viaLink);await wait(800);
+        const inTab=await env.pairLink();await viaLink.evaluate(h=>{location.hash=h;},'#'+inTab.split('#')[1]);
+        await viaLink.waitForFunction(()=>window.ResonancePlayer.pairing==='paired',null,{timeout:8000}).catch(()=>{});
+        const tab=await viaLink.evaluate(()=>({state:window.ResonancePlayer.pairing,hash:location.hash,ui:localStorage.getItem('code-resonance-ui-v1')||''}));
+        check('A: a pairing link opened in an already open tab pairs it and leaves no code in the address or stored routes',tab.state==='paired'&&!/pair=/.test(tab.hash+tab.ui),JSON.stringify(tab));
         await linkCtx.close();
         await page.close();
       }finally{await env.stop();}
@@ -107,6 +114,15 @@ const getJSON=async u=>(await fetch(u)).json();
       await cc.waitForFunction(id=>window.ResonancePlayer.state.project===id&&window.ResonancePlayer.state.recipe?.family==='stellar-forge',sample,{timeout:30000}).catch(()=>{});
       const b1=await engine(cc,()=>({project:window.ResonancePlayer.state.project,family:window.ResonancePlayer.state.recipe?.family,style:window.ResonancePlayer.state.sound.options.style,texture:window.ResonancePlayer.state.sound.options.texture,intensity:window.ResonancePlayer.state.recipe?.overrides?.intensity}));
       check('B: switching projects switches identity and music, independently',b1.project===sample&&b1.family==='stellar-forge'&&b1.style==='chip'&&b1.texture===.3&&b1.intensity===.6,JSON.stringify(b1));
+      // A project's own information mode applies in every world, also after switching projects (the recipe is read even
+      // when no living world loads it).
+      await admin(url,cap,`/api/recipe?id=${lumen}`,{action:{type:'overrides',labels:'explorer'}});
+      await admin(url,cap,`/api/preferences?id=${lumen}`,{patch:{world:'construct'}});
+      await cc.click('.project-switch');await cc.click(`.menu-item:has-text("lumen-recipes")`);
+      await cc.waitForFunction(id=>window.ResonancePlayer.state.project===id&&window.ResonancePlayer.state.world==='construct'&&window.ResonancePlayer.state.labels==='explorer',lumen,{timeout:20000}).catch(()=>{});
+      const own=await engine(cc,()=>({world:window.ResonancePlayer.state.world,labels:window.ResonancePlayer.state.labels}));
+      check('B: a project\'s own information mode applies in a non-living world after switching projects',own.world==='construct'&&own.labels==='explorer',JSON.stringify(own));
+      await admin(url,cap,`/api/recipe?id=${lumen}`,{action:{type:'overrides',labels:null}});await admin(url,cap,`/api/preferences?id=${lumen}`,{patch:{world:null}});
       const lumenRecipe=await getJSON(`${url}/api/recipe?id=${lumen}`);
       check('B: the other project was not touched',lumenRecipe.family==='machine-cathedral'&&lumenRecipe.overrides.intensity===1&&lumenRecipe.tuning?.values?.['light.bloom']===1.5,JSON.stringify({family:lumenRecipe.family,intensity:lumenRecipe.overrides.intensity,tuning:lumenRecipe.tuning?.values}));
       await cc.close();

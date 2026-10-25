@@ -48,6 +48,11 @@ export async function saveSettings(patch){const next=await post('/api/settings',
 export async function savePreferences(patch,id=state.selected){if(!id)throw new Error('No project selected');const next=await post(`/api/preferences?id=${encodeURIComponent(id)}`,{patch});state.preferences.set(id,next);if(id===state.selected)applyEffective();changed('preferences');return next;}
 export async function presetAction(body){const next=await post('/api/presets',body);state.presets=next;changed('presets');return next;}
 export function setDevice(patch){state.device={...state.device,...patch};writeLocal(DEVICE_KEY,state.device);applyEffective();changed('device');}
+// This device's choices made in another window of this browser apply here too.
+addEventListener('storage',e=>{if(e.key!==DEVICE_KEY)return;state.device={quality:'auto',...readLocal(DEVICE_KEY)};applyEffective();changed('device');});
+// An unsaved draft in a view (a Visual Studio preview, including a classic stage tried locally) blocks recording: a
+// recording shows what is saved.
+export function setDraft(name){state.draft=name||null;changed('draft');}
 export function setUi(patch){state.ui={...state.ui,...patch};writeLocal(UI_KEY,state.ui);}
 export function select(id){
   if(id===state.selected)return;state.selected=id||'';setUi({project:state.selected});state.musicPreview=null;

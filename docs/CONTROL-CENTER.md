@@ -80,9 +80,12 @@ needs a **control capability**: `POST /api/session` issues one only to a request
 of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none, whatever headers it forges) carrying the page's own
 origin **and the receiver's pairing key**; it is then sent as the `X-Resonance-Capability` header, which a cross-origin
 page cannot send without a CORS preflight the receiver never answers. The pairing key lives in `receiver-auth.json`
-(readable by your account only); a browser receives it once through the private link (`npm start`, `npm run pair`,
+(readable by your account only); a browser receives it once by opening a pairing link (`npm start`, `npm run pair`,
 VS Code's *Open Code Stage*) and keeps it, so other programs and accounts on the computer cannot change anything by
-forging an Origin header. An unpaired browser can watch, play and record, and offers *Pair this browser*. Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS
+forging an Origin header. The link carries a single-use code (15 minutes) that the receiver exchanges for the key, so the
+key never appears in a link or a command line. An unpaired browser can watch, play and record, and offers *Pair this
+browser*. A program listening on the receiver's port while it is stopped could read a browser's stored key (see
+[SECURITY.md](../SECURITY.md)). Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS
 view never requests one. The ingestion token (`/v1/*`) is never returned to a page. Pack imports are extracted into a
 quarantine directory with the SDK's limits (file types, sizes, count, total, paths, links) and validated by the same
 code as the command line; code packs are installed unapproved; approval stays bound to the exact files (digest).

@@ -37,6 +37,10 @@ node visual/memory-recorder.qual.js / memory-lifecycle.qual.js   # browser behav
 xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
 node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
 node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
+node ui/serve.js [--port 4180] [--empty]              # an isolated installation to review the Control Center (prints a pairing link)
+node ui/run-all.js [--jobs 3] [--only home,visual] [--quick]   # the interface: every workspace's suite + the acceptance suite
+node ui/acceptance.qual.js [--quick]                  # cross-view acceptance (first run, pairing, projects, OBS, recording, layouts)
+node ui/screenshots.js [--gpu amd]                    # review screenshots into docs/control-center/
 ```
 
 **Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):

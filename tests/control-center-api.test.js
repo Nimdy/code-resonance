@@ -85,6 +85,19 @@ test('Control sessions are issued only to the receiver\'s own page; every admini
   for(const [what,body] of [['no key',undefined],['no body',null],['a wrong key','0'.repeat(64)],['a short key',svc.pairing.slice(0,10)]]){
     const r=await fetch(`${base}/api/session`,{method:'POST',...(body===null?{headers:{Origin:base}}:{headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({pairing:body})})});
     assert.equal(r.status,403,what);assert.equal((await r.json()).code,'pairing-required',what);}
+  // Links carry a single-use code instead of the key: minted for the ingestion token's holder, exchanged once for the key.
+  assert.equal((await fetch(`${base}/v1/pairing-code`,{method:'POST'})).status,401,'no token, no code');
+  const minted=await (await fetch(`${base}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${svc.token}`}})).json();
+  assert.match(minted.code,/^[0-9a-f]{32}$/);assert(!minted.url.includes(svc.pairing));assert(minted.url.endsWith(`#pair=${minted.code}`));
+  const viaCode=async code=>fetch(`${base}/api/session`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({code})});
+  const exchanged=await viaCode(minted.code);assert.equal(exchanged.status,200);const ex=await exchanged.json();
+  assert.equal(ex.pairing,svc.pairing,'the code is exchanged for the key, once');assert.match(ex.capability,/^[0-9a-f]{64}$/);
+  assert.equal((await viaCode(minted.code)).status,403,'a code works once');
+  assert.equal((await viaCode('f'.repeat(32))).status,403,'an unknown code');
+  const foreign=await (await fetch(`${base}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${svc.token}`}})).json();
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{'Content-Type':'application/json',Origin:'http://evil.example'},body:JSON.stringify({code:foreign.code})})).status,403,'a foreign page cannot use a code');
+  assert.equal((await viaCode(foreign.code)).status,200,'and the refused attempt did not consume it');
+  assert.equal((await fetch(`${base}/api/session`,{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({pairing:'é'.repeat(64)})})).status,403,'a non-hex key is refused, not a crash');
   assert.match(svc.pairing,/^[0-9a-f]{64}$/);assert.notEqual(svc.pairing,svc.token);
   const auth=JSON.parse(fs.readFileSync(path.join(dir,'receiver-auth.json'),'utf8'));assert.equal(auth.pairing,svc.pairing);
   if(process.platform!=='win32')assert.equal(fs.statSync(path.join(dir,'receiver-auth.json')).mode&0o077,0,'the key file is private');

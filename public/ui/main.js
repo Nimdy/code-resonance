@@ -69,12 +69,12 @@ export function openPairing(){
   const status=h('div',{class:'small',role:'status'});
   const dlg=modal({title:'Pair this browser',subtitle:'Once per browser. Watching, the Stage, sound and recording work without it.',
     body:h('div',{class:'section'},
-      h('p',{class:'muted',text:'Changing settings, visual identities, music, packs or integrations needs this browser to be paired with your receiver, so that no other program or account on this computer can change them. Pairing uses a private link that only your account can read.'}),
-      h('div',{class:'field'},h('span',{class:'field-label',text:'Print the private link (in the Code Resonance folder)'}),copyable('npm run pair')),
-      h('p',{class:'faint small',text:'npm start prints it too, and VS Code’s CODE RESONANCE: Open Code Stage opens it directly. Open it in this browser, or paste it below. Keep it to yourself.'}),
-      h('div',{class:'field-row'},input,button({label:'Pair',kind:'primary',onClick:async()=>{text(status,'Checking…');
-        if(await P.api.pair(input.value.trim())){dlg.close();toast('This browser is paired: changes are allowed here.','ok');}
-        else{status.className='small danger';text(status,'The receiver did not accept this. Copy the whole link (or the 64-character key) from npm run pair.');}}})),status),
+      h('p',{class:'muted',text:'Changing settings, visual identities, music, packs or integrations needs this browser to be paired with your receiver, so that no other program or account on this computer can change them. Pairing uses a single-use link that only your account can create.'}),
+      h('div',{class:'field'},h('span',{class:'field-label',text:'Make a pairing link (in the Code Resonance folder)'}),copyable('npm run pair')),
+      h('p',{class:'faint small',text:'The link works once, for 15 minutes (npm start prints one too, and VS Code’s CODE RESONANCE: Open Code Stage opens one directly). Open it in this browser, or paste it below.'}),
+      h('div',{class:'field-row'},input,button({label:'Pair',kind:'primary',onClick:async()=>{text(status,'Checking…');const r=await P.api.pair(input.value.trim());
+        if(r==='paired'){dlg.close();toast('This browser is paired: changes are allowed here.','ok');return;}
+        status.className='small danger';text(status,r==='offline'?'The receiver does not answer: start it (npm start) and try again.':'The receiver did not accept this: the link may have been used already or expired. Run npm run pair for a new one.');}})),status),
     actions:[{label:'Close'}]});
   input.addEventListener('keydown',e=>{if(e.key==='Enter')dlg.dialog.querySelector('.field-row .btn').click();});
 }
@@ -84,6 +84,7 @@ const workspace=h('main',{class:'workspace',id:'workspace'});
 // Recording is one action whichever control starts it, and only one window records at a time.
 export async function toggleRecording(){
   if(!P.record.active&&store.state.others.recording){toast('Another Code Resonance window is recording. Stop it there first.','warning');return;}
+  if(!P.record.active&&store.state.draft){toast(`Apply or cancel the ${store.state.draft} first: a recording shows what is saved.`,'warning');return;}
   if(!P.state.recording.supported.ok){toast(P.state.recording.supported.reason,'error');return;}
   try{await P.record.toggle();}catch(e){toast(`Recording failed: ${e.message}`,'error');}
 }
@@ -114,7 +115,7 @@ function updateShell(topics){
     text(document.getElementById('receiverText'),s.receiver===false?'Receiver offline':ok?(feed==='open'?'Receiver connected':'Reconnecting…'):'Connecting…');
     receiverStatus.title=s.receiver===false?'The local receiver does not answer. Start it with: npm start':feed==='open'?'The local receiver answers and announces changes':'Waiting for the receiver';
   }
-  if(!topics||topics.has('pairing')){const unpaired=P.pairing==='unpaired';pairBtn.hidden=!unpaired;
+  if(!topics||topics.has('pairing')||topics.has('pairing-checked')){const unpaired=P.pairing==='unpaired';pairBtn.hidden=!unpaired;
     // The first change refused for want of pairing opens the dialog (once per page); a page that only watches is left alone.
     // On the Stage it is a message with a Pair action instead (a dialog over the performance would be in the way).
     if(unpaired&&topics?.has('pairing')&&!pairingPrompted&&!document.querySelector('.modal-backdrop')){pairingPrompted=true;
@@ -180,7 +181,7 @@ async function boot(){
   await render();
   requestAnimationFrame(trackStage);
   // A remembered pairing key is checked once (a receiver whose data was reset has a new key).
-  if(P.pairing==='unknown')P.api.session().catch(()=>{});
+  if(P.pairing==='unknown')P.api.session({quiet:true}).catch(()=>{});
   await store.start();
 }
 boot().catch(e=>{console.error(e);document.body.append(h('div',{class:'callout danger'},h('div',{text:`The interface could not start: ${e.message}`})));});

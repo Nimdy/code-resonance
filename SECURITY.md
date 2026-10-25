@@ -25,12 +25,18 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
   request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
   whatever headers it forges), with the page's own Origin and fetch metadata, that presents the receiver's **pairing
   key** (also in `receiver-auth.json`, so only your account can read it). A browser receives the key once, in the
-  private link `npm start` / `npm run pair` prints (or VS Code's *Open Code Stage* opens), keeps it in that origin's
-  storage, and removes it from the address bar at once. Without it a browser can watch, play and record but change
+  pairing link `npm start` / `npm run pair` prints (or VS Code's *Open Code Stage* opens). The link carries a
+  single-use code, valid 15 minutes, which the receiver exchanges for the key once (minting a code needs the ingestion
+  token); the key itself never appears in a link, a log or a command line. The browser keeps the key in that origin's
+  storage and removes the code from the address bar at once. Without it a browser can watch, play and record but change
   nothing; another program or account on this computer cannot obtain a capability by forging an Origin header. A
   cross-origin page cannot send the custom header without a CORS preflight, which the receiver never answers.
   Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS view never requests one. The ingestion
-  token and the pairing key are never returned by any API route.
+  token and the pairing key are never returned by any API route (the key is returned once, to the page that redeems a
+  pairing code). **Limit:** the browser holds the key for the receiver's address (`127.0.0.1:<port>`); a program that
+  listens on that port while the receiver is stopped could read it from the browser and use it later. On a computer
+  shared with accounts you do not trust, keep the receiver running while you use the browser, or delete the key from
+  the browser (site data) when you stop.
 - **Pack import** (Visual Packs) accepts a `.zip` or a folder from your disk, never a URL. Archives are read by the
   receiver's own bounded reader (no symbolic links, encryption, ZIP64, traversal, absolute, device or duplicate names;
   declared sizes and CRCs are verified; the SDK's limits on file count, file size and total size apply before anything

@@ -121,7 +121,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   // The exact-value box carries the unit (it reads back "150 %" as 150), so the field needs no second read-out.
   const intensity=slider({min:0,max:200,integer:true,value:100,format:v=>`${v} %`,label:'Spectacle (%)',id:'vsIntensity',onInput:v=>setOverride('intensity',v/100,false),onChange:v=>setOverride('intensity',v/100,true)});
   const motion=slider({min:0,max:200,integer:true,value:100,format:v=>`${v} %`,label:'Motion (%)',id:'vsMotion',onInput:v=>setOverride('motion',v/100,false),onChange:v=>setOverride('motion',v/100,true)});
-  const labels=segmented({label:'Information on the stage',id:'vsLabels',value:'cinematic',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:LABEL_DOCS[m]})),onChange:m=>setOverride('labels',m,true)});
+  const labels=segmented({label:'Information on the stage',id:'vsLabels',value:'cinematic',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:LABEL_DOCS[m]})),onChange:m=>setOverride('labels',m===globalLabels()?null:m,true)});
+  // Choosing the global default means following it (null), so a later change in Settings applies to this project again.
+  function globalLabels(){return S.state.settings?.stage?.labels||'cinematic';}
   const fIntensity=field({label:'Spectacle',doc:'How strongly events are staged: 100 % is the identity as generated.',control:intensity,onReset:()=>setOverride('intensity',1,true)});
   const fMotion=field({label:'Motion',doc:'Camera and ambient movement.',control:motion,onReset:()=>setOverride('motion',1,true)});
   const fLabels=field({label:'Information',doc:'',control:labels});
@@ -216,7 +218,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   // effective configuration back once nothing asks for it any more.
   let local={world:false,labels:false};
   function applyLocalStage(restore=false){
-    const w=restore?null:wantedWorld(),l=restore?null:draft.overrides.labels||null;
+    const w=restore?null:wantedWorld(),l=restore||!Object.hasOwn(draft.overrides,'labels')?null:draft.overrides.labels??globalLabels();
     if(w){if(P.state.world!==w)P.setWorld(w);local.world=true;}
     if(l){if(P.state.labels!==l)P.setLabels(l);local.labels=true;}
     if(!w&&local.world||!l&&local.labels){local={world:!!w,labels:!!l};S.applyEffective({force:true});if(w)P.setWorld(w);if(l)P.setLabels(l);}
@@ -386,7 +388,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const input=h('input',{class:'input',id:'vsPresetName',type:'text',maxlength:40,autocomplete:'off',autofocus:true,'aria-label':'Preset name'});
     const err=h('div',{class:'vs-error small',role:'alert'});
     const payload={family:s.source==='user'?s.family:null,look:s.pack?.id||null,tuning:s.tuning?.values||{},
-      overrides:{intensity:s.overrides?.intensity??1,motion:s.overrides?.motion??1,labels:s.overrides?.labels||'cinematic'}};
+      overrides:{intensity:s.overrides?.intensity??1,motion:s.overrides?.motion??1,labels:s.overrides?.labels??null}};
     const save=async()=>{const name=input.value.trim();if(!NAME.test(name)){input.setAttribute('aria-invalid','true');text(err,name?NAME_RULE:'Give the preset a name.');input.focus();return false;}
       try{await S.presetAction({action:'create',kind:'visual',name,payload});toast(`Preset “${name}” saved. It can be previewed on any project.`,'ok');S.setUi({visualTab:'presets'});tabs.set('presets');renderBrowser();}
       catch(e){text(err,e.message);return false;}};
@@ -396,7 +398,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
         h('dl',{class:'kv'},h('dt',{text:'Family'}),h('dd',{text:payload.family?familyName(payload.family):'Automatic (chosen by each project\'s code)'}),
           h('dt',{text:'Look'}),h('dd',{text:payload.look?(packOf(payload.look)?.name||payload.look):'None'}),
           h('dt',{text:'Parameters'}),h('dd',{text:tuned?count(tuned,'tuned value'):'None tuned'}),
-          h('dt',{text:'Presentation'}),h('dd',{text:`Spectacle ${pct(payload.overrides.intensity)} · Motion ${pct(payload.overrides.motion)} · ${LABEL_NAMES[payload.overrides.labels]}`}))),
+          h('dt',{text:'Presentation'}),h('dd',{text:`Spectacle ${pct(payload.overrides.intensity)} · Motion ${pct(payload.overrides.motion)} · ${payload.overrides.labels?LABEL_NAMES[payload.overrides.labels]:'Information: global default'}`}))),
       actions:[{label:'Cancel',kind:'ghost'},{label:'Save preset',kind:'primary',onClick:save}]});
   }
   function renamePreset(p){
@@ -457,7 +459,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(msg)stageNote.append(h('div',{class:'callout'},icon('info'),h('div',{class:'callout-body',text:msg})));
   }
   function renderFoot(){
-    const p=pending();
+    const p=pending();S.setDraft(p?'Visual Studio preview':null);
     cancelBtn.hidden=!p;applyBtn.hidden=!p;
     applyBtn.disabled=!!previewError||busy||!!previewTimer;
     foot.classList.toggle('pending',p);
@@ -486,13 +488,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     lookSelect.value=cur;
   }
   function renderOverrides(){
-    const s=shown();if(!s)return;const o={intensity:1,motion:1,labels:'cinematic',...s.overrides,...draft.overrides};
+    const s=shown();if(!s)return;const o={intensity:1,motion:1,...s.overrides,...draft.overrides},ownLabels=o.labels??null,shownLabels=ownLabels??globalLabels();
     if(!fIntensity.contains(document.activeElement))intensity.set(Math.round(o.intensity*100));
     if(!fMotion.contains(document.activeElement))motion.set(Math.round(o.motion*100));
-    labels.set(o.labels);
+    labels.set(shownLabels);
     fIntensity.setModified(o.intensity!==1);fMotion.setModified(o.motion!==1);
     fIntensity.classList.toggle('pending',Object.hasOwn(draft.overrides,'intensity'));fMotion.classList.toggle('pending',Object.hasOwn(draft.overrides,'motion'));fLabels.classList.toggle('pending',Object.hasOwn(draft.overrides,'labels'));
-    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),LABEL_DOCS[o.labels]);
+    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}${ownLabels?'':' Follows the global default (Settings).'}`);
   }
   // Parameters are generated from the tunable metadata; rebuilt only when the set of parameters changes.
   let paramSig='',paramFields=new Map();const openGroups=new Set();
@@ -699,7 +701,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   return {
     route(next){wantedRoute=next?.length?next:null;consumeRoute();},
     unmount(){
-      alive=false;clearTimeout(previewTimer);thumbRun++;
+      alive=false;clearTimeout(previewTimer);thumbRun++;S.setDraft(null);
       if(pending()){if(P.state.preview)P.preview(null).catch(()=>{});applyLocalStage(true);toast('The preview was discarded when you left Visual Studio. Nothing was saved.','info');}
       for(const f of offs)f();
     }

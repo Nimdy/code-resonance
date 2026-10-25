@@ -24,9 +24,9 @@ Requires Node.js 20+ and VS Code 1.99+.
 npm start
 ```
 
-The receiver prints a **private link** (`http://127.0.0.1:4174/#pair=…`). Open it once in the browser you use for Code
-Resonance: it opens the **Creative Control Center** and pairs that browser, so it may change settings, identities,
-packs and integrations (`npm run pair` prints the link again; VS Code's *Open Code Stage* opens it directly). Without
+The receiver prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, valid 15 minutes). Open it in the
+browser you use for Code Resonance: it opens the **Creative Control Center** and pairs that browser for good, so it may change settings, identities,
+packs and integrations (`npm run pair` prints a new link; VS Code's *Open Code Stage* opens it directly). Without
 pairing the application still shows everything, plays and records, but changes nothing. Then click **Enable sound**
 (browsers need a gesture before audio). With no project yet, Home shows a short setup guide; `npm run demo` posts a
 clearly labelled fictional session. `npm run doctor` checks the setup and says what to fix. Step by step:

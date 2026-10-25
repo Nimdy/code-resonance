@@ -22,20 +22,28 @@
     queueMicrotask(()=>{flushing=false;const topics=new Set(dirty);dirty.clear();for(const f of listeners){try{f(topics);}catch(e){console.error(e);}}});}
   // Administrative requests carry a control capability (POST /api/session, bound to this page's origin and to the
   // loopback socket); it is requested on the first administrative call and renewed once when the receiver restarted.
-  // Capabilities are issued only to a paired browser: one that received the receiver's pairing key once, in the private
-  // link `npm run pair` (or `npm start`, or VS Code's Open Stage) gives. The key stays in this origin's storage; the link's
-  // fragment is removed at once (fragments never reach the server).
+  // Capabilities are issued only to a paired browser, one that holds the receiver's pairing key. A browser gets it once
+  // from a link (`npm run pair`, `npm start`, VS Code's Open Code Stage) carrying a single-use code that the receiver
+  // exchanges for the key; the key stays in this origin's storage. The link's fragment is removed at once (fragments never
+  // reach the server), also when a link is opened in a tab that already shows the application.
   const PAIR_KEY='code-resonance-pairing',readPairing=()=>{try{return localStorage.getItem(PAIR_KEY)||null;}catch{return null;}};
-  {const m=/(?:^#|[#&?])pair=([0-9a-f]{64})/.exec(location.hash);
-    if(m){try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}const rest=location.hash.replace(/[#&?]?pair=[0-9a-f]{64}/,'').replace(/^#?&/,'#');
-      window.history.replaceState(null,'',location.pathname+location.search+(rest&&rest!=='#'?rest:''));}}
-  let pairing=readPairing()?'unknown':'unpaired';
+  let pendingCode=null;
+  function takePairFragment(){
+    const m=/(?:^#|[#&?])pair=([0-9a-f]{64}|[0-9a-f]{32})\b/.exec(location.hash);if(!m)return false;
+    if(m[1].length===64){try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}}else pendingCode=m[1];
+    const rest=location.hash.replace(/[#&?]?pair=[0-9a-f]{32,64}/,'').replace(/^#?&/,'#');
+    window.history.replaceState(null,'',location.pathname+location.search+(rest&&rest!=='#'?rest:''));return true;
+  }
+  takePairFragment();
+  let pairing=readPairing()||pendingCode?'unknown':'unpaired';
   const api=(()=>{let capability=null,pending=null;
     function failure(status,data){const e=new Error(data?.error||`HTTP ${status}`);e.status=status;e.code=data?.code||null;e.data=data||null;return e;}
-    function session(){if(!pending)pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pairing:readPairing()||undefined})})
-      .then(async r=>{const data=await r.json().catch(()=>null);
-        if(!r.ok){if(data?.code==='pairing-required'){pairing='unpaired';changed('pairing');}throw failure(r.status,data);}
-        capability=data.capability;if(pairing!=='paired'){pairing='paired';changed('pairing');}return capability;}).finally(()=>{pending=null;});
+    function session({quiet=false}={}){if(!pending){const code=pendingCode;pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(code?{code}:{pairing:readPairing()||undefined})})
+      .then(async r=>{const data=await r.json().catch(()=>null);if(code)pendingCode=null;
+        // A refusal announces itself (the interface offers to pair), except the silent check of a remembered key.
+        if(!r.ok){if(data?.code==='pairing-required'){pairing='unpaired';changed(quiet&&!code?'pairing-checked':'pairing');}throw failure(r.status,data);}
+        if(data.pairing){try{localStorage.setItem(PAIR_KEY,data.pairing);}catch{}}
+        capability=data.capability;if(pairing!=='paired'){pairing='paired';changed('pairing');}return capability;}).finally(()=>{pending=null;});}
       return pending;}
     async function request(method,url,body,{retry=true,type=null}={}){
       if(!capability)await session();
@@ -46,9 +54,12 @@
       const data=await r.json().catch(()=>null);
       if(!r.ok)throw failure(r.status,data);
       return data;}
-    // Pair with a key, or with the private link that carries it; false when the receiver does not accept it.
-    async function pair(input){const m=/([0-9a-f]{64})/.exec(String(input||''));if(!m)return false;try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}capability=null;
-      try{await session();return true;}catch{return false;}}
+    // Pair with a link, its code, or the key itself: 'paired', 'refused' (not accepted), or 'offline' (no receiver).
+    async function pair(input){const m=/([0-9a-f]{64}|[0-9a-f]{32})/.exec(String(input||''));if(!m)return 'refused';capability=null;
+      if(m[1].length===64){try{localStorage.setItem(PAIR_KEY,m[1]);}catch{}}else pendingCode=m[1];
+      try{await session();return 'paired';}catch(e){return e instanceof TypeError?'offline':'refused';}}
+    // A link opened in a tab that already shows the application changes only the fragment.
+    addEventListener('hashchange',()=>{if(takePairFragment()&&pendingCode)void session().catch(()=>{});});
     return {request,post:(url,body,o)=>request('POST',url,body,o),session,pair,get capability(){return capability;}};})();
   let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0,speedChoice=4;
   let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,receiverOk=null;
@@ -224,6 +235,9 @@
       if(!scene.nodes.size&&mode==='live'){resetScene(model.graph);frame=model.frames.at(-1)||frame;music.setFrame(frame);
         lastSeq=Math.max(lastSeq,(model.timelineFrames||0)-1);feedCues=model.timeline.slice(-60);}
       music.setProject(selected,model.performance?.identity);
+      // The recipe holds the project's information mode whatever world shows (the living world loads it itself); asked
+      // once the project exists on the receiver, never before.
+      if(!recipe&&selectedWorld!=='living')void reloadRecipe();
       $('stageEmpty')?.classList.toggle('hidden',true);
       changed('model','feed','frame');
     }catch{setReceiver(false);}
@@ -564,8 +578,9 @@
   async function recipeAction(action,{ifRevision}={}){
     if(!selected)return null;
     const body=Array.isArray(action)?{actions:action}:{action};if(Number.isInteger(ifRevision))body.ifRevision=ifRevision;
-    const next=await api.post(`/api/recipe?id=${encodeURIComponent(selected)}`,body);
-    await showSaved(next);return next;
+    const id=selected,next=await api.post(`/api/recipe?id=${encodeURIComponent(id)}`,body);
+    // The answer belongs to the project it was sent for: shown only if that project is still the one on stage.
+    if(id===selected)await showSaved(next);return next;
   }
   // Reload the saved recipe (the receiver announced a change made elsewhere).
   async function reloadRecipe(){

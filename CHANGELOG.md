@@ -38,7 +38,8 @@ Stage, on the same engine and the same authoritative state. Built on 0.4.0 alpha
 - **Change feed** (`GET /api/changes`, server-sent events): every window, the Stage and the OBS view converge.
 - **Capture evidence** per project from the journal (`GET /api/evidence`).
 - **Control capabilities and pairing:** administrative routes need a capability, issued only to a loopback request
-  of the page's origin that presents the pairing key from `receiver-auth.json` (`npm run pair`). Previously recipe edits
+  of the page's origin that presents the pairing key from `receiver-auth.json`, which a browser gets once through a
+  single-use pairing link (`npm run pair`). Previously recipe edits
   and pack approvals needed only the page's Origin, which any local process can forge.
 - **Recipes:** revisions, batches, previews, `tune` / `tune-reset`; a project's information mode follows the global
   setting until one is chosen for it (recipes from before 0.5 are read that way).

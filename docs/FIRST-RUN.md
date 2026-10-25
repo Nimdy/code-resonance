@@ -22,9 +22,9 @@ approval and, inside WSL2, how to reach the player from Windows.
 
 ## 2. Open the Control Center
 
-`npm start` prints a **private link**: `http://127.0.0.1:4174/#pair=…`. Open it in the browser you use for Code
+`npm start` prints a **pairing link**: `http://127.0.0.1:4174/#pair=…` (single use, 15 minutes). Open it in the browser you use for Code
 Resonance. It opens the **Control Center** (Home) and pairs that browser once, so it may change settings, visual
-identities, music, packs and integrations. Keep the link to yourself; `npm run pair` prints it again. A browser opened
+identities, music, packs and integrations. `npm run pair` prints a new link whenever you need one. A browser opened
 on `http://127.0.0.1:4174/` without the link can watch, play and record, and says **View only · Pair this browser**.
 
 Click **Enable sound** (browsers need a click before audio). With no project yet, Home shows a short setup guide that
@@ -119,4 +119,4 @@ Source settings: 1920×1080 and **Control audio via OBS** ticked. Acceptance pro
 | *View only · Pair this browser* / changes are refused | this browser is not paired | open the link `npm run pair` prints (once per browser) |
 | In OBS the Construct shows instead of the living world | OBS's browser has no WebGL (typically no usable GPU with hardware acceleration on) | OBS → Settings → Advanced → turn off *Browser Source Hardware Acceleration*, restart OBS |
 
-Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder, its token or the private pairing link.
+Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder or its token.

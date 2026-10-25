@@ -25,8 +25,8 @@ function createControl({ttlMs=12*3600*1000,max=64,now=Date.now}={}){
     const site=req.headers['sec-fetch-site'],dest=req.headers['sec-fetch-dest'];
     if(site!==undefined&&site!=='same-origin')return refuse(403,'cross-site-refused','Same-origin fetch required');
     if(dest!==undefined&&dest!=='empty')return refuse(403,'cross-site-refused','Unexpected request destination');
-    if(pairing&&!(typeof offered==='string'&&offered.length===pairing.length&&crypto.timingSafeEqual(Buffer.from(offered),Buffer.from(pairing))))
-      return refuse(403,'pairing-required','This browser is not paired with the receiver: open the link that npm start (or npm run doctor) prints');
+    if(pairing&&!(typeof offered==='string'&&/^[0-9a-f]{64}$/.test(offered)&&crypto.timingSafeEqual(Buffer.from(offered),Buffer.from(pairing))))
+      return refuse(403,'pairing-required','This browser is not paired with the receiver: open the link that npm run pair prints');
     const t=now();
     // Room first from expired entries, then from the least recently used live ones.
     if(live.size>=max)for(const [k,v] of live)if(v.expiresAt<=t)live.delete(k);

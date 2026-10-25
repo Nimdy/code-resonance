@@ -68,13 +68,15 @@ async function createEnvironment({dataDir=null,port=0,empty=false,demo=true}={})
     }
     await flush();
   }
-  return {svc,url,dir,projects,pairing:svc.pairing,pairUrl:`${url}/#pair=${svc.pairing}`,async stop({keep=!!dataDir}={}){await svc.stop();if(!keep)await fsp.rm(dir,{recursive:true,force:true});}};
+  // A pairing link as npm run pair prints it: a fresh single-use code each time.
+  const pairLink=async()=>`${url}/#pair=${(await (await fetch(url+'/v1/pairing-code',{method:'POST',headers:auth})).json()).code}`;
+  return {svc,url,dir,projects,pairing:svc.pairing,pairLink,async stop({keep=!!dataDir}={}){await svc.stop();if(!keep)await fsp.rm(dir,{recursive:true,force:true});}};
 }
 module.exports={createEnvironment};
 if(require.main===module||require.main?.filename===require("node:path").join(__dirname,"serve.js")){
   const args=process.argv.slice(2),flag=k=>{const i=args.indexOf(`--${k}`);return i<0?undefined:args[i+1];};
   createEnvironment({port:Number(flag('port')||0),dataDir:flag('data')?path.resolve(flag('data')):null,empty:args.includes('--empty'),demo:!args.includes('--no-demo')}).then(env=>{
-    console.log(`Control Center (private link, pairs your browser): ${env.pairUrl}\nData (isolated): ${env.dir}\nProjects: ${JSON.stringify(env.projects)}\nCtrl+C stops it${flag('data')?'':' and deletes the data directory'}.`);
+    env.pairLink().then(link=>console.log(`Control Center (pairs one browser, single use): ${link}`));console.log(`Data (isolated): ${env.dir}\nProjects: ${JSON.stringify(env.projects)}\nCtrl+C stops it${flag('data')?'':' and deletes the data directory'}.`);
     const stop=async()=>{await env.stop();process.exit(0);};process.on('SIGINT',stop);process.on('SIGTERM',stop);
   }).catch(e=>{console.error(e);process.exitCode=1;});
 }

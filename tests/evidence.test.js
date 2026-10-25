@@ -63,7 +63,10 @@ async function ready(evidence,id=projectId){for(let i=0;i<500;i++){const d=await
 test('An extension session with reported settings: editor events, capture state and the reported settings',async t=>{
   const {evidence,append,changes}=await setup(t);
   const batches=extensionSession('11111111-2222-4333-8444-555555555555');
-  const stamps=[];for(const b of batches)stamps.push(await append(b));
+  // The first batch makes the receiver load (or build) this project's document; batches arriving during that wait and are
+  // announced once with it. Waiting for the document first makes the later capture changes arrive one by one.
+  const stamps=[await append(batches[0])];await ready(evidence);const before=changes.length;
+  for(const b of batches.slice(1))stamps.push(await append(b));
   const doc=await ready(evidence);
   const started=batches[0][0],stopped=batches.at(-1)[0];
   // The shape the receiver journals: protocol.js keeps every reported key on workspace.started.
@@ -77,7 +80,7 @@ test('An extension session with reported settings: editor events, capture state 
     capturePromptText:false,shareProjectName:true,baselineFileLimit:2000,receiverPort:4174},at:stamps[2],kind:'workspace.settings'});
   assert.equal(doc.demonstration,false);
   assert.deepEqual(compact(doc),{lastReceivedAt:stamps.at(-1),editor:{state:'stopped',at:stamps.at(-1),version:'0.5.0'},agents:[],demonstration:false});
-  assert.ok(changes.length>=3); // started, reported, settings, stopped
+  assert.ok(before>=1,'the first document is announced');assert.ok(changes.length-before>=2,`each later capture change is announced (settings reported, stopped): ${changes.length-before}`);
   // Nothing private: no file names, folder names or prompt text in the document.
   assert.doesNotMatch(JSON.stringify(doc),/src\/a\.ts|my-app|secret/);
 });

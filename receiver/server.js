@@ -66,6 +66,9 @@ function tokenMatches(header,token){
   const a=Buffer.from(String(header||'')),b=Buffer.from(`Bearer ${token}`);
   return a.length===b.length&&crypto.timingSafeEqual(a,b);
 }
+// The auth file holds the ingestion token and the pairing key: written whole to a private temporary file and renamed, so
+// it is never readable by others, not even for a moment while an older, more permissive file is replaced.
+async function writeAuth(file,data){const tmp=`${file}.${process.pid}.tmp`;await fs.writeFile(tmp,JSON.stringify(data),{mode:0o600});await fs.chmod(tmp,0o600).catch(()=>{});await fs.rename(tmp,file);}
 // A crash mid-append can leave a final line without its newline; terminate it so the next record stays parseable.
 async function terminateJournal(file){
   let fd;try{fd=await fs.open(file,'r');}catch(e){if(e.code==='ENOENT')return '';throw e;}
@@ -189,6 +192,12 @@ function createService(options={}) {
   const port=Number(options.port??process.env.RESONANCE_PORT??4174);
   const host=options.host||'127.0.0.1';
   if(!LOOPBACK_HOSTS.includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');
+  // Pairing codes: what links carry instead of the pairing key (a link can end up in a process's command line, which other
+  // accounts can read on Linux). Single use, valid for minutes, kept as hashes; exchanged once for the key.
+  const codes=new Map();
+  function mintCode(ttlMs=15*60*1000){const t=Date.now();for(const [k,v] of codes)if(v<=t)codes.delete(k);while(codes.size>=32)codes.delete(codes.keys().next().value);
+    const code=crypto.randomBytes(16).toString('hex');codes.set(sha(code),t+ttlMs);return {code,expiresAt:t+ttlMs};}
+  const codeValid=code=>typeof code==='string'&&/^[0-9a-f]{32}$/.test(code)&&(codes.get(sha(code))||0)>Date.now();
   let server,worker,token,pairing=null,actualPort,closing=false,startedAt=null,packPoll=null,lastPacks=null;
   const flight=new Map();let cursor=0;
   const writes=new Map();const checkedJournals=new Set();
@@ -436,9 +445,12 @@ function createService(options={}) {
       if(req.method==='POST'&&pathname==='/api/session'){
         // The pairing key travels in a small JSON body; a request without one is simply not paired (refused below).
         const body=(req.headers['content-type']||'').split(';')[0]==='application/json'?await readBody(req,res,1024):{};if(!body)return;
-        const r=control.issue(req,expectedOrigins,{pairing,offered:body.pairing});
+        // A pairing code (from a link) stands for the key once: it is consumed, and the key is returned for the browser to keep.
+        const viaCode=codeValid(body.code);
+        const r=control.issue(req,expectedOrigins,{pairing,offered:viaCode?pairing:body.pairing});
         if(!r.ok){response(res,r.status,{error:r.error,code:r.code});return;}
-        response(res,200,{capability:r.capability,expiresAt:r.expiresAt,scopes:r.scopes});return;
+        if(viaCode)codes.delete(sha(body.code));
+        response(res,200,{capability:r.capability,expiresAt:r.expiresAt,scopes:r.scopes,...(viaCode?{pairing}:{})});return;
       }
       if(req.method==='GET'&&pathname==='/api/changes'){
         // An EventSource of the page itself (Fetch metadata, when sent: same-origin, destination empty). A frame or an
@@ -602,6 +614,11 @@ function createService(options={}) {
         if(!entry){response(res,404,{error:'Project not found'});return;}
         await exportProject(res,id,entry);return;
       }
+      // A pairing link for whoever holds the ingestion token (npm run pair, the VS Code extension's Open Code Stage).
+      if(req.method==='POST'&&pathname==='/v1/pairing-code'){
+        if(!tokenMatches(req.headers.authorization,token)){response(res,401,{error:'Receiver token required'});return;}
+        const c=mintCode();response(res,200,{...c,url:`http://127.0.0.1:${actualPort}/#pair=${c.code}`});return;
+      }
       if(req.method==='POST'&&(pathname==='/v1/events'||pathname==='/v1/flush'||pathname==='/v1/rebuild')) {
         if(!tokenMatches(req.headers.authorization,token)){response(res,401,{error:'Receiver token required'});return;}
         if(pathname==='/v1/flush'||pathname==='/v1/rebuild') {
@@ -637,8 +654,7 @@ function createService(options={}) {
         pairing=/^[0-9a-f]{64}$/.test(a.pairing||'')?a.pairing:null;}
       catch{token=crypto.randomBytes(32).toString('hex');pairing=null;}
       pairing||=crypto.randomBytes(32).toString('hex');
-      await fs.writeFile(authFile,JSON.stringify({version:1,token,port,pairing}),{mode:0o600});
-      await fs.chmod(authFile,0o600).catch(()=>{});
+      await writeAuth(authFile,{version:1,token,port,pairing});
       // Nothing waits in quarantine across runs: an import is reviewed and installed within one receiver's lifetime.
       imports.clear();
       worker=new Worker(path.resolve(__dirname,'../engine/worker.js'),{workerData:{dataDir,intervalMs,windowMs,graceMs}});
@@ -658,7 +674,7 @@ function createService(options={}) {
       await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,host,resolve);});
       actualPort=server.address().port;startedAt=Date.now();
       // Auth hint stores port for VS Code extension, not an invitation to bind outside loopback.
-      await fs.writeFile(authFile,JSON.stringify({version:1,token,port:actualPort,pairing}),{mode:0o600});
+      await writeAuth(authFile,{version:1,token,port:actualPort,pairing});
       // Packs installed or approved from the command line reach open windows too: the registry's stamp, every 5 s.
       lastPacks=registry.snapshot();
       packPoll=setInterval(()=>{try{const s=registry.snapshot();if(s!==lastPacks){lastPacks=s;usage=null;usageEpoch++;changes.emit('packs');}}catch(e){console.warn('[resonance packs]',e.message);}},5000);packPoll.unref();
@@ -666,8 +682,9 @@ function createService(options={}) {
       listProjects().then(list=>{for(const p of list)if(!closing)evidence.get(p.id).catch(()=>{});}).catch(()=>{});
       console.log(`[CODE RESONANCE] Receiver listening: http://${host}:${actualPort}`);
       console.log(`[CODE RESONANCE] Local data: ${dataDir}`);
-      // The private link pairs a browser (once) so it may change settings, packs and integrations; keep it to yourself.
-      if(options.quiet!==true)console.log(`[CODE RESONANCE] Control Center (private link, pairs this browser): http://127.0.0.1:${actualPort}/#pair=${pairing}`);
+      // A link that pairs one browser (once) so it may change settings, packs and integrations: a single-use code, valid
+      // 15 minutes; `npm run pair` makes a new one. The pairing key itself is never printed.
+      if(options.quiet!==true)console.log(`[CODE RESONANCE] Control Center (pairs one browser; single use, 15 min): http://127.0.0.1:${actualPort}/#pair=${mintCode().code}`);
       return this;
     },
     flush,

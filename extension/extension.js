@@ -242,14 +242,16 @@ async function recordPrompt(){
   const meta={fingerprint:hash(content).slice(0,20),length:content.length,source:'manual'};
   send(recording,'agent.prompt.submitted',{meta,...(conf().get('capturePromptText',false)?{text:content}:{})});
 }
-// The Control Center opens paired (its private link carries the receiver's pairing key, readable by this account only);
-// the OBS view never needs it.
-function pairingFragment(){try{const a=JSON.parse(require('node:fs').readFileSync(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));
-  return /^[0-9a-f]{64}$/.test(a.pairing||'')?`#pair=${a.pairing}`:'';}catch{return '';}}
+// The Control Center opens paired: the receiver (asked with this account's ingestion token) gives a single-use code,
+// valid minutes, which the page exchanges for the pairing key. The key itself never appears in a link or a command line.
+async function pairingFragment(port){try{
+  const a=JSON.parse(await fs.readFile(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));if(!a.token)return '';
+  const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${a.token}`},signal:AbortSignal.timeout(2000)});
+  if(!r.ok)return '';const {code}=await r.json();return /^[0-9a-f]{32}$/.test(code||'')?`#pair=${code}`:'';}catch{return '';}}
 async function openStage(overlay=false){
   const port=conf().get('receiverPort',4174);
   const project=recording?`?project=${recording.projectId}`:'';
-  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}${pairingFragment()}`));
+  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}${await pairingFragment(port)}`));
 }
 // One click from the status bar to everything a performer needs while coding.
 async function menu(context){
