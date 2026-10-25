@@ -734,6 +734,14 @@ robustness quick 15/15; recording quick 45/45. `npm test` 30/30 runs under `unit
 one timing-dependent test was made deterministic (24/30 before; the receiver's behaviour was correct, the test assumed
 which of two orders happened).
 
+**In CI.** GitHub's runners for this private repository have two cores and no GPU. There, the studios that render WebGL
+continuously (Visual, Music, Record & Broadcast) and the acceptance scenarios with three windows rendering at once starve
+the browser (measured on PR #7: clicks timing out after 30 s, screenshots refused, a saved change taking 105 s to appear
+in the other windows). The required `ui` job therefore runs Connections, Home, Packs, Projects, Settings and the
+single-window acceptance scenarios at the Lowest quality; the whole interface qualification is the extended job
+`ui-full` (label `extended:ui-full`) and the local gate above. Reproduced locally on two pinned cores (`taskset -c 0,1`)
+before changing the jobs.
+
 Reviews before the pull request: backend security and correctness (fixed: a symbolic link that let the Claude route
 return any JSON file the receiver can read, including its token; a pack id that destroyed the approval store; an empty
 digest skipping the approval check; edits of a recipe whose pack is missing overwriting it), interface honesty

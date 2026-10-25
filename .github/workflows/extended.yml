@@ -11,6 +11,7 @@ name: extended-qualification
 #   windows-browser  native Windows: Chromium Stage, a reference pack, quick recording
 #   windows-vscode   native Windows: the extension in a real VS Code
 #   obs              OBS Studio itself, in the disposable runner (installed from the official PPA, Xvfb, software GL)
+#   ui-full          the whole interface qualification: every workspace suite and the multi-window acceptance scenarios
 on:
   pull_request:
     types: [labeled, synchronize, opened, reopened]
@@ -94,6 +95,28 @@ jobs:
         with:
           name: history
           path: qualification/results/visual/history-qualification.json
+  ui-full:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:ui-full')
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node ui/run-all.js --jobs 1
+        env:
+          CR_UI_QUALITY: '3'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-full
+          path: qualification/results/ui
   soak:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:soak')
     runs-on: ubuntu-latest

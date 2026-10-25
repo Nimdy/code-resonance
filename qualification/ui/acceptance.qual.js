@@ -14,9 +14,13 @@ const {createService}=require(path.join(REPO,'receiver/server'));
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const OUT=path.join(__dirname,'..','results','ui');
 const QUICK=process.argv.includes('--quick');
+// --single-window (or CR_UI_SINGLE_WINDOW=1): skip the scenarios with three windows rendering at once (H, I, G), which
+// starve a two-core runner without a GPU; they run in the extended tier and locally.
+const SINGLE=process.argv.includes('--single-window')||process.env.CR_UI_SINGLE_WINDOW==='1';
 const checks=[],measurements={};
 function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(detail).slice(0,400)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${String(detail).slice(0,300)}`:''}`);}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const log=m=>console.log(`NOTE  ${m}`);
 const LAUNCH={args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required']};
 // Pages opened from one browser context are windows of one browser profile (they share BroadcastChannel and storage,
 // like a user's windows); a fresh context is a different profile.
@@ -141,6 +145,7 @@ const getJSON=async u=>(await fetch(u)).json();
       check('B: a reloaded Stage plays the persisted configuration',await engine(again,()=>window.ResonancePlayer.state.recipe?.family==='stellar-forge'&&window.ResonancePlayer.state.sound.options.style==='chip'));
       await again.close();
       // H + I: Control Center, Stage and OBS view open at the same time.
+      if(!SINGLE){
       const {page:control,errors:controlErrors}=await open(windows,`${url}/?project=${sample}#/home`);await ready(control);
       const {page:stage,errors:stageErrors}=await open(windows,`${url}/?project=${sample}#/stage`);await ready(stage);
       const {page:obs,errors:obsErrors,requests:obsRequests}=await open(windows,`${url}/?overlay=1&sound=1&project=${sample}`,{width:1920,height:1080});
@@ -178,7 +183,9 @@ const getJSON=async u=>(await fetch(u)).json();
       check('H: the OBS view never requests a control capability',!obsRequests.some(r=>r==='POST /api/session'),obsRequests.filter(r=>r.startsWith('POST')).join(','));
       await obs.screenshot({path:path.join(OUT,'acceptance-h-obs.png')});
       // G: recording state is one across the views of a window and announced to other windows.
-      await press(stage,'#stageRecordBtn');await wait(1500);
+      await press(stage,'#stageRecordBtn');
+      await stage.waitForFunction(()=>window.ResonancePlayer.state.recording.active,null,{timeout:60000,polling:500}).catch(()=>{});
+      await control.waitForFunction(()=>document.getElementById('recordBtn').disabled,null,{timeout:20000,polling:500}).catch(()=>{});
       const recState=await Promise.all([engine(stage,()=>({active:window.ResonancePlayer.state.recording.active,topbar:document.getElementById('recordBtn').getAttribute('aria-pressed')})),engine(control,()=>({disabled:document.getElementById('recordBtn').disabled,label:document.getElementById('recordBtn').textContent}))]);
       check('G: one recorder: the Stage and the top bar agree, and another window cannot start a second recording',recState[0].active&&recState[0].topbar==='true'&&recState[1].disabled,JSON.stringify(recState));
       const download=stage.waitForEvent('download',{timeout:20000}).catch(()=>null);
@@ -186,10 +193,11 @@ const getJSON=async u=>(await fetch(u)).json();
       const file=await download;let size=0;if(file){const p=path.join(OUT,'acceptance-g-recording.webm');await file.saveAs(p);size=fs.statSync(p).size;}
       const last=await engine(stage,()=>window.ResonancePlayer.state.recording.last);
       check('G: the recording finishes as a WebM file with sound',size>20000&&last?.audio===true&&!last?.audioLost,JSON.stringify({size,...(last||{})}));
-      await wait(1500);
+      await control.waitForFunction(()=>!document.getElementById('recordBtn').disabled,null,{timeout:20000,polling:500}).catch(()=>{});
       check('G: the other window can record again once it stopped',await engine(control,()=>!document.getElementById('recordBtn').disabled));
       for(const [name,errs] of [['Control Center',ccErrors.concat(controlErrors)],['Stage',stageErrors],['OBS view',obsErrors]])check(`no page errors (${name})`,errs.length===0,errs.slice(0,3).join(' | '));
       await Promise.all([control.close(),stage.close(),obs.close()]);
+      }else log('H, I, G skipped (--single-window): three windows rendering at once; run in the extended tier and locally');
       // J: every workspace at desktop, laptop and narrow widths: no horizontal page overflow, the navigation reachable,
       // the workspace loaded (its heading present), keyboard focus visible on the first control.
       const routes=['home','projects','visual','music','packs','connections','output','settings','stage'];
@@ -213,7 +221,7 @@ const getJSON=async u=>(await fetch(u)).json();
       }
     }finally{await env.stop();await fsp.rm(dir,{recursive:true,force:true});}
   }finally{await browser.close();}
-  const report={at:new Date().toISOString(),browser:'chromium (playwright-core, headless, SwiftShader)',quick:QUICK,checks,measurements};
+  const report={at:new Date().toISOString(),browser:'chromium (playwright-core, headless, SwiftShader)',quick:QUICK,singleWindow:SINGLE,checks,measurements};
   await fsp.writeFile(path.join(OUT,'acceptance.json'),JSON.stringify(report,null,2));
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);
   process.exitCode=checks.every(c=>c.pass)?0:1;

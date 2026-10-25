@@ -5,7 +5,8 @@ name: qualification
 #   packs     each reference visual pack (declarative, shader, world) through the compatibility tests, quick mode
 #   runtime   the pack runtime's robustness (slow, hanging and failing test fixtures; quick mode) and live recording
 #             of the four renderer categories (real WebM files measured with ffmpeg; quick mode)
-#   ui        the Control Center and Stage: every workspace's browser suite and the cross-view acceptance suite
+#   ui        the Control Center and Stage: the workspace suites that run within a two-core runner without a GPU, and
+#             the single-window acceptance scenarios (the full interface qualification is in extended.yml: ui-full)
 #   vscode    the extension in a real VS Code
 # The expensive tier (full pack suites, long recordings, soak, native Windows browser and VS Code, OBS) is in
 # extended.yml. The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
@@ -85,7 +86,7 @@ jobs:
             qualification/results/recording
   ui:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: qualification
@@ -96,11 +97,13 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npx playwright-core install --with-deps chromium
-      # One suite at a time, rendering at the Lowest quality as a user of a 2-core machine without a GPU would choose:
-      # several windows software-rendering WebGL at once starve the runner's main threads (clicks time out).
-      - run: node ui/run-all.js --jobs 1 --quick
+      # One suite at a time, rendering at the Lowest quality as a user of a 2-core machine without a GPU would choose.
+      # The studios that render WebGL continuously (Visual, Music, Output) and the scenarios with three windows rendering
+      # at once starve these runners (measured: clicks time out, screenshots fail); they run in extended.yml (ui-full).
+      - run: node ui/run-all.js --jobs 1 --quick --only connections,home,packs,projects,settings,acceptance
         env:
           CR_UI_QUALITY: '3'
+          CR_UI_SINGLE_WINDOW: '1'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
