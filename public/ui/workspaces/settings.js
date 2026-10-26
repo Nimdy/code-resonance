@@ -2,15 +2,18 @@
 // receiver's settings.json (every window and the OBS view follow them); this device's choices stay in this browser;
 // music defaults and visual identity have their own studios and are only linked from here (one place for each).
 // Storage, diagnostics and the documentation are read-only: erasing data is explained, never a button.
-import {h,text,button,select,segmented,toggle,callout,copyable,kv,section,toast,setLabel,styles} from '../dom.js';
+import {h,text,button,select,segmented,toggle,callout,copyable,kv,toast,setLabel,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {duration,clockTime,projectName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
 import {openDoc,DOCS} from '../markdown.js';
 const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
-const QUALITY_DOCS={auto:'Starts at High and lowers the resolution while frames are slow, then climbs back.',0:'Full resolution with 4× anti-aliasing.',1:'Full resolution, no anti-aliasing.',2:'75 % resolution.',3:'55 % resolution: for machines without a capable GPU.'};
+const QUALITY_DOCS={auto:'Lowers the resolution within about two seconds of slow frames (straight to the lowest level when far too slow) and climbs back only after a stable period. If no level draws smoothly, it says so and offers Monolith, a 2D stage.',0:'Full resolution with 4× anti-aliasing.',1:'Full resolution, no anti-aliasing.',2:'75 % resolution.',3:'55 % resolution: for machines without a capable GPU.'};
 // Scrolling follows the app's Motion setting first, then the system's (html[data-motion] is set only when not "system").
 const smooth=()=>{const m=document.documentElement.dataset.motion;return m==='full'||(m!=='reduce'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)?'smooth':'auto';};
-const SECTIONS=[['global','Global'],['device','This device'],['storage','Storage & privacy'],['diagnostics','Diagnostics'],['about','About']];
+const SECTIONS=[['global','Global','All windows and OBS','globe'],['device','This device','This browser only','monitor'],['storage','Storage & privacy','Where everything lives','folder'],
+  ['diagnostics','Diagnostics','What this window sees','cpu'],['about','About','Versions and guides','info']];
+// A path breaks after its separators (never inside a folder name) when it has to wrap.
+const pathCode=p=>{const c=h('code',{class:'set-path'});for(const part of String(p).split(/(?<=[\/\\])/)){c.append(part,h('wbr'));}return c;};
 const ABOUT_DOCS=['FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','ALPHA.md','SECURITY.md','packs/README.md'];
 export default {mount(view,{store:S,player:P,navigate}){
   styles('settings');
@@ -34,6 +37,15 @@ export default {mount(view,{store:S,player:P,navigate}){
     renderGlobal();
   }
   const st=()=>S.state.settings;
+  // ---- Layout helpers: a section (title, scope, rule), a titled panel of rows, a context column -------------------
+  // A section says where its choices are kept (the receiver, for every window; or this browser only).
+  function sec(id,title,{scope=null,subtitle=null,actions=[]},...children){
+    return h('section',{class:'section set-section',id:`set-${id}`},
+      h('div',{class:'section-head'},h('h2',{class:'title-m',text:title}),
+        scope?h('span',{class:['set-scope',scope[0]]},icon(scope[0]==='device'?'monitor':'globe'),h('span',{text:scope[1]})):null,
+        subtitle?h('span',{class:'faint small',text:subtitle}):null,h('span',{class:'rule'}),actions.length?h('div',{class:'actions'},...actions):null),...children);
+  }
+  const panel=(title,note,...body)=>h('div',{class:'panel set-panel'},h('div',{class:'panel-head'},h('div',{class:'grow'},h('h3',{text:title}),note?h('span',{class:'note',text:note}):null)),...body);
   // ---- Global ------------------------------------------------------------------------------------------------------
   const worldSel=select({id:'setWorld',label:'Default world',options:P.WORLDS.map(w=>({value:w,label:WORLD_NAMES[w]})),value:'living',onChange:v=>save({stage:{world:v}},worldRow)});
   const worldRow=row({id:'rowWorld',label:'Default world',doc:'Shown for projects that have not chosen their own world.',control:worldSel});
@@ -50,23 +62,30 @@ export default {mount(view,{store:S,player:P,navigate}){
   const guide=toggle({id:'setGuide',onChange:v=>save({onboarding:{dismissed:!v}},guideRow)});guide.input.setAttribute('aria-label','Show the setup guide on Home');
   const guideRow=row({id:'rowGuide',label:'Setup guide on Home',doc:'The first-run steps (receiver, Connect VS Code, the first project, sound, Open the Stage). Hidden once dismissed; show it again here.',control:guide});
   const globalError=h('div',{class:'set-error'});
-  const group=(title,...rows)=>h('div',{class:'set-group'},h('div',{class:'eyebrow set-group-title',text:title}),...rows);
   const elsewhere=h('div',{class:'set-elsewhere'},
     ...[['music','Music defaults','Style, tempo, texture and volume for every project: Music Studio, Global scope.'],['visual','Visual identity','A project\u2019s world family, look, tuning and public title: Visual Studio.'],
       ['projects','A project\u2019s world and music','Overrides of these defaults for one project: Projects.'],['connections','Capture settings','What VS Code and agents share is set in VS Code: Connections shows what they report.'],['packs','Visual pack approvals','Visual Packs.']]
       .map(([ws,t,d])=>h('button',{type:'button',class:'set-link',onClick:()=>navigate(ws)},h('span',{class:'grow'},h('strong',{text:t}),h('span',{text:d})),icon('chevron-right'))));
-  const globalSection=section({title:'Global',subtitle:'saved by the receiver · every window and the OBS view follow',id:'set-global'},globalError,
-    h('div',{class:'set-global'},
-      h('div',{class:'panel set-panel'},group('Stage',worldRow,labelsRow,captionsRow),group('Recording',profileRow),group('Interface',motionRow,guideRow)),
-      h('div',{class:'set-aside'},h('div',{class:'eyebrow',text:'Set elsewhere'}),elsewhere)));
+  const globalSection=sec('global','Global',{scope:['global','Saved by the receiver \u00b7 every window and the OBS view follow']},globalError,
+    h('div',{class:'set-split'},
+      h('div',{class:'set-groups'},
+        panel('Stage','What the Stage and the OBS view show unless a project chooses otherwise',h('div',{class:'set-rows'},worldRow,labelsRow,captionsRow)),
+        panel('Recording','Record & Broadcast starts from this profile',h('div',{class:'set-rows'},profileRow)),
+        panel('Interface','This Control Center, in every window',h('div',{class:'set-rows'},motionRow,guideRow))),
+      h('aside',{class:'set-aside','aria-label':'Set elsewhere'},h('div',{class:'set-aside-head'},h('h3',{text:'Set elsewhere'}),h('p',{class:'field-doc',text:'Choices that have their own studio: one place for each.'})),elsewhere)));
   // ---- This device -------------------------------------------------------------------------------------------------
   const qualitySeg=segmented({id:'setQuality',label:'Rendering quality on this device',options:P.QUALITY.map(q=>({value:q,label:QUALITY_NAMES[q],title:QUALITY_DOCS[q]})),value:S.state.device.quality||'auto',
     onChange:q=>{S.unpin('quality');S.setDevice({quality:q});P.setQuality(q);qualityRow.status('Saved in this browser','ok');renderDevice();}});
   const qualityRow=row({id:'rowQuality',label:'Rendering quality',control:qualitySeg});
-  const qualityNow=h('div',{class:'set-now small'});
+  const qualityNow=h('div',{class:'set-now'});
   const resetBtn=button({label:'Reset this device\u2019s preferences',icon:'reset',kind:'outline',size:'sm',id:'setDeviceReset',onClick:()=>{S.unpin('quality');S.setDevice({quality:'auto'});P.setQuality('auto');renderDevice();toast('This browser\u2019s preferences are back to their defaults (quality: Auto).','ok');}});
-  const deviceSection=section({title:'This device',subtitle:'kept in this browser only: it describes this machine',id:'set-device'},
-    h('div',{class:'panel set-panel'},qualityRow,h('div',{class:'set-device-foot'},qualityNow,h('div',{class:'grow'}),resetBtn)));
+  const deviceSection=sec('device','This device',{scope:['device','Saved in this browser only \u00b7 it describes this machine']},
+    h('div',{class:'set-split'},
+      h('div',{class:'set-groups'},panel('Rendering','The living worlds and visual packs, on this machine\u2019s GPU',h('div',{class:'set-rows'},qualityRow))),
+      h('aside',{class:'set-aside'},h('div',{class:'panel set-panel set-machine'},h('div',{class:'panel-body'},
+        h('div',{class:'set-machine-head'},icon('monitor'),h('span',{class:'eyebrow',text:'This machine, now'})),qualityNow,
+        h('p',{class:'field-doc',text:'Another computer, or another browser on this one, keeps its own choice. Resetting affects this browser only.'}),
+        h('div',{},resetBtn))))));
   // ---- Storage & privacy -------------------------------------------------------------------------------------------
   const dataPath=copyable('…',{label:'Copy'});dataPath.id='setDataDir';
   const projectPath=h('div',{class:'set-project-dir'});
@@ -75,37 +94,39 @@ export default {mount(view,{store:S,player:P,navigate}){
   const authorities=h('tbody');
   const table=h('div',{class:'set-table-wrap'},h('table',{class:'set-table'},h('thead',{},h('tr',{},...['What','Where it lives','Changed in'].map(t=>h('th',{scope:'col',text:t})))),authorities));
   const erase=h('ol',{class:'set-steps'});
-  const storageSection=section({title:'Storage & privacy',subtitle:'every kind of configuration has one home',id:'set-storage'},
-    h('div',{class:'panel set-panel set-storage'},
-      h('div',{class:'set-field'},h('div',{class:'set-label',text:'Data folder'}),h('p',{class:'field-doc',text:'Everything the receiver keeps, on this computer only. No accounts, no cloud, no telemetry.'}),dataPath,projectPath),
-      table,
-      h('div',{class:'set-field'},h('div',{class:'set-label',text:'Erasing data'}),erase,
-        h('p',{class:'field-doc',text:'Nothing is copied anywhere else. Recordings and exports are ordinary files in your downloads folder: delete them there.'}),
-        h('div',{},button({label:'Security and privacy model',icon:'shield',kind:'ghost',size:'sm',onClick:()=>openDoc('SECURITY.md')})))));
+  const storageSection=sec('storage','Storage & privacy',{subtitle:'every kind of configuration has one home, on this computer'},
+    h('div',{class:'set-split set-storage'},
+      panel('Where each choice lives','One home for every kind of configuration',table),
+      h('aside',{class:'set-aside'},
+        panel('Data folder','Everything the receiver keeps, on this computer only. No accounts, no cloud, no telemetry.',h('div',{class:'panel-body'},dataPath,projectPath)),
+        panel('Erasing data','Nothing is copied anywhere else',h('div',{class:'panel-body'},erase,
+          h('p',{class:'field-doc',text:'Recordings and exports are ordinary files in your downloads folder: delete them there.'}),
+          h('div',{},button({label:'Security and privacy model',icon:'shield',kind:'ghost',size:'sm',onClick:()=>openDoc('SECURITY.md')})))))));
   // ---- Diagnostics -------------------------------------------------------------------------------------------------
   const caps=detect();
   const receiverKv=h('div',{id:'setReceiver'}),capsList=h('div',{class:'set-caps',id:'setCaps'}),feedEl=h('div');
   const copyBtn=button({label:'Copy diagnostics',icon:'copy',kind:'primary',id:'setCopyDiag',onClick:()=>copyDiagnostics()});
-  const diagSection=section({title:'Diagnostics',subtitle:'what this window can see, live',id:'set-diagnostics',actions:[button({label:'Refresh',icon:'refresh',size:'sm',kind:'ghost',onClick:()=>Promise.all([S.loadStatus(),loadDataDir()]).then(renderDiagnostics)})]},
+  const diagSection=sec('diagnostics','Diagnostics',{subtitle:'what this window can see, live',actions:[button({label:'Refresh',icon:'refresh',size:'sm',kind:'ghost',onClick:()=>Promise.all([S.loadStatus(),loadDataDir()]).then(renderDiagnostics)})]},
     h('div',{class:'set-diag'},
-      h('div',{class:'panel set-panel'},h('div',{class:'eyebrow',text:'Receiver'}),receiverKv,feedEl),
-      h('div',{class:'panel set-panel'},h('div',{class:'eyebrow',text:'This browser'}),capsList)),
-    h('div',{class:'panel set-panel set-diag-foot'},
-      h('div',{class:'set-field'},h('div',{class:'set-label',text:'Share a problem report'}),h('p',{class:'field-doc',text:'Copies these facts as JSON: versions, states and capabilities. It contains no token, no paths, no project names or identifiers.'}),h('div',{},copyBtn)),
-      h('div',{class:'set-field'},h('div',{class:'set-label',text:'From a terminal'}),h('p',{class:'field-doc',text:'Checks Node, the receiver, its token\u2019s permissions, projects, packs and (on WSL) how to reach the player from Windows. Read-only.'}),copyable('npm run doctor'))));
+      panel('Receiver','As it answers this window',h('div',{class:'panel-body'},receiverKv,feedEl)),
+      panel('This browser','What this window can do',h('div',{class:'panel-body set-caps-body'},capsList)),
+      panel('Report a problem','Facts only: nothing that identifies you or your projects',h('div',{class:'panel-body set-report'},
+        h('div',{class:'set-field'},h('div',{class:'set-label',text:'Share a problem report'}),h('p',{class:'field-doc',text:'Copies these facts as JSON: versions, states and capabilities. It contains no token, no paths, no project names or identifiers.'}),h('div',{},copyBtn)),
+        h('div',{class:'set-field'},h('div',{class:'set-label',text:'From a terminal'}),h('p',{class:'field-doc',text:'Checks Node, the receiver, its token\u2019s permissions, projects, packs and (on WSL) how to reach the player from Windows. Read-only.'}),copyable('npm run doctor'))))));
   // ---- About -------------------------------------------------------------------------------------------------------
   const aboutKv=h('div',{id:'setAbout'});
-  const aboutSection=section({title:'About',id:'set-about'},
-    h('div',{class:'set-diag'},h('div',{class:'panel set-panel'},h('div',{class:'set-brand'},h('div',{class:'glyph'},h('i'),h('i'),h('i')),h('div',{},h('strong',{text:'Code Resonance'}),h('div',{class:'faint small',text:'Your development, performed: local, private, yours.'}))),aboutKv),
-      h('div',{class:'panel set-panel'},h('div',{class:'eyebrow',text:'Documentation'}),h('div',{class:'set-docs'},...ABOUT_DOCS.map(d=>h('button',{type:'button',class:'set-doc',dataset:{doc:d},onClick:()=>openDoc(d)},icon('doc'),h('span',{text:DOCS[d]||d}),h('span',{class:'faint tiny num',text:d})))))));
-  // ---- Layout: a short index beside the sections --------------------------------------------------------------------
-  const nav=h('nav',{class:'set-nav','aria-label':'Settings sections'},...SECTIONS.map(([id,t])=>h('a',{href:`#set-${id}`,dataset:{target:id},text:t,onClick:e=>{e.preventDefault();
-    const target=document.getElementById(`set-${id}`);target.scrollIntoView({behavior:smooth(),block:'start'});target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}})));
+  const aboutSection=sec('about','About',{},
+    h('div',{class:'set-about'},h('div',{class:'panel set-panel'},h('div',{class:'panel-body'},h('div',{class:'set-brand'},h('div',{class:'glyph'},h('i'),h('i'),h('i')),h('div',{},h('strong',{text:'Code Resonance'}),h('div',{class:'faint small',text:'Your development, performed: local, private, yours.'}))),aboutKv)),
+      panel('Documentation','Opens here, from this receiver',h('div',{class:'panel-body'},h('div',{class:'set-docs'},...ABOUT_DOCS.map(d=>h('button',{type:'button',class:'set-doc',dataset:{doc:d},onClick:()=>openDoc(d)},icon('doc'),h('span',{text:DOCS[d]||d}),h('span',{class:'faint tiny num',text:d}))))))));
+  // ---- Layout: a section index (with each section's scope) beside the sections ------------------------------------
+  const nav=h('nav',{class:'set-nav','aria-label':'Settings sections'},...SECTIONS.map(([id,t,hint,ic])=>h('a',{href:`#set-${id}`,dataset:{target:id},onClick:e=>{e.preventDefault();
+    const target=document.getElementById(`set-${id}`);target.scrollIntoView({behavior:smooth(),block:'start'});target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}},
+    icon(ic),h('span',{class:'set-nav-text'},h('span',{class:'set-nav-label',text:t}),h('span',{class:'set-nav-hint',text:hint})))));
   const content=h('div',{class:'set-content'},globalSection,deviceSection,storageSection,diagSection,aboutSection);
   const page=h('div',{class:'page ws-settings'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Control Center'}),h('h1',{class:'title-l',text:'Settings'}),
-      h('p',{class:'muted',text:'Global choices are kept by the receiver and apply to every window; this device\u2019s choices stay in this browser. Each project\u2019s own choices are made in the studios.'}))),
-    h('div',{class:'set-layout'},nav,content)));
+      h('p',{class:'muted measure',text:'Global choices are kept by the receiver and apply to every window; this device\u2019s choices stay in this browser. Each project\u2019s own choices are made in the studios.'}))),
+    h('div',{class:'set-layout'},h('div',{class:'set-nav-col'},nav),content)));
   view.append(page);
   // The index follows the reading position.
   const spy=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting){const id=e.target.id.slice(4);for(const a of nav.children)a.toggleAttribute('aria-current',a.dataset.target===id);}},{root:page,rootMargin:'-10% 0px -70% 0px'});
@@ -133,10 +154,11 @@ export default {mount(view,{store:S,player:P,navigate}){
   function renderDevice(){
     const q=S.state.device.quality||'auto',s=P.state;
     qualitySeg.set(q);
-    text(qualityRow.doc,`${QUALITY_DOCS[q]} For the living worlds and visual packs on this machine; recordings keep their dimensions. Kept in this browser because it describes this GPU.`);
+    text(qualityRow.doc,`${QUALITY_DOCS[q]} Recordings keep their dimensions whatever the quality.`);
     const level=s.qualityLevel;
-    qualityNow.replaceChildren(...[h('span',{class:'faint',text:'Now rendering at '}),h('strong',{class:'num',id:'setQualityNow',text:level===null||level===undefined?'— (no living world running)':QUALITY_NAMES[String(level)]}),
-      S.pinned('quality')?h('span',{class:'faint',text:' · this window\u2019s URL sets the quality until you choose here'}):null].filter(Boolean));
+    qualityNow.replaceChildren(h('span',{class:'faint small',text:'Now rendering at'}),
+      h('strong',{class:['num','set-now-value',level===null||level===undefined?'idle':''],id:'setQualityNow',text:level===null||level===undefined?'— (no living world running)':QUALITY_NAMES[String(level)]}),
+      h('span',{class:'faint small',text:`Chosen: ${QUALITY_NAMES[q]||q}${S.pinned('quality')?' · this window’s URL sets the quality until you choose here':''}`}));
   }
   async function loadDataDir(){
     // The data folder is only told to a page holding a control capability (a page of this computer's player).
@@ -149,7 +171,7 @@ export default {mount(view,{store:S,player:P,navigate}){
     dataPath.set(dataDir||'Not reported to this page. By default ~/.code-resonance, or the RESONANCE_DATA folder the receiver was started with.');dataPath.querySelector('button').disabled=!dataDir;
     const p=S.project(),id=p?.id||'';
     if(id&&hashFor!==id){hashFor=id;projectHash='';hashOf(id).then(x=>{if(hashFor===id){projectHash=x;renderStorage();}}).catch(()=>{});}
-    projectPath.replaceChildren(p&&projectHash?h('p',{class:'field-doc'},'The selected project, ',h('strong',{text:projectName(p)}),' (private name), is kept in ',h('code',{text:J('projects',projectHash)}),'.'):'');
+    projectPath.replaceChildren(p&&projectHash?h('p',{class:'field-doc'},'The selected project, ',h('strong',{text:projectName(p)}),' (private name), is kept in ',pathCode(J('projects',projectHash)),'.'):'');
     const rows=[
       ['Global settings: stage and recording defaults, motion, music defaults, the setup guide',J('settings.json'),'Settings, Music Studio'],
       ['Each project\u2019s visual identity (Visual Recipe: family, look, tuning, public title)',J('projects','<project>','recipe.json'),'Visual Studio'],
@@ -161,12 +183,12 @@ export default {mount(view,{store:S,player:P,navigate}){
       ['What VS Code captures and shares','VS Code settings resonance.* (user or workspace)','VS Code (Connections shows what it reports)'],
       ['This device: rendering quality, last page, remembered project','This browser\u2019s storage for this address','Settings, This device'],
       ['Previews, the playhead, a recording in progress','This window\u2019s memory only (gone when it closes)','—']];
-    authorities.replaceChildren(...rows.map(([what,where,how])=>h('tr',{},h('td',{text:what}),h('td',{},h('code',{text:where})),h('td',{class:'faint',text:how}))));
+    authorities.replaceChildren(...rows.map(([what,where,how])=>h('tr',{},h('td',{text:what}),h('td',{},pathCode(where)),h('td',{class:'faint',text:how}))));
     erase.replaceChildren(
       h('li',{text:'Stop capture in VS Code (CODE RESONANCE: Stop Code Performance) and stop the receiver (Ctrl+C where npm start runs).'}),
-      h('li',{},'One project: delete its folder, ',h('code',{text:J('projects','<project>','')}),p&&projectHash?' (the selected project\u2019s is shown above).':'.'),
-      h('li',{},'Everything, including the receiver token: delete ',h('code',{text:D()}),'.'),
-      h('li',{},'Also clear the extension\u2019s outbox in VS Code\u2019s global storage (',h('code',{text:'…/globalStorage/zerobandwidth.code-resonance/outbox'}),') and any agent spool in ',h('code',{text:J('spool','')}),'.'),
+      h('li',{},'One project: delete its folder, ',pathCode(J('projects','<project>','')),p&&projectHash?' (the selected project\u2019s is shown above).':'.'),
+      h('li',{},'Everything, including the receiver token: delete ',pathCode(D()),'.'),
+      h('li',{},'Also clear the extension\u2019s outbox in VS Code\u2019s global storage (',pathCode('…/globalStorage/zerobandwidth.code-resonance/outbox'),') and any agent spool in ',pathCode(J('spool','')),'.'),
       h('li',{text:'This browser: use Reset this device\u2019s preferences above, or clear this site\u2019s data in the browser.'}));
   }
   function detect(){
