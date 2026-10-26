@@ -29,8 +29,10 @@ the whole file, so the player finishes and saves the recording at that moment an
 1. **Picture.** After each presented frame the player draws it into one player-owned 2D canvas: the built-in worlds'
    canvases (world and labels), or the bitmap a visual pack's worker composited (world and labels) and returned with the
    frame's acknowledgement. Pack isolation is unchanged: the player receives pixels, never pack code or pack access.
-2. **Capture.** That canvas is captured with `captureStream(30)`: a video frame each time it changes, at most 30 per
-   second, timestamped at capture.
+2. **Capture.** That canvas is captured with `captureStream()`: a video frame each time it changes, timestamped at
+   capture. The player draws it at most 30 times a second (every presented frame when it presents fewer). Chromium's
+   `captureStream(30)` kept only every other frame of a canvas drawn from `requestAnimationFrame`, whatever the rate
+   (3 of 6 frames a second on a software renderer).
 3. **Sound.** The music's own output (a `MediaStreamAudioDestinationNode` on the same audio graph the speakers get), so
    the recording has exactly the music you hear, with no second clock. Each recording takes its own clone of the track.
 4. **Encoding.** `MediaRecorder` muxes both tracks into WebM, using each track's capture timestamps.

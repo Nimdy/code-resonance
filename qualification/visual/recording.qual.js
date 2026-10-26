@@ -101,7 +101,8 @@ function verify(label,rec,{seconds,sync=true,minChanging=.3,gateQuality=true}){
   // The file holds what the player presented: its frame rate is the compositor's (one captured frame per frame drawn).
   // Full runs: the file follows what the player presented. Quick runs (CI's software renderer, where copying a
   // main-thread WebGL frame starves the capture) check the mechanism: a steady stream with no long gaps.
-  const drawn=rec.result.frames/(rec.result.durationMs/1000);
+  // The player's own rate (frames it presented to the recorder), not the frames the recorder kept (capped at 30 a second).
+  const drawn=(rec.result.presented??rec.result.frames)/(rec.result.durationMs/1000);
   // Quick: after the first second, a gap is judged against the stream's own rate (a software renderer may present a few
   // frames a second); a start-up gap is reported, not judged. Full runs allow no gap anywhere.
   // (A broken capture shows gaps of seconds or no frames; a loaded CI machine shows hitches of a few hundred ms.)

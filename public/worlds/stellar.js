@@ -334,8 +334,9 @@ export function createFamily(ctx){
   const galRT=keep(new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));bgU.uGalTex.value=galRT.texture;
   function renderGalaxy(q){const [w,h]=ctx.pipeline.size,dv=q>=2?4:3,gw=Math.max(1,Math.ceil(w/dv)),gh=Math.max(1,Math.ceil(h/dv));if(galRT.width!==gw||galRT.height!==gh)galRT.setSize(gw,gh);
     // The face-on gas map keeps its texel-to-pixel ratio: 1024 at 1080p, 512 at quality 2, 256 at quality 3 (a machine
-    // without a GPU: the map is most of the frame's cost there), smaller for smaller views.
-    const top=q>=3?256:q>=2?512:1024,ms=Math.max(128,Math.min(top,Math.round(top*h/1080/32)*32));if(mapRT.width!==ms)mapRT.setSize(ms,ms);
+    // without a GPU: the map is most of the frame's cost there), smaller for smaller views (down to 96 at quality 3: a
+    // stage-sized view there renders about 300 lines, and a 128 map was a quarter of its frame on a software renderer).
+    const top=q>=3?256:q>=2?512:1024,ms=Math.max(q>=3?96:128,Math.min(top,Math.round(top*h/1080/32)*32));if(mapRT.width!==ms)mapRT.setSize(ms,ms);
     if(ARR!=='cluster')fsPass(mapMat,mapRT);fsPass(marchMat,galRT);}
   // The deep sky (the world's background(); a shader pack may replace it): the baked nebula and dust layers, dimmed where
   // the view crosses the disc (so background galaxies never show through it), and the unlocked sky layers.
@@ -1218,9 +1219,10 @@ export function createFamily(ctx){
     const exposure=(1+(clamp(num(LT.exposure,1.05),.4,2.2)-1)*.6)*1.08*(sec==='breath'?.96:sec==='lift'?1.03:1)*1.24*(1-.1*st)*(1+Math.min(.05,calm)*inten);
     const tint=new THREE.Vector3(1,1,1);if(sec==='tension')tint.set(1.04,.98,.96);else if(sec==='resolve')tint.set(.97,1.01,1.03);
     tint.lerp(new THREE.Vector3(1.08,.9,.95),st*.6);
-    // Light shafts from the galactic core, and from a star that went nova.
+    // Light shafts from the galactic core, and from a star that went nova. The core's faint shafts are left out at quality
+    // 3 (a machine without a GPU): 24 more taps per pixel in the final pass, an eighth of the frame on a software renderer.
     const rays=[];const core=screenOf(tmp.set(0,0,0));
-    if(core)rays.push({x:core.x,y:core.y,strength:.05*(1-st*.6),color:{x:1,y:.86,z:.68}});
+    if(core&&(i.quality||0)<3)rays.push({x:core.x,y:core.y,strength:.05*(1-st*.6),color:{x:1,y:.86,z:.68}});
     let nova=null;for(const x of novas){const age=(i.tsec-x.at)/sp;if(age>=0&&age<10){const s=[...sys.values()].find(z=>z.index===x.idx&&z.alive);if(s){const p=screenOf(s.pos);if(p)nova={...p,strength:.2*x.amount*Math.exp(-age*.45)*smooth(age/.3)};}}}
     if(nova)rays.push({x:nova.x,y:nova.y,strength:nova.strength*inten,color:{x:.95,y:.97,z:1}});
     return {tonemap:'agx',bloom:Math.min(1.6,num(LT.bloom,1))*.62*(1+.15*i.activity)*(1+(i.unlocks[3]?.level||0)*.08),threshold:clamp(num(LT.bloomThreshold,.7),.6,.85),exposure,

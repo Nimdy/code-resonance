@@ -15,7 +15,7 @@
   function create(){
     const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
     const g=canvas.getContext('2d',{alpha:false});
-    let recorder=null,chunks=[],streams=[],startedAt=0,frames=0,bytes=0,audio=false,mimeType='',finishing=null,lastDraw=0;
+    let recorder=null,chunks=[],streams=[],startedAt=0,frames=0,presented=0,bytes=0,audio=false,mimeType='',finishing=null,lastDraw=0,interval=1000/30,due=0;
     // The recorded sound is watched while recording: a browser can stop delivering it (an audio device lost or reset)
     // while the music still plays. Then the user is told, and the result says so: never a silent file passed as good.
     let watch=null,audioLost=false,lostMs=0,onAudioLost=null,inputs=[];
@@ -57,13 +57,16 @@
         if(recorder)return {ok:false,reason:'Already recording'};
         const s=supported();if(!s.ok)return s;
         g.fillStyle='#000';g.fillRect(0,0,canvas.width,canvas.height);
-        const video=canvas.captureStream(fps);
+        // Captured without a frame rate (a video frame each time the canvas changes); the rate is capped in frame().
+        // Chromium's captureStream(fps) kept only every other frame of a canvas drawn from requestAnimationFrame, at any
+        // rate: 30 of 60, but also 3 of 6 on a machine rendering 6 frames a second (a software renderer).
+        const video=canvas.captureStream();interval=1000/Math.max(1,fps);due=0;
         // The recording owns clones of the music's tracks: stopping it never ends the music output itself (a second
         // recording, or the speakers, keep working).
         const outputs=audioStream?.getAudioTracks().filter(t=>t.readyState==='live')||[];
         inputs=outputs.map(t=>t.clone());audio=inputs.length>0;
         const combined=new MediaStream([...video.getVideoTracks(),...inputs]);
-        streams=[video,combined];chunks=[];bytes=0;frames=0;mimeType=s.mimeType;audioLost=false;lostMs=0;onAudioLost=audioLostListener;
+        streams=[video,combined];chunks=[];bytes=0;frames=0;presented=0;mimeType=s.mimeType;audioLost=false;lostMs=0;onAudioLost=audioLostListener;
         watch=audio&&audioContext?watchAudio(inputs[0],outputs[0],audioContext,musicLevel):null;
         recorder=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:bitsPerSecond,audioBitsPerSecond:160000});
         recorder.ondataavailable=e=>{if(e.data?.size){chunks.push(e.data);bytes+=e.data.size;}};
@@ -71,18 +74,22 @@
           const blob=new Blob(chunks,{type:mimeType}),durationMs=performance.now()-startedAt;
           for(const st of streams)for(const t of st.getTracks())t.stop();
           watch?.stop();watch=null;inputs=[];
-          const result={blob,mimeType,durationMs,frames,bytes:blob.size,audio,audioLost,audioLostMs:lostMs,reason:recorder.stopReason||'stopped'};
+          const result={blob,mimeType,durationMs,frames,presented,bytes:blob.size,audio,audioLost,audioLostMs:lostMs,reason:recorder.stopReason||'stopped'};
           recorder=null;chunks=[];streams=[];resolve(result);};});
         recorder.onerror=()=>{if(recorder?.state==='recording'){recorder.stopReason='recorder error';recorder.stop();}};
         recorder.start(1000);startedAt=performance.now();
         return {ok:true,mimeType,audio,width:canvas.width,height:canvas.height};
       },
-      // One presented frame: draw(g, w, h) paints it. Called once per player frame while recording.
-      frame(draw){if(!recorder||recorder.state!=='recording')return;try{draw(g,canvas.width,canvas.height);frames++;lastDraw=performance.now();}catch(e){console.error('recording frame',e);}},
+      // One presented frame: draw(g, w, h) paints it. Called once per player frame while recording (counted in
+      // `presented`, the player's own rate); recorded frames (`frames`) come at most
+      // `fps` a second (every presented frame when the player is slower), half a 60 Hz frame of slack keeping a 60 Hz
+      // player at exactly every other frame.
+      frame(draw){if(!recorder||recorder.state!=='recording')return;presented++;const now=performance.now();if(now<due-8)return;due=now-due>interval?now+interval:due+interval;
+        try{draw(g,canvas.width,canvas.height);frames++;lastDraw=now;}catch(e){console.error('recording frame',e);}},
       stop(reason='stopped'){if(!recorder)return Promise.resolve(null);if(recorder.state==='recording'){recorder.stopReason=reason;recorder.requestData?.();recorder.stop();}return finishing;},
       // Qualification: end the recorded audio track, as a lost audio device would.
       breakAudio(){for(const t of inputs)t.stop();},
-      stats(){return {active:!!recorder,elapsedMs:recorder?performance.now()-startedAt:0,frames,bytes,chunks:chunks.length,audio,audioLost,mimeType,width:canvas.width,height:canvas.height,lastFrameAgoMs:recorder?performance.now()-lastDraw:null};}
+      stats(){return {active:!!recorder,elapsedMs:recorder?performance.now()-startedAt:0,frames,presented,bytes,chunks:chunks.length,audio,audioLost,mimeType,width:canvas.width,height:canvas.height,lastFrameAgoMs:recorder?performance.now()-lastDraw:null};}
     };
   }
   window.ResonanceRecording={create,supported};
