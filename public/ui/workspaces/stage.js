@@ -44,7 +44,14 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
   const picked=h('div',{class:'stage-picked'});
   const info=h('div',{class:'stage-info'});
   const empty=h('div',{class:'stage-empty-msg'});
-  const shell=h('div',{class:'stage-chrome-ui chrome-pass',dataset:{idle:'false'}},top,recPill,notice,empty,picked,info,bottom);
+  // A title card names the world as the Stage opens or the world changes, then fades (the overlay is never recorded).
+  const card=h('div',{class:'stage-card',role:'status','aria-live':'polite'},h('span',{class:'eyebrow'}),h('strong'),h('span',{class:'stage-card-sub'}));
+  let cardTimer=null,cardKey='';
+  function showCard(){const s=P.state;if(!s.project)return;const fam=s.world==='living'?(s.recipe?.familyName||null):WORLD_NAMES[s.world];if(!fam)return;
+    const key=`${s.project}|${s.world}|${s.recipe?.family||''}`;if(key===cardKey)return;cardKey=key;
+    text(card.children[0],s.world==='living'?'Living world':'Classic stage');text(card.children[1],fam);text(card.children[2],publicName(s.recipe));
+    card.classList.remove('show');void card.offsetWidth;card.classList.add('show');clearTimeout(cardTimer);cardTimer=setTimeout(()=>card.classList.remove('show'),4200);}
+  const shell=h('div',{class:'stage-chrome-ui chrome-pass',dataset:{idle:'false'}},top,recPill,notice,empty,picked,info,card,bottom);
   chrome.append(shell);
   // ---- Behaviour ---------------------------------------------------------------------------------------------
   // A choice made on the Stage is saved for the project, so every window follows; choosing the global default goes back
@@ -115,10 +122,11 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
       h('div',{class:'info-feed'},...P.feed(5).map(e=>h('div',{class:['feed-line',e.kind]},h('span',{class:'num faint',text:clockTime(e.ts)}),h('span',{text:e.label})))),
       h('div',{class:'tiny faint',text:'Interpretation is not proof of correctness. Only hashed identities reach the stage.'})));}
   function renderAll(){renderTitle();renderTransport();renderWorlds();renderSound();renderRecording();renderNotice();renderEmpty();renderPicked();renderInfo();labels.set(P.state.labels);quality.value=P.state.quality;}
-  renderAll();
+  renderAll();showCard();
   let infoAt=0;
   offs.push(store.on(t=>{
     if(t.has('recipe')||t.has('world')||t.has('mode')||t.has('preview')||t.has('selection')||t.has('projects'))renderTitle();
+    if(t.has('recipe')||t.has('world'))showCard();
     if(t.has('position')||t.has('mode'))renderTransport();
     if(t.has('world'))renderWorlds();
     if(t.has('sound'))renderSound();
@@ -130,5 +138,5 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
     if(t.has('quality'))quality.value=P.state.quality;
     if(store.state.ui.stageInfo&&(t.has('feed')||t.has('frame'))&&performance.now()-infoAt>500){infoAt=performance.now();renderInfo();}
   }));
-  return {unmount(){for(const f of offs)f();clearTimeout(idleTimer);document.body.classList.remove('stage-idle');if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});}};
+  return {unmount(){for(const f of offs)f();clearTimeout(idleTimer);clearTimeout(cardTimer);document.body.classList.remove('stage-idle');if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});}};
 }};
