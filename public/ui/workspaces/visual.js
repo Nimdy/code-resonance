@@ -12,10 +12,29 @@
 import {h,text,clear,button,field,select,segmented,slider,parameterControl,humanize,formatParam,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES,publicName,count} from '../format.js';
+// Each built-in family with the reason to choose it: what the code becomes, and what its moments look like.
 const FAMILIES=[
-  {id:'stellar-forge',name:'Stellar Forge',line:'Gravity: star systems around hubs, agents as comets'},
-  {id:'fractal-biosphere',name:'Fractal Biosphere',line:'Growth: organisms of many small parts'},
-  {id:'machine-cathedral',name:'Machine Cathedral',line:'Engineering: an ordered, tested city'}];
+  {id:'fractal-biosphere',name:'Fractal Biosphere',line:'A recursive undersea forest grown from the code',
+    why:'Each subsystem is an organism whose crown branches with its structure. Passing tests bloom, failures blight the branches until they recover, milestones leave flowers that stay. For code that grows organically.'},
+  {id:'stellar-forge',name:'Stellar Forge',line:'A galaxy: subsystems are star systems in its arms',
+    why:'Scale and gravity: modules orbit their hubs, agents cross as comets, failures are storms over the affected worlds, milestones are novae that leave remnants. For large projects of many modules.'},
+  {id:'machine-cathedral',name:'Machine Cathedral',line:'Needle spires on still water under a moon',
+    why:'Order and craft: subsystems are towers, live work lights their windows, links are bridges of light, failures crack the stone and recovery seals it. For tested, engineered code.'}];
+// Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
+// a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
+const CURATED=[
+  {id:'curated:abyss',name:'Bioluminescent abyss',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2}}},
+  {id:'curated:reef',name:'Sunlit reef',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8}}},
+  {id:'curated:deep-field',name:'Deep field',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85}}},
+  {id:'curated:nursery',name:'Stellar nursery',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06]}}},
+  {id:'curated:vigil',name:'Moonlit vigil',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12]}}},
+  {id:'curated:evensong',name:'Amber evensong',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0]}}}];
+// The few parameters that change a world the most, shown first; every other one stays under its group.
+const ESSENTIALS={
+  'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway'],
+  'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed'],
+  'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows'],
+  common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
   {id:'nexus',icon:'globe',line:'Modules and links as a network (Canvas 2D)'},
@@ -503,12 +522,15 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!s||!spec){if(saved)text(paramsSummary,'Loading parameters…');return;}
     const sig=`${s.family}|${s.pack?.id||''}|${Object.keys(spec).join(',')}`;
     if(sig!==paramSig){paramSig=sig;paramFields=new Map();clear(paramsBox);
-      const groups=new Map();
-      for(const [path,sp] of Object.entries(spec)){const g=GROUP_OF[sp.group]||sp.group;if(!groups.has(g))groups.set(g,[]);groups.get(g).push([path,sp]);}
-      const order=[...GROUPS.map(([g])=>g).filter(g=>groups.has(g)),...[...groups.keys()].filter(g=>!GROUPS.some(([x])=>x===g))];
-      if(!openGroups.size)order.slice(0,2).forEach(g=>openGroups.add(g));
+      const groups=new Map(),essential=ESSENTIALS[s.family]?[...ESSENTIALS[s.family],...ESSENTIALS.common].filter(p=>spec[p]):[];
+      if(essential.length)groups.set('essentials',essential.map(p=>[p,spec[p]]));
+      for(const [path,sp] of Object.entries(spec)){if(essential.includes(path))continue;const g=GROUP_OF[sp.group]||sp.group;if(!groups.has(g))groups.set(g,[]);groups.get(g).push([path,sp]);}
+      const order=[...[['essentials'],...GROUPS].map(([g])=>g).filter(g=>groups.has(g)),...[...groups.keys()].filter(g=>g!=='essentials'&&!GROUPS.some(([x])=>x===g))];
+      if(!openGroups.size)(essential.length?['essentials']:order.slice(0,2)).forEach(g=>openGroups.add(g));
       for(const g of order){
         const fields=groups.get(g).map(([path,sp])=>paramField(path,sp,s));
+        if(g==='essentials'){paramsBox.append(disclosure({summary:`Essentials  ·  ${fields.length}`,open:openGroups.has(g),onToggle:o=>o?openGroups.add(g):openGroups.delete(g)},
+          h('p',{class:'faint small vs-essentials-note',text:'The few parameters that change this world the most. Everything else is in the groups below.'}),...fields));continue;}
         paramsBox.append(disclosure({summary:`${GROUPS.find(([x])=>x===g)?.[1]||humanize(g)}  ·  ${groups.get(g).length}`,open:openGroups.has(g),onToggle:o=>o?openGroups.add(g):openGroups.delete(g)},...fields));
       }
     }
@@ -579,11 +601,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(label)[...browser.querySelectorAll('button')].find(b=>(b.getAttribute('aria-label')||b.textContent)===label)?.focus({preventScroll:true});
   }
   // A card: the picture (state chips over it) and the name; the whole card is one button.
-  function card({id,title,line,media,pills=[],onChoose,active=false,disabled=false,choose='Preview',match=false}){
+  function card({id,title,line,why=null,media,pills=[],onChoose,active=false,disabled=false,choose='Preview',match=false}){
     const b=h('button',{type:'button',class:'vs-card-main',disabled,'aria-pressed':String(active),'aria-label':`${choose} ${title}`,onClick:onChoose},
       h('span',{class:'vs-thumb'},media,pills.length?h('span',{class:'vs-chips'},...pills):null,
         match?h('span',{class:'vs-match',title:'The code\'s match: the family this project\'s code scores highest for (the automatic choice)'},icon('star'),h('span',{class:'visually-hidden',text:'The code\'s match'})):null),
-      h('span',{class:'vs-card-text'},h('strong',{text:title}),h('span',{class:'vs-card-line',text:line})));
+      h('span',{class:'vs-card-text'},h('strong',{text:title}),h('span',{class:'vs-card-line',text:line}),why?h('span',{class:'vs-card-why',text:why}):null));
     return h('div',{class:['vs-card',active?'active':''],role:'listitem',dataset:{card:id}},b);
   }
   const tile=(ic,caption,kind='')=>h('span',{class:'vs-thumb-media'},h('span',{class:['vs-thumb-tile',kind]},icon(ic)),h('span',{class:'vs-thumb-cap',text:caption}));
@@ -602,7 +624,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     browserActions.append(button({label:'Visual Packs',icon:'packs',size:'sm',kind:'ghost',onClick:()=>navigate('packs')}));
     for(const f of FAMILIES){
       const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:familyName(f.id),line:f.line,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),
+      cards.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
         match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
     }
@@ -637,19 +659,21 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     note('Reusable on every project. Previewing one changes nothing until you apply it.');
     const saveBtn=button({label:'Save as preset',icon:'save',size:'sm',id:'vsSavePreset',disabled:!saved||pending(),title:pending()?'Apply or cancel the preview first: a preset records the saved identity':'Save this project\'s saved identity as a reusable preset',onClick:()=>savePresetDialog()});
     browserActions.append(saveBtn);
-    if(!S.state.presets){cards.append(h('p',{class:'faint small vs-cards-empty',text:S.state.errors?.presets?`Presets could not be loaded: ${S.state.errors.presets}`:'Loading presets…'}));return;}
-    if(!list.length){cards.append(h('div',{class:'vs-cards-empty'},h('p',{class:'small muted',text:'No visual presets yet. Save the identity you like as a preset to reuse it on other projects.'})));return;}
-    for(const p of list){
+    const presetCard=(p,curated)=>{
       const x=p.payload||{},n=Object.keys(x.tuning||{}).length,err=presetErrors.get(p.id),prev=presetPreview===p.id;
       const summary=[x.family?familyName(x.family):'Automatic family',x.look?(packOf(x.look)?.name||x.look):null,n?count(n,'parameter'):null,x.overrides?.intensity!==undefined&&x.overrides.intensity!==1?`Spectacle ${pct(x.overrides.intensity)}`:null].filter(Boolean).join(' · ');
-      cards.append(h('div',{class:['vs-card','preset',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
-        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon('star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary}))),
+      cards.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
+        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary}))),
         err?h('div',{class:'vs-error small',text:err}):null,
-        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):null,h('span',{class:'grow'}),
+        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):curated?pill('Curated','plain',{plain:true,title:'Built in and read-only: preview it, then apply or save your own'}):null,h('span',{class:'grow'}),
           button({label:'Preview',size:'sm',kind:'outline',icon:'eye',attrs:{'aria-label':`Preview the preset ${p.name}`},onClick:()=>previewPreset(p)}),
-          button({icon:'doc',size:'sm',kind:'ghost',title:'Rename',attrs:{'aria-label':`Rename the preset ${p.name}`},onClick:()=>renamePreset(p)}),
-          button({icon:'trash',size:'sm',kind:'ghost',title:'Delete',attrs:{'aria-label':`Delete the preset ${p.name}`},onClick:()=>deletePreset(p)}))));
-    }
+          curated?null:button({icon:'doc',size:'sm',kind:'ghost',title:'Rename',attrs:{'aria-label':`Rename the preset ${p.name}`},onClick:()=>renamePreset(p)}),
+          curated?null:button({icon:'trash',size:'sm',kind:'ghost',title:'Delete',attrs:{'aria-label':`Delete the preset ${p.name}`},onClick:()=>deletePreset(p)}))));
+    };
+    for(const p of CURATED)presetCard(p,true);
+    if(!S.state.presets){cards.append(h('p',{class:'faint small vs-cards-empty',text:S.state.errors?.presets?`Presets could not be loaded: ${S.state.errors.presets}`:'Loading presets…'}));return;}
+    if(!list.length){cards.append(h('div',{class:'vs-cards-empty'},h('p',{class:'small muted',text:'No saved presets yet. Save the identity you like as a preset to reuse it on other projects.'})));return;}
+    for(const p of list)presetCard(p,false);
   }
   function renderAll(){
     if(!alive)return;
