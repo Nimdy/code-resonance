@@ -124,9 +124,11 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     info=frameInfo(t,dt,phase);stale=false;
     world.update(info);
     const goal=world.cameraGoal(info);rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
+    // updateMs is the CPU time of update and the camera (docs/packs/performance.md); afterCamera's camera-dependent
+    // offscreen passes are drawing and count as draw time.
+    const drawn=performance.now();
     world.afterCamera?.(info);
     if(ext)updateExtension(info);
-    const drawn=performance.now();
     let query=null;if(timer){gpuPoll();if(queries.length<6){query=gl.createQuery();gl.beginQuery(timer.TIME_ELAPSED_EXT,query);}}
     const backgroundMaterial=ext?.background||(world.background?world.background(info):null);
     const bg=backgroundMaterial?pipeline.renderBackground(backgroundMaterial):null;

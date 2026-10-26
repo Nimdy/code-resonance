@@ -186,11 +186,22 @@ export function createFamily(ctx){
   //  2 a nursery (a dark globule collapsing onto a protostar, blown open into a bright bubble when the star ignites),
   //  3 a calm glow (serene light in the gas around a system that recovered).
   const MEV=6,mevU={uMx:{value:Array.from({length:MEV},()=>new THREE.Vector4())},uMy:{value:Array.from({length:MEV},()=>new THREE.Vector4())},uMc:{value:Array.from({length:MEV},()=>new THREE.Vector3())}};
-  const mapMat=keep(new THREE.ShaderMaterial({uniforms:{...galU,...brU,...mevU,uMap:{value:null},uFlowT:{value:0},uFlowK:{value:.2},uKnotT:{value:0},uMV:{value:0},uCk:{value:new THREE.Vector4(-9,0,.06,0)}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
+  // The project's systems in the disc: each subsystem lights an emission knot of its own colour in the gas (sized by the
+  // subsystem, a little brighter while work is live there), clears a bubble in the dust around its star, and its
+  // planets' orbits leave a faint dusty ring. uSysM: x, z (galaxy-local, per radius), outer orbit radius, role + strength.
+  // The lasting remnants live here too: limb-brightened shells of a nova in the disc, centred on the star that earned them.
+  const RM=8,ROLES=['interface','services','model','logic','tests','core'];
+  const sysU={uSysM:{value:Array.from({length:MAX_SYS},()=>new THREE.Vector4())},uSysN:{value:0},uRoleC:{value:ROLES.map(r=>new THREE.Color(ROLE_COLOR[r]).lerp(pal.primary,.08))},
+    uRmA:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmB:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmN:{value:0},
+    uRmC1:{value:new THREE.Color()},uRmC2:{value:new THREE.Color()},uRmC3:{value:new THREE.Color()}};
+  const mapMat=keep(new THREE.ShaderMaterial({uniforms:{...galU,...brU,...mevU,...sysU,uMap:{value:null},uFlowT:{value:0},uFlowK:{value:.2},uKnotT:{value:0},uMV:{value:0},uCk:{value:new THREE.Vector4(-9,0,.06,0)}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
     fragmentShader:`${GN}${GALAXY}varying vec2 vUv;uniform float uFlowT,uFlowK,uKnotT,uMV;uniform vec4 uCk;
       uniform vec2 uBrP[${NB*BK}];uniform vec4 uBrI[${NB}],uBrX[${NB}],uBrB[${NB}];uniform vec3 uBrC0[${NB}],uBrC1[${NB}];
       uniform vec4 uMx[${MEV}],uMy[${MEV}];uniform vec3 uMc[${MEV}];
+      uniform vec4 uSysM[${MAX_SYS}];uniform int uSysN;uniform vec3 uRoleC[${ROLES.length}];
+      uniform vec4 uRmA[${RM}],uRmB[${RM}];uniform int uRmN;uniform vec3 uRmC1,uRmC2,uRmC3;
       vec2 rot2(vec2 v,float a){float c=cos(a),s=sin(a);return vec2(c*v.x-s*v.y,s*v.x+c*v.y);}
+      float gl3(vec3 c){return dot(c,vec3(.3,.5,.2));}
       // storm pillars: dark dust in a ring around the star, turbulent, broken into fingers pointing at it
       float stormD(float r,float ph,float sd,float dis){float big=gn(vec3(cos(ph)*1.1,sin(ph)*1.1,sd*.37));ph+=1.2*gn(vec3(r*1.6,sd,uMV*.03));vec3 pq=vec3(cos(ph)*2.,sin(ph)*2.,r*2.2-uMV*.05)+vec3(sd,sd*.7,0.);
         float f=fbm(pq,3)+.35*gn(vec3(cos(ph)*6.,sin(ph)*6.,r*5.-uMV*.1+sd))+big*.6;
@@ -248,6 +259,27 @@ export function createFamily(ctx){
           e+=col*pr*fl*grow*ends*I.y*(1.+pulse*5.)+col*exp(-dm*dm/(w*w*4.))*grow*ends*I.y*.03*(1.+pulse*3.);
           dust+=exp(-sq((dm-w*1.1)/(w*.4)))*.5*I.y*grow*ends*fl;}
         dust*=.3+.7*smoothstep(-.35,.3,nz);e*=uGal3.x;
+        // the project's systems: an emission knot in the subsystem's colour, a bubble cleared in the dust, a dusty orbit ring
+        for(int k=0;k<${MAX_SYS};k++){if(k>=uSysN)break;vec4 S=uSysM[k];if(S.z<=0.)continue;vec2 rel=(n-S.xy)/S.z;float d2=dot(rel,rel);if(d2>4.)continue;
+          float sk=fract(S.w)*1.6;vec3 rc=uRoleC[int(S.w)];float d=sqrt(d2);float fk=float(k)*1.37;
+          float tex=smoothstep(-.55,.6,gn(vec3(rel*2.6,fk+uKnotT*.6))+.5*gn(vec3(rel*6.,fk*2.+uKnotT))+.35*nz);
+          float knot=exp(-d2*16.)*(.55+.6*tex)+exp(-d2*4.5)*tex*.12;
+          float ring=exp(-sq((d-1.-.05*gn(vec3(rel*3.,fk)))/.09))*smoothstep(-.3,.4,gn(vec3(rel*1.7,fk+5.)))*.09;
+          vec3 kc=mix(rc*rc*1.25,uCHII,.18);
+          e+=kc*sk*(knot*1.25+ring);
+          dust*=1.-.85*exp(-d2*2.2);}
+        // lasting remnants: limb-brightened shells (broken filaments, H-alpha rose, refactor violet, a thin teal inner edge)
+        for(int k=0;k<${RM};k++){if(k>=uRmN)break;vec4 A=uRmA[k],B=uRmB[k];vec2 rel=(n-A.xy)/A.z;float rho=length(rel);if(rho>1.3)continue;
+          vec2 cs=rel/max(rho,1e-4);float sd=B.y*17.;vec3 hc=B.x<0.?uRmC3:uRmC1;float ly=abs(B.x);
+          float rr=rho*(1.+.05*gn(vec3(cs*1.8,sd))+.018*gn(vec3(cs*6.,sd+3.)));
+          for(int l=0;l<2;l++){float fl=float(l);if(fl>=ly)break;float x=rr/(1.-fl*.27);
+            float w=.09;float lb=(sqrt(max(0.,1.-x*x))-sqrt(max(0.,sq(1.-w)-x*x)))/sqrt(1.-sq(1.-w));lb=pow(lb,2.2)*smoothstep(1.004,.99,x);
+            float brk=.25+.75*smoothstep(-.3,.3,gn(vec3(cs*1.5,sd+fl*5.)));
+            float fil=pow(max(0.,1.-abs(gn(vec3(cs*4.5,x*7.+sd+fl*3.)))*2.6),4.);
+            float oiii=exp(-sq((x-.87)/.03))*brk*(.5+.5*fil);
+            vec3 hl=mix(hc,vec3(1.,.84,.88),.3*lb);
+            e+=((hl*lb*brk*(.5+1.*fil)+hc*smoothstep(1.,.35,x)*.07)*(1.-fl*.4)+uRmC2*oiii*.4)*B.z*(1.+gl3(e)*.6);
+            dust+=exp(-sq((x-1.035)/.03))*.22*brk*B.z;dust*=1.-.45*smoothstep(.98,.6,x)*min(B.z,1.);}}
         for(int k=0;k<${MEV};k++){vec4 Y=uMy[k];if(Y.y<=0.)continue;vec4 X=uMx[k];vec2 rel=n-X.xy;float rho=length(rel);float gl=dot(e,vec3(.3,.5,.2));
           if(Y.x<.5){if(abs(rho-X.z)>X.w*6.)continue;float ring=exp(-sq((rho-X.z)/X.w));float wake=step(rho,X.z)*exp(-(X.z-rho)/(X.w*5.));
             e+=uMc[k]*Y.y*(ring*(gl*1.1+dust*7.+.02)+wake*(gl*.25+dust*1.2));}
@@ -262,35 +294,20 @@ export function createFamily(ctx){
           else{float r=rho/X.z;if(r>2.5)continue;e+=uMc[k]*Y.y*exp(-r*r)*(gl*.9+dust*2.5+.05);}}
         float edge=1.-smoothstep(1.12,1.32,q);gl_FragColor=vec4(max(e,0.)*edge,dust*edge);}`}));
   // ---- The galaxy raymarched through its disc slab (third resolution): rgb light, a transmittance ------------------
-  // Besides the disc, the march carries the lasting remnants: limb-brightened shells of broken filaments, one per
-  // system that earned them (the transient moments are drawn into the gas map above).
-  const RM=8;
+  // (The moments and the lasting remnant shells are drawn into the gas map above, so they lie in the disc.)
   const bgU={...common,...galU,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uFar:{value:skyFar.texture},uNear:{value:skyNear.texture},uSkyRot:{value:0},
     uQ:{value:0},uUnlock:{value:new THREE.Vector4()},uGain:{value:2.1},uBulge:{value:1},uStorm:{value:0},uGalTex:{value:null},
-    uRmA:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmB:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmN:{value:0},
-    uRmC1:{value:new THREE.Color()},uRmC2:{value:new THREE.Color()},uRmC3:{value:new THREE.Color()}};
+    uRmA:sysU.uRmA,uRmB:sysU.uRmB,uRmN:sysU.uRmN,uRmC1:sysU.uRmC1,uRmC2:sysU.uRmC2,uRmC3:sysU.uRmC3};
   const marchMat=keep(new THREE.ShaderMaterial({uniforms:bgU,vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
     fragmentShader:`${GN}${GALAXY}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam;uniform float uQ,uV;
       uniform vec4 uRmA[${RM}],uRmB[${RM}];uniform int uRmN;uniform vec3 uRmC1,uRmC2,uRmC3;
-      // Thin shells (light echo fronts, remnant filaments) are far thinner than a march step: they are intersected
-      // analytically; each crossing is lit with the limb brightening of its path length and composited at its depth.
-      float hT[24];vec3 hE[24];int nh=0;
-      vec2 shell(vec3 o,vec3 d,vec3 c,float r,float sq){vec3 s=vec3(1.,1./sq,1.);vec3 oo=(o-c)*s,dd=d*s;float a=dot(dd,dd),b=dot(oo,dd),k=dot(oo,oo)-r*r,h=b*b-a*k;if(h<0.)return vec2(-1.);h=sqrt(h);return vec2((-b-h)/a,(-b+h)/a);}
       void main(){vec4 pp=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(pp.xyz/pp.w-uCam);
         vec3 o=rotY(uCam,-uGal.y),dir=rotY(d,-uGal.y);float R=uGal.x;bool cl=uGal2.w>.5&&uGal2.w<1.5;
         float Yb=R*${SLAB.toFixed(4)};float Y=cl?R*.9:Yb,RC=cl?R*1.1:R*${MAPR.toFixed(2)};float t0=0.,t1=-1.;
         if(abs(dir.y)<1e-5){if(abs(o.y)<Y){t0=0.;t1=1e6;}}else{float ta=(Y-o.y)/dir.y,tb=(-Y-o.y)/dir.y;t0=max(min(ta,tb),0.);t1=max(ta,tb);}
         if(cl){float b=dot(o,dir),c=dot(o,o)-RC*RC,h=b*b-c;if(h<0.)t1=-1.;else{h=sqrt(h);t0=max(t0,-b-h);t1=min(t1,-b+h);}}
         else{vec2 o2=o.xz,d2=dir.xz;float a=dot(d2,d2),b=dot(o2,d2),c=dot(o2,o2)-RC*RC,h=b*b-a*c;if(a<1e-8){if(c>0.)t1=-1.;}else if(h<0.)t1=-1.;else{h=sqrt(h);t0=max(t0,(-b-h)/a);t1=min(t1,(-b+h)/a);}}
-        // remnant shells (lasting): broken limb-brightened filaments, Halpha rose (refactor: violet) with a thin teal inner edge
-        for(int k=0;k<${RM};k++){if(k>=uRmN)break;vec4 A=uRmA[k],B=uRmB[k];float ly=min(abs(B.x),2.);vec3 hc=B.x<0.?uRmC3:uRmC1;
-          for(int l=0;l<2;l++){float fl=float(l);if(fl>=ly)break;float rk=A.w*(1.-fl*.24);vec2 th=shell(o,dir,A.xyz,rk,B.w);if(th.y<0.)continue;
-            for(int e=0;e<2;e++){float t=e==0?th.x:th.y;if(t<0.||nh>=24)continue;vec3 p=o+dir*t;vec3 rel=(p-A.xyz)*vec3(1.,1./B.w,1.);vec3 dr=rel/rk;
-              vec3 g=normalize((p-A.xyz)*vec3(1.,1./(B.w*B.w),1.));float lim=min(1./max(abs(dot(g,dir)),.06),9.);
-              float f=pow(max(0.,1.-abs(gn(dr*(2.1+fl*.8)+vec3(B.y*9.+fl*5.)))*4.),5.)+.12*pow(max(0.,1.-abs(gn(dr*4.+vec3(B.y*4.)))*4.),6.);
-              float brk=smoothstep(.05,.4,gn(dr*1.2+vec3(B.y*13.+fl)));
-              hT[nh]=t;hE[nh]=(hc*(f*brk*(1.-fl*.3)+.03*(.5+.5*brk))+uRmC2*pow(max(0.,1.-abs(gn(dr*2.6+vec3(B.y*7.+2.)))*4.),6.)*brk*.35)*B.z*lim*rk*.06/R;nh++;}}}
-        vec3 L=vec3(0.);float T=1.;float Ts[44];float N=1.,ds=1.,j=0.;
+        vec3 L=vec3(0.);float T=1.;float N=1.,ds=1.,j=0.;
         if(t1>t0){N=uQ>1.5?16.:clamp((t1-t0)/(2.*Y)*5.5,26.,44.);ds=(t1-t0)/N;j=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));float dn=ds/R;
           for(int i=0;i<44;i++){if(float(i)>=N)break;float tc=t0+(float(i)+j)*ds;vec3 p=o+dir*tc;vec3 em;float du,gl;
             if(cl){vec3 n=p/R;float r3=length(n*vec3(1.,1.35,1.));float nz=gn(n*5.+uGalSeed);em=mix(mix(uCOld,vec3(1.,.95,.9),.25),uCYoung,.1+.25*nz)*(exp(-r3*9.)*2.2+exp(-r3*3.2)*.22)*(.85+.3*nz)*uGal3.x;du=0.;gl=.3;}
@@ -300,36 +317,52 @@ export function createFamily(ctx){
               float wn=smoothstep(R*1.5,R*.7,tc);if(wn>0.&&uQ<1.5){float fq=16./R*clamp(R*.8/max(tc,.1),1.,4.5);float nd=gn(p*fq+uGalSeed*3.)+.5*gn(p*fq*2.3+uGalSeed.zxy);
                 gas*=mix(1.,.45+1.1*smoothstep(-.45,.5,nd),wn);du*=mix(1.,.35+1.3*smoothstep(-.3,.5,nd+.1),wn);}
               em=gas+old;gl=dot(m.rgb,vec3(.3,.5,.2))*ve;}
-            L+=T*em*dn;T*=exp(-du*min(uGal3.y,1.)*70.*dn-dn*.15);Ts[i]=T;}}
-        for(int h=0;h<24;h++){if(h>=nh)break;float t=hT[h];float Th=1.;if(t1>t0&&t>t0){int ih=int(clamp(floor((t-t0)/ds-j),-1.,N-1.));Th=ih<0?1.:Ts[ih];}L+=hE[h]*Th;}
+            L+=T*em*dn;T*=exp(-du*min(uGal3.y,1.)*70.*dn-dn*.15);}}
+        // a cluster has no disc: its remnants are spherical shells around their stars, seen limb-brightened (a ring on the sky)
+        if(cl)for(int k=0;k<${RM};k++){if(k>=uRmN)break;vec4 A=uRmA[k],B=uRmB[k];vec3 c=vec3(A.x,A.w,A.y)*R;float rk=A.z*R;vec3 oc=o-c;float tb=-dot(oc,dir);if(tb<0.)continue;
+          vec3 cp=oc+dir*tb;float x=length(cp)/rk;if(x>1.05)continue;vec3 cs=cp/max(length(cp),1e-4);float sd=B.y*17.;vec3 hc=B.x<0.?uRmC3:uRmC1;
+          float w=.09;float lb=(sqrt(max(0.,1.-x*x))-sqrt(max(0.,sq(1.-w)-x*x)))/sqrt(1.-sq(1.-w));lb=pow(lb,2.2)*smoothstep(1.004,.99,x);
+          float brk=.25+.75*smoothstep(-.3,.3,gn(cs*1.5+vec3(sd)));float fil=pow(max(0.,1.-abs(gn(cs*4.5+vec3(x*7.+sd)))*2.6),4.);
+          L+=(hc*lb*brk*(.5+fil)+uRmC2*exp(-sq((x-.87)/.03))*brk*.4)*B.z*.5;}
         gl_FragColor=vec4(L,T);}`}));
   const galRT=keep(new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));bgU.uGalTex.value=galRT.texture;
   function renderGalaxy(q){const [w,h]=ctx.pipeline.size,dv=q>=2?4:3,gw=Math.max(1,Math.ceil(w/dv)),gh=Math.max(1,Math.ceil(h/dv));if(galRT.width!==gw||galRT.height!==gh)galRT.setSize(gw,gh);
     const ms=q>=2?512:1024;if(mapRT.width!==ms)mapRT.setSize(ms,ms);
     if(ARR!=='cluster')fsPass(mapMat,mapRT);fsPass(marchMat,galRT);}
-  // The composite: the march upsampled, the deep sky behind it (dimmed where the view crosses the disc, so background
-  // galaxies never show through it), and the bulge: a de Vaucouleurs cusp with a short bar, warm gold-white, whose
-  // nucleus is the brightest light in the frame.
-  const background_=keep(new THREE.ShaderMaterial({uniforms:bgU,vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
-    fragmentShader:`${GN}${GALAXY}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam;uniform samplerCube uFar,uNear;uniform sampler2D uGalTex;uniform float uV,uSkyRot,uGain,uBulge,uBeat,uStorm,uBreath;uniform vec4 uUnlock;
-      float bulge(vec3 o,vec3 d,vec3 c,float s,float bar){vec3 oc=o-c;float tb=max(0.,-dot(oc,d));vec3 cp=oc+d*tb;float ba=uGal.w;
-        vec2 bx=vec2(dot(cp.xz,vec2(cos(ba),sin(ba))),dot(cp.xz,vec2(-sin(ba),cos(ba))));
-        float x=sqrt((bx.x*bx.x/(1.+bar*1.6)+bx.y*bx.y+cp.y*cp.y*1.5)/(s*s));float ser=exp(-7.67*(pow(max(x,.003),.25)-1.));
-        float amp=clamp(dot(oc,oc)/(s*s*100.),.1,1.);return (ser*.05*exp(-x*x/2.5)+exp(-dot(cp,cp)/(s*s*.0012))*5.)*amp;}
+  // The deep sky (the world's background(); a shader pack may replace it): the baked nebula and dust layers, dimmed where
+  // the view crosses the disc (so background galaxies never show through it), and the unlocked sky layers.
+  const SKY_FS=`${GN}${GALAXY}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam;uniform samplerCube uFar,uNear;uniform float uV,uSkyRot,uBeat,uStorm;uniform vec4 uUnlock;
       void main(){vec4 pp=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(pp.xyz/pp.w-uCam);
         vec3 sky=textureCube(uFar,rotY(d,uSkyRot)).rgb;vec4 nr=textureCube(uNear,rotY(d,uSkyRot*1.3));sky=sky*exp(-nr.a)+nr.rgb;
         if(uUnlock.x>0.){float veil=uUnlock.x*smoothstep(.15,.7,gn(vec3(d.x*3.,d.y*8.-uV*.04,d.z*3.)))*exp(-sq(d.y*2.5-.6));sky+=mix(uCHII,vec3(.4,1.,.75),.6)*veil*.18;}
         if(uUnlock.z>0.){vec3 pd=normalize(vec3(.62,.32,-.71));float cpd=dot(d,pd);if(cpd>.8){float pa=acos(clamp(cpd,-1.,1.));vec3 ax=normalize(cross(pd,vec3(0.,1.,0.)));
           float beam=pow(abs(dot(normalize(d-pd*cpd+1e-5),rotY(ax,uV*2.4))),40.)*exp(-pa*9.);sky+=uUnlock.z*(vec3(.7,.85,1.)*(exp(-pa*160.)*(1.2+.8*uBeat)+beam*.5));}}
-        vec2 gt=vec2(.75)/vec2(textureSize(uGalTex,0));vec4 g=texture2D(uGalTex,vUv)*.36+(texture2D(uGalTex,vUv+gt)+texture2D(uGalTex,vUv-gt)+texture2D(uGalTex,vUv+vec2(gt.x,-gt.y))+texture2D(uGalTex,vUv-vec2(gt.x,-gt.y)))*.16;
         vec3 o=rotY(uCam,-uGal.y),dir=rotY(d,-uGal.y);float R=uGal.x;
         if(o.y*dir.y<0.){float th=-o.y/dir.y;sky*=mix(.12,1.,smoothstep(R*.8,R*1.3,length(o.xz+dir.xz*th)));}
+        float l=dot(sky,vec3(.3,.5,.2));sky=mix(sky,vec3(l)*vec3(1.,.84,.88),uStorm*.25)*(1.-uStorm*.08);
+        gl_FragColor=vec4(sky,1.);}`;
+  const background_=keep(new THREE.ShaderMaterial({uniforms:bgU,vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,fragmentShader:SKY_FS}));
+  // The galaxy over whatever sky is behind it (drawn first in the scene, so it never depends on the background): the
+  // march upsampled, and the bulge, a de Vaucouleurs cusp with a short bar, warm gold-white, whose nucleus is the
+  // brightest light in the frame. Premultiplied: light + the backdrop x the galaxy's transmittance.
+  const galCompMat=keep(new THREE.ShaderMaterial({uniforms:bgU,vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,transparent:false,
+    blending:THREE.CustomBlending,blendEquation:THREE.AddEquation,blendSrc:THREE.OneFactor,blendDst:THREE.SrcAlphaFactor,blendSrcAlpha:THREE.ZeroFactor,blendDstAlpha:THREE.OneFactor,
+    fragmentShader:`${GN}${GALAXY}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam;uniform sampler2D uGalTex;uniform float uGain,uBulge,uStorm,uBreath,uBeat;
+      float bulge(vec3 o,vec3 d,vec3 c,float s,float bar){vec3 oc=o-c;float tb=max(0.,-dot(oc,d));vec3 cp=oc+d*tb;float ba=uGal.w;
+        vec2 bx=vec2(dot(cp.xz,vec2(cos(ba),sin(ba))),dot(cp.xz,vec2(-sin(ba),cos(ba))));
+        float x=sqrt((bx.x*bx.x/(1.+bar*1.6)+bx.y*bx.y+cp.y*cp.y*1.5)/(s*s));float ser=exp(-7.67*(pow(max(x,.003),.25)-1.));
+        float amp=clamp(dot(oc,oc)/(s*s*100.),.1,1.);return (ser*.05*exp(-x*x/2.5)+exp(-dot(cp,cp)/(s*s*.0012))*5.)*amp;}
+      void main(){vec4 pp=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(pp.xyz/pp.w-uCam);
+        vec2 gt=vec2(.75)/vec2(textureSize(uGalTex,0));vec4 g=texture2D(uGalTex,vUv)*.36+(texture2D(uGalTex,vUv+gt)+texture2D(uGalTex,vUv-gt)+texture2D(uGalTex,vUv+vec2(gt.x,-gt.y))+texture2D(uGalTex,vUv-vec2(gt.x,-gt.y)))*.16;
+        vec3 o=rotY(uCam,-uGal.y),dir=rotY(d,-uGal.y);float R=uGal.x;
         float sb=R*(PROTO>.5?.08:.11);vec3 bl;vec3 gold=vec3(1.,.886,.69);
         if(uGal2.w>2.5){vec3 ax2=vec3(cos(uGal3.w),0.,sin(uGal3.w))*R*.2;bl=mix(uCOld,gold,.6)*(bulge(o,dir,ax2,sb*.8,0.)+bulge(o,dir,-ax2,sb*.8,0.));}
         else bl=(PROTO>.5?mix(gold,uCYoung,.45):mix(uCOld,gold,.75))*bulge(o,dir,vec3(0.),sb,uGal2.w<.5?1.:0.);
-        vec3 col=g.rgb*uGain+sky*g.a+bl*uBulge*uGal3.x*(.06+.94*g.a)*(1.+.05*uBreath);
+        vec3 col=g.rgb*uGain*(1.+.15*uBeat)+bl*uBulge*uGal3.x*(.06+.94*g.a)*(1.+.05*uBreath+.5*uBeat);
         float l=dot(col,vec3(.3,.5,.2));col=mix(col,vec3(l)*vec3(1.,.84,.88),uStorm*.25)*(1.-uStorm*.08);
-        gl_FragColor=vec4(col,1.);}`.replace(/PROTO/g,PROTOSTAR?'1.':'0.')}));
+        gl_FragColor=vec4(col,g.a);}`.replace(/PROTO/g,PROTOSTAR?'1.':'0.')}));
+  // first of all scene objects (opaque list, lowest order): resolved stars and planets are drawn over it, never dimmed by it
+  add(new THREE.Mesh(quad0,galCompMat),-10);
   // ---- The disc sheet: the thin gas and dust of the map rasterised at full resolution in the galactic plane ----------
   // (crisp arms, lanes, feathers and streams at any distance; the march above carries the thick, soft component). It
   // dims what lies behind it by its dust (blend: emission + destination x transmittance) and gains optical depth at
@@ -338,7 +371,7 @@ export function createFamily(ctx){
   const sheetMat=keep(new THREE.ShaderMaterial({uniforms:{...common,...galU,uSheet:{value:new THREE.Vector2(1,1)}},transparent:true,depthWrite:false,depthTest:false,side:THREE.DoubleSide,
     blending:THREE.CustomBlending,blendEquation:THREE.AddEquation,blendSrc:THREE.OneFactor,blendDst:THREE.SrcAlphaFactor,blendSrcAlpha:THREE.ZeroFactor,blendDstAlpha:THREE.OneFactor,
     vertexShader:`${GN}${GALAXY}varying vec3 vL,vW;void main(){float R=uGal.x;vec3 lp=position*R*${MAPR.toFixed(2)};vL=lp;vW=rotY(lp,uGal.y);gl_Position=projectionMatrix*viewMatrix*vec4(vW,1.);}`,
-    fragmentShader:`${GN}${GALAXY}uniform vec2 uSheet;varying vec3 vL,vW;
+    fragmentShader:`${GN}${GALAXY}uniform vec2 uSheet;uniform float uBeat;varying vec3 vL,vW;
       void main(){float R=uGal.x;float q=length(vL.xz)/R;if(q>${MAPR.toFixed(2)})discard;vec4 m=galMap(vL.xz);vec3 v=cameraPosition-vW;float dist=length(v);v/=dist;
         float path=min(1./max(abs(v.y),.04),9.);
         // close to the camera the map is magnified: a finer octave of cloud structure takes over
@@ -350,7 +383,7 @@ export function createFamily(ctx){
         // the far half of the bulge stands above the plane: dust behind the centre does not dim it
         float cb=(1.-smoothstep(.06,.3,q))*smoothstep(-.25,.25,dot(normalize(-vL),rotY(v,-uGal.y)));
         T=mix(T,1.,cb*.85);
-        gl_FragColor=vec4(e*uSheet.x*(.45+.12*min(path,6.))*T,T);}`}));
+        gl_FragColor=vec4(e*uSheet.x*(.45+.12*min(path,6.))*(1.+.15*uBeat)*T,T);}`}));
   const sheet=new THREE.Mesh(sheetGeo,sheetMat);add(sheet,-2.5);sheet.visible=ARR!=='cluster';
   // ---- Galaxy stars (GPU points following the galaxy's structure) and the distant sky -----------------------------
   // A steep brightness law: most stars blend into unresolved light, a few bright ones stand out. HII regions are soft
@@ -422,14 +455,14 @@ export function createFamily(ctx){
   // ---- Stars (one per subsystem): photosphere (resolved only up close), point-spread glow and corona ----------------
   const stormC=mix3(pal.warning,new THREE.Color('#c0123c'),.55),stormV=mix3(stormC,new THREE.Color('#8a2bff'),.35);
   const starBase=keep(new THREE.IcosahedronGeometry(1,4));
-  const stars=instancedBuffers(starBase,{iStar:4,iStarColor:3,iStarFx:4},16);
+  const stars=instancedBuffers(starBase,{iStar:4,iStarColor:3,iStarFx:4,iStarB:4},16);
   const starMat=keep(new THREE.ShaderMaterial({uniforms:{...common,uGran:{value:clamp(num(sec.granulation,1),.2,2.2)*clamp(num(mot.convection,1),.2,2.2)},uStressC:{value:stormC}},
     vertexShader:`${SCREEN}attribute vec4 iStar,iStarFx;attribute vec3 iStarColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uSpeed,uBreath;
       varying vec3 vN,vP,vC,vW;varying vec4 vS,vF;
       void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;
         float grow=age<0.?0.:age<2.6?.35+.15*age/2.6:age<3.5?.5+.5*smoothstep(2.6,3.3,age)+.12*sin((age-2.6)*3.5)*(3.5-age):1.;
         float flare=iStar.z>-1e4&&uT>=iStar.z?exp(-(uT-iStar.z)/uSpeed*.8):0.;
-        float r=sys.w*grow*(1.+.05*flare);float px=r*pxPer(sys.xyz);float pd=squeezeS(px);pd=mix(min(pd,12.),pd,iStarFx.y);float vis=smoothstep(7.,11.5,pd)*(1.-iStarFx.w);
+        float r=sys.w*grow*(1.+.05*flare);float px=r*pxPer(sys.xyz);float pd=squeezeS(px);pd=mix(min(pd,5.),pd,iStarFx.y);float vis=smoothstep(7.,11.5,pd)*(1.-iStarFx.w);
         float rv=r*pd/max(px,1e-4)*vis;
         vP=position;vN=normal;vC=iStarColor;vS=vec4(iStar.xyw,age);vF=vec4(flare,iStarFx.yzw);
         vec3 w=sys.xyz+position*rv;vW=w;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
@@ -454,22 +487,32 @@ export function createFamily(ctx){
   const CS=4.2;
   const coronaMat=keep(new THREE.ShaderMaterial({uniforms:{...common,uCorona:{value:clamp(num(sec.corona,.8),0,1.6)},uLoops:{value:clamp(num(sec.loops,4),0,8)},uStressC:{value:stormV}},
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`${SCREEN}attribute vec4 iStar,iStarFx;attribute vec3 iStarColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uSpeed,uPx;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow,vAge,vHalf,vRv,vPP,vVis,vLum,vCor,vNova;
+    vertexShader:`${SCREEN}attribute vec4 iStar,iStarFx,iStarB;attribute vec3 iStarColor;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uSpeed,uPx;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow,vAge,vHalf,vRv,vPP,vVis,vLum,vCor,vNova,vSpk,vSize,vAct,vNear;
       void main(){vec4 sys=uSys[int(iStar.x)];float age=(uT-iStar.y)/uSpeed;vAge=age;vGrow=age<0.?0.:age<2.6?.12+.18*age/2.6:age<4.?1.+2.6*exp(-(age-2.6)*2.2):1.;
         float flare=iStar.z>-1e4&&uT>=iStar.z?exp(-(uT-iStar.z)/uSpeed*.6):0.;vFlash=flare;
-        float r=sys.w*(age<2.6&&age>=0.?.55:1.);float pp=pxPer(sys.xyz);float px=r*pp;float pd=squeezeS(px);pd=mix(min(pd,12.),pd,iStarFx.y);
+        float r=sys.w*(age<2.6&&age>=0.?.55:1.);float pp=pxPer(sys.xyz);float px=r*pp;float pd=squeezeS(px);pd=mix(min(pd,5.),pd,iStarFx.y);
         vVis=smoothstep(7.,11.5,pd)*(1.-iStarFx.w);vCor=smoothstep(5.,13.,pd)*(1.-iStarFx.w);float rv=r*pd/max(px,1e-4);
         float na=(uT-iStarFx.x)/uSpeed;vNova=na>=0.&&na<1.4?exp(-na*3.2)*smoothstep(0.,.06,na):0.;
-        float S=max(rv*${CS.toFixed(1)},(56.+170.*vNova)*uPx/pp);vHalf=S;vRv=rv;vPP=pp;vLum=(.55+.45*sys.w/1.1)*(iStarFx.w>.5?.45:1.);
+        // the beacon's diffraction cross: its length (px at 1080p) follows the subsystem's size, a little longer while work is live
+        vSize=iStarB.x;vAct=iStarB.y;vNear=clamp(sqrt(pp/(40.*uPx)),.85,1.5);vSpk=(16.+50.*vSize*vSize)*(1.+.25*vAct)*(iStarFx.w>.5?.6:1.)*vNear;
+        float S=max(max(rv*${CS.toFixed(1)},(56.+170.*vNova)*uPx/pp),vSpk*2.4*uPx/pp*(1.-vVis));vHalf=S;vRv=rv;vPP=pp;vLum=(.55+.45*sys.w/1.1)*(iStarFx.w>.5?.45:1.);
         vec3 right=vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]),up=vec3(viewMatrix[0][1],viewMatrix[1][1],viewMatrix[2][1]);
         vec3 w=sys.xyz+(right*position.x+up*position.y)*S;vUv=position.xy;vC=iStarColor;vS=vec4(iStar.x,iStar.w,iStarFx.z,0.);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${GN}uniform float uV,uCorona,uLoops,uBreath,uBeat,uPx;uniform vec3 uStressC;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow,vAge,vHalf,vRv,vPP,vVis,vLum,vCor,vNova;
+    fragmentShader:`${GN}uniform float uV,uCorona,uLoops,uBreath,uBeat,uPx;uniform vec3 uStressC;varying vec2 vUv;varying vec3 vC;varying vec4 vS;varying float vFlash,vGrow,vAge,vHalf,vRv,vPP,vVis,vLum,vCor,vNova,vSpk,vSize,vAct,vNear;
       void main(){vec2 P=vUv*vHalf;float r=length(P)/vRv;float dpx=length(P)*vPP/uPx;float a=atan(vUv.y,vUv.x);float ex=max(r-1.,0.);float st=vS.y;
         vec3 sc=mix(vC,uStressC,st*.8);
         // point-spread glow (always) and its slow breathing: the star at galaxy scale
-        float breathe=1.+.12*sin(uV*.33+vS.z*40.)+.05*uBreath+.02*uBeat;float flick=1.-st*(.25+.2*gn(vec3(uV*3.,vS.x*7.,0.)));
-        float dl=max(0.,dpx-vRv*vPP/uPx*vVis*.97);float core=exp(-dpx*dpx/5.)*2.6*(1.-vVis*.9),glow=exp(-dl/5.5)*.55+exp(-dl/19.)*.1;
-        vec3 c=(mix(sc,vec3(1.,.97,.93),.6)*core+sc*glow*breathe)*vLum*flick;
+        float breathe=1.+.12*sin(uV*.33+vS.z*40.)+.05*uBreath+.5*uBeat;float flick=1.-st*(.25+.2*gn(vec3(uV*3.,vS.x*7.,0.)));
+        float dl=max(0.,dpx-vRv*vPP/uPx*vVis*.97);float pt=1.-vVis*.9;
+        // at galaxy scale a subsystem is the most deliberate light in the disc: a hard, white-hot point (well above the
+        // bloom threshold), a tight halo in its own colour, and a crisp diffraction cross whose horizontal arm is the
+        // longer, cooler anamorphic glint. Galaxy stars are round; the project's stars are not.
+        vec2 qp=P*vPP/uPx;float L=vSpk;
+        float core=(exp(-dpx*dpx/1.2)*10.+exp(-dpx*dpx/(5.*vNear))*2.)*pt*(.7+.5*vSize)*vNear,glow=exp(-dl/3.2)*.7+exp(-dl/(9.+10.*vSize))*.22*(.4+vSize);
+        float spV=exp(-qp.x*qp.x/.7)*exp(-abs(qp.y)/(L*.3)),spH=exp(-qp.y*qp.y/.6)*exp(-abs(qp.x)/(L*.6));
+        float d45=abs(qp.x+qp.y)*.7071,e45=abs(qp.x-qp.y)*.7071;float spD=(exp(-d45*d45/.4)*exp(-e45/(L*.09))+exp(-e45*e45/.4)*exp(-d45/(L*.09)))*.35;
+        float live=1.+.45*vAct;
+        vec3 c=(mix(sc,vec3(1.,.97,.93),.6)*core+sc*glow*breathe+(mix(sc,vec3(1.),.55)*(spV+spD)+mix(sc,vec3(.75,.85,1.),.6)*spH*.85)*1.5*pt*(.55+.45*vSize))*vLum*flick*live;
         // resolved corona: streamers and prominences (up close), eruptions on one limb when the subsystem is under strain
         if(r<${CS.toFixed(1)}){float edge=1.-smoothstep(${(CS*.55).toFixed(2)},${CS.toFixed(1)},r);
           float flow=uV*(.02+.05*st);float strm=fbm(vec3(cos(a)*2.2,sin(a)*2.2,log(max(r,1.))*1.3-flow)+vS.x*3.7+vec3(st*uV*.3,0.,0.),2)*.6+.5;
@@ -488,7 +531,7 @@ export function createFamily(ctx){
         if(vNova>.002){vec2 q=P*vPP/uPx;float L=150.*vNova+20.;float sp=exp(-abs(q.y)/.9)*exp(-abs(q.x)/L)+exp(-abs(q.x)/.9)*exp(-abs(q.y)/L);
           c+=vec3(1.,.98,.95)*vNova*(exp(-dot(q,q)/18.)*40.+exp(-length(q)/9.)*3.+sp*4.);}
         gl_FragColor=vec4(c,1.);}`}));
-  for(const k of ['iStar','iStarColor','iStarFx'])coronaGeo.setAttribute(k,stars.geometry.attributes[k]);
+  for(const k of ['iStar','iStarColor','iStarFx','iStarB'])coronaGeo.setAttribute(k,stars.geometry.attributes[k]);
   add(new THREE.Mesh(coronaGeo,coronaMat),3);
   // ---- Planets ---------------------------------------------------------------------------------------------------
   const PLANET_VS=`${ORBIT}${SCREEN}attribute vec4 iOrbit,iLife,iLook;attribute vec3 iTilt,iColor;attribute vec2 iGlow;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uV,uSpeed;
@@ -560,7 +603,7 @@ export function createFamily(ctx){
         vec3 c=orbitPos(sys.xyz,iOrbit.x,iOrbit.y,iOrbit.z,iTilt.xy,uV);float pp=pxPer(c);float pb=iOrbit.w*pp;float pxD=pb*(squeezeP(pb)/max(pb,1e-4))*grow;
         float fade=(1.-smoothstep(6.,11.,pxD))*grow;float ph=.5+.5*dot(normalize(sys.xyz-c),normalize(cameraPosition-c));
         float st=iLook.y;vec3 col=mix(iColor,vec3(1.),.25);if(st<.5)col=mix(col,uDraft,.55);else if(st>2.5)col=mix(col*.6,uStress,.6);else if(st>1.5)col=mix(col,uValid,.25);
-        vC=col*fade*(.3+.9*ph*ph)*(1.+iGlow.x*2.)*1.3;float h=max(pxD*1.1,2.2)*uPx/pp;
+        vC=col*fade*(.45+.9*ph*ph)*(1.+iGlow.x*2.)*2.6;float h=max(pxD*1.1,3.4)*uPx/pp;
         vec3 right=vec3(viewMatrix[0][0],viewMatrix[1][0],viewMatrix[2][0]),up=vec3(viewMatrix[0][1],viewMatrix[1][1],viewMatrix[2][1]);
         vUv=position.xy;gl_Position=fade<.002?vec4(2.,2.,2.,1.):projectionMatrix*viewMatrix*vec4(c+(right*position.x+up*position.y)*h,1.);}`,
     fragmentShader:`varying vec2 vUv;varying vec3 vC;void main(){float r=dot(vUv,vUv);if(r>1.)discard;gl_FragColor=vec4(vC*(exp(-r*9.)*1.6+exp(-r*3.)*.25),1.);}`}));
@@ -744,7 +787,7 @@ export function createFamily(ctx){
     const free=(x,y,z,s)=>{for(const p of placed)if(Math.hypot(p.x-x,p.y-y,p.z-z)<gap(p.s,s))return false;return true;};
     if(ARR==='spiral'){const last=new Array(ARMS).fill(null),lastS=new Array(ARMS).fill(0),big=Math.max(1,...list.map(d=>S.get(d.id)));
       list.forEach((d,k)=>{const s=S.get(d.id),arm=k%ARMS;let r=last[arm]!==null?last[arm]+gap(lastS[arm],s)*Math.sin(PITCH)*1.02:Math.max(coreSize*SPREAD+s+1,big*1.15/Math.sin(Math.PI/Math.max(2,ARMS)));
-        const h=rand(hash(d.id)),y=(h-.5)*(.4+1.6*VERTICAL);
+        const h=rand(hash(d.id)),y=(h-.5)*.12;
         for(let i=0;i<500;i++){const a=armAngle(arm,r);if(free(Math.cos(a)*r,y,Math.sin(a)*r,s)&&r>=coreSize+s+.6)break;r+=.25;}
         const a=armAngle(arm,r);const p={x:Math.cos(a)*r,y,z:Math.sin(a)*r,s,arm,r};placed.push(p);out.set(d.id,p);last[arm]=r;lastS[arm]=s;});
       return out;}
@@ -756,7 +799,7 @@ export function createFamily(ctx){
     const angles=inner.map(d=>d.angle).sort((a,b)=>a-b);let minSep=TAU;for(let i=0;i<angles.length;i++){const a=angles[i],b=i+1<angles.length?angles[i+1]:angles[0]+TAU;if(angles.length>1)minSep=Math.min(minSep,b-a);}
     const big=Math.max(1,...inner.map(d=>S.get(d.id)));
     const R=Math.max(coreSize+big+1,(ARR==='binary-core'?Math.max(0,...placed.map(p=>Math.hypot(p.x,p.z)+p.s))+big+1:0),inner.length>1?gap(big,big)/(2*Math.sin(Math.min(Math.PI/2,Math.max(.05,minSep)/2))):0);
-    for(const d of inner){const s=S.get(d.id),h=rand(hash(d.id));const p={x:Math.cos(d.angle)*R,y:(h-.5)*(.3+VERTICAL),z:Math.sin(d.angle)*R,s};placed.push(p);out.set(d.id,p);}
+    for(const d of inner){const s=S.get(d.id),h=rand(hash(d.id));const p={x:Math.cos(d.angle)*R,y:(h-.5)*.12,z:Math.sin(d.angle)*R,s};placed.push(p);out.set(d.id,p);}
     return out;
   }
   function layoutState(t){
@@ -826,9 +869,15 @@ export function createFamily(ctx){
   let builtVersion=-1,moduleIds=[],planetIds=[],beltIds=[],symbolIds=[],linkKeys=[],bridgeList=[],linkEnds=[];const beltState=[];
   const agentState=new Map();
   const BELT_ABOVE=25,BELT_KEEP=18;
-  function syncBodies(){
+  // Which worlds exist depends on the time as well as on the model: a module belongs once its subsystem is born (so a
+  // seek to a moment and continuous play up to it give the same bodies).
+  // Which systems are alive (not how many): one born and another gone at the same moment still re-syncs the bodies.
+  let builtAlive='';
+  const aliveKey=()=>{let k='';for(const [id,s] of sys)if(s.alive)k+=id+',';return k;};
+  function ensureBodies(){const k=aliveKey();if(model.version!==builtVersion||k!==builtAlive)syncBodies(k);}
+  function syncBodies(alive){
     const epoch=model.epoch;
-    moduleIds=[...model.modules.values()].filter(m=>sys.has(m.group)).sort((a,b)=>a.order-b.order).map(m=>m.id);
+    moduleIds=[...model.modules.values()].filter(m=>sys.get(m.group)?.alive).sort((a,b)=>a.order-b.order).map(m=>m.id);
     const byGroup=new Map();for(const id of moduleIds){const m=model.modules.get(id);if(!byGroup.has(m.group))byGroup.set(m.group,[]);byGroup.get(m.group).push(m);}
     // Large subsystems: the outer hex rings become asteroid belts (the inner ~18 modules stay planets).
     const cut=new Map();for(const [g,list] of byGroup){if(list.length<=BELT_ABOVE){cut.set(g,Infinity);continue;}const d=sys.get(g).d;
@@ -880,9 +929,12 @@ export function createFamily(ctx){
     bridgeList=[...pairs.values()].sort((x,y)=>y.n-x.n||(x.key<y.key?-1:1)).slice(0,NB);
     for(const p of bridgeList){p.bornS=Number.isFinite(p.born)?secs(p.born,epoch):p.born===Infinity?1e6:-1e5;p.goneS=p.live?1e6:secs(p.removed,epoch);p.seed=rand(hash(`bridge/${p.ga}|${p.gb}`));}
     linkEnds=linkKeys.map(key=>{const l=model.links.get(key);const A=bodies.get(l.a),B=bodies.get(l.b);return [A&&!A.belt?A.index:-1,B&&!B.belt?B.index:-1];});
-    builtVersion=model.version;
+    builtVersion=model.version;builtAlive=alive;
   }
   function rebuild(){builtVersion=-1;}
+  // The world as it is at a moment (layout, rotation, bodies): effects are placed at their command's time, never from
+  // whatever frame happened to be drawn last (after a seek the intents arrive before the next frame).
+  function stateAt(tMs){updateLayout({t:tMs,tview:secs(tMs,model.epoch)/ctx.speed(),overrides:info.overrides||{}});ensureBodies();}
   // ---- Agents: comets (positions are pure functions of the observed lifecycle and time) ----------------------------
   const PROBE=G.agents?.form==='probe';
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'].map(c=>new THREE.Color(c));
@@ -932,26 +984,33 @@ export function createFamily(ctx){
     if(s.groupId&&sys.get(s.groupId)?.alive)return sys.get(s.groupId);
     const ids=s.fileIds||(s.fileId?[s.fileId]:[]);const count=new Map();for(const id of ids){const m=model.modules.get(id);if(m&&sys.get(m.group)?.alive)count.set(m.group,(count.get(m.group)||0)+1);}
     let best=null,bn=0;for(const [g,n] of count)if(n>bn){bn=n;best=g;}return best?sys.get(best):null;}
-  bgU.uRmC1.value.copy(mix3(new THREE.Color('#e8607e'),pal.secondary,.2).multiplyScalar(.8));bgU.uRmC2.value.copy(mix3(new THREE.Color('#45d6e8'),pal.accent,.2));bgU.uRmC3.value.copy(mix3(new THREE.Color('#8f7dff'),pal.primary,.25));
-  const remSites=new Map();
-  function updateRemnants(i){
-    const epoch=model.epoch,sp=ctx.speed();remSites.clear();
-    for(const l of ctx.director.lasting()){if(l.first>i.t)continue;const site=remnantSite(l);
-      // a milestone without a system of its own leaves its remnant in the field between the arms, never at the core
-      const key=site?site.d.id:`field/${hash(`${l.type}|${l.subject?.groupId||''}|${(l.subject?.fileIds||[]).join(',')}`)}`;
-      let r=remSites.get(key);if(!r){r={site,key,first:l.first,last:-Infinity,count:0,refactor:0};remSites.set(key,r);}
-      const times=(l.times||[l.at]).filter(x=>x<=i.t);r.first=Math.min(r.first,l.first);r.last=Math.max(r.last,times.length?times[times.length-1]:l.first);r.count+=Math.max(1,l.count||1);
-      if(l.type==='refactor.validated')r.refactor++;else r.refactor--;}
-    const list=[...remSites.values()].sort((a,b)=>b.last-a.last||(a.key<b.key?-1:1)).slice(0,RM);
-    const Yb=galR*SLAB;let n=0;
-    for(const r of list){const h=hash(r.key);let cx,cy,cz,base;
-      if(r.site){const p=r.site.local;cx=p.x+(rand(h)-.5)*.5;cy=p.y;cz=p.z+(rand(h+1)-.5)*.5;base=r.site.sysR*.8;}
-      else{const a=rand(h)*TAU,q=(.45+.3*rand(h+1))*galR;cx=Math.cos(a)*q;cy=0;cz=Math.sin(a)*q;base=galR*.08;}
+  sysU.uRmC1.value.copy(mix3(new THREE.Color('#ff5f86'),pal.secondary,.2));sysU.uRmC2.value.copy(mix3(new THREE.Color('#45d6e8'),pal.accent,.2));sysU.uRmC3.value.copy(mix3(new THREE.Color('#9a7dff'),pal.primary,.25));
+  // The lasting entries change rarely: the remnant sites are regrouped only when a cheap signature of them changes
+  // (entries begun by t, their counts, the newest time by t, the model and the systems alive); per frame only the
+  // cached sites (at most RM) are placed and animated.
+  let remSig='',remList=[];
+  function updateRemnants(i,alive){
+    const sp=ctx.speed(),all=ctx.director.lasting();let n0=0,cnt=0,newest=-Infinity;
+    for(const l of all){if(l.first>i.t)continue;n0++;cnt+=l.count||1;const last=l.at<=i.t?l.at:(l.times||[]).reduce((m,x)=>x<=i.t&&x>m?x:m,l.first);if(last>newest)newest=last;}
+    const sig=`${n0}|${cnt}|${newest}|${model.version}|${alive}`;
+    if(sig!==remSig){remSig=sig;const sites=new Map();
+      for(const l of all){if(l.first>i.t)continue;const site=remnantSite(l);
+        // a milestone without a system of its own leaves its remnant in the field between the arms, never at the core
+        const key=site?site.d.id:`field/${hash(`${l.type}|${l.subject?.groupId||''}|${(l.subject?.fileIds||[]).join(',')}`)}`;
+        let r=sites.get(key);if(!r){r={g:site?site.d.id:null,key,first:l.first,last:-Infinity,count:0,refactor:0};sites.set(key,r);}
+        const times=(l.times||[l.at]).filter(x=>x<=i.t);r.first=Math.min(r.first,l.first);r.last=Math.max(r.last,times.length?times[times.length-1]:l.first);r.count+=Math.max(1,l.count||1);
+        if(l.type==='refactor.validated')r.refactor++;else r.refactor--;}
+      remList=[...sites.values()].sort((a,b)=>b.last-a.last||(a.key<b.key?-1:1)).slice(0,RM);for(const r of remList)r.h=hash(r.key);}
+    let n=0;
+    for(const r of remList){const h=r.h,st=r.g?sys.get(r.g):null;let cx,cz,base;
+      // centred on the star that earned it, enclosing its planets
+      let cy=0;if(st&&st.local){cx=st.local.x;cy=st.local.y;cz=st.local.z;base=st.sysR*.5+.3;}
+      else{const a=rand(h)*TAU,q=(.45+.3*rand(h+1))*galR;cx=Math.cos(a)*q;cz=Math.sin(a)*q;base=galR*.08;}
       const age=(i.t-r.first)/1000/sp,last=(i.t-r.last)/1000/sp;
-      const size=base*(1+.14*Math.min(5,r.count-1))*(1+.06*Math.log(1+Math.max(age,0)/60))*(.5+.5*smooth(age/9));
+      const size=base*(1+.08*Math.min(5,r.count-1))*(1+.05*Math.log(1+Math.max(age,0)/60))*(.55+.45*smooth(age/9));
       const pulse=last>=0?Math.exp(-last*.35)*smooth(last):0;
-      bgU.uRmA.value[n].set(cx,cy,cz,size);bgU.uRmB.value[n].set(Math.min(2,r.count)*(r.refactor>0?-1:1),rand(h+2),smooth(age/7)*(1.1+.15*Math.min(4,r.count))*(1+pulse*1.6),Math.min(1,Yb*.8/size));n++;}
-    bgU.uRmN.value=n;return n;}
+      sysU.uRmA.value[n].set(cx/galR,cz/galR,size/galR,cy/galR);sysU.uRmB.value[n].set(Math.min(2,r.count)*(r.refactor>0?-1:1),rand(h+2),smooth(age/7)*(.4+.06*Math.min(4,r.count))*(1+pulse*1.6),r.count);n++;}
+    sysU.uRmN.value=n;return n;}
   // ---- Effects ----------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0},fxT=0,fxSeed=0;
   const seedOf=cmd=>rand(hash(String(cmd.id??`${cmd.intent}|${cmd.at}`)));
@@ -972,9 +1031,10 @@ export function createFamily(ctx){
   const priorCmd=(at,types,ms=2000)=>{const c=ctx.director.commands;for(let k=c.length-1;k>=0;k--){const x=c[k];if(x.at<=at&&at-x.at<=ms&&types.includes(x.intent))return x;}return null;};
   function effect(cmd,i){
     if(i)info=i;fxT=Number.isFinite(cmd.at)?(cmd.at-model.epoch)/1000:info.tsec;fxSeed=seedOf(cmd);const tv=fxT/ctx.speed(),s=clamp(cmd.scale,0,1.6),subj=cmd.subject||{};if(s<=0)return;
+    if(Number.isFinite(cmd.at))stateAt(cmd.at);
     const planetPos=id=>{const b=bodies.get(id);return b?bodyPos(new THREE.Vector3(),b,tv):null;};
     switch(cmd.effect){
-      case 'ignition':{pendingIgn.push({g:subj.groupId,at:fxT,s,seed:fxSeed});if(pendingIgn.length>8)pendingIgn.shift();flushIgnitions();break;}
+      case 'ignition':{pendingIgn.push({g:subj.groupId,at:fxT,atMs:Number.isFinite(cmd.at)?cmd.at:model.epoch+fxT*1000,s,seed:fxSeed});if(pendingIgn.length>8)pendingIgn.shift();flushIgnitions();break;}
       case 'planet-birth':{const p=planetPos(subj.fileId);if(!p)break;const b=bodies.get(subj.fileId);burst(p,b.color.clone().lerp(new THREE.Color(1,.8,.6),.4),{radius:b.size*5+.6,duration:2,size:.7,mode:5});break;}
       case 'accretion-spark':{const p=planetPos(subj.fileId);if(!p)break;burst(p,pal.highlight,{radius:1.3*s+.5,duration:1.5,size:.6,mode:1});break;}
       case 'ablation':{const p=planetPos(subj.fileId);if(!p)break;const b=bodies.get(subj.fileId);const st=homeSys(b);const away=st?p.clone().sub(st.pos).normalize():new THREE.Vector3(0,1,0);
@@ -1010,10 +1070,13 @@ export function createFamily(ctx){
   // Ignitions wait for the model's star (see the header): timed from the star's recorded birth. A nursery globule
   // collapses for 2.6 s (the camera has arrived by then), the star ignites, blows the globule open and a light echo leaves.
   const pendingIgn=[],nurseries=[];
-  function flushIgnitions(){
+  // Returns whether the world's state was moved to an ignition's moment (the caller restores its own moment).
+  function flushIgnitions(){let moved=false;
     for(let k=pendingIgn.length-1;k>=0;k--){const p=pendingIgn[k];const st=starOf(p.g);
       if(!st){if(info.tsec-p.at>60*ctx.speed())pendingIgn.splice(k,1);continue;}
-      pendingIgn.splice(k,1);const save=fxT,saveSeed=fxSeed;fxT=Math.max(p.at,Number.isFinite(st.born)?secs(st.born,model.epoch):p.at);fxSeed=p.seed;ignite(st,p.s);fxT=save;fxSeed=saveSeed;}
+      pendingIgn.splice(k,1);const tMs=Math.max(p.atMs,Number.isFinite(st.born)?st.born:p.atMs);stateAt(tMs);moved=true;const st2=starOf(p.g);if(!st2)continue;
+      const save=fxT,saveSeed=fxSeed;fxT=secs(tMs,model.epoch);fxSeed=p.seed;ignite(st2,p.s);fxT=save;fxSeed=saveSeed;}
+    return moved;
   }
   const IGN=2.6;
   function ignite(st,s){
@@ -1025,7 +1088,7 @@ export function createFamily(ctx){
     wave(st.pos,.25*s,2.4,IGN);flash(.03*s,IGN);
   }
   // ---- Frame ------------------------------------------------------------------------------------------------------
-  let stressNow=0,remCount=0;const stormOf=new Map(),stressOf=new Map();
+  let stressNow=0,remCount=0;const stormOf=new Map(),stressOf=new Map(),sizeOf=new Map(),actOf=new Map();
   const stormK=mix3(new THREE.Color('#e01838'),pal.warning,.25);
   const evList=[];
   function pushEv(pri,type,c,radius,w,strength,dis,seedV,col){evList.push({pri,type,x:c.x/galR,z:c.z/galR,r:radius/galR,w,strength,dis,seed:seedV,col});}
@@ -1071,49 +1134,57 @@ export function createFamily(ctx){
     return st?{index:st.index,k:smooth(since/1.6)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1)}:null;}
   function update(i){
     info=i;const epoch=model.epoch;
-    if(!baked)bakeSky();
     const sp=ctx.speed();common.uT.value=i.tsec;common.uV.value=i.tview;common.uSpeed.value=sp;common.uActivity.value=i.activity;
     common.uBeat.value=i.beat*num(MU.beatPulse,.4)*num(MU.reactivity,.6)*.6;
     const tempo=Math.max(40,i.mood?.tempo||92),breathS=Math.max(2,num(mot.breath,4))*4*60/tempo;common.uBreath.value=Math.sin(i.tview/breathS*TAU)*num(MU.reactivity,.6);
     common.uIntensity.value=i.overrides.intensity??1;const motion=clamp(i.overrides.motion??1,0,2);common.uMotion.value=motion;
     const px=ctx.pipeline.size[1]/1080;common.uPx.value=Math.max(.5,px);common.uRes.value.set(ctx.pipeline.size[0],ctx.pipeline.size[1]);
-    updateLayout(i);
-    if(model.version!==builtVersion)syncBodies();
-    if(pendingIgn.length)flushIgnitions();
+    updateLayout(i);ensureBodies();
+    if(pendingIgn.length&&flushIgnitions()){updateLayout(i);ensureBodies();}
     const q=i.quality||0;discMat.uniforms.uQ.value=q;beltMat.uniforms.uQ.value=q;
     gal.geometry.setDrawRange(0,q>=2?GSTARS>>1:GSTARS);bgU.uQ.value=q;
     galMat.uniforms.uRich.value=richness(i.t);galU.uGal3.value.x=.55+.45*galMat.uniforms.uRich.value;
     // The gas flows (two phases of a 48 s cycle), knots evolve; both pure functions of view time.
     mapMat.uniforms.uFlowT.value=i.tview/48;mapMat.uniforms.uFlowK.value=.2*Math.min(1.5,motion);mapMat.uniforms.uKnotT.value=i.tview*.018*Math.min(1.5,motion);mapMat.uniforms.uMV.value=i.tview;
-    // Stars: birth, flares, novae, unrest (stressed planets now, and the storm a failing run raised), attention.
-    const list=[...sys.values()].filter(s=>s.alive);stars.ensure(list.length);
-    stressOf.clear();let stressed=0,alive=0;
-    for(const id of moduleIds){const m=model.modules.get(id);if(!m||!aliveAt(m,i.t))continue;alive++;if(model.stateAt(m,i.t)==='stressed'){stressOf.set(m.group,(stressOf.get(m.group)||0)+1);stressed++;}}
-    stressNow=alive?clamp(stressed/Math.max(3,alive*.35)):0;
-    stormOf.clear();for(const x of storms){const age=(i.tsec-x.at)/sp;if(age<0||age>40)continue;const k=smooth(age/.6)*Math.exp(-age/9)*clamp(x.s,.4,1.2);for(const [g,w] of x.w)stormOf.set(g,Math.max(stormOf.get(g)||0,w*k));}
-    const focus=attentionFocus(i);
-    list.forEach((s,k)=>{const fl=starFlares.has(s.index)?starFlares.get(s.index):-1e5;const sn0=stressOf.get(s.d.id)||0;const lvl=sn0?clamp(Math.min(1,sn0/3)*.7+(stormOf.get(s.d.id)||0)):0;s.lvl=lvl;
-      stars.write('iStar',k,s.index,Number.isFinite(s.born)?secs(s.born,epoch):-1e5,fl,lvl);
-      stars.write('iStarColor',k,s.color.r,s.color.g,s.color.b);stars.write('iStarFx',k,novaAt.has(s.index)?novaAt.get(s.index):-1e5,focus&&focus.index===s.index?focus.k:0,s.seed,s.d.core?1:0);});
-    for(const s of sys.values())if(!s.alive)s.lvl=0;
-    stars.commit(list.length);bindShared(coronaGeo,stars.geometry,['iStar','iStarColor','iStarFx'],list.length);
-    // Planets: state transitions (blended in the shader), agents at work, human edits; orbit arcs light for active ones.
+    // Modules: state transitions (blended in the shader), agents at work, human edits; orbit arcs light for active ones.
+    // Per system: how many worlds are alive (its size), how many are stressed, and how recently work touched it.
     const working=new Map();for(const a of i.agents)if(a.fileId&&a.display==='tool')working.set(a.fileId,a);
     const recent=(at,ms)=>Number.isFinite(at)&&i.t>=at?Math.exp(-(i.t-at)/(ms*sp)):0;
-    let beltDirty=false;
+    stressOf.clear();sizeOf.clear();actOf.clear();let stressed=0,alive=0,beltDirty=false;
     for(const id of moduleIds){const m=model.modules.get(id),b=bodies.get(id);if(!m||!b)continue;
       let cur=m.initial,prev=m.initial,at=-1e5,atMs=-Infinity;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;at=secs(e.at,epoch);atMs=e.at;}
+      const act=Math.max(working.has(id)?1:0,recent(m.lastHuman,12000),recent(atMs,15000),recent(model.bornAt(m),15000));
+      if(aliveAt(m,i.t)){alive++;sizeOf.set(m.group,(sizeOf.get(m.group)||0)+1);actOf.set(m.group,Math.max(actOf.get(m.group)||0,act));
+        if(model.stateAt(m,i.t)==='stressed'){stressOf.set(m.group,(stressOf.get(m.group)||0)+1);stressed++;}}
       if(b.belt){const v=STATE_INDEX[cur]??1;if(beltState[b.index]!==v){beltState[b.index]=v;for(let k=0;k<BELT_N;k++)belt.arrays.kC[(b.index*BELT_N+k)*4+3]=v;beltDirty=true;}continue;}
       const k=b.index;planets.write('iLook',k,b.style,STATE_INDEX[cur]??1,STATE_INDEX[prev]??1,b.sub);
       const life=planets.arrays.iLife;life[k*4+2]=at;planets.dirty('iLife');
       const glow=working.has(id)?.8:Number.isFinite(m.lastHuman)&&i.t>=m.lastHuman&&i.t-m.lastHuman<4000*sp?.6*(1-(i.t-m.lastHuman)/(4000*sp)):0;
-      planets.write('iGlow',k,glow,b.seed);
-      orbits.arrays.oAct[k]=Math.max(working.has(id)?1:0,recent(m.lastHuman,12000),recent(atMs,15000),recent(model.bornAt(m),15000));}
+      planets.write('iGlow',k,glow,b.seed);orbits.arrays.oAct[k]=act;}
     planets.flush();orbits.dirty('oAct');orbits.flush();if(beltDirty){belt.dirty('kC');belt.flush();}
     bindShared(pSpriteGeo,planets.geometry,['iOrbit','iTilt','iLife','iLook','iColor','iGlow'],planetIds.length);
     for(let k=0;k<linkEnds.length;k++){const [a,b]=linkEnds[k];links.arrays.iAct[k]=Math.max(a>=0?orbits.arrays.oAct[a]:0,b>=0?orbits.arrays.oAct[b]:0);}links.dirty('iAct');links.flush();
     orbitMat.uniforms.uOrbitK.value=clamp(1.1/Math.sqrt(Math.max(1,planetIds.length/12)),.08,1);
-    remCount=updateRemnants(i);
+    stressNow=alive?clamp(stressed/Math.max(3,alive*.35)):0;
+    stormOf.clear();for(const x of storms){const age=(i.tsec-x.at)/sp;if(age<0||age>40)continue;const k=smooth(age/.6)*Math.exp(-age/9)*clamp(x.s,.4,1.2);for(const [g,w] of x.w)stormOf.set(g,Math.max(stormOf.get(g)||0,w*k));}
+    // Stars: birth, flares, novae, unrest (stressed planets now, and the storm a failing run raised), attention, and the
+    // beacon a subsystem is at galaxy scale (sized by its worlds, a little brighter while work is live in it).
+    const list=[...sys.values()].filter(s=>s.alive);stars.ensure(list.length);
+    const focus=attentionFocus(i);let nMax=8;for(const n of sizeOf.values())nMax=Math.max(nMax,n);
+    let sn=0;
+    list.forEach((s,k)=>{const fl=starFlares.has(s.index)?starFlares.get(s.index):-1e5;const sn0=stressOf.get(s.d.id)||0;const lvl=sn0?clamp(Math.min(1,sn0/3)*.7+(stormOf.get(s.d.id)||0)):0;s.lvl=lvl;
+      const n=sizeOf.get(s.d.id)||0,sizeK=clamp(.18+.82*Math.log2(1+n)/Math.log2(1+nMax)),act=actOf.get(s.d.id)||0;s.sizeK=sizeK;
+      stars.write('iStar',k,s.index,Number.isFinite(s.born)?secs(s.born,epoch):-1e5,fl,lvl);
+      stars.write('iStarColor',k,s.color.r,s.color.g,s.color.b);stars.write('iStarFx',k,novaAt.has(s.index)?novaAt.get(s.index):-1e5,focus&&focus.index===s.index?focus.k:0,s.seed,s.d.core?1:0);
+      stars.write('iStarB',k,sizeK,act,0,0);
+      // its knot in the gas: lit once the star has ignited, dimmed while the system is under strain
+      const age=Number.isFinite(s.born)?(i.t-s.born)/1000/sp:1e5,lit=smooth((age-IGN)/2.5);
+      if(s.local&&sn<MAX_SYS&&lit>0){const ri=ROLES.indexOf(s.role);const str=Math.min(.999,(.3+.7*sizeK)*(1+.3*act)*(1-.55*lvl)*(s.d.core?.4:1)*.62*lit);
+        sysU.uSysM.value[sn].set(s.local.x/galR,s.local.z/galR,Math.max(.6,s.sysR-1.1)/galR,(ri<0?3:ri)+str);sn++;}});
+    sysU.uSysN.value=sn;
+    for(const s of sys.values())if(!s.alive)s.lvl=0;
+    stars.commit(list.length);bindShared(coronaGeo,stars.geometry,['iStar','iStarColor','iStarFx','iStarB'],list.length);
+    remCount=updateRemnants(i,builtAlive);
     const un=k=>i.unlocks[k]?.level||0;
     bgU.uUnlock.value.set(un(0),un(1),un(2),un(3));plasmaMat.uniforms.uCurrents.value=un(1);haloMat.uniforms.uHalo.value=un(3);
     bgU.uStorm.value=stressNow*.8+Math.min(1,Math.max(0,...stormOf.values()))*.2;
@@ -1126,7 +1197,7 @@ export function createFamily(ctx){
     // The sky turns with the camera (with a slight lag, for parallax): its densest complex stays behind the galaxy.
     let da=Math.atan2(camera.position.z,camera.position.x)-baseAz;while(da>Math.PI)da-=TAU;while(da<-Math.PI)da+=TAU;
     bgU.uSkyRot.value=-da*.82+i.tview*.002*clamp(i.overrides.motion??1,0,2);
-    updateAgents(i);renderGalaxy(i.quality||0);}
+    updateAgents(i);if(!baked)bakeSky();renderGalaxy(i.quality||0);}
   function background(){return background_;}
   const proj=new THREE.Vector3();
   function screenOf(p){proj.copy(p).project(camera);return proj.z<1&&Math.abs(proj.x)<1.15&&Math.abs(proj.y)<1.15?{x:proj.x*.5+.5,y:proj.y*.5+.5}:null;}
@@ -1232,7 +1303,7 @@ export function createFamily(ctx){
     for(const x of disposables)x.dispose?.();fsScene.remove(fsQuad);
   }
   // After a seek: no transient survives, and pools restart (their look comes from the commands, never from the slot).
-  function onPrime(){starFlares.clear();novaAt.clear();bridgePulse.clear();ckWave=null;pendingIgn.length=0;nurseries.length=0;waves.length=0;flashes.length=0;calms.length=0;novas.length=0;storms.length=0;echoes.length=0;agentState.clear();
+  function onPrime(){remSig='';starFlares.clear();novaAt.clear();bridgePulse.clear();ckWave=null;pendingIgn.length=0;nurseries.length=0;waves.length=0;flashes.length=0;calms.length=0;novas.length=0;storms.length=0;echoes.length=0;agentState.clear();
     burstNext=0;for(const v of burstU.uBA.value)v.w=-1e5;
     galMat.uniforms.uWave.value.set(-100,0,0,0);galMat.uniforms.uExpand.value.set(-100,0,0,0);}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
