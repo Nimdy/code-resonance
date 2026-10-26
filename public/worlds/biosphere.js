@@ -303,6 +303,8 @@ export function createFamily(ctx){
     forest=growForest(model,{species,G,epoch,quality,current});
     const lite=quality>=2||model.modules.size>200;if(crownLite!==lite)makeCrowns(lite);
     orgs.clear();orgList.length=0;for(const o of forest.orgs){orgs.set(o.id,o);orgList.push(o);}
+    // What a bloom's geometry reads of its organism (blooms on an unchanged organism are kept across rebuilds).
+    for(const o of orgList)o.sig=hash(`${o.id}|${o.index}|${o.root}|${o.top}|${o.height}|${o.radius}|${o.crown.map(c=>`${c.p}:${c.dist}`).join(';')}`);
     counts.thick=copy(thick,forest.seg,SEG,SEG_NAMES);counts.fine=copy(fine,forest.fine,SEG,SEG_NAMES);
     counts.leaves=copy(leaves,forest.leaf,LEAF,['lP','lD','lW','lM']);
     counts.glows=copy(glows,forest.glow,GLOW,['gP','gG','gM']);
@@ -367,18 +369,30 @@ export function createFamily(ctx){
   const v3=a=>new THREE.Vector3(a[0],a[1],a[2]);
   // ---- Blooms (rebuilt from director.lasting(): a pure function of the verified history) -------------------------
   // They spread around the crown (golden-angle order over its highest points), each at most a third of its radius.
-  let lastBloomKey='';const bloomAt=new Map();
+  // Bounded: per organism its first (crowning) bloom and its newest PER_ORG-1, and at most BLOOM_MAX in the world (the
+  // crowning ones are kept first). A retired bloom's place is taken by a newer one (places cycle around the crown).
+  const PER_ORG=24,BLOOM_MAX=400;
+  let lastBloomKey='',lastBloomSet='';const bloomAt=new Map();
   function buildBlooms(i){
-    let key='';const occ=[];
-    for(const l of ctx.director.lasting()){if(l.first>i.t)continue;const kind=l.type==='refactor.validated'?1:0;
-      const known=l.times.filter(x=>x<=i.t),older=l.count-l.times.length,n=older+known.length;key+=`${l.type}:${l.first}:${n};`;
-      for(let k=0;k<n;k++)occ.push({kind,at:k<older?l.first:known[k-older],subject:l.subject});}
-    key+=`|${builtVersion}`;if(key===lastBloomKey)return;lastBloomKey=key;
-    occ.sort((a,b)=>a.at-b.at);const out={seg:[],glow:[],leaf:[]};const slot=new Map(),lastBloom=new Map();bloomLights.length=0;
+    let key='';const lasting=ctx.director.lasting(),lite=(i.quality||0)>=2;
+    for(const l of lasting){if(l.first>i.t)continue;let n=l.count-l.times.length;for(const x of l.times)if(x<=i.t)n++;key+=`${l.type}:${l.first}:${n};`;}
+    key+=`|${builtVersion}|${lite}`;if(key===lastBloomKey)return;lastBloomKey=key;
+    // Occurrences in groups (the occurrences older than the last eight times of an entry share its first time).
+    const groups=[];lasting.forEach((l,seq)=>{if(l.first>i.t)return;const org=mainOrg(l.subject?.fileIds)||biggest();if(!org)return;const kind=l.type==='refactor.validated'?1:0;
+      const known=l.times.filter(x=>x<=i.t),older=l.count-l.times.length;if(older>0)groups.push({kind,at:l.first,n:older,org,seq});for(const at of known)groups.push({kind,at,n:1,org,seq});});
+    groups.sort((a,b)=>a.at-b.at||a.seq-b.seq);
+    const total=new Map();for(const g of groups){g.k0=total.get(g.org.id)||0;total.set(g.org.id,g.k0+g.n);}
+    let occ=[];for(const g of groups){const T=total.get(g.org.id),from=Math.max(g.k0,T-(PER_ORG-1),1),to=g.k0+g.n;
+      if(g.k0===0)occ.push({kind:g.kind,at:g.at,org:g.org,k:0});for(let k=from;k<to;k++)occ.push({kind:g.kind,at:g.at,org:g.org,k});}
+    if(occ.length>BLOOM_MAX){const firsts=occ.filter(o=>o.k===0),rest=occ.filter(o=>o.k>0);occ=firsts.slice(-BLOOM_MAX).concat(rest.slice(Math.max(0,rest.length-(BLOOM_MAX-Math.min(BLOOM_MAX,firsts.length)))));
+      occ.sort((a,b)=>a.at-b.at||a.k-b.k);}
     // Facing the establishing view (a pure function of the composition), so a bloom opens toward the viewer.
     const toward=comp?[-comp.V[0],0,-comp.V[1]]:[0,0,1];let camEye=null;if(comp){const v=viewOf(1),ce=Math.cos(v.el);camEye=[v.target.x+Math.cos(v.az)*ce*v.distance,v.target.y+Math.sin(v.el)*v.distance,v.target.z+Math.sin(v.az)*ce*v.distance];}
-    occ.forEach((o,j)=>{const org=mainOrg(o.subject?.fileIds)||biggest();if(!org)return;
-      const k=slot.get(org.id)||0;slot.set(org.id,k+1);const top=org.crown.slice(0,Math.max(1,Math.min(14,org.crown.length)));
+    // The same blooms on unchanged organisms (a structure change elsewhere) are not grown again.
+    const set=`${lite}|${model.epoch}|${toward}|${camEye}|`+occ.map(o=>`${o.kind}:${o.at}:${o.k}:${o.org.sig}`).join(';');
+    if(set===lastBloomSet){for(const b of bloomLights)b.org=orgs.get(b.org.id)||b.org;for(const b of bloomAt.values())b.org=orgs.get(b.org.id)||b.org;return;}lastBloomSet=set;
+    const out={seg:[],glow:[],leaf:[]};const lastBloom=new Map();bloomLights.length=0;
+    occ.forEach((o,j)=>{const org=o.org,k=o.k;const top=org.crown.slice(0,Math.max(1,Math.min(14,org.crown.length)));
       // The first bloom crowns the organism; later ones open around its crown (smaller), so they accumulate.
       const first=()=>{let b=null,bs=Infinity;for(const c of org.crown){const sc=Math.abs(c.p[1]/org.height-.68)+(camEye?.15*Math.hypot(c.p[0]-camEye[0],c.p[2]-camEye[2])/Math.max(1,org.radius):0);if(sc<bs){bs=sc;b=c;}}return b||{p:org.top,dist:org.height};};
       const cr=k===0?first():top.length?top[(k*5+(o.kind?2:0))%top.length]:{p:[org.root[0],org.height,org.root[2]],dist:org.height};
@@ -388,10 +402,10 @@ export function createFamily(ctx){
       const up=[ed[0]/el*.8,ed[1]/el*.8+.45,ed[2]/el*.8];
       const centerP=[cr.p[0]+toward[0]*size*.15,cr.p[1]+size*.1,cr.p[2]+toward[2]*size*.15];
       lastBloom.set(`${o.kind}|${o.at}`,{org,p:centerP,size});
-      // Older blooms in a long history keep their form with fewer elements (never dropped: every verified mark stays).
-      const lite=(i.quality||0)>=2||j<occ.length-24||out.glow.length>GLOW*20000;
+      // Older blooms in a long history keep their form with fewer elements.
+      const fewer=lite||j<occ.length-24||out.glow.length>GLOW*20000;
       const start=secs(o.at,model.epoch);
-      growBloom(out,{center:centerP,up,org:org.index%MAXO,dist:cr.dist,size,kind:o.kind,start,seed:hash(`${org.id}/${k}/${o.kind}`),lite});
+      growBloom(out,{center:centerP,up,org:org.index%MAXO,dist:cr.dist,size,kind:o.kind,start,seed:hash(`${org.id}/${k}/${o.kind}`),lite:fewer});
       bloomLights.push({org,p:centerP,size,start,kind:o.kind});});
     bloomCount=copy(bloomSeg,out.seg,SEG,SEG_NAMES)+copy(bloomLeaf,out.leaf,LEAF,['lP','lD','lW','lM']);copy(bloomGlow,out.glow,GLOW,['gP','gG','gM']);bloomAt.clear();for(const [k,v] of lastBloom)bloomAt.set(k,v);
   }
@@ -410,7 +424,7 @@ export function createFamily(ctx){
     vertexShader:`attribute vec4 aCol;attribute float aSize;uniform float uPx;uniform vec2 uRes;varying vec4 vC;void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;gl_PointSize=clamp(aSize*.05*px/max(.4,-mv.z),1.5,60.*uPx);vC=aCol;}`,
     fragmentShader:`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*5.)+exp(-r*24.)*2.)*vC.a,1.);}`});
   const agentPoints=new THREE.Points(agentPts.geometry,agentMat);agentPoints.frustumCulled=false;agentPoints.renderOrder=7;scene.add(agentPoints);
-  const agentState=new Map(),tmp=new THREE.Vector3();
+  const agentState=new Map(),tmp=new THREE.Vector3(),tmpP=new THREE.Vector3();
   function agentGoal(a,i){
     const tip=a.fileId?anchorPos(a.fileId):null,home=a.home?forest?.anchors.get(a.home):null,o=home?orgList[home.org]:null;
     const ph=rand(hash(a.id))*6.283;
@@ -424,12 +438,21 @@ export function createFamily(ctx){
     const free=i.agents.filter(b=>!(b.home&&forest?.anchors.get(b.home))).map(b=>b.id).sort(),k=Math.max(0,free.indexOf(a.id)),pf=k*6.283/Math.max(1,free.length)+ph*.2;
     return new THREE.Vector3(centre.x+Math.cos(pf+i.tview*.06)*extent*.5,canopyH*(.5+.18*k),centre.z+Math.sin(pf+i.tview*.06)*extent*.5);
   }
+  // Where a presence's swarm is at the frame's time (a pure function of the observed lifecycle and the time, so a seek
+  // and continuous play agree): the goal of its current state, eased in from the goal of the state before it.
+  const goalKey=p=>`${p.display}|${p.fileId}|${p.home}`;
+  function agentAt(a,i,out){out.copy(agentGoal(a,i));
+    const spd=ctx.speed(),W=(a.display==='tool'?1.6:2.8)*1000*spd,before=ctx.agents.presence(a.id,i.t-W);
+    if(!before||goalKey(before)===goalKey(a))return out;
+    // The moment the goal changed (within the last W): bisected over the pure lifecycle.
+    let lo=i.t-W,hi=i.t;for(let n=0;n<12;n++){const mid=(lo+hi)/2,p=ctx.agents.presence(a.id,mid);if(p&&goalKey(p)===goalKey(a))hi=mid;else lo=mid;}
+    const prev=ctx.agents.presence(a.id,lo);if(!prev)return out;
+    return out.lerp(tmpP.copy(agentGoal(prev,i)),1-smooth((i.t-hi)/W));}
   function updateAgents(i){
     let n=0;const seen=new Set();const cap=agentPts.capacity;
     for(const a of i.agents.slice(0,MAX_AGENTS)){
-      seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3(),snap:true};agentState.set(a.id,st);}
-      // Smoothing independent of the frame rate (exponential approach over real elapsed time).
-      const goal=agentGoal(a,i);if(st.snap){st.pos.copy(goal);st.snap=false;}else st.pos.lerp(goal,1-Math.exp(-Math.max(0,i.dt)*(a.display==='tool'?1.8:.9)));
+      seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}
+      agentAt(a,i,st.pos);
       const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.45)*num(G.agentProminence,.8),ph=rand(hash(a.id))*100;
       const spread=a.display==='tool'?.5:a.busy?.95:.6;
       for(let k=0;k<SWARM;k++){const u=k/SWARM*6.283+ph,rk=spread*(.35+.65*rand(k*31+7)),wk=(pollinator?.7:1.2)+k*.045;
@@ -456,7 +479,11 @@ export function createFamily(ctx){
   // An organism's light swells into the water around it (its halo, mist and floor) for a few seconds.
   const lightUp=(o,start,k)=>{if(o)transients.light.push({org:o.index%MAXO,at:start,k});};
   function effect(cmd,i){
+    // At the command's own time (also right after a seek, before the next frame): the current structure, the organisms'
+    // sizes and the current's phase then, never those of the last frame drawn.
+    const q=i?.quality??Math.max(0,builtQuality);if(model.version!==builtVersion||(q>=2)!==(builtQuality>=2))build(q);
     if(!forest)return;const s=cmd.subject||{},inten=clamp(cmd.scale,0,1.6),start=secs(cmd.at,model.epoch);
+    if(Number.isFinite(cmd.at)){growthAt(cmd.at,start);U.uSwayT.value=start/ctx.speed()*(i?.overrides?.motion??1);}
     const show=(i?.overrides?.intensity??1)>0&&inten>0;
     const ids=s.fileIds||[];
     switch(cmd.effect){
@@ -497,10 +524,21 @@ export function createFamily(ctx){
   }
   // ---- Frame ----------------------------------------------------------------------------------------------------
   const lightDir=new THREE.Vector3(0,1,0);
-  function rebuild(){builtVersion=-1;for(const s of agentState.values())s.snap=true;}
+  function rebuild(){builtVersion=-1;}
   // The cold shadow of a failing run (it desaturates the grade and dims the shafts while the blight spreads).
   function shadowAt(i){let k=0;const spd=ctx.speed();for(const x of transients.shadow){const a=(i.tsec-x.at)/spd;if(a>=0)k+=x.k*smooth(a/.8)*Math.exp(-Math.max(0,a-2)/4);}return clamp(k);}
   const env1=(a,rise,hold,fall)=>a<0?0:smooth(a/rise)*Math.exp(-Math.max(0,a-hold)/fall);
+  // Organism girth and size at time t: trunks thicken with the modules alive then; a new organism grows from its seed.
+  function growthAt(T,tsec){const spd=ctx.speed(),alive=new Array(orgList.length).fill(0);
+    for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(m&&a&&model.alive(m,T)&&m.removed===null)alive[a.org]++;}
+    // Size: each module counts as it grows in (3 s) and as it fades out, so the organism scales smoothly.
+    const grow=new Array(orgList.length).fill(0);
+    for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(!m||!a)continue;const b=m.born;if(!(b<=T))continue;
+      let k=Number.isFinite(b)?clamp((T-b)/3000):1;if(m.removed!==null&&m.removed<=T)k*=1-clamp((T-m.removed)/3000);grow[a.org]+=k;}
+    for(const o of orgList){const k=o.index%MAXO,age=(tsec-o.born)/spd,birth=age>=0?smooth(age/5):1;
+      const S=(.7+.17*Math.log2(1+grow[o.index]))*(.08+.92*easeOut(birth));orgColors[k].w=S;U.uOrg.value[k].z=o.height*S;U.uOrg.value[k].w=.85+.12*Math.log2(1+alive[o.index]);
+      orgSpecies[k].z=age>=0&&age<7?(1-smooth(age/7))*(.4+.6*smooth(age/.6)):0;}
+    return grow;}
   function update(i){
     const epoch=model.epoch,q=i.quality||0,spd=ctx.speed();
     U.uT.value=i.tsec;U.uV.value=i.tview;U.uSpeed.value=spd;const motion=i.overrides?.motion??1;U.uSwayT.value=i.tview*motion;airMat.uniforms.uMotion.value=motion;
@@ -522,19 +560,10 @@ export function createFamily(ctx){
     const un=[0,1,2,3].map(k=>i.unlocks[k]?.level||0);groundU.uUnlock.value.set(...un);airMat.uniforms.uUnlock.value.set(...un);U.uVeins.value=un[2];
     let shaftBoost=0;for(const x of transients.shafts)shaftBoost+=x.k*env1((i.tsec-x.at)/spd,1.5,2,3);shaftMat.uniforms.uShaftK.value=shaftBase*(1+shaftBoost)*(1-.55*shadowAt(i));
     for(const v of orgSpecies)v.w=0;for(const x of transients.light)orgSpecies[x.org].w+=x.k*env1((i.tsec-x.at)/spd,1.5,2,3.5);
-    // Organism girth and size: trunks thicken with the modules alive now; a new organism grows from its seed.
-    if(forest){const alive=new Array(orgList.length).fill(0);
-      for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(m&&a&&model.alive(m,i.t)&&m.removed===null)alive[a.org]++;}
-      // Size: each module counts as it grows in (3 s) and as it fades out, so the organism scales smoothly.
-      const grow=new Array(orgList.length).fill(0);const T=i.t;
-      for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(!m||!a)continue;const b=m.born;if(!(b<=T))continue;
-        let k=Number.isFinite(b)?clamp((T-b)/3000):1;if(m.removed!==null&&m.removed<=T)k*=1-clamp((T-m.removed)/3000);grow[a.org]+=k;}
+    if(forest){const grow=growthAt(i.t,i.tsec);
       // Seasons: as the ecosystem matures (modules alive, smoothly weighted) the ambient light slowly warms toward the
       // palette's accent; a pure function of the model at this time.
       {let total=0;for(const g of grow)total+=g;const m=clamp(Math.log2(1+total)/9);U.uFogLit.value.copy(fogLit).lerp(seasonLit,m*.4);U.uFogC.value.copy(fogC).lerp(seasonFog,m*.3);}
-      for(const o of orgList){const k=o.index%MAXO,age=(i.tsec-o.born)/spd,birth=age>=0?smooth(age/5):1;
-        const S=(.7+.17*Math.log2(1+grow[o.index]))*(.08+.92*easeOut(birth));orgColors[k].w=S;U.uOrg.value[k].z=o.height*S;U.uOrg.value[k].w=.85+.12*Math.log2(1+alive[o.index]);
-        orgSpecies[k].z=age>=0&&age<7?(1-smooth(age/7))*(.4+.6*smooth(age/.6)):0;}
       // Framing: the main mass of the ecosystem (organisms of any real size).
       extent=3;canopyH=2;let worldR=3;const big=Math.max(1,...orgList.map(o=>o.members.length));
       for(const o of orgList){const S=orgColors[o.index%MAXO].w,r=Math.hypot(o.root[0]-centre.x,o.root[2]-centre.z)+o.radius*S;worldR=Math.max(worldR,r);
