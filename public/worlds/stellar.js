@@ -32,7 +32,7 @@
 // twinkle). Verified milestones unlock
 // lasting layers (aurora veils, plasma currents, a distant pulsar, a galactic halo).
 //
-// Rendering: the deep sky is baked once per recipe into two cube maps (a raymarched emission nebula, its densest complex
+// Rendering: the deep sky is baked once per recipe (and render size) into two cube maps (a raymarched emission nebula, its densest complex
 // placed behind the galaxy, and a nearer layer of dark dust filaments that drifts at its own rate). The galaxy's gas and
 // dust are rendered each frame face-on into a map (pure function of time: two flow phases of a differential rotation),
 // which also carries the moments that live in the disc (light echoes, storm globules, nurseries, calm glows, a commit's
@@ -155,9 +155,15 @@ export function createFamily(ctx){
         float rim=pow(max(0.,1.-abs(n*.8-.3)),9.)*cm;
         gl_FragColor=vec4(mix(uA,uB,.5)*rim*.05*uDensity,a*.8*uDensity);}
     }`;
-  const bake=size=>keep(new THREE.WebGLCubeRenderTarget(size,{type:THREE.HalfFloatType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:false,depthBuffer:false}));
-  const skyFar=bake(896),skyNear=bake(640);let baked=false;
-  function bakeSky(){
+  // The cube maps are sized to what is rendered, a pure function of the render height and quality: 896 and 640 px faces
+  // at 1080p and above, smaller for thumbnails and at the qualities a slow machine uses (the far layer marches ten noise
+  // steps per pixel, seconds of work on a software renderer); baked again only if the view later needs larger ones.
+  const bake=size=>new THREE.WebGLCubeRenderTarget(size,{type:THREE.HalfFloatType,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,generateMipmaps:false,depthBuffer:false});
+  let skyFar=null,skyNear=null,bakedFace=0;
+  const skyFace=q=>Math.max(128,Math.min(896,Math.round(896*(ctx.pipeline.size[1]||1080)/1080*(q>=2?.5:1)/32)*32));
+  function bakeSky(face){
+    skyFar?.dispose();skyNear?.dispose();skyFar=bake(face);skyNear=bake(Math.max(96,Math.round(face*640/896/32)*32));bakedFace=face;
+    bgU.uFar.value=skyFar.texture;bgU.uNear.value=skyNear.texture;
     const sc=new THREE.Scene(),g=new THREE.SphereGeometry(5,32,16),gx=[];const r=rng(hash(`galaxies/${seed}`));
     for(let k=0;k<14;k++){const u=r()*2-1,a=r()*TAU,s=Math.sqrt(1-u*u);gx.push(new THREE.Vector4(Math.cos(a)*s,u,Math.sin(a)*s,.004+r()*.012));}
     // A cool sky against the warm galaxy: teal and blue gas, a little rose in the brightest knots (never brown).
@@ -167,7 +173,7 @@ export function createFamily(ctx){
         uD0:{value:(()=>{const el=-Math.atan((.27+.15*clamp(num(cam.elevation,.4),.05,.9))/2.03)+.05;return new THREE.Vector3(-Math.cos(baseAz)*Math.cos(el),Math.sin(el),-Math.sin(baseAz)*Math.cos(el));})()},uDensity:{value:nebDensity},uStyle:{value:nebStyle},uLayer:{value:0},uGx:{value:gx}}});
     const mesh=new THREE.Mesh(g,m);mesh.frustumCulled=false;sc.add(mesh);
     for(const [rt,layer] of [[skyFar,0],[skyNear,1]]){m.uniforms.uLayer.value=layer;const cc=new THREE.CubeCamera(.1,50,rt);cc.update(ctx.renderer,sc);}
-    g.dispose();m.dispose();baked=true;
+    g.dispose();m.dispose();
   }
   // ---- The galaxy's gas and dust, face-on (rendered each frame; pure function of time) ----------------------------
   // Two flow phases of a differential rotation (omega ~ 1/r relative to the arm pattern): the gas visibly streams through
@@ -295,7 +301,7 @@ export function createFamily(ctx){
         float edge=1.-smoothstep(1.12,1.32,q);gl_FragColor=vec4(max(e,0.)*edge,dust*edge);}`}));
   // ---- The galaxy raymarched through its disc slab (third resolution): rgb light, a transmittance ------------------
   // (The moments and the lasting remnant shells are drawn into the gas map above, so they lie in the disc.)
-  const bgU={...common,...galU,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uFar:{value:skyFar.texture},uNear:{value:skyNear.texture},uSkyRot:{value:0},
+  const bgU={...common,...galU,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uFar:{value:null},uNear:{value:null},uSkyRot:{value:0},
     uQ:{value:0},uUnlock:{value:new THREE.Vector4()},uGain:{value:2.1},uBulge:{value:1},uStorm:{value:0},uGalTex:{value:null},
     uRmA:sysU.uRmA,uRmB:sysU.uRmB,uRmN:sysU.uRmN,uRmC1:sysU.uRmC1,uRmC2:sysU.uRmC2,uRmC3:sysU.uRmC3};
   const marchMat=keep(new THREE.ShaderMaterial({uniforms:bgU,vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
@@ -327,7 +333,8 @@ export function createFamily(ctx){
         gl_FragColor=vec4(L,T);}`}));
   const galRT=keep(new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));bgU.uGalTex.value=galRT.texture;
   function renderGalaxy(q){const [w,h]=ctx.pipeline.size,dv=q>=2?4:3,gw=Math.max(1,Math.ceil(w/dv)),gh=Math.max(1,Math.ceil(h/dv));if(galRT.width!==gw||galRT.height!==gh)galRT.setSize(gw,gh);
-    const ms=q>=2?512:1024;if(mapRT.width!==ms)mapRT.setSize(ms,ms);
+    // The face-on gas map keeps its texel-to-pixel ratio: 1024 (512 at slow qualities) at 1080p, smaller for smaller views.
+    const top=q>=2?512:1024,ms=Math.max(256,Math.min(top,Math.round(top*h/1080/64)*64));if(mapRT.width!==ms)mapRT.setSize(ms,ms);
     if(ARR!=='cluster')fsPass(mapMat,mapRT);fsPass(marchMat,galRT);}
   // The deep sky (the world's background(); a shader pack may replace it): the baked nebula and dust layers, dimmed where
   // the view crosses the disc (so background galaxies never show through it), and the unlocked sky layers.
@@ -1197,7 +1204,7 @@ export function createFamily(ctx){
     // The sky turns with the camera (with a slight lag, for parallax): its densest complex stays behind the galaxy.
     let da=Math.atan2(camera.position.z,camera.position.x)-baseAz;while(da>Math.PI)da-=TAU;while(da<-Math.PI)da+=TAU;
     bgU.uSkyRot.value=-da*.82+i.tview*.002*clamp(i.overrides.motion??1,0,2);
-    updateAgents(i);if(!baked)bakeSky();renderGalaxy(i.quality||0);}
+    updateAgents(i);const face=skyFace(i.quality||0);if(face>bakedFace)bakeSky(face);renderGalaxy(i.quality||0);}
   function background(){return background_;}
   const proj=new THREE.Vector3();
   function screenOf(p){proj.copy(p).project(camera);return proj.z<1&&Math.abs(proj.x)<1.15&&Math.abs(proj.y)<1.15?{x:proj.x*.5+.5,y:proj.y*.5+.5}:null;}
@@ -1297,7 +1304,7 @@ export function createFamily(ctx){
     return {position:bodyPos(new THREE.Vector3(),b,i.tview),text:`A ${['UI','typed','test','logic','configuration'][b.style]} ${b.belt?'asteroid clump':'world'} · ${model.stateAt(m,i.t)}`,sub:`${plural(syms,'symbol')} · ${plural(deps,'dependency')} · ${ctx.name(m.group)}`};}
   function stats(){return {systems:[...sys.values()].filter(s=>s.alive).length,planets:planetIds.length,belts:beltIds.length,moons:symbolIds.length,links:linkKeys.length,bridges:bridgeList.length,remnants:remCount,galaxyStars:GSTARS,
     galaxy:+galR.toFixed(2),arrangement:ARR,camera:camera.position.toArray().map(x=>+x.toFixed(1))};}
-  function dispose(){
+  function dispose(){skyFar?.dispose();skyNear?.dispose();
     const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});
     for(const o of objs){scene.remove(o);o.geometry?.dispose?.();o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();fsScene.remove(fsQuad);

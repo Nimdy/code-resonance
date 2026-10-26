@@ -895,7 +895,8 @@
       if(!candidate||candidate.familyKind==='pack'||candidate.pack?.kind==='shader')return null;
       const m=await import('/worlds/host.js'),c=document.createElement('canvas');c.width=width;c.height=height;
       const w=await m.createWorld(c,{recipe:candidate,labels:'off',quality:1,adaptive:false,film:true});
-      try{w.resize(width,height,1);w.reset(constructGraph(),0);let t=12000;for(let i=0;i<frames;i++){w.render(t,1/30,{phase:(i%30)/30});t+=1000/30;}return c.toDataURL('image/jpeg',.82);}
+      // The page keeps responding between frames (a software renderer may take a while per frame).
+      try{w.resize(width,height,1);w.reset(constructGraph(),0);let t=12000;for(let i=0;i<frames;i++){w.render(t,1/30,{phase:(i%30)/30});t+=1000/30;if(i%4===3)await new Promise(r=>setTimeout(r,0));}return c.toDataURL('image/jpeg',.82);}
       finally{w.dispose();}
     },
     dismissNotice(id){const i=notices.findIndex(n=>n.id===id);if(i>=0){notices.splice(i,1);changed('notice');}}
