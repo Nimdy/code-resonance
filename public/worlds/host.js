@@ -54,6 +54,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const rig=createCameraRig(camera);
   const model=createModel({speed});
   let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null,ext=null;
+  // After a reset, prime or new epoch the world still holds the frame before it: the first intent brings it up to date at
+  // the intent's time, so an effect is placed as it is in continuous play (a seek then an event before the next frame).
+  let stale=true;
   // The director and agent presences fold the recorded intents; the history keeps that fold exact for any length of
   // project with bounded memory (checkpoints), and it survives recipe switches (decisions do not depend on the look).
   const director=createDirector({recipe,intensity:recipe.overrides?.intensity??1}),agents=createAgents();
@@ -109,13 +112,16 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       u.uActivity.value=i.activity;u.uRes.value.set(w,h);u.uCam.value.copy(camera.position);u.uInv.value.copy(inverse);}
     ext.effects?.update?.(i);
   }
+  function frameInfo(t,dt,phase){
+    const tsec=(t-model.epoch)/1000;
+    return {t,tsec,tview:tsec/speedK,dt,beat:Math.exp(-((phase%1)*16)*.9),barPhase:phase,mood,energy:mood.energy||0,
+      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level};
+  }
   function render(t,dt,{phase=0}={}){
     const began=performance.now();renderer.info.reset();adapt(dt);
     if(startedAt===null)startedAt=t;
     dt=Math.min(.1,Math.max(0,dt));
-    const tsec=(t-model.epoch)/1000;
-    info={t,tsec,tview:tsec/speedK,dt,beat:Math.exp(-((phase%1)*16)*.9),barPhase:phase,mood,energy:mood.energy||0,
-      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level};
+    info=frameInfo(t,dt,phase);stale=false;
     world.update(info);
     const goal=world.cameraGoal(info);rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
     world.afterCamera?.(info);
@@ -135,21 +141,21 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   }
   return {
     get world(){return world;},get recipe(){return current;},
-    reset(graph,t){model.reset(graph,t);world.rebuild();snapCamera=true;},
+    reset(graph,t){model.reset(graph,t);world.rebuild();snapCamera=true;stale=true;},
     applyDelta(delta,start,end){model.applyDelta(delta,start,end);world.onDelta?.(delta,start,end);},
     cue(c,t){model.cue(c,t);world.onCue?.(c,t);},
     // A recorded intent at its time: folded (exactly, also when it arrives late) and expressed if the world has an effect.
-    intent(i,t){const r=history.add(i);if(r.cmd?.effect){expressed[r.cmd.effect]=(expressed[r.cmd.effect]||0)+1;world.effect(r.cmd,info);ext?.effects?.effect?.(r.cmd,info);}},
+    intent(i,t){if(stale&&Number.isFinite(t)){info=frameInfo(t,0,info?.barPhase||0);world.update(info);stale=false;}const r=history.add(i);if(r.cmd?.effect){expressed[r.cmd.effect]=(expressed[r.cmd.effect]||0)+1;world.effect(r.cmd,info);ext?.effects?.effect?.(r.cmd,info);}},
     // After a seek: intents before t set the director (cooldowns, unlocks) and agent lifecycles, without effects.
     // Intents at or after the seek point are forgotten, so the schedule delivers them again as fresh events.
     prime(entries,t){
       const list=[];for(const e of entries)(e.intents||[]).forEach((i,k)=>{if(i.ord===undefined&&Number.isInteger(e.seq))i.ord=e.seq*65536+k;if(i.ts<t)list.push(i);});
       history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
-      world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);},
+      world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);stale=true;},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
-    setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;}},
+    setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;}},
     async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
