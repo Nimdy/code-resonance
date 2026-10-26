@@ -48,6 +48,6 @@ const FAMILIES=[['fractal-biosphere','biosphere'],['stellar-forge','stellar'],['
       await p.getByRole('button',{name:'Preview the preset Bioluminescent abyss'}).click();await wait(9000);}});
     await shoot('visual-studio-essentials','visual',{before:async p=>{await wait(10000);await p.locator('.vs-params').scrollIntoViewIfNeeded().catch(()=>{});await wait(1000);}});
     await browser.close();
-    fs.writeFileSync(path.join(OUT,'README.md'),`# Flagship worlds: screenshots\n\nReal browser screenshots (headless Chromium, ${GPU?'AMD integrated GPU':'software rendering (SwiftShader)'}) of an isolated installation made by \`qualification/ui/world-shots.js\` on the recorded Lumen session.\n\n${shots.map(s=>`- \`${path.basename(s)}\``).join('\n')}\n`);
+    fs.writeFileSync(path.join(OUT,'README.md'),`# Flagship worlds: screenshots\n\nReal browser screenshots (headless Chromium, ${GPU?'AMD integrated GPU':'software rendering (SwiftShader)'}) of an isolated installation made by \`qualification/ui/world-shots.js\` on the recorded Lumen session.\n\n${shots.map(s=>`- \`${path.basename(s)}\``).join('\n')}\n\nBefore and after (\`before-after-<family>.jpg\`): stills of the render lab (\`qualification/visual/lab.js --gpu amd\`) on the same\nrecorded Lumen session at the same moments (the end, 3.5 s after the first failure, recovery and milestone, 60 s of\nidle); left the 0.5.0 world, right the flagship world.\n`);
   }finally{await env.stop();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
