@@ -1,95 +1,230 @@
-/* Visual Studio: the stage as large as the column allows (16:9), a browser strip under it, the World DNA inspector. */
-.ws-visual .vs-main{padding:16px 20px 14px;gap:12px;overflow:hidden}
-.ws-visual .vs-head{display:flex;align-items:baseline;gap:8px 22px;flex-wrap:wrap;flex:none}
-.ws-visual .vs-legend{display:flex;gap:6px 16px;flex-wrap:wrap;margin-left:auto;font-size:12.5px;color:var(--text-3)}
+/* Visual Studio: the stage as wide as the column allows (16:9), the world browser under it taking the height that is left,
+   and the World DNA inspector beside them. The stage slot is only ever resized by these rules, never rebuilt. */
+.ws-visual{--inspector:clamp(400px,24vw,540px)}
+@media (max-width:1280px){.ws-visual{--inspector:360px}}
+@media (max-width:1080px){.ws-visual{--inspector:320px}}
+/* The column is a size container: the stage takes its full width unless that would leave the browser less than its
+   minimum height, in which case it takes the height and centres. The minimum keeps the cards from turning into thin
+   2.3:1 slivers at 1920 x 1080 (the stage letterboxes a little there instead). */
+.ws-visual .vs-main{--vs-head:34px;--vs-gap:12px;--vs-browser-min:196px;
+  padding:14px clamp(16px,1.25vw,28px) 12px;gap:var(--vs-gap);overflow:hidden;container:vs-main/size}
+.ws-visual .vs-head{display:flex;align-items:center;gap:8px 22px;flex:none;height:var(--vs-head);min-width:0}
+.ws-visual .vs-head .title-l{white-space:nowrap}
+.ws-visual .vs-legend{display:flex;gap:6px 18px;margin-left:auto;font-size:12.5px;color:var(--text-3);min-width:0;overflow:hidden;white-space:nowrap}
 .ws-visual .vs-term{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .ws-visual .vs-term i{width:7px;height:7px;border-radius:2px;flex:none}
 .ws-visual .vs-term strong{color:var(--text-2);font-weight:600}
 .ws-visual .vs-term.saved i{background:var(--ok)}.ws-visual .vs-term.preview i{background:var(--accent)}
 .ws-visual .vs-term.preset i{background:var(--warn)}.ws-visual .vs-term.pack i{background:var(--agent)}
-/* The largest 16:9 rectangle the column's free height allows (container units of the stage box). */
-.ws-visual .vs-stage{flex:1;min-height:200px;container-type:size;display:grid;place-items:center}
-.ws-visual .vs-slot{width:min(100cqw,calc(100cqh * 16 / 9));aspect-ratio:16/9}
-/* Browser strip */
-.ws-visual .vs-browser{flex:none;display:grid;gap:10px;min-width:0}
-.ws-visual .vs-browser-head{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;min-width:0}
+@container vs-main (max-width:1180px){.ws-visual .vs-term>span{display:none}}
+.ws-visual .vs-stage{flex:none;display:flex;justify-content:center;min-height:0}
+.ws-visual .vs-slot{flex:none;width:min(100cqw,(100cqh - var(--vs-head) - 2 * var(--vs-gap) - var(--vs-browser-min)) * 16 / 9);aspect-ratio:16/9;min-height:0}
+/* ---- World browser: a strip of cards across the full width ---- */
+.ws-visual .vs-browser{flex:1 1 0;min-height:var(--vs-browser-min);display:flex;flex-direction:column;gap:10px;min-width:0}
+.ws-visual .vs-browser-head{display:flex;align-items:center;gap:8px 14px;min-width:0;flex:none}
 .ws-visual .vs-browser-note{flex:1 1 160px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-browser-actions{display:flex;gap:6px}
-.ws-visual .vs-cards{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:1px 1px 6px;min-height:150px;scroll-snap-type:x proximity}
+.ws-visual .vs-note-short{display:none}
+@container vs-main (max-width:860px){.ws-visual .vs-note-long{display:none}.ws-visual .vs-note-short{display:inline}}
+.ws-visual .vs-browser-actions{display:flex;gap:6px;flex:none}
+/* Four cards share the width (more scroll sideways); each is as tall as the strip. A column too narrow for four whole
+   cards shows three and a deliberate peek of the fourth, and the edge the strip continues past fades (.fade-r/.fade-l,
+   set from script while it overflows), so a cut card reads as "more this way". */
+.ws-visual .vs-cards{flex:1 1 0;min-height:0;display:grid;grid-auto-flow:column;grid-auto-columns:clamp(228px,calc((100% - 36px) / 4),460px);grid-template-rows:minmax(0,1fr);
+  gap:12px;overflow-x:auto;overflow-y:hidden;padding:1px 1px 8px;scroll-snap-type:x proximity;container:vs-cards/size}
 .ws-visual .vs-cards-empty{align-self:center;padding:24px 4px}
-.ws-visual .vs-card{flex:0 0 188px;display:flex;flex-direction:column;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;scroll-snap-align:start;
-  transition:border-color var(--t-1),background var(--t-1)}
-.ws-visual .vs-card:hover{border-color:var(--line-3);background:var(--bg-3)}
-.ws-visual .vs-card.active{border-color:var(--accent-line);box-shadow:0 0 0 1px var(--accent-line) inset}
+@container vs-main (max-width:947px){.ws-visual .vs-cards{grid-auto-columns:calc((100% - 24px - 56px) / 3)}}
+.ws-visual .vs-cards.fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
+.ws-visual .vs-cards.fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px);mask-image:linear-gradient(90deg,transparent,#000 56px)}
+.ws-visual .vs-cards.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent)}
+.ws-visual .vs-card{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;scroll-snap-align:start;
+  transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-1)}
+.ws-visual .vs-card:hover{border-color:var(--line-3)}
+.ws-visual .vs-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 0 24px rgba(117,237,255,.12)}
 .ws-visual .vs-card.ghost{border-style:dashed;background:transparent}
-.ws-visual .vs-card.preset{flex-basis:248px;padding:12px 12px 0}
-.ws-visual .vs-card-main{display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit;min-width:0}
-.ws-visual .vs-card-main:disabled{cursor:not-allowed;opacity:.55}
-.ws-visual .vs-card-main:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-3)}
-.ws-visual .vs-thumb{position:relative;display:block;aspect-ratio:16/9;background:#000;overflow:hidden}
+.ws-visual .vs-card-main{position:relative;flex:1;display:block;min-height:0;text-align:left;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit}
+.ws-visual .vs-card-main:disabled{cursor:not-allowed}
+.ws-visual .vs-card-main:disabled .vs-thumb{opacity:.55}
+/* The keyboard ring is drawn over the picture (which covers the whole button), doubled with a dark line so it reads on a
+   bright picture and on the active card's own accent border. */
+.ws-visual .vs-card-main:focus-visible{outline:none}
+.ws-visual .vs-card-main:focus-visible::after{content:'';position:absolute;inset:0;z-index:3;border-radius:calc(var(--r-3) - 1px);box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px rgba(4,6,10,.8);pointer-events:none}
+/* The picture fills the card; the name and line sit over its lowest third on a dark scrim, so on a short card (about
+   2.2:1 at 1920 x 1080) the rendered world still shows over the top two thirds. */
+.ws-visual .vs-thumb{position:absolute;inset:0;display:block;background:#000;overflow:hidden}
 .ws-visual .vs-thumb-media{position:absolute;inset:0;display:block}
-.ws-visual .vs-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;animation:fade-in var(--t-3) var(--ease)}
-.ws-visual .vs-thumb-cap{position:absolute;left:8px;right:8px;bottom:5px;font-size:11.5px;font-weight:550;color:rgba(232,238,247,.78);text-shadow:0 1px 6px #000,0 0 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-chips{position:absolute;left:6px;top:6px;right:6px;display:flex;flex-wrap:wrap;gap:4px}
-.ws-visual .vs-chips .pill{height:18px;font-size:11.5px;padding:0 7px;gap:5px;background:rgba(6,9,14,.78);backdrop-filter:blur(6px)}
+.ws-visual .vs-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;animation:fade-in var(--t-3) var(--ease);transition:transform var(--t-3) var(--ease)}
+.ws-visual .vs-card:hover .vs-thumb img{transform:scale(1.03)}
+.ws-visual .vs-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,6,10,.42) 0,rgba(4,6,10,0) 20%,rgba(4,6,10,0) 50%,rgba(4,6,10,.72) 74%,rgba(4,6,10,.9) 100%);pointer-events:none}
+/* A caption over a picture (a newer revision is rendering) is a chip at the top right, clear of the name whatever the
+   card's height; on a tile it sits under the icon. */
+.ws-visual .vs-thumb-cap{font-size:12px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-thumb-media>.vs-thumb-cap{position:absolute;right:8px;top:7px;z-index:2;height:20px;line-height:20px;padding:0 8px;border-radius:10px;max-width:calc(100% - 16px);
+  background:rgba(6,9,14,.82);backdrop-filter:blur(6px);color:rgba(232,238,247,.86)}
+.ws-visual .vs-thumb:has(.vs-match) .vs-thumb-media>.vs-thumb-cap{right:36px}
+.ws-visual .vs-thumb-tile .vs-thumb-cap{max-width:100%;padding:0 10px;text-align:center;color:var(--text-3)}
+.ws-visual .vs-chips{position:absolute;left:8px;top:7px;right:36px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
+.ws-visual .vs-chips .pill{height:20px;font-size:12px;padding:0 8px;gap:5px;background:rgba(6,9,14,.82);backdrop-filter:blur(6px);pointer-events:auto}
 .ws-visual .vs-chips .pill::before{width:5px;height:5px}
-.ws-visual .vs-match{position:absolute;right:6px;top:6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.78);color:var(--warn);backdrop-filter:blur(6px)}
+.ws-visual .vs-match{position:absolute;right:8px;top:7px;z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.82);color:var(--warn);backdrop-filter:blur(6px)}
 .ws-visual .vs-match svg{width:12px;height:12px}
-.ws-visual .vs-thumb-tile{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 58%,#0f1828,#05070b 72%);color:var(--text-4)}
+/* The tile's icon and caption are centred together in the part of the card above its name, under the chips. */
+.ws-visual .vs-thumb-tile{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:28px 0 56px;background:radial-gradient(ellipse at 50% 40%,#0f1828,#05070b 72%);color:var(--text-4)}
 .ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
-.ws-visual .vs-thumb-tile svg{width:24px;height:24px}
-.ws-visual .vs-card-text{display:grid;gap:2px;padding:8px 11px 10px;min-width:0}
-.ws-visual .vs-card-text strong{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-card-line{font-size:12.5px;line-height:1.35;color:var(--text-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ws-visual .vs-card-why{font-size:12px;line-height:1.4;color:var(--text-4);margin-top:3px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft,rgba(117,237,255,.12));color:var(--accent,#75edff)}
-.ws-visual .vs-essentials-note{margin:0 0 8px}
-.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:4px 11px 10px;margin-top:auto;min-height:30px}
-.ws-visual .vs-card-foot .pill{height:19px;font-size:11.5px;padding:0 7px}
-.ws-visual .vs-card.preset .vs-card-foot{padding:8px 0 10px}
-.ws-visual .vs-card.preset .vs-card-text{padding:0}
-.ws-visual .vs-card-foot .grow{flex:1}
-.ws-visual .vs-preset-body{display:flex;gap:10px;align-items:flex-start;min-width:0}
+.ws-visual .vs-thumb-tile svg{width:26px;height:26px;flex:none}
+/* A short strip (1280 x 720) keeps only the icon: the caption would meet the name (the card's label says what choosing
+   it does, its pills say why it cannot run). */
+@container vs-cards (max-height:139px){.ws-visual .vs-thumb-tile{padding-top:0}.ws-visual .vs-thumb-tile .vs-thumb-cap{display:none}}
+/* From 140 px the card's line may take two lines (below), so the tile keeps clear of a taller name block; up to 175 px
+   (1920 x 1080) the icon and caption sit side by side to fit the space left above it. */
+@container vs-cards (min-height:140px){.ws-visual .vs-thumb-tile{padding-bottom:76px}}
+@container vs-cards (min-height:140px) and (max-height:175px){.ws-visual .vs-thumb-tile{flex-direction:row;gap:8px}.ws-visual .vs-thumb-tile .vs-thumb-cap{padding:0}}
+.ws-visual .vs-card-text{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:1px;padding:0 12px 10px;min-width:0;pointer-events:none}
+.ws-visual .vs-card-text strong{font-size:15px;font-weight:620;color:#f2f6fc;text-shadow:0 1px 8px rgba(0,0,0,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-card-line{font-size:13px;line-height:1.35;color:rgba(214,222,236,.86);text-shadow:0 1px 6px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-card-why{display:none;font-size:12.5px;line-height:1.4;color:rgba(190,200,218,.78);margin-top:3px;text-shadow:0 1px 6px rgba(0,0,0,.9);-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* A strip of 140 px or more (every screen but a short one) gives the line two lines, so it reads whole; a tall strip
+   (1440 x 900, 2560 x 1440) also shows why to choose a world where that fits whole too (script marks a cut one .cut),
+   never on the card being shown, whose story the inspector tells. */
+@container vs-cards (min-height:140px){
+  .ws-visual .vs-card:not(.preset) .vs-card-line{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  /* Room for a two-line line on every card, so the names share one baseline across the strip. */
+  .ws-visual .vs-card:not(.preset) .vs-card-text{min-height:70px;align-content:start}
+  .ws-visual .vs-thumb::after{background:linear-gradient(180deg,rgba(4,6,10,.45) 0,rgba(4,6,10,0) 22%,rgba(4,6,10,0) 36%,rgba(4,6,10,.88) 78%)}}
+@container vs-cards (min-height:176px){
+  .ws-visual .vs-card-why{display:-webkit-box}
+  .ws-visual .vs-thumb::after{background:linear-gradient(180deg,rgba(4,6,10,.5) 0,rgba(4,6,10,0) 26%,rgba(4,6,10,0) 30%,rgba(4,6,10,.92) 76%)}}
+.ws-visual .vs-cards .vs-card.shown .vs-card-why,.ws-visual .vs-cards .vs-card .vs-card-why.cut{display:none}
+/* Presets: no picture, a compact text card with its actions */
+.ws-visual .vs-card.preset{padding:12px 12px 0;background:linear-gradient(160deg,var(--bg-3),var(--bg-2) 70%)}
+.ws-visual .vs-card.preset .vs-card-text{position:static;padding:0;gap:2px;pointer-events:auto}
+.ws-visual .vs-card.preset .vs-card-text strong{font-size:14.5px;line-height:1.3;color:var(--text-1);text-shadow:none;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.ws-visual .vs-card.preset .vs-card-line{color:var(--text-3);text-shadow:none;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.ws-visual .vs-card.preset .vs-card-why{display:none;color:var(--text-2);text-shadow:none;-webkit-line-clamp:1}
+/* A short strip (1280 x 720) keeps the name and summary whole: no icon beside them, no half-cut line under them. */
+@container vs-cards (max-height:139px){.ws-visual .vs-card.preset .vs-preset-icon{display:none}}
+/* The text takes the height the strip gives (these heights are the strip's inside, 9 px under its box): why to choose
+   the look in two lines first (1920 x 1080), then the name and summary, then more of the why. A why that would
+   still be cut is left to the tooltip (script marks it .cut). */
+@container vs-cards (min-height:140px){.ws-visual .vs-card.preset .vs-card-why{display:-webkit-box;-webkit-line-clamp:2}}
+@container vs-cards (min-height:165px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:3}.ws-visual .vs-card.preset .vs-card-text strong{-webkit-line-clamp:2}}
+@container vs-cards (min-height:205px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:4}}
+@container vs-cards (min-height:165px){.ws-visual .vs-card.preset .vs-card-line{-webkit-line-clamp:2}}
+@container vs-cards (min-height:245px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:5}}
+.ws-visual .vs-card.preset .vs-error{margin-top:4px}
+.ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft);color:var(--accent)}
+.ws-visual .vs-preset-body{display:flex;gap:10px;align-items:flex-start;min-width:0;min-height:0;overflow:hidden}
 .ws-visual .vs-preset-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn);flex:none}
 .ws-visual .vs-preset-icon svg{width:15px;height:15px}
-/* Inspector */
+.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;padding:8px 0 10px;margin-top:auto;min-height:30px;flex:none}
+.ws-visual .vs-card-foot .pill{height:20px;font-size:12px;padding:0 8px}
+.ws-visual .vs-card-foot .grow{flex:1}
+/* ---- Inspector ---- */
+.ws-visual .inspector-head{padding:16px 20px 14px;gap:3px}
 .ws-visual .vs-insp-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ws-visual .vs-family{font-size:18px;letter-spacing:-.01em}
-.ws-visual .inspector-body{gap:22px}
-.ws-visual .vs-sec{display:grid;gap:12px;min-width:0}
-.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px}
-.ws-visual .vs-sec-head h3{flex:none}
+.ws-visual .vs-family{font-size:21px;line-height:1.25;font-weight:640;letter-spacing:-.015em;margin-top:2px}
+.ws-visual .vs-sub{line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .inspector-body{gap:0;padding:4px 20px 28px;container:vs-insp/inline-size}
+.ws-visual .vs-sec{display:grid;gap:12px;min-width:0;padding:18px 0;border-top:1px solid var(--line)}
+.ws-visual .vs-sec:first-child{border-top:0;padding-top:14px}
+.ws-visual .vs-sec[hidden]{display:none}
+.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px;min-height:20px}
+.ws-visual .vs-sec-head h3{flex:none;color:var(--text-2)}
 .ws-visual .vs-sec-head .rule{flex:1;height:1px;background:var(--line)}
-.ws-visual .vs-kv{grid-template-columns:76px 1fr;gap:6px 12px}
-.ws-visual .vs-kv .pill{height:20px;font-size:12px}
+.ws-visual .vs-sub-head{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+.ws-visual .vs-why{line-height:1.55;color:var(--text-2)}
+.ws-visual .vs-why[hidden]{display:none}
+.ws-visual .vs-identity{display:grid;gap:4px}
+.ws-visual .vs-status{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-width:0}
+.ws-visual .vs-status .pill{height:22px;font-size:12px;flex:none}
+.ws-visual .vs-custom{color:var(--text-2)}
+.ws-visual .vs-state-why{margin:0;line-height:1.45}
+/* Each action as wide as its label, the rows filled: never a label cut off in a fixed column. */
 .ws-visual .vs-actions{display:flex;flex-wrap:wrap;gap:6px}
+.ws-visual .vs-actions .btn{flex:1 1 auto;justify-content:flex-start}
 .ws-visual .vs-identity-note{display:grid;gap:8px}
 .ws-visual .vs-identity-note:empty{display:none}
-.ws-visual .vs-look,.ws-visual .vs-look-empty{display:grid;gap:6px;justify-items:start}
-.ws-visual .vs-look .field{justify-self:stretch}
-.ws-visual .vs-params{display:grid;gap:2px}
-.ws-visual .vs-params details.disclosure:first-child{border-top:0;padding-top:0}
-.ws-visual .vs-params details.disclosure>summary{white-space:pre}
+.ws-visual .vs-look .field[hidden]{display:none}
+.ws-visual .vs-look-empty{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.ws-visual .vs-look-empty[hidden]{display:none}
+/* Property rows read in one order everywhere: the label (with its read-out and reset), then the control, then the
+   description. A slider, a row of choices or three channels takes the full width under its label (.stack), so its
+   track stays long enough for precise control; a switch, a colour or a select sits beside its label, with what the
+   value was generated as under them. The label column never gets less than 40 %, and the read-out has a column of its
+   own (it wraps there), so a long label and "generated 1.00 0.80 0.90" never share a cell. The reset column exists
+   only while there is something to reset, so every control ends on the same right edge (a reset sits past it). */
+.ws-visual .vs-props{display:grid;gap:0;min-width:0}
+.ws-visual .vs-props .field{grid-template-columns:minmax(40%,1fr) minmax(0,auto) auto;column-gap:0;row-gap:5px;align-items:center;padding:10px 0}
+.ws-visual .vs-props .field-head{display:contents}
+/* Anything else the shared field helper may put in its head later takes a row of its own instead of a stray cell. */
+.ws-visual .vs-props .field-head>:not(.field-label,.field-value,.field-reset){grid-column:1/-1}
+.ws-visual .vs-props .field-label{grid-column:1;grid-row:1;line-height:1.3;min-width:0;overflow-wrap:break-word;padding-right:10px}
+.ws-visual .vs-props .field-reset{grid-column:3;grid-row:1;margin:0 0 0 8px;display:none}
+.ws-visual .vs-props .field.modified .field-reset{display:inline-flex}
+.ws-visual .vs-props .field>.vs-param-control,.ws-visual .vs-props .field>.field-row,.ws-visual .vs-props .field>.select,.ws-visual .vs-props .field>.segmented{grid-column:2;grid-row:1;min-width:0;justify-self:end}
+.ws-visual .vs-props .field-value{grid-column:1/-1;grid-row:2;margin:0;font-size:12px;line-height:1.35;color:var(--text-3);min-width:0}
+.ws-visual .vs-props .field-value:empty{display:none}
+/* The description takes the next free row: always after the control. */
+.ws-visual .vs-props .field-doc{grid-column:1/-1;font-size:12.5px;line-height:1.45}
+.ws-visual .vs-props .field.stack>.vs-param-control,.ws-visual .vs-props .field.stack>.field-row,.ws-visual .vs-props .field.stack>.segmented,.ws-visual .vs-props .field.stack>.select{grid-column:1/-1;grid-row:2;justify-self:stretch}
+.ws-visual .vs-props .field.stack .field-value{grid-column:2;grid-row:1;justify-self:end;text-align:right;overflow-wrap:anywhere}
+/* A row of choices wraps rather than scrolls (a narrow inspector never hides an option), each as wide as its label. */
+.ws-visual .vs-props .field.stack .segmented{display:flex;flex-wrap:wrap;width:100%;overflow:visible}
+.ws-visual .vs-props .field.stack .segmented button{flex:1 1 auto;padding:0 8px}
+.ws-visual .vs-props .field .select{width:100%}
+.ws-visual .vs-props .field .input.num{width:72px;flex:none}
+.ws-visual .vs-props .field .range{flex:1;min-width:0}
+/* The narrowest inspector (360 px at 1280 px and below: 320 px inside its padding) puts selects under their label too;
+   a 1440 x 900 screen (400 px: 360 inside) keeps them beside it. */
+@container vs-insp (max-width:340px){
+  .ws-visual .vs-props .field:has(>.vs-param-control>.select)>.vs-param-control,.ws-visual .vs-props .field>.select{grid-column:1/-1;grid-row:2;justify-self:stretch}
+  .ws-visual .vs-props .field:has(>.vs-param-control>.select) .field-value,.ws-visual .vs-props .field:has(>.select) .field-value{grid-column:2;grid-row:1;justify-self:end;text-align:right;overflow-wrap:anywhere}
+}
 .ws-visual .vs-param-control{display:grid;gap:4px;min-width:0}
 .ws-visual .vs-param-control .vec3{display:grid;gap:4px}
+.ws-visual .vs-param-control .vec3 .field-row{gap:8px}
+.ws-visual .vs-param-control .vec3 .tiny{width:12px}
 .ws-visual .field.pending>.field-head .field-label{color:var(--accent)}
-.ws-visual .field-value{font-size:12px;color:var(--text-3)}
+/* Parameter groups: a heading-sized summary with the count and how many are customised */
+.ws-visual .vs-params{display:grid;gap:0}
+.ws-visual .vs-params details.disclosure{border-top:1px solid var(--line);padding-top:0}
+.ws-visual .vs-params details.disclosure:first-child{border-top:0}
+.ws-visual .vs-params details.disclosure>summary{padding:11px 0;gap:10px;font-size:14px;color:var(--text-1);border-radius:var(--r-1)}
+.ws-visual .vs-params details.disclosure>summary:focus-visible{outline-offset:0}
+.ws-visual .vs-params details.disclosure>.disclosure-body{gap:0;padding:0 0 12px}
+.ws-visual .vs-sum-name{flex:none}
+.ws-visual .vs-sum-count{font-size:12px;color:var(--text-3);min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--bg-3);display:inline-grid;place-items:center}
+.ws-visual .vs-sum-mod{margin-left:auto;font-size:12px;font-weight:550;color:var(--accent)}
+.ws-visual .vs-sum-mod[hidden]{display:none}
+.ws-visual details.pending>summary .vs-sum-name{color:var(--accent)}
+.ws-visual .vs-group-head{font:600 12px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);padding:14px 0 2px}
+.ws-visual .vs-group-head:first-child{padding-top:4px}
+.ws-visual .vs-purpose-note{line-height:1.45;margin:0 0 4px;max-width:60ch}
+/* Essentials: the first controls, set apart on a raised panel */
+.ws-visual .vs-sec-ess{padding:16px 0}
+.ws-visual .vs-ess details.disclosure{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-3);padding:0 14px}
+.ws-visual .vs-ess details.disclosure>summary{padding:12px 0 10px}
+.ws-visual .vs-ess details.disclosure>summary .vs-sum-name{font:600 12px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.ws-visual .vs-ess details.disclosure.pending>summary .vs-sum-name{color:var(--accent)}
+.ws-visual .vs-ess .vs-essentials-note{margin:0 0 4px}
+.ws-visual .vs-ess .field{border-top:1px solid var(--line)}
+.ws-visual .vs-params-count{white-space:nowrap}
 .ws-visual .vs-error{color:var(--danger);line-height:1.4}
 .ws-visual .vs-error:empty{display:none}
 .ws-visual .vs-input-row .input{flex:1;min-width:0}
 .ws-visual .vs-aliases{display:grid;gap:0}
-.ws-visual .vs-aliases>p{margin-bottom:8px}
-.ws-visual .vs-alias{display:grid;gap:6px;padding:9px 0;border-top:1px solid var(--line)}
+.ws-visual .vs-aliases>p{margin-bottom:6px}
+.ws-visual .vs-alias{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
 .ws-visual .vs-alias-head{display:flex;gap:8px;align-items:baseline;min-width:0}
 .ws-visual .vs-alias-head strong{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-alias-head .grow{flex:1}
 /* The segmented track scrolls (overflow:auto), which clips an outside focus ring: draw it inside the button. */
 .ws-visual .segmented button:focus-visible{outline-offset:-2px}
 .ws-visual #vsQuality{display:flex}.ws-visual #vsQuality button{flex:1;padding:0 6px}
-.ws-visual .vs-foot{gap:8px;transition:background var(--t-2)}
-.ws-visual .vs-foot.pending{background:linear-gradient(0deg,rgba(117,237,255,.07),var(--bg-1))}
+/* Apply and Cancel: always at the foot of the inspector; a pending preview lights the bar. */
+.ws-visual .vs-foot{gap:8px;padding:12px 20px;min-height:60px;transition:background var(--t-2),border-color var(--t-2)}
+.ws-visual .vs-foot.pending{background:linear-gradient(0deg,rgba(117,237,255,.09),var(--bg-1));border-top-color:var(--accent-line)}
 .ws-visual .vs-foot-status{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ws-visual .vs-foot .grow{flex:0 0 0}
+.ws-visual .vs-foot #vsApply{min-width:104px}
 /* Over the stage */
 .vs-chrome{position:absolute;inset:0}
 .vs-chrome .vs-badge{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 24px)}
@@ -99,18 +234,28 @@
 .vs-chrome .vs-stage-note .callout{background:rgba(10,13,20,.9);backdrop-filter:blur(10px);max-width:560px}
 .ws-visual .vs-dialog,.modal .vs-dialog{display:grid;gap:10px}
 .modal .vs-error{color:var(--danger)}.modal .vs-error:empty{display:none}
-/* Laptops: a shorter strip leaves the stage its height. */
-@media (max-height:780px){.ws-visual .vs-main{padding:12px 16px 10px;gap:9px}.ws-visual .vs-card{flex-basis:164px}.ws-visual .vs-card-line{-webkit-line-clamp:1}.ws-visual .vs-card-why{display:none}
-  .ws-visual .vs-term>span{display:none}.ws-visual .vs-thumb-cap{font-size:10.5px;left:6px;right:6px}.ws-visual .vs-head .title-l{font-size:19px}
-  .ws-visual .vs-cards{min-height:0}}
+/* A 900 px screen: the family's story in three lines (the whole of it is its tooltip), so the Essentials start higher. */
+@media (max-height:920px){.ws-visual .vs-why:not([hidden]){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}}
+/* Short screens: a tighter column leaves the stage its height. */
+@media (max-height:780px){.ws-visual .vs-main{--vs-browser-min:160px;--vs-head:30px;--vs-gap:10px;padding:10px 16px 8px}.ws-visual .vs-head .title-l{font-size:20px}
+  /* The family's story in two lines (the whole of it is the paragraph's tooltip and the card's), so the controls start
+     higher in a short inspector. */
+  .ws-visual .vs-why:not([hidden]){display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ws-visual .inspector-head{padding:12px 20px 10px}.ws-visual .vs-sec{padding:14px 0}
+  /* What the state means and what customising does are the tooltips of the state pill and the customisation line; the
+     look pack's description is its select's tooltip (its purpose is in the label). */
+  .ws-visual .vs-state-why,.ws-visual .vs-lock-note,.ws-visual .vs-look .field-doc,.ws-visual .vs-essentials-note{display:none}
+  .ws-visual .vs-sec-identity{gap:10px}.ws-visual .vs-identity-note:not(:has(>:not(.vs-lock-note))){display:none}}
 /* Narrow: the inspector stacks below, the stage takes the full width, Apply stays in reach. */
 @media (max-width:900px){
   /* Stacked rows take their content's height (the shared .split rows would otherwise share the view's height). */
   .ws-visual.split>.main,.ws-visual.split>.inspector{min-height:auto}
-  .ws-visual .vs-main{overflow:visible}
-  .ws-visual .vs-stage{flex:none;container-type:normal;min-height:0;display:block}
+  .ws-visual .vs-main{overflow:visible;container-type:normal}
+  .ws-visual .vs-head{height:auto}
+  .ws-visual .vs-legend{display:none}
   .ws-visual .vs-slot{width:100%}
-  .ws-visual .vs-legend{margin-left:0}
+  .ws-visual .vs-browser{flex:none}
+  .ws-visual .vs-cards{flex:none;height:170px;container-type:normal}
   /* A pending preview keeps Apply and Cancel at the bottom of the screen wherever the page is scrolled. */
   .ws-visual .vs-foot.pending{position:fixed;left:var(--rail);right:0;bottom:0;z-index:30;border-top:1px solid var(--accent-line);background:var(--bg-1);box-shadow:0 -12px 32px rgba(0,0,0,.45)}
   .ws-visual.split:has(.vs-foot.pending){padding-bottom:58px}
