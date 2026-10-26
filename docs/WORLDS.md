@@ -60,48 +60,87 @@ A seeded share (up to 0.25) is added to each score so similar projects can still
 the data is ambiguous the seed decides. The weights were chosen by hand with the three demonstration projects in
 view; they encode the intent above, not a learned model.
 
+Generator v2 (`RECIPE_VERSION` 2) draws the Fractal Biosphere's dominant species from these traits and adds the
+Machine Cathedral's light shafts and wetness from a separate random stream (`genome-added`), so every value generated
+by v1 is unchanged; `tests/recipe.test.js` pins both.
+
 ## World families
 
-### Stellar Forge
-
-| Data | Image |
-|---|---|
-| Subsystem | A star; temperature from its contents (interface blue-white, services gold, model orange, logic pale yellow, tests violet), size from its symbols; it ignites when created |
-| File | A planet on a Kepler orbit around its subsystem's star, orbit from its persisted plot (ring and bearing); surface from content (UI banded gas giant, types crystal, tests ice, functions terran, no symbols moonlet); API routes are polar jets |
-| Symbol | A moon or ring particle in stable slot order; it spirals in when created |
-| State | Draft: molten protoplanet; committed: cooled world; validated: aurora; stressed: storms |
-| Dependency | An energy ribbon between two planets; across subsystems a plasma bridge |
-| Agent | A comet: halo orbit while working on a request, at the planet it reads or edits while a tool runs, parked at the system's edge while waiting |
-
-The recipe's arrangement shapes the galaxy (spiral arms, a ring, two cores with tidal streams, or a spheroidal
-cluster) and the systems are packed on that same structure so neighbours never overlap. Ambient: a nebula with
-filaments and dark lanes, a dust and gas disc, star convection and coronae, orbital motion, twinkling stars.
-Milestones unlock aurora veils, plasma currents, a pulsar and a halo.
+The three built-in families are three different universes, each with its own visual grammar: an idle life that is
+ambient only and never suggests new work, events that mean what the data says, failure that is never celebratory,
+recovery that resolves it, and milestones that leave something lasting. Every image is a function of the model, the
+recipe and the performance clock, so seeks, replays and films reproduce it (no `Math.random`, `Date.now` or
+`performance.now` in a world).
 
 ### Fractal Biosphere
 
-| Data | Image |
-|---|---|
-| Subsystem | An organism rooted at its persisted site; species from the recipe (coral, fern, kelp, mycelial, crystal-tree) |
-| Folder | A limb from the trunk, in the order the folder first appeared; the trunk grows with the folders |
-| File | A branch from its folder's limb; long files fork into twigs |
-| Symbol | A leaf in slot order: components blossom, classes bear pods, routes raise stamens, interfaces and types are translucent fronds |
-| State | Draft: pale new growth; validated: glowing leaves; stressed: blight, drooping leaves |
-| Dependency | A tendril; between organisms at most four braided vines per pair, brighter for more links |
-| Agent | A firefly swarm gathered at the branch it reads or edits |
+A bioluminescent reef or night forest grown from the code. Each subsystem is an organism of its own species (sea
+fan, crystal tree, kelp, fern colony, mycelium), chosen from the project's data: coral for UI-heavy code, ferns for
+deep folder branching, crystal trees for typed and tested code, mycelium for cross-district coupling, kelp for
+function-heavy code. Crowns are recursive: pinnate fans, polyp buds and photophores along every path. Bodies are dark
+and translucent; the light lives in the photophores and buds. The anchor organism is brightest and the others step
+down a stop per depth band into the haze (`public/worlds/biosphere.js`, `biosphere-growth.js`, `biosphere-glsl.js`).
 
-One continuous current field sways every vertex by its rest position, so connected parts stay connected. Ambient:
-a dark veined ground, spores, nutrient pulses, breathing leaves, light shafts. Verified milestones leave lasting
-fractal blooms on the organism and unlock fireflies, drifting petals, canopy veins and a bioluminescent tide.
+| Moment | Image |
+|---|---|
+| Idle | One current sways everything; the light breathes over 2, 4 or 8 bars; a soft swell of the water's own colour circulates through the tissue; light shafts migrate with motes inside; far giants stand in the haze |
+| Edit | A narrow, bright pulse climbs that file's branch and lights its photophores |
+| Structure created / removed | The crown grows outward along its paths, growth front leading / it folds back and drops dull flecks |
+| Subsystem created | A seed glows at the root and the organism grows from about 8 % over 5 s; spores burst; the camera turns until the newborn is not hidden |
+| Subsystem connected | A dim rhizome cord grows along the floor between the two roots, a bright head travelling it once |
+| Tests passing | A calm green wave through the covered organisms |
+| Failure | Blight on the failing branches only: they drain to rust and black, sag and curl; a few dull embers fall; the grade desaturates and the shafts dim |
+| Recovery | The flood climbs only the repaired branches and leaves fresh growth in the species' own grammar |
+| Milestone (lasting) | A phyllotactic flower: 144 florets on Vogel's spiral, petals placed by the golden angle, the spiral repeated at every petal tip; refactors grow crystals bearing crystals; blooms accumulate and are never dropped |
+| Agents | Firefly swarms or pollinators at the exact branch they read or edit; waiting presences low at the edge |
+| Mature history | Girth, buttress roots and moss grow, blooms accumulate, the light warms |
+
+### Stellar Forge
+
+A galaxy composed by the software, seen from low over its disc. Gas and dust are a face-on map in differential
+rotation drawn twice: a crisp sheet in the galactic plane and a soft raymarched volume (bulge light, remnant shells).
+Each arm has the anatomy of a grand-design spiral (a broken dust lane on its inner edge, rose HII knots, blue-white
+clusters, feathers and spurs); the nucleus is a gold-white cusp, the brightest light in the frame. Subsystems are
+star systems packed on the arms; files are planets on Kepler orbits (`public/worlds/stellar.js`).
+
+| Moment | Image |
+|---|---|
+| Idle | Gas streams and lanes shear, star clouds evolve, the galaxy rotates, a slow lateral dolly; coronae breathe on the bars; nothing twinkles |
+| Edit | Rim glow on the planet, its orbit arc lights, its dependency threads show briefly |
+| Structure created / removed | Accretion sparks spiral in / a grey ablation stream blows away |
+| Subsystem created | A dark globule collapses in the disc, the star ignites and blows it open, a light echo crosses the disc |
+| Subsystem connected | A surge of light along the tidal stream between the two systems; both stars flare |
+| Tests passing | Aurora on the covered planets |
+| Failure | The worst-hit star dims and erupts on one limb; dark dust pillars with crimson rims rise around each strained system; at most 10 % global darkening |
+| Recovery | The pillars thin and dissolve; a serene glow lights the gas |
+| Milestone (lasting) | A hard point-spread spike, then a light echo racing out across the dust lanes; it leaves a remnant shell of broken filaments (rose for a milestone, violet for a refactor) that grows with repetition |
+| Agents | Comets with a tapered ion tail and a work stream to the planet being edited, following the observed lifecycle |
+| Mature history | More stars and gas, up to six tidal streams, accumulated remnant shells, asteroid belts and the unlock layers |
 
 ### Machine Cathedral
 
-The Construct's visual language on the new engine: districts are luminous plots on a survey ground, files are towers
-whose storeys are their symbols (floors, blocks, glass, open frames, plates, roof spires, a crown for overflow),
-drafts show scaffold edges, validated towers light their windows, failing runs show red strain; conduits stay low,
-bridges arc between rooftops; agents are drones. Ambient: fog, motes, breathing windows, conduit flow, mechanism
-rings around the tallest towers; milestones unlock searchlights and glass aurora. The original Construct
-(`public/construct.js`) is kept unchanged as a selectable world for comparison.
+A night cathedral city on black wet obsidian, seen from low with a long lens. The camera stands on the line from the
+moon through the largest tower, so the moon sits behind the great spire. Subsystems are precincts (islands between
+mirror canals), files are towers whose storeys are their symbols; the largest landmarks become openwork spires
+(`public/worlds/cathedral.js`). The original Construct (`public/construct.js`) is kept unchanged as a classic stage.
+
+| Moment | Image |
+|---|---|
+| Idle | Cloud crosses the moon every 20–30 s and the rays and glitter dim and return; mist drifts past the tower bases; windows breathe with a slow candle flicker; the orrery precesses; a carillon peal climbs the great spire every 16 bars |
+| Edit | That tower's windows warm; the edited storey flares |
+| Structure created / removed | A storey slides down and turns into place with a spark ring / it lifts, folds away and drops grey dust |
+| Subsystem created | A light runs once around the foundation, the kerb rises bay by bay, then the nave |
+| Subsystem connected | A light cable extends between the tower tops; a clamp ring closes at each end |
+| Tests passing | A light scan climbs the covered towers |
+| Failure | A tremor; narrow white-hot cracks with a dim red bleed; windows gutter and die storey by storey from the top; the precinct turns grey-blue. Never gold |
+| Recovery | Warm light climbs the covered towers, a warm beam rises through the great spire, the orrery realigns |
+| Milestone (lasting) | The camera pushes in on the crowned spire, the lattice is gilded from the foot up, a halo ring blooms out and a gold wave crosses the water; tilted halo rings, lit tracery lanterns and gable roses stay |
+| Agents | A servitor (a lantern inside two brass rings) circling the tower it works on and lighting its facade; parked low at the precinct's edge while waiting |
+| Mature history | Islands between mirror canals; three to five grand openwork spires; a low carpet of roofs for the smaller modules of large precincts |
+
+The Visual Studio shows why to choose each world, offers six curated looks (two per family, built in and read-only,
+previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials
+group above the full parameter groups.
 
 ## Semantic fidelity
 

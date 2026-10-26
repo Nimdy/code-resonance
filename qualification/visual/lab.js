@@ -4,6 +4,7 @@
 //
 // node visual/lab.js --dataset lumen [--family fractal-biosphere] [--variant 0] [--at 0.25,0.6,1] [--events]
 //        [--idle 20,90] [--warm 4] [--size 1920x1080] [--labels cinematic|off] [--gpu amd] [--out <dir>] [--tag name]
+//        [--tune '{"atmosphere.fog":0.4}'] (tuned values, as a preset or the Visual Studio would apply them)
 //   --dataset   a receiver data directory under results/datasets/ (or a path): lumen, excalidraw, self, lumen-long, …
 //   --at        moments as fractions of the recorded performance (1 = its end: the mature project)
 //   --events    stills around real recorded intents: 1 s and 3.5 s after the first validation.failed,
@@ -33,6 +34,7 @@ const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==nul
       const project=projectOf(dir);
       if(FAMILY)await recipeAction(svc,project,{type:'family',family:FAMILY});
       if(VARIANT!==null){const want=Number(VARIANT);for(let i=0;i<want;i++)await recipeAction(svc,project,{type:'regenerate',keepFamily:!!FAMILY});}
+      if(arg('tune',null))await recipeAction(svc,project,{type:'tune',values:JSON.parse(arg('tune'))});
       const {page,info,errors}=await filmPage(browser,svc,project,{width:W,height:H,query:`&labels=${LABELS}`});
       await page.evaluate(m=>window.__film.setLabels(m),LABELS);
       const span=info.end-info.start,moments=[];
