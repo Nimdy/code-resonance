@@ -1,0 +1,52 @@
+# Control Center workspaces
+
+Real browser screenshots (headless Chromium, AMD integrated GPU) of an isolated installation made by `qualification/ui/workspace-shots.js`: the recorded Lumen session (Fractal Biosphere, public title "Lumen Recipes"), the reference packs installed, the same routes and sizes for every set.
+
+- `01-home-1920x1080.jpg`
+- `02-projects-1920x1080.jpg`
+- `03-project-detail-1920x1080.jpg`
+- `04-visual-studio-saved-1920x1080.jpg`
+- `05-visual-studio-preview-1920x1080.jpg`
+- `06-music-studio-1920x1080.jpg`
+- `07-visual-packs-1920x1080.jpg`
+- `08-connections-1920x1080.jpg`
+- `09-record-broadcast-1920x1080.jpg`
+- `10-settings-1920x1080.jpg`
+- `11-stage-controls-1920x1080.jpg`
+- `12-stage-clean-1920x1080.jpg`
+- `01-home-2560x1440.jpg`
+- `02-projects-2560x1440.jpg`
+- `03-project-detail-2560x1440.jpg`
+- `04-visual-studio-saved-2560x1440.jpg`
+- `05-visual-studio-preview-2560x1440.jpg`
+- `06-music-studio-2560x1440.jpg`
+- `07-visual-packs-2560x1440.jpg`
+- `08-connections-2560x1440.jpg`
+- `09-record-broadcast-2560x1440.jpg`
+- `10-settings-2560x1440.jpg`
+- `11-stage-controls-2560x1440.jpg`
+- `12-stage-clean-2560x1440.jpg`
+- `01-home-1440x900.jpg`
+- `02-projects-1440x900.jpg`
+- `03-project-detail-1440x900.jpg`
+- `04-visual-studio-saved-1440x900.jpg`
+- `05-visual-studio-preview-1440x900.jpg`
+- `06-music-studio-1440x900.jpg`
+- `07-visual-packs-1440x900.jpg`
+- `08-connections-1440x900.jpg`
+- `09-record-broadcast-1440x900.jpg`
+- `10-settings-1440x900.jpg`
+- `11-stage-controls-1440x900.jpg`
+- `12-stage-clean-1440x900.jpg`
+- `01-home-1280x720.jpg`
+- `02-projects-1280x720.jpg`
+- `03-project-detail-1280x720.jpg`
+- `04-visual-studio-saved-1280x720.jpg`
+- `05-visual-studio-preview-1280x720.jpg`
+- `06-music-studio-1280x720.jpg`
+- `07-visual-packs-1280x720.jpg`
+- `08-connections-1280x720.jpg`
+- `09-record-broadcast-1280x720.jpg`
+- `10-settings-1280x720.jpg`
+- `11-stage-controls-1280x720.jpg`
+- `12-stage-clean-1280x720.jpg`
