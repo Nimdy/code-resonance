@@ -248,7 +248,8 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     await A.focus('.vs-card[data-card="fractal-biosphere"] .vs-card-main');await A.keyboard.press('Enter');await previewing(A);
     check('a world card works from the keyboard (Enter) and keeps the focus',await state(A,()=>window.ResonancePlayer.state.preview.recipe.family)==='fractal-biosphere'&&await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='fractal-biosphere');
     await A.keyboard.press('Tab');
-    check('Tab moves on to the next card',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='machine-cathedral');
+    // The built-in worlds are shown Fractal Biosphere, Stellar Forge, Machine Cathedral.
+    check('Tab moves on to the next card',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='stellar-forge');
     await A.click('#vsCancel');await settled(A);
     await A.click('#vsQuality button[data-value="2"]');
     check('quality is set for this device only',await state(A,()=>window.ResonancePlayer.state.quality)==='2'&&await state(A,()=>JSON.parse(localStorage.getItem('code-resonance-device-v1')).quality)==='2');

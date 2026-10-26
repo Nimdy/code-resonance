@@ -20,6 +20,6 @@
     },
     "overrides": {"atmosphere.weather": "night-fog", "atmosphere.fog": 0.5, "light.bloom": 0.9},
     "technique": {"saturation": 0.75, "tint": [0.86, 1, 1.16], "grain": 0.5},
-    "budget": {"drawCalls": 30, "passes": 32, "triangles": 600000, "points": 20000, "textures": 20, "updateMs": 4}
+    "budget": {"drawCalls": 30, "passes": 40, "triangles": 600000, "points": 20000, "textures": 20, "updateMs": 4}
   }
 }

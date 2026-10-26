@@ -50,6 +50,9 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     const page=await browser.newPage({viewport:{width:1920,height:1080}});
     const errors=[];page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('pageerror',e=>errors.push(String(e)));
     await page.addInitScript(TAP);
+    // CR_QUALITY (CI): the rendering quality a user of a slow machine would choose (a runner without a GPU).
+    const Q=['0','1','2','3'].includes(process.env.CR_QUALITY)?process.env.CR_QUALITY:null;
+    if(Q)await page.addInitScript(q=>{try{if(!localStorage.getItem('code-resonance-device-v1'))localStorage.setItem('code-resonance-device-v1',JSON.stringify({quality:q}));}catch{}},Q);
     // The Performance Stage of the Control Center (#/stage): the same engine the other workspaces show.
     // A paired browser (the private link npm start prints), as a user's: its world choices are saved for the project.
     await page.goto(url+`/#/stage&pair=${svc.pairing}`);
@@ -98,7 +101,7 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
       measurements.exportWavBytes=size;check('audio export renders the recorded performance to WAV',head.startsWith('RIFF')&&head.endsWith('WAVE')&&size>100000,`${size} bytes`);}
     else check('audio export renders the recorded performance to WAV',false,'no download');
     const overlay=await browser.newPage({viewport:{width:1920,height:1080}});
-    await overlay.goto(url+'/?overlay=1');await overlay.waitForTimeout(4000);
+    await overlay.goto(url+`/?overlay=1${Q?`&quality=${Q}`:''}`);await overlay.waitForTimeout(4000);
     check('OBS overlay hides all controls',!(await overlay.isVisible('.app'))&&!(await overlay.isVisible('.stage-chrome'))&&!(await overlay.isVisible('.topbar'))&&(await overlay.$$('button')).length===0);
     // The visible world canvas: the living world (WebGL) by default, the Construct, or the 2D stage for the other worlds or without WebGL.
     const canvasBox=await overlay.evaluate(()=>{const e=[...document.querySelectorAll('#world,#construct,#stage')].find(c=>!c.classList.contains('hidden'));const r=e.getBoundingClientRect();return [r.width,r.height,e.id];});
