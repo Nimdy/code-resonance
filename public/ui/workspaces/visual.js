@@ -23,12 +23,12 @@ const FAMILIES=[
 // Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
 // a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[
-  {id:'curated:abyss',name:'Bioluminescent abyss',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2}}},
-  {id:'curated:reef',name:'Sunlit reef',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8}}},
-  {id:'curated:deep-field',name:'Deep field',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85}}},
-  {id:'curated:nursery',name:'Stellar nursery',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06]}}},
-  {id:'curated:vigil',name:'Moonlit vigil',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12]}}},
-  {id:'curated:evensong',name:'Amber evensong',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0]}}}];
+  {id:'curated:abyss',name:'Bioluminescent abyss',line:'Deep teal water, strong inner light, fireflies in the dark.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2}}},
+  {id:'curated:reef',name:'Sunlit reef',line:'Bright shafts through violet water, translucent fronds swaying.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8}}},
+  {id:'curated:deep-field',name:'Deep field',line:'Seen from farther out: a calm, cool galaxy in a dense starfield.',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85}}},
+  {id:'curated:nursery',name:'Stellar nursery',line:'Warm billowing nebulae, thick dust and bright young plasma.',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06]}}},
+  {id:'curated:vigil',name:'Moonlit vigil',line:'Cold blue night, deep fog, moon rays and a mirror of water.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12]}}},
+  {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0]}}}];
 // The few parameters that change a world the most, shown first; every other one stays under its group.
 const ESSENTIALS={
   'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway'],
@@ -663,7 +663,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const x=p.payload||{},n=Object.keys(x.tuning||{}).length,err=presetErrors.get(p.id),prev=presetPreview===p.id;
       const summary=[x.family?familyName(x.family):'Automatic family',x.look?(packOf(x.look)?.name||x.look):null,n?count(n,'parameter'):null,x.overrides?.intensity!==undefined&&x.overrides.intensity!==1?`Spectacle ${pct(x.overrides.intensity)}`:null].filter(Boolean).join(' · ');
       cards.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
-        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary}))),
+        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line}):null)),
         err?h('div',{class:'vs-error small',text:err}):null,
         h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):curated?pill('Curated','plain',{plain:true,title:'Built in and read-only: preview it, then apply or save your own'}):null,h('span',{class:'grow'}),
           button({label:'Preview',size:'sm',kind:'outline',icon:'eye',attrs:{'aria-label':`Preview the preset ${p.name}`},onClick:()=>previewPreset(p)}),

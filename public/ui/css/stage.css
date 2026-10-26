@@ -48,9 +48,3 @@ body.stage-idle,body.stage-idle *{cursor:none!important}
 @media (max-width:900px){.stage-top{padding:10px 10px 28px}.stage-top .segmented{order:5;width:100%}.stage-title strong{max-width:60vw}.transport-row{flex-wrap:wrap}.scrub{order:4;flex-basis:100%}.stage-info{display:none}}
 /* Messages on the Stage sit above the transport, never over its controls. */
 body.immersive .toasts{bottom:128px}
-/* The world's title card: centred low in the frame, large light type, fades in and out (respects reduced motion). */
-.stage-card{position:absolute;left:0;right:0;bottom:22%;display:grid;justify-items:center;gap:6px;pointer-events:none;opacity:0;transform:translateY(8px);transition:opacity 900ms var(--ease),transform 900ms var(--ease)}
-.stage-card.show{opacity:1;transform:none}
-.stage-card .eyebrow{color:rgba(230,236,246,.7);letter-spacing:.32em}
-.stage-card strong{font-size:clamp(28px,3.4vw,56px);font-weight:250;letter-spacing:.04em;color:#f6f4ee;text-shadow:0 2px 30px rgba(0,0,0,.6)}
-.stage-card-sub{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:rgba(222,230,242,.62)}

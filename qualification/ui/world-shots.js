@@ -1,6 +1,6 @@
 'use strict';
 // Screenshots of the flagship worlds where people meet them: the Performance Stage (each built-in family on a real
-// recorded session, the entry title card, the four supported resolutions) and the Visual Studio's world browser with
+// recorded session, the four supported resolutions) and the Visual Studio's world browser with
 // its rendered thumbnails, curated looks and Essentials. A real browser on an isolated installation (the seeded
 // environment of ui/screenshots.js). JPEG files in docs/worlds/spectacle/.
 // Usage (from qualification/): node ui/world-shots.js [--gpu amd]
@@ -38,7 +38,6 @@ const FAMILIES=[['fractal-biosphere','biosphere'],['stellar-forge','stellar'],['
     for(const [f,short] of FAMILIES){
       await family(f);
       await shoot(`stage-${short}`,'stage',{before:clean});
-      if(short==='biosphere')await shoot('stage-entry-card','stage',{before:async p=>{await wait(1800);}});
     }
     // The supported resolutions, on the Machine Cathedral (the last family chosen).
     for(const [w,h] of [[2560,1440],[1440,900],[1280,720]])await shoot('stage-cathedral','stage',{width:w,height:h,before:clean});
