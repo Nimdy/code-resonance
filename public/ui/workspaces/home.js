@@ -1,5 +1,6 @@
-// Home: at a glance, whether Code Resonance is working, which project is active and whether its capture is really
-// running, what needs attention, and the way to the Stage. On a first run it is a setup guide derived from what the
+// Home: entering the creative application. The live world of the active project (the stage slot), its identity and
+// whether its capture and agents are really active, what needs attention, recent projects, and the way to the Stage
+// and the studios. On a first run it is a setup guide derived from what the
 // receiver actually observes, so it can be left and resumed at any step. Capture state is built from evidence only:
 // a past event is never presented as proof that capture runs now.
 import {h,text,button,section,pill,callout,emptyState,copyable,toast,styles} from '../dom.js';
@@ -12,75 +13,91 @@ function hasWebgl2(){if(webgl2===null)try{const g=document.createElement('canvas
 // Rebuilding a small region must not lose the keyboard position: the focused control is found again by its key.
 function swap(el,nodes){const k=el.contains(document.activeElement)?document.activeElement.closest('[data-fk]')?.dataset.fk:null;el.replaceChildren(...nodes.filter(Boolean));if(k)el.querySelector(`[data-fk="${CSS.escape(k)}"]`)?.focus({preventScroll:true});}
 const fk=k=>({'data-fk':k});
+// A demo's agent is named plainly: the demo label beside it already says it is fictional.
+const agentName=(p,a)=>isDemo(p)?'Demo agent':providerName(a.provider);
 export default {mount(view,ctx){
   styles('home');
   const {store:S,player:P,navigate,chrome,stageUrl}=ctx;const offs=[];
   const openStage=()=>{S.setUi({stageOpened:true});navigate('stage');};
   const openWindow=()=>{S.setUi({stageOpened:true});window.open(stageUrl(),'_blank','noopener');};
   // ---- Layout ------------------------------------------------------------------------------------------------
-  const sys=h('div',{class:'home-sys','aria-label':'System status'});
-  const head=h('div',{class:'page-head home-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Code Resonance'}),h('h1',{class:'title-l',text:'Home'})),sys);
-  // The stage slot exists from the start (the shell finds it once, at mount); it is only hidden on a first run.
+  // A workspace grid: the live world (the stage slot) and the recent projects in the wide column; beside it, the active
+  // project's identity, its actions and its evidence-based capture and agent status, then what needs attention. The
+  // top bar already states the receiver, live mode and sound, so Home does not repeat them as pills.
+  // A light, one-line head: the live world below it is what this page is about.
+  const head=h('div',{class:'page-head home-head'},h('div',{class:'grow'},h('h1',{class:'title-l',text:'Home'}),h('span',{class:'eyebrow',text:'Code Resonance'})));
+  // The stage slot exists from the start (the shell finds it once, at mount); it is only hidden on a first run. Its size
+  // follows the column by CSS alone, so a layout change only moves the stage layer over it.
   const slot=h('div',{class:'stage-slot home-slot','data-stage-slot':''});
-  const projectEl=h('div',{class:'home-project'});
-  const hero=h('section',{class:'home-hero','aria-label':'Active project'},h('div',{class:'home-slot-wrap'},slot),projectEl);
+  const hero=h('section',{class:'home-hero','aria-label':'Live world'},slot);
+  const projectEl=h('section',{class:'panel home-project','aria-label':'Active project'});
   const loading=h('p',{class:'faint small',text:'Connecting to the receiver…'});
-  const guideTop=h('div'),guideBottom=h('div'),firstEmpty=h('div');
+  // The guide goes under the stage while no real project exists (guideTop: on a first run the stage is hidden, so it
+  // takes the wide column), and below both columns, at the full width, once one does (guideBottom). Only one of them is
+  // ever filled. guideBottom is outside the columns, so the side column can end level with the recent projects.
+  const guideTop=h('div',{class:'home-guide-slot home-guide-top'}),guideBottom=h('div',{class:'home-guide-slot home-guide-bottom'}),firstEmpty=h('div',{class:'home-first'});
   const attention=h('div',{class:'home-attention'}),recent=h('div',{class:'home-recent'});
-  const lower=h('div',{class:'home-lower'},
-    section({title:'Needs attention'},attention),
-    section({title:'Recent projects',actions:[button({label:'All projects',icon:'projects',kind:'ghost',size:'sm',onClick:()=>navigate('projects'),attrs:fk('all-projects')})]},recent));
-  view.append(h('div',{class:'page ws-home'},h('div',{class:'page-inner'},head,loading,hero,firstEmpty,guideTop,lower,guideBottom)));
+  const attentionCount=h('span',{class:'note'});
+  const attentionEl=h('section',{class:'panel home-att','aria-label':'Needs attention'},
+    h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{text:'Needs attention'})),attentionCount),h('div',{class:'panel-body'},attention));
+  const recentEl=section({title:'Recent projects',actions:[button({label:'All projects',icon:'projects',kind:'ghost',size:'sm',onClick:()=>navigate('projects'),attrs:fk('all-projects')})]},recent);
+  recentEl.classList.add('home-recent-sec');
+  const main=h('div',{class:'home-main'},hero,firstEmpty,guideTop,recentEl);
+  const side=h('div',{class:'home-side'},projectEl,attentionEl);
+  const grid=h('div',{class:'home-grid'},main,side,guideBottom);
+  view.append(h('div',{class:'page ws-home'},h('div',{class:'page-inner'},head,loading,grid)));
   // Over the stage: whether it is live or replaying, and a preview's label (the world stays clickable elsewhere).
   const modeBadge=h('span',{class:'pill plain'}),previewBadge=h('span',{class:'pill accent',text:'Preview · not saved'});
   const overlay=h('div',{class:'chrome-pass home-chrome'},h('div',{class:'slot-badge'},modeBadge,previewBadge));
   chrome.append(overlay);
-  // ---- System line: is Code Resonance itself working? ---------------------------------------------------------
-  function renderSys(){
-    const s=P.state,st=S.state,status=st.status,feed=st.changes,gl=hasWebgl2()&&!(s.world==='living'&&s.worldStatus.failed);
-    const item=(tone,label,title)=>h('span',{class:'sys-item',title},h('span',{class:`dot ${tone}`}),label);
-    swap(sys,[
-      s.receiver===false?item('danger','Receiver offline','The local receiver does not answer. Start it with npm start.'):s.receiver?item('ok',`Receiver${status?.version?` ${status.version}`:''}`,status?`Running on port ${status.port}${status.loopbackOnly?', reachable from this computer only':''}`:'The receiver answers'):item('','Connecting',''),
-      s.receiver===false?null:feed==='open'?item('ok','Live updates','Changes made in other windows and by the receiver appear here at once'):item('warn','Reconnecting','The change feed is reconnecting; values refresh every few seconds meanwhile'),
-      item(gl?'ok':'warn',gl?'WebGL2':'No living world',gl?'The living world can render in this browser':'The Stage falls back to The Construct in this browser'),
-      item(s.sound.enabled?'ok':'',s.sound.enabled?'Sound on':'Sound off',s.sound.enabled?'Music plays in this window':'Browsers start sound only after a click')]);
-  }
   // ---- The active project ---------------------------------------------------------------------------------------
   function statusLines(pr){
     const s=P.state,st=S.state,full=st.evidence.get(pr.id),ev=pr.evidence,cap=capture(ev,full),now=Date.now();
-    const line=(tone,main,sub=null,key='')=>h('li',{dataset:{status:key}},h('span',{class:`dot ${tone}`}),h('div',{},h('span',{text:main}),sub?h('span',{class:'faint small',text:sub}):null));
+    const line=(tone,main,sub=null,key='')=>h('li',{dataset:{status:key}},h('span',{class:`dot ${tone}`}),h('div',{},main instanceof Node?main:h('span',{text:main}),sub?h('span',{class:'faint small',text:sub}):null));
     const out=[];
-    out.push(s.receiver===false?line('danger','Receiver disconnected','Start it again with npm start. What follows is as of the last answer.','receiver')
-      :s.receiver?line(st.changes==='open'?'ok':'warn','Receiver available',st.changes==='open'?'Changes arrive as they happen':'Reconnecting to its change feed','receiver'):line('','Connecting to the receiver…',null,'receiver'));
+    // A receiver that answers with its change feed open is already stated by the top bar; only a problem is repeated here,
+    // because it qualifies everything below it.
+    if(s.receiver===false)out.push(line('danger','Receiver disconnected','Start it again with npm start. What follows is as of the last answer.','receiver'));
+    else if(!s.receiver)out.push(line('','Connecting to the receiver…',null,'receiver'));
+    else if(st.changes!=='open')out.push(line('warn','Reconnecting to the receiver’s change feed','Values refresh every few seconds meanwhile','receiver'));
     const reported=full&&!full.building?full.editor?.reported:null;
     const extension=cap.key==='unknown'||cap.key==='none'?null:isDemo(pr)?'Fictional capture events written by the demo, not by VS Code':reported?`VS Code capture observed · extension ${reported.extensionVersion||'?'} reported its settings ${ago(reported.at)}`:ev?.editor?.version?`VS Code capture observed · extension ${ev.editor.version}`:'VS Code capture observed · this extension version does not report its settings';
     out.push(line(cap.key==='running'?'ok':cap.key==='quiet'?'warn':'',cap.line,extension,`capture-${cap.key}`));
     const last=ev?.lastReceivedAt;
-    out.push(last?line(now-last<LIVE_MS?'accent':'',now-last<LIVE_MS?`Events received ${ago(last)}`:`Project idle · last events received ${ago(last)}`,when(last),'events'):line('','No events received yet',null,'events'));
+    // The absolute time is given once: not again when the capture line above already states it (capture stopped at …).
+    const abs=last?when(last):null;
+    out.push(last?line(now-last<LIVE_MS?'accent':'',now-last<LIVE_MS?`Events received ${ago(last)}`:`Project idle · last events received ${ago(last)}`,cap.line.includes(abs)?null:abs,'events'):line('','No events received yet',null,'events'));
     const agents=[...(ev?.agents||[])].sort((a,b)=>(b.lastAt||0)-(a.lastAt||0));
-    out.push(agents.length?line('agent',`Agent activity observed: ${agents.map(a=>`${providerName(a.provider)} ${ago(a.lastAt)}`).join(', ')}`,isDemo(pr)?'Fictional agent events written by the demo':'Through hooks: sessions, tools and files only','agents'):line('','No agent activity observed',null,'agents'));
+    // Each time is one unbreakable piece, so a narrow column moves it to the next line whole (never a lone "ago").
+    const agentMain=agents.length?h('span',{},'Agent activity observed: ',...agents.flatMap((a,i)=>[i?', ':'',`${agentName(pr,a)} `,h('span',{class:'nowrap',text:ago(a.lastAt)})])):null;
+    out.push(agents.length?line('agent',agentMain,isDemo(pr)?'Fictional agent events written by the demo':'Through hooks: sessions, tools and files only','agents'):line('','No agent activity observed',null,'agents'));
     return out;
   }
   function renderProject(){
     const pr=S.project();
-    if(!pr){swap(projectEl,[h('div',{class:'home-project-empty'},h('span',{class:'eyebrow',text:'Active project'}),h('p',{class:'muted',text:'No project is selected. Choose one from Recent projects or the project menu above.'}))]);return;}
+    if(!pr){swap(projectEl,[h('div',{class:'home-id home-project-empty'},h('span',{class:'eyebrow',text:'Active project'}),h('p',{class:'muted',text:'No project is selected. Choose one from Recent projects or the project menu above.'}))]);return;}
     const r=P.state.project===pr.id&&P.state.recipe?P.state.recipe:pr.recipe,e=S.effective(),world=e.world;
-    const visual=world==='living'?`${r?.familyName||r?.family||'Living world'}${r?` · ${familyLine(r)}`:''}`:WORLD_NAMES[world]||world;
+    // The family, then its state (chosen or generated, locked) as one piece in a quieter tone: a narrow column moves the
+    // state to the next line whole.
+    const visual=world==='living'?[h('span',{text:r?.familyName||r?.family||'Living world'}),r?h('span',{class:'home-id-state',text:familyLine(r)}):null]:[h('span',{text:WORLD_NAMES[world]||world})];
     swap(projectEl,[
-      h('div',{class:'home-project-top'},h('span',{class:'eyebrow',text:'Active project'}),isDemo(pr)?pill(DEMO_LABEL,'warn'):null),
-      h('h2',{class:'title-l home-name',id:'homeProjectName',text:projectName(pr),title:projectName(pr)}),
-      h('div',{class:'faint small home-private'},icon('lock'),pr.name?'Private workspace name · never shown on the Stage':'The extension did not share a name: shown by its id'),
-      h('dl',{class:'kv home-kv'},h('dt',{text:'Public title'}),h('dd',{class:r?.title?'':'faint',id:'homePublicTitle',text:r?.title?`“${r.title}”`:'No public title — the Stage shows a generic name'}),
-        h('dt',{text:world==='living'?'Visual identity':'World'}),h('dd',{text:visual})),
-      isDemo(pr)?callout({kind:'warn',icon:'info',body:'Demonstration (fictional): produced by npm run demo on this computer. Nothing in it comes from real work.'}):null,
-      h('ul',{class:'home-status',id:'homeStatus','aria-label':'Capture status'},...statusLines(pr)),
+      h('div',{class:'home-id'},
+        h('div',{class:'home-project-top'},h('span',{class:'eyebrow',text:'Active project'}),isDemo(pr)?pill(DEMO_LABEL,'warn'):null,h('span',{class:'grow'}),
+          button({label:'Project details',icon:'chevron-right',kind:'ghost',size:'sm',title:'Activity, evidence and settings of this project',onClick:()=>navigate('projects',pr.id),attrs:fk('details')})),
+        h('h2',{class:'title-l home-name',id:'homeProjectName',text:projectName(pr),title:projectName(pr)}),
+        h('div',{class:'faint small home-private'},icon('lock'),pr.name?'Private workspace name · never on the Stage':'The extension did not share a name: shown by its id'),
+        h('dl',{class:'kv home-kv'},h('dt',{text:'Public title'}),h('dd',{class:r?.title?'':'faint',id:'homePublicTitle',text:r?.title?`“${r.title}”`:'No public title — the Stage shows a generic name'}),
+          h('dt',{text:world==='living'?'Visual identity':'World'}),h('dd',{class:'home-id-visual'},...visual.filter(Boolean))),
+        isDemo(pr)?callout({kind:'warn',icon:'info',body:'Demonstration (fictional): produced by npm run demo on this computer. Nothing in it comes from real work.'}):null),
       h('div',{class:'home-actions'},
-        button({label:'Open Stage',icon:'stage',kind:'primary',size:'lg',id:'homeOpenStage',onClick:openStage,attrs:fk('open-stage')}),
-        button({label:'Open in new window',icon:'external',kind:'outline',title:'Open the Stage in a new window (for a second monitor or OBS preview)',onClick:openWindow,attrs:fk('open-window')})),
-      h('div',{class:'home-links'},
-        button({label:'Visual Studio',icon:'visual',kind:'ghost',size:'sm',onClick:()=>navigate('visual'),attrs:fk('visual')}),
-        button({label:'Music Studio',icon:'music',kind:'ghost',size:'sm',onClick:()=>navigate('music'),attrs:fk('music')}),
-        button({label:'Project details',icon:'chevron-right',kind:'ghost',size:'sm',onClick:()=>navigate('projects',pr.id),attrs:fk('details')}))]);
+        h('div',{class:'home-actions-main'},
+          button({label:'Open Stage',icon:'stage',kind:'primary',size:'lg',id:'homeOpenStage',title:'The full-screen performance (F)',onClick:openStage,attrs:fk('open-stage')}),
+          button({label:'Open in new window',icon:'external',kind:'outline',size:'lg',title:'Open the Stage in a new window (for a second monitor or OBS preview)',onClick:openWindow,attrs:fk('open-window')})),
+        h('div',{class:'home-links'},
+          button({label:'Visual Studio',icon:'visual',kind:'outline',size:'sm',title:'This project’s visual identity',onClick:()=>navigate('visual'),attrs:fk('visual')}),
+          button({label:'Music Studio',icon:'music',kind:'outline',size:'sm',title:'This project’s music',onClick:()=>navigate('music'),attrs:fk('music')}))),
+      h('div',{class:'home-cap'},h('h3',{class:'eyebrow',text:'Capture & agents'}),
+        h('ul',{class:'home-status',id:'homeStatus','aria-label':'Capture status'},...statusLines(pr)))]);
   }
   function renderChrome(){
     const s=P.state;text(modeBadge,s.mode==='live'?'Live · about 10 s behind':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);
@@ -116,17 +133,27 @@ export default {mount(view,ctx){
   function renderAttention(){
     const items=attentionItems(),sig=items.map(x=>x.textContent).join('|');if(sig===attentionSig)return;attentionSig=sig;
     swap(attention,items.length?items:[h('div',{class:'home-calm'},icon('check'),h('span',{text:'Nothing needs attention.'}))]);
+    text(attentionCount,items.length?`${items.length} ${items.length===1?'item':'items'}`:'');attentionEl.classList.toggle('calm',!items.length);
+    // On a first run a calm attention panel would be a lone card beside the guide: the grid drops that column (CSS).
+    grid.classList.toggle('att-calm',!items.length);
   }
   // ---- Recent projects ------------------------------------------------------------------------------------------
   function renderRecent(){
     const list=[...S.state.projects].sort((a,b)=>(lastActivity(b)||0)-(lastActivity(a)||0)).slice(0,6);
     if(!list.length){swap(recent,[h('p',{class:'faint small',text:'No projects yet.'})]);return;}
+    // Each card names the agent seen most recently and when, rather than repeating that some agent activity exists.
     swap(recent,list.map(p=>{const active=p.id===S.state.selected,cap=capture(p.evidence,S.state.evidence.get(p.id)),r=p.recipe;
+      const agent=[...(p.evidence?.agents||[])].sort((a,b)=>(b.lastAt||0)-(a.lastAt||0))[0];
+      const agentLine=agent?`${agentName(p,agent)}${agent.lastAt?` ${ago(agent.lastAt)}`:''}`:null;
+      // One row per project: name, visual identity, capture and agent, then when. Where the list is wide these are
+      // columns of one line; where it is narrow (beside the stage on a large screen, or a small window) the identity and
+      // the capture line go on a second line (CSS only, by the list's own width).
       return h('button',{type:'button',class:['home-recent-row',active?'active':''],'aria-current':active?'true':null,dataset:{id:p.id,fk:`recent-${p.id}`},title:active?'The active project':'Make this the active project',onClick:()=>S.select(p.id)},
         h('span',{class:`dot ${cap.key==='running'?'ok':''}`}),
-        h('span',{class:'grow'},h('span',{class:'name-line'},h('strong',{class:'ellipsis',text:projectName(p)}),isDemo(p)?pill(DEMO_LABEL,'warn',{plain:true}):null),
-          h('span',{class:'faint small ellipsis',text:[r?.familyName||'Identity not generated yet',cap.label].join(' · ')})),
-        h('span',{class:'small muted num',text:ago(lastActivity(p))}));}));
+        h('span',{class:'rr-name'},h('strong',{class:'ellipsis',text:projectName(p)}),isDemo(p)?pill(DEMO_LABEL,'warn',{plain:true}):null),
+        h('span',{class:'rr-sub'},h('span',{class:['rr-id ellipsis',r?.familyName?'':'faint'],text:r?.familyName||'Identity not generated yet'}),
+          h('span',{class:'rr-meta ellipsis',text:[cap.label,agentLine].filter(Boolean).join(' · ')})),
+        h('span',{class:'rr-end'},active?h('span',{class:'home-active-tag',text:'Active'}):null,h('span',{class:'num home-ago',text:ago(lastActivity(p))})));}));
   }
   // ---- Setup guide (first run, resumable) ------------------------------------------------------------------------
   function steps(){
@@ -158,7 +185,7 @@ export default {mount(view,ctx){
     const firstReal=!st.projects.some(p=>!isDemo(p));
     const sig=JSON.stringify([show,first,firstReal,st.projectsLoaded,settingsKnown,demo?.id,list.map(x=>[x.done,x.summary]),st.changes,P.state.receiver,st.integrations?.vscode?.latestVersion,st.status?.version]);
     if(sig===guideSig)return;guideSig=sig;
-    if(!show){guideTop.replaceChildren();guideBottom.replaceChildren();
+    if(!show){guideTop.replaceChildren();guideBottom.replaceChildren();grid.classList.remove('guide-top');
       swap(firstEmpty,first&&st.projectsLoaded?[emptyState({icon:'projects',title:'No project yet',body:`Start capture in VS Code (${START_CMD}); the project appears here within seconds. The setup guide is hidden: Settings can show it again.`,
         actions:[button({label:'How to connect',icon:'connections',kind:'primary',onClick:()=>navigate('connections'),attrs:fk('empty-connect')}),button({label:'Settings',icon:'settings',onClick:()=>navigate('settings'),attrs:fk('empty-settings')})]})]:[]);
       return;
@@ -179,27 +206,30 @@ export default {mount(view,ctx){
           h('p',{class:'faint small',text:`A fictional project generated on this computer and always labelled “${DEMO_LABEL}”. It shows what a performance looks like; it is not your work and does not count as a connection.`}),
           demo?button({label:'Show the demo',size:'sm',onClick:()=>S.select(demo.id),attrs:fk('guide-demo')}):copyable('npm run demo'))));
     const target=first||firstReal?guideTop:guideBottom;(target===guideTop?guideBottom:guideTop).replaceChildren();swap(target,[guide]);
+    // The guide in the wide column (only the demo so far) makes it far taller than the side: the side then keeps its own height.
+    grid.classList.toggle('guide-top',target===guideTop);
   }
   // ---- Updates ---------------------------------------------------------------------------------------------------
   function layout(){
     const st=S.state,first=st.projectsLoaded?!st.projects.length:P.state.receiver===false;
     loading.hidden=st.projectsLoaded||P.state.receiver===false;
-    hero.hidden=first||!st.projectsLoaded;lower.hidden=!st.projectsLoaded&&P.state.receiver!==false;
-    recent.closest('.section').hidden=first;
+    grid.hidden=!st.projectsLoaded&&P.state.receiver!==false;
+    hero.hidden=first||!st.projectsLoaded;projectEl.hidden=hero.hidden;recentEl.hidden=first;
+    grid.classList.toggle('first-run',first);
   }
-  const all=()=>{layout();renderSys();renderProject();renderAttention();renderRecent();renderGuide();renderChrome();};
+  const all=()=>{layout();renderProject();renderAttention();renderRecent();renderGuide();renderChrome();};
   all();
   if(!S.state.integrations)void S.loadIntegrations();
   if(!S.state.status)void S.loadStatus();
   if(S.state.selected&&!S.state.evidence.has(S.state.selected))void S.loadEvidence(S.state.selected);
-  const T={sys:['status','receiver','changes','sound','world'],project:['projects','selection','evidence','recipe','world','receiver','changes','settings','preferences'],
+  const T={project:['projects','selection','evidence','recipe','world','receiver','changes','settings','preferences'],
     attention:['receiver','packs','notice','world','sound','projects','selection','settings'],recent:['projects','selection','evidence'],guide:['status','integrations','projects','sound','settings','changes','receiver','selection'],
     layout:['projects','receiver'],chrome:['mode','position','preview']};
   let wasSupported=P.state.recording.supported.ok;
   offs.push(S.on(t=>{
     const has=k=>T[k].some(x=>t.has(x));
     if(has('layout'))layout();
-    if(has('sys'))renderSys();if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('chrome'))renderChrome();
+    if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('chrome'))renderChrome();
     const sup=P.state.recording.supported.ok;if(has('attention')||(t.has('recording')&&sup!==wasSupported)){wasSupported=sup;renderAttention();}
   }));
   // Relative times ("2 min ago") and the 2-minute capture window age without any event arriving.
