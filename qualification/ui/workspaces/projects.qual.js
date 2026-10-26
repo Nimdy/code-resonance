@@ -98,7 +98,7 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     await page.keyboard.press('Escape');
     check('Escape closes it',!(await page.isVisible('.tl-menu').catch(()=>false)));
     // Agents and validation outcomes from the projection.
-    const agentsText=await page.textContent('.proj-side');
+    const agentsText=await page.textContent('.proj-agents-panel');
     check('header: no stray text among the actions',!(await page.textContent('.proj-detail-head')).includes('null'));
     check('agents: providers observed through hooks, with no claim about reasoning',agentsText.includes('Claude Code')&&agentsText.includes('never sees an agent’s hidden reasoning')&&agentsText.includes(`${model.agents.length} agent sessions`));
     const cues=model.timeline.filter(c=>/^(validation|milestone)\./.test(c.type)&&(c.type!=='validation.diagnostics'||c.detail?.errors||c.detail?.warnings));
@@ -150,8 +150,8 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     await pass('a second window follows "Use global"',b.page.waitForFunction(()=>[...document.querySelectorAll('.cfg-row')].some(r=>r.textContent.startsWith('World')&&r.textContent.includes('Living')&&r.textContent.includes('Global default')),null,{timeout:15000}));
     allErrors.push(...b.errors);await b.context.close();
     // A demonstration's agent events are fictional: never described as observed.
-    await page.goto(env.url+`/#/projects/${demo}`);await page.waitForSelector('.proj-side .list-row',{timeout:15000});await page.waitForTimeout(400);
-    const demoSide=await page.textContent('.proj-side');
+    await page.goto(env.url+`/#/projects/${demo}`);await page.waitForSelector('.proj-agents-panel .list-row',{timeout:15000});await page.waitForTimeout(400);
+    const demoSide=await page.textContent('.proj-agents-panel');
     check('demo: its agents are labelled fictional, not "observed through hooks"',demoSide.includes('Fictional agent events written by the demo')&&!demoSide.includes('Observed through hooks')&&!demoSide.includes('What agent hooks reported'),demoSide.slice(0,160));
     // ---- Layout at the laptop and narrow sizes ------------------------------------------------------------------
     await page.goto(env.url+`/#/projects/${lumen}`);await page.waitForSelector('.tl-track',{timeout:15000});
