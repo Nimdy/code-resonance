@@ -171,7 +171,8 @@ export function createOverlay(){
       if(it.kind==='title'){
         g.textAlign='left';g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=18*scale;
         g.font=`200 ${Math.round(58*scale)}px ${FONT}`;g.fillStyle='rgba(248,246,240,.96)';g.fillText(it.text,80*scale,h-150*scale);
-        g.font=`500 ${Math.round(15*scale)}px ${FONT}`;g.fillStyle='rgba(220,228,240,.78)';g.fillText((it.sub||'').toUpperCase(),83*scale,h-102*scale);g.shadowBlur=0;continue;
+        // The subtitle is left out where it would be under 11 px (small previews); films and the Stage at 1080p keep it.
+        if(15*scale>=11){g.font=`500 ${Math.round(15*scale)}px ${FONT}`;g.fillStyle='rgba(220,228,240,.78)';g.fillText((it.sub||'').toUpperCase(),83*scale,h-102*scale);}g.shadowBlur=0;continue;
       }
       if(it.kind==='caption'){
         g.font=`500 ${Math.round(27*scale)}px ${FONT}`;g.textAlign='center';g.shadowColor='rgba(4,6,12,.95)';g.shadowBlur=18*scale;g.fillStyle='#eef3fb';
