@@ -124,8 +124,10 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     let query=null;if(timer){gpuPoll();if(queries.length<6){query=gl.createQuery();gl.beginQuery(timer.TIME_ELAPSED_EXT,query);}}
     const backgroundMaterial=ext?.background||(world.background?world.background(info):null);
     const bg=backgroundMaterial?pipeline.renderBackground(backgroundMaterial):null;
+    // Light shafts point at a light the world draws in its own sky: a pack that replaces the sky has none to point at.
+    let grade=world.grade?.(info)||{};if(ext?.background&&grade.rays?.length)grade={...grade,rays:[]};
     pipeline.render(()=>{if(bg)pipeline.drawBackdrop(bg);const before=renderer.info.render.calls;renderer.render(scene,camera);
-      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(world.grade?.(info)||{},current.genome.technique)});
+      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique)});
     calls.total=renderer.info.render.calls;
     if(query){gl.endQuery(timer.TIME_ELAPSED_EXT);queries.push(query);}
     if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);}

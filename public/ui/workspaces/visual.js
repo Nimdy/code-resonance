@@ -47,6 +47,9 @@ const GROUP_OF={agentProminence:'agents'};
 // Technique values are multipliers the world host applies to the family's own grade (public/worlds/host.js
 // withTechnique): absent means identity, so that is what an untouched control shows.
 const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.contrast':1,'technique.saturation':1,'technique.vignette':1,'technique.grain':1,'technique.aberration':.004,'technique.tint':[1,1,1],'technique.lift':[0,0,0]};
+// Values a world renders when an older genome lacks a parameter added later (generator v2 added these to the Machine
+// Cathedral; the numbers are its own fallbacks in public/worlds/cathedral.js), so a control starts from what is shown.
+const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6}};
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
 const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
@@ -547,6 +550,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);
   }
   function valueOf(s,path,spec){const v=getPath(s.genome,path);if(v!==undefined)return v;if(Object.hasOwn(TECHNIQUE_IDENTITY,path))return TECHNIQUE_IDENTITY[path];
+    if(Object.hasOwn(ADDED_DEFAULTS[s.family]||{},path))return ADDED_DEFAULTS[s.family][path];
     return spec.type==='boolean'?false:spec.type==='enum'?spec.values?.[0]:spec.type==='color'?'#000000':spec.type==='vec3'?[spec.min,spec.min,spec.min]:spec.min;}
   function paramField(path,spec,s){
     const label=humanize(path.split('.').at(-1));
