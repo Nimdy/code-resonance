@@ -1,330 +1,1137 @@
-// Machine Cathedral: the software as engineered architecture, built while the work happens (the Construct's visual
-// language, rebuilt for the living-world engine: instanced, atmospheric, alive between events).
+// Machine Cathedral: the software as a monumental machine-cathedral of light, built while the work happens.
+// A night cathedral city on a black, wet obsidian floor that mirrors it, seen from low with a long lens toward a low
+// moon that hangs behind the city's great openwork spire and throws crepuscular rays past it: sodium-amber light in
+// lancets and rose windows against a cold steel-blue night, a moonlit ground mist the towers' bases sink into, cloud
+// banks crossing the moon, clockwork precessing on the bars.
 //
-// Data -> image (unchanged meaning from the Construct):
-//  - district (subsystem) -> a luminous plot on the survey ground, coloured by what it contains
-//  - file (module)        -> a tower on its persisted plot; storeys are its symbols in stable slot order
-//                            (functions floors, classes thick blocks, components glass, interfaces/types open frames,
-//                            constants thin plates; API routes are roof spires; overflow forms a crown)
-//  - material state       -> draft: scaffold edges; committed: solid with faint windows; validated: lit windows;
-//                            stressed: red strain lines, only where a failing run applies
-//  - dependency           -> a conduit near the ground; across districts a bridge between rooftops
-//  - agent                -> a drone: hovering over the tower it reads or edits while a tool runs, beaming light;
-//                            circling its district while working on a request; resting at the edge while waiting
-// Ambient life (never progress): drifting fog and motes, breathing window light, energy flowing in conduits, slow
-// mechanisms turning around tall towers. Verified milestones unlock searchlights, beacons and glass aurora.
+// Data -> image (every structure comes from the world model):
+//  - district (subsystem) -> a precinct, an island separated from the others by dark mirror canals: its foundation
+//                            engraved in light on the floor, a low kerb whose coping carries a line of light (the share
+//                            of its committed and validated work), and its nave (a
+//                            long gabled hall along the precinct's axis, clerestory lancets lit by the share of its
+//                            validated work, a rose window in each gable)
+//  - file (module)        -> a tower on its persisted plot: a plinth with an inscription band, one storey per symbol in
+//                            stable slot order (functions lancet storeys, classes paired lancets with an oculus,
+//                            components stained glass, interfaces/types tracery screens, constants low bands), taller
+//                            storeys for larger modules; stages step in every few storeys with pinnacle clusters at the
+//                            setback; the roof from the recipe's architecture (gothic concave spire, needle, deco stepped
+//                            crown, brutalist ziggurat over a lantern band with stepped organ-pipe columns on its flanks);
+//                            each precinct's largest module is its landmark: a much taller tower crowned by an openwork
+//                            spire of stone ribs and tracery (the few largest landmarks of a large project are the city's
+//                            grand spires; in a large precinct the smaller modules form a low carpet of hip-roofed
+//                            buildings); towers of three storeys and more carry an octagonal lantern stage and a spire
+//                            ringed by gablets; tall gothic towers may carry flying buttresses; API routes
+//                            are lit pinnacles; the city's largest tower carries the orrery
+//  - material state       -> draft: dark glass behind a thin cyan scaffold; committed: stone with some warm windows and
+//                            an engraved inscription; validated: the windows lit; stressed: angular cracks climbing from
+//                            the base, windows dying storey by storey from the top, a slow red crown lamp, the precinct
+//                            around it turning cold
+//  - dependency           -> inside a precinct a channel inlaid in the floor carrying light; across precincts a thin
+//                            cable of light slung between towers at staggered heights (the most-linked pairs, a few dozen)
+//  - verified milestone   -> lasting: each covered tower's top storey becomes a lantern of lit tracery, its precinct's
+//                            gable roses ignite, and the precinct's great spire is crowned (its openwork ribs gilded from
+//                            the foot up, halo rings tilted toward the view, one more per repeat); its own moment pushes
+//                            the camera in on that spire with a gold flare
+//  - agent                -> a servitor: a lantern inside two precessing brass rings, circling the tower it works on below
+//                            the skyline, beaming onto it and casting a warm pool of light on the facade
+// Ambient life (never progress): mist banks drifting past the bases, cloud shadows passing, cloud banks crossing the
+// moon (the rays, rims and glitter dim and return), drips ringing the wet floor, dust glinting toward the moon, windows
+// breathing on the bars with a slow candle flicker, the orrery precessing with beads ticking on the bars, a carillon peal
+// climbing the great spire every sixteen bars, light flowing in channels and cables. Verified milestones unlock
+// searchlights, the clockwork's full light, spire beacons and an aurora over the glass.
 import {THREE,NOISE,BACKGROUND_VS,clamp,lerp,smooth,hash,rand,rng,instancedBuffers,pointBuffers} from './core.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 const SQRT3=Math.sqrt(3);
-const KINDS={function:{h:.3,r:.56,look:0},method:{h:.21,r:.54,look:0},class:{h:.44,r:.64,look:1},'ui.component':{h:.38,r:.6,look:2},interface:{h:.22,r:.56,look:3},type:{h:.16,r:.54,look:3},variable:{h:.1,r:.5,look:4}};
-const PALETTE=['#43d1c1','#f2a65a','#a78bfa','#f582ae','#5cb7f2','#9be37d','#f7786b','#e9d461'];
+// Storey proportions per symbol kind (height, radius factor, facade look).
+const KINDS={function:{h:.46,r:1,look:0},method:{h:.38,r:.97,look:0},class:{h:.7,r:1.06,look:1},'ui.component':{h:.62,r:1.03,look:2},interface:{h:.4,r:.95,look:3},type:{h:.34,r:.93,look:3},variable:{h:.2,r:.98,look:9}};
+// Facade looks (shader): 0 lancet, 1 paired lancets, 2 stained glass, 3 tracery screen, 4 plinth, 5 roof spire,
+// 7 crown step, 8 slab, 9 band, 10 pinnacle / needle, 11 lantern band, 12 roof pinnacle, 13 buttress pier / column.
+const ARCH={gothic:{sides:8,r:.35,id:0},brutalist:{sides:4,r:.44,id:1},deco:{sides:4,r:.38,id:2},spire:{sides:8,r:.3,id:3}};
+const DISTRICT_HUES=['#7fd6d0','#f0b77a','#b3a2f5','#f29dbb','#86c2f0','#a9e08e','#f2928a','#e8d47c'];
+const DMAX=24;
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
-const FOG=`uniform vec3 uFog;uniform float uFogD;vec3 fog(vec3 c,float d){return mix(c,uFog,1.-exp(-d*uFogD));}float fogK(float d){return exp(-d*uFogD);}`;
+// Shared GLSL: height fog with drifting density, sky colour for a direction (also reflected in the floor).
+const FOG=`uniform vec3 uFogC,uFogW,uMoonDir,uMoonC,uMistC;uniform float uFogD,uFogH,uFogS,uMirror,uMistD,uMistH,uMoonK;uniform vec2 uMistO,uCloudO;uniform sampler2D uNoise;
+  // Cloud shadows: moonlight on the floor and the facades, broken by passing cloud.
+  float cloudSh(vec2 xz){return mix(.3,1.,smoothstep(.32,.68,texture(uNoise,xz*.016+uCloudO).x));}
+  vec3 hazeCol(vec3 v,float y){float m=max(dot(v,uMoonDir),0.);return uFogC+uMoonC*uMoonK*(pow(m,8.)*.06+pow(m,40.)*.2)+uFogW*exp(-y*.5)*.6;}
+  // The ground mist is lit from above by the moon: a pale bank, brightest toward the moon (forward scattering).
+  vec3 mistCol(vec3 v){float m=max(dot(v,uMoonDir),0.);return uFogC*1.2+uMoonC*(.014+.035*pow(m,5.)+.08*pow(m,30.))*(.35+.65*uMoonK)+uFogW*.9;}
+  float layerE(float y0,float y1,float H){float dy=y1-y0;return abs(dy)>1e-3?H*(exp(-y0/H)-exp(-y1/H))/dy:exp(-y0/H);}
+  // Haze that starts beyond the near city (aerial perspective: far precincts recede), plus a dense ground mist (banks
+  // drifting with the wind, three times denser in its lowest layer) that the towers' bases sink into.
+  float fogAmt(vec3 p){vec3 q=vec3(p.x,abs(p.y),p.z);vec3 d=q-cameraPosition;float L=length(d);float y0=max(cameraPosition.y,0.),y1=q.y;
+    float bank=texture(uNoise,q.xz*.045+uMistO).y;bank=smoothstep(.22,.78,bank);
+    // The mist lies thickest among the precincts (the open water beyond stays dark and clear).
+    float city=.25+.75*exp(-pow(length(q.xz-uMistC.xy)/uMistC.z,2.));
+    return 1.-exp(-uFogD*max(L-uFogS,0.)*(.3+layerE(y0,y1,uFogH))-uMistD*city*(.15+1.8*bank)*L*(layerE(y0,y1,uMistH)+2.*layerE(y0,y1,uMistH*.3)));}
+  vec3 fogCol(vec3 p){vec3 v=normalize(vec3(p.x,abs(p.y),p.z)-cameraPosition);float y=abs(p.y);return mix(hazeCol(v,y),mistCol(v),exp(-y/(uMistH*1.6)));}
+  vec3 applyFog(vec3 c,vec3 p){return mix(c,fogCol(p),fogAmt(p));}`;
+// The cloud bank that crosses the moon: one low-frequency function of the angle from the moon and the clock, evaluated
+// identically here and in JavaScript (moonCloud), so the moonlight dims exactly when a cloud covers the disc.
+const SKY=`uniform vec3 uZenith,uHorizon,uCity;uniform float uCloudT,uMoonAz;
+  float moonBand(float s,float h,float el){float x=s*7.+uCloudT;float b=.5+.5*(.62*sin(x+1.3)+.38*sin(x*2.17+4.1));return smoothstep(.42,.78,b)*exp(-pow((h-el)*13.,2.));}
+  vec3 skyCol(vec3 d){float h=d.y;vec3 c=mix(hazeCol(d,0.),uZenith,smoothstep(0.,.38,h));c+=uCity*exp(-max(h,0.)*22.)*.3*smoothstep(-.01,.01,h);
+    float m=max(dot(d,uMoonDir),0.);c+=uMoonC*uMoonK*(pow(m,120.)*.16+pow(m,2400.)*.9);return c;}`;
 export function createFamily(ctx){
-  const {scene,camera,model,recipe}=ctx;const G=recipe.genome,P=G.palette,arch=G.geometry.architecture;
+  const {scene,camera,model,recipe,renderer}=ctx;const G=recipe.genome,P=G.palette;
+  const g=G.geometry||{},sec=G.secondary||{},atm=G.atmosphere||{},mat=G.material||{},mot=G.motion||{},cam=G.camera||{};
+  const archName=ARCH[g.architecture]?g.architecture:'gothic',A=ARCH[archName],SIDES=A.sides;
+  const setback=Number.isFinite(g.setback)?g.setback:.15,spireK=Number.isFinite(g.spire)?g.spire:.6,buttressK=Number.isFinite(g.buttress)?g.buttress:.5;
+  const mechK=Number.isFinite(sec.mechanisms)?sec.mechanisms:.7,winK=Number.isFinite(sec.windows)?sec.windows:.9,beaconK=Number.isFinite(sec.beacons)?sec.beacons:.7;
+  const fogK=Number.isFinite(atm.fog)?atm.fog:.7,moteK=Number.isFinite(atm.motes)?atm.motes:.7,searchK=Number.isFinite(atm.searchlights)?atm.searchlights:.5;
+  const shaftK=Number.isFinite(atm.shafts)?atm.shafts:.8,wetK=Number.isFinite(mat.wetness)?mat.wetness:.6;
+  const stoneK=Number.isFinite(mat.stone)?mat.stone:.55,metalK=Number.isFinite(mat.metal)?mat.metal:.45,glassK=Number.isFinite(mat.glass)?mat.glass:.45;
+  const turbK=Number.isFinite(mot.turbulence)?mot.turbulence:.4,driftK=Number.isFinite(cam.drift)?cam.drift:.5,streetK=Number.isFinite(G.space?.streets)?G.space.streets:1;
+  const mechSpeed=Number.isFinite(mot.mechanism)?mot.mechanism:1,breathBars=[2,4,8].includes(mot.breath)?mot.breath:4;
+  const weather=atm.weather||'night-fog';
   const col=c=>new THREE.Color(c);
   const pal={primary:col(P.primary),secondary:col(P.secondary),accent:col(P.accent),highlight:col(P.highlight),deep:col(P.deep),haze:col(P.haze),warning:col(P.warning),valid:col(P.valid)};
   const seed=recipe.projectSeed>>>0;
-  const fogColor=pal.deep.clone().lerp(pal.haze,G.atmosphere.weather==='steam'?.45:.3).multiplyScalar(1.1);
-  const common={uT:{value:0},uV:{value:0},uSpeed:{value:1},uPx:{value:1},uRes:{value:new THREE.Vector2(1920,1080)},uBeat:{value:0},uActivity:{value:0},
-    uFog:{value:fogColor},uFogD:{value:.008+.012*G.atmosphere.fog},uUnlock:{value:new THREE.Vector4()},uKey:{value:new THREE.Vector3(-.45,.8,.35).normalize()},
+  // ---- Light and colour: cool exterior night, warm interior light ------------------------------------------------
+  // The cathedral owns its look whatever the palette: obsidian near-black, sodium-amber interior light, a cold
+  // steel-blue moon and haze; gold is kept for verified milestones. Palette colours only tint (hue), never lighten.
+  const warm=new THREE.Color('#ff9c48').lerp(pal.secondary,.08);
+  const GOLD=new THREE.Color('#ffd27a').lerp(new THREE.Color('#fff1cf'),.2);
+  const moonC=new THREE.Color('#a6bbe0').lerp(pal.highlight,.08);
+  const fogC=new THREE.Color(weather==='dusk-haze'?'#3a3442':weather==='steam'?'#36404c':'#2c3648').lerp(pal.haze,.1);
+  {const L=.2126*fogC.r+.7152*fogC.g+.0722*fogC.b,want=weather==='steam'?.016:weather==='dusk-haze'?.014:.012;fogC.multiplyScalar(want/Math.max(L,1e-4));}
+  const horizon=fogC.clone().multiplyScalar(1.2);
+  const capL=(c,max)=>{const L=.2126*c.r+.7152*c.g+.0722*c.b;return L>max?c.multiplyScalar(max/L):c;};
+  const zenith=new THREE.Color('#010206').lerp(capL(pal.deep.clone(),.002),.2);
+  const cityGlow=warm.clone().multiplyScalar(weather==='dusk-haze'?.14:.09);
+  const stone=new THREE.Color('#474c57').lerp(new THREE.Color('#7a7468'),stoneK*.5).multiplyScalar(.45+.35*stoneK);
+  const metal=new THREE.Color('#c39a5c').lerp(pal.highlight,.12).multiplyScalar(.6+.8*metalK);
+  const seedR=rng(hash(`cathedral/${seed}/${recipe.variant||0}`));const moonPh=rand(hash(`moon/${seed}`))*6.283;
+  const axisAz=seedR()*Math.PI*2;
+  // The moon sits low behind the city as seen from the camera's establishing side; its light rims the towers.
+  // The moon hangs low behind the city, seen from the establishing side; the camera stands on the line from the moon
+  // through the city's great spire, and the moon's elevation follows that camera so the disc sits behind the spire.
+  const moonAz=axisAz+Math.PI+(seedR()<.5?-1:1)*(.1+.08*seedR());let moonEl=.065+.03*seedR();
+  const moonDir=new THREE.Vector3(Math.cos(moonAz)*Math.cos(moonEl),Math.sin(moonEl),Math.sin(moonAz)*Math.cos(moonEl));
+  const keyAz=axisAz+Math.PI+(seedR()<.5?-1:1)*(.95+.3*seedR());const keyDir=new THREE.Vector3(Math.cos(keyAz)*.5,1,Math.sin(keyAz)*.5).normalize().lerp(moonDir,.25).normalize();
+  // JavaScript twin of moonBand (GLSL): the cloud cover on the moon's disc.
+  const moonCloud=T=>{const b=.5+.5*(.62*Math.sin(T+1.3)+.38*Math.sin(T*2.17+4.1));return smooth((b-.42)/.36);};
+  const common={uT:{value:0},uV:{value:0},uSpeed:{value:1},uPx:{value:1},uRes:{value:new THREE.Vector2(1920,1080)},uBeat:{value:0},uActivity:{value:0},uBars:{value:0},
+    uMirror:{value:1},uMistD:{value:.05},uMistH:{value:.4},uMoonK:{value:1},uMistO:{value:new THREE.Vector2()},uCloudO:{value:new THREE.Vector2()},uCloudT:{value:0},uMoonAz:{value:moonAz},uRain:{value:.5},uCold:{value:new THREE.Vector4(0,0,1,0)},uFogC:{value:fogC},uFogW:{value:cityGlow.clone().multiplyScalar(.18)},uFogD:{value:.01},uFogH:{value:2.2},uFogS:{value:0},uMistC:{value:new THREE.Vector3(0,0,10)},uMoonDir:{value:moonDir},uMoonC:{value:moonC},
+    uKey:{value:keyDir},uWarm:{value:warm},uUnlock:{value:new THREE.Vector4()},uMood:{value:new THREE.Vector4(1,0,0,0)},uCentre:{value:new THREE.Vector3()},uAxis:{value:axisAz},
+    uZenith:{value:zenith},uHorizon:{value:horizon},uCity:{value:cityGlow},
+    uAgentL:{value:Array.from({length:4},()=>new THREE.Vector4())},uAgentC:{value:Array.from({length:4},()=>new THREE.Vector3())},uCarillon:{value:new THREE.Vector4(0,0,0,-1)},
     uWaves:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,-1e5))},uWaveC:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,1))}};
   const WAVE=`uniform vec4 uWaves[4],uWaveC[4];uniform float uT,uSpeed;
     vec3 waves(vec3 p){vec3 a=vec3(0.);for(int i=0;i<4;i++){float age=(uT-uWaves[i].w)/uSpeed;if(age<0.||age>7.)continue;float r=age*uWaveC[i].w;float d=distance(p.xz,uWaves[i].xz);
-      a+=uWaveC[i].rgb*exp(-pow((d-r)*1.1,2.))*(1.-age/7.);}return a;}`;
-  const S=1.0*G.space.spread;
+      a+=uWaveC[i].rgb*exp(-pow((d-r)*1.6,2.))*(1.-age/7.)*(1.-age/7.);}return a;}`;
+  // Every opaque surface writes 1 + its height into alpha: the floor's reflection reads coverage and blur from it.
+  const OUT_ALPHA=`float outAlpha(vec3 w){return uMirror<0.?1.+min(abs(w.y),40.)*.1:1.;}`;
+  const additive=m=>{m.transparent=true;m.depthWrite=false;m.blending=THREE.CustomBlending;m.blendEquation=THREE.AddEquation;m.blendSrc=THREE.OneFactor;m.blendDst=THREE.OneFactor;
+    m.blendSrcAlpha=THREE.ZeroFactor;m.blendDstAlpha=THREE.OneFactor;return m;};
+  const S=1.22*(Number.isFinite(G.space?.spread)?G.space.spread:1);
   const plot=(q,r)=>new THREE.Vector3((SQRT3*q+SQRT3/2*r)*S,0,1.5*r*S);
-  // ---- Ground: dark stone, the survey grid, district plots glowing under their towers -------------------------
-  const DMAX=32;
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:{...common,uScale:{value:80},uPlots:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},uPlotC:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},
-      uGrid:{value:pal.highlight.clone().lerp(pal.primary,.4)},uStone:{value:pal.deep.clone().lerp(new THREE.Color('#1a2230'),.6)}},
-    vertexShader:`uniform float uScale;varying vec3 vW;void main(){vec3 p=vec3(position.x*uScale,0.,-position.y*uScale);vW=p;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`${NOISE}${FOG}${WAVE}uniform float uV,uActivity;uniform vec3 uGrid,uStone;uniform vec4 uPlots[${DMAX}],uPlotC[${DMAX}];varying vec3 vW;
-      float hexEdge(vec2 p){vec2 q=vec2(p.x/1.7320508,p.y/1.5+p.x/3.4641016);vec2 g=floor(q);vec2 f=fract(q);
-        vec3 c=vec3(f,1.-f.x-f.y);float e=min(min(abs(f.x-f.y),abs(fract(q.x+q.y)-.5)),1.);
-        vec2 r=vec2(p.x,p.y);vec2 h=vec2(1.7320508,1.5);vec2 a=mod(r,vec2(h.x,h.y*2.))-vec2(h.x,h.y*2.)*.5,b=mod(r-vec2(h.x*.5,h.y),vec2(h.x,h.y*2.))-vec2(h.x,h.y*2.)*.5;
-        vec2 gv=dot(a,a)<dot(b,b)?a:b;vec2 ab=abs(gv);float d=max(dot(ab,normalize(vec2(1.,1.7320508))),ab.x);return 1.-smoothstep(.0,.04,abs(d-.84));}
-      void main(){vec2 p=vW.xz;float n=fbm3(vec3(p*.15,1.));vec3 c=uStone*(.55+.3*n)+vec3(.006);
-        float grid=hexEdge(p/${S.toFixed(3)})*.5;float plot=0.;vec3 pc=vec3(0.);
-        for(int i=0;i<${DMAX};i++){if(uPlots[i].w<=0.)continue;float d=distance(p,uPlots[i].xz);float k=exp(-pow(d/uPlots[i].w,2.)*1.6)*uPlotC[i].w;plot+=k;pc+=uPlotC[i].rgb*k;}
-        c+=pc*.16*(.9+.1*sin(uV*.6+n*6.))+uGrid*grid*(.025+.11*min(1.,plot))+waves(vW)*.8;
-        float dist=length(cameraPosition-vW);gl_FragColor=vec4(fog(c,dist),1.);}`}));
-  ground.frustumCulled=false;ground.renderOrder=-2;scene.add(ground);
-  // ---- Storeys, plinths, crowns, spires (instanced; procedural windows, scaffold and strain in the shader) -----
-  const sides=arch==='brutalist'?4:6;
-  const prism=new THREE.CylinderGeometry(1,1,1,sides,1,false);prism.translate(0,.5,0);if(sides===4)prism.rotateY(Math.PI/4);
-  const blocks=instancedBuffers(prism,{bPos:4,bSize:4,bLife:4,bState:4,bColor:3},256);
-  const blockMat=new THREE.ShaderMaterial({uniforms:{...common,uValid:{value:pal.valid.clone().lerp(new THREE.Color('#fff0d2'),.5)},uStress:{value:pal.warning},uScaffold:{value:new THREE.Color('#d7ecff')},uWin:{value:G.secondary.windows},uGlass:{value:G.material.glass}},
-    vertexShader:`${WAVE}attribute vec4 bPos,bSize,bLife,bState;attribute vec3 bColor;uniform float uV;varying vec3 vW,vN,vC,vL,vWave;varying vec4 vS,vZ,vLf;varying float vH;
-      void main(){float age=(uT-bLife.x)/uSpeed;float gone=bLife.y<1e5?clamp((uT-bLife.y)/uSpeed/.9,0.,1.):0.;
-        float rise=clamp(age/.45,0.,1.);float settle=clamp((uT-bLife.z)/uSpeed/.6,0.,1.);float y=mix(bPos.w,bPos.y,settle*settle*(3.-2.*settle));
-        vec3 local=position;float r=bSize.x*(1.-gone*.6),h=bSize.y*(rise<1.?(rise*rise*(3.-2.*rise))*.999+.001:1.);
-        vec3 w=vec3(bPos.x,y,bPos.z)+vec3(local.x*r,local.y*h,local.z*r);
-        vW=w;vN=normalize(normal);vL=position;vC=bColor;vS=bState;vZ=bSize;vLf=vec4(age,gone,bLife.w,0.);vH=h;vWave=waves(w);
-        gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${NOISE}${FOG}uniform vec3 uValid,uStress,uScaffold,uKey;uniform float uV,uWin,uGlass,uBeat,uT,uSpeed;uniform vec4 uUnlock;varying vec3 vW,vN,vC,vL,vWave;varying vec4 vS,vZ,vLf;varying float vH;
-      void main(){if(vLf.y>=1.)discard;vec3 n=normalize(vN);vec3 v=normalize(cameraPosition-vW);float look=vZ.z;
-        float k=clamp((uT-vS.z)/uSpeed/1.2,0.,1.);float st=k>.5?vS.x:vS.y;
-        float edgeX=min(abs(fract(atan(vL.z,vL.x)/6.2832*${sides}.+.5)-.5)*2.,1.);float edgeY=min(vL.y,1.-vL.y);float edge=1.-smoothstep(.0,.06,min(edgeX*.5,edgeY*vZ.y*2.));
-        float diff=max(0.,dot(n,uKey))*.75+.12;float rim=pow(1.-abs(dot(n,v)),3.);
-        vec3 body=look>1.5&&look<2.5?mix(vec3(.55,.75,.95),vC,.45)*(.25+uGlass*.2):look>3.5?vec3(.35,.4,.48)+vC*.1:vec3(.62,.66,.74)*.55+vC*(look>.5&&look<1.5?.32:.18);
-        vec3 c=body*diff*.55+vC*rim*.25;
-        // Window bands: rows on the walls; lit by validation, faint when committed, red under strain.
-        float rows=step(.35,fract(vL.y*max(1.,vZ.y*7.)))*step(.2,abs(fract(atan(vL.z,vL.x)/6.2832*${sides*3}.)-.5)*2.)*step(.05,abs(n.y-1.)*abs(n.y+1.));
-        float flick=.85+.15*sin(uV*(1.3+vZ.w*5.)+vZ.w*40.)+.05*uBeat;
-        if(st>1.5&&st<2.5)c+=uValid*rows*1.4*uWin*flick;else if(st>2.5)c+=uStress*(rows*1.1+edge*1.6)*(.7+.3*sin(uV*6.+vW.y*4.));else if(st>.5)c+=mix(uValid,vC,.5)*rows*.22*uWin*flick;
-        if(st<.5){c=c*.35+uScaffold*edge*1.2+vC*.05;}
-        if(look>2.5&&look<3.5){c=c*.5+vC*edge*.9;}
-        c+=vC*edge*.08+vWave*.9+uUnlock.w*vec3(.4,.9,.8)*rows*rim*.6;
-        float birth=vLf.x>0.&&vLf.x<1.2?1.-vLf.x/1.2:0.;c+=uScaffold*birth*edge*2.;
-        gl_FragColor=vec4(fog(c,length(cameraPosition-vW)),1.);}`});
-  const blockMesh=new THREE.Mesh(blocks.geometry,blockMat);blockMesh.frustumCulled=false;scene.add(blockMesh);
-  const spireGeo=new THREE.ConeGeometry(.06,1,5,1,false);spireGeo.translate(0,.5,0);
-  const spires=instancedBuffers(spireGeo,{pPos:4,pLife:4,pColor:3},32);
-  const spireMat=new THREE.ShaderMaterial({uniforms:common,
-    vertexShader:`attribute vec4 pPos,pLife;attribute vec3 pColor;uniform float uT,uSpeed,uV;varying vec3 vC;varying float vY,vA;varying vec3 vW;
-      void main(){float age=(uT-pLife.x)/uSpeed;float g=clamp(age/.9,0.,1.);float gone=pLife.y<1e5?clamp((uT-pLife.y)/uSpeed/.9,0.,1.):0.;
-        vec3 w=vec3(pPos.x,pPos.y,pPos.z)+vec3(position.x,position.y*pPos.w*g*(1.-gone),position.z);vW=w;vC=pColor;vY=position.y;vA=g*(1.-gone);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${FOG}uniform float uV,uBeat;varying vec3 vC;varying float vY,vA;varying vec3 vW;void main(){vec3 c=vC*(.25+smoothstep(.85,1.,vY)*3.*(.7+.3*sin(uV*2.+vW.x)+.3*uBeat));gl_FragColor=vec4(fog(c*vA,length(cameraPosition-vW)),1.);}`});
-  const spireMesh=new THREE.Mesh(spires.geometry,spireMat);spireMesh.frustumCulled=false;scene.add(spireMesh);
-  // ---- Conduits and bridges (screen-space ribbons, double-sided) ------------------------------------------------
-  const SEG=24;const ribbon=(()=>{const g=new THREE.BufferGeometry(),t=[],side=[],idx=[];
+  // ---- A seeded, tileable noise texture (smoothed value noise, 4 channels): cheap texture lookups replace gradient
+  // noise in the full-screen floor and the facades.
+  const noiseTex=(()=>{const N=256,r=rng(hash(`noise/${seed}`)),a=new Float32Array(N*N*4);for(let i=0;i<a.length;i++)a[i]=r();
+    for(let pass=0;pass<3;pass++){const b=new Float32Array(a.length);for(let y=0;y<N;y++)for(let x=0;x<N;x++)for(let c=0;c<4;c++){let sum=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)sum+=a[(((y+dy+N)%N)*N+((x+dx+N)%N))*4+c];b[(y*N+x)*4+c]=sum/9;}a.set(b);}
+    const d=new Uint8Array(N*N*4);for(let c=0;c<4;c++){let lo=1,hi=0;for(let i=c;i<a.length;i+=4){lo=Math.min(lo,a[i]);hi=Math.max(hi,a[i]);}for(let i=c;i<a.length;i+=4)d[i]=Math.round((a[i]-lo)/(hi-lo||1)*255);}
+    const t=new THREE.DataTexture(d,N,N,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;})();
+  common.uNoise={value:noiseTex};
+  // ---- Reflection: the scene mirrored in the floor plane, at half resolution, rendered before the frame -----------
+  const reflRT=new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,depthBuffer:true});
+  const mirror=new THREE.Scene();
+  const mirrored=mesh=>{const m=new THREE.Mesh(mesh.geometry,mesh.material);m.scale.y=-1;m.frustumCulled=false;m.renderOrder=mesh.renderOrder;mirror.add(m);return m;};
+  // ---- Floor: polished obsidian slabs, wet and dry, mirroring the precinct ----------------------------------------
+  const floorU={...common,uScale:{value:900},uRefl:{value:reflRT.texture},uReflOn:{value:1},uD:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},uD2:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},
+    uDC:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},uObs:{value:new THREE.Color('#030406').lerp(capL(pal.deep.clone(),.003),.2)},uWet:{value:.35+.6*wetK},uTurb:{value:.4+1.5*turbK},uRose:{value:new THREE.Vector4(0,0,3,0)},uMetal:{value:metal}};
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:floorU,
+    vertexShader:`uniform float uScale;uniform vec3 uCentre;varying vec3 vW;void main(){vec3 p=vec3(position.x*uScale+uCentre.x,0.,-position.y*uScale+uCentre.z);vW=p;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
+    fragmentShader:`${FOG}${SKY}${WAVE}uniform float uV,uAxis,uReflOn,uWet,uActivity,uRain;uniform float uTurb;uniform vec2 uRes;uniform sampler2D uRefl;uniform vec3 uObs,uWarm,uCentre,uMetal;
+      uniform vec4 uD[${DMAX}],uD2[${DMAX}],uDC[${DMAX}],uRose,uUnlock,uCold;varying vec3 vW;
+      float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float line(float d,float w){float a=max(fwidth(d),1e-5);return 1.-smoothstep(w,w+a*1.5,abs(d));}
+      // Drips on the wet stone: rings spreading from seeded points on their own periods (ambient weather).
+      vec2 ripples(vec2 p,float t){vec2 n=vec2(0.);vec2 g=p*1.25;vec2 c0=floor(g-.5);
+        for(int j=0;j<2;j++)for(int i=0;i<2;i++){vec2 id=c0+vec2(float(i),float(j));float h=h21(id);if(h>uRain)continue;float h2=h21(id+17.3);
+          vec2 ctr=id+.2+.6*vec2(h2,fract(h2*7.13));float ph=fract(t*(.22+.18*h)+h*9.);float r=ph*.62;vec2 d=g-ctr;float L=length(d);
+          float w=(L-r)*7.;n+=d/max(L,1e-3)*sin(w*3.)*exp(-w*w)*(1.-ph)*(1.-ph);}
+        return n;}
+      void main(){vec2 p=vW.xz;vec3 toC=cameraPosition-vW;float dist=length(toC);vec3 V=toC/dist;
+        float ca=cos(uAxis),sa=sin(uAxis);vec2 q=mat2(ca,-sa,sa,ca)*(p-uCentre.xz);
+        // Slabs in running bond along the processional axis; joints (fading with distance), per-slab tone and polish.
+        vec2 s=q/vec2(2.4,1.6);s.x+=step(1.,mod(floor(s.y),2.))*.5;vec2 cell=floor(s),f=fract(s);
+        float near=1.-smoothstep(9.,20.,dist);
+        float jd=min(min(f.x,1.-f.x)*2.4,min(f.y,1.-f.y)*1.6);float jw=fwidth(jd);float joint=(1.-smoothstep(0.,.018+jw*1.2,jd))*(1.-smoothstep(.04,.16,jw))*near;
+        float ch=mix(.5,h21(cell),near);
+        vec4 nz=texture(uNoise,p*.011);vec4 nz2=texture(uNoise,p*.037+.31);float wn=(nz.x-.5)*1.4+(nz2.y-.5)*.6;float wet=smoothstep(-.05,.3,wn+(ch-.5)*.2)*uWet;
+        float rough=mix(.75,.06,wet)+joint*.5;
+        // Surface normal: broad undulation, a fine shimmer moving with the air, and drip rings in the wet.
+        vec4 nr=texture(uNoise,p*.21+vec2(uV*.0011,uV*.0007)*uTurb);vec2 n2=(nr.zw-.5)*2.*(.012+.045*(1.-wet));
+        // Fine detail fades where a pixel covers much floor (grazing, far): no sparkle aliasing.
+        vec2 fw=fwidth(p);float fine=1.-smoothstep(.08,.35,max(fw.x,fw.y));
+        vec4 nf=texture(uNoise,p*1.9+vec2(uV*.03,-uV*.021)*uTurb);n2+=(nf.xy-.5)*(.018+.03*(1.-wet))*fine;
+        float rk=wet*(1.-smoothstep(18.,46.,dist))*fine;if(rk>.01)n2+=ripples(p,uV)*.07*rk;
+        vec2 uv=gl_FragCoord.xy/uRes;vec2 off=n2*vec2(.05,.22)/(1.+dist*.04);
+        vec3 refl=vec3(0.);float cov=0.;
+        if(uReflOn>.5){vec4 c0=texture(uRefl,uv+off);float hgt=max(c0.a-1.,0.)*10.;float br=rough*(.0015+.0011*min(hgt,8.))*(14./(6.+dist*.25));
+          vec4 acc=c0+texture(uRefl,uv+off+vec2(br*.25,br*2.4))+texture(uRefl,uv+off+vec2(-br*.3,br*1.2))+texture(uRefl,uv+off+vec2(br*.3,-br*1.3))+texture(uRefl,uv+off+vec2(-br*.2,-br*2.6));
+          acc/=5.;cov=clamp(acc.a,0.,1.);refl=acc.rgb;}
+        vec3 R=reflect(-V,normalize(vec3(n2.x,1.,n2.y)));R.y=max(R.y,.004);R=normalize(R);float mr=max(dot(R,uMoonDir),0.);
+        // The reflected night is dark away from the moon; toward it, the moon's glitter path runs across the wet stone.
+        vec3 sky=skyCol(R)*mix(.22,1.,pow(mr,5.));
+        float glit=pow(mr,mix(60.,900.,wet))*mix(.4,5.,wet)*uMoonK;
+        vec3 rc=refl+(sky+uMoonC*glit)*(1.-cov);
+        float F=.05+.95*pow(1.-clamp(V.y,0.,1.),4.);F*=mix(.5,1.,wet)*(1.-joint*.6);
+        vec3 base=uObs*(.6+.5*ch)*(1.+joint*.5);
+        // Cloud shadows sweep the floor.
+        float cs=cloudSh(p);
+        vec3 c=base*(.25+.75*(1.-F))*(.6+.4*cs)+rc*F+uMoonC*cs*.006*(1.-F*.5);
+        // Foundations: each district's outline engraved in light (a double line with ticks), laid when it was founded.
+        vec3 lines=vec3(0.),glow=vec3(0.);
+        for(int i=0;i<${DMAX};i++){vec4 D=uD[i];if(D.z<=0.)continue;vec4 D2=uD2[i];vec4 C=uDC[i];
+          vec2 dp=p-D.xy;float rmax=max(D.z,D.w)+2.;if(dot(dp,dp)>rmax*rmax)continue;float c2=cos(D2.x),s2=sin(D2.x);vec2 l=mat2(c2,-s2,s2,c2)*dp;float e=length(l/D.zw);float d=(e-1.)*min(D.z,D.w);
+          float ang=atan(l.y,l.x)/6.2831853+.5;float age=(uT-D2.y)/uSpeed;float laid=clamp(age/2.6,0.,1.);
+          float vis=step(ang,laid*1.0001)*step(0.,age);float fresh=exp(-max(age,0.)*.45);float head=exp(-pow((ang-laid)*18.,2.))*step(age,2.8);
+          // At grazing angles a fine inlay aliases into dashes: it fades with the view's slope; the founding engraving
+          // (a bright head running once around) shows at any angle.
+          float graze=smoothstep(.05,.2,V.y);
+          float l2=line(d+.2,.016)*(graze*.5+fresh*1.5+head*4.)+line(d+.36,.008)*graze*.4;
+          lines+=C.rgb*l2*vis*(C.w*.6+fresh*2.);
+          glow+=C.rgb*exp(-abs(d)*1.8)*.03*C.w+uWarm*D2.z*(1.-smoothstep(-2.5,.5,d))*.035*vis;}
+        // The crossing: a rose inlaid in brass at the centre of the precinct.
+        vec2 rq=p-uRose.xy;float rr=length(rq),ra=atan(rq.y,rq.x);float R0=uRose.z;
+        float rose=(line(rr-R0,.02)+line(rr-R0*.72,.012)+line(rr-R0*.3,.012)+line(rr-R0*1.06,.008))*step(rr,R0*1.1)
+          +line(sin(ra*8.)*rr*.12,.01)*step(rr,R0)*step(R0*.3,rr)+line(abs(sin(ra*16.))*rr*.06-.01*rr,.006)*step(R0*.72,rr)*step(rr,R0);
+        c+=uMetal*rose*(.05+.25*uRose.w)*(1.-F*.6);
+        c+=lines*(1.-F*.4)+glow+waves(vW)*(1.-.5*F);
+        if(uCold.w>0.){float k=uCold.w*exp(-pow(distance(p,uCold.xy)/uCold.z,2.));c=mix(c,vec3(dot(c,vec3(.3,.55,.15)))*vec3(.55,.8,1.35),k);}
+        gl_FragColor=vec4(applyFog(c,vW),1.);}`}));
+  floor.frustumCulled=false;floor.renderOrder=-2;scene.add(floor);
+  // ---- Stone: plinths, storeys, roofs, pillars, buttresses, pinnacles (one instanced frustum, facades in the shader)
+  const frustum=new THREE.CylinderGeometry(1,1,1,SIDES,4,false);frustum.translate(0,.5,0);
+  const stoneB=instancedBuffers(frustum,{iA:4,iB:4,iL:4,iS:4,iF:4,iC:4,iT:4},512);
+  const stoneU={...common,uStone:{value:stone},uMetal:{value:metal},uStress:{value:pal.warning},uValid:{value:pal.valid},uDraft:{value:new THREE.Color('#9cc8ff').lerp(pal.highlight,.3)},
+    uGlass:{value:[pal.accent,new THREE.Color('#c41e3a'),new THREE.Color('#1f4fd8'),pal.valid].map(c=>{const h={};c.getHSL(h);return new THREE.Color().setHSL(h.h,.88,.42);})},uWin:{value:winK},uGlassK:{value:glassK},uMetalK:{value:metalK},
+    uSides:{value:SIDES},uArch:{value:A.id},uGold:{value:GOLD},uRoseDir:{value:new THREE.Vector2(-Math.cos(moonAz),-Math.sin(moonAz))}};
+  const stoneMat=new THREE.ShaderMaterial({uniforms:stoneU,
+    vertexShader:`${FOG}attribute vec4 iA,iB,iL,iS,iF,iC,iT;uniform float uT,uSpeed,uV,uSides;
+      varying vec3 vW,vL,vN,vC;varying vec4 vB,vS,vF,vX,vT;varying vec2 vP;varying float vFog,vAsm,vTest;
+      void main(){float look=iB.w;vTest=iC.w;float age=(uT-iL.x)/uSpeed;float gone=iL.y<1e5?clamp((uT-iL.y)/uSpeed/1.1,0.,1.):0.;
+        // Assembly: a storey slides down from just above its slot and turns into place, locking with a small overshoot;
+        // a roof or a plinth rises from below; a removed piece lifts, turns and folds away.
+        float a=clamp(age/1.1,0.,1.);float e=1.-pow(1.-a,3.)+sin(a*3.14159)*.05*(1.-a);
+        float lift=0.,turn=0.,scale=1.;
+        if(look<3.5||look>8.5&&look<9.5){lift=(1.-e)*.32*max(iB.z,.3);turn=(1.-e)*6.2832/uSides;scale=mix(1.12,1.,e);}
+        else if(look<4.5){lift=-(1.-e)*(iB.z+.05);}
+        else{lift=-(1.-e)*iB.z*1.02;}
+        lift+=gone*gone*.9;turn+=gone*.9;scale*=1.-gone;
+        // Tremor after a failure (from the state change, or the effect).
+        float sk=(uT-iS.z)/uSpeed;float tr=iS.x>2.5&&sk>0.&&sk<1.8?(1.-sk/1.8):0.;float fk=(uT-iF.x)/uSpeed;if(iF.y>1.5&&iF.y<2.5&&fk>0.&&fk<1.8)tr=max(tr,1.-fk/1.8);
+        vec2 jit=tr*vec2(sin(uV*61.+iL.w*40.),cos(uV*53.+iL.w*17.))*.03;
+        vec3 lp=position;float r=(look>4.5&&look<5.5?iB.x*pow(1.-lp.y,1.3):mix(iB.x,iB.y,lp.y))*scale;float ang=iA.w+turn;float c=cos(ang),s=sin(ang);
+        vec2 xz=mat2(c,-s,s,c)*(lp.xz*r);
+        vec3 w=vec3(iA.x+xz.x+jit.x,iA.z+lp.y*iB.z+lift,iA.y+xz.y+jit.y);
+        float slope=(iB.x-iB.y)/max(iB.z,1e-3);vec3 nl=abs(normal.y)>.5?normal:normalize(vec3(normal.x,slope,normal.z));
+        vec2 nxz=mat2(c,-s,s,c)*nl.xz;vec3 n=vec3(nxz.x,nl.y,nxz.y);
+        w.y*=uMirror;n.y*=uMirror;
+        vW=w;vL=vec3(lp.x,lp.y,lp.z);vN=n;vB=iB;vS=iS;vF=iF;vC=iC.rgb;vT=iT;vP=iA.xy;vX=vec4(age,gone,(uT-iL.z)/uSpeed,iL.w);vAsm=a;
+        vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uKey,uWarm,uStone,uMetal,uStress,uValid,uDraft,uGold,uGlass[4],uAgentC[4];uniform vec4 uUnlock,uMood,uCold,uAgentL[4];uniform vec3 uCentre;uniform vec2 uRoseDir;
+      uniform float uT,uV,uSpeed,uBeat,uBars,uWin,uGlassK,uMetalK,uSides,uArch,uActivity;
+      varying vec3 vW,vL,vN,vC;varying vec4 vB,vS,vF,vX,vT;varying vec2 vP;varying float vFog,vAsm,vTest;
+      float h11b(float n){return fract(sin(n*12.9898)*43758.5453);}
+      float AA(float d){return max(fwidth(d),1e-4);}
+      float fill(float d){float a=AA(d);return 1.-smoothstep(-a,a,d);}
+      // A pointed (equilateral) arch window: half width a, springing at ys, sill at yb.
+      float lancet(vec2 p,float a,float yb,float ys){float d=p.y>ys?length(vec2(abs(p.x)+a,p.y-ys))-2.*a:abs(p.x)-a;return max(d,yb-p.y);}
+      float rect(vec2 p,vec2 c,vec2 hs){vec2 d=abs(p-c)-hs;return max(d.x,d.y);}
+      void main(){
+        if(vX.y>=1.)discard;
+        float look=vB.w,h=vB.z;float r=mix(vB.x,vB.y,vL.y);
+        vec3 N=normalize(vN);vec3 V=normalize(cameraPosition-vW);
+        float stCur=vS.x,stPrev=vS.y;float sk=(uT-vS.z)/uSpeed;float wy=abs(vW.y);float top=max(vT.z,.5);
+        // State changes: validation lights the tower upward (a scan); a failure kills the light storey by storey from
+        // the top; a commit clads the scaffold in stone; the scan band itself glows.
+        float scanY=sk*(stCur>1.5?3.2:2.6);
+        float st=sk<0.?stPrev:(stCur>2.5?(sk>(1.-vT.x)*2.8?stCur:stPrev):(wy<scanY?stCur:stPrev));
+        float band=stCur<2.5&&sk>0.&&sk<5.?exp(-pow((wy-scanY)*5.,2.))*(1.-sk/5.):0.;
+        float fxk=(uT-vF.x)/uSpeed,fk2=fxk-vT.y;
+        float fxScan=vF.y>.5&&vF.y<1.5&&fxk>0.&&fxk<4.?exp(-pow((wy-fxk*3.)*4.,2.))*(1.-fxk/4.):0.;
+        float fxRestore=vF.y>2.5&&vF.y<3.5&&fk2>0.&&fk2<6.?exp(-pow((wy-fk2*2.4)*2.5,2.))*(1.-fk2/6.):0.;
+        float cap=step(.9,abs(N.y));
+        float ang=atan(vL.x,vL.z);float fs=(ang/6.2831853+.5)*uSides;float fi=floor(fs),fu=fract(fs);
+        float faceW=2.*r*sin(3.14159265/uSides);float px=(fu-.5)*faceW,py=vL.y*h;
+        float seed=vX.w;
+        // Lighting: moonlight from behind the city (broken by passing cloud) rimming the silhouettes, a faint cool fill,
+        // warm bounce from the lit precinct below.
+        float cs=cloudSh(vW.xz);float key=max(dot(N,uKey),0.)*cs*(.3+.7*uMoonK);
+        float rim=pow(1.-max(dot(N,V),0.),3.)*(.35+.65*max(dot(normalize(vec3(N.x,0.,N.z)+1e-4),normalize(vec3(uMoonDir.x,0.,uMoonDir.z))),0.))*uMoonK;
+        float bounce=exp(-wy*.4)*(.5-.5*N.y);
+        float tex=texture(uNoise,vec2(vW.x+vW.z,vW.y*2.6)*.8+seed).x;
+        vec3 stoneC=uStone*(.82+.36*tex)*(1.-.08*step(.5,fract(py/.13+fi*.5)));
+        float ashlar=smoothstep(-AA(py)*1.5-.003,0.,abs(fract(py/.13)-.5)*.13-.062);stoneC*=1.-.4*ashlar*step(look,4.5);
+        vec3 lit=stoneC*(key*.75*uMoonC+.018*uMoonC)+uMoonC*rim*.32+uWarm*bounce*.05;
+        // A servitor at work casts a small warm pool of light on the facade it works on.
+        for(int k=0;k<4;k++){vec4 Ag=uAgentL[k];if(Ag.w<=0.)continue;vec3 dl=Ag.xyz-vW;float dd=length(dl);lit+=uAgentC[k]*Ag.w*max(dot(N,dl/max(dd,1e-3)),0.)*(.25+stoneC*6.)/(1.+dd*dd*3.);}
+        float ed=min(fu,1.-fu)*faceW;float far=1.-smoothstep(.012,.05,AA(ed));float rib=(1.-smoothstep(.0,.028+AA(ed),ed))*(.35+.65*far);
+        float lineY=1.-smoothstep(0.,AA(py-.05)*1.5+.004,abs(py-.05));
+        vec3 c=lit*(1.+rib*.8)+uMoonC*rib*key*.15;
+        vec3 em=vec3(0.);
+        // Windows (storeys only): bays across each face, shaped by the architecture and the symbol kind.
+        float isStorey=step(look,3.5)+step(8.5,look)*step(look,9.5);
+        if(isStorey>.5&&cap<.5){
+          float nb=max(1.,floor(faceW/(uArch>.5&&uArch<1.5?.3:.34)));float bx=fract(fu*nb),bi=floor(fu*nb);float bw=faceW/nb;
+          vec2 wp=vec2((bx-.5)*bw,py);float d=1.;float cid=fi*13.+bi;
+          if(look>8.5){d=rect(wp,vec2(0.,h*.5),vec2(bw*.3,h*.2));}
+          else if(uArch<.5||uArch>2.5){
+            float a=bw*(look>.5&&look<1.5?.2:look>1.5&&look<2.5?.33:look>2.5?.12:.24);float yb=h*(look>1.5&&look<2.5?.12:.2),ys=h*(uArch>2.5?.72:.52);a=min(a,(h*.9-ys)/1.75);
+            if(look>.5&&look<1.5){float a2=a*.62;d=min(lancet(wp-vec2(-a*.75,0.),a2,yb,ys*.95),lancet(wp-vec2(a*.75,0.),a2,yb,ys*.95));d=min(d,length(wp-vec2(0.,ys+a*1.35))-a*.42);}
+            else d=lancet(wp,a,yb,ys);
+          }else if(uArch<1.5){d=lancet(wp,bw*.075,h*.04,h*.88);}
+          else{float a=bw*.13;d=min(lancet(wp-vec2(-a*1.25,0.),a,h*.12,h*.66),lancet(wp-vec2(a*1.25,0.),a,h*.12,h*.66));}
+          float win=fill(d);float frame=(1.-smoothstep(0.,.02+AA(d),abs(d-.022)))*(1.-win);
+          c*=1.-.45*(1.-smoothstep(0.,.03,d))*(1.-win);c+=lit*frame*.9;
+          // Glass: leaded quarries, sodium-warm when lit, stained for components. Each lit window is a room seen through
+          // the glass: brightest toward the sill and the middle, some with a mullion or a transom, its candlelight drifting
+          // on its own slow flicker (never on and off).
+          float lh=h11b(cid+seed*91.);float lit2=h11b(cid*1.7+seed*37.);
+          float litFrac=st>2.5?0.:st>1.5?.88:st>.5?.42:0.;
+          float human=exp(-max(vS.w,0.)*.9)*step(0.,vS.w);float weld=vX.z>0.?exp(-vX.z*.8):0.;
+          if(vF.y>3.5&&vF.y<4.5&&fxk>0.)weld=max(weld,exp(-fxk*.45)*smoothstep(0.,.8,fxk));if(vF.y>2.5&&vF.y<3.5&&fk2>0.)weld=max(weld,exp(-fk2*.45)*step(wy,fk2*2.4));
+          litFrac=min(1.,litFrac+human*.5+weld*1.2);
+          float on=step(lit2,litFrac);
+          float fl=texture(uNoise,vec2(cid*.071+seed*.37,uV*.23+lh)).x;
+          float breathe=.84+.16*sin(6.2832*uBars/${breathBars}.+seed*6.)+.3*(fl-.5)+.02*uBeat;
+          vec2 lq=wp*vec2(26.,20.);float lead=min(abs(fract(lq.x+lq.y)-.5),abs(fract(lq.x-lq.y)-.5));lead=smoothstep(.05,.12,lead);
+          vec3 gc=mix(uWarm*(.7+.6*lh),vec3(.9,.93,1.)*(.8+.3*lh),vTest*.15);
+          if(look>1.5&&look<2.5){float m=h11b(floor(lq.x*.5)+floor(lq.y*.5)*7.+cid);gc=mix(uWarm,m<.25?uGlass[0]:m<.5?uGlass[1]:m<.75?uGlass[2]:uGlass[3],.25+.3*uGlassK)*(.75+.4*m);}
+          float wx=abs(wp.x)/max(bw*.3,1e-3);float sill=clamp((wp.y-h*.15)/(h*.65),0.,1.);float depth=(1.15-.6*sill)*(1.-.4*min(wx*wx,1.));
+          float mull=step(.6,lh)*(1.-smoothstep(0.,AA(wp.x)*1.5+.005,abs(wp.x)))+step(.78,lh)*(1.-smoothstep(0.,AA(wp.y)*1.5+.005,abs(wp.y-h*.48)));
+          float inten=(st>1.5&&st<2.5?2.4:1.15)*uWin*on*breathe*depth*(1.+weld*1.6+human*.6);
+          vec3 glass=mix(vec3(.003,.004,.008)+uMoonC*.015*pow(1.-max(dot(N,V),0.),2.)*uMoonK,gc*inten,on);
+          // Failing: the light dies storey by storey from the top; each window gutters once as it goes out.
+          if(st>2.5){float emer=step(.9,lit2);float dk=sk-(1.-vT.x)*2.8;float gut=dk>0.&&dk<.7&&stPrev>.5&&stPrev<2.5?(1.-dk/.7)*(.6+.4*sin(dk*40.+cid)):0.;
+            glass=vec3(.002,.003,.008)+uStress*emer*.14*(.7+.3*sin(uV*.9+cid))+gc*gut*1.4*step(lit2,.88);}
+          if(st<.5)glass=vec3(.002,.004,.008);
+          if(look>2.5&&look<3.5){float lat=min(abs(fract(wp.x*14.)-.5),abs(fract(wp.y*14.)-.5));glass*=.5+.5*smoothstep(.1,.2,lat);}
+          glass*=(.6+.4*lead)*(1.-.85*mull);
+          // A verified milestone (lasting): the covered tower's top storey becomes a lantern of lit tracery, kindled from
+          // the sill up, brighter for a while after its moment, then steady.
+          float ra=(uT-vF.z)/uSpeed;
+          if(vF.z>-1e4&&ra>0.&&vF.w>.5){float ign=clamp(ra/1.6-vL.y*.7,0.,1.);vec2 tq=vec2(wp.x/max(bw*.16,1e-3),(wp.y-h*.2)/(h*.13));vec2 tf=fract(tq)-.5;
+            float qd=min(abs(length(tf)-.33),min(abs(tf.x),abs(tf.y))*1.4);float tr=1.-smoothstep(.04,.04+fwidth(qd)*1.5+.02,qd);
+            vec3 tc=mix(uWarm,uGold,.55)*(1.5+2.5*exp(-max(ra-2.,0.)*.25))*(.9+.1*fl);
+            glass=mix(glass,tc*(1.-.82*tr),ign);}
+          em+=glass*win*(1.-cap);
+          c=mix(c,vec3(0.),win*.9);
+        }
+        // Plinth: an inscription band engraved once the work is committed (set in stone).
+        if(look>3.5&&look<4.5&&cap<.5){float y=vL.y;float bandM=step(.32,y)*step(y,.72);
+          float cells=floor((ang/6.2831853+.5)*uSides*7.);float gx=fract((ang/6.2831853+.5)*uSides*7.),gy=(y-.32)/.4;
+          float bit=step(.45,h11b(cells*3.1+floor(gx*3.)+floor(gy*4.)*5.+seed*13.))*step(.12,fract(gx*3.))*step(.15,fract(gy*4.));
+          float inscribed=st>.5?1.:0.;float prog=sk>0.&&stPrev<.5&&stCur>.5?clamp(sk/1.6,0.,1.):1.;
+          float fxs=vF.y>4.5&&vF.y<5.5&&fxk>0.?clamp(fxk/1.6,0.,1.):1.;float around=(ang/6.2831853+.5);
+          float shown=step(around,prog)*step(around,fxs);float hot=(vF.y>4.5&&vF.y<5.5&&fxk>0.&&fxk<4.?exp(-fxk*.8)*2.5:0.)+(sk>0.&&sk<4.&&stPrev<.5?exp(-sk*.8)*2.5:0.);
+          em+=mix(uWarm,uMetal,.5)*bit*bandM*inscribed*shown*(.2+hot)*(st>2.5?.2:1.);
+          // The coping of the plinth: a continuous line of light once committed (it stays), struck bright by a commit.
+          float cop=(1.-smoothstep(0.,AA(y)*1.5+.02,abs(y-.9)))+(1.-smoothstep(0.,AA(y)*1.5+.015,abs(y-.12)))*.5;
+          em+=mix(uWarm,uMetal,.35)*cop*inscribed*shown*(.12+hot*1.6)*(st>2.5?.2:1.);
+          c=mix(c,stoneC*.3,bandM*.6);}
+        // Roofs: crockets climbing the spire's edges, small lucarnes and a lit finial.
+        if(look>4.5&&look<5.5){
+          // Crockets: small leafy knobs up the edges that catch the moonlight (stone, not lamps).
+          float cro=rib*smoothstep(.7,.9,fract(py/.2))*step(vL.y,.92);c+=uMoonC*cro*(.05+.4*rim+.2*key)*uMoonK;
+          float lu=lancet(vec2(px,py-h*.1),min(faceW*.12,.05),0.,h*.07);float luc=fill(lu)*step(.5,mod(fi,2.))*step(vL.y,.3);
+          em+=uWarm*luc*(st>1.5&&st<2.5?.6:st>.5&&st<1.5?.2:0.);c*=1.-luc*.8;
+          float crown=vF.w>.5&&vF.z>-1e4?clamp((uT-vF.z)/uSpeed/2.5-vL.y,0.,1.):0.;em+=uGold*(rib*1.2+.05)*crown*(.5+.12*min(vF.w,4.));
+          float fin=smoothstep(.86,.98,vL.y);em+=mix(uWarm,uMetal,.3)*fin*(.4+1.4*uUnlock.z);c=mix(c,c*vec3(.75,.85,.9),.4);}
+        if(look>6.5&&look<8.5){em+=mix(uWarm,vC,.25)*lineY*(st>1.5&&st<2.5?.8:.3)*(look<7.5?1.:.4);}
+        // Buttress piers and brutalist columns: fluted; a brutalist column carries a vertical light slit.
+        if(look>12.5&&look<13.5){float fl=abs(fract(fu*3.)-.5);c*=.8+.4*smoothstep(.1,.3,fl);
+          if(uArch>.5&&uArch<1.5&&cap<.5){float sl=1.-smoothstep(.0,AA(px)*1.5+.01,abs(px)-faceW*.05);sl*=step(.06,vL.y)*step(vL.y,.94);float on=st>1.5&&st<2.5?.7:st>.5&&st<1.5?.12*step(.5,h11b(seed*7.+fi)):0.;
+            em+=uWarm*sl*on*(1.+.1*sin(6.2832*uBars/${breathBars}.+seed*5.));c*=1.-sl*.6;}}
+        if(look>9.5&&look<10.5){em+=mix(uWarm,uMetal,.4)*smoothstep(.88,1.,vL.y)*(.1+.2*uUnlock.z);}
+        if(look>10.5&&look<11.5&&cap<.5){float on=st>1.5&&st<2.5?1.:st>.5&&st<1.5?.45:st>2.5?0.:.06;float fl2=texture(uNoise,vec2(seed+fi*.13,uV*.19)).y;
+          if(uArch>.5&&uArch<1.5){float mul=step(.12,abs(fract(fu*3.)-.5)*2.);em+=uWarm*mul*on*1.5*(.9+.1*sin(6.2832*uBars/${breathBars}.+seed*5.));c*=.3;}
+          else{// The lantern stage: one tall open lancet on each face, the light inside seen through it.
+            float dl=lancet(vec2(px,py),faceW*.26,h*.1,h*.62);float ow=fill(dl);float fr=1.-smoothstep(0.,.015+AA(dl),abs(dl-.02));
+            em+=uWarm*ow*on*(1.6+.5*(fl2-.5))*(1.1-.5*vL.y);c=mix(c,vec3(0.),ow*.9);c+=uMoonC*fr*(.08+.3*rim)*(1.-ow);}}
+        // Gablets (Freiburg): a pointed gable on each face around the foot of a spire, a small lit lancet in each, moonlit
+        // crockets on its rakes.
+        if(look>13.5&&look<14.5){float rake=h*(1.-abs(px)/(faceW*.5));if(py>rake||cap>.5)discard;
+          float er=1.-smoothstep(0.,AA(rake-py)*1.5+.012,rake-py);c+=uMoonC*er*(.1+.5*rim+.3*key)*uMoonK;
+          float gl=fill(lancet(vec2(px,py-h*.1),faceW*.07,0.,h*.28));float on=st>1.5&&st<2.5?1.:st>.5&&st<1.5?.4:0.;
+          em+=uWarm*gl*on*1.3;c*=1.-.8*gl;}
+        // String courses and ribs: precise light lines (state coloured; a failing tower's only faintly red).
+        vec3 lineC=st<.5?uDraft*.12:st>2.5?uStress*.22:st>1.5?mix(uWarm,uValid,.2)*.55:mix(uWarm,vC,.4)*.14;
+        if(look<3.5||look>8.5&&look<9.5){em+=lineC*lineY*(1.-cap);em+=lineC*rib*(st<.5?.3:.05)*(1.-cap);}
+        // Draft: dark glass behind a thin, dim cyan scaffold that fades with distance.
+        float camD=length(cameraPosition-vW);
+        if(st<.5&&look<4.5){float gx=smoothstep(-AA(px)*1.2-.002,0.,abs(fract(px/.2)-.5)*.2-.094);float gy=smoothstep(-AA(py)*1.2-.002,0.,abs(fract(py/.2)-.5)*.2-.094);
+          c=c*.25;em+=uDraft*max(gx,gy)*.055*(1.-cap)*(1.-smoothstep(20.,70.,camD));}
+        // Stressed: at most one crack per face climbing from the base: a narrow white-hot core with a dim red bleed.
+        vec3 crk=vec3(0.);
+        if(stCur>2.5&&look<4.5&&cap<.5&&(st>2.5||sk>0.)){float cTop=min(top,max(sk,0.)*1.3+.15);float hf=h11b(fi*7.3+seed*31.);
+          if(hf<.38){float x0=(h11b(fi*3.1+seed*17.)-.5)*faceW*.45;float t1=wy*2.1+hf*5.,t2=wy*5.7+hf*11.;
+            float x=x0+(abs(fract(t1)-.5)-.25)*faceW*.5+(abs(fract(t2)-.5)-.25)*faceW*.16;float dd=abs(px-x);float grow=1.-smoothstep(cTop-.35,cTop,wy);
+            float core=1.-smoothstep(.001,.0035+AA(dd),dd);crk=(vec3(1.,.8,.66)*core*1.3+uStress*exp(-dd*32.)*.16)*grow*(.85+.15*sin(uV*1.1+seed*3.));}
+          c*=.75;}
+        // Assembly glow on new pieces, the state sweeps, effects.
+        float asmG=(1.-vAsm)*step(vX.x,1.6)*step(0.,vX.x);em+=uDraft*asmG*(rib+lineY+.1)*.9;
+        em+=(stCur>1.5?mix(uWarm,uValid,.3)*2.:uDraft*.8)*band*(.4+rib);
+        em+=mix(uWarm,uValid,.3)*fxScan*2.+mix(uWarm,vec3(1.,.86,.62),.3)*fxRestore*3.;
+        em+=uDraft*vX.y*(rib+lineY)*1.5;
+        vec3 outc=c+em*uMood.x;
+        // A failing precinct turns cold: stone and window light drain toward a grey-blue (not the cracks).
+        if(uCold.w>0.){float k=uCold.w*exp(-pow(distance(vW.xz,uCold.xy)/uCold.z,2.));outc=mix(outc,vec3(dot(outc,vec3(.3,.55,.15)))*vec3(.5,.75,1.3),k);}
+        outc+=crk;
+        gl_FragColor=vec4(mix(outc,fogCol(vW),vFog),outAlpha(vW));}`});
+  const stoneMesh=new THREE.Mesh(stoneB.geometry,stoneMat);stoneMesh.frustumCulled=false;scene.add(stoneMesh);
+  const stoneMirror=mirrored(stoneMesh);
+  // ---- Ribbons: arcade arches and suspended bridges (solid), floor channels, agent beams and crown needles (light)
+  const SEG=28;const ribbonGeo=(()=>{const gg=new THREE.BufferGeometry(),t=[],side=[],idx=[];
     for(let i=0;i<=SEG;i++){t.push(i/SEG,i/SEG);side.push(-1,1);if(i<SEG){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
-    g.setAttribute('position',new THREE.Float32BufferAttribute(new Array((SEG+1)*2*3).fill(0),3));g.setAttribute('aT',new THREE.Float32BufferAttribute(t,1));g.setAttribute('aSide',new THREE.Float32BufferAttribute(side,1));g.setIndex(idx);return g;})();
-  const links=instancedBuffers(ribbon,{kA:4,kB:4,kInfo:4,kColA:3,kColB:3},128);
-  const linkMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-    vertexShader:`attribute float aT,aSide;attribute vec4 kA,kB,kInfo;attribute vec3 kColA,kColB;uniform float uT,uSpeed,uPx,uV;uniform vec2 uRes;varying float vT,vSide,vAl,vCross,vSeed,vD;varying vec3 vC;
-      vec3 curve(vec3 a,vec3 b,float lift,float t){vec3 m=(a+b)*.5+vec3(0.,lift,0.);float u=1.-t;return u*u*a+2.*u*t*m+t*t*b;}
-      void main(){vec3 a=kA.xyz,b=kB.xyz;float d=distance(a,b);float lift=kInfo.z>.5?(1.1+.24*d):(.25+.08*d);
-        vec3 p=curve(a,b,lift,aT),q=curve(a,b,lift,min(1.,aT+.01));if(aT>.99)q=p+(p-curve(a,b,lift,aT-.01));
-        vec4 cp=projectionMatrix*viewMatrix*vec4(p,1.),cq=projectionMatrix*viewMatrix*vec4(q,1.);vec2 dir=normalize((cq.xy/cq.w-cp.xy/cp.w)*uRes+1e-5);vec2 nrm=vec2(-dir.y,dir.x);
-        float age=(uT-kInfo.x)/uSpeed;float grow=clamp(age/(kInfo.z>.5?1.8:.9),0.,1.);float gone=kInfo.y<1e5?clamp((uT-kInfo.y)/uSpeed/.9,0.,1.):0.;
-        float w=(kInfo.z>.5?3.2:1.5)*uPx*(1.+(1.-smoothstep(0.,3.,age))*1.5);cp.xy+=nrm*aSide*w/uRes*2.*cp.w;gl_Position=cp;
-        vT=aT;vSide=aSide;vAl=(aT<=grow?1.:0.)*(1.-gone);vCross=kInfo.z;vSeed=kInfo.w;vC=mix(kColA,kColB,aT);vD=length(cameraPosition-p);}`,
-    fragmentShader:`${FOG}uniform float uV,uActivity;varying float vT,vSide,vAl,vCross,vSeed,vD;varying vec3 vC;
-      void main(){if(vAl<.01)discard;float edge=1.-vSide*vSide;float p=fract(vT*(vCross>.5?3.:2.)-uV*(.18+.2*uActivity)+vSeed);float pulse=smoothstep(0.,.05,p)*smoothstep(.2,.05,p);
-        gl_FragColor=vec4(vC*edge*((vCross>.5?.6:.14)+pulse*(vCross>.5?1.8:.7))*vAl*fogK(vD),1.);}`});
-  const linkMesh=new THREE.Mesh(links.geometry,linkMat);linkMesh.frustumCulled=false;linkMesh.renderOrder=1;scene.add(linkMesh);
-  // ---- Mechanisms: slow rings turning around the tallest towers (ambient; more with the recipe's mechanism level) -
-  const MECH=24,mechs=instancedBuffers(new THREE.TorusGeometry(1,.012,4,64),{mPos:4,mInfo:4,mColor:3},MECH);
-  const mechMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`attribute vec4 mPos,mInfo;attribute vec3 mColor;uniform float uV,uT,uSpeed;varying vec3 vC;varying float vA,vD;
-      void main(){float a=uV*mInfo.y+mInfo.z;float tilt=mInfo.w;vec3 p=position*mPos.w;
-        float ct=cos(1.5708+tilt),st=sin(1.5708+tilt);p=vec3(p.x,p.y*ct-p.z*st,p.y*st+p.z*ct);float ca=cos(a),sa=sin(a);p=vec3(p.x*ca-p.z*sa,p.y,p.x*sa+p.z*ca);
-        vec3 w=mPos.xyz+p+vec3(0.,sin(uV*.3+mInfo.z)*.15,0.);vC=mColor;vA=clamp((uT-mInfo.x)/uSpeed/3.,0.,1.);vD=length(cameraPosition-w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${FOG}uniform float uV;varying vec3 vC;varying float vA,vD;void main(){gl_FragColor=vec4(vC*vA*fogK(vD)*.9,1.);}`});
-  const mechMesh=new THREE.Mesh(mechs.geometry,mechMat);mechMesh.frustumCulled=false;scene.add(mechMesh);
-  // ---- Motes, searchlights (unlock), drones (agents), bursts ----------------------------------------------------
-  const moteCount=Math.round(2000+3500*G.atmosphere.motes),motes=pointBuffers({mInfo:4},moteCount);
-  {const r=rng(hash(`motes/${seed}`));for(let i=0;i<moteCount;i++){motes.write('position',i,(r()-.5)*2,r(),(r()-.5)*2);motes.write('mInfo',i,r(),.3+r()*1.4,r()*6.283,r());}motes.commit(moteCount);}
-  const moteMat=new THREE.ShaderMaterial({uniforms:{...common,uBox:{value:new THREE.Vector3(40,12,40)},uMote:{value:pal.highlight.clone().lerp(pal.valid,.3)}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`uniform vec3 uBox;uniform float uV,uPx;attribute vec4 mInfo;varying float vA,vD;void main(){float y=fract(position.y+uV*.008*mInfo.y)*uBox.y;
-      vec3 p=vec3(position.x*uBox.x+sin(uV*.15*mInfo.y+mInfo.z)*2.,y,position.z*uBox.z+cos(uV*.12*mInfo.y+mInfo.z)*2.);vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;vD=-mv.z;
-      gl_PointSize=clamp(1.4*uPx*30./max(1.,-mv.z),1.,5.);vA=(.4+.6*mInfo.w)*smoothstep(0.,1.,y)*(1.-smoothstep(uBox.y*.7,uBox.y,y));}`,
-    fragmentShader:`${FOG}uniform vec3 uMote;varying float vA,vD;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(uMote*exp(-r*3.)*vA*.35*fogK(vD*.5),1.);}`});
-  const motePoints=new THREE.Points(motes.geometry,moteMat);motePoints.frustumCulled=false;motePoints.renderOrder=3;scene.add(motePoints);
-  const LIGHTS=8,lights=instancedBuffers(new THREE.ConeGeometry(1,1,24,1,true).translate(0,-.5,0),{sPos:4,sInfo:4,sColor:3},LIGHTS);
-  const lightMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-    vertexShader:`attribute vec4 sPos,sInfo;attribute vec3 sColor;uniform float uV;uniform vec4 uUnlock;varying vec3 vC;varying float vY,vA;
-      void main(){float a=uV*sInfo.y+sInfo.z;vec3 dir=normalize(vec3(cos(a)*.45,1.,sin(a)*.45));vec3 up=vec3(0.,1.,0.);vec3 ax=normalize(cross(up,dir)+1e-4);float ang=acos(dot(up,dir));
-        vec3 p=position;p.xz*=sPos.w*.25;p.y*=sPos.w;p.y=-p.y;vec3 k=ax;float c=cos(ang),s=sin(ang);p=p*c+cross(k,p)*s+k*dot(k,p)*(1.-c);
-        vec3 w=sPos.xyz+p;vC=sColor;vY=-position.y;vA=uUnlock.x*sInfo.x;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`varying vec3 vC;varying float vY,vA;void main(){gl_FragColor=vec4(vC*(1.-vY)*.06*vA,1.);}`});
-  const lightMesh=new THREE.Mesh(lights.geometry,lightMat);lightMesh.frustumCulled=false;lightMesh.renderOrder=4;scene.add(lightMesh);
-  const MAX_AGENTS=10,PER_AGENT=40,agentPts=pointBuffers({aCol:4,aSize:1},MAX_AGENTS*PER_AGENT);
-  const agentMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`attribute vec4 aCol;attribute float aSize;uniform float uPx;varying vec4 vC;void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(aSize*uPx*40./max(.5,-mv.z),0.,48.);vC=aCol;}`,
-    fragmentShader:`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*4.)+exp(-r*20.)*2.)*vC.a,1.);}`});
-  const agentPoints=new THREE.Points(agentPts.geometry,agentMat);agentPoints.frustumCulled=false;agentPoints.renderOrder=5;scene.add(agentPoints);
-  const BURSTS=24,PER=48,burstPts=pointBuffers({bDir:4},BURSTS*PER);
+    gg.setAttribute('position',new THREE.Float32BufferAttribute(new Array((SEG+1)*2*3).fill(0),3));gg.setAttribute('aT',new THREE.Float32BufferAttribute(t,1));gg.setAttribute('aSide',new THREE.Float32BufferAttribute(side,1));gg.setIndex(idx);return gg;})();
+  const RIBBON_VS=`${FOG}attribute float aT,aSide;attribute vec4 kA,kB,kInfo,kC;uniform float uT,uSpeed,uV;
+    varying float vT,vSide,vAl,vKind,vSeed,vFog,vFresh;varying vec4 vC;varying vec3 vW,vTan;
+    vec3 curve(float t,float kind){vec3 a=kA.xyz,b=kB.xyz;vec3 m=mix(a,b,t);
+      if(kind>1.5&&kind<2.5){float x=t*2.-1.;m.y+=kB.w*(sqrt(max(4.-pow(1.+abs(x),2.),0.))/1.7320508);}
+      else if(kind>.5&&kind<1.5){m.y-=kB.w*4.*t*(1.-t);}
+      return m;}
+    void main(){float kind=kInfo.z;float age=(uT-kInfo.x)/uSpeed;float gone=kInfo.y<1e5?clamp((uT-kInfo.y)/uSpeed/1.,0.,1.):0.;
+      float grow=kind>1.5&&kind<2.5?clamp((age-.6)/1.4,0.,1.):kind>2.5?1.:clamp(age/(kind>.5?2.2:1.2),0.,1.);
+      vec3 p=curve(aT,kind),q=curve(min(1.,aT+.01),kind);if(aT>.99)q=p+(p-curve(aT-.01,kind));vec3 tg=normalize(q-p+1e-5);
+      vec3 side=kind<.5?normalize(cross(tg,vec3(0.,1.,0.))+1e-5):normalize(cross(tg,normalize(cameraPosition-p))+1e-5);
+      float w=kA.w*(kind>2.5&&kind<3.5?mix(.15,1.,aT):kind>3.5?mix(1.,.2,aT):1.);
+      p+=side*aSide*w*.5;if(kind<.5)p.y=.012;
+      p.y*=uMirror;vW=p;vTan=tg;
+      vT=aT;vSide=aSide;vAl=(aT<=grow?1.:0.)*(1.-gone)*step(0.,age);vFresh=age>0.&&age<12.?exp(-max(age-2.2,0.)*.45):0.;vKind=kind;vSeed=kInfo.w;vC=kC;vFog=fogAmt(p);
+      gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`;
+  const solidB=instancedBuffers(ribbonGeo,{kA:4,kB:4,kInfo:4,kC:4},256);
+  const solidMat=new THREE.ShaderMaterial({uniforms:{...common,uStone:{value:stone},uMetal:{value:metal}},side:THREE.DoubleSide,vertexShader:RIBBON_VS,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm;uniform float uV,uActivity,uBars;uniform vec4 uMood;varying float vT,vSide,vAl,vKind,vSeed,vFog;varying vec4 vC;varying vec3 vW,vTan;
+      void main(){if(vAl<.5)discard;float e=abs(vSide);float core=exp(-e*e*28.);float edge=smoothstep(.6,.95,e);
+        vec3 c=uStone*(.12+.25*max(uKey.y,0.)*(1.-e))+uMoonC*edge*.12;
+        vec3 em=vC.rgb*core*vC.w;
+        if(vKind>.5&&vKind<1.5){float p=fract(vT*3.-uV*(.12+.12*uActivity)+vSeed);float pk=smoothstep(0.,.03,p)*(1.-smoothstep(.03,.12,p));em+=mix(uWarm,vC.rgb,.5)*(pk*2.6+.25)*core;em+=uMoonC*edge*.15;}
+        gl_FragColor=vec4(mix(c+em*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
+  const solidMesh=new THREE.Mesh(solidB.geometry,solidMat);solidMesh.frustumCulled=false;scene.add(solidMesh);mirrored(solidMesh);
+  const glowB=instancedBuffers(ribbonGeo,{kA:4,kB:4,kInfo:4,kC:4},256);
+  const glowMat=additive(new THREE.ShaderMaterial({uniforms:{...common},side:THREE.DoubleSide,vertexShader:RIBBON_VS,
+    fragmentShader:`${FOG}uniform float uV,uActivity;uniform vec3 uWarm;uniform vec4 uMood;varying float vT,vSide,vAl,vKind,vSeed,vFog,vFresh;varying vec4 vC;varying vec3 vW,vTan;
+      void main(){if(vAl<.5)discard;float e=1.-vSide*vSide;vec3 c=vec3(0.);
+        if(vKind<.5){float p=fract(vT*2.-uV*(.15+.2*uActivity)+vSeed);float pk=smoothstep(0.,.04,p)*(1.-smoothstep(.04,.16,p));c=vC.rgb*vC.w*e*(.35+pk*2.5);}
+        else if(vKind<1.5){float p=fract(vT*2.5-uV*(.1+.12*uActivity)+vSeed);float pk=smoothstep(0.,.02,p)*(1.-smoothstep(.02,.06,p));c=vC.rgb*vC.w*(pow(e,3.)*(.7+3.*vFresh)+pk*pow(e,2.)*3.);}
+        else{float f=pow(e,1.5)*(.75+.25*sin(vT*14.-uV*5.));c=vC.rgb*vC.w*f*(1.-vT*.5);}
+        c*=(1.-vFog*.8)*uMood.x;if(!(c.r>=0.&&c.g>=0.&&c.b>=0.&&c.r<1e4))c=vec3(0.);
+        gl_FragColor=vec4(c,0.);}`}));
+  const glowMesh=new THREE.Mesh(glowB.geometry,glowMat);glowMesh.frustumCulled=false;glowMesh.renderOrder=2;scene.add(glowMesh);
+  // ---- Kerbs: each precinct's foundation edged by a low stone kerb (a few centimetres) whose coping carries a line of
+  // light: lit by the share of the precinct's committed and validated work (it stays), struck by commits and foundings.
+  const bayShape=new THREE.BoxGeometry(1,1,1);bayShape.translate(0,.5,0);
+  const bayB=instancedBuffers(bayShape,{aP:4,aS:4,aC:4,aQ:4,aF:4},128);
+  const bayMat=new THREE.ShaderMaterial({uniforms:{...common,uStone:{value:stone},uMetal:{value:metal},uDLit:{value:new Float32Array(DMAX)}},
+    vertexShader:`${FOG}attribute vec4 aP,aS,aC,aQ,aF;uniform float uT,uSpeed,uBars,uDLit[${DMAX}];varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;
+      void main(){float age=(uT-aP.w)/uSpeed;float e=clamp(age/1.2,0.,1.);e=1.-pow(1.-e,3.);
+        vec3 lp=position;vec3 q=lp*vec3(aS.x,aS.y,.12);q.y-=(1.-e)*(aS.y+.02);
+        float c=cos(aP.z),s=sin(aP.z);vec3 w=vec3(aP.x+q.x*c-q.z*s,q.y,aP.y+q.x*s+q.z*c);
+        vec3 n=vec3(normal.x*c-normal.z*s,normal.y,normal.x*s+normal.z*c);w.y*=uMirror;n.y*=uMirror;
+        float ph=fract(aQ.x-uBars/aQ.y+aQ.z);float dd=min(ph,1.-ph)*aQ.w;vChase=exp(-dd*dd*1.2);
+        float fk=(uT-aF.x)/uSpeed-aF.y;vFx=aF.z>.5&&fk>-1.&&fk<5.?exp(-fk*fk*2.)*4.+max(0.,fk)*exp(-fk*.7)*.6:0.;
+        vLit=uDLit[int(aS.z)];
+        vW=w;vN=n;vL=vec3(lp.x*aS.x,lp.y,lp.z);vC=aC.rgb;vK=aC.w;vAge=age;vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm;uniform float uV,uActivity,uBars;uniform vec4 uMood,uUnlock;varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;
+      void main(){if(vAge<0.)discard;vec3 N=normalize(vN);vec3 V=normalize(cameraPosition-vW);
+        float key=max(dot(N,uKey),0.);float rim=pow(1.-max(dot(N,V),0.),3.)*.2;float tex=texture(uNoise,vW.xz*.7+vW.y*.3).x;
+        vec3 c=uStone*(.7+.4*tex)*(key*.35*uMoonC*cloudSh(vW.xz)+.03*uMoonC)+uMoonC*rim*.2;
+        float y=vL.y;float cop=N.y>.5?1.:smoothstep(.55,.9,y);
+        vec3 lc=mix(uWarm,vC,.35);
+        float fresh=vAge<3.?exp(-vAge*1.2)*1.5:0.;
+        vec3 em=lc*cop*(.05+.5*vLit+(fresh+vFx)*1.4+vChase*.12*(.3+.7*uUnlock.y));
+        gl_FragColor=vec4(mix((c+em)*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
+  const bayMesh=new THREE.Mesh(bayB.geometry,bayMat);bayMesh.frustumCulled=false;scene.add(bayMesh);mirrored(bayMesh);
+  // ---- Pinnacles and needles: the same stone shader on a cheap four-sided geometry (they are many) ------------------
+  const pinGeo=new THREE.CylinderGeometry(1,1,1,4,1,false);pinGeo.translate(0,.5,0);
+  const pinB=instancedBuffers(pinGeo,{iA:4,iB:4,iL:4,iS:4,iF:4,iC:4,iT:4},256);
+  const pinMesh=new THREE.Mesh(pinB.geometry,stoneMat);pinMesh.frustumCulled=false;scene.add(pinMesh);mirrored(pinMesh);
+  // ---- Naves: each precinct's hall, a long gabled body along its principal axis with clerestory lancets, and a rose
+  // window in each gable (the rose ignites with a verified milestone and stays lit) ----------------------------------
+  const naveGeo=(()=>{const P=[],N=[],F=[];const v3=(a)=>new THREE.Vector3(...a);
+    const poly=(pts,n,f)=>{for(let k=1;k+1<pts.length;k++){let a=pts[0],b=pts[k],c=pts[k+1];const cr=v3(b).sub(v3(a)).cross(v3(c).sub(v3(a)));if(cr.dot(v3(n))<0)[b,c]=[c,b];for(const x of [a,b,c]){P.push(...x);N.push(...n);F.push(f);}}};
+    poly([[.5,0,-.5],[.5,0,.5],[.5,1,.5],[.5,1,-.5]],[1,0,0],0);poly([[-.5,0,-.5],[-.5,0,.5],[-.5,1,.5],[-.5,1,-.5]],[-1,0,0],0);
+    poly([[.5,1,-.5],[.5,1,.5],[0,2,.5],[0,2,-.5]],[1,.5,0],1);poly([[-.5,1,-.5],[-.5,1,.5],[0,2,.5],[0,2,-.5]],[-1,.5,0],1);
+    for(const z of [.5,-.5])poly([[-.5,0,z],[.5,0,z],[.5,1,z],[0,2,z],[-.5,1,z]],[0,0,Math.sign(z)],2);
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('aFace',new THREE.Float32BufferAttribute(F,1));return g;})();
+  const naveB=instancedBuffers(naveGeo,{nA:4,nB:4,nC:4,nD:4},16);
+  const naveMat=new THREE.ShaderMaterial({uniforms:{...common,uStone:{value:stone},uMetal:{value:metal},uGlass:stoneU.uGlass,uGlassK:{value:glassK},uArch:{value:A.id},uDraft:stoneU.uDraft},
+    vertexShader:`${FOG}attribute vec4 nA,nB,nC,nD;attribute float aFace;uniform float uT,uSpeed;varying vec3 vW,vN,vL,vC;varying vec4 vB,vD;varying float vFace,vLit,vFog,vRise;
+      void main(){float age=(uT-nA.w)/uSpeed;float rise=smoothstep(0.,1.,clamp((age-1.)/2.2,0.,1.));
+        vec3 lp=position;float y=lp.y<=1.?lp.y*nB.z:nB.z+(lp.y-1.)*nB.w;y*=rise;
+        vec2 dir=vec2(cos(nA.z),sin(nA.z)),perp=vec2(dir.y,-dir.x);vec2 xz=nA.xy+perp*lp.x*nB.y+dir*lp.z*nB.x;
+        vec3 nl=normal/vec3(nB.y,aFace>.5&&aFace<1.5?nB.w:nB.z,nB.x);vec3 n=normalize(vec3(perp.x*nl.x+dir.x*nl.z,nl.y,perp.y*nl.x+dir.y*nl.z));
+        vec3 w=vec3(xz.x,y,xz.y);w.y*=uMirror;n.y*=uMirror;
+        vW=w;vN=n;vL=vec3(lp.x*nB.y,y,lp.z*nB.x);vB=nB;vC=nC.rgb;vLit=nC.w;vD=nD;vFace=aFace;vRise=age<0.?-1.:rise;vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm,uGlass[4],uDraft;uniform float uV,uBars,uGlassK,uArch,uT,uSpeed;uniform vec4 uMood;
+      varying vec3 vW,vN,vL,vC;varying vec4 vB,vD;varying float vFace,vLit,vFog,vRise;
+      float h11b(float n){return fract(sin(n*12.9898)*43758.5453);}
+      float fillD(float d){float a=max(fwidth(d),1e-4);return 1.-smoothstep(-a,a,d);}
+      float lancet(vec2 p,float a,float yb,float ys){float d=p.y>ys?length(vec2(abs(p.x)+a,p.y-ys))-2.*a:abs(p.x)-a;return max(d,yb-p.y);}
+      void main(){if(vRise<0.)discard;vec3 N=normalize(vN);vec3 V=normalize(cameraPosition-vW);float y=vL.y,H=vB.z,W=vB.y,Ln=vB.x;
+        float key=max(dot(N,uKey),0.)*cloudSh(vW.xz);float rim=pow(1.-max(dot(N,V),0.),3.);
+        float tex=texture(uNoise,vW.xz*.6+vW.y*.4).x;vec3 st=uStone*(.75+.35*tex);
+        vec3 c=st*(key*.6*uMoonC+.03*uMoonC)+uMoonC*rim*.14*uMoonK+st*uWarm*exp(-y*2.5)*(.04+.08*vLit);vec3 em=vec3(0.);float lit=vLit;
+        float ign=vD.x>-1e4?clamp((uT-vD.x)/uSpeed,0.,1e4):-1.;float hold=ign>=0.?exp(-max(ign-1.5,0.)*.35)*smoothstep(0.,1.5,ign):0.;
+        if(vFace<.5){
+          // Side walls: bays between buttresses, tall clerestory lancets above, low aisle lancets below.
+          float nb=max(2.,floor(Ln/.46+.5));float bf=(vL.z/Ln+.5)*nb;float bx=fract(bf)-.5,bi=floor(bf);float bw=Ln/nb;vec2 wp=vec2(bx*bw,y);
+          float but=smoothstep(.36,.42,abs(bx));c*=1.-.35*but;c+=uMoonC*but*rim*.1;
+          float d1,d2;if(uArch>.5&&uArch<1.5){d1=max(abs(wp.x)-bw*.05,abs(y-H*.55)-H*.38);d2=1.;}
+          else{d1=lancet(wp,bw*.17,H*.5,H*.76);d2=lancet(wp,bw*.12,H*.1,H*.3);}
+          float w1=fillD(d1),w2=fillD(d2);float side=step(0.,vL.x);float r1=h11b(bi*3.1+side*7.+vD.w*13.),r2=h11b(bi*5.7+side*3.+vD.w*29.);
+          float on1=step(r1,lit*1.1),on2=step(r2,lit*.6);
+          vec3 g1=uWarm*(.9+.4*r2)*(1.15-.3*(y-H*.5)/(H*.3));
+          em+=g1*w1*on1*1.3+uWarm*w2*on2*.6;c*=1.-.85*max(w1,w2);}
+        else if(vFace<1.5){
+          // Roof: dark lead with a lit brass ridge.
+          float top=H+vB.w;float ridge=1.-smoothstep(.0,.04+fwidth(y),top-y);c=c*.55+uMetal*ridge*.06;em+=mix(uWarm,uMetal,.5)*ridge*.06*(.4+lit);}
+        else{
+          // Gable: the rose window, a portal glowing at its foot, and an oculus under the apex.
+          vec2 gp=vec2(vL.x,y);float R=min(W*.36,H*.33);vec2 rc=gp-vec2(0.,H*.62);float rr=length(rc)/R;float th=atan(rc.y,rc.x);
+          if(uArch>.5&&uArch<1.5){float sl=max(abs(abs(gp.x)-W*.3)-W*.02,abs(y-H*.45)-H*.35);float ws=fillD(sl);em+=uWarm*ws*(.3+lit);c*=1.-.8*ws;}
+          float inside=1.-smoothstep(1.,1.02,rr);
+          // The rose sits deep in the wall: a dark reveal, then a moulded stone frame catching the moonlight.
+          float reveal=smoothstep(1.,1.02,rr)*(1.-smoothstep(1.12,1.14,rr));float mould=smoothstep(1.13,1.15,rr)*(1.-smoothstep(1.21,1.23,rr));
+          c*=1.-.8*reveal;c+=uMoonC*(mould*(.05+.3*rim)+reveal*max(-rc.y/max(length(rc),1e-3),0.)*.04)*uMoonK;
+          // Tracery: a hub, twelve spokes to a ring, and twelve cusped lobes (foils) in the outer band; the glass is set in
+          // concentric bands (amber hub, ruby, cobalt), each pane a little different.
+          float sf=fract(th/6.2831853*12.+.5)-.5;float spoke=abs(sf)*rr*.52;float rings=min(abs(rr-.62),abs(rr-.27));
+          vec2 lq=vec2((rr-.81)/.19,sf*rr*.52/.16);float lobe=length(lq)-.82;
+          float bar=min(min(rings,max(spoke,step(rr,.27)*1.+step(.62,rr)*1.)),abs(rr-1.));float trac=1.-smoothstep(0.,.04+fwidth(rr)*1.5,bar);
+          trac=max(trac,step(.62,rr)*smoothstep(-.02,.06,lobe));
+          float ring=rr<.27?0.:rr<.62?1.:2.,sec=floor(fract(th/6.2831853)*12.);float ci=ring*12.+sec;float m=h11b(ci*3.7+vD.w*11.);
+          vec3 gc=mix(uWarm,ring<.5?mix(uWarm,vec3(1.,.8,.4),.5):ring<1.5?uGlass[1]:uGlass[2],.7+.25*uGlassK)*(.8+.4*m);
+          float base=.3+.8*lit;float glow=ign>=0.?clamp(ign/2.2-rr*.7+.3,0.,1.):0.;
+          float I=base+glow*(1.8+5.*hold)*(.92+.08*sin(6.2832*uBars/8.+ci));
+          em+=gc*I*(1.-trac)*inside*(.9+.3*(1.-rr));c=mix(c,c*.3,inside);c+=uMetal*trac*inside*.18;
+          float por=fillD(lancet(gp,W*.12,0.,H*.2));em+=uWarm*por*(.25+.7*lit)*(1.-y/(H*.4));c*=1.-.8*por;
+          float ocu=fillD(length(gp-vec2(0.,H+vB.w*.45))-min(W*.07,vB.w*.22));em+=uWarm*ocu*(.2+.6*lit);c*=1.-.8*ocu;}
+        float fx=vD.y>-1e4?(uT-vD.y)/uSpeed:-1.;if(fx>0.&&fx<6.){float band=exp(-pow((y-fx*.8)*4.,2.))*(1.-fx/6.);em+=mix(uWarm,vC,.3)*band*1.5;}
+        gl_FragColor=vec4(mix((c+em)*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
+  const naveMesh=new THREE.Mesh(naveB.geometry,naveMat);naveMesh.frustumCulled=false;scene.add(naveMesh);mirrored(naveMesh);
+  // ---- Openwork spires: the precincts' great spires as lattices of stone ribs, tracery and rings with the night seen
+  // through them; a verified milestone crowns one with light (its ribs glow gold, lasting) ----------------------------
+  const latGeo=new THREE.CylinderGeometry(1,1,1,SIDES,10,true);latGeo.translate(0,.5,0);
+  const latB=instancedBuffers(latGeo,{lA:4,lB:4,lC:4},16);
+  const latMat=new THREE.ShaderMaterial({uniforms:{...common,uStone:{value:stone},uMetal:{value:metal},uGold:{value:GOLD},uSides:{value:SIDES}},side:THREE.DoubleSide,
+    vertexShader:`${FOG}attribute vec4 lA,lB,lC;uniform float uSides;varying vec3 vW,vL,vN;varying vec4 vB,vC;varying float vFog;
+      void main(){vec3 lp=position;float k=pow(1.-lp.y,1.12);float r=lB.x*k;float c=cos(lB.w),s=sin(lB.w);vec2 xz=mat2(c,-s,s,c)*(lp.xz*r);
+        vec3 w=vec3(lA.x+xz.x,lA.z+lp.y*lB.y,lA.y+xz.y);vec2 nxz=mat2(c,-s,s,c)*normal.xz;vec3 n=normalize(vec3(nxz.x,lB.x/max(lB.y,.01),nxz.y));
+        w.y*=uMirror;n.y*=uMirror;vW=w;vL=lp;vN=n;vB=lB;vC=lC;vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm,uGold;uniform float uSides,uBars,uT,uSpeed;uniform vec4 uMood,uCarillon;varying vec3 vW,vL,vN;varying vec4 vB,vC;varying float vFog;
+      float ln(float d,float w){float a=max(fwidth(d),1e-5);return 1.-smoothstep(w,w+a*1.2,abs(d));}
+      void main(){float H=vB.y,y=vL.y;float r=vB.x*pow(1.-y,1.12);float ang=atan(vL.x,vL.z);float fs=(ang/6.2831853+.5)*uSides;float fu=fract(fs);
+        float faceW=max(2.*r*sin(3.14159265/uSides),1e-3);float px=(fu-.5)*faceW,py=y*H;float camD=length(cameraPosition-vW);float near=1.-smoothstep(30.,70.,camD);
+        float ed=min(fu,1.-fu)*faceW;float rib=ln(ed,.022+.018*(1.-y));
+        float sp=.42*(1.-.5*y);float ry=fract(py/sp);float ring=ln(min(ry,1.-ry)*sp,.014)*near;
+        float la=min(faceW,sp*1.2)*.2;vec2 cq=vec2(px,ry*sp);float ld=cq.y>sp*.5?length(vec2(abs(cq.x)+la,cq.y-sp*.5))-2.*la:abs(cq.x)-la;ld=max(ld,sp*.12-cq.y);
+        float tr=(ln(ld,.008)+ln(px,.006)*step(ry,.5))*near;
+        float m=max(rib,max(ring,tr));if(m<.5&&y<.97)discard;
+        vec3 N=normalize(vN)*(gl_FrontFacing?1.:-1.);vec3 V=normalize(cameraPosition-vW);float rim=pow(1.-abs(dot(N,V)),2.);
+        vec3 c=uStone*(.05+.5*max(dot(N,uKey),0.)*cloudSh(vW.xz))*uMoonC+uMoonC*rim*.18*uMoonK;
+        // Gilded from the foot up when crowned; after its moment the crown holds bright for a while, then settles.
+        float crown=vC.y>-1e4?clamp((uT-vC.y)/uSpeed/2.2-y*.9,0.,1.):0.;float lvl=vC.x;
+        float a2=(uT-vC.w)/uSpeed;float fresh=vC.w>-1e4&&a2>0.?(1.+1.5*exp(-a2*.6))*(1.-smoothstep(18.,26.,a2)):0.;
+        vec3 em=uGold*crown*(rib*.9+ring*.6+tr*.45)*(.75+.18*min(lvl,4.)+1.8*fresh)*(.92+.08*sin(6.2832*uBars/4.+y*6.));
+        // The carillon: on the city's great spire a peal of light climbs the lattice's rings every sixteen bars.
+        if(vB.z>.5&&uCarillon.y>0.){float pk=exp(-pow((y-uCarillon.x)*9.,2.));em+=mix(uWarm,vec3(1.,.93,.8),.4)*(ring*1.4+rib*.35)*pk*uCarillon.y;}
+        em+=mix(uWarm,uMetal,.4)*rib*step(.8,fract(py/.2))*.25*vC.z;
+        em+=mix(uWarm,uGold,.5)*smoothstep(.95,.99,y)*(.6+1.6*vC.z+2.*crown);
+        gl_FragColor=vec4(mix((c+em)*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
+  const latMesh=new THREE.Mesh(latB.geometry,latMat);latMesh.frustumCulled=false;scene.add(latMesh);mirrored(latMesh);
+  // ---- Rings: tower armillaries, the great orrery, crowns' halos and lock clamps (instanced torus, brass and light)-
+  const ringGeo=new THREE.TorusGeometry(1,.02,6,128);
+  const ringB=instancedBuffers(ringGeo,{rC:4,rU:4,rV:4,rK:4},64);
+  const ringMat=new THREE.ShaderMaterial({uniforms:{...common,uMetal:{value:metal}},
+    vertexShader:`${FOG}attribute vec4 rC,rU,rV,rK;uniform float uT,uSpeed;varying vec3 vW,vN;varying float vFog,vTh,vKind,vA;varying vec3 vCol;
+      void main(){vec3 U=rU.xyz,Vv=rV.xyz;vec3 Nn=normalize(cross(U,Vv));float th=atan(position.y,position.x);float rad=length(position.xy)-1.;float thick=rU.w;
+        vec3 dir=U*cos(th)+Vv*sin(th);vec3 w=rC.xyz+dir*(rC.w+rad*thick/.02)+Nn*position.z*thick/.02;
+        vN=normalize(dir*rad+Nn*position.z);w.y*=uMirror;vN.y*=uMirror;vW=w;vFog=fogAmt(w);vTh=th;vKind=rK.x;vA=rK.y;vCol=vec3(rK.z,rV.w,rK.w);
+        gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uMetal,uKey,uWarm;uniform float uV;uniform vec4 uMood;varying vec3 vW,vN;varying float vFog,vTh,vKind,vA;varying vec3 vCol;
+      void main(){if(vA<.01)discard;vec3 N=normalize(vN);vec3 V=normalize(cameraPosition-vW);vec3 H=normalize(uKey+V);
+        float spec=pow(max(dot(N,H),0.),40.);float teeth=step(.5,fract(vTh*48./6.2831853));
+        vec3 c=uMetal*(.08+.35*max(dot(N,uKey),0.))*(.85+.15*teeth)+uMoonC*spec*.6+uMetal*pow(1.-max(dot(N,V),0.),3.)*.25;
+        c+=vCol*(vKind>.5?1.:.35);
+        gl_FragColor=vec4(mix(c*vA*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
+  const ringMesh=new THREE.Mesh(ringB.geometry,ringMat);ringMesh.frustumCulled=false;scene.add(ringMesh);mirrored(ringMesh);
+  // ---- Searchlights and the recovery beam (volumetric: the chord of the view ray through each beam) ---------------
+  const beamGeo=new THREE.CylinderGeometry(1,1,1,20,1,true);beamGeo.translate(0,.5,0);
+  const beamB=instancedBuffers(beamGeo,{bP:4,bD:4,bC:4},16);
+  const beamMat=additive(new THREE.ShaderMaterial({uniforms:{...common},side:THREE.BackSide,
+    vertexShader:`attribute vec4 bP,bD,bC;varying vec3 vW;varying vec4 vP,vD,vC;
+      void main(){vec3 d=normalize(bD.xyz);vec3 u=normalize(abs(d.y)<.99?cross(d,vec3(0.,1.,0.)):vec3(1.,0.,0.));vec3 v=cross(d,u);
+        vec3 w=bP.xyz+d*position.y*bD.w+(u*position.x+v*position.z)*bP.w*(1.+position.y*bC.w);
+        vW=w;vP=bP;vD=vec4(d,bD.w);vC=bC;gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
+    fragmentShader:`uniform float uV;uniform vec4 uMood;uniform sampler2D uNoise;varying vec3 vW;varying vec4 vP,vD,vC;
+      void main(){vec3 ro=cameraPosition,rd=normalize(vW-ro);vec3 a=vP.xyz,d=vD.xyz;
+        vec3 w0=ro-a;float b=dot(rd,d),dd=dot(w0,d),e=dot(rd,w0);float den=max(1.-b*b,1e-4);float s=(dd-b*e)/den,tt=(b*dd-e)/den;
+        vec3 pc=ro+rd*tt,pa=a+d*clamp(s,0.,vD.w);float dist=length(pc-pa);float along=clamp(s/vD.w,0.,1.);float rr=vP.w*(1.+along*vC.w);
+        float ch=sqrt(max(0.,1.-dist*dist/(rr*rr)));if(ch<=0.||tt<0.)discard;float camD=length(w0-d*dot(w0,d));ch*=smoothstep(rr*1.3,rr*3.5,camD);float mie=dot(rd,d);ch*=mix(.7,1.25,smoothstep(-.3,.8,mie));
+        vec4 n1=texture2D(uNoise,vec2(pa.x+pa.z,pa.y*.4)*.03+vec2(0.,-uV*.003));vec4 n2=texture2D(uNoise,vec2(pa.x-pa.z,pa.y*.3)*.17+vec2(uV*.002,0.));float dust=.7+.4*n1.x*n1.y+.1*(n2.z-.5);
+        float fall=smoothstep(.0,.12,along)*(1.-smoothstep(.55,1.,along));
+        gl_FragColor=vec4(vC.rgb*ch*ch*dust*fall*uMood.x,0.);}`}));
+  const beamMesh=new THREE.Mesh(beamB.geometry,beamMat);beamMesh.frustumCulled=false;beamMesh.renderOrder=4;scene.add(beamMesh);
+  // ---- Points: dust, orrery beads and beacons, agents, bursts ----------------------------------------------------
+  const POINT_FS=`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*5.)+exp(-r*24.)*1.5)*vC.a,0.);}`;
+  // Dust in the air between the camera and the city, glinting where it lies toward the moon (forward scattering).
+  const MOTES=Math.round((1400+2400*moteK)),motes=pointBuffers({mI:4},MOTES);
+  {const r=rng(hash(`motes/${seed}`));for(let i=0;i<MOTES;i++){motes.write('position',i,r(),r(),r()*6.2832);motes.write('mI',i,0,.3+r()*.7,r(),r());}motes.commit(MOTES);}
+  const moteMat=additive(new THREE.ShaderMaterial({uniforms:{...common,uBox:{value:new THREE.Vector4(0,0,20,8)},uMote:{value:moonC.clone().lerp(warm,.15)},uCount:{value:MOTES}},
+    vertexShader:`uniform vec3 uMote,uMoonDir;uniform vec4 uBox;uniform float uV,uPx,uCount,uMoonK;attribute vec4 mI;varying vec4 vC;
+      void main(){if(float(gl_VertexID)>=uCount){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vC=vec4(0.);return;}
+        float drift=uV*.012*(mI.y-.5);
+        vec3 p=vec3(uBox.x+(position.x-.5)*uBox.z,fract(position.y+drift*.5)*uBox.w,uBox.y+(sin(position.z)*.5)*uBox.z)+vec3(sin(uV*.05+mI.w*9.),0.,cos(uV*.04+mI.z*9.))*1.5;
+        p.y=max(p.y,.02);vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+        float fwd=max(dot(normalize(p-cameraPosition),uMoonDir),0.);float a=.1+2.2*pow(fwd,18.)*uMoonK;
+        float tw=.55+.45*sin(uV*(.6+mI.w)+mI.z*40.);gl_PointSize=clamp(1.3*uPx*22./max(1.,-mv.z),1.,2.6);vC=vec4(uMote*tw*a*mI.y*.12*clamp((-mv.z-4.)/8.,0.,1.),1.);}`,
+    fragmentShader:POINT_FS}));
+  const motePoints=new THREE.Points(motes.geometry,moteMat);motePoints.frustumCulled=false;motePoints.renderOrder=5;scene.add(motePoints);
+  const LAMPS=96,lamps=pointBuffers({aC:4,aS:1},LAMPS);
+  const lampMat=additive(new THREE.ShaderMaterial({uniforms:{...common},
+    vertexShader:`${FOG}attribute vec4 aC;attribute float aS;uniform float uPx;varying vec4 vC;void main(){vec3 p=position;p.y*=uMirror;vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp(aS*uPx*60./max(.5,-mv.z),0.,64.);vC=vec4(aC.rgb*(1.-fogAmt(p)*.85),aC.a);}`,fragmentShader:POINT_FS}));
+  const lampPoints=new THREE.Points(lamps.geometry,lampMat);lampPoints.frustumCulled=false;lampPoints.renderOrder=6;scene.add(lampPoints);
+  const lampMirror=new THREE.Points(lamps.geometry,lampMat);lampMirror.frustumCulled=false;mirror.add(lampMirror);
+  const BURSTS=24,PER=40,burstPts=pointBuffers({bDir:4},BURSTS*PER);
   {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*6.283,s=Math.sqrt(1-u*u);burstPts.write('position',b*PER+k,0,0,0);burstPts.write('bDir',b*PER+k,Math.cos(a)*s,Math.abs(u)*.9+.1,Math.sin(a)*s,b+r()*.9);}burstPts.commit(BURSTS*PER);}
   const burstU={uBA:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(0,0,0,-1e5))},uBB:{value:Array.from({length:BURSTS},()=>new THREE.Vector4())},uBC:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(1,0,1,0))}};
-  const burstMat=new THREE.ShaderMaterial({uniforms:{...common,...burstU},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`attribute vec4 bDir;uniform vec4 uBA[${BURSTS}],uBB[${BURSTS}],uBC[${BURSTS}];uniform float uT,uSpeed,uPx;varying vec3 vC;varying float vA;
+  const burstMat=additive(new THREE.ShaderMaterial({uniforms:{...common,...burstU},
+    vertexShader:`attribute vec4 bDir;uniform vec4 uBA[${BURSTS}],uBB[${BURSTS}],uBC[${BURSTS}];uniform float uT,uSpeed,uPx;varying vec4 vC;
       void main(){int b=int(bDir.w);float sp=fract(bDir.w);vec4 A=uBA[b],B=uBB[b],C=uBC[b];float age=(uT-A.w)/uSpeed/C.x;
-        if(age<0.||age>1.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vA=0.;return;}
-        vec3 dir=bDir.xyz;if(C.y>1.5)dir=vec3(0.,1.,0.)*.8+dir*.25;float travel=(1.-pow(1.-age,2.2))*C.z*(.4+sp);vec3 p=A.xyz+dir*travel;if(C.y<.5)p.y-=age*age*1.2;
-        vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(B.w*uPx*24./max(.5,-mv.z)*(1.-age*.5),1.,20.);vC=B.rgb;vA=1.-age;}`,
-    fragmentShader:`varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*4.)*vA*2.,1.);}`});
-  const burstPoints=new THREE.Points(burstPts.geometry,burstMat);burstPoints.frustumCulled=false;burstPoints.renderOrder=6;scene.add(burstPoints);let burstNext=0;
-  // ---- Sky: dusk or night, heavier near the horizon -----------------------------------------------------------------
-  const sky=new THREE.ShaderMaterial({uniforms:{...common,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uTop:{value:pal.deep.clone().multiplyScalar(.6)},uHorizon:{value:fogColor.clone()},
-      uGlow:{value:pal.accent.clone().lerp(pal.highlight,.4)},uDusk:{value:G.atmosphere.weather==='dusk-haze'?1:0}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
-    fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uTop,uHorizon,uGlow;uniform float uV,uDusk;uniform vec4 uUnlock;
-      void main(){vec4 p=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(p.xyz/p.w-uCam);float h=d.y;vec3 c=mix(uHorizon,uTop,smoothstep(-.02,.45,h));
-        c+=uGlow*exp(-abs(h-.03)*14.)*(.12+.18*uDusk);float n=fbm3(vec3(d.x*2.5+uV*.004,d.y*6.,d.z*2.5));c*=.88+.25*n;
-        float aur=uUnlock.w*smoothstep(.1,.6,fbm3(vec3(d.x*4.,d.y*10.-uV*.05,d.z*4.)))*smoothstep(.1,.45,h);c+=vec3(.3,.9,.7)*aur*.18;
+        if(age<0.||age>1.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vC=vec4(0.);return;}
+        vec3 dir=bDir.xyz;float ra=C.w*6.2832;dir.xz=mat2(cos(ra),-sin(ra),sin(ra),cos(ra))*dir.xz;sp=fract(sp+C.w*7.13);float mode=C.y;vec3 p;
+        if(mode<.5){p=A.xyz+vec3(dir.x,dir.y*.6,dir.z)*C.z*(.3+sp)*(1.-pow(1.-age,2.));p.y-=age*age*2.2;}
+        else if(mode<1.5){float a=6.2832*sp;p=A.xyz+vec3(cos(a),0.,sin(a))*C.z*(1.-pow(1.-age,3.));p.y+=dir.y*.15;}
+        else if(mode<2.5){p=A.xyz+vec3(dir.x*.35,1.,dir.z*.35)*C.z*(.3+sp)*(1.-pow(1.-age,2.));}
+        else{p=A.xyz+dir*C.z*(.2+sp)*(1.-pow(1.-age,2.));p.y-=age*.8;}
+        p.y=max(p.y,.02);vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(B.w*uPx*22./max(.5,-mv.z)*(1.-age*.5),1.,14.);
+        vC=vec4(B.rgb*(1.-age)*(mode<.5?1.6:1.2),1.);}`,fragmentShader:POINT_FS}));
+  const burstPoints=new THREE.Points(burstPts.geometry,burstMat);burstPoints.frustumCulled=false;burstPoints.renderOrder=7;scene.add(burstPoints);
+  // ---- Sky: a low moon in haze behind the city, thin stratus, sparse stars, the city's warm glow on the horizon ----
+  const sky=new THREE.ShaderMaterial({uniforms:{...common,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uAurora:{value:pal.valid.clone().lerp(pal.accent,.4)}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
+    fragmentShader:`${NOISE}${FOG}${SKY}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uAurora;uniform float uV;uniform vec4 uUnlock,uMood;
+      void main(){vec4 p=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(p.xyz/p.w-uCam);float h=d.y;vec3 c=skyCol(d);
+        float cl=0.;if(h>-.02&&h<.6){vec2 cp=d.xz/(max(h,0.)+.12);float n=fbm3(vec3(cp.x*.55+uV*.02,cp.y*.55+uV*.006,1.7));cl=smoothstep(.0,.45,n)*smoothstep(-.02,.08,h)*(1.-smoothstep(.25,.6,h));
+          // The bank that crosses the moon (its twin in JavaScript dims the moonlight while it covers the disc).
+          // Ragged edges: the bank's outline is warped by noise along the height, and broken inside.
+          float sa=atan(d.z,d.x)-uMoonAz;sa=atan(sin(sa),cos(sa));float det=fbm3(vec3(sa*9.+uCloudT*1.3,h*26.,4.7));float warp=fbm3(vec3(h*18.,sa*4.+uCloudT*.4,9.1));
+          cl=max(cl,moonBand(sa+warp*.16,h+warp*.025,uMoonDir.y)*smoothstep(-.3,.3,det+.12)*(.75+.25*det));}
+        float m=max(dot(d,uMoonDir),0.);vec3 cloudC=uHorizon*.55+uMoonC*pow(m,8.)*.35;c=mix(c,cloudC,cl*.75);c+=uMoonC*pow(m,30.)*cl*.5;
+        if(h>-.01&&h<.08){float az=atan(d.z,d.x);vec2 ad=vec2(cos(az),sin(az));
+          float n1=1.-abs(fbm3(vec3(ad*7.,.7)));float n2=1.-abs(fbm3(vec3(ad*13.,4.1)));float r1=.004+.03*n1*n1*smoothstep(-.3,.5,fbm3(vec3(ad*2.,2.)));float r2=.002+.014*n2*n2;
+          float m1=(1.-smoothstep(r1-.0015,r1+.0015,h)),m2=(1.-smoothstep(r2-.0012,r2+.0012,h));
+          // Two ridges separated by haze: the far one pale and soft, the near one dark, each paling toward its foot.
+          vec3 hz=hazeCol(d,0.);vec3 far=hz*mix(1.45,1.05,clamp(h/max(r1,1e-3),0.,1.)),near=hz*mix(.85,.38,clamp(h/max(r2,1e-3),0.,1.));c=mix(c,far,m1*.8);c=mix(c,near,m2*.92);cl*=1.-max(m1,m2);}
+        vec2 sq=d.xz/(h+.3)*220.;vec2 sg=floor(sq);float st=fract(sin(dot(sg,vec2(12.9898,78.233)))*43758.5453);float sr=length(fract(sq)-.5-(vec2(fract(st*13.7),fract(st*71.3))-.5)*.5);
+        float star=step(.9978,st)*smoothstep(.08,.35,h)*(1.-cl)*(.3+.3*sin(uV*.8+st*90.))*(1.-smoothstep(.04,.04+fwidth(sq.x)*1.2,sr));
+        c+=vec3(.75,.82,1.)*star*.5;
+        if(m>.9998){float disc=smoothstep(.999922,.999934,m);float rr=clamp((1.-m)/(1.-.999928),0.,1.);float mt=(.78+.22*gnoise(d*420.))*(.72+.28*sqrt(1.-rr*rr));
+          c=mix(c,uMoonC*3.4*mt*(.35+.65*uMoonK),disc*(1.-cl*.5));}
+        if(uUnlock.w>0.&&h>.04){float aur=uUnlock.w*smoothstep(.15,.6,fbm3(vec3(d.x*3.,d.y*8.-uV*.03,d.z*3.)))*smoothstep(.06,.3,h)*(1.-smoothstep(.45,.8,h));c+=uAurora*aur*.16;}
         gl_FragColor=vec4(c,1.);}`});
-  // ---- Structure ------------------------------------------------------------------------------------------------
-  const districts=new Map(),towers=new Map();let builtVersion=-1,blockCount=0,spireCount=0,linkCount=0,mechCount=0,extent=8,centre=new THREE.Vector3();
-  const blockRefs=[];   // per instance: {kind:'storey'|'plinth'|'crown'|'pavilion', module, symbol}
-  function districtColor(d){return d.core?new THREE.Color('#efe6cf'):new THREE.Color(PALETTE[(d.order+PALETTE.length*8-1)%PALETTE.length]).lerp(pal.primary,.25);}
-  function build(t){
-    const epoch=model.epoch;districts.clear();towers.clear();blockRefs.length=0;
-    let k=0;centre.set(0,0,0);let n=0;
+  // ---- Structure ----------------------------------------------------------------------------------------------------
+  const districts=new Map(),towers=new Map();let builtVersion=-1,stoneCount=0,glowStatic=0,extent=8,tallest=1,quality=0;
+  const centre=new THREE.Vector3();let orreryAt=null;
+  const blocks=[];      // per stone instance: {kind, module, symbol, h, born, removed, stack (bool), ...}
+  const towerBlocks=new Map(),districtBays=new Map();let bayList=[];
+  const bridges=[],channels=[];
+  function districtColor(d){return d.core?new THREE.Color('#f3e7cc'):new THREE.Color(DISTRICT_HUES[(d.order+DISTRICT_HUES.length*8-1)%DISTRICT_HUES.length]).lerp(pal.primary,.2).lerp(new THREE.Color('#e0b27a'),.45);}
+  const greats=[],flyers=[],naves=[];
+  function build(){
+    const epoch=model.epoch;districts.clear();towers.clear();blocks.length=0;towerBlocks.clear();districtBays.clear();bridges.length=0;channels.length=0;greats.length=0;flyers.length=0;naves.length=0;
+    const fu=floorU;let k=0;centre.set(0,0,0);let n=0;
+    const rot=axisAz+Math.PI/SIDES;
+    // Precincts: raw centroids first, then canals: each precinct is pushed out from the city's centre, so wide dark
+    // mirror canals separate them (positions stay a pure function of the model's persisted plots).
+    const raw=[];let cx=0,cz=0,cw=0;
     for(const d of [...model.districts.values()].filter(d=>d.members.length).sort((a,b)=>a.order-b.order)){
-      const members=d.members.map(id=>model.modules.get(id)).filter(Boolean);
-      const c=new THREE.Vector3();for(const m of members)c.add(plot(m.q,m.r));c.multiplyScalar(1/members.length);
-      let r=1.5;for(const m of members)r=Math.max(r,plot(m.q,m.r).distanceTo(c)+1.4);
-      const color=districtColor(d);districts.set(d.id,{d,centre:c,radius:r,color,born:Math.min(...members.map(m=>m.born)),index:k});
-      if(k<DMAX){ground.material.uniforms.uPlots.value[k].set(c.x,0,c.z,r*.9);ground.material.uniforms.uPlotC.value[k].set(color.r,color.g,color.b,0);}k++;
-      centre.add(c);n++;}
-    for(;k<DMAX;k++)ground.material.uniforms.uPlots.value[k].set(0,0,0,0);
-    if(n)centre.multiplyScalar(1/n);extent=6;for(const s of districts.values())extent=Math.max(extent,s.centre.distanceTo(centre)+s.radius);
-    ground.material.uniforms.uScale.value=Math.max(900,extent*40);moteMat.uniforms.uBox.value.set(extent*2.2,Math.max(9,extent*.5),extent*2.2);
-    // Towers: plinth + storeys in slot order (+ crown / pavilion), spires on the roof.
-    const list=[],spireList=[];
+      const members=d.members.map(id=>model.modules.get(id)).filter(Boolean);if(!members.length)continue;
+      const pts=members.map(m=>plot(m.q,m.r));const c=new THREE.Vector3();for(const p of pts)c.add(p);c.multiplyScalar(1/pts.length);raw.push({d,members,pts,c});const w=Math.sqrt(members.length);cx+=c.x*w;cz+=c.z*w;cw+=w;}
+    if(cw){cx/=cw;cz/=cw;}
+    const canal=.32*streetK;const offsets=new Map();
+    for(const {d,members,pts,c} of raw){
+      const off=new THREE.Vector3((c.x-cx)*canal,0,(c.z-cz)*canal);for(const p of pts)p.add(off);c.add(off);offsets.set(d.id,off);
+      // Principal axis and extents: the foundation is an ellipse around the district's towers; the nave runs along it.
+      let sxx=0,szz=0,sxz=0;for(const p of pts){const x=p.x-c.x,z=p.z-c.z;sxx+=x*x;szz+=z*z;sxz+=x*z;}
+      const ang=.5*Math.atan2(2*sxz,sxx-szz);const ca=Math.cos(ang),sa=Math.sin(ang);let ex=0,ez=0;
+      for(const p of pts){const x=p.x-c.x,z=p.z-c.z;ex=Math.max(ex,Math.abs(x*ca+z*sa));ez=Math.max(ez,Math.abs(-x*sa+z*ca));}
+      const rx=Math.max(1.7,(ex+1.2*S)*1.1),rz=Math.max(1.7,(ez+1.2*S)*1.1);
+      const born=Math.min(...members.map(m=>m.born));const color=districtColor(d);
+      const ds={d,centre:c,radius:Math.max(rx,rz),rx,rz,ex,ez,ang,color,ringColor:color.clone().multiplyScalar(.1),born,index:k,members,lit:0};districts.set(d.id,ds);
+      if(k<DMAX){fu.uD.value[k].set(c.x,c.z,rx,rz);const perim=Math.PI*(3*(rx+rz)-Math.sqrt((3*rx+rz)*(rx+3*rz)));fu.uD2.value[k].set(-ang,secs(born,epoch),0,Math.max(12,Math.round(perim/.6)));fu.uDC.value[k].set(color.r,color.g,color.b,.3);}
+      k++;centre.addScaledVector(c,Math.sqrt(members.length));n+=Math.sqrt(members.length);}
+    for(;k<DMAX;k++)fu.uD.value[k].set(0,0,0,0);
+    if(n)centre.multiplyScalar(1/n);
+    const core=[...districts.values()].find(s=>s.d.core);orreryAt=core?core.centre.clone():centre.clone();
+    extent=6;for(const s of districts.values())extent=Math.max(extent,s.centre.distanceTo(centre)+s.radius);
+    common.uCentre.value.copy(centre);floorU.uScale.value=Math.max(1200,extent*60);
+    floorU.uRose.value.set(orreryAt.x,orreryAt.z,core?Math.min(core.rx,core.rz)*.75:Math.max(2.2,extent*.12),floorU.uRose.value.w);
+    common.uFogH.value=1.5+extent*.06;common.uMistH.value=.3+.01*extent;
+    // Towers.
+    const list=[],pins=[];
+    const symTotal=m=>Object.entries(m.counts||{}).filter(([x])=>x!=='api.route'&&x!=='property').reduce((a,[,v])=>a+v,0);const landmark=new Map();let maxT=1;
+    for(const m of model.modules.values()){if(m.removed!==null)continue;const t=symTotal(m);maxT=Math.max(maxT,t);const best=landmark.get(m.group);if(!best||t>symTotal(best)||t===symTotal(best)&&m.id<best.id)landmark.set(m.group,m);}
+    const gothicLike=archName==='gothic'||archName==='spire';const stageN=archName==='spire'?4:3;const stepK=.05+.3*setback;
+    // Hierarchy: the few largest precinct landmarks become the city's grand spires (much taller); in a large precinct
+    // the modules beyond its first few form a low, dense carpet of roofs (each still its own building) beneath them.
+    const alive=[...model.modules.values()].filter(m=>m.removed===null);const rankIn=new Map(),byGroup=new Map();
+    for(const m of alive){if(!byGroup.has(m.group))byGroup.set(m.group,[]);byGroup.get(m.group).push(m);}
+    for(const l of byGroup.values()){l.sort((a,b)=>symTotal(b)-symTotal(a)||(a.id<b.id?-1:1));l.forEach((m,k)=>rankIn.set(m.id,k));}
+    const greatsAll=[...landmark.values()].filter(m=>symTotal(m)>=4).sort((a,b)=>symTotal(b)-symTotal(a)||(a.id<b.id?-1:1));
+    const grandN=clamp(Math.round(1.2+Math.sqrt(greatsAll.length)*.8),1,5);const grand=new Set(greatsAll.slice(0,grandN).map(m=>m.id));
+    const grandK=smooth((alive.length-25)/220);   // the hierarchy steepens with the size of the project
     for(const m of [...model.modules.values()].sort((a,b)=>a.order-b.order)){
-      const dist=districts.get(m.group);if(!dist)continue;const p=plot(m.q,m.r);
+      const dist=districts.get(m.group);if(!dist)continue;const p=plot(m.q,m.r).add(offsets.get(m.group));
       const born=secs(m.born,epoch),removed=m.removed===null?1e6:secs(m.removed,epoch);
-      const tw={id:m.id,pos:p,color:dist.color,storeys:[],born:m.born,top:.3,district:m.group};towers.set(m.id,tw);
-      list.push({kind:'plinth',module:m.id,x:p.x,z:p.z,y:0,r:.74,h:.16,look:4,born,removed,color:dist.color.clone().multiplyScalar(.5)});
-      const syms=[...m.symbols].map(id=>model.symbols.get(id)).filter(s=>s&&s.kind!=='api.route'&&KINDS[s.kind]).sort((a,b)=>a.slot-b.slot||a.id.localeCompare(b.id));
-      const shown=syms.slice(0,16);
-      for(const s of shown){const K=KINDS[s.kind];const sb=model.bornAt(s);
-        list.push({kind:'storey',module:m.id,symbol:s.id,x:p.x,z:p.z,r:K.r*(arch==='spire'?.8:1),h:K.h*(arch==='gothic'?1.15:1),look:m.test?3:K.look,born:Number.isFinite(sb)?secs(sb,epoch):sb===Infinity?1e6:-1e5,
-          removed:s.removed===null?removed:secs(s.removed,epoch),color:dist.color});}
-      const extra=Object.entries(m.counts||{}).filter(([x])=>x!=='api.route'&&x!=='property').reduce((a,[,v])=>a+v,0)-shown.length;
-      if(extra>0)list.push({kind:'crown',module:m.id,x:p.x,z:p.z,r:.5,h:Math.min(1,.1*Math.log2(1+extra)),look:4,born,removed,color:dist.color.clone().lerp(new THREE.Color('#6b7891'),.6)});
-      if(!shown.length&&extra<=0)list.push({kind:'pavilion',module:m.id,x:p.x,z:p.z,r:.5,h:.3,look:4,born,removed,color:dist.color.clone().lerp(new THREE.Color('#7b88a1'),.5)});
+      const syms=[...m.symbols].map(id=>model.symbols.get(id)).filter(s=>s&&KINDS[s.kind]).sort((a,b)=>a.slot-b.slot||a.id.localeCompare(b.id));
       const routes=[...m.symbols].map(id=>model.symbols.get(id)).filter(s=>s&&s.kind==='api.route');
-      routes.slice(0,6).forEach((s,j)=>spireList.push({module:m.id,j,n:Math.min(6,routes.length),born:Number.isFinite(model.bornAt(s))?secs(model.bornAt(s),epoch):-1e5,removed:s.removed===null?removed:secs(s.removed,epoch),color:pal.valid.clone().lerp(dist.color,.4)}));
+      const great=landmark.get(m.group)===m&&symTotal(m)>=4,isGrand=great&&grand.has(m.id);
+      const carpet=!great&&(byGroup.get(m.group)?.length||0)>8&&(rankIn.get(m.id)??0)>=6;
+      const shown=syms.slice(0,carpet?3:16);const total=symTotal(m);
+      // Mass: larger modules get taller storeys (log of their symbols), each precinct's landmark much taller again.
+      const mass=.62+.88*Math.pow(clamp(Math.log2(1+total)/Math.log2(1+maxT)),1.6);const hk=mass*(isGrand?1.22+.6*grandK:great?1.22:carpet?.6:1);
+      const R0=A.r*(.9+.28*Math.min(1,total/12))*(m.test?.92:1)*(isGrand?1.25:great?1.15:carpet?1.4:1);const sd=rand(hash(m.id));
+      const delay=p.distanceTo(orreryAt)*.09;
+      const tw={id:m.id,pos:p,color:dist.color,born:m.born,top:.3,roofTop:.6,district:m.group,R:R0,count:shown.length,blocks:[],great,grand:isGrand,carpet,delay,storeys:[]};towers.set(m.id,tw);
+      const add=(b,pin=false)=>{b.module=m.id;b.test=m.test;b.x=p.x;b.z=p.z;b.rot=b.rot??rot;b.seed=rand(hash(m.id+(b.symbol||b.kind)+(b.j||0)));b.color=dist.color;b.pin=pin;b.frac=b.frac??0;(pin?pins:list).push(b);tw.blocks.push(b);return b;};
+      add({kind:'plinth',stack:true,look:4,rB:R0*1.5,rT:R0*1.36,h:.24,born,removed,weld:-1e5});
+      const N=shown.length;let prev=null;const rf=j=>Math.max(.55,1-stepK*Math.floor(j/stageN));
+      shown.forEach((s,j)=>{const K=KINDS[s.kind];const st=Math.floor(j/stageN);const rb=R0*K.r*rf(j),rt=rb*(archName==='gothic'?.985:1);const sb=model.bornAt(s);
+        // A setback: a cluster of pinnacles stands at the corners of the stage below.
+        if(prev&&j%stageN===0&&archName!=='brutalist'&&!carpet){const rr=prev.rT*.96;for(let q=0;q<4;q++){const a=rot+(q+.5)/4*Math.PI*2+(SIDES===8?Math.PI/8:Math.PI/4);
+          add({kind:'pinnacle',attach:'after',ref:prev,look:10,rB:.045+.01*st,rT:0,h:.2+.05*st,ox:Math.cos(a)*rr,oz:Math.sin(a)*rr,born,removed,weld:-1e5,j:100+j*4+q},true);
+          if(gothicLike&&N>=6)for(const sgn of [-1,1]){const a2=a+sgn*.32;add({kind:'pinnacle',attach:'after',ref:prev,look:10,rB:.025,rT:0,h:.11+.02*st,ox:Math.cos(a2)*rr*.98,oz:Math.sin(a2)*rr*.98,born,removed,weld:-1e5,j:300+j*8+q*2+(sgn>0)},true);}}}
+        prev=add({kind:'storey',stack:true,symbol:s.id,look:K.look,rB:rb,rT:rt,h:K.h*hk*(archName==='gothic'?1.2:archName==='spire'?1.28:1.05),born:Number.isFinite(sb)?secs(sb,epoch):sb===Infinity?1e6:-1e5,
+          removed:s.removed===null?removed:secs(s.removed,epoch),weld:Number.isFinite(s.weldAt)?secs(s.weldAt,epoch):-1e5,j,frac:(j+.5)/Math.max(1,N)});tw.storeys.push(prev);});
+      const extra=total-N;const topR=N?prev.rT:R0;
+      if(extra>0)add({kind:'band',stack:true,look:9,rB:topR*.98,rT:topR*.94,h:Math.min(.9,.14*Math.log2(1+extra))*hk,born,removed,weld:-1e5,frac:1});
+      if(!N&&extra<=0)add({kind:'storey',stack:true,look:3,rB:R0*.9,rT:R0*.86,h:.32,born,removed,weld:-1e5,chapel:true,frac:.5});
+      // Roof by architecture. A precinct's great spire is an openwork lattice (drawn by the lattice mesh; its block
+      // here only keeps the stack's height).
+      const rTop=topR*(N?1:.88);
+      const lattice=(GH)=>{const b=add({kind:'roof',stack:true,roof:true,look:5,rB:0,rT:0,h:GH,born,removed,weld:-1e5,hidden:true});greats.push({id:m.id,rB:rTop*1.02,block:b});};
+      const GH=Math.max(rTop*2*(3+3.5*spireK),N*.5*hk)*(isGrand?1+.6*grandK:1);
+      if(carpet)add({kind:'roof',stack:true,roof:true,look:5,rB:rTop*1.04,rT:0,h:rTop*(gothicLike?1.1+.6*spireK:.8),born,removed,weld:-1e5});
+      else if(gothicLike){const H=rTop*2*(archName==='spire'?2.4+3.2*spireK:1.7+2.4*spireK)*(.6+.4*Math.min(1,N/6));
+        if(great)lattice(GH);
+        else if(N>=3){// An octagonal lantern stage, then the spire with a gablet on each face around its foot (Freiburg).
+          const lan=add({kind:'crown',stack:true,roof:true,look:11,rB:rTop*.84,rT:rTop*.82,h:Math.max(.3,rTop*1.25)*hk,born,removed,weld:-1e5,j:7});
+          add({kind:'gablet',attach:'after',ref:lan,look:14,rB:rTop*.92,rT:rTop*.92,h:rTop*1.5,ox:0,oz:0,born,removed,weld:-1e5,j:8});
+          add({kind:'roof',stack:true,roof:true,look:5,rB:rTop*.66,rT:0,h:H*1.15,born,removed,weld:-1e5});}
+        else add({kind:'roof',stack:true,roof:true,look:5,rB:rTop*(archName==='spire'?.85:.92),rT:0,h:H,born,removed,weld:-1e5});
+        if(archName==='gothic'&&N>=2)for(let j=0;j<4;j++){const a=rot+(j+.5)/4*Math.PI*2+Math.PI/8;
+          add({kind:'pinnacle',attach:'roof',look:12,rB:.055,rT:0,h:.32+.05*Math.min(4,N/2),ox:Math.cos(a)*rTop*1.02,oz:Math.sin(a)*rTop*1.02,born,removed,weld:-1e5,j:j+40},true);
+          if(N>=4)for(const sgn of [-1,1]){const a2=a+sgn*.3;add({kind:'pinnacle',attach:'roof',look:12,rB:.03,rT:0,h:.16+.03*Math.min(4,N/2),ox:Math.cos(a2)*rTop*1.0,oz:Math.sin(a2)*rTop*1.0,born,removed,weld:-1e5,j:j*2+(sgn>0)+60},true);}}}
+      else if(archName==='deco'){for(let q=0;q<3;q++)add({kind:'crown',stack:true,roof:true,look:7,rB:rTop*(.92-q*.2),rT:rTop*(.8-q*.2),h:.16,born,removed,weld:-1e5,j:q});
+        // Deco keeps the cathedral's signifiers: pinnacles at the crown's corners, an openwork crown on the landmark.
+        if(great)lattice(GH*.85);else add({kind:'roof',stack:true,roof:true,look:5,rB:rTop*.3,rT:0,h:rTop*2*(.8+1.6*spireK),born,removed,weld:-1e5});
+        if(N>=3)for(let j=0;j<4;j++){const a=rot+(j+.5)/4*Math.PI*2+Math.PI/4;add({kind:'pinnacle',attach:'roof',look:12,rB:.045,rT:0,h:.3+.04*Math.min(4,N/2),ox:Math.cos(a)*rTop*.95,oz:Math.sin(a)*rTop*.95,born,removed,weld:-1e5,j:j+40},true);}}
+      else{// Brutalist: a lantern band, a stepped ziggurat crown; the landmark carries an openwork crown of ribs.
+        const ck=.35+.65*Math.min(1,N/6);if(N>=6||great)add({kind:'crown',stack:true,roof:true,look:11,rB:rTop*.86,rT:rTop*.86,h:.22*ck*hk,born,removed,weld:-1e5});
+        const steps=great?3:N>=5?2:N>=3?1:0;for(let q=0;q<steps;q++)add({kind:'crown',stack:true,roof:true,look:7,rB:rTop*(1.02-q*.24),rT:rTop*(.96-q*.24),h:(.07+.05*ck)*(1-q*.15),born,removed,weld:-1e5,j:q+1});
+        if(!steps)add({kind:'crown',stack:true,roof:true,look:8,rB:rTop*1.04,rT:rTop*1.0,h:.05,born,removed,weld:-1e5,j:1});
+        if(great)lattice(GH*.8);else if(spireK>.75&&N>=5)add({kind:'roof',stack:true,roof:true,look:10,rB:.035,rT:.012,h:(.5+spireK*.9),born,removed,weld:-1e5});}
+      // API routes: pinnacles around the roof's foot.
+      routes.slice(0,8).forEach((s,j)=>{const a=rot+(j+.5)/Math.min(8,routes.length)*Math.PI*2;const sb=model.bornAt(s);
+        add({kind:'pinnacle',attach:'roof',look:10,rB:.05,rT:0,h:.42+.12*(j%2),ox:Math.cos(a)*rTop*.92,oz:Math.sin(a)*rTop*.92,born:Number.isFinite(sb)?secs(sb,epoch):-1e5,removed:s.removed===null?removed:secs(s.removed,epoch),weld:-1e5,j},true);});
+      // Gothic towers of five storeys and more may carry buttress piers with flying buttresses to the tower; brutalist
+      // ones of three and more carry stepped columns on two sides along the precinct's axis (organ pipes).
+      if(gothicLike&&N>=5&&!carpet&&sd<buttressK+.15){for(let j=0;j<4;j++){const a=rot+(j+.5)/4*Math.PI*2+(SIDES===8?Math.PI/8:0);const off=R0*1.9;
+        const pier=add({kind:'buttress',attach:'base',look:13,rB:.12,rT:.09,h:1,frac:.3,ox:Math.cos(a)*off,oz:Math.sin(a)*off,born,removed,weld:-1e5,j});
+        add({kind:'pinnacle',attach:'after',ref:pier,look:10,rB:.06,rT:0,h:.34,ox:Math.cos(a)*off,oz:Math.sin(a)*off,born,removed,weld:-1e5,j:j+20},true);
+        flyers.push({tw,pier,a,off});}}
+      if(archName==='brutalist'&&N>=3&&!carpet){const ax=dist.ang;for(const sgn of [-1,1])for(let q=0;q<3;q++){const off=R0*(1.12+.62*q)*sgn;
+        add({kind:'buttress',attach:'base',look:13,rB:R0*.36,rT:R0*.34,h:1,frac:.82-.2*q,ox:Math.cos(ax)*off,oz:Math.sin(ax)*off,born,removed,weld:-1e5,j:q+(sgn>0?3:0),rot:ax+Math.PI/4},false);}}
+      for(const b of tw.blocks)b.delay=delay;
     }
-    blocks.ensure(list.length);list.forEach((b,i)=>{blocks.write('bPos',i,b.x,0,b.z,0);blocks.write('bSize',i,b.r,b.h,b.look,rand(hash(b.module+(b.symbol||b.kind))));blocks.write('bLife',i,b.born,b.removed,-1e5,0);
-      blocks.write('bState',i,1,1,-1e5,0);blocks.write('bColor',i,b.color.r,b.color.g,b.color.b);blockRefs.push(b);});
-    blockCount=list.length;blocks.commit(blockCount);
-    spires.ensure(spireList.length);spireList.forEach((s,i)=>{spires.write('pLife',i,s.born,s.removed,0,0);spires.write('pColor',i,s.color.r*2,s.color.g*2,s.color.b*2);});spireCount=spireList.length;spires.commit(spireCount);spireRefs=spireList;
-    // Links between towers: conduits within a district (quieter the more there are), bridges between districts.
-    // Conduits inside a district rest quieter the more there are; between two districts at most four representative
-    // bridges stand for all their links, brighter the more links they carry (hundreds of arches would read as noise).
-    const all=[...model.links.values()].filter(l=>towers.has(l.a)&&towers.has(l.b));const internal=all.filter(l=>!l.cross);const quiet=Math.min(1,3/Math.sqrt(internal.length+1)+.15);
+    // The great orrery turns at the city's largest tower.
+    orreryTower=null;{let best=null,bs=-1;
+      for(const tw of towers.values()){const m=model.modules.get(tw.id);if(m.removed!==null)continue;const n=symTotal(m);if(n>bs||n===bs&&tw.id<best){bs=n;best=tw.id;}}
+      orreryTower=best;}
+    // Naves: one hall per precinct along its axis (the precinct's lit share lights its windows each frame).
+    for(const s of districts.values()){const len=Math.max(1.5,2*s.ex*.92+.5*S),wid=Math.min(.95*S,Math.max(.8,s.ez*1.1+.6));const wall=Math.min(1.05,.42+.12*Math.log2(1+s.members.length));
+      const roof=archName==='brutalist'?.05:archName==='deco'?wid*.5:wid*.66;naves.push({s,len,wid,wall,roof,born:secs(s.born,epoch),seed:rand(hash(s.d.id+'n'))});}
+    // Pinnacles along the naves' eaves at every buttress, and a finial on each gable.
+    if(archName!=='brutalist')for(const v of naves){const nb=Math.max(2,Math.round(v.len/.46)),dx=Math.cos(v.s.ang),dz=Math.sin(v.s.ang),px=dz,pz=-dx;const nv={module:null,removed:1e6,weld:-1e5,color:v.s.color,frac:0,delay:0,rot};
+      for(let q=0;q<=nb;q++){const z=-v.len/2+q*v.len/nb;for(const sg of [-1,1])pins.push({...nv,kind:'pinnacle',look:10,rB:.035,rT:0,h:.17+.04*(q%2),x:v.s.centre.x+px*sg*v.wid*.5+dx*z,z:v.s.centre.z+pz*sg*v.wid*.5+dz*z,y:v.wall,born:v.born+3.2,seed:rand(hash(v.s.d.id+'e'+q+sg))});}
+      for(const sg of [-1,1])pins.push({...nv,kind:'pinnacle',look:10,rB:.05,rT:0,h:.32,x:v.s.centre.x+dx*sg*v.len*.5,z:v.s.centre.z+dz*sg*v.len*.5,y:v.wall+v.roof-.05,born:v.born+3.2,seed:rand(hash(v.s.d.id+'g'+sg))});}
+    naveB.ensure(naves.length);naves.forEach((v,i)=>{naveB.write('nA',i,v.s.centre.x,v.s.centre.z,v.s.ang,v.born);naveB.write('nB',i,v.len,v.wid,v.wall,v.roof);naveB.write('nC',i,v.s.color.r,v.s.color.g,v.s.color.b,0);naveB.write('nD',i,-1e5,-1e5,0,v.seed);});naveB.commit(naves.length);
+    // Cloister walls: a low wall of blind arcading around each foundation ellipse, raised bay by bay when founded.
+    const solid=[],bays=[];
+    for(const s of districts.values()){const perim=Math.PI*(3*(s.rx+s.rz)-Math.sqrt((3*s.rx+s.rz)*(s.rx+3*s.rz)));const np=Math.max(12,Math.round(perim/(.9*S))&~1);
+      const ca=Math.cos(s.ang),sa=Math.sin(s.ang);const H=.055*S,born=secs(s.born,model.epoch);const pts=[];
+      for(let j=0;j<np;j++){const a=j/np*Math.PI*2;const lx=Math.cos(a)*s.rx,lz=Math.sin(a)*s.rz;pts.push([s.centre.x+lx*ca-lz*sa,s.centre.z+lx*sa+lz*ca]);}
+      for(let j=0;j<np;j++){const a=pts[j],b=pts[(j+1)%np];const chord=Math.hypot(a[0]-b[0],a[1]-b[1]);
+        bays.push({x:(a[0]+b[0])/2,z:(a[1]+b[1])/2,rot:Math.atan2(b[1]-a[1],b[0]-a[0]),born:born+j/np*2.4,span:chord+.03,h:H,c:s.color,order:(j+.5)/np,period:[16,12,24,8,32,20,28,10][s.index%8],phase:rand(hash(s.d.id+'c')),n:np,district:s.d.id,di:s.index});}
+    }
+    // Dependencies: channels inlaid in the floor inside a precinct; across precincts a thin cable of light slung between
+    // two towers at staggered heights, one per pair of precincts, the most-linked pairs first (a few dozen at most).
+    const all=[...model.links.values()].filter(l=>towers.has(l.a)&&towers.has(l.b));const internal=all.filter(l=>!l.cross).slice(-900);
+    const quiet=Math.min(1,3/Math.sqrt(internal.length+1)+.25);
     const pairs=new Map();for(const l of all.filter(l=>l.cross)){const key=[towers.get(l.a).district,towers.get(l.b).district].sort().join('|');if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push(l);}
-    const ll=internal.map(l=>({l,k:.8*quiet}));
-    for(const list of pairs.values()){list.sort((x,y)=>(model.bornAt(x)-model.bornAt(y))||rand(hash(x.key))-rand(hash(y.key)));const k=Math.min(2.2,1+.35*Math.log2(list.length))/Math.min(4,list.length)**.35;
-      for(const l of list.slice(0,4))ll.push({l,k:1.2*k});}
-    links.ensure(ll.length);ll.forEach(({l,k},i)=>{const a=towers.get(l.a),b=towers.get(l.b);const born=model.bornAt(l);
-      links.write('kInfo',i,Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,l.removed===null?1e6:secs(l.removed,epoch),l.cross?1:0,rand(hash(l.key)));
-      links.write('kColA',i,a.color.r*k,a.color.g*k,a.color.b*k);links.write('kColB',i,b.color.r*k,b.color.g*k,b.color.b*k);});
-    linkCount=ll.length;links.commit(linkCount);linkRefs=ll.map(x=>x.l);
-    builtVersion=model.version;
+    for(const l of internal){const a=towers.get(l.a),b=towers.get(l.b);const born=model.bornAt(l);
+      channels.push({l,born:Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,removed:l.removed===null?1e6:secs(l.removed,epoch),k:.9*quiet,c:a.color.clone().lerp(b.color,.5)});}
+    const plist=[...pairs.entries()].sort((x,y)=>y[1].length-x[1].length||(x[0]<y[0]?-1:1)).slice(0,24);
+    for(const [,ls] of plist){ls.sort((x,y)=>(model.bornAt(x)-model.bornAt(y))||rand(hash(x.key))-rand(hash(y.key)));const kk=Math.min(2,1+.3*Math.log2(ls.length));const l=ls[0];const born=model.bornAt(l);
+      bridges.push({l,born:Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,removed:l.removed===null?1e6:secs(l.removed,epoch),k:kk,ha:.55+.35*rand(hash(l.key+'a')),hb:.55+.35*rand(hash(l.key+'b'))});}
+    // Write static instance data.
+    stoneB.ensure(list.length);pinB.ensure(pins.length);
+    const writeStatic=(B,b,i)=>{b.index=i;b.buf=B;B.write('iB',i,b.rB,b.rT,b.h,b.look);B.write('iL',i,b.born,b.removed,b.weld,b.seed);B.write('iA',i,b.x,b.z,b.y||0,b.rot);
+      B.write('iS',i,1,1,-1e5,1);B.write('iF',i,-1e5,0,-1e5,0);B.write('iC',i,b.color.r,b.color.g,b.color.b,b.test?1:0);B.write('iT',i,b.frac,b.delay||0,b.y||0,0);blocks.push(b);if(!b.module)return;
+      if(!towerBlocks.has(b.module))towerBlocks.set(b.module,[]);towerBlocks.get(b.module).push(b);};
+    list.forEach((b,i)=>writeStatic(stoneB,b,i));pins.forEach((b,i)=>writeStatic(pinB,b,i));
+    stoneCount=list.length;stoneB.commit(stoneCount);pinCount=pins.length;pinB.commit(pinCount);
+    bayB.ensure(bays.length);bays.forEach((b,i)=>{bayB.write('aP',i,b.x,b.z,b.rot,b.born);bayB.write('aS',i,b.span,b.h,Math.min(DMAX-1,b.di),0);bayB.write('aC',i,b.c.r,b.c.g,b.c.b,1);bayB.write('aQ',i,b.order,b.period,b.phase,b.n);bayB.write('aF',i,-1e5,0,0,0);
+      if(!districtBays.has(b.district))districtBays.set(b.district,[]);districtBays.get(b.district).push(i);});bayList=bays;bayCount=bays.length;bayB.commit(bayCount);
+    glowB.ensure(channels.length+bridges.length+64);
+    channels.forEach((x,i)=>{const a=towers.get(x.l.a),b=towers.get(x.l.b);glowB.write('kA',i,a.pos.x,.012,a.pos.z,.05);glowB.write('kB',i,b.pos.x,.012,b.pos.z,0);glowB.write('kInfo',i,x.born,x.removed,0,rand(hash(x.l.key)));glowB.write('kC',i,x.c.r,x.c.g,x.c.b,x.k);});
+    bridges.forEach((x,j)=>{const i=channels.length+j;const a=towers.get(x.l.a).color,b=towers.get(x.l.b).color;const c=a.clone().lerp(b,.5).lerp(warm,.5);glowB.write('kInfo',i,x.born,x.removed,1,rand(hash(x.l.key)));glowB.write('kC',i,c.r,c.g,c.b,.75*x.k);});
+    glowStatic=channels.length+bridges.length;
+    tallCache=null;builtVersion=model.version;lastingSig='';applyFx();
   }
-  let spireRefs=[],linkRefs=[];
-  // Per frame: stack heights (storeys settle when one is removed), states, roof spires, link endpoints at rooftops.
-  const stackY=new Map();
-  function restack(t,epoch){
-    const byModule=new Map();blockRefs.forEach((b,i)=>{if(!byModule.has(b.module))byModule.set(b.module,[]);byModule.get(b.module).push(i);});
-    for(const [mid,idx] of byModule){const tw=towers.get(mid);let y=0;
-      for(const i of idx){const b=blockRefs[i];const alive=b.born<=(t-epoch)/1000+1e-3;const gone=b.removed<1e5&&(t-epoch)/1000>=b.removed;
-        const target=y;const key=i;const prev=stackY.get(key);
-        if(prev===undefined){stackY.set(key,{y:target,from:target,at:-1e5});}
-        else if(Math.abs(prev.y-target)>1e-4){prev.from=lerpSettled(prev,(t-epoch)/1000);prev.y=target;prev.at=(t-epoch)/1000;}
-        const s=stackY.get(key);blocks.write('bPos',i,b.x,s.y,b.z,s.from);const life=blocks.arrays.bLife;life[i*4+2]=s.at;
-        if(alive&&!gone)y+=b.h+(b.kind==='plinth'?.008:.008);}
-      tw.top=Math.max(.3,y);}
-    blocks.dirty('bLife');
-  }
-  const lerpSettled=(s,now)=>{const k=Math.min(1,Math.max(0,(now-s.at)/.6));const e=k*k*(3-2*k);return s.from+(s.y-s.from)*e;};
-  // ---- Agents: drones -----------------------------------------------------------------------------------------
-  const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'].map(c=>new THREE.Color(c));
-  const agentState=new Map();
-  function agentGoal(a,i){
-    const tw=a.fileId?towers.get(a.fileId):null,home=a.home?towers.get(a.home):null,dist=home?districts.get(home.district):null;
-    if(tw&&a.display==='tool')return tw.pos.clone().setY(tw.top+1.4);
-    const ph=rand(hash(a.id))*6.283;
-    if(dist){const R=a.display==='waiting'||a.display==='dormant'?dist.radius+1.5:dist.radius*.7,y=a.display==='waiting'||a.display==='dormant'?1.6:3.2,sp=a.busy?.25:.05;
-      return new THREE.Vector3(dist.centre.x+Math.cos(ph+i.tview*sp)*R,y+Math.sin(i.tview*.7+ph)*.25,dist.centre.z+Math.sin(ph+i.tview*sp)*R);}
-    return new THREE.Vector3(centre.x+Math.cos(ph+i.tview*.06)*extent*.6,4,centre.z+Math.sin(ph+i.tview*.06)*extent*.6);
-  }
-  function updateAgents(i){
-    let n=0;const seen=new Set();
-    for(const a of i.agents.slice(0,MAX_AGENTS)){
-      seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3(),snap:true};agentState.set(a.id,st);}
-      const goal=agentGoal(a,i);if(st.snap){st.pos.copy(goal);st.snap=false;}else st.pos.lerp(goal,Math.min(1,i.dt*(a.display==='tool'?2:1.1)));
-      const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.5)*G.agentProminence;
-      agentPts.write('position',n,st.pos.x,st.pos.y,st.pos.z);agentPts.write('aCol',n,c.r*2,c.g*2,c.b*2,alpha);agentPts.write('aSize',n,2.4);n++;
-      // Rotor glints around the drone body.
-      for(let k=0;k<4;k++){const u=k/4*6.283+i.tview*9;agentPts.write('position',n,st.pos.x+Math.cos(u)*.22,st.pos.y+.03,st.pos.z+Math.sin(u)*.22);agentPts.write('aCol',n,c.r,c.g,c.b,alpha*.6);agentPts.write('aSize',n,.5);n++;}
-      // A beam of light onto the tower it works on (editing pours down, reading scans upward).
-      const tw=a.fileId?towers.get(a.fileId):null;
-      if(tw&&a.display==='tool'){const inward=a.activity==='reading'||a.activity==='searching';const top=tw.pos.clone().setY(tw.top);
-        for(let k=0;k<30&&n<agentPts.capacity;k++){let f=(i.tview*1.1+k/30)%1;if(inward)f=1-f;const p=st.pos.clone().lerp(top,f);p.x+=Math.sin(k*2.1+i.tview)*.12*f;p.z+=Math.cos(k*1.7+i.tview)*.12*f;
-          agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*1.4,c.g*1.4,c.b*1.4,alpha*.7);agentPts.write('aSize',n,.55);n++;}}
+  let bayCount=0,pinCount=0,orreryTower=null,tallCache=null;
+  // ---- Per frame: stacking (analytic, so a seek or a film reproduces it exactly), states, attachments ---------------
+  const presence=(b,ts,sp)=>{const a=(ts-b.born)/sp;if(a<0)return 0;let x=Math.min(1,a/.7);x=x*x*(3-2*x);if(b.removed<1e5){const g=(ts-b.removed)/sp;if(g>0)x*=1-Math.min(1,g/1.1);}return x;};
+  function restack(i){const ts=i.tsec,sp=ctx.speed();tallest=1;
+    for(const tw of towers.values()){let y=0,roofBase=0,plinthTop=0;const m=model.modules.get(tw.id);
+      for(const b of tw.blocks){if(!b.stack)continue;if(b.roof&&roofBase===0)roofBase=y;b.y=y;b.pr=presence(b,ts,sp);y+=b.h*b.pr;if(b.kind==='plinth')plinthTop=y;}
+      tw.top=Math.max(.3,roofBase||y);tw.roofTop=y;tw.plinthTop=plinthTop;
+      if(m&&model.alive(m,i.t))tallest=Math.max(tallest,tw.roofTop);
+      for(const b of tw.blocks){const B=b.buf;if(b.stack){B.write('iA',b.index,b.x,b.z,b.y,b.rot);B.arrays.iT[b.index*4+2]=tw.roofTop;continue;}
+        if(b.attach==='roof'){b.y=tw.top;}
+        else if(b.attach==='base'){const H=Math.max(.5,(tw.top-plinthTop)*b.frac);b.y=plinthTop;B.arrays.iB[b.index*4+2]=H;b.hh=H;}
+        else if(b.attach==='after'){const r=b.ref;b.y=r.y+(r.hh??r.h*(r.pr??1));}
+        B.write('iA',b.index,b.x+b.ox,b.z+b.oz,b.y,b.rot);B.arrays.iT[b.index*4+2]=tw.roofTop;}
     }
-    for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
-    agentPts.commit(n);
+    stoneB.dirty('iB');pinB.dirty('iB');stoneB.dirty('iT');pinB.dirty('iT');
   }
+  // ---- Lasting transformations: rose windows and crowns of light from verified milestones (director.lasting()) -----
+  let lastingSig='';const roses=new Map(),crowns=[],naveRose=new Map();
+  function lasting(i){
+    const list=[];for(const l of ctx.director.lasting()){if(l.first>i.t)continue;const later=l.times.filter(x=>x>i.t).length;const count=l.count-later;if(count>0)list.push({l,count});}
+    const sig=list.map(x=>`${x.l.type}|${x.l.first}|${x.count}`).join(';')+`@${builtVersion}`;if(sig===lastingSig)return;lastingSig=sig;
+    roses.clear();crowns.length=0;naveRose.clear();const byTower=new Map();
+    for(const {l,count} of list){const ids=(l.subject?.fileIds||[]).concat(l.subject?.fileId?[l.subject.fileId]:[]).filter(id=>towers.has(id));if(!ids.length)continue;
+      for(const id of ids){const at=secs(l.first,model.epoch);if(!roses.has(id)||roses.get(id)>at)roses.set(id,at);}
+      // The crown goes to the covered precinct's great spire when it has one, else to the largest covered tower.
+      let best=ids[0];const score=id=>{const tw=towers.get(id);return (tw.great?1000:0)+tw.count;};for(const id of ids)if(score(id)>score(best)||score(id)===score(best)&&id<best)best=id;
+      const lastAt=secs(Math.max(...l.times.filter(x=>x<=i.t)),model.epoch);
+      const c=byTower.get(best)||{id:best,level:0,at:secs(l.first,model.epoch),last:lastAt};c.level+=count;c.last=Math.max(c.last,lastAt);byTower.set(best,c);
+      const d=towers.get(best).district;const nr=naveRose.get(d);if(!nr||nr.last<lastAt)naveRose.set(d,{first:Math.min(nr?.first??1e9,c.at),last:lastAt});}
+    crowns.push(...byTower.values());
+    for(const [id,list2] of towerBlocks){const at=roses.has(id)?roses.get(id):-1e5;const tw=towers.get(id);const top=tw.storeys.at(-1);
+      const cl=byTower.get(id)?.level||0;for(const b of list2){const o=b.index*4;b.buf.arrays.iF[o+2]=at;b.buf.arrays.iF[o+3]=b===top?1:b.look===5?cl:0;}}
+    stoneB.dirty('iF');pinB.dirty('iF');
+    naves.forEach((v,k)=>{const r=naveRose.get(v.s.d.id);naveB.arrays.nD[k*4]=r?r.last:-1e5;});naveB.dirty('nD');
+  }
+  // ---- Transient effects per tower or district (cleared on a seek) -------------------------------------------------
+  const fxTower=new Map(),fxDistrict=new Map();
+  function applyFx(){for(const [id,f] of fxTower){const list2=towerBlocks.get(id);if(!list2)continue;for(const b of list2){const o=b.index*4;b.buf.arrays.iF[o]=f.at;b.buf.arrays.iF[o+1]=f.kind;}}
+    for(const [id,f] of fxDistrict){const idx=districtBays.get(id);if(!idx)continue;for(const k of idx)bayB.write('aF',k,f.at,f.delay(bayList[k]),1,0);}stoneB.dirty('iF');pinB.dirty('iF');bayB.flush();}
+  // ---- Agents: servitor drones with lanterns ------------------------------------------------------------------------
+  const AGENT_COLORS=['#ffb0dc','#ffd28a','#9cf0c8','#a8b8ff','#ffb48c','#8ce4ff','#dcaaff','#c8f096'].map(c=>new THREE.Color(c));
+  const agentPos=new Map();
+  // Servitors fly below the skyline (the banners and chips above the city stay clear): around the tower an agent works
+  // on at four fifths of its height, over their precinct while thinking, parked low at its edge while waiting.
+  function orbitOf(a,i,out){const ph=rand(hash(a.id))*6.283;const home=a.home?towers.get(a.home):null,dist=home?districts.get(home.district):null;
+    const waiting=a.display==='waiting'||a.display==='dormant';
+    if(dist){const R=waiting?dist.radius+.5:dist.radius*.55,y=waiting?.55:Math.max(1.1,(dist.meanTop||1.5)*.8),sp=a.busy?.1:.03;
+      return out.set(dist.centre.x+Math.cos(ph+i.tview*sp)*R,y+Math.sin(i.tview*.6+ph)*.08,dist.centre.z+Math.sin(ph+i.tview*sp)*R);}
+    return out.set(centre.x+Math.cos(ph+i.tview*.04)*extent*.5,Math.max(1.2,tallest*.3),centre.z+Math.sin(ph+i.tview*.04)*extent*.5);}
   // ---- Effects --------------------------------------------------------------------------------------------------
-  let info={tsec:0,tview:0},waveNext=0;const flashes=[];
-  function wave(pos,color,speed=4){const k=waveNext++%4;common.uWaves.value[k].set(pos.x,0,pos.z,info.tsec);common.uWaveC.value[k].set(color.r,color.g,color.b,speed);}
-  function burst(pos,color,{radius=1.4,duration=1.6,size=1,mode=0}={}){const k=burstNext++%BURSTS;burstU.uBA.value[k].set(pos.x,pos.y,pos.z,info.tsec);burstU.uBB.value[k].set(color.r*1.5,color.g*1.5,color.b*1.5,size);burstU.uBC.value[k].set(duration,mode,radius,0);}
-  function flash(a){flashes.push({at:info.tsec,amount:a});if(flashes.length>6)flashes.shift();}
-  const topOf=id=>{const tw=towers.get(id);return tw?tw.pos.clone().setY(tw.top):null;};
+  // Every effect is placed from its command alone (its time, its subject, the towers' heights at that time) and takes
+  // the pool slot that frees first, with its spark pattern seeded by the command: replays and seeks reproduce it.
+  let info={tsec:0,tview:0,t:0};const flashes=[];
+  const at=cmd=>secs(cmd.at,model.epoch);
+  const hgt={top:0,roofTop:0};
+  function heightsAt(tw,ts){const sp=ctx.speed();let y=0,roofBase=0;for(const b of tw.blocks){if(!b.stack)continue;if(b.roof&&roofBase===0)roofBase=y;y+=b.h*presence(b,ts,sp);}hgt.top=Math.max(.3,roofBase||y);hgt.roofTop=y;return hgt;}
+  function wave0(pos,color,t0,speed=4){const W=common.uWaves.value;let k=0;for(let j=1;j<4;j++)if(W[j].w<W[k].w)k=j;W[k].set(pos.x,0,pos.z,t0);common.uWaveC.value[k].set(color.r,color.g,color.b,speed);}
+  function burst(pos,color,t0,key,{radius=1.4,duration=1.6,size=1,mode=0}={}){const A=burstU.uBA.value,C=burstU.uBC.value,sp=ctx.speed();let k=0,end=Infinity;
+    for(let j=0;j<BURSTS;j++){const e=A[j].w+C[j].x*sp;if(e<end){end=e;k=j;}}
+    A[k].set(pos.x,pos.y,pos.z,t0);burstU.uBB.value[k].set(color.r*1.5,color.g*1.5,color.b*1.5,size);C[k].set(duration,mode,radius,rand(hash(key)));}
+  function flash(t0,a,kind=0){flashes.push({at:t0,amount:a,kind});flashes.sort((x,y)=>x.at-y.at);if(flashes.length>8)flashes.shift();}
+  const topAt=(id,ts)=>{const tw=towers.get(id);if(!tw)return null;const h=heightsAt(tw,ts);return {pos:tw.pos.clone().setY(h.top),roofTop:h.roofTop,tw};};
+  const lockRings=[],beamFx=[],haloFx=[],moments=[];
+  const keep=(list,x,n)=>{list.push(x);list.sort((a,b)=>a.at-b.at);while(list.length>n)list.shift();};
+  function towerFx(ids,t0,kind){for(const id of ids)if(towers.has(id))fxTower.set(id,{at:t0,kind});applyFx();}
+  const MD=2.2;   // a milestone's own moment: its crown, lanterns and halo ignite this long after the run that verified it
+  // The tower a milestone crowns: its precinct's great spire when it covers one, else its largest covered tower.
+  function crownTower(ids){ids=ids.filter(id=>towers.has(id));if(!ids.length)return null;let best=ids[0];const score=id=>{const tw=towers.get(id);return (tw.great?1000:0)+tw.count;};
+    for(const id of ids)if(score(id)>score(best)||score(id)===score(best)&&id<best)best=id;return best;}
   function effect(cmd,i){
-    if(i)info=i;const s=cmd.subject||{},k=clamp(cmd.scale,0,1.6),ids=(s.fileIds||[]).slice(0,14);
+    if(i)info=i;const s=cmd.subject||{},k=clamp(cmd.scale,0,1.6),ids=(s.fileIds||[]).slice(0,24),t0=at(cmd),sp=ctx.speed();
+    if(model.version!==builtVersion)build();
+    if(k<=.001)return;const kw=Math.min(1,k);const wave=(p,c,t,spd)=>wave0(p,c.clone().multiplyScalar(kw),t,spd);const key=`${cmd.at}|${cmd.intent}|${cmd.id??''}`;
+    const white=new THREE.Color('#dfe9ff'),glow=warm.clone().lerp(new THREE.Color('#ffe2b8'),.3);
     switch(cmd.effect){
-      case 'foundation':{const d=districts.get(s.groupId);if(d){wave(d.centre,d.color,3.5);burst(d.centre.clone().setY(.3),d.color,{radius:d.radius,duration:2,size:1.2});}break;}
-      case 'raise':{const p=topOf(s.fileId);if(p)burst(p,new THREE.Color('#d7ecff'),{radius:1,duration:1.4,size:.8});break;}
-      case 'storey':{const p=topOf(s.fileId);if(p)burst(p,pal.highlight,{radius:.8*k+.4,duration:1.2,size:.6,mode:2});break;}
-      case 'dismantle':{const p=topOf(s.fileId);if(p)burst(p,new THREE.Color(.6,.62,.7),{radius:1.2,duration:1.8,size:.7});break;}
-      case 'lock-mechanism':{const a=topOf(s.fileId),b=topOf(s.targetId);if(a&&b){burst(a,pal.highlight,{radius:1.4,duration:2,size:1});burst(b,pal.highlight,{radius:1.4,duration:2,size:1});if(cmd.tier>=2){wave(a.clone().lerp(b,.5),pal.highlight,4);flash(.08);}}break;}
-      case 'stress-fracture':{for(const id of ids){const p=topOf(id);if(p)burst(p,pal.warning,{radius:1,duration:2,size:.8});}if(ids.length){wave(topOf(ids[0])||centre,pal.warning,3);}flash(.06*k);break;}
-      case 'window-scan':{for(const id of ids){const p=topOf(id);if(p)burst(p,pal.valid,{radius:.8,duration:1.6,size:.6,mode:2});}break;}
-      case 'restore':{for(const id of ids){const p=topOf(id);if(p)burst(p,pal.valid,{radius:1.4,duration:2.2,size:1,mode:2});}if(ids.length)wave(topOf(ids[0])||centre,pal.valid,3.5);flash(.18*k);break;}
-      case 'reassemble':{for(const id of ids){const p=topOf(id);if(p)burst(p,pal.highlight,{radius:1.6,duration:2.2,size:1});}flash(.1);break;}
-      case 'illumination':{for(const id of ids){const p=topOf(id);if(p)burst(p,pal.valid.clone().lerp(new THREE.Color('#fff4d6'),.5),{radius:4,duration:3,size:1.4,mode:2});}
-        wave(centre,pal.valid.clone().lerp(new THREE.Color('#fff4d6'),.5),5);flash((cmd.tier>=4?.9:.45)*k);break;}
-      case 'set-in-stone':{wave(centre,new THREE.Color('#ffe2a6'),4.5);break;}
-      case 'district-lights':{wave(centre,pal.accent,5);break;}
+      case 'foundation':{const d=districts.get(s.groupId);if(d){wave(d.centre,d.color,t0,3.2);fxDistrict.set(d.d.id,{at:t0,kind:7,delay:b=>b.order*2.4});naveFx(d.d.id,t0+1.2*sp);applyFx();}break;}
+      case 'raise':{const tw=towers.get(s.fileId);if(tw){wave(tw.pos,white.clone().multiplyScalar(.5),t0,2.4);burst(tw.pos.clone().setY(.05),white,t0,key,{radius:.9,duration:1.2,size:.9,mode:1});}break;}
+      case 'storey':{const p=topAt(s.fileId,t0+.9*sp);if(p)burst(p.pos,white,t0+.9*sp,key,{radius:.6+.3*k,duration:.9,size:.9,mode:1});break;}
+      case 'dismantle':{const p=topAt(s.fileId,t0);if(p)burst(p.pos,new THREE.Color(.45,.47,.52),t0,key,{radius:.9,duration:1.8,size:.9,mode:3});break;}
+      case 'lock-mechanism':{const a=topAt(s.fileId,t0),b=topAt(s.targetId,t0);if(a&&b){const az=Math.atan2(b.pos.z-a.pos.z,b.pos.x-a.pos.x);
+        keep(lockRings,{id:s.fileId,at:t0+2.2*sp,az,y:a.pos.y*.85},8);keep(lockRings,{id:s.targetId,at:t0+2.2*sp,az:az+Math.PI,y:b.pos.y*.85},8);
+        if(cmd.tier>=2){wave(a.pos.clone().lerp(b.pos,.5),pal.highlight,t0+2.2*sp,3.5);flash(t0+2.2*sp,.05);}}break;}
+      case 'stress-fracture':{towerFx(ids,t0,2);const red=pal.warning.clone().lerp(new THREE.Color('#ff4a1a'),.4);
+        ids.slice(0,8).forEach((id,j)=>{const p=topAt(id,t0);if(p)burst(p.pos,red,t0,key+j,{radius:.8,duration:2.2,size:1.1,mode:0});});
+        flash(t0,.5*k,1);break;}
+      case 'window-scan':{towerFx(ids,t0,1);break;}
+      case 'restore':{towerFx(ids,t0,3);ids.slice(0,10).forEach((id,j)=>{const tw=towers.get(id);if(!tw)return;const ts=t0+(.8+tw.delay)*sp;const p=topAt(id,ts);burst(p.pos,glow,ts,key+j,{radius:2.2,duration:2.8,size:1.9,mode:2});});
+        if(ids.length)wave(orreryAt||centre,glow,t0,3.2);keep(beamFx,{at:t0+1.*sp,k:kw},4);flash(t0,.14*k);break;}
+      case 'reassemble':case 'illumination':{towerFx(ids,t0,4);const big=cmd.tier>=4;const ct=crownTower(ids);
+        ids.slice(0,12).forEach((id,j)=>{const tw=towers.get(id);if(!tw)return;const ts=t0+(MD+.6+tw.delay)*sp;const p=topAt(id,ts);burst(p.pos.setY(p.roofTop),GOLD,ts,key+j,{radius:big?3.4:2.4,duration:3.2,size:2,mode:2});});
+        wave(ct?towers.get(ct).pos:(orreryAt||centre),GOLD.clone().multiplyScalar(2.2),t0+MD*sp,big?5:3.8);flash(t0+MD*sp,(big?.7:.4)*k,2);
+        if(ct){keep(haloFx,{at:t0+(MD+.4)*sp,id:ct,k:kw},4);keep(moments,{at:t0+MD*sp,id:ct,k:kw},4);}break;}
+      case 'set-in-stone':{towerFx(ids,t0,5);wave(orreryAt||centre,warm.clone().multiplyScalar(.5),t0,4);
+        // The commit is a carillon beat: a ring of light runs once along every precinct's coping (and stays lit there
+        // with the committed share) while the plinths' copings are struck.
+        for(const d of districts.values())fxDistrict.set(d.d.id,{at:t0,kind:5,delay:b=>b.order*1.6});applyFx();break;}
+      case 'district-lights':{const o=orreryAt||centre;for(const d of districts.values()){const dd=d.centre.distanceTo(o);fxDistrict.set(d.d.id,{at:t0,kind:7,delay:b=>dd*.12+b.order*1.2});naveFx(d.d.id,t0+dd*.12*sp);}applyFx();wave(o,warm,t0,5);break;}
       default:break;
     }
   }
+  function naveFx(id,t){naves.forEach((v,k)=>{if(v.s.d.id===id)naveB.arrays.nD[k*4+1]=t;});naveB.dirty('nD');}
   // ---- Frame ----------------------------------------------------------------------------------------------------
-  function rebuild(){builtVersion=-1;stackY.clear();for(const s of agentState.values())s.snap=true;}
+  const workingSet=new Set(),seenSet=new Set(),crownMap=new Map();const NONE=[],haloLight=GOLD.clone().multiplyScalar(1.2);
+  const tmpA=new THREE.Vector3(),tmpB=new THREE.Vector3(),tmpV=new THREE.Vector3(),tmpN=new THREE.Vector3(),tmpC=new THREE.Color();
+  const drones=Array.from({length:10},()=>({pos:null,c:null,a:0,ph:0,busy:false}));let nd=0;
+  let li=0;const lamp=(x,y,z,r,g,b,size)=>{if(li>=LAMPS)return;lamps.write('position',li,x,y,z);lamps.write('aC',li,r,g,b,1);lamps.write('aS',li,size);li++;};
+  function rebuild(){builtVersion=-1;}
+  function tallOrder(){if(!tallCache){const fh=tw=>tw.blocks.reduce((a,b)=>a+(b.stack?b.h:0),0);tallCache=[...towers.values()].sort((a,b)=>fh(b)-fh(a)||(a.id<b.id?-1:1));}return tallCache;}
+  // ---- The establishing view: the camera stands on the line from the moon through the city's great spire, outside
+  // the city, low, with a long lens; the moon's elevation is set from that standpoint so the disc sits behind the
+  // spire's upper third (a pure function of the city and the clock: seeks and films reproduce it).
+  const estab={C:new THREE.Vector3(),T:new THREE.Vector3(),S:new THREE.Vector3(),fov:24,L:40,yaw:0,pitch:0,near:20};
+  const camE=new THREE.Vector3();
+  function establish(i){
+    const C=cam,motion=i.overrides?.motion??1,aspect=Math.min(camera.aspect||16/9,2.4);
+    const otw=orreryTower&&towers.get(orreryTower);const S=estab.S.copy(otw?otw.pos:(orreryAt||centre));
+    const top=otw?otw.top:1,roofTop=otw?otw.roofTop:2;const hA=top+.6*Math.max(roofTop-top,.4);
+    const mx=Math.cos(moonAz),mz=Math.sin(moonAz),px=-mz,pz=mx;
+    let back=0,latMin=-1,latMax=1;
+    // Only precincts standing now frame the view (a precinct whose every module was removed leaves no mark on it).
+    for(const d of districts.values()){d.standing=d.members.some(m=>model.alive(m,i.t));}
+    for(const d of districts.values()){if(!d.standing)continue;const dx=d.centre.x-S.x,dz=d.centre.z-S.z;back=Math.max(back,-(dx*mx+dz*mz)+d.radius);const lat=dx*px+dz*pz;latMin=Math.min(latMin,lat-d.radius);latMax=Math.max(latMax,lat+d.radius);}
+    const lens=Math.sqrt(34/clamp(C.fov||34,20,60))*(C.distance||1);
+    let tallTop=2;for(const tw of tallOrder().slice(0,4))tallTop=Math.max(tallTop,tw.roofTop);
+    const L0=Math.max(back+2+extent*.3,extent*3.1*lens,tallTop*4.6*lens,32);
+    const e0=clamp(((C.elevation??.4)-.15)/.65);const Cy0=Math.max(.45,L0*Math.tan(.022+.04*e0+.045*smooth((extent-16)/45)));
+    // The moon's elevation from the undisturbed standpoint (the idle sway and glide then move the spire across it).
+    moonEl=clamp(Math.atan2(hA-Cy0,L0),.035,.2);moonDir.set(Math.cos(moonAz)*Math.cos(moonEl),Math.sin(moonEl),Math.sin(moonAz)*Math.cos(moonEl));
+    const proc=C.personality!=='architectural',tv=i.tview;
+    // Idle: a slow sideways sway (the spire slides across the moon) and, for the procession, a slow glide in and back.
+    const sway=Math.sin(tv/130+moonPh)*(.4+.8*driftK)*.009*L0*motion;
+    const glide=proc&&i.phase==='idle'?.16*smooth(.5-.5*Math.cos(tv*Math.PI*2/170))*motion:0;
+    const L=L0*(1-glide)*(proc?1+.03*Math.sin(tv/97)*motion:1);const Cy=Cy0*(1-glide*.6)*(proc?1:1+.08*Math.sin(tv/83)*motion);
+    const Cp=estab.C.set(S.x-mx*L+px*sway,Cy,S.z-mz*L+pz*sway);
+    // Frame: the city's angular width (horizontal), from the spires' tops with headroom down to a band of reflection.
+    let aMin=Infinity,aMax=-Infinity,aTop=moonEl+.03,near=Infinity;
+    for(const d of districts.values()){if(!d.standing)continue;const dx=d.centre.x-Cp.x,dz=d.centre.z-Cp.z,dist=Math.max(1,Math.hypot(dx,dz));let a=Math.atan2(dz,dx)-moonAz;a=Math.atan2(Math.sin(a),Math.cos(a));
+      const w=Math.asin(Math.min(.95,d.radius/dist));aMin=Math.min(aMin,a-w);aMax=Math.max(aMax,a+w);near=Math.min(near,Math.max(1,dist-d.radius));}
+    for(const tw of tallOrder().slice(0,8)){const dist=Math.max(1,Math.hypot(tw.pos.x-Cp.x,tw.pos.z-Cp.z));aTop=Math.max(aTop,Math.atan2(tw.roofTop-Cy,dist));}
+    if(!Number.isFinite(aMin)){aMin=-.3;aMax=.3;near=10;}
+    let hf=(aMax-aMin)*1.06;let aim=(aMin+aMax)/2;const lim=.22*hf;aim=clamp(aim,-lim,lim);hf=Math.max(hf,2*Math.max(aim-aMin,aMax-aim)*1.04);
+    const aBot=-(Math.atan2(Cy,near)+.38*Math.max(aTop,.05));
+    const vNeed=(aTop-aBot)/.9,vH=2*Math.atan(Math.tan(hf/2)/aspect);let vf=clamp(Math.max(vNeed,Math.min(vH,vNeed*1.4)),.16,.95);
+    // A wide, low city is cropped at the sides rather than left floating in empty water.
+    const pitchTop=aTop+.08*vf-vf/2,pitchMid=(aTop+aBot)/2;const pitch=vf>vNeed*1.02?lerp(pitchTop,Math.min(pitchMid,pitchTop),.4):pitchMid;
+    // With room to spare across the frame, centre the city (the moon need only stay well inside the frame).
+    {const hfa=2*Math.atan(Math.tan(vf/2)*aspect);if(hfa>hf*1.02){const mid=(aMin+aMax)/2;aim=clamp(mid,-.36*hfa,.36*hfa);}}
+    estab.yaw=moonAz+aim;estab.pitch=pitch;estab.fov=THREE.MathUtils.radToDeg(vf);estab.L=L;estab.near=near;
+    camE.set(Math.cos(estab.yaw)*Math.cos(pitch),Math.sin(pitch),Math.sin(estab.yaw)*Math.cos(pitch));estab.T.copy(Cp).addScaledVector(camE,L);
+    // Haze from the near city outward (aerial perspective) and a ground mist scaled to the view's depth.
+    common.uFogS.value=Math.max(0,L-extent*.7);common.uFogD.value=(.3+.35*fogK)/Math.max(8,extent);common.uMistD.value=(5.4+4.8*fogK)/Math.max(48,L);common.uMistC.value.set(centre.x,centre.z,extent*1.05);
+    moteMat.uniforms.uBox.value.set(lerp(Cp.x,S.x,.45),lerp(Cp.z,S.z,.45),Math.max(10,L*.7),Math.max(3,Cy*2.2));}
   function update(i){
-    info=i;const epoch=model.epoch;
-    common.uT.value=i.tsec;common.uV.value=i.tview;common.uSpeed.value=ctx.speed();common.uBeat.value=i.beat*G.music.beatPulse;common.uActivity.value=i.activity;
+    info=i;const epoch=model.epoch,sp=ctx.speed();quality=i.quality||0;
+    const tempo=i.mood?.tempo||92,bars=i.tview*tempo/240;
+    common.uT.value=i.tsec;common.uV.value=i.tview;common.uSpeed.value=sp;common.uBeat.value=i.beat*(G.music?.beatPulse??.4)*.5;common.uActivity.value=i.activity;common.uBars.value=bars;
     common.uPx.value=Math.max(.5,ctx.pipeline.size[1]/1080);common.uRes.value.set(ctx.pipeline.size[0],ctx.pipeline.size[1]);
-    if(model.version!==builtVersion){build(i.t);stackY.clear();}
-    restack(i.t,epoch);
-    // District plots light up with their first tower.
-    for(const s of districts.values()){if(s.index>=DMAX)continue;const age=(i.t-s.born)/1000/ctx.speed();ground.material.uniforms.uPlotC.value[s.index].w=clamp(age/2)*(1+.3*i.activity);}
-    // States and agent highlight per instance.
-    const states=new Map();for(const tw of towers.values()){const m=model.modules.get(tw.id);let cur=m.initial,prev=m.initial,at=-1e5;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;at=secs(e.at,epoch);}states.set(tw.id,[STATE_INDEX[cur]??1,STATE_INDEX[prev]??1,at]);}
-    blockRefs.forEach((b,k)=>{const s=states.get(b.module)||[1,1,-1e5];blocks.write('bState',k,b.kind==='plinth'?Math.max(1,s[0]):s[0],b.kind==='plinth'?Math.max(1,s[1]):s[1],s[2],0);});blocks.flush();
-    spireRefs.forEach((s,k)=>{const tw=towers.get(s.module);const a=s.j/Math.max(1,s.n)*6.283+.4,rr=s.n>1?.28:0;spires.write('pPos',k,tw.pos.x+Math.sin(a)*rr,tw.top,tw.pos.z+Math.cos(a)*rr,.62);});spires.flush();
-    linkRefs.forEach((l,k)=>{const a=towers.get(l.a),b=towers.get(l.b);const ya=l.cross?a.top:.2,yb=l.cross?b.top:.2;links.write('kA',k,a.pos.x,ya,a.pos.z,0);links.write('kB',k,b.pos.x,yb,b.pos.z,0);});links.flush();
-    // Mechanisms around the tallest towers (count from the recipe), searchlights at district centres.
-    const tall=[...towers.values()].filter(tw=>model.alive(model.modules.get(tw.id),i.t)).sort((a,b)=>b.top-a.top).slice(0,Math.round(MECH*G.secondary.mechanisms*.5));
-    tall.forEach((tw,k)=>{mechs.write('mPos',k,tw.pos.x,tw.top*.6,tw.pos.z,.9+.25*(k%3));const m=model.modules.get(tw.id);mechs.write('mInfo',k,secs(m.born,epoch)+2,(k%2?-1:1)*(.15+.1*rand(k)),k*1.7,(rand(k+5)-.5)*.5);
-      const c=tw.color;mechs.write('mColor',k,c.r*.8,c.g*.8,c.b*.8);});mechCount=tall.length;mechs.commit(mechCount);
-    let li=0;for(const s of districts.values()){if(li>=LIGHTS)break;lights.write('sPos',li,s.centre.x,.2,s.centre.z,Math.max(14,extent*.9));lights.write('sInfo',li,G.atmosphere.searchlights*.5+.5,.12+.08*rand(li),li*2.3,0);lights.write('sColor',li,s.color.r,s.color.g,s.color.b);li++;}lights.commit(li);
-    updateAgents(i);
-    common.uUnlock.value.set(i.unlocks[0]?.level||0,i.unlocks[1]?.level||0,i.unlocks[2]?.level||0,i.unlocks[3]?.level||0);
+    // Ambient weather: mist banks drifting with the wind, cloud shadows passing, the moon slipping behind cloud and out
+    // again on a slow period, drips on the wet stone (all from the view clock: honest ambient life, never an event).
+    // A cloud bank crosses the moon every half minute or so: the moonlight (rays, rims, glitter) dims while it passes.
+    const tv=i.tview,wind=.6+turbK;common.uMistO.value.set(tv*.014*wind,tv*.006*wind);common.uCloudO.value.set(tv*.007*wind,tv*.0035*wind);
+    const cloudT=tv*(.1+.1*turbK)+moonPh;common.uCloudT.value=cloudT;common.uMoonK.value=1-.72*moonCloud(cloudT);
+    common.uRain.value=(weather==='night-fog'?.45:weather==='steam'?.3:.18)*(.5+wetK);
+    const section=i.mood?.section||'home';common.uMood.value.set(section==='breath'?.85:section==='lift'||section==='resolve'?1.08:1,0,0,0);
+    if(model.version!==builtVersion)build();
+    restack(i);lasting(i);establish(i);
+    const unl=i.unlocks.map(u=>u.level||0);
+    // Precincts: foundations laid when founded; the nave's windows light with the share of validated work; a failing
+    // precinct's surroundings turn cold (from its stressed state, as long as it lasts).
+    let cx=0,cz=0,cn=0;
+    for(const s of districts.values()){let lit=0,n=0,tops=0;
+      for(const m of s.members){if(!model.alive(m,i.t)||m.removed!==null&&m.removed<=i.t)continue;n++;const st=model.stateAt(m,i.t);lit+=st==='validated'?1:st==='committed'?.35:0;tops+=towers.get(m.id)?.top||0;
+        if(st==='stressed'){const tw=towers.get(m.id);if(tw){cx+=tw.pos.x;cz+=tw.pos.z;cn++;}}}
+      s.lit=n?lit/n:0;s.meanTop=n?tops/n:1;if(s.index<DMAX){floorU.uDC.value[s.index].w=.3+.2*i.activity;floorU.uD2.value[s.index].z=s.lit;bayMat.uniforms.uDLit.value[s.index]=s.lit;}}
+    naves.forEach((v,k)=>{naveB.arrays.nC[k*4+3]=v.s.lit;});naveB.dirty('nC');naveB.flush();
+    if(cn){const cold=common.uCold.value;cold.set(cx/cn,cz/cn,3+Math.sqrt(cn)*1.6,Math.min(.85,.45+.08*cn));}else common.uCold.value.w=0;
+    floorU.uRose.value.w=unl[1]*.6+.25;
+    // States per tower (with the time of the last change), the last human edit and agent work.
+    const working=workingSet;working.clear();for(const a of i.agents)if(a.fileId&&a.display==='tool')working.add(a.fileId);
+    for(const [id,list2] of towerBlocks){const m=model.modules.get(id);if(!m)continue;let cur=m.initial,prev=m.initial,t0=-1e5;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;t0=secs(e.at,epoch);}
+      const hum=Number.isFinite(m.lastHuman)&&m.lastHuman<=i.t?(i.t-m.lastHuman)/1000/sp:working.has(id)?.6:1e3;
+      const s0=STATE_INDEX[cur]??1,s1=STATE_INDEX[prev]??1,hv=working.has(id)?Math.min(hum,.6):hum;for(const b of list2)b.buf.write('iS',b.index,s0,s1,t0,hv);}
+    stoneB.flush();pinB.flush();
+    // Flying buttresses: from each pier's pinnacle up to the tower wall (solid stone arches).
+    let fi=0;solidB.ensure(flyers.length);
+    for(const f of flyers){const tw=f.tw,p=f.pier;if(!p.hh)continue;const ca=Math.cos(f.a),sa=Math.sin(f.a);const y0=p.y+p.hh+.2,y1=Math.min(tw.top-.1,y0+(tw.top-y0)*.3+.2);const rw=tw.R*.95;
+      solidB.write('kA',fi,tw.pos.x+ca*f.off,y0,tw.pos.z+sa*f.off,.07);solidB.write('kB',fi,tw.pos.x+ca*rw,y1,tw.pos.z+sa*rw,(f.off-rw)*.5+.05);
+      solidB.write('kInfo',fi,-1e5,1e6,2,0);solidB.write('kC',fi,0,0,0,0);fi++;}
+    solidB.commit(fi);
+    // Cables between precincts: endpoints at staggered heights, sagging; extended when the link was made.
+    let gi=channels.length;
+    for(const x of bridges){const a=towers.get(x.l.a),b=towers.get(x.l.b);const ya=Math.max(.8,a.top*(.62+.4*x.ha)),yb=Math.max(.8,b.top*(.62+.4*x.hb));const d=a.pos.distanceTo(b.pos);
+      glowB.write('kA',gi,a.pos.x,ya,a.pos.z,.05*Math.max(1,estab.L/28));glowB.write('kB',gi,b.pos.x,yb,b.pos.z,d*.06);gi++;}
+    gi=glowStatic;glowB.ensure(glowStatic+16);
+    // Agents: servitors with lanterns; while one works on a tower it circles it at four fifths of its height, beaming
+    // onto it and casting a warm pool of light on the facade.
+    li=0;nd=0;const MAX_AGENTS=10;const seen=seenSet;seen.clear();let na=0;for(const v of common.uAgentL.value)v.w=0;
+    for(const a of i.agents.slice(0,MAX_AGENTS)){seen.add(a.id);const orbit=orbitOf(a,i,tmpA);const tw=a.fileId?towers.get(a.fileId):null;const blend=smooth(Math.min(1,(a.since||0)/1000/sp/1.6));
+      const work=tw&&a.display==='tool';
+      if(work){const ph=rand(hash(a.id+'h'))*6.283+i.tview*.18;const rr=tw.R*2.2+.45;tmpB.set(tw.pos.x+Math.cos(ph)*rr,Math.max(.7,tw.top*.8)+Math.sin(i.tview*.9)*.05,tw.pos.z+Math.sin(ph)*rr);orbit.lerp(tmpB,blend);}
+      let pos=agentPos.get(a.id);if(!pos){pos=new THREE.Vector3();agentPos.set(a.id,pos);}pos.copy(orbit);
+      const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.45)*(G.agentProminence??.8);
+      lamp(pos.x,pos.y,pos.z,c.r*1.1*alpha,c.g*1.*alpha,c.b*.9*alpha,5);const dr=drones[nd++];dr.pos=pos;dr.c=c;dr.a=alpha;dr.ph=rand(hash(a.id))*6.283;dr.busy=a.busy;
+      if(na<4){const L=common.uAgentL.value[na],C=common.uAgentC.value[na];L.set(pos.x,pos.y,pos.z,(work?1.1*blend:.25)*alpha);C.set(c.r*.6+warm.r*.4,c.g*.6+warm.g*.4,c.b*.6+warm.b*.4);na++;}
+      if(work&&gi<glowB.capacity){glowB.write('kA',gi,pos.x,pos.y-.05,pos.z,.22);glowB.write('kB',gi,tw.pos.x,pos.y-.25,tw.pos.z,0);glowB.write('kInfo',gi,-1e5,1e6,3,rand(hash(a.id)));
+        glowB.write('kC',gi,c.r,c.g,c.b,.6*alpha*blend);gi++;}}
+    for(const id of agentPos.keys())if(!seen.has(id))agentPos.delete(id);
+    glowB.commit(gi);
+    // Beacons (unlock 2) on the tallest spires, breathing on the bars.
+    const tall=unl[0]>0||unl[2]>0?tallOrder():NONE;let tl=0;const beacons=Math.round((3+6*beaconK)*unl[2]);
+    for(const tw of tall){if(tl>=Math.max(beacons,2))break;if(!model.alive(model.modules.get(tw.id),i.t))continue;tw.rank=tl++;
+      if(tw.rank<beacons){const b=.5+.5*Math.sin(Math.PI*2*(bars/4+tw.rank*.17));lamp(tw.pos.x,tw.roofTop+.05,tw.pos.z,1.1*b,.95*b,.75*b,.8);}}
+    // Failing towers: a slow red warning light on the crown (mirrored in the floor).
+    for(const tw of towers.values()){const m=model.modules.get(tw.id);if(!m||!model.alive(m,i.t))continue;if(model.stateAt(m,i.t)!=='stressed')continue;const b=.55+.45*Math.sin(i.tview*1.6+rand(hash(tw.id))*6);
+      lamp(tw.pos.x,tw.roofTop+.08,tw.pos.z,pal.warning.r*2.6*b,pal.warning.g*.8*b,pal.warning.b*.7*b,2.6);if(li>=LAMPS-14)break;}
+    // Openwork spires (precincts' great spires) and crowns of light (lasting): cages of lit ribs.
+    let lc=0;latB.ensure(greats.length+crowns.length);const crownOf=crownMap;crownOf.clear();for(const c of crowns)crownOf.set(c.id,c);
+    for(const g of greats){const tw=towers.get(g.id);const H=tw.roofTop-tw.top;if(H<.02)continue;const c=crownOf.get(g.id);
+      latB.write('lA',lc,tw.pos.x,tw.pos.z,tw.top,0);latB.write('lB',lc,g.rB,H,0,axisAz+Math.PI/SIDES);latB.write('lC',lc,c?c.level:0,c?c.at+MD*sp:-1e5,unl[2],c?c.last+MD*sp:-1e5);lc++;}
+    for(const c of crowns){const tw=towers.get(c.id);if(!tw||tw.great)continue;const H=Math.max(.8,(tw.roofTop-tw.top)*1.06);
+      latB.write('lA',lc,tw.pos.x,tw.pos.z,tw.top,0);latB.write('lB',lc,tw.R*1.25,H,0,axisAz+Math.PI/SIDES);latB.write('lC',lc,c.level,c.at+MD*sp,unl[2],c.last+MD*sp);lc++;}
+    latB.commit(lc);
+    const otw=orreryTower&&towers.get(orreryTower),om=otw&&model.modules.get(otw.id);const oAge=om?(i.t-om.born)/1000/sp:-1;const o=otw?otw.pos:(orreryAt||centre);const lanternY=orreryY();
+    // Rings: the great orrery (three nested rings sharing one slow tilt, each precessing a third of a turn apart, beads
+    // of light ticking round them on the bars), the carillon (a peal climbing the great spire every sixteen bars), the
+    // crowns' halos (lasting; tilted toward the view and precessing, so their motion reads from a low camera) and lock
+    // clamps closing. A ring turning in its own plane cannot be seen: motion comes from precession and beads.
+    let ri=0;const R=tmpA,U=tmpB,Vv=tmpV,Nn=tmpN;
+    const ring=(c,radius,thick,u,v,kind,alpha,color)=>{if(ri>=ringB.capacity)ringB.ensure(ri+16);ringB.write('rC',ri,c.x,c.y,c.z,radius);ringB.write('rU',ri,u.x,u.y,u.z,thick);ringB.write('rV',ri,v.x,v.y,v.z,color.g);ringB.write('rK',ri,kind,alpha,color.r,color.b);ri++;};
+    const tick=(b,period,mode)=>{const x=b/period;if(!mode)return x*Math.PI*2;const n=Math.floor(b),f=b-n;return (n+smooth(Math.min(1,f/.35)))/period*Math.PI*2;};
+    // A ring's plane from its normal: tilted from the vertical by `tilt` toward horizontal azimuth `az`.
+    const orientN=(tilt,az,u,v)=>{const st=Math.sin(tilt),ct=Math.cos(tilt);Nn.set(Math.cos(az)*st,ct,Math.sin(az)*st);u.set(-Math.sin(az),0,Math.cos(az));v.crossVectors(Nn,u);};
+    const camAz=(x,z)=>Math.atan2(estab.C.z-z,estab.C.x-x);
+    const dl=dList();const baseR=otw?otw.R*3.4:1;
+    const mechB=mechSpeed*(.6+.4*mechK);let realign=0;for(const f of fxTower.values())if(f.kind===3){const ag=(i.tsec-f.at)/sp;if(ag>0&&ag<6)realign=Math.max(realign,smooth(ag/1.4)*(1-smooth((ag-3.5)/2.5)));}
+    if(otw&&oAge>0){const towardCam=camAz(o.x,o.z);const tilt=(.36+.06*Math.sin(tick(bars,64/mechB,0)))*(1-realign);
+      for(let k=0;k<Math.min(3,Math.max(1,dl.length));k++){const s=dl[k]||null;const age=s?(i.tsec-secs(s.born,epoch))/sp:oAge;const al=clamp(age/3)*clamp(oAge/3);if(al<=0)continue;
+        const period=[16,24,12][k]/mechB;const az=towardCam+tick(bars,period*4,0)*(k%2?-1:1)+k*2.094;orientN(tilt*(1-.12*k),az*(1-realign)+towardCam*realign,U,Vv);
+        R.set(o.x,lanternY,o.z);const rad=baseR*(.75+.2*k);ring(R,rad,.016+.004*(k%2),U,Vv,0,al,(s||districts.values().next().value).ringColor);
+        const lk=(.5+.6*mechK)*al*(.7+.5*unl[1]);const col=s?s.color:warm;
+        for(let q=0;q<3;q++){const th=tick(bars,period*.5,1)*(k%2?-1:1)+k*.9+q*2.094;const cth=Math.cos(th)*rad,sth=Math.sin(th)*rad;
+          lamp(R.x+U.x*cth+Vv.x*sth,R.y+U.y*cth+Vv.y*sth,R.z+U.z*cth+Vv.z*sth,(col.r*.4+.6*warm.r)*lk,(col.g*.4+.6*warm.g)*lk,(col.b*.4+.6*warm.b)*lk,(q?9:13)*Math.sqrt(estab.L/40));}}}
+    // The carillon: every sixteen bars a peal of light climbs the great spire's rings, and a brass ring rises with it.
+    common.uCarillon.value.set(0,0,0,0);
+    if(otw&&oAge>3){const g=greats.find(x=>x.id===otw.id);const H=otw.roofTop-otw.top;const ph=(bars%16)/4;if(ph<1&&H>.5){const f=.06+.84*smooth(ph);const y=otw.top+H*f;const env=Math.sin(Math.PI*ph)*(.5+.5*mechK);
+      common.uCarillon.value.set(f,env*1.6,0,0);const rr=(g?g.rB:otw.R)*Math.pow(1-f,1.12)*1.6+.08;
+      orientN(.26,camAz(o.x,o.z),U,Vv);R.set(o.x,y,o.z);tmpC.copy(moonC).lerp(warm,.4).multiplyScalar(1.1*env);ring(R,rr,.022,U,Vv,1,1,tmpC);}}
+    for(const c of crowns){const tw=towers.get(c.id);if(!tw)continue;const age=(i.tsec-c.at)/sp-MD;const al=clamp(age/2.5);if(al<=0)continue;const nq=Math.min(4,c.level+1);const ca=camAz(tw.pos.x,tw.pos.z);
+      const hold=1+1.2*clamp(1-(age-18)/8)*clamp(age/2);
+      for(let q=0;q<nq;q++){const f=.14+q*.18;orientN(.5+.06*q,ca+.7*Math.sin(tick(bars,(16+q*8)/mechB,0)+q*2.1),U,Vv);R.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*f,tw.pos.z);
+        ring(R,tw.R*(3.4-2.2*f)*(1+.22*q),.016,U,Vv,1,al*.85,tmpC.copy(haloLight).multiplyScalar(hold));}}
+    // A milestone's halo: a great ring blooming out through the haze from the crowned spire, tilted toward the view.
+    for(const h of haloFx){const ag=(i.tsec-h.at)/sp;if(ag<0||ag>7)continue;const tw=towers.get(h.id);if(!tw)continue;const e=1-Math.pow(1-clamp(ag/6),3);
+      orientN(.55,camAz(tw.pos.x,tw.pos.z),U,Vv);R.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*.3,tw.pos.z);tmpC.copy(GOLD).multiplyScalar(4*h.k*Math.pow(1-e,1.6));ring(R,tw.R*(1.6+14*e),.04,U,Vv,1,1,tmpC);
+      if(ag>.5){const e2=1-Math.pow(1-clamp((ag-.5)/6),3);tmpC.copy(GOLD).multiplyScalar(2.4*h.k*Math.pow(1-e2,1.6));ring(R,tw.R*(1.4+9*e2),.025,U,Vv,1,1,tmpC);}}
+    // Servitors: a lantern inside two brass rings precessing about it (faster while the agent works).
+    for(let k=0;k<nd;k++){const d=drones[k];const sp2=i.tview*(d.busy?1.4:.35)+d.ph;tmpC.copy(d.c).multiplyScalar(.5*d.a);
+      orientN(1.05,sp2,U,Vv);ring(d.pos,.62,.022,U,Vv,1,1,tmpC);orientN(1.05,-sp2*.8+1.6,U,Vv);ring(d.pos,.5,.018,U,Vv,1,1,tmpC);}
+    // Lock clamps: a ring drops onto each end of the new bridge, closing from wide and steep to tight and level.
+    for(const L of lockRings){const tw=towers.get(L.id);if(!tw)continue;const ag=(i.tsec-L.at)/sp;if(ag<0||ag>5)continue;const e=1-Math.pow(1-clamp(ag/1.1),3);
+      orientN(1.2*(1-e),L.az,U,Vv);R.set(tw.pos.x,Math.max(.6,L.y),tw.pos.z);tmpC.copy(pal.highlight).multiplyScalar(1.6*Math.exp(-Math.max(0,ag-1.1)*.8));ring(R,tw.R*(1.25+2.2*(1-e)),.035,U,Vv,1,1-ag/5,tmpC);}
+    ringB.commit(ri);lamps.commit(li);
+    // Beams: searchlights (after the searchlights unlock) and the recovery beam.
+    let bi=0;
+    if(unl[0]>0&&quality<3)for(const tw of tall){if(tw.rank===undefined||tw.rank>1)continue;const k=tw.rank;const a=i.tview*.09*(k?-1:1)+k*2.1+rand(seed)*6;tmpB.set(Math.cos(a)*.35,1,Math.sin(a)*.35).normalize();
+      beamB.write('bP',bi,tw.pos.x,tw.roofTop,tw.pos.z,.18);beamB.write('bD',bi,tmpB.x,tmpB.y,tmpB.z,60);const s2=.05*unl[0]*(.4+.6*searchK);beamB.write('bC',bi,warm.r*s2,warm.g*s2,warm.b*s2,.6);bi++;}
+    // Recovery: a warm beam rises through the great openwork spire into the haze and fades.
+    for(const f of beamFx){const ag=(i.tsec-f.at)/sp;if(ag<0||ag>8||!otw)continue;const e=smooth(ag/1.2)*(1-smooth((ag-3.5)/4.5));beamB.write('bP',bi,o.x,otw.top,o.z,.3);beamB.write('bD',bi,0,1,0,Math.max(4,(otw.roofTop-otw.top)*1.7));
+      const s2=e*2.6*f.k;beamB.write('bC',bi,warm.r*s2,warm.g*s2*.92,warm.b*s2*.8,.08);bi++;}
+    beamB.commit(bi);
+    moteMat.uniforms.uCount.value=Math.round(MOTES*(quality>=2?.5:1));
+    common.uUnlock.value.set(unl[0]||0,unl[1]||0,unl[2]||0,unl[3]||0);
   }
-  function afterCamera(){sky.uniforms.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);sky.uniforms.uCam.value.copy(camera.position);}
-  function background(){return sky;}
-  function grade(i){const L=G.light,inten=i.overrides.intensity??1;let f=0;for(const x of flashes){const age=(i.tsec-x.at)/ctx.speed();if(age>=0&&age<3)f+=x.amount*Math.exp(-age*2);}
-    return {bloom:L.bloom*(1+.2*i.activity),threshold:L.bloomThreshold,exposure:L.exposure*1.1,contrast:L.contrast,saturation:1.05,vignette:L.vignette,grain:L.grain,flash:f*inten,waves:[],
-      tint:i.mood.section==='tension'?new THREE.Vector3(1.06,.95,.9):i.mood.section==='resolve'?new THREE.Vector3(.95,1.04,1):new THREE.Vector3(1,1,1)};}
-  // ---- Camera: an architectural orbit (or a slow procession along the streets) ------------------------------------
+  let dCache=null,dCacheV=-1;function dList(){if(dCacheV!==builtVersion){dCache=[...districts.values()].sort((a,b)=>a.index-b.index).slice(0,4);dCacheV=builtVersion;}return dCache;}
+  function orreryY(){const tw=orreryTower&&towers.get(orreryTower);return tw?Math.max(.8,tw.top*.84):2;}
+  // The reflection pass (half resolution) runs inside the measured frame: from background() when the host asks for
+  // the sky, otherwise from afterCamera().
+  let reflDue=false,bgSeen=true;const clearTmp=new THREE.Color();
+  function renderReflection(){
+    reflDue=false;const on=quality<2;floorU.uReflOn.value=on?1:0;if(!on)return;
+    const [w,h]=ctx.pipeline.size;const rw=Math.max(2,w>>1),rh=Math.max(2,h>>1);if(reflRT.width!==rw||reflRT.height!==rh)reflRT.setSize(rw,rh);
+    const prevTarget=renderer.getRenderTarget(),prevClear=renderer.getClearColor(clearTmp),prevAlpha=renderer.getClearAlpha();
+    common.uMirror.value=-1;renderer.setRenderTarget(reflRT);renderer.setClearColor(0x000000,0);renderer.clear(true,true,false);renderer.render(mirror,camera);
+    common.uMirror.value=1;renderer.setRenderTarget(prevTarget);renderer.setClearColor(prevClear,prevAlpha);
+  }
+  function afterCamera(){camera.updateMatrixWorld();sky.uniforms.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);sky.uniforms.uCam.value.copy(camera.position);
+    if(!bgSeen&&reflDue)renderReflection();reflDue=true;bgSeen=false;}
+  function background(){bgSeen=true;if(reflDue)renderReflection();return sky;}
+  // ---- Grade: AgX; the moon throws crepuscular rays past the great spire's lattice (they breathe as cloud crosses the
+  // disc); a milestone's moment flares gold (halation and a horizontal streak) -------------------------------------
+  const gTint=new THREE.Vector3(),gBloomT=new THREE.Vector3(),gStreakT=new THREE.Vector3(1,.78,.45),gLift=new THREE.Vector3(-.014,-.013,-.01),gMoon=new THREE.Vector3();
+  const gRay={x:.5,y:.5,strength:0,color:moonC},gRays=[gRay],NO_RAYS=[];
+  function momentAt(i){let mm=0;const sp=ctx.speed();for(const m of moments){const ag=(i.tsec-m.at)/sp;if(ag<-.5||ag>10)continue;mm=Math.max(mm,m.k*smooth((ag+.3)/.9)*(1-smooth((ag-4)/5)));}return mm;}
+  function grade(i){const L=G.light||{},inten=i.overrides.intensity??1;let f=0,cold=0,gold=0;
+    for(const x of flashes){const age=(i.tsec-x.at)/ctx.speed();if(age<0||age>6)continue;const e=Math.exp(-age*1.6);if(x.kind===1)cold+=x.amount*Math.exp(-age*.6);else{f+=x.amount*e;if(x.kind===2)gold+=x.amount*Math.exp(-age*.5);}}
+    cold=Math.min(1,cold*inten);gold=Math.min(1,gold*inten);const mm=Math.min(1,momentAt(i)*Math.min(1,inten));
+    const section=i.mood.section;const tint=section==='tension'?gTint.set(1.04,.97,.97):section==='resolve'||section==='lift'?gTint.set(1.02,1,.97):section==='away'?gTint.set(.98,1,1.03):gTint.set(1,1,1);
+    tint.x*=1+.05*cold;tint.y*=1-.05*cold;tint.z*=1-.03*cold;
+    gBloomT.set(lerp(1.1,1.55,mm),lerp(.92,1.05,mm),lerp(.78,.5,mm));
+    let rays=NO_RAYS;gMoon.copy(moonDir).multiplyScalar(500).add(camera.position).project(camera);
+    if(gMoon.z<1&&Math.abs(gMoon.x)<1.6&&Math.abs(gMoon.y)<1.6){const out=Math.max(Math.abs(gMoon.x),Math.abs(gMoon.y));gRay.x=gMoon.x*.5+.5;gRay.y=gMoon.y*.5+.5;
+      gRay.strength=(.2+.25*shaftK)*common.uMoonK.value*Math.min(1,Math.pow(camera.fov/20,1.5))*(1-smooth((out-.95)/.6))*(1+.3*(i.unlocks[0]?.level||0));rays=gRays;}
+    return {tonemap:'agx',bloom:(L.bloom??1)*.9*(1+.15*i.activity)+gold*.4+mm*.5,threshold:Math.max(.6,(L.bloomThreshold??.7)+.2),exposure:(L.exposure??1)*.8*(1-.12*cold),contrast:(L.contrast??1)*1.16,
+      saturation:1-.3*cold,vignette:(L.vignette??.3)+.14,grain:L.grain??.025,flash:f*inten*.6,waves:NO_RAYS,tint,rays,rayDecay:.91,
+      streak:.16*mm,streakTint:gStreakT,bloomTint:gBloomT,lift:gLift};}
+  // ---- Camera: the establishing view (above), with attention gliding to significant events and back; a milestone's
+  // moment pushes in on the spire it crowns ---------------------------------------------------------------------
+  const gC=new THREE.Vector3(),gT=new THREE.Vector3(),gE=new THREE.Vector3(),gP=new THREE.Vector3(),goal={target:new THREE.Vector3(),distance:20,azimuth:0,elevation:0,fov:24,omega:.5};
+  // Attention: the camera glides toward the subject but never into the city (it stops outside every precinct); the
+  // long lens narrows to frame the subject.
+  function pushTo(P,r,k,amt,fovK=.8){const C0=estab.C;const dx=P.x-C0.x,dz=P.z-C0.z,dist=Math.max(1e-3,Math.hypot(dx,dz));
+    let fe=estab.fov*fovK;const want=Math.max(r/Math.tan(THREE.MathUtils.degToRad(fe)/2)*1.2,4);let travel=Math.max(0,dist-want)*amt;
+    const ux=dx/dist,uz=dz/dist;let safe=travel;
+    for(const d of districts.values()){const ox=d.centre.x-C0.x,oz=d.centre.z-C0.z;const along=ox*ux+oz*uz;const lat=Math.abs(ox*uz-oz*ux);const R=d.radius+1.2;
+      if(lat<R&&along>0){const entry=along-Math.sqrt(R*R-lat*lat);safe=Math.min(safe,Math.max(0,entry));}}
+    travel=Math.min(travel,safe);const left=dist-travel;
+    fe=clamp(THREE.MathUtils.radToDeg(2*Math.atan(r*1.25/Math.max(1,left))),estab.fov*.5,estab.fov*fovK);
+    gE.set(C0.x+ux*travel,lerp(C0.y,Math.max(.5,Math.min(C0.y,P.y*.6)),amt*.6),C0.z+uz*travel);gC.lerp(gE,k);gT.lerp(P,k);return lerp(0,fe-estab.fov,k);}
   function cameraGoal(i){
-    const C=G.camera,fov=C.fov,aspect=camera.aspect||16/9,tanHalf=Math.tan(THREE.MathUtils.degToRad(fov)/2);
-    let tallest=1;for(const tw of towers.values())tallest=Math.max(tallest,tw.top);
-    const fit=Math.max(extent/Math.min(aspect,1.8),tallest)/tanHalf*.95*C.distance;
-    const baseAz=rand(seed)*6.283-.9;let az=baseAz+(C.personality==='architectural'?i.tview*Math.PI*2/560:Math.sin(i.tview/90)*.8)*(i.overrides.motion??1);
-    const el=C.elevation+.04*Math.sin(i.tview/60);let target=centre.clone().setY(Math.min(1.5,tallest*.3)),distance=Math.max(9,fit);
-    const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;
-    if(since<14&&att){const a=subjectOf(att);if(a){const k=smooth(1-Math.max(0,since-9)/5);target.lerp(a.pos,.65*k);distance=lerp(distance,Math.min(distance,Math.max(7,a.radius/tanHalf*1.3)),k);}}
+    gC.copy(estab.C);gT.copy(estab.T);let dfov=0;const sp=ctx.speed();
+    let mk=0,mt=null;for(const m of moments){const ag=(i.tsec-m.at)/sp;if(ag<-1.6||ag>9)continue;const k=smooth((ag+1.6)/2.2)*(1-smooth((ag-5.5)/3));if(k>mk&&towers.has(m.id)){mk=k;mt=m;}}
+    const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/sp/1000:Infinity;
+    if(mt&&mk>0){const tw=towers.get(mt.id);gP.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*.42,tw.pos.z);dfov=pushTo(gP,(tw.roofTop-tw.top)*.55+tw.R*2,mk*Math.min(1,(i.overrides.intensity??1)+.3),.75,.7);}
+    else if(since<14&&att){const a=subjectOf(att);if(a){const k=smooth(1-Math.max(0,since-9)/5)*smooth(since/1.2+.2);gP.copy(a.pos);dfov=pushTo(gP,a.radius,k,.4);}}
     else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&towers.has(a.fileId));
-      if(busy){const tw=towers.get(busy.fileId);const d=districts.get(tw.district);target.lerp(tw.pos.clone().setY(tw.top*.5),.35);distance=lerp(distance,Math.max(7,(d?.radius||3)*1.8/tanHalf),.35);}
-      else if(i.phase==='idle'&&districts.size>1){const list=[...districts.values()].sort((a,b)=>a.index-b.index);const s=list[((Math.floor(i.tview/26)%list.length)+list.length)%list.length];target.lerp(s.centre,.5);distance=lerp(distance,Math.max(8,s.radius*2/tanHalf),.45);}}
-    return {target,distance,azimuth:az,elevation:el,fov,omega:.7};
+      if(busy){const tw=towers.get(busy.fileId);gP.set(tw.pos.x,tw.top*.5,tw.pos.z);gT.lerp(gP,.12);}}
+    // The rig's target always sits a fixed distance along the line of sight, so the camera glides on a steady path
+    // (it never swings through the city while the target and the distance settle at different rates).
+    const dx=gT.x-gC.x,dy=gT.y-gC.y,dz=gT.z-gC.z,len=Math.max(1e-3,Math.hypot(dx,dy,dz)),D=Math.max(6,estab.L*.5);
+    goal.target.set(gC.x+dx/len*D,gC.y+dy/len*D,gC.z+dz/len*D);goal.distance=D;goal.azimuth=Math.atan2(-dz,-dx);goal.elevation=Math.asin(clamp(-dy/len,-1,1));goal.fov=clamp(estab.fov+dfov,8,60);return goal;
   }
   function subjectOf(c){const s=c.subject||{};
     if(s.fileId&&towers.has(s.fileId)){const a=towers.get(s.fileId);if(s.targetId&&towers.has(s.targetId)){const b=towers.get(s.targetId);return {pos:a.pos.clone().lerp(b.pos,.5).setY(Math.max(a.top,b.top)*.6),radius:a.pos.distanceTo(b.pos)*.6+2};}
-      const d=districts.get(a.district);return {pos:(d?d.centre.clone():a.pos.clone()).lerp(a.pos,.5).setY(a.top*.5),radius:(d?.radius||3)+.5};}
-    if(s.groupId&&districts.get(s.groupId)){const d=districts.get(s.groupId);return {pos:d.centre.clone(),radius:d.radius+1};}
-    const list=(s.fileIds||[]).map(id=>towers.get(id)).filter(Boolean);if(list.length){const c0=new THREE.Vector3();for(const t of list)c0.add(t.pos);c0.multiplyScalar(1/list.length);let r=3;for(const t of list)r=Math.max(r,t.pos.distanceTo(c0)+1.5);return {pos:c0,radius:r};}
+      const d=districts.get(a.district);return {pos:(d?d.centre.clone():a.pos.clone()).lerp(a.pos,.5).setY(a.roofTop*.45),radius:Math.max((d?.radius||3)+.5,a.roofTop*.6)};}
+    if(s.groupId&&districts.get(s.groupId)){const d=districts.get(s.groupId);return {pos:d.centre.clone().setY(1),radius:d.radius+1};}
+    const list=(s.fileIds||[]).map(id=>towers.get(id)).filter(Boolean);if(list.length){const c0=new THREE.Vector3();for(const t of list)c0.add(t.pos);c0.multiplyScalar(1/list.length);let r=3,h=1;for(const t of list){r=Math.max(r,t.pos.distanceTo(c0)+1.5);h=Math.max(h,t.roofTop);}c0.y=h*.45;return {pos:c0,radius:Math.max(r,h*.6)};}
     return null;}
   // ---- Words ---------------------------------------------------------------------------------------------------
   const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
@@ -332,26 +1139,31 @@ export function createFamily(ctx){
   const MILESTONE={'first-validation':'First validation','integration-validated':'Integration validated','recovery':'Recovery','refactor':'Refactor validated'};
   function describe(c){const s=c.subject||{},d=c.detail||{},n=(s.fileIds||[]).length;const pos=subjectOf(c)?.pos;
     switch(c.intent){
-      case 'subsystem.created':return {text:'A new district is founded',sub:dName(s.groupId),position:pos};
-      case 'structure.created':return {text:'New storeys rise',sub:Object.entries(d.kinds||{}).filter(([k])=>k!=='variable').map(([k,v])=>`${v} ${k.replace('ui.component','glass storey').replace('api.route','spire').replace('class','block').replace('function','floor')}`).join(' · ')||plural(d.count||1,'storey'),position:pos};
-      case 'subsystem.connected':{const ga=towers.get(s.fileId)?.district,gb=towers.get(s.targetId)?.district;return {text:d.first?'Integration · a bridge locks two districts':'A bridge between districts strengthens',sub:ga&&gb?`${ctx.name(ga)} ↔ ${ctx.name(gb)}`:'',position:pos};}
-      case 'validation.failed':return {text:`Tests fail · strain in ${plural(n,'tower')}`,sub:'observed failing run',position:pos,color:'#ff8a6a'};
-      case 'validation.passed':return {text:`Tests pass · ${plural(n,'tower')} lit`,sub:'observed passing run',position:pos,color:'#9dffcf'};
-      case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'tower')} restored`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
-      case 'refactor.validated':return {text:'Refactor validated · the structure consolidates',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
-      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'window-scan':'A window scan',restore:'Restoration',reassemble:'Reassembly'})[c.effect]||'Illumination'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
+      case 'subsystem.created':return {text:'A new precinct is founded',sub:dName(s.groupId),position:pos};
+      case 'structure.created':return {text:'New storeys are set in place',sub:Object.entries(d.kinds||{}).filter(([k])=>k!=='variable').map(([k,v])=>`${v} ${k.replace('ui.component','glass storey').replace('api.route','pinnacle').replace('class','hall storey').replace('function','storey').replace('interface','tracery').replace('type','tracery')}`).join(' · ')||plural(d.count||1,'storey'),position:pos};
+      case 'subsystem.connected':{const ga=towers.get(s.fileId)?.district,gb=towers.get(s.targetId)?.district;return {text:d.first?'Integration · a bridge locks two precincts':'A bridge between precincts strengthens',sub:ga&&gb?`${ctx.name(ga)} ↔ ${ctx.name(gb)}`:'',position:pos};}
+      case 'validation.failed':return {text:`Tests fail · ${plural(n,'tower')} under strain`,sub:'observed failing run',position:pos,color:'#ff8a6a'};
+      case 'validation.passed':return {text:`Tests pass · ${plural(n,'tower')} lit`,sub:'observed passing run',position:pos,color:'#ffe2b0'};
+      case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'tower')} restored`,sub:'the tests pass again',position:pos,color:'#ffe2b0',banner:'Recovery',bannerSub:'the tests pass again'};
+      case 'refactor.validated':return {text:'Refactor validated · the structure is reassembled',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
+      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'window-scan':'A window scan',restore:'Restoration',reassemble:'Reassembly'})[c.effect]||'Illumination · rose windows ignite'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'tower')} set in stone`:'Committed · the work is set in stone',sub:'commit observed',position:pos};
-      case 'world.expanded':return {text:`The cathedral grows · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(2)};
+      case 'world.expanded':return {text:`The cathedral grows · chapter ${d.chapter}`,sub:'accumulated structure',position:(orreryAt||centre).clone().setY(2)};
       default:return null;}}
-  function agentPosition(id){return agentState.get(id)?.pos||null;}
+  function agentPosition(id){return agentPos.get(id)||null;}
   function agentColor(a){return '#'+AGENT_COLORS[a.voice%8].getHexString();}
-  function subsystemLabels(){return [...districts.values()].map(s=>({position:s.centre.clone().setY(2.5),text:ctx.name(s.d.id),sub:`${s.d.role} · ${plural(s.d.members.length,'module')}`}));}
+  function subsystemLabels(){return [...districts.values()].map(s=>({position:s.centre.clone().setY(1.6*S),text:ctx.name(s.d.id),sub:`${s.d.role} · ${plural(s.d.members.length,'module')}`}));}
   function status(i){let v=0,st=0;for(const m of model.modules.values()){if(!model.alive(m,i.t))continue;const s=model.stateAt(m,i.t);if(s==='validated')v++;if(s==='stressed')st++;}return st?`${st} under strain`:v?`${v} validated`:'';}
   function pick(x,y,cam){let best=null,bd=.05;for(const [id,tw] of towers){const p=tw.pos.clone().setY(tw.top*.6).project(cam);const d=Math.hypot(p.x-x,(p.y-y)*.6);if(p.z<1&&d<bd){bd=d;best=id;}}return best;}
   function inspect(id,i){const tw=towers.get(id),m=model.modules.get(id);if(!tw||!m)return null;const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
     return {position:tw.pos.clone().setY(tw.top),text:`A tower · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'storey')} · ${plural(deps,'link')} · ${ctx.name(m.group)}`};}
-  function stats(){return {districts:districts.size,towers:towers.size,blocks:blockCount,spires:spireCount,links:linkCount,mechanisms:mechCount,architecture:arch,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
-  function dispose(){for(const o of [ground,blockMesh,spireMesh,linkMesh,mechMesh,motePoints,lightMesh,agentPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}sky.dispose();prism.dispose();spireGeo.dispose();ribbon.dispose();}
-  function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;flashes.length=0;}
+  function stats(){return {districts:districts.size,towers:towers.size,stones:stoneCount,pinnacles:pinCount,naves:naves.length,spires:greats.length,flyers:flyers.length,bridges:bridges.length,channels:channels.length,rings:ringB.geometry.instanceCount,crowns:crowns.length,roses:roses.size,
+    architecture:archName,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),estab:[estab.C.x,estab.C.y,estab.C.z,estab.S.x,estab.S.z,centre.x,centre.z].map(x=>+x.toFixed(1)),view:{L:+estab.L.toFixed(1),fov:+estab.fov.toFixed(1),moonEl:+moonEl.toFixed(3),mist:+common.uMistD.value.toFixed(4)}};}
+  function dispose(){for(const o of [floor,stoneMesh,pinMesh,naveMesh,latMesh,bayMesh,solidMesh,glowMesh,ringMesh,beamMesh,motePoints,lampPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}
+    mirror.clear();noiseTex.dispose();sky.dispose();frustum.dispose();pinGeo.dispose();naveGeo.dispose();latGeo.dispose();ribbonGeo.dispose();bayShape.dispose();ringGeo.dispose();beamGeo.dispose();reflRT.dispose();}
+  // After a seek: transient effects are cleared (lasting rose windows and crowns come from director.lasting() each frame).
+  function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of burstU.uBC.value)v.set(1,0,1,0);
+    flashes.length=0;lockRings.length=0;beamFx.length=0;haloFx.length=0;moments.length=0;fxTower.clear();fxDistrict.clear();for(let k=0;k<bayCount;k++)bayB.arrays.aF[k*4]=-1e5;bayB.dirty('aF');bayB.flush();
+    if(builtVersion>=0){for(const B of [stoneB,pinB]){for(let k=0;k<B.capacity;k++){B.arrays.iF[k*4]=-1e5;B.arrays.iF[k*4+1]=0;}B.dirty('iF');}for(let k=0;k<naves.length;k++)naveB.arrays.nD[k*4+1]=-1e5;naveB.dirty('nD');}lastingSig='';}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }

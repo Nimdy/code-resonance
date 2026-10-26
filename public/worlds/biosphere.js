@@ -1,455 +1,708 @@
-// Fractal Biosphere: the software as a bioluminescent ecosystem that grows.
+// Fractal Biosphere: the software as a bioluminescent ecosystem grown by the code.
 //
-// Data -> image (no decoration claims engineering work):
-//  - subsystem (district) -> an organism rooted at its persisted site; its species comes from the recipe
-//                            (coral, fern, kelp, mycelial, crystal-tree), its trunk grows with its folders
-//  - folder               -> a limb from the trunk, in the order the folder first appeared
-//  - file (module)        -> a branch from its folder's limb; long files fork into twigs (fractal detail)
-//  - symbol               -> a leaf along its branch in stable slot order; components blossom, classes bear pods,
-//                            API routes raise glowing stamens, interfaces and types are translucent fronds
-//  - material state       -> draft: pale new growth; committed: mature; validated: leaves glow; stressed: blight
-//  - dependency           -> a tendril; across subsystems an arching vine with nutrient pulses
-//  - agent                -> a firefly swarm: drifting near its organism while working on a request, gathered at the
-//                            branch it reads or edits while a tool runs, settled low while waiting; it leaves on exit
-// Ambient life (never progress): everything sways in one continuous current, nutrients flow, leaves breathe,
-// spores drift, the ground's veins pulse. Verified milestones leave lasting blooms and unlock new ambient layers.
-import {THREE,NOISE,BACKGROUND_VS,clamp,lerp,smooth,hash,rand,rng,instancedBuffers,pointBuffers} from './core.js';
+// Data -> image (no decoration claims engineering work; the grammar is in biosphere-growth.js):
+//  - subsystem (district) -> an organism rooted at its persisted site, a recursive structure of its folders, files and
+//                            symbols; its species from its own role and data (interface: a sea fan, tests and types: a
+//                            crystal tree, services and flowing code: kelp, folder-rich code: a fern colony, heavily
+//                            cross-linked code: mycelium; the genome's species is the world's dominant one)
+//  - folder / file / symbol -> limb / branch / crown (or stem / frond / pinna, stipe / blade, cord / mushroom / satellite);
+//                            a crown is the organism's own branching rule repeated one scale down (a fan of fans,
+//                            shards bearing shards); symbol kinds colour their crowns and only symbols carry a light
+//  - material state       -> draft: pale new growth; committed: mature; validated: brighter; stressed: blight (colour
+//                            drained, leaves curl and rust, dull embers in the bark) on exactly the failing files
+//  - repaired file        -> fresh leaves open at its tip and stay (a lasting sign of the recovery, from the states)
+//  - dependency           -> across organisms a braided mycelial cord on the ground; inside one a faint silk thread
+//  - agent                -> a firefly swarm (or pollinators) gathered at the branch it reads or edits
+//  - lasting milestones   -> a phyllotactic fractal flower (milestone) or crystalline star (refactor) on the organism,
+//                            kept and accumulated around its crown for the project's whole life; ambient unlocks add
+//                            fireflies, drifting petals, brighter veins and a bioluminescent tide
+// Ambient life (never progress): one current sways everything, one slow band of light climbs every organism, the finest
+// tips breathe, light breathes on the recipe's period, caustics drift over the floor and the surface, motes drift in
+// slowly migrating shafts of light and in the glow around each crown. A file an agent or a person is touching glows
+// (model data: lastHuman / lastAgent); that is observation, never an effect.
+import {THREE,BACKGROUND_VS,clamp,lerp,smooth,easeOut,hash,rand,rng,instancedBuffers,pointBuffers} from './core.js';
+import {growForest,growBloom,buildCrown,crownDecay,SPECIES,SEG,LEAF,GLOW,TPL,CROWN_KEYS,CROWN_VARIANTS} from './biosphere-growth.js';
+import {COMMON,MAXO,SEG_VS,SEG_FS,CROWN_VS,LEAF_VS,LEAF_FS,GLOW_VS,GLOW_FS,SHAFT_VS,SHAFT_FS,PILLAR_VS,PILLAR_FS,GROUND_VS,GROUND_FS,SKY_FS} from './biosphere-glsl.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
-const KIND={function:0,method:1,class:2,'ui.component':3,interface:4,type:5,variable:6,'api.route':7};
-const SQRT3=Math.sqrt(3);
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
-// One current field displaces every vertex by its rest position, so connected parts stay connected while they sway.
-const SWAY=`
-uniform float uSway,uCurrent;
-vec3 sway(vec3 p,float flex,float tv){float h=max(0.,p.y);float k=flex*h*h*.012*uSway;
-  vec2 dir=vec2(cos(uCurrent),sin(uCurrent));float ph=dot(p.xz,dir)*.35;
-  float a=sin(tv*.55+ph)+.45*sin(tv*1.27+p.x*.6+p.z*.4)+.25*sin(tv*2.3+p.z*1.1);
-  float b=cos(tv*.43+p.z*.5)*.6+.3*sin(tv*1.9+p.x*.8);
-  return vec3(dir.x*a+dir.y*b*.4,-abs(a)*.08,dir.y*a-dir.x*b*.4)*k;}
-`;
-const FOG=`uniform vec3 uFog;uniform float uFogD;vec3 fog(vec3 c,float d){return mix(c,uFog,1.-exp(-d*uFogD));}float fogK(float d){return exp(-d*uFogD);}`;
+const num=(x,d)=>Number.isFinite(x)?x:d;
+const CROWN_TWIST={fan:.35,shard:1.4,hypha:.3};
 export function createFamily(ctx){
-  const {scene,camera,model,recipe}=ctx;const G=recipe.genome,P=G.palette,GEO=G.geometry;
+  const {scene,camera,model,recipe}=ctx;const G=recipe.genome,P=G.palette;
+  const GEO=G.geometry||{},ATM=G.atmosphere||{},MAT=G.material||{},MOT=G.motion||{},CAM=G.camera||{},SEC=G.secondary||{};
   const col=c=>new THREE.Color(c);
   const pal={primary:col(P.primary),secondary:col(P.secondary),accent:col(P.accent),highlight:col(P.highlight),deep:col(P.deep),haze:col(P.haze),warning:col(P.warning),valid:col(P.valid)};
-  const seed=recipe.projectSeed>>>0,species=GEO.species,terrain=G.atmosphere.terrain;
-  // Fog dims rather than tints: a bioluminescent world fades to near-black, keeping every colour saturated.
-  const fogColor=pal.deep.clone().lerp(pal.haze,terrain==='abyss'?.3:.15).multiplyScalar(terrain==='abyss'?1.1:.8);
-  const common={uT:{value:0},uV:{value:0},uSpeed:{value:1},uPx:{value:1},uRes:{value:new THREE.Vector2(1920,1080)},uBeat:{value:0},uActivity:{value:0},
-    uSway:{value:G.motion.sway*(species==='kelp'?1.9:species==='crystal-tree'?.35:1)},uCurrent:{value:G.motion.current},uFog:{value:fogColor},uFogD:{value:.006+.011*G.atmosphere.fog},
-    uWaves:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,-1e5))},uWaveC:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,1))},uUnlock:{value:new THREE.Vector4()},uMotion:{value:1}};
-  // Waves of light travel through the organisms (growth, validation, recovery, blight): centre, start, colour, speed.
-  const WAVE=`uniform vec4 uWaves[4],uWaveC[4];uniform float uT,uSpeed;
-    vec3 waves(vec3 p){vec3 a=vec3(0.);for(int i=0;i<4;i++){float age=(uT-uWaves[i].w)/uSpeed;if(age<0.||age>8.)continue;float r=age*uWaveC[i].w;float d=distance(p,uWaves[i].xyz);
-      a+=uWaveC[i].rgb*exp(-pow((d-r)*.9,2.))*(1.-age/8.);}return a;}`;
-  // ---- Terrain ------------------------------------------------------------------------------------------------
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:{...common,uScale:{value:60},uVein:{value:pal.accent.clone()},uVein2:{value:pal.primary.clone()},
-      uDeep:{value:pal.deep},uRoots:{value:Array.from({length:24},()=>new THREE.Vector4(0,0,0,0))},uRipple:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,-1e5))},uRippleC:{value:Array.from({length:8},()=>new THREE.Vector4(1,1,1,4))},
-      uTide:{value:G.material.bioluminescence},uCaustic:{value:terrain==='abyss'?1:0}},
-    vertexShader:`uniform float uScale;varying vec3 vW;void main(){vec3 p=vec3(position.x*uScale,0.,-position.y*uScale);vW=p;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`${NOISE}${FOG}uniform float uV,uT,uSpeed,uTide,uCaustic,uActivity;uniform vec3 uVein,uVein2,uDeep;uniform vec4 uRoots[24],uRipple[8],uRippleC[8],uUnlock;varying vec3 vW;
-      void main(){vec2 p=vW.xz;mat2 rot=mat2(.8,-.6,.6,.8);vec2 q=rot*p;float n=fbm3(vec3(q*.1,uV*.008));
-        vec2 w=q+vec2(fbm3(vec3(q*.15,1.)),fbm3(vec3(q*.15,7.)))*3.;
-        float ridge=pow(1.-abs(gnoise(vec3(w*.2,uV*.012))),26.);float ridge2=pow(1.-abs(gnoise(vec3(rot*w*.45+7.,uV*.02))),30.);
-        float flow=.5+.5*sin(dot(w,vec2(.7,.4))*.9-uV*.7+n*6.);
-        vec3 c=uDeep*(.9+n*.6);
-        c+=uVein*ridge*(.02+.07*flow)*uTide+uVein2*ridge2*.035*uTide;
-        float rootGlow=0.;for(int i=0;i<24;i++){if(uRoots[i].w<=0.)continue;float d=distance(p,uRoots[i].xz);rootGlow+=uRoots[i].w*exp(-d*d*.35);}
-        c+=uVein*rootGlow*.03*(.6+.4*flow)+uVein*ridge*rootGlow*.5;
-        c+=uCaustic*vec3(.2,.45,.5)*pow(max(0.,sin(p.x*1.3+uV*.7+n*4.)*sin(p.y*1.1-uV*.5+n*3.)),6.)*.12;
-        float tide=uUnlock.w*exp(-pow(mod(length(p)*.15-uV*.08,1.)-.5,2.)*40.)*.4;c+=uVein*tide*ridge*3.;
-        for(int i=0;i<8;i++){float age=(uT-uRipple[i].w)/uSpeed;if(age<0.||age>uRippleC[i].w)continue;float r=age*3.2;float d=distance(p,uRipple[i].xz);
-          c+=uRippleC[i].rgb*exp(-pow((d-r)*1.4,2.))*(1.-age/uRippleC[i].w)*(.6+ridge*2.);}
-        float dist=length(cameraPosition-vW);gl_FragColor=vec4(fog(c,dist),1.);}`}));
-  ground.frustumCulled=false;ground.renderOrder=-2;scene.add(ground);
-  // ---- Branch segments (instanced tapered cylinders) ----------------------------------------------------------
-  const cyl=new THREE.CylinderGeometry(1,1,1,species==='crystal-tree'?6:8,1,true);cyl.translate(0,.5,0);
-  const segs=instancedBuffers(cyl,{sA:4,sB:4,sInfo:4,sColor:3,sState:4},256);
-  const barkMat=new THREE.ShaderMaterial({uniforms:{...common,uValid:{value:pal.valid},uStress:{value:pal.warning},uSap:{value:pal.highlight.clone().lerp(pal.valid,.4)},uBark:{value:G.material.bark}},
-    vertexShader:`${SWAY}${WAVE}attribute vec4 sA,sB,sInfo,sState;attribute vec3 sColor;uniform float uV;varying vec3 vC,vN,vW,vWave;varying vec4 vS;varying float vGrow,vY,vV;
-      void main(){float age=(uT-sInfo.x)/uSpeed;float grow=clamp(age/1.4,0.,1.);float gone=sInfo.y<1e5?clamp((uT-sInfo.y)/uSpeed/1.6,0.,1.):0.;
-        vec3 a=sA.xyz,b=mix(sA.xyz,sB.xyz,grow*(1.-gone*.6));vec3 axis=b-a;float len=max(1e-4,length(axis));vec3 up=axis/len;
-        vec3 side=normalize(abs(up.y)<.95?cross(up,vec3(0.,1.,0.)):cross(up,vec3(1.,0.,0.)));vec3 fw=cross(side,up);
-        float rad=mix(sA.w,sB.w,position.y)*(grow>0.?1.:0.)*(1.-gone);
-        vec3 rest=a+up*position.y*len+(side*position.x+fw*position.z)*rad;
-        float flex=mix(sInfo.z,sInfo.w,position.y);vec3 w=rest+sway(rest,flex,uV);
-        if(sState.x>2.5)w.y-=flex*.05*max(0.,rest.y-1.)*smoothstep(0.,2.,(uT-sState.z)/uSpeed);
-        vW=w;vN=normalize(side*position.x+fw*position.z);vC=sColor;vS=sState;vGrow=grow*(1.-gone);vY=position.y;vV=uV;vWave=waves(rest);
-        gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${NOISE}${FOG}uniform vec3 uValid,uStress,uSap;uniform float uBark,uT,uSpeed;varying vec3 vC,vN,vW,vWave;varying vec4 vS;varying float vGrow,vY,vV;
-      void main(){if(vGrow<=0.)discard;vec3 n=normalize(vN);vec3 v=normalize(cameraPosition-vW);float rim=pow(1.-abs(dot(n,v)),2.5);
-        float grain=gnoise(vW*vec3(6.,1.,6.))*.5+.5;float rimT=pow(1.-abs(dot(n,v)),4.5);vec3 c=vec3(.01,.01,.014)+vC*(.02+.035*grain*uBark)+vC*rimT*.9;rim=rimT;
-        float sap=pow(.5+.5*sin(vW.y*1.7-vV*1.2+vW.x*.5+vC.r*9.),90.);c+=uSap*sap*(.04+rim*.25);
-        float k=clamp((uT-vS.z)/uSpeed/1.4,0.,1.);float st=k>.5?vS.x:vS.y;
-        if(st<.5)c=c*.6+uSap*(.18+rim*.9);else if(st>2.5)c=c*.5+uStress*(.12+rim*1.1)*(.7+.3*sin(vV*5.+vW.y*3.));else if(st>1.5)c+=uValid*rim*.45;
-        c+=vWave*1.4+vC*vS.w*rim;gl_FragColor=vec4(fog(c,length(cameraPosition-vW)),1.);}`});
-  const barkMesh=new THREE.Mesh(segs.geometry,barkMat);barkMesh.frustumCulled=false;scene.add(barkMesh);
-  // ---- Leaves (instanced quads, aligned along the leaf axis in screen space) -----------------------------------
-  const leaves=instancedBuffers(new THREE.PlaneGeometry(1,1),{lA:4,lB:4,lInfo:4,lColor:3,lState:4},256);
-  const shape={blade:0,round:1,frond:2,petal:3}[GEO.leafShape]??0;
-  const leafMat=new THREE.ShaderMaterial({uniforms:{...common,uValid:{value:pal.valid},uStress:{value:pal.warning},uSap:{value:pal.highlight.clone().lerp(pal.valid,.5)},uShape:{value:species==='crystal-tree'?4:shape},
-      uLum:{value:G.material.bioluminescence},uTrans:{value:G.material.translucency}},transparent:true,depthWrite:false,blending:THREE.NormalBlending,side:THREE.DoubleSide,
-    vertexShader:`${SWAY}${WAVE}attribute vec4 lA,lB,lInfo,lState;attribute vec3 lColor;uniform float uV,uPx;uniform vec2 uRes;varying vec2 vUv;varying vec3 vC,vWave;varying vec4 vS,vI;varying float vA,vD;
-      void main(){float age=(uT-lInfo.x)/uSpeed;float unfurl=smoothstep(0.,1.6,age);float gone=lInfo.y<1e5?clamp((uT-lInfo.y)/uSpeed/1.8,0.,1.):0.;
-        vec3 a=lA.xyz+sway(lA.xyz,lState.w,uV);vec3 tipRest=lB.xyz;
-        float droop=lState.x>2.5?smoothstep(0.,2.5,(uT-lState.z)/uSpeed):0.;tipRest.y-=droop*lA.w*.9;tipRest.y-=gone*2.5;
-        vec3 b=tipRest+sway(tipRest,lState.w*1.15,uV)+vec3(sin(uV*1.7+lInfo.z*9.),cos(uV*1.3+lInfo.z*7.),0.)*.05*lA.w;
-        vec3 mid=mix(a,b,.5);vec4 ca=projectionMatrix*viewMatrix*vec4(a,1.),cb=projectionMatrix*viewMatrix*vec4(b,1.),cm=projectionMatrix*viewMatrix*vec4(mid,1.);
-        vec2 sa=ca.xy/ca.w,sb=cb.xy/cb.w;vec2 d=(sb-sa)*uRes;float L=length(d);vec2 dir=L>1e-3?d/L:vec2(0.,1.);vec2 nrm=vec2(-dir.y,dir.x);
-        float s=unfurl*(1.-gone*.3)*(1.+.08*sin(uV*1.1+lInfo.z*13.));vec2 along=(sb-sa)*(position.y)*s;float width=max(L*lB.w,5.*uPx)*s;
-        vec4 cp=cm;cp.xy+=(along+nrm*position.x*width/uRes*2.)*cm.w;gl_Position=cp;
-        vUv=position.xy+.5;vC=lColor;vS=lState;vI=lInfo;vWave=waves(mid);vA=smoothstep(0.,.3,age)*(1.-gone);vD=length(cameraPosition-mid);}`,
-    fragmentShader:`${FOG}uniform vec3 uValid,uStress,uSap;uniform float uShape,uLum,uTrans,uT,uSpeed,uV,uBeat;varying vec2 vUv;varying vec3 vC,vWave;varying vec4 vS,vI;varying float vA,vD;
-      float leafMask(vec2 uv,float kind){vec2 p=uv-vec2(.5,.5);float y=uv.y;
-        if(kind>2.5&&kind<3.5){float a=atan(p.x,p.y);float r=length(p)*2.;float pet=.55+.45*cos(a*5.);return smoothstep(pet,pet-.15,r);}            // blossom
-        if(kind>1.5&&kind<2.5){float r=length(p*vec2(1.,1.))*2.;return smoothstep(1.,.75,r);}                                                        // pod
-        if(kind>6.5){float w=.05+.25*smoothstep(.75,1.,y);return smoothstep(w,w*.4,abs(p.x))*step(.02,y);}                                              // stamen
-        float sh=kind>5.5?1.:uShape;float w;
-        if(sh<.5)w=.5*sin(3.1416*y);else if(sh<1.5)w=.45*sqrt(max(0.,1.-pow(y*2.-1.,2.)));else if(sh<2.5)w=.48*sin(3.1416*y)*(.75+.25*sin(y*40.));else if(sh<3.5)w=.5*pow(sin(3.1416*pow(y,.7)),1.4);else w=.5*(1.-abs(y*2.-1.));
-        return smoothstep(w,w*.55,abs(p.x));}
-      void main(){float kind=vI.w;float m=leafMask(vUv,kind);if(m<.01)discard;
-        float k=clamp((uT-vS.z)/uSpeed/1.4,0.,1.);float st=k>.5?vS.x:vS.y;
-        float vein=pow(1.-abs(vUv.x-.5)*2.,8.)*.5;float breathe=.75+.25*sin(uV*1.2+vI.z*20.)+.1*uBeat;
-        vec3 c=vC*(.9+vein*1.6)*breathe*uLum;
-        if(st<.5)c=mix(c,uSap,.55)*.8;else if(st>2.5)c=mix(uStress*.7,vec3(.35,.12,.05),vUv.y)*(.7+.3*sin(uV*4.+vI.z*30.));else if(st>1.5)c=c*1.35+uValid*.35*breathe;
-        if(kind>2.5&&kind<3.5)c*=1.5;if(kind>6.5)c+=vC*smoothstep(.8,1.,vUv.y)*3.;if(kind>3.5&&kind<5.5)c*=.55+uTrans*.3;
-        c+=vWave*1.6;float a=m*vA*(kind>3.5&&kind<5.5?.35+uTrans*.3:.72);gl_FragColor=vec4(c*fogK(vD),a);}`});
-  const leafMesh=new THREE.Mesh(leaves.geometry,leafMat);leafMesh.frustumCulled=false;leafMesh.renderOrder=2;scene.add(leafMesh);
-  // ---- Tendrils and vines (dependencies) --------------------------------------------------------------------------
-  const SEG=28;const ribbon=(()=>{const g=new THREE.BufferGeometry(),t=[],side=[],idx=[];
-    for(let i=0;i<=SEG;i++){t.push(i/SEG,i/SEG);side.push(-1,1);if(i<SEG){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
-    g.setAttribute('position',new THREE.Float32BufferAttribute(new Array((SEG+1)*2*3).fill(0),3));g.setAttribute('aT',new THREE.Float32BufferAttribute(t,1));g.setAttribute('aSide',new THREE.Float32BufferAttribute(side,1));g.setIndex(idx);return g;})();
-  const vines=instancedBuffers(ribbon,{vA:4,vB:4,vInfo:4,vColA:3,vColB:3},128);
-  const vineMat=new THREE.ShaderMaterial({uniforms:{...common,uFlow:{value:G.motion.flow}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-    vertexShader:`${SWAY}attribute float aT,aSide;attribute vec4 vA,vB,vInfo;attribute vec3 vColA,vColB;uniform float uV,uPx,uT,uSpeed;uniform vec2 uRes;varying float vT,vSide,vAl,vCross,vSeed,vD;varying vec3 vC;
-      vec3 curve(vec3 a,vec3 b,float lift,float t,float seed){vec3 m=(a+b)*.5+vec3(0.,lift,0.);float u=1.-t;vec3 p=u*u*a+2.*u*t*m+t*t*b;
-        p+=vec3(sin(t*9.+seed*20.+uV*.4),cos(t*7.+seed*13.),sin(t*11.+seed*7.))*.12*sin(3.1416*t)*(1.+distance(a,b)*.05);return p;}
-      void main(){vec3 a=vA.xyz+sway(vA.xyz,vA.w,uV),b=vB.xyz+sway(vB.xyz,vB.w,uV);float d=distance(a,b);
-        float lift=vInfo.z>.5?(1.5+.35*d):(-min(a.y,b.y)*.8+.2);
-        vec3 p=curve(a,b,lift,aT,vInfo.w),q=curve(a,b,lift,min(1.,aT+.01),vInfo.w);if(aT>.99)q=p+(p-curve(a,b,lift,aT-.01,vInfo.w));
-        vec4 cp=projectionMatrix*viewMatrix*vec4(p,1.),cq=projectionMatrix*viewMatrix*vec4(q,1.);vec2 dir=normalize((cq.xy/cq.w-cp.xy/cp.w)*uRes+1e-5);vec2 nrm=vec2(-dir.y,dir.x);
-        float age=(uT-vInfo.x)/uSpeed;float grow=clamp(age/(vInfo.z>.5?2.4:1.2),0.,1.);float gone=vInfo.y<1e5?clamp((uT-vInfo.y)/uSpeed,0.,1.):0.;
-        float w=(vInfo.z>.5?4.2:2.2)*uPx*(1.+(1.-smoothstep(0.,3.,age))*1.4);cp.xy+=nrm*aSide*w/uRes*2.*cp.w;gl_Position=cp;
-        vT=aT;vSide=aSide;vAl=(aT<=grow?1.:0.)*(1.-gone);vCross=vInfo.z;vSeed=vInfo.w;vC=mix(vColA,vColB,aT);vD=length(cameraPosition-p);}`,
-    fragmentShader:`${FOG}uniform float uV,uFlow,uActivity;varying float vT,vSide,vAl,vCross,vSeed,vD;varying vec3 vC;
-      void main(){if(vAl<.01)discard;float edge=1.-vSide*vSide;float p=fract(vT*(vCross>.5?2.5:4.)-uV*(.15+.1*uFlow)*(1.+uActivity)+vSeed);
-        float pulse=smoothstep(0.,.06,p)*smoothstep(.25,.06,p);gl_FragColor=vec4(vC*edge*((vCross>.5?.32:.12)+pulse*(vCross>.5?1.4:.7))*vAl*fogK(vD),1.);}`});
-  const vineMesh=new THREE.Mesh(vines.geometry,vineMat);vineMesh.frustumCulled=false;vineMesh.renderOrder=1;scene.add(vineMesh);
-  // ---- Spores, fireflies (unlock), agents, bursts ---------------------------------------------------------------
-  const sporeCount=Math.round(2600+4200*G.atmosphere.spores),spores=pointBuffers({pInfo:4,pColor:3},sporeCount);
-  {const r=rng(hash(`spores/${seed}`));const cols=[pal.highlight,pal.valid,pal.secondary,pal.accent];
-    for(let i=0;i<sporeCount;i++){spores.write('position',i,(r()-.5)*2,r(),(r()-.5)*2);spores.write('pInfo',i,r(),.3+r()*1.6,r()*6.283,i<sporeCount*.12?1:0);const c=cols[Math.floor(r()*cols.length)];spores.write('pColor',i,c.r,c.g,c.b);}spores.commit(sporeCount);}
-  const sporeMat=new THREE.ShaderMaterial({uniforms:{...common,uBox:{value:new THREE.Vector3(40,14,40)},uRise:{value:terrain==='abyss'?-.18:.22},uSpores:{value:G.atmosphere.spores},uFlies:{value:G.atmosphere.fireflies}},
-    transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`uniform vec3 uBox;uniform float uV,uPx,uRise,uMotion;uniform vec4 uUnlock;attribute vec4 pInfo;attribute vec3 pColor;varying vec3 vC;varying float vA,vD;
-      void main(){float fly=pInfo.w;float y=fract(position.y+uV*uRise*.03*pInfo.y*uMotion)*uBox.y;
-        vec3 p=vec3(position.x*uBox.x+sin(uV*.2*pInfo.y+pInfo.z)*1.5,y,position.z*uBox.z+cos(uV*.17*pInfo.y+pInfo.z)*1.5);
-        if(fly>.5){p+=vec3(sin(uV*1.3+pInfo.z*5.),sin(uV*2.1+pInfo.z*3.)*.5,cos(uV*1.1+pInfo.z*7.))*1.2;p.y=1.+mod(p.y,4.);}
-        vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;vD=-mv.z;
-        float blink=fly>.5?pow(max(0.,sin(uV*(1.5+pInfo.y)+pInfo.z*11.)),8.)*uUnlock.x:1.;
-        gl_PointSize=clamp((fly>.5?3.5:1.6)*uPx*30./max(1.,-mv.z),1.,10.);vC=pColor*(fly>.5?3.:.55);vA=blink*smoothstep(0.,1.5,y)*(1.-smoothstep(uBox.y*.8,uBox.y,y));}`,
-    fragmentShader:`${FOG}uniform float uSpores;varying vec3 vC;varying float vA,vD;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*3.)*vA*uSpores*fogK(vD*.6),1.);}`});
-  const sporePoints=new THREE.Points(spores.geometry,sporeMat);sporePoints.frustumCulled=false;sporePoints.renderOrder=3;scene.add(sporePoints);
-  const SWARM=26,MAX_AGENTS=10,agentPts=pointBuffers({aCol:4,aSize:1},MAX_AGENTS*(SWARM+24));
-  const agentMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`attribute vec4 aCol;attribute float aSize;uniform float uPx;varying vec4 vC;void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(aSize*uPx*40./max(.5,-mv.z),0.,48.);vC=aCol;}`,
-    fragmentShader:`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*4.)+exp(-r*20.)*2.)*vC.a,1.);}`});
-  const agentPoints=new THREE.Points(agentPts.geometry,agentMat);agentPoints.frustumCulled=false;agentPoints.renderOrder=4;scene.add(agentPoints);
-  const BURSTS=24,PER=48,burstPts=pointBuffers({bDir:4},BURSTS*PER);
-  {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*6.283,s=Math.sqrt(1-u*u);burstPts.write('position',b*PER+k,0,0,0);burstPts.write('bDir',b*PER+k,Math.cos(a)*s,Math.abs(u)*.8+.2,Math.sin(a)*s,b+r()*.9);}burstPts.commit(BURSTS*PER);}
-  const burstU={uBA:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(0,0,0,-1e5))},uBB:{value:Array.from({length:BURSTS},()=>new THREE.Vector4())},uBC:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(1,0,1,0))}};
-  const burstMat=new THREE.ShaderMaterial({uniforms:{...common,...burstU},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    vertexShader:`attribute vec4 bDir;uniform vec4 uBA[${BURSTS}],uBB[${BURSTS}],uBC[${BURSTS}];uniform float uT,uSpeed,uPx;varying vec3 vC;varying float vA;
-      void main(){int b=int(bDir.w);float sp=fract(bDir.w);vec4 A=uBA[b],B=uBB[b],C=uBC[b];float age=(uT-A.w)/uSpeed/C.x;
-        if(age<0.||age>1.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vA=0.;return;}
-        vec3 dir=bDir.xyz;if(C.y>1.5)dir.y=-abs(dir.y)*1.5;float travel=C.y>.5&&C.y<1.5?(1.-age)*C.z:(1.-pow(1.-age,2.2))*C.z*(.4+sp);vec3 p=A.xyz+dir*travel;if(C.y>1.5)p.y-=age*age*2.;
-        vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(B.w*uPx*26./max(.5,-mv.z)*(1.-age*.5),1.,22.);vC=B.rgb;vA=(1.-age);}`,
-    fragmentShader:`varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*4.)*vA*2.,1.);}`});
-  const burstPoints=new THREE.Points(burstPts.geometry,burstMat);burstPoints.frustumCulled=false;burstPoints.renderOrder=5;scene.add(burstPoints);let burstNext=0;
-  // Lasting blooms: a fractal crown of petals on organisms that reached verified milestones (grows with each one).
-  const PETALS=2400,crowns=instancedBuffers(new THREE.PlaneGeometry(1,1),{cA:4,cB:4,cInfo:4,cColor:3},PETALS);let crownCount=0;
-  const crownMat=new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-    vertexShader:`${SWAY}attribute vec4 cA,cB,cInfo;attribute vec3 cColor;uniform float uV,uT,uSpeed,uBeat;varying vec2 vUv;varying vec3 vC;varying float vA;
-      void main(){float age=(uT-cInfo.x)/uSpeed-cInfo.y;float open=smoothstep(0.,3.5,age);vec3 base=cA.xyz+sway(cA.xyz,cA.w,uV);
-        float spin=uV*.06*(mod(cInfo.z,2.)<1.?1.:-1.);float a=cB.x+spin,el=cB.y*open;float len=cB.z*open*(1.+.06*sin(uV*.9+cInfo.z)+.05*uBeat);
-        vec3 dir=vec3(cos(a)*cos(el),sin(el),sin(a)*cos(el));vec3 side=normalize(cross(dir,vec3(0.,1.,0.))+1e-4);
-        vec3 p=base+dir*(position.y+.5)*len+side*position.x*len*cB.w;vUv=position.xy+.5;vC=cColor;vA=smoothstep(0.,.5,age);
-        gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`uniform float uV;varying vec2 vUv;varying vec3 vC;varying float vA;void main(){float w=.5*pow(sin(3.1416*pow(vUv.y,.7)),1.2);float m=smoothstep(w,w*.5,abs(vUv.x-.5));if(m<.01)discard;
-      float vein=pow(1.-abs(vUv.x-.5)*2.,6.);gl_FragColor=vec4(vC*(.5+vein*.8+smoothstep(.85,1.,vUv.y))*m*vA*1.3,1.);}`});
-  const crownMesh=new THREE.Mesh(crowns.geometry,crownMat);crownMesh.frustumCulled=false;crownMesh.renderOrder=3;scene.add(crownMesh);
-  const crownLevel=new Map();
-  // ---- Background: water or night air, deeper above, with soft light shafts ------------------------------------
-  const sky=new THREE.ShaderMaterial({uniforms:{...common,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uTop:{value:pal.deep.clone().multiplyScalar(.35)},uHorizon:{value:fogColor.clone()},uGlow:{value:pal.accent.clone().lerp(pal.valid,.3)},
-      uShafts:{value:G.atmosphere.lightShafts*(terrain==='abyss'?1.4:terrain==='cavern'?.4:.8)},uAbyss:{value:terrain==='abyss'?1:0}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
-    fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uTop,uHorizon,uGlow;uniform float uV,uShafts,uAbyss;uniform vec4 uUnlock;
-      void main(){vec4 p=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(p.xyz/p.w-uCam);float h=clamp(d.y,-1.,1.);
-        vec3 c=mix(uHorizon,uTop,smoothstep(-.05,.6,h));c+=uHorizon*.5*exp(-abs(h)*7.);
-        float n=fbm3(vec3(d.x*3.,d.y*2.-uV*.01,d.z*3.));c*=.85+.3*n;
-        float shafts=pow(max(0.,sin(atan(d.z,d.x)*13.+n*3.+uV*.05)),12.)*smoothstep(.0,.7,h)*uShafts;c+=uGlow*shafts*.05;
-        float veil=uUnlock.z*smoothstep(.1,.6,fbm3(vec3(d.x*5.,d.y*8.-uV*.04,d.z*5.)))*smoothstep(.15,.5,h);c+=uGlow*veil*.25;
-        gl_FragColor=vec4(c,1.);}`});
-  // ---- Structure ----------------------------------------------------------------------------------------------
-  const orgs=new Map();      // district id -> organism {root, height, color, dirs:Map, top, index}
-  const branchOf=new Map();  // module id -> {tip, base, points, flex, color, org, leafSlots:[...]}
-  let builtVersion=-1,segCount=0,leafCount=0,vineCount=0,extent=8,centre=new THREE.Vector3();
-  const tmp=new THREE.Vector3();
-  const S=1.25*G.space.spread;  // world units per layout cell
-  const hexWorld=(q,r)=>new THREE.Vector3((SQRT3*q+SQRT3/2*r)*S,0,1.5*r*S);
-  const SPECIES={coral:{trunk:.55,limb:.6,up:.8,thick:1.5,flex:.4},fern:{trunk:.7,limb:1.25,up:.25,thick:.7,flex:1.1},kelp:{trunk:1.5,limb:.75,up:1,thick:.6,flex:1.8},
-    mycelial:{trunk:.3,limb:1.3,up:-.35,thick:.75,flex:.6},'crystal-tree':{trunk:.9,limb:.9,up:.55,thick:1.1,flex:.15}}[species]||{trunk:.7,limb:1,up:.5,thick:1,flex:1};
-  // Grows a polyline from p along dir; the recipe's curl and gravitropism bend it, deterministic in its seed.
-  function grow(p,dir,len,n,curl,gravity,s){const pts=[p.clone()];let d=dir.clone().normalize();const r=rng(s);
-    for(let i=0;i<n;i++){const step=len/n;
-      if(species==='crystal-tree'){if(i%2===1)d.applyAxisAngle(new THREE.Vector3(r()-.5,0,r()-.5).normalize(),(r()-.5)*.9);}
-      else{d.applyAxisAngle(new THREE.Vector3(-d.z,0,d.x).normalize(),curl*(r()-.35)*.6);d.y+=gravity*.18;d.normalize();}
-      pts.push(pts.at(-1).clone().addScaledVector(d,step));}
-    return pts;}
-  function pointAlong(pts,s){let acc=0;for(let i=1;i<pts.length;i++){const l=pts[i].distanceTo(pts[i-1]);if(acc+l>=s)return {p:pts[i-1].clone().lerp(pts[i],(s-acc)/l),dir:pts[i].clone().sub(pts[i-1]).normalize(),i};acc+=l;}
-    return {p:pts.at(-1).clone(),dir:pts.at(-1).clone().sub(pts.at(-2)||pts[0]).normalize(),i:pts.length-1};}
-  const length=pts=>{let l=0;for(let i=1;i<pts.length;i++)l+=pts[i].distanceTo(pts[i-1]);return l;};
-  function build(t){
-    const epoch=model.epoch;orgs.clear();branchOf.clear();
-    const districts=[...model.districts.values()].filter(d=>d.members.length).sort((a,b)=>a.order-b.order);
-    const segList=[],leafList=[];let index=0;
-    for(const d of districts){
-      const h=hash(d.id),r=rng(h);
-      const members=d.members.map(id=>model.modules.get(id)).filter(Boolean).sort((a,b)=>a.order-b.order);
-      const born=Math.min(...members.map(m=>m.born));
-      const root=hexWorld(d.q,d.r);
-      // Folders in the order they first appeared: each is a limb at a fixed height on the trunk.
-      const dirs=[];for(const m of members)if(!dirs.includes(m.dir))dirs.push(m.dir);
-      const trunkLen=(2.2+1.15*Math.sqrt(dirs.length))*SPECIES.trunk*G.space.canopy;
-      const lean=new THREE.Vector3((r()-.5)*.25,1,(r()-.5)*.25);
-      const trunk=grow(root,lean,trunkLen,6,GEO.curl*.5,GEO.gravitropism*.3,h);
-      // One saturated palette colour per organism: blending complementary colours would only make grey.
-      const color=[pal.primary,pal.accent,pal.secondary][index%3].clone();
-      const org={id:d.id,root,trunk,color,index:index++,born,top:trunk.at(-1).clone(),members:members.map(m=>m.id),height:trunkLen,radius:2};
-      const leafScale=Math.min(2.4,Math.max(.8,.45+trunkLen*.13));
-      orgs.set(d.id,org);
-      const thick=(.16+.05*Math.sqrt(members.length))*SPECIES.thick;
-      for(let i=1;i<trunk.length;i++)segList.push({a:trunk[i-1],b:trunk[i],ra:thick*(1-(i-1)/trunk.length*GEO.taper),rb:thick*(1-i/trunk.length*GEO.taper),born:secs(born,epoch)+(i-1)*.18,removed:1e6,color,fa:(i-1)/6*SPECIES.flex*.4,fb:i/6*SPECIES.flex*.4,module:null});
-      dirs.forEach((dir,j)=>{
-        const dm=members.filter(m=>m.dir===dir);const dirBorn=Math.min(...dm.map(m=>m.born));
-        const at=pointAlong(trunk,Math.min(trunkLen*.94,trunkLen*.28+1.05*Math.sqrt(j)*SPECIES.trunk));
-        const az=j*2.39996+rand(h+j)*.6,elev=Math.PI/2-GEO.branchAngle*(species==='mycelial'?1.6:1);
-        const ld=new THREE.Vector3(Math.cos(az)*Math.cos(elev),Math.sin(elev)+SPECIES.up*.4,Math.sin(az)*Math.cos(elev));
-        const limbLen=(1.2+.95*Math.sqrt(dm.length))*SPECIES.limb;
-        const limb=grow(at.p,ld,limbLen,4,GEO.curl,GEO.gravitropism*SPECIES.up,hash(dir)^h);
-        const lt=thick*.6;
-        for(let i=1;i<limb.length;i++)segList.push({a:limb[i-1],b:limb[i],ra:lt*(1-(i-1)/limb.length*.7),rb:lt*(1-i/limb.length*.7),born:secs(dirBorn,epoch)+.3+i*.15,removed:1e6,color,fa:SPECIES.flex*(.3+.15*(i-1)),fb:SPECIES.flex*(.3+.15*i),module:null});
-        dm.forEach((m,k)=>{
-          const mh=hash(m.id),mr=rng(mh);const total=Object.entries(m.counts||{}).filter(([x])=>x!=='property').reduce((a,[,v])=>a+v,0);
-          const base=pointAlong(limb,Math.min(limbLen*.97,.35+.8*Math.sqrt(k)*SPECIES.limb));
-          const around=k*2.39996+mr()*.5;const perp=new THREE.Vector3(-base.dir.z,0,base.dir.x).normalize().applyAxisAngle(base.dir,around);
-          const bd=base.dir.clone().multiplyScalar(Math.cos(GEO.branchAngle)).addScaledVector(perp,Math.sin(GEO.branchAngle)).add(new THREE.Vector3(0,SPECIES.up*.35,0)).normalize();
-          const blen=(.75+.2*Math.sqrt(total))*Math.min(1.6,SPECIES.limb*1.1);
-          const pts=grow(base.p,bd,blen,3,GEO.curl*1.3,GEO.gravitropism*SPECIES.up,mh);
-          const bt=lt*.55*(.7+.15*Math.sqrt(total)),bornS=secs(m.born,epoch),removed=m.removed===null?1e6:secs(m.removed,epoch);
-          const flex0=SPECIES.flex*(.5+.2*k/Math.max(1,dm.length));
-          const segIdx=[];
-          for(let i=1;i<pts.length;i++){segIdx.push(segList.length);segList.push({a:pts[i-1],b:pts[i],ra:bt*(1-(i-1)/pts.length*.75),rb:bt*(1-i/pts.length*.75),born:bornS+.2+i*.14,removed,color:m.test?pal.highlight:color,fa:flex0+.25*(i-1),fb:flex0+.25*i,module:m.id});}
-          // Long files fork into twigs, so detail scales with what a file holds.
-          const ends=[{pts,flex:flex0+.75}];
-          if(total>7){for(let f=0;f<(total>18?3:2);f++){const at2=pointAlong(pts,length(pts)*(.55+.18*f));const td=at2.dir.clone().applyAxisAngle(new THREE.Vector3(0,1,0),(f-1)*1.4+mr()).add(new THREE.Vector3(0,.25,0)).normalize();
-            const tw=grow(at2.p,td,blen*.55,2,GEO.curl,GEO.gravitropism,mh+f*97);for(let i=1;i<tw.length;i++){segIdx.push(segList.length);segList.push({a:tw[i-1],b:tw[i],ra:bt*.45,rb:bt*.3,born:bornS+.5+f*.2+i*.12,removed,color,fa:flex0+.5,fb:flex0+.8,module:m.id});}ends.push({pts:tw,flex:flex0+1});}}
-          const tip=pts.at(-1).clone();
-          branchOf.set(m.id,{tip,base:base.p,pts,ends,flex:flex0+.75,org:d.id,segIdx,color});
-          // Leaves along the ends in slot order, alternating sides with the golden angle.
-          const syms=[...m.symbols].map(id=>model.symbols.get(id)).filter(Boolean).sort((a,b)=>a.slot-b.slot||a.id.localeCompare(b.id)).slice(0,32);
-          syms.forEach((s,i)=>{const end=ends[i%ends.length];const L=length(end.pts);const kind=KIND[s.kind]??0;
-            const at3=pointAlong(end.pts,L*(.3+.68*((Math.floor(i/ends.length)+1)/(Math.ceil(syms.length/ends.length)+1))));
-            const ang=i*2.39996;const side=new THREE.Vector3(-at3.dir.z,0,at3.dir.x).normalize().applyAxisAngle(at3.dir,ang);
-            const size=[.7,.55,.62,1.15,.85,.65,.34,1.5][kind]*GEO.leafDensity*(species==='kelp'?1.4:1)*leafScale;
-            let dirv=side.clone().multiplyScalar(.85).addScaledVector(at3.dir,.5).add(new THREE.Vector3(0,.25,0)).normalize();
-            if(kind===7)dirv=new THREE.Vector3(0,1,0).addScaledVector(at3.dir,.2).normalize();
-            const sBorn=model.bornAt(s);
-            const leafBase=[pal.accent,pal.secondary,pal.primary][(org.index+1)%3];
-            const lc=kind===3?[pal.primary,pal.secondary,pal.accent][org.index%3].clone():kind===2?pal.secondary.clone():kind===7?pal.valid.clone():kind===4||kind===5?pal.highlight.clone().lerp(leafBase,.5):kind===6?pal.highlight.clone():leafBase.clone().multiplyScalar(kind===1?.8:1);
-            leafList.push({a:at3.p,b:at3.p.clone().addScaledVector(dirv,size),width:kind===3?.95:kind===2?.9:kind===7?.12:.32,size,born:Number.isFinite(sBorn)?secs(sBorn,epoch):sBorn===Infinity?1e6:-1e5,
-              removed:s.removed===null?(m.removed===null?1e6:secs(m.removed,epoch)):secs(s.removed,epoch),seed:rand(hash(s.id)),kind,flex:end.flex,color:lc,module:m.id});});
-          org.radius=Math.max(org.radius,tip.clone().sub(root).setY(0).length()+.8);
-        });
-      });
-      org.canopy=Math.max(org.height,...[...branchOf.values()].filter(b=>b.org===d.id).map(b=>b.tip.y));
-    }
-    segs.ensure(segList.length);segList.forEach((g,i)=>{segs.write('sA',i,g.a.x,g.a.y,g.a.z,g.ra);segs.write('sB',i,g.b.x,g.b.y,g.b.z,g.rb);segs.write('sInfo',i,g.born,g.removed,g.fa,g.fb);segs.write('sColor',i,g.color.r,g.color.g,g.color.b);segs.write('sState',i,1,1,-1e5,0);});
-    segCount=segList.length;segs.commit(segCount);segModules=segList.map(g=>g.module);
-    leaves.ensure(leafList.length);leafList.forEach((l,i)=>{leaves.write('lA',i,l.a.x,l.a.y,l.a.z,l.size);leaves.write('lB',i,l.b.x,l.b.y,l.b.z,l.width);leaves.write('lInfo',i,l.born,l.removed,l.seed,l.kind);leaves.write('lColor',i,l.color.r,l.color.g,l.color.b);leaves.write('lState',i,1,1,-1e5,l.flex);});
-    leafCount=leafList.length;leaves.commit(leafCount);leafModules=leafList.map(l=>l.module);leafFlex=leafList.map(l=>l.flex);
-    // Ground under each organism glows by its size; organisms define the frame.
-    const roots=common.uRoots||ground.material.uniforms.uRoots;let k=0;centre.set(0,0,0);let n=0;
-    for(const o of orgs.values()){if(k<24)ground.material.uniforms.uRoots.value[k++].set(o.root.x,0,o.root.z,Math.min(1.5,.4+o.members.length*.05));centre.add(o.root);n++;}
-    for(;k<24;k++)ground.material.uniforms.uRoots.value[k].set(0,0,0,0);
-    if(n)centre.multiplyScalar(1/n);extent=4;for(const o of orgs.values())extent=Math.max(extent,o.root.distanceTo(centre)+o.radius);
-    ground.material.uniforms.uScale.value=Math.max(900,extent*40);sporeMat.uniforms.uBox.value.set(extent*2.2,Math.max(10,extent*.7),extent*2.2);
-    // Vines: dependencies between branch tips.
-    // Many dependencies between the same two organisms read as one braided vine, not a wall of arches: at most four
-    // representative strands per pair, brighter the more links they stand for. Internal tendrils quieten as they multiply.
-    const pairs=new Map(),internal=[];
-    for(const l of model.links.values()){const a=branchOf.get(l.a),b=branchOf.get(l.b);if(!a||!b)continue;
-      if(a.org===b.org){internal.push({l,a,b,k:1});continue;}
-      const key=[a.org,b.org].sort().join('|');if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push({l,a,b});}
-    const vl=[];const quiet=Math.min(1,Math.sqrt(60/Math.max(60,internal.length)));for(const x of internal)vl.push({...x,k:.8*quiet});
-    for(const list of pairs.values()){list.sort((x,y)=>(model.bornAt(x.l)-model.bornAt(y.l))||rand(hash(x.l.key))-rand(hash(y.l.key)));
-      const k=Math.min(2.4,1+.35*Math.log2(list.length));for(const x of list.slice(0,4))vl.push({...x,k:1.3*k/Math.min(4,list.length)**.35});}
-    vines.ensure(vl.length);vl.forEach(({l,a,b,k},i)=>{const born=model.bornAt(l);vines.write('vA',i,a.tip.x,a.tip.y,a.tip.z,a.flex);vines.write('vB',i,b.tip.x,b.tip.y,b.tip.z,b.flex);
-      vines.write('vInfo',i,Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,l.removed===null?1e6:secs(l.removed,epoch),a.org!==b.org?1:0,rand(hash(l.key)));
-      const ca=orgs.get(a.org)?.color||pal.primary,cb=orgs.get(b.org)?.color||pal.primary;vines.write('vColA',i,ca.r*k,ca.g*k,ca.b*k);vines.write('vColB',i,cb.r*k,cb.g*k,cb.b*k);});
-    vineCount=vl.length;vines.commit(vineCount);
-    builtVersion=model.version;
+  const seed=recipe.projectSeed>>>0,species=SPECIES[GEO.species]?GEO.species:'coral',terrain=ATM.terrain||'abyss';
+  // ---- Environment: always abyssal blue-teal (or night blue), tinted a little by the palette; near black below the
+  // horizon so the organisms' own light carries the image -------------------------------------------------------------
+  const ENV={abyss:{fog:[.0015,.006,.013],lit:[.022,.08,.13],top:[.003,.016,.03],sun:[.45,.85,1],body:[.006,.01,.015],shafts:1.2,surface:26,caust:1,t:0},
+    'forest-floor':{fog:[.0018,.003,.01],lit:[.028,.048,.12],top:[.002,.005,.014],sun:[.7,.8,1],body:[.007,.009,.014],shafts:.9,surface:60,caust:.35,t:1},
+    cavern:{fog:[.002,.006,.007],lit:[.05,.1,.085],top:[.001,.003,.003],sun:[.8,.95,.8],body:[.008,.01,.01],shafts:.8,surface:40,caust:.5,t:2}};
+  const env=ENV[terrain]||ENV.abyss;
+  const tint=(a,k)=>{const h=new THREE.Vector3(pal.haze.r,pal.haze.g,pal.haze.b);const m=Math.max(.05,h.x,h.y,h.z);return new THREE.Vector3(...a).lerp(h.multiplyScalar(Math.max(...a)/m),k);};
+  const fogC=tint(env.fog,.12),fogLit=tint(env.lit,.08);
+  const acc=new THREE.Vector3(pal.accent.r,pal.accent.g,pal.accent.b),seasonLit=fogLit.clone().lerp(acc.clone().multiplyScalar(Math.max(...env.lit)/Math.max(.05,acc.x,acc.y,acc.z)),.6),seasonFog=fogC.clone().lerp(acc.clone().multiplyScalar(Math.max(...env.fog)/Math.max(.05,acc.x,acc.y,acc.z)),.5);
+  // Bioluminescence compresses toward 1 so the catalogue's extremes stay readable (0.2 -> 0.64, 2 -> 1.45).
+  const fogK=num(ATM.fog,.7),lum=.55+.45*num(MAT.bioluminescence,1);
+  const orgColors=Array.from({length:MAXO},()=>new THREE.Vector4(1,1,1,1)),orgSpecies=Array.from({length:MAXO},()=>new THREE.Vector4(0,1,0,0));
+  const orgValue=new Float32Array(MAXO).fill(1);
+  const palU=[pal.primary,pal.primary,pal.secondary,pal.accent,pal.highlight,pal.valid].map(c=>new THREE.Vector3(c.r,c.g,c.b));
+  const current=num(MOT.current,0);
+  const U={uT:{value:0},uV:{value:0},uSpeed:{value:1},uSwayAmp:{value:num(MOT.sway,.9)},uSwayT:{value:0},uFlow:{value:num(MOT.flow,1)},uLum:{value:lum*1.15},uBreath:{value:.12},
+    uIntensity:{value:1},uPx:{value:1},uFogD:{value:.007+.011*fogK},uFogH:{value:.35},uFogFar:{value:28},uTurb:{value:.4+.8*num(MOT.turbulence,.6)},uBark:{value:.4+1.6*num(MAT.bark,.45)},uTrans:{value:num(MAT.translucency,.55)},uRoots:{value:.3+1.1*num(G.space?.rootVisibility,.6)},uVeins:{value:0},uCur:{value:new THREE.Vector2(Math.cos(current),Math.sin(current))},
+    uLean:{value:new THREE.Vector2()},uRes:{value:new THREE.Vector2(1920,1080)},uOrg:{value:Array.from({length:MAXO},()=>new THREE.Vector4(0,0,1,1))},uOrgB:{value:Array.from({length:MAXO},()=>new THREE.Vector4(1,0,0,0))},
+    uBL:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,0))},uBLC:{value:Array.from({length:8},()=>new THREE.Vector4(1,1,1,1))},uOrgC:{value:orgColors},uOrgS:{value:orgSpecies},uPal:{value:palU},
+    uFogC:{value:fogC.clone()},uFogLit:{value:fogLit.clone()},uLightDir:{value:new THREE.Vector3(0,1,0)},uBody:{value:new THREE.Vector3(...env.body)},
+    uWave:{value:Array.from({length:8},()=>new THREE.Vector4(-1,-1e5,1,1))},uWaveC:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,1))},uState:{value:null}};
+  // ---- Module state texture (2 texels per module: state, pulse) ----------------------------------------------------
+  let stateTex=null,stateData=null;
+  function ensureState(n){n=Math.max(1,n);if(stateTex&&stateTex.image.height>=n)return;stateTex?.dispose();
+    const h=Math.max(16,1<<Math.ceil(Math.log2(n)));stateData=new Float32Array(2*h*4);
+    stateTex=new THREE.DataTexture(stateData,2,h,THREE.RGBAFormat,THREE.FloatType);stateTex.minFilter=stateTex.magFilter=THREE.NearestFilter;stateTex.needsUpdate=true;U.uState.value=stateTex;}
+  ensureState(16);
+  // ---- Branches: two instanced tube meshes (structure: smooth; fine stems and roots: cheaper) ------------------------
+  const SEG_LAYOUT={iA:4,iB:4,iC1:4,iC2:4,iT:4,iM:4};
+  const tube=(radial,height)=>{const g=new THREE.CylinderGeometry(1,1,1,radial,height,true);g.translate(0,.5,0);g.deleteAttribute('normal');g.deleteAttribute('uv');return g;};
+  const thickGeo=tube(10,5),fineGeo=tube(5,2);
+  const thick=instancedBuffers(thickGeo,SEG_LAYOUT,512),fine=instancedBuffers(fineGeo,SEG_LAYOUT,1024);
+  const segMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:SEG_VS,fragmentShader:SEG_FS,side:THREE.DoubleSide});
+  const thickMesh=new THREE.Mesh(thick.geometry,segMat),fineMesh=new THREE.Mesh(fine.geometry,segMat);
+  for(const m of [thickMesh,fineMesh]){m.frustumCulled=false;scene.add(m);}
+  // ---- Crowns: one instanced mesh per recursive template (rebuilt only when the level of detail changes) -------------
+  const CROWN_LAYOUT={tA:4,tB:4,tC:4,tD:4,tM:4};
+  const crownSets={};let crownLite=null;
+  function makeCrowns(lite){
+    for(const key of CROWN_KEYS){const old=crownSets[key];if(old){scene.remove(old.mesh);old.mesh.geometry.dispose();old.base.dispose();old.material.dispose();}
+      const name=key.split(':')[0],C=buildCrown(key,lite,crownDecay(G)),g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(C.pos,3));g.setAttribute('aO',new THREE.BufferAttribute(C.aO,4));g.setAttribute('aS',new THREE.BufferAttribute(C.aS,4));
+      g.setAttribute('aP',new THREE.BufferAttribute(C.aP,4));g.setAttribute('aA',new THREE.BufferAttribute(C.aA,1));g.setIndex(new THREE.BufferAttribute(C.index,1));
+      const buf=instancedBuffers(g,CROWN_LAYOUT,64);
+      const material=new THREE.ShaderMaterial({uniforms:{...U,uCrownD:{value:C.maxD},uTwist:{value:CROWN_TWIST[name]},uTipBreath:{value:name==='fan'?1:.5}},vertexShader:CROWN_VS,fragmentShader:SEG_FS,side:THREE.DoubleSide});
+      const mesh=new THREE.Mesh(buf.geometry,material);mesh.frustumCulled=false;mesh.visible=false;scene.add(mesh);
+      crownSets[key]={base:g,buf,material,mesh,count:0};}
+    crownLite=lite;
   }
-  let segModules=[],leafModules=[],leafFlex=[];
-  // ---- Agents: firefly swarms ------------------------------------------------------------------------------
-  const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'].map(c=>new THREE.Color(c));
-  const agentState=new Map();
-  function swayed(p,flex,tv){const h=Math.max(0,p.y),k=flex*h*h*.012*common.uSway.value,dx=Math.cos(common.uCurrent.value),dz=Math.sin(common.uCurrent.value),ph=(p.x*dx+p.z*dz)*.35;
-    const a=Math.sin(tv*.55+ph)+.45*Math.sin(tv*1.27+p.x*.6+p.z*.4)+.25*Math.sin(tv*2.3+p.z*1.1),b=Math.cos(tv*.43+p.z*.5)*.6+.3*Math.sin(tv*1.9+p.x*.8);
-    return new THREE.Vector3(p.x+(dx*a+dz*b*.4)*k,p.y-Math.abs(a)*.08*k,p.z+(dz*a-dx*b*.4)*k);}
+  // ---- Leaves and glows ----------------------------------------------------------------------------------------------
+  const leafGeo=new THREE.PlaneGeometry(1,1,1,6);leafGeo.deleteAttribute('normal');leafGeo.deleteAttribute('uv');
+  const leaves=instancedBuffers(leafGeo,{lP:4,lD:4,lW:4,lM:4},512);
+  const leafMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LEAF_VS,fragmentShader:LEAF_FS,transparent:true,depthWrite:false,side:THREE.DoubleSide});
+  const leafMesh=new THREE.Mesh(leaves.geometry,leafMat);leafMesh.frustumCulled=false;leafMesh.renderOrder=2;scene.add(leafMesh);
+  const glows=pointBuffers({gP:4,gG:4,gM:4},512);
+  const glowMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:GLOW_VS,fragmentShader:GLOW_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+  const glowPoints=new THREE.Points(glows.geometry,glowMat);glowPoints.frustumCulled=false;glowPoints.renderOrder=4;scene.add(glowPoints);
+  // ---- Ground ------------------------------------------------------------------------------------------------------
+  const moss=pal.primary.clone().lerp(pal.valid,.35);
+  const groundU={...U,uScale:{value:200},uCentre:{value:new THREE.Vector2()},uOrgN:{value:0},uMoss:{value:new THREE.Vector3(moss.r,moss.g,moss.b)},
+    uWeb:{value:new THREE.Vector3(pal.accent.r,pal.accent.g,pal.accent.b).lerp(new THREE.Vector3(pal.highlight.r,pal.highlight.g,pal.highlight.b),.3)},
+    uRipple:{value:Array.from({length:6},()=>new THREE.Vector4(0,0,0,-1e5))},uRippleC:{value:Array.from({length:6},()=>new THREE.Vector4(1,1,1,4))},uUnlock:{value:new THREE.Vector4()},
+    uWebK:{value:num(SEC.veins,.7)*(species==='mycelial'?1.6:1)},uTideK:{value:1},uCaustK:{value:env.caust*(.4+.6*num(ATM.lightShafts,.7))}};
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:groundU,vertexShader:GROUND_VS,fragmentShader:GROUND_FS}));
+  ground.frustumCulled=false;ground.renderOrder=-2;scene.add(ground);
+  // ---- Light shafts: soft sheets slanting down from the light through the whole scene ----------------------------
+  const SHAFTS=9,shaftGeo=new THREE.PlaneGeometry(1,1,1,4);shaftGeo.deleteAttribute('normal');shaftGeo.deleteAttribute('uv');
+  const shafts=instancedBuffers(shaftGeo,{sP:4},SHAFTS);const shaftU=Array.from({length:SHAFTS},()=>new THREE.Vector4());
+  const shaftBase=num(ATM.lightShafts,.7)*env.shafts*.9;
+  const shaftMat=new THREE.ShaderMaterial({uniforms:{...U,uShaftL:{value:30},uShaftK:{value:shaftBase}},vertexShader:SHAFT_VS,fragmentShader:SHAFT_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+  const shaftMesh=new THREE.Mesh(shafts.geometry,shaftMat);shaftMesh.frustumCulled=false;shaftMesh.renderOrder=8;scene.add(shaftMesh);
+  // ---- Columns of light (checkpoints) --------------------------------------------------------------------------------
+  const PILLARS=6,pillarGeo=new THREE.PlaneGeometry(1,1,1,8);pillarGeo.deleteAttribute('normal');pillarGeo.deleteAttribute('uv');
+  const pillars=instancedBuffers(pillarGeo,{pK:1},PILLARS);for(let k=0;k<PILLARS;k++)pillars.write('pK',k,k);pillars.commit(PILLARS);
+  const pillarU={uCol:{value:Array.from({length:PILLARS},()=>new THREE.Vector4(0,0,-1e5,1))},uColC:{value:Array.from({length:PILLARS},()=>new THREE.Vector4())}};
+  const pillarMat=new THREE.ShaderMaterial({uniforms:{...U,...pillarU},vertexShader:PILLAR_VS,fragmentShader:PILLAR_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+  const pillarMesh=new THREE.Mesh(pillars.geometry,pillarMat);pillarMesh.frustumCulled=false;pillarMesh.renderOrder=8;scene.add(pillarMesh);let pillarNext=0;
+  // ---- Low mist: two drifting sheets near the ground, lit by the light above and by the organisms' glow (per vertex) --
+  const mistGeo=new THREE.PlaneGeometry(2,2,40,40);mistGeo.deleteAttribute('normal');mistGeo.deleteAttribute('uv');
+  const mist=instancedBuffers(mistGeo,{mY:4},2);mist.write('mY',0,.5,1,1,.13);mist.write('mY',1,1.6,.6,.55,.71);mist.commit(2);
+  const mistMat=new THREE.ShaderMaterial({uniforms:{...groundU,uMistK:{value:.5+.5*fogK},uMistR:{value:30}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+    vertexShader:`${COMMON}uniform vec2 uCentre;uniform float uMistR;uniform int uOrgN;attribute vec4 mY;varying vec3 vW,vGlow;varying vec4 vM;
+      void main(){vec3 p=vec3(uCentre.x+position.x*uMistR,mY.x,uCentre.y-position.y*uMistR);vW=p;vM=mY;vec3 glow=vec3(0.);
+        for(int i=0;i<MAXO;i++){if(i>=uOrgN)break;vec4 o=uOrg[i];float R=max(1.5,o.z*.6);float d=distance(p.xz,o.xy);glow+=satc(uOrgC[i].rgb)*exp(-d*d/(R*R))*(.6+uOrgS[i].w*2.+uOrgS[i].z*2.);}
+        vGlow=glow*(1.-smoothstep(.75,1.,max(abs(position.x),abs(position.y))));gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
+    fragmentShader:`${COMMON}uniform float uMistK,uMistR;uniform vec2 uCentre;varying vec3 vW,vGlow;varying vec4 vM;
+      void main(){vec2 p=vW.xz;vec2 f=uCur*uV*.05*vM.y;float n=vnoise((p-f)*.05+vM.w*9.)*.7+.35*vnoise((p+f*1.7)*.13+vM.w*5.+uV*.01);
+        float dens=smoothstep(-.3,.8,n);float d=length(vW-cameraPosition);vec3 e=(vW-cameraPosition)/max(d,1e-3);
+        // A sheet seen edge-on (or near its rim) fades away: no line across the horizon.
+        float fade=smoothstep(1.5,6.,d)*(1.-fogAmount(vW))*smoothstep(.04,.22,abs(e.y))*(1.-smoothstep(uMistR*.55,uMistR*.95,length(vW.xz-uCentre)));
+        vec3 c=(uFogLit*.25+vGlow*1.6)*dens*vM.z*.11*uMistK*fade*(1.+uBreath*sin(uV*.4+vM.w*5.));
+        gl_FragColor=vec4(c,1.);}`});
+  const mistMesh=new THREE.Mesh(mist.geometry,mistMat);mistMesh.frustumCulled=false;mistMesh.renderOrder=7;scene.add(mistMesh);
+  // ---- Mycelial cords (dependencies) -------------------------------------------------------------------------------
+  const RSEG=40;const ribbon=(()=>{const g=new THREE.BufferGeometry(),t=[],side=[],idx=[];
+    for(let i=0;i<=RSEG;i++){t.push(i/RSEG,i/RSEG);side.push(-1,1);if(i<RSEG){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
+    g.setAttribute('position',new THREE.Float32BufferAttribute(new Array((RSEG+1)*2*3).fill(0),3));g.setAttribute('aT',new THREE.Float32BufferAttribute(t,1));g.setAttribute('aSide',new THREE.Float32BufferAttribute(side,1));g.setIndex(idx);return g;})();
+  const cords=instancedBuffers(ribbon,{cA:4,cB:4,cI:4,cD:4,cCA:3,cCB:3},128);
+  const cordMat=new THREE.ShaderMaterial({uniforms:{...U,uTendrils:{value:.3+1.2*num(SEC.tendrils,.75)}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+    vertexShader:`${COMMON}attribute float aT,aSide;attribute vec4 cA,cB,cI,cD;attribute vec3 cCA,cCB;varying float vT,vSide,vAl,vKind,vSeed,vW8,vFog,vNew;varying vec3 vC;
+      vec3 path(float t){vec3 a=cA.xyz,b=cB.xyz;float kind=cA.w;float L=distance(a.xz,b.xz);
+        if(kind<.5){vec3 dir=normalize(b-a+1e-4);vec3 sd=normalize(vec3(-dir.z,0.,dir.x));vec3 p=mix(a,b,t);
+          p+=sd*sin(t*3.1416*2.+cI.z*12.)*.05*L*sin(3.1416*t)+vec3(0.,.03+.02*sin(3.1416*t),0.);
+          float ph=t*L*1.1+cD.z*2.094+cI.z*6.;p+=(sd*cos(ph)+vec3(0.,1.,0.)*sin(ph)*.6)*.07*(.6+.4*sin(3.1416*t))*step(1.5,cD.w);return p;}
+        vec3 ga=grown(a,cA.w-1.),gb=grown(b,cB.w);vec3 pa=ga+sway(ga,cD.x*orgScale(cA.w-1.),cA.w-1.),pb=gb+sway(gb,cD.y*orgScale(cB.w),cB.w);vec3 p=mix(pa,pb,t);p.y-=sin(3.1416*t)*(.15+.12*distance(a,b));return p;}
+      void main(){float age=(uT-cI.x)/uSpeed;float grow=clamp(age/2.6,0.,1.);float gone=cI.y<1e5?clamp((uT-cI.y)/uSpeed/1.5,0.,1.):0.;
+        vec3 p=path(aT),q=path(min(1.,aT+.02));if(aT>.98)q=p+(p-path(aT-.02));
+        vec4 cp=projectionMatrix*viewMatrix*vec4(p,1.),cq=projectionMatrix*viewMatrix*vec4(q,1.);vec2 dir=normalize((cq.xy/cq.w-cp.xy/cp.w)*uRes+1e-5);vec2 nrm=vec2(-dir.y,dir.x);
+        float w=(cA.w<.5?3.2:1.1)*uPx*(1.+(1.-smoothstep(0.,3.,age))*1.2);cp.xy+=nrm*aSide*w/uRes*2.*cp.w;gl_Position=cp;
+        vT=aT;vSide=aSide;vAl=(aT<=grow?1.:0.)*(1.-gone);vKind=cA.w<.5?0.:1.;vSeed=cI.z;vW8=cI.w;vC=satc(mix(cCA,cCB,aT));
+        vFog=1.-fogAmount(p);vNew=(1.-smoothstep(2.,6.,age))*exp(-sq((aT-grow)*12.));}`,
+    fragmentShader:`uniform float uV,uFlow,uLum,uTendrils;varying float vT,vSide,vAl,vKind,vSeed,vW8,vFog,vNew;varying vec3 vC;
+      void main(){if(vAl<.01)discard;float edge=1.-vSide*vSide;float p=fract(vT*(vKind<.5?3.:2.)-uV*(.12+.08*uFlow)+vSeed);
+        float pulse=smoothstep(0.,.2,p)*smoothstep(.6,.2,p);float k=vKind<.5?(.008+pulse*.025)*vW8:(.03+pulse*.15)*vW8*uTendrils;
+        // Rhizomes: a dark cord with a dim living core (the light of a new strand runs along it once).
+        gl_FragColor=vec4(vC*(edge*edge*k+edge*vNew*2.5)*vAl*vFog*uLum,1.);}`});
+  const cordMesh=new THREE.Mesh(cords.geometry,cordMat);cordMesh.frustumCulled=false;cordMesh.renderOrder=1;scene.add(cordMesh);
+  // ---- Atmosphere: motes in the shafts and in the glow around each crown (and, when unlocked, fireflies near the
+  // organisms and drifting petals), with depth of field: soft discs near the lens, fine points far away -------------
+  const moteN=Math.round(420+620*num(ATM.spores,.75)),FLIES=120,PETALN=60,AIRN=moteN+FLIES+PETALN;
+  const air=pointBuffers({pI:4},AIRN);
+  {const r=rng(hash(`air/${seed}`));
+    for(let i=0;i<AIRN;i++){const kind=i<moteN?(r()<.62?0:r()<.9?1:4):i<moteN+FLIES?2:3;air.write('position',i,r(),r(),r());air.write('pI',i,r(),.4+r()*1.4,r()*6.283,kind);}
+    air.commit(AIRN);}
+  const moteC=fogLit.clone().normalize().lerp(new THREE.Vector3(pal.highlight.r,pal.highlight.g,pal.highlight.b),.45);
+  const airMat=new THREE.ShaderMaterial({uniforms:{...U,uBox:{value:new THREE.Vector3(40,14,40)},uBoxC:{value:new THREE.Vector3()},uRise:{value:terrain==='abyss'?-.35:.3},uSpores:{value:num(ATM.spores,.75)},
+      uFlies:{value:num(ATM.fireflies,.7)},uUnlock:{value:new THREE.Vector4()},uMotion:{value:1},uShaft:{value:shaftU},uOrgN:{value:0},uFocus:{value:10},uMoteC:{value:moteC},uFlyC:{value:new THREE.Color('#ffd98a').lerp(pal.valid,.3)},uPetalC:{value:pal.secondary.clone().lerp(pal.highlight,.25)}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`${COMMON}
+      uniform vec3 uBox,uBoxC,uMoteC,uFlyC,uPetalC;uniform float uRise,uMotion,uFlies,uFocus;uniform vec4 uUnlock,uShaft[9];uniform int uOrgN;attribute vec4 pI;varying vec3 vC;varying float vA,vK,vR,vBok;
+      void main(){float kind=pI.w,sp=pI.y,ph=pI.z,rn=pI.x;float tv=uV*uMotion;vec3 u=position;
+        u.y=fract(u.y+tv*uRise*.004*sp*(kind>2.5&&kind<3.5?-1.6:1.));
+        vec3 p;vec3 c=uMoteC;float vis=1.,size=1.4;
+        if(kind<.5){
+          // In a shaft: along its slanting column, within its width; bright where it catches the light.
+          int k=int(rn*8.999);vec4 S=uShaft[k];vec3 L=normalize(uLightDir);float drift=sin(uV*.013+S.w*6.)*S.z*.8;vec3 b=vec3(S.x+drift*L.z,0.,S.y-drift*L.x);
+          vec3 e1=normalize(cross(L,vec3(0.,1.,0.))),e2=cross(L,e1);float hgt=u.y*uBox.y*1.15;
+          vec2 o=vec2(u.x-.5,u.z-.5);o+=vec2(sin(tv*.11*sp+ph),cos(tv*.09*sp+ph*2.))*.08;
+          p=b+L*(hgt/max(.3,L.y))+(e1*o.x+e2*o.y)*S.z*1.4;vis=exp(-dot(o,o)*7.)*(.55+.45*sin(uV*.05+S.w*11.));c*=1.2;
+        }else if(kind<1.5){
+          // Around a crown: a slow halo of motes within one and a half radii, lit by the organism's colour.
+          if(uOrgN<1){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;return;}
+          int k=int(fract(rn*7.31)*float(uOrgN));vec4 o=uOrg[k];float R=max(1.,o.z*.45)*1.5;vec3 cc=vec3(o.x,o.z*.62,o.y);
+          vec3 d=normalize(vec3(u.x-.5,(fract(u.y)-.5)*.8,u.z-.5)+1e-3);float rr=pow(fract(rn*13.7+.37),.4);float a=tv*.03*sp+ph;
+          d.xz=mat2(cos(a),-sin(a),sin(a),cos(a))*d.xz;p=cc+d*R*rr+vec3(0.,sin(tv*.13*sp+ph)*.3,0.);
+          c=mix(uMoteC,satc(uOrgC[k].rgb),.55);vis=.55*(1.-rr*.6)*(1.+uOrgS[k].w*2.)*step(fract(rn*91.7),.1+.1*float(uOrgN));
+        }else if(kind<2.5){
+          // Fireflies (unlocked): low around the organisms, blinking.
+          if(uOrgN<1){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;return;}
+          int k=int(fract(rn*5.17)*float(uOrgN));vec4 o=uOrg[k];float R=max(1.,o.z*.45)*(.7+.9*u.x);float a=ph+tv*.05*sp;
+          p=vec3(o.x+cos(a)*R,.3+u.z*o.z*.7,o.y+sin(a)*R)+vec3(sin(tv*.9+ph*5.),sin(tv*1.4+ph*3.)*.4,cos(tv*.8+ph*7.))*.5;
+          vis=uUnlock.x*uFlies*pow(max(0.,sin(tv*(.9+sp*.6)+ph*11.)),6.);size=2.6;c=uFlyC*3.;
+        }else if(kind<3.5){
+          p=uBoxC+(vec3(fract(u.x+tv*uCur.x*.0025*sp),u.y,fract(u.z+tv*uCur.y*.0025*sp))-vec3(.5,0.,.5))*uBox;vis=uUnlock.y*.7;size=3.2;c=uPetalC*.8;
+        }else{
+          p=uBoxC+(vec3(fract(u.x+tv*uCur.x*.0025*sp),u.y,fract(u.z+tv*uCur.y*.0025*sp))-vec3(.5,0.,.5))*uBox;vis=.05;
+        }
+        vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;float z=max(.3,-mv.z);
+        // Depth of field: discs in front of the focus, fine points behind it (the light they carry is kept).
+        float coc=(max(0.,uFocus-z)/z*12.+max(0.,z-uFocus)/z*1.2)*uPx;float s0=max(1.2*uPx,size*.035*px/z);float ps=s0+coc;
+        // Only a few motes near the lens become soft discs (a clean lens, not a dusty one).
+        if(ps>5.*uPx&&fract(rn*37.13)>.3)vis=0.;
+        gl_PointSize=clamp(ps,1.,(kind>1.5&&kind<2.5?14.:22.)*uPx);vBok=smoothstep(4.,9.,ps);
+        vC=c*min(1.,sq(s0/ps)*1.6+.006)*(1.-.5*smoothstep(4.,12.,ps));vK=kind;vR=ph+tv*(.3+sp*.2);
+        vA=vis*(1.-fogAmount(p)*.9)*smoothstep(.0,.06,u.y)*smoothstep(1.,.85,u.y)*smoothstep(1.2,3.5,z);}`,
+    fragmentShader:`uniform float uSpores;varying vec3 vC;varying float vA,vK,vR,vBok;void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q)*4.;if(r>1.)discard;
+      float g=mix(exp(-r*3.),smoothstep(1.,.8,r)*(.75+.25*smoothstep(.4,.95,r)),vBok);
+      if(vK>2.5&&vK<3.5){float c=cos(vR),s=sin(vR);vec2 z=mat2(c,-s,s,c)*q*2.;float m=smoothstep(.5,.3,abs(z.x)*1.8+z.y*z.y*1.2);g=m*.8;}
+      gl_FragColor=vec4(vC*g*vA*(vK<1.5||vK>3.5?uSpores*.9:1.),1.);}`});
+  const airPoints=new THREE.Points(air.geometry,airMat);airPoints.frustumCulled=false;airPoints.renderOrder=5;scene.add(airPoints);
+  // ---- Bursts (pooled emitters: seedling bursts, spore plumes, embers of decay, falling leaves) ----------------------
+  const BURSTS=20,PER=96,burstPts=pointBuffers({bD:4,bE:2},BURSTS*PER);
+  {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*6.283,s=Math.sqrt(1-u*u);const i=b*PER+k;burstPts.write('bD',i,Math.cos(a)*s,Math.abs(u),Math.sin(a)*s,b+r()*.98);burstPts.write('bE',i,r(),r());}burstPts.commit(BURSTS*PER);}
+  const burstU={uBA:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(0,0,0,-1e5))},uBB:{value:Array.from({length:BURSTS},()=>new THREE.Vector4())},uBC:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(1,0,1,0))}};
+  const burstMat=new THREE.ShaderMaterial({uniforms:{...U,...burstU},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`${COMMON}attribute vec4 bD;attribute vec2 bE;uniform vec4 uBA[${BURSTS}],uBB[${BURSTS}],uBC[${BURSTS}];varying vec3 vC;varying float vA;
+      void main(){int b=int(bD.w);float r=fract(bD.w);vec4 A=uBA[b],B=uBB[b],C=uBC[b];
+        // Each particle leaves at its own moment and speed (no visible lattice).
+        float age=((uT-A.w)/uSpeed-bE.x*C.x*.3)/(C.x*(.75+.5*bE.y));
+        if(age<0.||age>1.){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vA=0.;return;}
+        vec3 dir=bD.xyz;float mode=C.y;vec3 p;float fade=1.-age;float wob=sin(age*7.+r*40.)*.12;
+        if(mode<.5){p=A.xyz+dir*(1.-pow(1.-age,2.5))*C.z*(.25+.75*r)+vec3(wob,age*age*.5,cos(age*6.+r*30.)*.12);}
+        else if(mode<1.5){float spread=C.z*(.18+.5*r*r);p=A.xyz+vec3(dir.x*spread*sqrt(age),age*C.z*(1.4+1.8*bE.y)+dir.y*.25,dir.z*spread*sqrt(age))+vec3(wob,0.,cos(age*5.+r*20.)*.1);p.xz+=uCur*age*age*C.z*.4;fade=sin(3.1416*min(1.,age*1.1));}
+        else if(mode<2.5){
+          // Embers of decay: few, dull, falling (never a festive cloud).
+          if(bE.y>.33){gl_Position=vec4(2.,2.,2.,1.);gl_PointSize=0.;vA=0.;return;}
+          p=A.xyz+vec3(dir.x,0.,dir.z)*C.z*(.3+.5*r)*sqrt(age)+vec3(sin(age*4.+r*20.)*.1,-age*age*C.z*1.4-age*.25,cos(age*3.+r*13.)*.1);fade=(1.-age)*.8;}
+        else{p=A.xyz+vec3(dir.x,0.,dir.z)*C.z*.5*age+vec3(sin(age*9.+r*20.)*.15,-age*age*C.z*1.6,cos(age*7.+r*13.)*.15);fade=1.-age*age;}
+        vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;
+        gl_PointSize=clamp(B.w*.08*px/max(.4,-mv.z)*(.5+.6*bE.y),1.5,24.*uPx);vC=B.rgb;vA=fade*(1.-fogAmount(p)*.8);}`,
+    fragmentShader:`varying vec3 vC;varying float vA;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*(exp(-r*4.)+exp(-r*18.))*vA,1.);}`});
+  const burstPoints=new THREE.Points(burstPts.geometry,burstMat);burstPoints.frustumCulled=false;burstPoints.renderOrder=6;scene.add(burstPoints);let burstNext=0;
+  // ---- Lasting blooms: phyllotactic flowers (milestones) and crystalline stars (refactors), drawn with the world's
+  // materials -----------------------------------------------------------------------------------------------------------
+  const bloomSeg=instancedBuffers(fineGeo,SEG_LAYOUT,256),bloomGlow=pointBuffers({gP:4,gG:4,gM:4},128),bloomLeaf=instancedBuffers(leafGeo,{lP:4,lD:4,lW:4,lM:4},256);let bloomCount=0;
+  const bloomLeafMesh=new THREE.Mesh(bloomLeaf.geometry,leafMat);bloomLeafMesh.frustumCulled=false;bloomLeafMesh.renderOrder=3;scene.add(bloomLeafMesh);
+  const bloomMesh=new THREE.Mesh(bloomSeg.geometry,segMat);bloomMesh.frustumCulled=false;scene.add(bloomMesh);
+  const bloomPoints=new THREE.Points(bloomGlow.geometry,glowMat);bloomPoints.frustumCulled=false;bloomPoints.renderOrder=4;scene.add(bloomPoints);
+  // ---- Background -------------------------------------------------------------------------------------------------
+  const sky=new THREE.ShaderMaterial({uniforms:{...U,uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uTop:{value:new THREE.Vector3(...env.top)},uSun:{value:new THREE.Vector3(...env.sun)},
+      uShafts:{value:num(ATM.lightShafts,.7)*env.shafts},uAbyss:{value:terrain==='abyss'?1:0},uSurface:{value:env.surface},uTerrain:{value:env.t},uUnlock:groundU.uUnlock},vertexShader:BACKGROUND_VS,fragmentShader:SKY_FS,depthWrite:false,depthTest:false});
+  // ---- Structure ------------------------------------------------------------------------------------------------------
+  let forest=null,builtVersion=-1,builtQuality=-1,extent=6,canopyH=4,worldExtent=6;const centre=new THREE.Vector3();
+  const orgs=new Map(),orgList=[];
+  function copy(buf,packed,stride,names){const n=packed.length/stride;buf.ensure(n);
+    names.forEach((name,a)=>{const arr=buf.arrays[name];for(let i=0;i<n;i++){const o=i*stride+a*4,t=i*4;arr[t]=packed[o];arr[t+1]=packed[o+1];arr[t+2]=packed[o+2];arr[t+3]=packed[o+3];}buf.dirty(name);});
+    buf.commit(n);return n;}
+  const SEG_NAMES=['iA','iB','iC1','iC2','iT','iM'],CROWN_FIELDS=['tA','tB','tC','tD','tM'];
+  const counts={thick:0,fine:0,crowns:0,far:0,leaves:0,glows:0,cords:0};
+  // The establishing composition (from the organisms' rest sizes; it changes only when the structure does).
+  let comp=null;const Sof0=o=>.7+.17*Math.log2(1+o.members.length);
+  function compose(){
+    const fov=num(CAM.fov,38),tanV=Math.tan(THREE.MathUtils.degToRad(fov)/2),aspect=camera.aspect||16/9,tanH=tanV*aspect;
+    const list=orgList.filter(o=>o.removed>=1e5);if(!list.length){comp=null;return;}
+    const BEAUTY={coral:1.5,'crystal-tree':1.25,fern:.6,kelp:.25,mycelial:.3},mass=o=>{const S=Sof0(o);return Math.pow(o.height*S,1.6)*Math.sqrt(o.radius*S+.6)*(BEAUTY[o.species]||1);};
+    const A=list.reduce((a,o)=>!a||mass(o)>mass(a)?o:a,null),SA=Sof0(A),HA=A.height*SA,RA=A.radius*SA;
+    const xa0=list.length>1?.36:.18,base=rand(seed)*6.283;let best=null,bs=-Infinity;
+    for(let j=0;j<24;j++)for(const s of [-1,1]){
+      const phi=base+j*Math.PI/12,V=[Math.cos(phi),Math.sin(phi)],R=[-V[1],V[0]],xa=s*xa0;
+      const dA=Math.max(HA*.5/(tanV*.8),RA*1.15/(tanH*(1-Math.abs(xa)*.8)),1.6+HA*.6)*num(CAM.distance,1);
+      const C=[A.root[0]-V[0]*dA-R[0]*xa*dA*tanH,A.root[2]-V[1]*dA-R[1]*xa*dA*tanH];let score=0;
+      for(const o of list){if(o===A)continue;const w=Math.sqrt(mass(o)),S=Sof0(o),dx=o.root[0]-C[0],dz=o.root[2]-C[1],z=dx*V[0]+dz*V[1],x=dx*R[0]+dz*R[1],r=o.radius*S;
+        if(z<dA*.8){const near=z>.3?(Math.abs(x)-r)/(z*tanH):(Math.abs(x)-r>0?9:0);if(near<1.05)score-=2.5*Math.max(w,Math.sqrt(o.height*S)*1.5);continue;}
+        const ndc=x/(z*tanH),half=r/(z*tanH);
+        if(Math.abs(ndc)<.98)score+=w*(1+.7*clamp(-Math.sign(xa)*ndc+.15))+.5*w*clamp((z-dA)/(extent+2));else score+=.1*w;
+        // A near organism cut by the frame's edge is a distraction (it reads as a pole across the image).
+        if(Math.abs(ndc)-half<1&&Math.abs(ndc)+half>1)score-=1.2*w*clamp(1.6-(z-dA)/(extent+2));}
+      // A sea fan is seen face-on; otherwise prefer the seed's own direction a little.
+      if(A.fan)score+=1.4*Math.sqrt(mass(A))*Math.abs(A.fan[0]*V[0]+A.fan[2]*V[1]);
+      score-=.004*j;
+      if(score>bs){bs=score;best={V,R,xa,dA,A,HA,RA,phi,C,tanV,tanH,aspect};}}
+    comp=best;
+    // The light: in the upper third of the establishing view, on the side away from the anchor, so its shafts cut
+    // through the silhouettes (a pure function of the composition).
+    const v=viewOf(1),pitch=-v.el,V=comp.V,R=comp.R,cp=Math.cos(pitch),sp=Math.sin(pitch);
+    const f=[V[0]*cp,sp,V[1]*cp],up=[-V[0]*sp,cp,-V[1]*sp],lx=-Math.sign(comp.xa||1)*.42*tanH,ly=.62*tanV;
+    comp.light=new THREE.Vector3(f[0]+R[0]*lx+up[0]*ly,f[1]+up[1]*ly,f[2]+R[1]*lx+up[2]*ly).normalize();
+    // Brightness budget: the anchor at full light, the others about one stop lower per band of depth behind it.
+    const band=Math.max(6,extent*.8);
+    for(const o of orgList){const k=o.index%MAXO,dx=o.root[0]-comp.C[0],dz=o.root[2]-comp.C[1],z=dx*V[0]+dz*V[1];
+      const b=o===comp.A?1:z<comp.dA?.8:Math.pow(.5,(z-comp.dA)/band);U.uOrgB.value[k].x=clamp(b,.4,1)*(o===comp.A?1:orgValue[k]);}
+  }
+  // The establishing view for the composition (k: the anchor's current size relative to its rest size).
+  function viewOf(k){const A=comp.A,dA=Math.max(1.6,comp.dA*k),crane=CAM.personality==='crane';
+    const C=[A.root[0]-comp.V[0]*dA-comp.R[0]*comp.xa*dA*comp.tanH,A.root[2]-comp.V[1]*dA-comp.R[1]*comp.xa*dA*comp.tanH];
+    const HA=comp.HA*k,RA=comp.RA*k,low=clamp(1-HA/(RA*1.6));
+    // Tall organisms are seen from low, looking up; low wide ones (a fern colony, a mycelial mat) from a little above.
+    const yc=lerp(HA*(crane?.36:.26),HA*.8+dA*.12,low),yt=lerp(HA*.52,HA*.3,low);
+    return {target:new THREE.Vector3(C[0]+comp.V[0]*dA,yt,C[1]+comp.V[1]*dA),distance:Math.hypot(dA,yt-yc),az:Math.atan2(-comp.V[1],-comp.V[0]),el:Math.atan2(yc-yt,dA)};}
+  // Giant far organisms in the haze (the reef / forest goes on beyond the project's own): silhouettes only, no data.
+  // Three depth layers (parallax), several forms (fan walls, columns, forks), never behind the anchor's own silhouette.
+  function farLayer(lite){
+    const out={};if(!comp||!orgList.length)return out;
+    const r=rng(hash(`far/${seed}`)),N=lite?7:13,forms=terrain==='cavern'?['shard','hypha','shard']:['fan','shard','fan','hypha'];
+    const reach=extent*2.4+34,hz=Math.max(.6,Math.min(1.5,canopyH/5)),fwd=Math.atan2(comp.V[1],comp.V[0]);
+    for(let k=0,tries=0;k<N&&tries<N*6;tries++){
+      const layer=k%3,name=forms[Math.floor(r()*forms.length)],v=Math.floor(r()*CROWN_VARIANTS)%CROWN_VARIANTS;
+      const off=(r()-.5)*2*Math.atan(comp.tanH*1.25),ndc=Math.tan(off)/comp.tanH;
+      // The side of the anchor stays clear (its silhouette reads alone against the haze).
+      if(Math.abs(ndc-comp.xa)<.38||Math.abs(ndc+Math.sign(comp.xa||1)*.42)<.22)continue;
+      const a=fwd+off,d=reach+[8,40,85][layer]+r()*[18,30,40][layer],sc=([11,19,30][layer]+r()*[8,12,16][layer])*hz;
+      const column=name==='shard',width=column?.35+.25*r():name==='fan'?1.2+.6*r():.8+.4*r();
+      const x=comp.C[0]+Math.cos(a)*d,z=comp.C[1]+Math.sin(a)*d,dir=[(r()-.5)*.2,1,(r()-.5)*.2],l=Math.hypot(...dir);
+      const key=`${name}:${v}`;(out[key]||(out[key]=[])).push(x,-sc*.1,z,sc*(column?1.3:1),dir[0]/l,dir[1]/l,dir[2]/l,width,comp.R[0],0,comp.R[1],0,-1e5,1e6,1,column?.3:.4,-1,0,r(),1+8);k++;}
+    return out;
+  }
+  function build(quality){
+    const epoch=model.epoch;
+    forest=growForest(model,{species,G,epoch,quality,current});
+    const lite=quality>=2||model.modules.size>200;if(crownLite!==lite)makeCrowns(lite);
+    orgs.clear();orgList.length=0;for(const o of forest.orgs){orgs.set(o.id,o);orgList.push(o);}
+    counts.thick=copy(thick,forest.seg,SEG,SEG_NAMES);counts.fine=copy(fine,forest.fine,SEG,SEG_NAMES);
+    counts.leaves=copy(leaves,forest.leaf,LEAF,['lP','lD','lW','lM']);
+    counts.glows=copy(glows,forest.glow,GLOW,['gP','gG','gM']);
+    ensureState(forest.moduleIds.length);
+    // Organism colours: one family of hues per world (the primary, a little toward the accent); organisms differ in
+    // saturation and value, accent hues are kept for blooms and events.
+    for(const o of orgList){const k=o.index%MAXO,r1=rand(hash(o.id)),r2=rand(hash(o.id)+5),r3=rand(hash(o.id)+9);
+      const c=pal.primary.clone().lerpHSL(pal.accent,o.index===0?0:.05+.2*r1),hsl={};c.getHSL(hsl);c.setHSL(hsl.h,clamp(hsl.s*(.55+.45*r2)),hsl.l);
+      orgColors[k].set(c.r,c.g,c.b,1);orgValue[k]=.8+.3*r3;U.uOrg.value[k].set(o.root[0],o.root[2],o.height,1);orgSpecies[k].set(o.speciesIndex,SPECIES[o.species].flex,0,0);}
+    groundU.uOrgN.value=Math.min(MAXO,orgList.length);airMat.uniforms.uOrgN.value=groundU.uOrgN.value;
+    // Frame: centroid weighted by size, extent to the outermost canopy.
+    centre.set(0,0,0);let w=0;for(const o of orgList){const k=Math.sqrt(o.members.length);centre.x+=o.root[0]*k;centre.z+=o.root[2]*k;w+=k;}if(w)centre.multiplyScalar(1/w);
+    extent=3;canopyH=2;for(const o of orgList){extent=Math.max(extent,Math.hypot(o.root[0]-centre.x,o.root[2]-centre.z)+o.radius);canopyH=Math.max(canopyH,o.height);}
+    worldExtent=extent;
+    compose();
+    const far=farLayer(quality>=2);counts.crowns=0;counts.far=0;
+    for(const key of CROWN_KEYS){const set=crownSets[key],own=forest.crowns[key],extra=far[key]||[];
+      const all=extra.length?own.concat(extra):own;set.count=copy(set.buf,all,TPL,CROWN_FIELDS);set.mesh.visible=set.count>0;counts.crowns+=own.length/TPL;counts.far+=extra.length/TPL;}
+    groundU.uScale.value=Math.max(1500,extent*60);mistMat.uniforms.uMistR.value=extent*1.6+10;groundU.uCentre.value.set(centre.x,centre.z);
+    airMat.uniforms.uBox.value.set(extent*2.4+8,Math.max(6,canopyH*1.15),extent*2.4+8);airMat.uniforms.uBoxC.value.set(centre.x,-.5,centre.z);
+    buildCords();
+    {const r=rng(hash(`shafts/${seed}`));for(let k=0;k<SHAFTS;k++){const a=r()*6.283,d=Math.sqrt(r())*(extent*1.1+2),x=centre.x+Math.cos(a)*d,z=centre.z+Math.sin(a)*d,wd=.8+r()*2.4,sd=r();
+      shafts.write('sP',k,x,z,wd,sd);shaftU[k].set(x,z,wd,sd);}shafts.commit(SHAFTS);shaftMat.uniforms.uShaftL.value=Math.max(24,canopyH*4.5);}
+    builtVersion=model.version;builtQuality=quality;lastBloomKey='';evCache.clear();
+  }
+  // Dependencies: across organisms at most three braided strands per pair along the ground (brighter for more links);
+  // inside an organism a faint silk thread between the two branches (quieter as they multiply).
+  function buildCords(){
+    const epoch=model.epoch,pairs=new Map(),inner=[];
+    for(const l of model.links.values()){const a=forest.anchors.get(l.a),b=forest.anchors.get(l.b);if(!a||!b)continue;
+      if(a.org===b.org)inner.push({l,a,b});else{const key=a.org<b.org?`${a.org}|${b.org}`:`${b.org}|${a.org}`;if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push({l,a,b});}}
+    const list=[];
+    for(const ps of pairs.values()){ps.sort((x,y)=>(model.bornAt(x.l)-model.bornAt(y.l))||(x.l.key<y.l.key?-1:1));const k=Math.min(2.2,1+.35*Math.log2(ps.length)),n=Math.min(3,ps.length);
+      ps.slice(0,n).forEach((x,i)=>list.push({...x,kind:0,strand:i,strands:n,w:k}));}
+    inner.sort((x,y)=>rand(hash(x.l.key))-rand(hash(y.l.key)));const quiet=Math.min(1,Math.sqrt(40/Math.max(40,inner.length)));
+    for(const x of inner.slice(0,240))list.push({...x,kind:1,strand:0,strands:1,w:quiet});
+    cords.ensure(list.length);
+    list.forEach(({l,a,b,kind,strand,strands,w},i)=>{const oa=orgList[a.org],ob=orgList[b.org];const born=model.bornAt(l);
+      const pa=kind===0?oa.root:a.tip,pb=kind===0?ob.root:b.tip;
+      cords.write('cA',i,pa[0],pa[1],pa[2],kind===0?0:1+a.org%MAXO);cords.write('cB',i,pb[0],pb[1],pb[2],b.org%MAXO);
+      cords.write('cI',i,Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,l.removed===null?1e6:secs(l.removed,epoch),rand(hash(l.key)),w);
+      cords.write('cD',i,a.dist,b.dist,strand,strands);
+      const ca=orgColors[a.org%MAXO],cb=orgColors[b.org%MAXO];cords.write('cCA',i,ca.x,ca.y,ca.z);cords.write('cCB',i,cb.x,cb.y,cb.z);});
+    counts.cords=list.length;cords.commit(list.length);
+  }
+  // ---- Sway mirror (must agree with COMMON.sway) ----------------------------------------------------------------
+  function swayed(p0,dist0,org){const k=org%MAXO,o=U.uOrg.value[k],S=orgColors[k].w,p=[o.x+(p0[0]-o.x)*S,p0[1]*S,o.y+(p0[2]-o.y)*S],dist=dist0*S,H=Math.max(1,o.z),x=clamp(dist/H,0,2.5),f=x*Math.sqrt(x)*H*.07*U.uSwayAmp.value*orgSpecies[k].y;
+    const tv=U.uSwayT.value,d=U.uCur.value,tb=U.uTurb.value,ph=(p[0]*d.x+p[2]*d.y)*.16-tv*.5;
+    const a=Math.sin(ph)+tb*(.6*Math.sin(ph*2.3+p[1]*.3+1.7)+.35*Math.sin(tv*1.3+p[0]*.37-p[2]*.29));
+    const b=.55*Math.sin(tv*.41+(-d.y*p[0]+d.x*p[2])*.21+p[1]*.17);const mx=d.x*a-d.y*b+U.uLean.value.x,mz=d.y*a+d.x*b+U.uLean.value.y;
+    return new THREE.Vector3(p[0]+mx*f,p[1]-.12*Math.hypot(mx,mz)*x*f,p[2]+mz*f);}
+  // An organism's current size (its data-driven scale) applied to its rest geometry.
+  const Sof=o=>orgColors[o.index%MAXO].w,hOf=o=>o.height*Sof(o),rOf=o=>o.radius*Sof(o);
+  const scaled=(o,p)=>{const S=Sof(o);return new THREE.Vector3(o.root[0]+(p[0]-o.root[0])*S,p[1]*S,o.root[2]+(p[2]-o.root[2])*S);};
+  const topOf=o=>scaled(o,o.top);
+  const anchorPos=id=>{const a=forest?.anchors.get(id);return a?swayed(a.tip,a.dist,a.org):null;};
+  const orgOfModule=id=>{const a=forest?.anchors.get(id);return a?orgList[a.org]:null;};
+  const orgsOf=ids=>[...new Set((ids||[]).map(id=>forest?.anchors.get(id)?.org).filter(x=>x!==undefined))].map(k=>orgList[k]).filter(Boolean);
+  // The organism holding most of a subject's files (ties: the larger organism).
+  const mainOrg=ids=>{const n=new Map();for(const id of ids||[]){const a=forest?.anchors.get(id);if(a)n.set(a.org,(n.get(a.org)||0)+1);}let best=null,bn=0;for(const [k,c] of n){const o=orgList[k];if(c>bn||(c===bn&&best&&o.members.length>best.members.length)){best=o;bn=c;}}return best;};
+  const biggest=()=>comp?.A||orgList.reduce((a,o)=>!a||o.members.length>a.members.length?o:a,null);
+  const v3=a=>new THREE.Vector3(a[0],a[1],a[2]);
+  // ---- Blooms (rebuilt from director.lasting(): a pure function of the verified history) -------------------------
+  // They spread around the crown (golden-angle order over its highest points), each at most a third of its radius.
+  let lastBloomKey='';const bloomAt=new Map();
+  function buildBlooms(i){
+    let key='';const occ=[];
+    for(const l of ctx.director.lasting()){if(l.first>i.t)continue;const kind=l.type==='refactor.validated'?1:0;
+      const known=l.times.filter(x=>x<=i.t),older=l.count-l.times.length,n=older+known.length;key+=`${l.type}:${l.first}:${n};`;
+      for(let k=0;k<n;k++)occ.push({kind,at:k<older?l.first:known[k-older],subject:l.subject});}
+    key+=`|${builtVersion}`;if(key===lastBloomKey)return;lastBloomKey=key;
+    occ.sort((a,b)=>a.at-b.at);const out={seg:[],glow:[],leaf:[]};const slot=new Map(),lastBloom=new Map();bloomLights.length=0;
+    // Facing the establishing view (a pure function of the composition), so a bloom opens toward the viewer.
+    const toward=comp?[-comp.V[0],0,-comp.V[1]]:[0,0,1];let camEye=null;if(comp){const v=viewOf(1),ce=Math.cos(v.el);camEye=[v.target.x+Math.cos(v.az)*ce*v.distance,v.target.y+Math.sin(v.el)*v.distance,v.target.z+Math.sin(v.az)*ce*v.distance];}
+    occ.forEach((o,j)=>{const org=mainOrg(o.subject?.fileIds)||biggest();if(!org)return;
+      const k=slot.get(org.id)||0;slot.set(org.id,k+1);const top=org.crown.slice(0,Math.max(1,Math.min(14,org.crown.length)));
+      // The first bloom crowns the organism; later ones open around its crown (smaller), so they accumulate.
+      const first=()=>{let b=null,bs=Infinity;for(const c of org.crown){const sc=Math.abs(c.p[1]/org.height-.68)+(camEye?.15*Math.hypot(c.p[0]-camEye[0],c.p[2]-camEye[2])/Math.max(1,org.radius):0);if(sc<bs){bs=sc;b=c;}}return b||{p:org.top,dist:org.height};};
+      const cr=k===0?first():top.length?top[(k*5+(o.kind?2:0))%top.length]:{p:[org.root[0],org.height,org.root[2]],dist:org.height};
+      const size=clamp((k===0?.5:.3*Math.pow(.9,k-1))*Math.min(org.radius,org.height*.55),.45,2.6)*(o.kind?.85:1);
+      // Facing the establishing lens (like a flower turned to the light), a little upward.
+      const eye=camEye||[cr.p[0]+toward[0]*10,2,cr.p[2]+toward[2]*10],ed=[eye[0]-cr.p[0],eye[1]-cr.p[1],eye[2]-cr.p[2]],el=Math.hypot(...ed)||1;
+      const up=[ed[0]/el*.8,ed[1]/el*.8+.45,ed[2]/el*.8];
+      const centerP=[cr.p[0]+toward[0]*size*.15,cr.p[1]+size*.1,cr.p[2]+toward[2]*size*.15];
+      lastBloom.set(`${o.kind}|${o.at}`,{org,p:centerP,size});
+      // Older blooms in a long history keep their form with fewer elements (never dropped: every verified mark stays).
+      const lite=(i.quality||0)>=2||j<occ.length-24||out.glow.length>GLOW*20000;
+      const start=secs(o.at,model.epoch);
+      growBloom(out,{center:centerP,up,org:org.index%MAXO,dist:cr.dist,size,kind:o.kind,start,seed:hash(`${org.id}/${k}/${o.kind}`),lite});
+      bloomLights.push({org,p:centerP,size,start,kind:o.kind});});
+    bloomCount=copy(bloomSeg,out.seg,SEG,SEG_NAMES)+copy(bloomLeaf,out.leaf,LEAF,['lP','lD','lW','lM']);copy(bloomGlow,out.glow,GLOW,['gP','gG','gM']);bloomAt.clear();for(const [k,v] of lastBloom)bloomAt.set(k,v);
+  }
+  // The light of the newest blooms on the branches around them (eight at most), opening with the bloom.
+  const sat=c=>{const m=Math.max(c.r,c.g,c.b,1e-3);return new THREE.Color(c.r/m,c.g/m,c.b/m);};
+  const bloomLights=[],BLOOM_C=[sat(pal.secondary),sat(pal.highlight.clone().lerp(pal.accent,.5))];
+  function updateBloomLights(i){const L=U.uBL.value,C=U.uBLC.value,spd=ctx.speed(),n=bloomLights.length;
+    for(let k=0;k<8;k++){const b=bloomLights[n-1-k];if(!b){L[k].set(0,0,0,0);continue;}
+      const o=b.org,S=Sof(o),a=(i.tsec-b.start)/spd,c=BLOOM_C[b.kind];
+      L[k].set(o.root[0]+(b.p[0]-o.root[0])*S,b.p[1]*S,o.root[2]+(b.p[2]-o.root[2])*S,(a>=0?.3*smooth(a/4):0)*(1+.08*Math.sin(i.tview*.4+k)));C[k].set(c.r,c.g,c.b,b.size*Sof(b.org)*1.6);}}
+  // ---- Agents: firefly swarms or pollinators, with soft trails -----------------------------------------------------
+  const AGENT_COLORS=['#ffe29a','#9dffcf','#ff9ee8','#a7c8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'].map(c=>new THREE.Color(c));
+  const pollinator=G.agents?.form==='pollinator',SWARM=pollinator?7:Math.max(8,Math.min(48,num(G.agents?.swarm,24))),TRAIL=5,MAX_AGENTS=10;
+  const agentPts=pointBuffers({aCol:4,aSize:1},MAX_AGENTS*(SWARM*TRAIL+24));
+  const agentMat=new THREE.ShaderMaterial({uniforms:U,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`attribute vec4 aCol;attribute float aSize;uniform float uPx;uniform vec2 uRes;varying vec4 vC;void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;gl_PointSize=clamp(aSize*.05*px/max(.4,-mv.z),1.5,60.*uPx);vC=aCol;}`,
+    fragmentShader:`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*5.)+exp(-r*24.)*2.)*vC.a,1.);}`});
+  const agentPoints=new THREE.Points(agentPts.geometry,agentMat);agentPoints.frustumCulled=false;agentPoints.renderOrder=7;scene.add(agentPoints);
+  const agentState=new Map(),tmp=new THREE.Vector3();
   function agentGoal(a,i){
-    const b=a.fileId?branchOf.get(a.fileId):null,home=a.home?branchOf.get(a.home):null;const o=home?orgs.get(home.org):null;
-    if(b&&a.display==='tool')return swayed(b.tip,b.flex,i.tview).add(new THREE.Vector3(0,.5,0));
+    const tip=a.fileId?anchorPos(a.fileId):null,home=a.home?forest?.anchors.get(a.home):null,o=home?orgList[home.org]:null;
     const ph=rand(hash(a.id))*6.283;
-    if(o){const R=a.display==='waiting'||a.display==='dormant'?o.radius+1.2:o.radius*.6+.6,y=a.display==='waiting'||a.display==='dormant'?.8:o.canopy*.75;
-      const sp=a.busy?.25:.06;return new THREE.Vector3(o.root.x+Math.cos(ph+i.tview*sp)*R,y+Math.sin(i.tview*.6+ph)*.4,o.root.z+Math.sin(ph+i.tview*sp)*R);}
-    return new THREE.Vector3(centre.x+Math.cos(ph+i.tview*.07)*extent*.5,3,centre.z+Math.sin(ph+i.tview*.07)*extent*.5);
+    // At the branch it works on: each presence keeps its own side of it (two agents on one file stay apart).
+    if(tip&&a.display==='tool'){const same=i.agents.filter(b=>b.display==='tool'&&b.fileId===a.fileId).map(b=>b.id).sort(),k=Math.max(0,same.indexOf(a.id));return tip.add(tmp.set(Math.cos(ph)*.6,.45+1.1*k,Math.sin(ph)*.6));}
+    // Presences around one organism keep apart (their own height band and side), so two never merge into one.
+    if(o){const waiting=a.display==='waiting'||a.display==='dormant';const same=i.agents.filter(b=>b.home&&forest?.anchors.get(b.home)?.org===home.org).map(b=>b.id).sort(),k=Math.max(0,same.indexOf(a.id));
+      const R=waiting?rOf(o)+1:rOf(o)*.65+.5,y=(waiting?.7:hOf(o)*.62)+k*1.1;const s=a.busy?.22:.05,ph2=ph+k*2.2;
+      return new THREE.Vector3(o.root[0]+Math.cos(ph2+i.tview*s)*R,y+Math.sin(i.tview*.5+ph)*.3,o.root[2]+Math.sin(ph2+i.tview*s)*R);}
+    // Not yet at home anywhere: they drift over the ecosystem, each in its own lane (never stacked on another).
+    const free=i.agents.filter(b=>!(b.home&&forest?.anchors.get(b.home))).map(b=>b.id).sort(),k=Math.max(0,free.indexOf(a.id)),pf=k*6.283/Math.max(1,free.length)+ph*.2;
+    return new THREE.Vector3(centre.x+Math.cos(pf+i.tview*.06)*extent*.5,canopyH*(.5+.18*k),centre.z+Math.sin(pf+i.tview*.06)*extent*.5);
   }
   function updateAgents(i){
-    let n=0;const seen=new Set();
+    let n=0;const seen=new Set();const cap=agentPts.capacity;
     for(const a of i.agents.slice(0,MAX_AGENTS)){
       seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3(),snap:true};agentState.set(a.id,st);}
-      const goal=agentGoal(a,i);if(st.snap){st.pos.copy(goal);st.snap=false;}else st.pos.lerp(goal,Math.min(1,i.dt*(a.display==='tool'?2:1)));
-      const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.5)*G.agentProminence,ph=rand(hash(a.id))*100;
-      const spread=a.display==='tool'?.45:a.busy?.9:.6;
-      for(let k=0;k<SWARM&&n<agentPts.capacity;k++){const u=k/SWARM*6.283+ph;const r=spread*(.4+.6*rand(k*31+7));
-        const p=st.pos.clone().add(new THREE.Vector3(Math.cos(u+i.tview*(1.3+k*.05))*r,Math.sin(i.tview*(2.1+k*.07)+k)*r*.6,Math.sin(u*1.3+i.tview*(1.1+k*.04))*r));
-        const blink=.55+.45*Math.sin(i.tview*(3+k*.3)+k*2.1);agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*1.6,c.g*1.6,c.b*1.6,alpha*blink);agentPts.write('aSize',n,k===0?2.2:.7);n++;}
-      const b=a.fileId?branchOf.get(a.fileId):null;
-      if(b&&a.display==='tool'){const tip=swayed(b.tip,b.flex,i.tview),inward=a.activity==='reading'||a.activity==='searching';
-        for(let k=0;k<20&&n<agentPts.capacity;k++){let f=(i.tview*.8+k/20)%1;if(inward)f=1-f;const p=st.pos.clone().lerp(tip,f);p.y+=Math.sin(f*Math.PI)*.3;
-          agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*1.4,c.g*1.4,c.b*1.4,alpha*Math.sin(f*Math.PI)*.8);agentPts.write('aSize',n,.6);n++;}}
+      // Smoothing independent of the frame rate (exponential approach over real elapsed time).
+      const goal=agentGoal(a,i);if(st.snap){st.pos.copy(goal);st.snap=false;}else st.pos.lerp(goal,1-Math.exp(-Math.max(0,i.dt)*(a.display==='tool'?1.8:.9)));
+      const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.45)*num(G.agentProminence,.8),ph=rand(hash(a.id))*100;
+      const spread=a.display==='tool'?.5:a.busy?.95:.6;
+      for(let k=0;k<SWARM;k++){const u=k/SWARM*6.283+ph,rk=spread*(.35+.65*rand(k*31+7)),wk=(pollinator?.7:1.2)+k*.045;
+        for(let j=0;j<TRAIL&&n<cap;j++){const tt=i.tview-j*.07;
+          const x=st.pos.x+Math.cos(u+tt*wk)*rk,y=st.pos.y+Math.sin(tt*(1.9+k*.07)+k)*rk*.55,z=st.pos.z+Math.sin(u*1.3+tt*wk*.9)*rk;
+          const blink=pollinator?.8+.2*Math.sin(tt*30+k):Math.max(0,Math.sin(tt*(2.4+k*.23)+k*2.1))**2;
+          agentPts.write('position',n,x,y,z);agentPts.write('aCol',n,c.r*2.4,c.g*2.4,c.b*2.4,alpha*blink*(1-j/TRAIL)*(j?.5:1));agentPts.write('aSize',n,(pollinator?3.2:1.6)*(j?.6:1));n++;}}
+      // The presence's heart: one soft light at the swarm's centre.
+      if(n<cap){agentPts.write('position',n,st.pos.x,st.pos.y,st.pos.z);agentPts.write('aCol',n,c.r*1.4,c.g*1.4,c.b*1.4,alpha*(a.busy?.9:.5));agentPts.write('aSize',n,a.display==='tool'?9:6);n++;}
+      if(a.display==='tool'&&a.fileId){const tip=anchorPos(a.fileId);if(tip){const inward=a.activity==='reading'||a.activity==='searching';
+        for(let k=0;k<16&&n<cap;k++){let f=(i.tview*.6+k/16)%1;if(inward)f=1-f;const p=st.pos.clone().lerp(tip,f);p.y+=Math.sin(f*Math.PI)*.25;
+          agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*1.6,c.g*1.6,c.b*1.6,alpha*Math.sin(f*Math.PI)*.6);agentPts.write('aSize',n,.6);n++;}}}
     }
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
     agentPts.commit(n);
   }
   // ---- Effects --------------------------------------------------------------------------------------------------
-  let info={tsec:0,tview:0};let waveNext=0,rippleNext=0;
-  const flashes=[];
-  function wave(pos,color,speed=3.2){const k=waveNext++%4;common.uWaves.value[k].set(pos.x,pos.y,pos.z,info.tsec);common.uWaveC.value[k].set(color.r,color.g,color.b,speed);}
-  function ripple(pos,color,duration=4){const k=rippleNext++%8;ground.material.uniforms.uRipple.value[k].set(pos.x,0,pos.z,info.tsec);ground.material.uniforms.uRippleC.value[k].set(color.r,color.g,color.b,duration);}
-  function burst(pos,color,{radius=1.6,duration=1.6,size=1,mode=0}={}){const k=burstNext++%BURSTS;burstU.uBA.value[k].set(pos.x,pos.y,pos.z,info.tsec);burstU.uBB.value[k].set(color.r*1.5,color.g*1.5,color.b*1.5,size);burstU.uBC.value[k].set(duration,mode,radius,0);}
-  function flash(a){flashes.push({at:info.tsec,amount:a});if(flashes.length>6)flashes.shift();}
-  const tipOf=id=>{const b=branchOf.get(id);return b?swayed(b.tip,b.flex,info.tview):null;};
-  const orgsOf=ids=>[...new Set((ids||[]).map(id=>branchOf.get(id)?.org).filter(Boolean))].map(id=>orgs.get(id)).filter(Boolean);
-  function crown(o,level,colorA,colorB){
-    // Recursive phyllotaxis: each verified milestone adds a ring of petals around the organism's crown.
-    const r=rng(hash(o.id)+level*977);const base=o.top.clone().add(new THREE.Vector3(0,.3,0));const count=Math.round(13+level*8);
-    for(let k=0;k<count&&crownCount<PETALS;k++){const i=crownCount++;const ang=k*2.39996+level*.5,el=.25+.45*(k/count)+level*.08;
-      const c=colorA.clone().lerp(colorB,k/count);crowns.write('cA',i,base.x,base.y,base.z,SPECIES.flex*.9+.6);crowns.write('cB',i,ang,el,(.7+.45*level)*(.8+.4*r()),.42);
-      crowns.write('cInfo',i,info.tsec,k*.04,level+k,0);crowns.write('cColor',i,c.r*1.6,c.g*1.6,c.b*1.6);}
-    crowns.commit(crownCount);}
+  let waveNext=0,rippleNext=0;const transients={flash:[],shadow:[],swell:[],shafts:[],light:[]},pulses=new Map();
+  function wave(org,start,color,{speed=4,width=1.2,down=false,heal=false,k=1}={}){const s=waveNext++%8;U.uWave.value[s].set(org,start,speed,down?-1:heal?2:1);U.uWaveC.value[s].set(color.r*k,color.g*k,color.b*k,width);}
+  function ripple(pos,start,color,duration=5,k=1){const s=rippleNext++%6;groundU.uRipple.value[s].set(pos[0],0,pos[2],start);groundU.uRippleC.value[s].set(color.r*k,color.g*k,color.b*k,duration);}
+  function burst(pos,start,color,{radius=1.6,duration=2,size=1,mode=0,k=1}={}){const b=burstNext++%BURSTS;burstU.uBA.value[b].set(pos.x,pos.y,pos.z,start);burstU.uBB.value[b].set(color.r*k,color.g*k,color.b*k,size);burstU.uBC.value[b].set(duration,mode,radius,0);}
+  function pillar(x,z,start,color,{width=1,duration=9,k=1}={}){const s=pillarNext++%PILLARS;pillarU.uCol.value[s].set(x,z,start,duration);pillarU.uColC.value[s].set(color.r*k,color.g*k,color.b*k,width);}
+  const pulse=(id,start,kind=0)=>{if(id)pulses.set(id,{at:start,kind});};
+  // An organism's light swells into the water around it (its halo, mist and floor) for a few seconds.
+  const lightUp=(o,start,k)=>{if(o)transients.light.push({org:o.index%MAXO,at:start,k});};
   function effect(cmd,i){
-    if(i)info=i;const s=cmd.subject||{},k=clamp(cmd.scale,0,1.6);
+    if(!forest)return;const s=cmd.subject||{},inten=clamp(cmd.scale,0,1.6),start=secs(cmd.at,model.epoch);
+    const show=(i?.overrides?.intensity??1)>0&&inten>0;
+    const ids=s.fileIds||[];
     switch(cmd.effect){
-      case 'sprout':{const o=orgs.get(s.groupId);if(!o)break;ripple(o.root,pal.valid,5);burst(o.root.clone().setY(.4),pal.valid,{radius:2.2,duration:2.2,size:1.2});wave(o.root,pal.valid,3);break;}
-      case 'branch-growth':{const b=branchOf.get(s.fileId);if(!b)break;const o=orgs.get(b.org);if(o)wave(o.root,pal.highlight.clone().lerp(pal.valid,.4),4);burst(tipOf(s.fileId),pal.highlight,{radius:1,duration:1.4,size:.8});break;}
-      case 'unfurl':{const p=tipOf(s.fileId);if(p)burst(p,pal.secondary,{radius:.9*k+.4,duration:1.4,size:.7});break;}
-      case 'shed':{const p=tipOf(s.fileId);if(p)burst(p,pal.warning.clone().lerp(pal.highlight,.5),{radius:1.2,duration:3,size:.8,mode:2});break;}
-      case 'mycelium-bridge':{const a=tipOf(s.fileId),b=tipOf(s.targetId);if(!a||!b)break;burst(a,pal.valid,{radius:1.4,duration:2,size:1});burst(b,pal.valid,{radius:1.4,duration:2,size:1});
-        if(cmd.tier>=2){ripple(a,pal.valid,4.5);ripple(b,pal.valid,4.5);wave(a.clone().lerp(b,.5),pal.valid.clone().lerp(pal.accent,.4),3.5);}break;}
-      case 'blight':{for(const o of orgsOf(s.fileIds)){wave(o.root,pal.warning,2.4);ripple(o.root,pal.warning,4);}for(const id of (s.fileIds||[]).slice(0,10)){const p=tipOf(id);if(p)burst(p,pal.warning,{radius:1,duration:2.6,size:.8,mode:2});}flash(.08*k);break;}
-      case 'glow-wave':{for(const o of orgsOf(s.fileIds))wave(o.root,pal.valid,3.6);break;}
-      case 'regreen':{for(const o of orgsOf(s.fileIds)){wave(o.root,pal.valid.clone().lerp(pal.highlight,.3),3);ripple(o.root,pal.valid,6);burst(o.top,pal.valid,{radius:2.6,duration:2.6,size:1.2});}flash(.2*k);break;}
-      case 'metamorphosis':{for(const id of (s.fileIds||[]).slice(0,12)){const p=tipOf(id);if(p)burst(p,pal.highlight,{radius:1.8,duration:2.4,size:1,mode:1});}for(const o of orgsOf(s.fileIds))wave(o.root,pal.highlight,2.6);flash(.12);break;}
-      case 'fractal-bloom':{const list=orgsOf(s.fileIds);const targets=list.length?list:[...orgs.values()].slice(0,1);
-        for(const o of targets){const lvl=(crownLevel.get(o.id)||0)+1;crownLevel.set(o.id,lvl);crown(o,lvl,pal.secondary,pal.valid);burst(o.top,pal.highlight,{radius:3.5,duration:3.2,size:1.6});ripple(o.root,pal.highlight,7);wave(o.root,pal.highlight,4);}
-        flash((cmd.tier>=4?.9:.45)*k);break;}
-      case 'spore-release':{for(const id of (s.fileIds||[]).slice(0,16)){const p=tipOf(id);if(p)burst(p,pal.highlight.clone().lerp(pal.valid,.3),{radius:2.4,duration:3.6,size:.9});}ripple(centre,pal.highlight,6);break;}
-      case 'season-turn':{ripple(centre,pal.accent,8);wave(centre,pal.accent,5);break;}
+      case 'sprout':{const o=orgs.get(s.groupId);if(!o||!show)break;const c=pal.valid.clone().lerp(pal.highlight,.4);
+        ripple(o.root,start,pal.valid,7,1.1*inten);burst(v3(o.root).setY(.3),start,c,{radius:2.4,duration:3.5,size:1.1,mode:0,k:1.8*inten});
+        burst(v3(o.root).setY(.2),start+.5,pal.highlight,{radius:1.2,duration:7,size:.8,mode:1,k:1.2*inten});wave(o.index,start+.4,pal.highlight,{speed:3,width:1.4,k:.4*inten});lightUp(o,start,.8*inten);break;}
+      case 'branch-growth':{const o=orgOfModule(s.fileId);pulse(s.fileId,start,0);if(!o||!show)break;wave(o.index,start,pal.highlight.clone().lerp(pal.valid,.4),{speed:5,width:.9,k:.4*inten});break;}
+      case 'unfurl':{pulse(s.fileId,start,0);const p=anchorPos(s.fileId);if(p&&show)burst(p,start+.6,pal.highlight,{radius:.7,duration:1.6,size:.7,mode:0,k:.8*inten});break;}
+      case 'shed':{pulse(s.fileId,start,1);const p=anchorPos(s.fileId);if(p&&show)burst(p,start,new THREE.Color(.32,.28,.22),{radius:.9,duration:3.2,size:.8,mode:3,k:.7});break;}
+      case 'mycelium-bridge':{const a=orgOfModule(s.fileId),b=orgOfModule(s.targetId);if(!a||!b||!show)break;
+        ripple(a.root,start,pal.valid,4.5,.4*inten);ripple(b.root,start+1.6,pal.valid,4.5,.4*inten);
+        if(cmd.tier>=2){wave(a.index,start,pal.valid,{speed:4,k:.5*inten});wave(b.index,start+1.8,pal.valid,{speed:4,k:.5*inten});}break;}
+      case 'blight':{for(const id of ids)pulse(id,start,2);if(!show)break;const list=orgsOf(ids);
+        // The drain runs down only the failing branches (gated per module in the shaders).
+        for(const o of list){wave(o.index,start,new THREE.Color(.3,.09,.03),{speed:2.6,width:1.4,down:true,k:.45});}
+        for(const id of ids.slice(0,6)){const p=anchorPos(id);if(p)burst(p,start+.2,new THREE.Color(.45,.11,.035),{radius:1.1,duration:6,size:.5,mode:2,k:.5});}
+        transients.shadow.push({at:start,k:.9*Math.min(1,inten)});break;}
+      case 'glow-wave':{for(const id of ids)pulse(id,start,0);if(!show)break;for(const o of orgsOf(ids))wave(o.index,start,pal.valid,{speed:3.2,width:1.2,k:.3*inten});break;}
+      case 'regreen':{for(const id of ids)pulse(id,start,0);if(!show)break;const list=orgsOf(ids);
+        // Light floods back up from the roots (a front climbing for about two seconds, the colour behind it).
+        for(const o of list){const H=hOf(o)*1.7+1;wave(o.index,start,pal.valid,{speed:H/2.2,width:1.4,heal:true,k:.45*inten});ripple(o.root,start,pal.valid,6,.9*inten);lightUp(o,start+1,.5*inten);
+          burst(topOf(o),start+1.8,pal.valid.clone().lerp(pal.highlight,.5),{radius:1.3,duration:6,size:.9,mode:1,k:.9*inten});}
+        transients.swell.push({at:start+.8,k:.3*inten});break;}
+      case 'metamorphosis':case 'fractal-bloom':{const list=orgsOf(ids);const targets=list.length?list:[biggest()].filter(Boolean);if(!show)break;
+        const c=cmd.effect==='metamorphosis'?pal.highlight.clone().lerp(pal.accent,.3):pal.secondary.clone().lerp(pal.highlight,.3);
+        for(const o of targets){wave(o.index,start,c,{speed:3,width:1.8,k:.45*inten});ripple(o.root,start,c,8,.7*inten);lightUp(o,start+.5,(cmd.tier>=4?1.4:1)*inten);
+          burst(topOf(o),start+1.5,c,{radius:2.4,duration:6,size:1.1,mode:1,k:1*inten});}
+        transients.swell.push({at:start+.5,k:(cmd.tier>=4?.7:.45)*inten});transients.flash.push({at:start+1.2,k:(cmd.tier>=4?.25:.12)*inten});break;}
+      case 'spore-release':{if(!show)break;const c=pal.highlight.clone().lerp(pal.valid,.35);const list=orgsOf(ids.length?ids:null);const targets=list.length?list.slice(0,4):orgList.slice(0,3);
+        // A slow column of light and spores rises from the committed organisms; the shafts brighten for a moment.
+        for(const o of targets){const t=topOf(o);pillar(o.root[0],o.root[2],start,c,{width:Math.max(1.2,rOf(o)*.55),duration:10,k:.5*inten});
+          burst(v3(o.root).setY(.4),start,c,{radius:Math.max(.8,rOf(o)*.35),duration:10,size:1,mode:1,k:1.2*inten});burst(t,start+1.2,c,{radius:1.2,duration:9,size:.9,mode:1,k:1*inten});
+          wave(o.index,start,c,{speed:2.4,width:1.2,k:.25*inten});}
+        transients.shafts.push({at:start,k:.6*inten});break;}
+      case 'season-turn':{if(!show)break;ripple([centre.x,0,centre.z],start,pal.accent,9,.5*inten);for(const o of orgList)wave(o.index,start+rand(hash(o.id))*2,pal.accent.clone().lerp(pal.highlight,.4),{speed:2,width:2.4,k:.45*inten});transients.swell.push({at:start,k:.25*inten});transients.shafts.push({at:start,k:.4*inten});break;}
       default:break;
     }
   }
-  // ---- Frame -------------------------------------------------------------------------------------------------
+  // ---- Frame ----------------------------------------------------------------------------------------------------
+  const lightDir=new THREE.Vector3(0,1,0);
   function rebuild(){builtVersion=-1;for(const s of agentState.values())s.snap=true;}
+  // The cold shadow of a failing run (it desaturates the grade and dims the shafts while the blight spreads).
+  function shadowAt(i){let k=0;const spd=ctx.speed();for(const x of transients.shadow){const a=(i.tsec-x.at)/spd;if(a>=0)k+=x.k*smooth(a/.8)*Math.exp(-Math.max(0,a-2)/4);}return clamp(k);}
+  const env1=(a,rise,hold,fall)=>a<0?0:smooth(a/rise)*Math.exp(-Math.max(0,a-hold)/fall);
   function update(i){
-    info=i;const epoch=model.epoch;
-    common.uT.value=i.tsec;common.uV.value=i.tview;common.uSpeed.value=ctx.speed();common.uBeat.value=i.beat*G.music.beatPulse;common.uActivity.value=i.activity;common.uMotion.value=i.overrides.motion??1;
-    common.uPx.value=Math.max(.5,ctx.pipeline.size[1]/1080);common.uRes.value.set(ctx.pipeline.size[0],ctx.pipeline.size[1]);
-    if(model.version!==builtVersion)build(i.t);
-    // Per-frame state: material states (blended in shaders), agent highlight, recent human editing glow.
-    const stateOf=new Map();const working=new Set(i.agents.filter(a=>a.fileId&&a.display==='tool').map(a=>a.fileId));
-    for(const id of new Set([...segModules,...leafModules])){if(!id)continue;const m=model.modules.get(id);if(!m)continue;
-      let cur=m.initial,prev=m.initial,at=-1e5;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;at=secs(e.at,epoch);}
-      const glow=working.has(id)?.8:Number.isFinite(m.lastHuman)&&i.t-m.lastHuman<4000?.4*(1-(i.t-m.lastHuman)/4000):0;
-      stateOf.set(id,[STATE_INDEX[cur]??1,STATE_INDEX[prev]??1,at,glow]);}
-    for(let k=0;k<segCount;k++){const v=segModules[k]?stateOf.get(segModules[k]):null;segs.write('sState',k,...(v||[1,1,-1e5,0]));}segs.flush();
-    for(let k=0;k<leafCount;k++){const v=stateOf.get(leafModules[k]);leaves.write('lState',k,v?v[0]:1,v?v[1]:1,v?v[2]:-1e5,leafFlex[k]);}leaves.flush();
-    updateAgents(i);
-    common.uUnlock.value.set(i.unlocks[0]?.level||0,i.unlocks[1]?.level||0,i.unlocks[2]?.level||0,i.unlocks[3]?.level||0);
-    sporeMat.uniforms.uFlies.value=G.atmosphere.fireflies;
+    const epoch=model.epoch,q=i.quality||0,spd=ctx.speed();
+    U.uT.value=i.tsec;U.uV.value=i.tview;U.uSpeed.value=spd;const motion=i.overrides?.motion??1;U.uSwayT.value=i.tview*motion;airMat.uniforms.uMotion.value=motion;
+    U.uPx.value=Math.max(.5,ctx.pipeline.size[1]/1080);U.uRes.value.set(ctx.pipeline.size[0],ctx.pipeline.size[1]);
+    if(model.version!==builtVersion||(q>=2)!==(builtQuality>=2))build(q);
+    // Light: placed by the composition (upper third, away from the anchor), migrating very slowly.
+    if(comp){if(Math.abs((camera.aspect||16/9)-comp.aspect)>.01)build(q);
+      const L=comp.light,laz=Math.atan2(L.z,L.x)+.04*Math.sin(i.tview*.0021),lel=Math.asin(clamp(L.y,-1,1))+.02*Math.sin(i.tview*.0017+1);
+      lightDir.set(Math.cos(laz)*Math.cos(lel),Math.sin(lel),Math.sin(laz)*Math.cos(lel));}
+    else lightDir.set(.5,.5,.3).normalize();
+    U.uLightDir.value.copy(lightDir);
+    U.uLean.value.set(lightDir.x*.12,lightDir.z*.12);
+    // Music: breathing on the bar, a softer world in breath sections, never a flash per beat.
+    const bar=Math.sin((i.barPhase||0)*Math.PI*2),sec=i.mood?.section;
+    U.uBreath.value=.1+.05*bar*num(G.music?.reactivity,.5)+(sec==='lift'?.04:sec==='breath'?-.03:0);
+    // The world's light breathes over the recipe's period (in bars at the score's base tempo; a fixed clock, so a tempo
+    // change never makes the light jump), never on the beat.
+    const barSec=240/92,period=barSec*([2,4,8].includes(MOT.breath)?MOT.breath:4);U.uLum.value=lum*1.15*(1+.07*Math.sin(i.tview*6.283/period));
+    const un=[0,1,2,3].map(k=>i.unlocks[k]?.level||0);groundU.uUnlock.value.set(...un);airMat.uniforms.uUnlock.value.set(...un);U.uVeins.value=un[2];
+    let shaftBoost=0;for(const x of transients.shafts)shaftBoost+=x.k*env1((i.tsec-x.at)/spd,1.5,2,3);shaftMat.uniforms.uShaftK.value=shaftBase*(1+shaftBoost)*(1-.55*shadowAt(i));
+    for(const v of orgSpecies)v.w=0;for(const x of transients.light)orgSpecies[x.org].w+=x.k*env1((i.tsec-x.at)/spd,1.5,2,3.5);
+    // Organism girth and size: trunks thicken with the modules alive now; a new organism grows from its seed.
+    if(forest){const alive=new Array(orgList.length).fill(0);
+      for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(m&&a&&model.alive(m,i.t)&&m.removed===null)alive[a.org]++;}
+      // Size: each module counts as it grows in (3 s) and as it fades out, so the organism scales smoothly.
+      const grow=new Array(orgList.length).fill(0);const T=i.t;
+      for(const id of forest.moduleIds){const m=model.modules.get(id),a=forest.anchors.get(id);if(!m||!a)continue;const b=m.born;if(!(b<=T))continue;
+        let k=Number.isFinite(b)?clamp((T-b)/3000):1;if(m.removed!==null&&m.removed<=T)k*=1-clamp((T-m.removed)/3000);grow[a.org]+=k;}
+      // Seasons: as the ecosystem matures (modules alive, smoothly weighted) the ambient light slowly warms toward the
+      // palette's accent; a pure function of the model at this time.
+      {let total=0;for(const g of grow)total+=g;const m=clamp(Math.log2(1+total)/9);U.uFogLit.value.copy(fogLit).lerp(seasonLit,m*.4);U.uFogC.value.copy(fogC).lerp(seasonFog,m*.3);}
+      for(const o of orgList){const k=o.index%MAXO,age=(i.tsec-o.born)/spd,birth=age>=0?smooth(age/5):1;
+        const S=(.7+.17*Math.log2(1+grow[o.index]))*(.08+.92*easeOut(birth));orgColors[k].w=S;U.uOrg.value[k].z=o.height*S;U.uOrg.value[k].w=.85+.12*Math.log2(1+alive[o.index]);
+        orgSpecies[k].z=age>=0&&age<7?(1-smooth(age/7))*(.4+.6*smooth(age/.6)):0;}
+      // Framing: the main mass of the ecosystem (organisms of any real size).
+      extent=3;canopyH=2;let worldR=3;const big=Math.max(1,...orgList.map(o=>o.members.length));
+      for(const o of orgList){const S=orgColors[o.index%MAXO].w,r=Math.hypot(o.root[0]-centre.x,o.root[2]-centre.z)+o.radius*S;worldR=Math.max(worldR,r);
+        if(o.members.length>=big*.12||orgList.length<=6){extent=Math.max(extent,r);canopyH=Math.max(canopyH,o.height*S);}}worldExtent=worldR;
+      // Fog scales with the world: a large ecosystem is seen from further away through the same visual depth.
+      const sc=Math.max(1,extent/9);U.uFogD.value=(.007+.011*fogK)/sc;U.uFogFar.value=28*sc;}
+    // Module states and pulses into the state texture; repaired files (a stressed state followed by a healthy one)
+    // keep the time of their repair.
+    if(forest){const working=new Set();for(const a of i.agents)if(a.fileId&&a.display==='tool')working.add(a.fileId);
+      for(const [id,p] of pulses)if((i.tsec-p.at)/spd>20)pulses.delete(id);
+      const D=stateData;forest.moduleIds.forEach((id,k)=>{const m=model.modules.get(id);if(!m)return;
+        let cur=m.initial,prev=m.initial,at=-1e5,stressed=m.initial==='stressed',healed=-1e5;
+        for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;at=secs(e.at,epoch);if(cur==='stressed'){stressed=true;healed=-1e5;}else if(stressed){stressed=false;healed=at;}}
+        const human=Number.isFinite(m.lastHuman)&&i.t>=m.lastHuman&&i.t-m.lastHuman<5000?1-(i.t-m.lastHuman)/5000:0;
+        const o=k*8;D[o]=STATE_INDEX[cur]??1;D[o+1]=STATE_INDEX[prev]??1;D[o+2]=at;D[o+3]=(working.has(id)?.7:0)+human*.35;
+        let ps=-1e5,pk=0;const p=pulses.get(id);if(p&&p.at<=i.tsec){ps=p.at;pk=p.kind;}
+        // Touch (observed edits by a person or an agent): a pulse climbs that file's branch.
+        const touch=Math.max(Number.isFinite(m.lastHuman)?m.lastHuman:-Infinity,Number.isFinite(m.lastAgent)?m.lastAgent:-Infinity);if(Number.isFinite(touch)&&touch<=i.t&&i.t-touch<6000){const ts=secs(touch,epoch);if(ts>ps){ps=ts;pk=0;}}
+        const an=forest.anchors.get(id);D[o+4]=ps;D[o+5]=pk;D[o+6]=an?Math.max(0,an.dist-(an.size||1)):0;D[o+7]=healed;});
+      stateTex.needsUpdate=true;}
+    updateAgents(i);buildBlooms(i);updateBloomLights(i);
+    // Quality 2 and below: half the motes (the shaft and crown motes are interleaved, so both halve).
+    {const h=q>=2?Math.round(moteN/2):0;air.geometry.setDrawRange(h,AIRN-h);}
+    U.uIntensity.value=i.overrides?.intensity??1;
+    for(const L of Object.values(transients))while(L.length&&(i.tsec-L[0].at)/spd>20)L.shift();
   }
-  function afterCamera(){sky.uniforms.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);sky.uniforms.uCam.value.copy(camera.position);}
+  function afterCamera(){sky.uniforms.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);sky.uniforms.uCam.value.copy(camera.position);
+    airMat.uniforms.uFocus.value=Math.max(3,camState.focus);}
   function background(){return sky;}
-  function grade(i){const L=G.light,inten=i.overrides.intensity??1;let f=0;for(const x of flashes){const age=(i.tsec-x.at)/ctx.speed();if(age>=0&&age<3)f+=x.amount*Math.exp(-age*2);}
-    return {bloom:L.bloom*1.1*(1+.2*i.activity),threshold:L.bloomThreshold*.85,exposure:L.exposure*1.05,contrast:L.contrast,saturation:1.12,vignette:L.vignette+.05,grain:L.grain,flash:f*inten,waves:[],
-      tint:i.mood.section==='tension'?new THREE.Vector3(1.05,.95,.92):i.mood.section==='resolve'?new THREE.Vector3(.95,1.05,1):new THREE.Vector3(1,1,1)};}
-  // ---- Camera: low among the organisms (wandering) or rising over them (crane) --------------------------------------
-  function cameraGoal(i){
-    const C=G.camera,fov=C.fov,aspect=camera.aspect||16/9,tanHalf=Math.tan(THREE.MathUtils.degToRad(fov)/2);
-    let canopy=3;for(const o of orgs.values())canopy=Math.max(canopy,o.canopy||o.height);
-    const fit=Math.max(extent/Math.min(aspect,1.8),canopy*.9)/tanHalf*1.0*C.distance;
-    const baseAz=rand(seed)*6.283;let az=baseAz+(C.personality==='wandering'?Math.sin(i.tview/80)*.9+i.tview*.004:i.tview*Math.PI*2/600)*(i.overrides.motion??1);
-    let el=C.elevation+(C.personality==='crane'?.12*Math.sin(i.tview/60):.04*Math.sin(i.tview/50));
-    let target=centre.clone().setY(canopy*.42),distance=Math.max(8,fit);
-    const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;
-    if(since<14&&att){const a=subjectOf(att,i);if(a){const k=smooth(1-Math.max(0,since-9)/5);target.lerp(a.pos,.7*k);distance=lerp(distance,Math.min(distance,Math.max(6,a.radius/tanHalf*1.3)),k);}}
-    else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&branchOf.has(a.fileId));
-      if(busy){const b=branchOf.get(busy.fileId);const o=orgs.get(b.org);target.lerp(b.tip,.35);distance=lerp(distance,Math.max(6,(o?.radius||3)*1.6/tanHalf),.35);}
-      else if(i.phase==='idle'&&orgs.size>1){const list=[...orgs.values()].sort((a,b)=>a.index-b.index);const o=list[((Math.floor(i.tview/28)%list.length)+list.length)%list.length];target.lerp(o.root.clone().setY(o.canopy*.5),.5);distance=lerp(distance,Math.max(7,o.radius*1.9/tanHalf),.45);}}
-    return {target,distance,azimuth:az,elevation:el,fov,omega:.7};
+  // The grade reuses its objects (no allocation per frame).
+  const lightPoint=new THREE.Vector3(),projected=new THREE.Vector3(),SHADOW_TINT=new THREE.Vector3(.86,.95,1.08);
+  const halo=pal.accent.clone().lerp(pal.highlight,.5);
+  const gradeOut={tonemap:'agx',bloomTint:new THREE.Vector3(.85+halo.r*.3,.85+halo.g*.3,.9+halo.b*.3),streak:.05,streakTint:new THREE.Vector3(),rays:[],rayDecay:.965,tint:new THREE.Vector3(),lift:new THREE.Vector3(0,.001,.003)};
+  const ray={x:0,y:0,strength:0,color:new THREE.Vector3()};
+  function grade(i){
+    const L=G.light||{},inten=i.overrides?.intensity??1,spd=ctx.speed();
+    let shadow=shadowAt(i),swell=0,flash=0;
+    for(const x of transients.swell){const a=(i.tsec-x.at)/spd;if(a>=0)swell+=x.k*smooth(a/2)*Math.exp(-Math.max(0,a-1.5)/3.5);}
+    for(const x of transients.flash){const a=(i.tsec-x.at)/spd;if(a>=0)flash+=x.k*Math.exp(-a*1.6);}
+    shadow=clamp(shadow);
+    const sec=i.mood?.section,lit=U.uFogLit.value,g=gradeOut;
+    // Music: a cooler tint under tension, a warmer one on resolve and lift; a cold shadow while blight spreads.
+    g.tint.set(1,1,1);if(sec==='tension')g.tint.set(.97,.97,1.04);else if(sec==='resolve'||sec==='lift')g.tint.set(1.02,1.01,.98);g.tint.lerp(SHADOW_TINT,shadow);
+    // Light shafts toward the light's place on screen (fading as it leaves the frame).
+    lightPoint.copy(camera.position).addScaledVector(lightDir,400);projected.copy(lightPoint).project(camera);g.rays.length=0;
+    if(projected.z<1){const x=projected.x*.5+.5,y=projected.y*.5+.5,off=Math.max(0,Math.abs(x-.5)-.5,Math.abs(y-.5)-.5);
+      const k=num(ATM.lightShafts,.7)*env.shafts*Math.exp(-off*1.4)*(1-.45*shadow);if(k>.01){ray.x=x;ray.y=y;ray.strength=.7*k;ray.color.set(lit.x*3.2,lit.y*2.4,lit.z*2.2);g.rays.push(ray);}}
+    g.streakTint.set(lit.x*2,lit.y*2,lit.z*2.2);
+    g.bloom=num(L.bloom,1)*1.0*(1+.12*i.activity)+swell*.6;g.threshold=num(L.bloomThreshold,.7)*.75;
+    g.exposure=num(L.exposure,1.05)*1.2*(1-.12*shadow)*(1+.18*swell)*(sec==='breath'?.94:1);
+    g.contrast=num(L.contrast,1)*1.12;g.saturation=1-.3*shadow;g.vignette=num(L.vignette,.3)+.12;g.grain=num(L.grain,.025);g.flash=flash*inten;
+    return g;
   }
-  function subjectOf(c,i){const s=c.subject||{};
-    if(s.fileId&&branchOf.has(s.fileId)){const b=branchOf.get(s.fileId);if(s.targetId&&branchOf.has(s.targetId)){const q=branchOf.get(s.targetId).tip;return {pos:b.tip.clone().lerp(q,.5),radius:b.tip.distanceTo(q)*.6+2};}
-      const o=orgs.get(b.org);return {pos:o?o.root.clone().setY(o.canopy*.5).lerp(b.tip,.4):b.tip.clone(),radius:(o?.radius||3)*1.05+.5};}
-    if(s.groupId&&orgs.get(s.groupId)){const o=orgs.get(s.groupId);return {pos:o.root.clone().setY(o.canopy*.45),radius:o.radius+1};}
-    const list=orgsOf(s.fileIds);if(list.length){const c0=new THREE.Vector3();for(const o of list)c0.add(o.root);c0.multiplyScalar(1/list.length);let r=3;for(const o of list)r=Math.max(r,o.root.distanceTo(c0)+o.radius);c0.y=Math.max(...list.map(o=>o.canopy))*.45;return {pos:c0,radius:r};}
+  // ---- Camera: an establishing composition. The largest organism stands close on a third (its crown may leave the
+  // frame), the rest recede diagonally into the haze behind it; a low lens looks slightly up so the crowns break the
+  // light. Idle motion is a slow breath of that view; significant events draw the view and it returns. ---------------
+  const camState={focus:10,view:''};
+  function cameraGoal(i){
+    const fov=num(CAM.fov,38),tanV=Math.tan(THREE.MathUtils.degToRad(fov)/2);
+    const motion=i.overrides?.motion??1,drift=(.3+.9*num(CAM.drift,.7))*motion,crane=CAM.personality==='crane';
+    let target,distance,az,el;
+    if(comp){const v=viewOf(clamp(Sof(comp.A)/Sof0(comp.A),.75,1.3));target=v.target;distance=v.distance;az=v.az;el=v.el;}
+    else{target=centre.clone().setY(canopyH*.5);distance=Math.max(6,extent*1.6/tanV*.4);az=rand(seed)*6.283;el=.08;}
+    // Idle: a slow, composed breath (minutes per cycle), never a constant drift.
+    az+=(.05*Math.sin(i.tview/83)+.02*Math.sin(i.tview/37+1))*drift;distance*=1+.03*Math.sin(i.tview/61)*drift;el+=(crane?.03:.012)*Math.sin(i.tview/97)*drift;
+    const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity,hold=att&&att.tier>=3?16:12;
+    camState.view='establishing';
+    if(since<hold&&att){const ev=eventView(att,tanV);if(ev){camState.view=`${att.intent} +${since.toFixed(1)}s`;const k=smooth(1-Math.max(0,since-(hold-5))/5)*smooth(since/.8+.35)*Math.min(1,(i.overrides?.intensity??1)+.4);
+      target.lerp(ev.target,k);distance=lerp(distance,ev.distance,k);let da=ev.az-az;while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;az+=da*k;el=lerp(el,ev.el,k);}}
+    else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&forest?.anchors.has(a.fileId));
+      if(busy){const a=forest.anchors.get(busy.fileId),o=orgList[a.org];target.lerp(scaled(o,a.tip),.25);distance=lerp(distance,Math.min(distance,Math.max(6,rOf(o)*2/tanV)),.25);}}
+    camState.focus=distance;
+    return {target,distance,azimuth:az,elevation:el,fov,omega:since<hold&&att?.tier>=3?.75:.5};
+  }
+  // The view of an event: its subject near the centre (below the banner's band), its whole organism inside about 70 % of
+  // the frame height, turned around the subject until no other organism stands between it and the lens. Computed from
+  // the organisms' rest sizes and the composition only (a pure function, memoised per event).
+  const evCache=new Map();
+  function eventView(att,tanV){
+    const key=`${att.at}|${att.intent}|${builtVersion}`;if(evCache.has(key))return evCache.get(key);if(evCache.size>64)evCache.clear();
+    // An event across several organisms is best seen in the wide view (it stays).
+    // Wide events (a checkpoint's columns of light, a season turning) read best in the establishing view.
+    if(att.intent==='repository.checkpoint'||att.intent==='world.expanded')return null;
+    const a=subjectOf(att,true);if(!a||!comp||(!a.org&&!a.bloom))return null;
+    const tanH=tanV*(comp.aspect||16/9),O=a.org,H0=O?O.height*Sof0(O):a.radius*2,R0=O?O.radius*Sof0(O):a.radius;
+    // A subject's height in its rest frame (the subject positions are current ones; the ratio is close to 1).
+    const P=a.pos.clone(),dist=Math.min(Math.max(H0/(2*tanV*.7),R0*1.15/tanH,a.radius/tanV*1.2,3.2),viewOf(1).distance*1.15);
+    const el=.1,az0=Math.atan2(-comp.V[1],-comp.V[0]);let best=null,bs=Infinity;
+    for(const d of [0,.3,-.3,.6,-.6,.9,-.9,1.25,-1.25,1.6,-1.6]){const az=az0+d,cx=P.x+Math.cos(az)*dist,cz=P.z+Math.sin(az)*dist;let pen=0;
+      for(const o of orgList){if(o===O||o.removed<1e5)continue;const S=Sof0(o),r=o.radius*S*.55,h=o.height*S;
+        // Closest approach of the sight line (lens to subject) to the organism's axis, in plan.
+        const vx=P.x-cx,vz=P.z-cz,L2=vx*vx+vz*vz,t=clamp(((o.root[0]-cx)*vx+(o.root[2]-cz)*vz)/L2,0,1),qx=cx+vx*t-o.root[0],qz=cz+vz*t-o.root[2];
+        const y=P.y+dist*Math.sin(el)*(1-t);if(t>.02&&t<.98&&Math.hypot(qx,qz)<r+.3&&y<h*1.05)pen+=Math.sqrt(o.members.length)+1;
+        // Never with the lens inside an organism's crown.
+        {const dl=Math.hypot(cx-o.root[0],cz-o.root[2]),R=o.radius*S*1.6+1.5;if(dl<R)pen+=2*(1-dl/R)*(Math.sqrt(o.members.length)+1);}}
+      const score=pen*10+Math.abs(d);if(score<bs){bs=score;best=az;}}
+    // The subject sits a little above the centre (in the band 0.35-0.65 of the height, clear of the banner's top band).
+    const target=P.clone();target.y=Math.max(.6,P.y-dist*tanV*.08);
+    const out={target,distance:dist,az:best,el};
+    // A milestone's bloom may arrive a moment after the recovery that drew the view: memoise only the settled view.
+    const settled=!(att.intent==='milestone.achieved'||att.intent==='refactor.validated'||att.intent==='validation.recovered')||a.bloom;if(settled)evCache.set(key,out);return out;}
+  // rest: from the organisms' rest sizes (time-independent: the event view memoises it).
+  function subjectOf(c,rest=false){const s=c.subject||{};
+    const SX=rest?Sof0:Sof,sc=(o,p)=>{const S=SX(o);return new THREE.Vector3(o.root[0]+(p[0]-o.root[0])*S,p[1]*S,o.root[2]+(p[2]-o.root[2])*S);},hX=o=>o.height*SX(o),rX=o=>o.radius*SX(o);
+    // A milestone (or the recovery verified by the same run) draws the view to the bloom it opened.
+    const bm=c.intent==='validation.recovered'?ctx.director.commands.find(x=>x.intent==='milestone.achieved'&&Math.abs(x.at-c.at)<3000):null;if(bm)c=bm;
+    if(c.intent==='milestone.achieved'||c.intent==='refactor.validated'){const b=bloomAt.get(`${c.intent==='refactor.validated'?1:0}|${c.at}`);if(b)return {pos:sc(b.org,b.p),radius:Math.max(2.2,b.size*SX(b.org)*3),org:b.org,bloom:true};}
+    if(s.fileId&&forest?.anchors.has(s.fileId)){const a=forest.anchors.get(s.fileId),o=orgList[a.org];
+      if(s.targetId&&forest.anchors.has(s.targetId)){const b=forest.anchors.get(s.targetId),ob=orgList[b.org];const pa=v3(o.root).setY(hX(o)*.4),pb=v3(ob.root).setY(hX(ob)*.4);return {pos:pa.clone().lerp(pb,.5),radius:pa.distanceTo(pb)*.6+Math.max(rX(o),rX(ob)),org:null};}
+      return {pos:v3(o.root).setY(hX(o)*.45).lerp(sc(o,a.tip),.35),radius:rX(o)+hX(o)*.35,org:o};}
+    if(s.groupId&&orgs.get(s.groupId)){const o=orgs.get(s.groupId);return {pos:v3(o.root).setY(Math.max(1.2,hX(o)*.45)),radius:Math.max(2.5,rX(o)+hX(o)*.35),org:o};}
+    const list=orgsOf(s.fileIds);if(list.length){const c0=new THREE.Vector3();for(const o of list)c0.add(v3(o.root));c0.multiplyScalar(1/list.length);let r=3,h=1;for(const o of list){r=Math.max(r,c0.distanceTo(v3(o.root))+rX(o));h=Math.max(h,hX(o));}c0.y=h*.42;return {pos:c0,radius:r+h*.3,org:list.length===1?list[0]:null};}
     return null;}
   // ---- Words ---------------------------------------------------------------------------------------------------
-  const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+  const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;const branches=n=>plural(n,'branch').replace('branchs','branches');
   const orgName=id=>{const d=model.districts.get(id);return d?`${ctx.name(id)} · ${d.role}`:ctx.name(id);};
   const MILESTONE={'first-validation':'First validation','integration-validated':'Integration validated','recovery':'Recovery','refactor':'Refactor validated'};
-  function describe(c,i){const s=c.subject||{},d=c.detail||{},n=(s.fileIds||[]).length;const pos=subjectOf(c,i)?.pos;
+  const WORD={coral:'sea fan','crystal-tree':'crystal tree',fern:'fern',kelp:'kelp',mycelial:'mycelium'};
+  // A milestone verified by the same run as a recovery carries both in one banner (the recovery's own is dropped).
+  // The labels keep one callout per subject: when both share one, the recovery's (listed first) carries the banner.
+  const subjectKey=c=>c.subject?.fileId||c.subject?.groupId||(c.subject?.fileIds||[]).join(',');
+  const partner=(c,intent)=>ctx.director.commands.find(x=>x!==c&&x.intent===intent&&Math.abs(x.at-c.at)<3000)||null;
+  const kindsOf=c=>(c?.detail?.kinds||[]).map(x=>MILESTONE[x]||x);
+  function describe(c,i){const d0=describeRaw(c);if(!d0)return null;
+    // A newer failing run owns the screen: older, lower-tier captions give way to it.
+    const t=i?.t??c.at;if(c.intent!=='validation.failed'&&ctx.director.commands.some(x=>x.tier>=Math.min(3,c.tier)&&x.intent==='validation.failed'&&x.at>c.at&&x.at<=t))return null;
+    // A banner says it already: no second caption for the same event.
+    if(c.tier>=3&&d0.banner)d0.text='';
+    return d0;}
+  function describeRaw(c){const s=c.subject||{},d=c.detail||{},n=(s.fileIds||[]).length;const pos=subjectOf(c)?.pos;
     switch(c.intent){
-      case 'subsystem.created':return {text:'A new organism takes root',sub:orgName(s.groupId),position:pos};
-      case 'structure.created':return {text:'New growth unfurls',sub:Object.entries(d.kinds||{}).filter(([k])=>k!=='variable').map(([k,v])=>`${v} ${k.replace('ui.component','blossom').replace('api.route','stamen').replace('class','pod')}`).join(' · ')||plural(d.count||1,'leaf'),position:pos};
-      case 'subsystem.connected':{const ga=branchOf.get(s.fileId)?.org,gb=branchOf.get(s.targetId)?.org;return {text:d.first?'Integration · two organisms intertwine':'A vine between organisms strengthens',sub:ga&&gb?`${ctx.name(ga)} ↔ ${ctx.name(gb)}`:'',position:pos};}
-      case 'validation.failed':return {text:`Tests fail · blight on ${plural(n,'branch')}`.replace('branchs','branches'),sub:'observed failing run',position:pos,color:'#ff8a6a'};
-      case 'validation.passed':return {text:`Tests pass · ${plural(n,'branch').replace('branchs','branches')} glow`,sub:'observed passing run',position:pos,color:'#9dffcf'};
-      case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'branch').replace('branchs','branches')} green again`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
-      case 'refactor.validated':return {text:'Refactor validated · the organism reshapes',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
-      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'glow-wave':'A glow wave',regreen:'Regreening',metamorphosis:'Metamorphosis'})[c.effect]||'A fractal bloom'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
-      case 'repository.checkpoint':return {text:n?`Committed · spores of ${plural(n,'branch').replace('branchs','branches')} rise`:'Committed · the growth is set',sub:'commit observed',position:pos};
-      case 'world.expanded':return {text:`The ecosystem grows · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(2)};
+      case 'subsystem.created':{const o=orgs.get(s.groupId);return {text:`A new ${WORD[o?.species||species]} takes root`,sub:orgName(s.groupId),position:pos};}
+      case 'structure.created':return {text:'A bud unfurls',sub:Object.entries(d.kinds||{}).filter(([k])=>k!=='variable').map(([k,v])=>`${v} ${k.replace('ui.component','blossom').replace('api.route','route').replace('class','pod')}`).join(' · ')||plural(d.count||1,'new twig'),position:pos};
+      case 'subsystem.connected':{const ga=forest?.anchors.get(s.fileId)?.org,gb=forest?.anchors.get(s.targetId)?.org;const na=orgList[ga]?.id,nb=orgList[gb]?.id;
+        return {text:d.first?'Integration · a mycelial strand joins two organisms':'The strand between two organisms thickens',sub:na&&nb?`${ctx.name(na)} ↔ ${ctx.name(nb)}`:'',position:pos};}
+      case 'validation.failed':return {text:`Tests fail · blight on ${branches(n)}`,sub:'observed failing run',position:pos,color:'#ff8a6a'};
+      case 'validation.passed':return {text:`Tests pass · ${branches(n)} glow`,sub:'observed passing run',position:pos,color:'#9dffcf'};
+      case 'validation.recovered':{const m=partner(c,'milestone.achieved');if(m&&subjectKey(m)===subjectKey(c)){const k=kindsOf(m).filter(x=>x!=='Recovery');
+          return {text:`Recovered · a fractal bloom opens`,sub:'verified by a passing test run',position:subjectOf(m)?.pos||pos,color:'#9dffcf',banner:['Recovery',...k].join(' · '),bannerSub:'a fractal bloom opens · verified by a passing test run'};}
+        return {text:`Recovered · light returns to ${branches(d.repaired||n)}`,sub:'the tests pass again',position:pos,color:'#9dffcf',...(m?{}:{banner:'Recovery',bannerSub:'the tests pass again'})};}
+      case 'refactor.validated':return {text:'Refactor validated · a crystalline bloom forms',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
+      case 'milestone.achieved':{const k=kindsOf(c);if(partner(c,'validation.recovered')&&!k.includes('Recovery'))k.unshift('Recovery');
+        return {text:`A fractal bloom opens · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · ')||'Milestone',bannerSub:'a fractal bloom opens · verified by a passing test run'};}
+      case 'repository.checkpoint':return {text:n?`Committed · spores rise from ${branches(n)}`:'Committed · the growth is set',sub:'commit observed',position:pos};
+      case 'world.expanded':return {text:`The ecosystem deepens · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(canopyH*.6)};
       default:return null;}}
-  function agentPosition(id){return agentState.get(id)?.pos||null;}
+  // The chip of a presence stays inside the safe frame (the swarm itself stays at the branch it works on).
+  const chipP=new THREE.Vector3();
+  function agentPosition(id){const p=agentState.get(id)?.pos;if(!p)return null;chipP.copy(p).project(camera);if(chipP.z>1||chipP.z<-1)return p;
+    const x=clamp(chipP.x,-.9,.6),y=clamp(chipP.y,-.75,.8);if(x===chipP.x&&y===chipP.y)return p;return new THREE.Vector3(x,y,chipP.z).unproject(camera);}
   function agentColor(a){return '#'+AGENT_COLORS[a.voice%8].getHexString();}
-  function subsystemLabels(){return [...orgs.values()].map(o=>({position:o.root.clone().setY((o.canopy||o.height)+.8),text:ctx.name(o.id),sub:`${model.districts.get(o.id)?.role||''} · ${plural(o.members.length,'module')}`}));}
+  function subsystemLabels(){return orgList.map(o=>({position:v3(o.root).setY(hOf(o)+.6),text:ctx.name(o.id),sub:`${model.districts.get(o.id)?.role||''} · ${plural(o.members.length,'module')}`}));}
   function status(i){let v=0,st=0;for(const m of model.modules.values()){if(!model.alive(m,i.t))continue;const s=model.stateAt(m,i.t);if(s==='validated')v++;if(s==='stressed')st++;}return st?`${st} under blight`:v?`${v} validated`:'';}
-  function pick(x,y,cam,i){let best=null,bd=.05;for(const [id,b] of branchOf){const p=swayed(b.tip,b.flex,i.tview).project(cam);const d=Math.hypot(p.x-x,(p.y-y)*.6);if(p.z<1&&d<bd){bd=d;best=id;}}
-    if(!best)for(const o of orgs.values()){const p=o.root.clone().setY(o.height*.5).project(cam);const d=Math.hypot(p.x-x,p.y-y);if(p.z<1&&d<bd*2){bd=d;best='org:'+o.id;}}return best;}
-  function inspect(id,i){if(!id)return null;if(id.startsWith('org:')){const o=orgs.get(id.slice(4));return o?{position:o.top.clone(),text:orgName(o.id),sub:`${plural(o.members.length,'module')} · organism of this subsystem`}:null;}
-    const m=model.modules.get(id),b=branchOf.get(id);if(!m||!b)return null;const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
-    return {position:swayed(b.tip,b.flex,i.tview),text:`A branch · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'leaf').replace('leafs','leaves')} · ${plural(deps,'vine')} · ${ctx.name(m.group)}`};}
-  function stats(){return {organisms:orgs.size,segments:segCount,leaves:leafCount,vines:vineCount,spores:sporeCount,crowns:crownCount,species,terrain,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
-  function dispose(){for(const o of [ground,barkMesh,leafMesh,vineMesh,sporePoints,agentPoints,burstPoints,crownMesh]){scene.remove(o);o.geometry.dispose();o.material.dispose();}sky.dispose();cyl.dispose();ribbon.dispose();}
-  // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified milestones before t.
-  function onPrime(t,tsec){for(const v of common.uWaves.value)v.w=-1e5;for(const v of ground.material.uniforms.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;flashes.length=0;
-    crownCount=0;crownLevel.clear();crowns.commit(0);const keep=info;
-    // One entry per (milestone, subject) with how many times it happened, however long ago (director.lasting()).
-    for(const c of ctx.director.lasting()){if(c.effect!=='fractal-bloom'||c.first>t)continue;
-      if(model.version!==builtVersion)build(t);const list=orgsOf(c.subject?.fileIds);
-      for(let n=0;n<c.count;n++){const at=c.times[n-(c.count-c.times.length)]??c.first;info={...keep,tsec:(at-model.epoch)/1000};
-        for(const o of (list.length?list:[...orgs.values()].slice(0,1))){const lvl=(crownLevel.get(o.id)||0)+1;crownLevel.set(o.id,lvl);crown(o,lvl,pal.secondary,pal.valid);}}}
-    info=keep;}
+  function pick(x,y,cam){let best=null,bd=.05;if(!forest)return null;for(const [id,a] of forest.anchors){const p=swayed(a.tip,a.dist,a.org).project(cam);const d=Math.hypot(p.x-x,(p.y-y)*.6);if(p.z<1&&d<bd){bd=d;best=id;}}
+    if(!best)for(const o of orgList){const p=v3(o.root).setY(hOf(o)*.5).project(cam);const d=Math.hypot(p.x-x,p.y-y);if(p.z<1&&d<bd*2){bd=d;best='org:'+o.id;}}return best;}
+  function inspect(id,i){if(!id||!forest)return null;if(id.startsWith('org:')){const o=orgs.get(id.slice(4));return o?{position:topOf(o),text:orgName(o.id),sub:`${plural(o.members.length,'module')} · a ${WORD[o.species]} of this subsystem`}:null;}
+    const m=model.modules.get(id),a=forest.anchors.get(id);if(!m||!a)return null;const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
+    return {position:swayed(a.tip,a.dist,a.org),text:`A branch · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'twig')} · ${plural(deps,'strand')} · ${ctx.name(m.group)}`};}
+  function stats(){const sp={};for(const o of orgList)sp[o.species]=(sp[o.species]||0)+1;
+    return {organisms:orgList.length,species:sp,dominant:species,segments:counts.thick+counts.fine,structural:counts.thick,twigs:counts.fine,crowns:counts.crowns,farSilhouettes:counts.far,leaves:counts.leaves,glows:counts.glows,cords:counts.cords,bloomSegments:bloomCount,
+    motes:moteN,terrain,palette:P,anchor:comp?`${comp.A.species}/${comp.A.members.length}`:null,view:camState.view,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),canopy:+canopyH.toFixed(1)};}
+  function dispose(){for(const o of [thickMesh,fineMesh,leafMesh,glowPoints,ground,shaftMesh,pillarMesh,mistMesh,cordMesh,airPoints,burstPoints,bloomMesh,bloomPoints,bloomLeafMesh,agentPoints]){scene.remove(o);o.geometry.dispose();}
+    for(const set of Object.values(crownSets)){scene.remove(set.mesh);set.mesh.geometry.dispose();set.base.dispose();set.material.dispose();}
+    for(const m of [segMat,leafMat,glowMat,ground.material,shaftMat,pillarMat,mistMat,cordMat,airMat,burstMat,agentMat,sky])m.dispose();
+    for(const g of [thickGeo,fineGeo,leafGeo,shaftGeo,pillarGeo,mistGeo,ribbon])g.dispose();stateTex?.dispose();stateTex=null;}
+  // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified history (buildBlooms).
+  function onPrime(){for(const v of U.uWave.value)v.y=-1e5;for(const v of groundU.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of pillarU.uCol.value)v.z=-1e5;
+    for(const L of Object.values(transients))L.length=0;pulses.clear();lastBloomKey='';agentState.clear();}
+  makeCrowns(false);
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }

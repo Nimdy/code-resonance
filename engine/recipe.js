@@ -30,7 +30,8 @@
 const {sha}=require('../receiver/protocol');
 const catalog=require('./catalog');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
-const RECIPE_VERSION=1;      // generator: bump when the same inputs would produce a different genome
+const RECIPE_VERSION=2;      // generator: bump when the same inputs would produce a different genome
+                             // (2: Fractal Biosphere species from the data; Machine Cathedral shafts and wetness added)
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
 const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
@@ -126,7 +127,11 @@ const GENOMES={
     };
   },
   'fractal-biosphere'(r,t){
-    const species=t.ui>.25?weighted(r,[['coral',2],['fern',2],['kelp',1],['crystal-tree',1]]):weighted(r,[['mycelial',2],['fern',1],['coral',1],['crystal-tree',1.5]]);
+    // Species from the data (the seed still decides between close candidates): component surfaces grow coral (polyps,
+    // blossoms), folder branching grows ferns, flowing function code kelp, dense cross-subsystem dependencies a
+    // mycelial network, classes, types and tests crystal trees.
+    const species=weighted(r,[['mycelial',.3+.8*clamp(t.crossDensity||0)],['kelp',.3+(t.functions||0)*(1-clamp((t.model||0)*3))],['fern',.4+2*clamp(t.branching||0)],
+      ['crystal-tree',.4+3*(t.model||0)+1.5*(t.tests||0)],['coral',.5+3*clamp(t.uiModules||0)]]);
     return {
       geometry:{species,branchAngle:between(r,.35,.8),lengthDecay:between(r,.68,.86),curl:between(r,.05,.45),gravitropism:between(r,-.15,.6),
         taper:between(r,.55,.8),leafShape:pick(r,['blade','round','frond','petal']),leafDensity:between(r,.6,1.2)},
@@ -143,7 +148,7 @@ const GENOMES={
     };
   },
   'machine-cathedral'(r,t){
-    return {
+    const g={
       geometry:{architecture:pick(r,['gothic','brutalist','deco','spire']),setback:between(r,0,.35),spire:between(r,.3,1),buttress:between(r,0,1)},
       secondary:{mechanisms:between(r,.4,1),windows:between(r,.6,1.2),beacons:between(r,.4,1)},
       space:{spread:between(r,.95,1.15),streets:between(r,.8,1.2)},
@@ -156,6 +161,7 @@ const GENOMES={
         'subsystem.connected':'lock-mechanism','validation.failed':'stress-fracture','validation.passed':'window-scan','validation.recovered':'restore',
         'refactor.validated':'reassemble','milestone.achieved':'illumination','repository.checkpoint':'set-in-stone','world.expanded':'district-lights'}
     };
+    return g;
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
@@ -171,9 +177,16 @@ function common(r,traits){
     agentProminence:round(.6+.4*clamp(traits.agentShare*2+traits.agents/8)),
     limits:{detail:round(1-.55*size),maxParticles:Math.round(6000+18000*(1-size*.4)),maxLabels:pick(r,[4,5,6])}};
 }
+// Values added to a family after its identities were first generated: drawn from their own seeded stream, so every
+// earlier value of an identity keeps exactly its draw (recipes stored before them fall back to the world's defaults).
+const ADDED={
+  // Machine Cathedral: moonlight shafts through the haze, and how wet (mirror-like) the obsidian floor is.
+  'machine-cathedral'(r,g){g.atmosphere.shafts=between(r,.5,1.1);g.material.wetness=between(r,.3,.9);}
+};
 function genome(family,seed,variant,traits){
   const r=rng('genome',family,seed,variant);
   const g=GENOMES[family](r,traits);
+  ADDED[family]?.(rng('genome-added',family,seed,variant),g);
   const {light,music,agentProminence,limits}=common(r,traits);
   return {...g,palette:palette(rng('palette',family,seed,variant),family,traits),light,ambient:AMBIENT[family],music,agentProminence,limits};
 }
