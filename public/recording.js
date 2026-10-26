@@ -50,6 +50,9 @@
     return {
       canvas,supported,
       get active(){return !!recorder&&recorder.state==='recording';},
+      // Settles with the result when the current (or last) recording has stopped, however it stopped (the user, the
+      // page, a recorder error): what the single-recorder lock is released on.
+      get finished(){return finishing;},
       get audio(){return audio;},get audioLost(){return audioLost;},
       // Size of the recording (even numbers, as video encoders require). Changes apply while idle only.
       resize(w,h){if(recorder)return;canvas.width=even(w);canvas.height=even(h);},
@@ -92,5 +95,33 @@
       stats(){return {active:!!recorder,elapsedMs:recorder?performance.now()-startedAt:0,frames,presented,bytes,chunks:chunks.length,audio,audioLost,mimeType,width:canvas.width,height:canvas.height,lastFrameAgoMs:recorder?performance.now()-lastDraw:null};}
     };
   }
-  window.ResonanceRecording={create,supported};
+  // One recording at a time in this browser profile: an exclusive Web Lock, taken only if it is free. The browser's
+  // lock manager grants it to exactly one window however close together windows ask (the windows' BroadcastChannel
+  // announcements alone let two windows that press Record in the same instant both start), and releases it when the
+  // holding page closes, navigates away or crashes: a lock is never left stale. Without Web Locks (an insecure context,
+  // e.g. a LAN address) the announcements are all there is, and `policy` says so.
+  const LOCK='code-resonance.recorder';
+  const ELSEWHERE='Another window of this browser is already recording (one recording at a time): stop it there, then record here.';
+  const lockManager=()=>typeof navigator!=='undefined'?navigator.locks:undefined;
+  function claim(locks=lockManager()){
+    const unlocked={ok:true,policy:'announcements',release:()=>Promise.resolve()};
+    if(!locks?.request)return Promise.resolve(unlocked);
+    return new Promise(resolve=>{
+      let done=false;const settle=v=>{if(!done){done=true;resolve(v);}};
+      let release;const held=new Promise(r=>{release=r;});
+      // Settles once the lock manager has let the lock go (another window may then take it).
+      const gone=locks.request(LOCK,{mode:'exclusive',ifAvailable:true},lock=>{
+        if(!lock){settle({ok:false,policy:'web-locks',reason:ELSEWHERE});return undefined;}
+        // Held until release(): the lock manager keeps it while this promise is pending. release() resolves when the
+        // lock is really free, so the window can announce the end of its recording only then.
+        settle({ok:true,policy:'web-locks',release:()=>{release();return gone;}});return held;
+      }).then(()=>{},e=>settle({...unlocked,error:String(e?.message||e)}));
+    });
+  }
+  // Whether some window of this browser holds the recorder lock (null: no Web Locks here).
+  async function held(locks=lockManager()){
+    if(!locks?.query)return null;
+    try{const s=await locks.query();return (s.held||[]).some(l=>l.name===LOCK);}catch{return null;}
+  }
+  window.ResonanceRecording={create,supported,claim,held,LOCK};
 })();

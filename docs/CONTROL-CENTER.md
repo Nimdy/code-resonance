@@ -70,8 +70,10 @@ the recipe revision it previewed (`ifRevision`); if another window changed the i
 to reload or to apply on top. Applying a change never seeks, restarts or interrupts playback: music options apply on
 the next bar, a recipe updates the running world (a change of runtime — built-in family, pack world, shader look —
 rebuilds the world in place). Previews and session choices stay in the window that made them; the OBS view never shows
-a preview. One recording at a time: the windows of a browser tell each other (BroadcastChannel) and the Record controls
-of the others say so.
+a preview. One recording at a time: a window records only while it holds the browser's recorder lock (Web Locks, granted
+to exactly one window however close two presses are, and freed at once if that window crashes); the windows also tell
+each other (BroadcastChannel) so the Record controls of the others say so, and a stale announcement from a crashed window
+is cleared once no window holds the lock. The scope is one browser profile and origin, where recordings are made.
 
 ## Security of administrative actions
 

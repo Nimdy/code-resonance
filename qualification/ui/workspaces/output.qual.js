@@ -91,7 +91,9 @@ function probe(file){
         check('the recorded sound carries the music (not silent)',p.maxVolumeDb!==null&&p.maxVolumeDb>-60,`max_volume ${p.maxVolumeDb} dB`);}
       check('the file name carries no private name',!names.some(n=>file.suggestedFilename().includes(n))&&!/sample-app/.test(file.suggestedFilename()),file.suggestedFilename());
     }else check('the 720p recording is a WebM file with video and sound',false,'no download');
-    const lastText=await until(()=>page.evaluate(()=>{const t=document.getElementById('outLast').textContent;return /code-resonance-.*\.webm/.test(t)&&/music is included/.test(t)?t:'';}),5000);
+    // The file, its size and length are on the line under Record (#outLastLine); the sound and the downloads note in the
+    // profile column (#outLast), which no longer repeats the line.
+    const lastText=await until(()=>page.evaluate(()=>{const line=document.getElementById('outLastLine').textContent,t=document.getElementById('outLast').textContent;return /code-resonance-.*\.webm/.test(line)&&/music is included/.test(t)?`${line} | ${t}`:'';}),5000);
     check('the last recording is described (file, length, size, sound) with the downloads note',lastText&&/downloads folder/.test(lastText)&&/1280 × 720/.test(lastText),String(lastText).slice(0,200));
     const freed=await until(()=>page2.evaluate(()=>{const b=document.getElementById('outRecordBtn');return !b.disabled&&b.textContent.trim()==='Record';}),5000);
     check('the second window can record again once the first stopped',freed);
@@ -183,6 +185,87 @@ function probe(file){
     else check('Download JSON gives the derived history of the selected project',false,'no download');
     const film=await page.textContent('.out-cmds');
     check('the film command is the real one (film.js after npm ci in qualification, with this data folder and project)',/cd qualification && npm ci/.test(film)&&film.includes(`node visual/film.js --data "${env.dir}" --project ${sample}`),film.replace(/\s+/g,' ').slice(0,200));
+    // ---- One recorder, atomically: two windows press Record at the same instant, many times -------------------------
+    // Both windows' buttons are enabled when pressed (neither has heard the other announce a recording, so the
+    // announcements cannot decide); the browser's recorder lock lets exactly one start, and the other says why.
+    const ROUNDS=Math.max(1,Number(process.env.CR_RECORD_RACE_ROUNDS)||20);
+    const racers=[];for(const label of ['race-a','race-b']){const p=await ctx.newPage();watch(p,label);
+      await p.goto(`${url}/?qual=1&project=${sample}#/output`);await p.waitForSelector('#outRecordBtn');
+      await p.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:20000});racers.push(p);}
+    const policies=await Promise.all(racers.map(p=>p.evaluate(()=>window.ResonancePlayer.record.lockPolicy)));
+    check('the recorder lock is the browser’s Web Locks (not announcements alone)',policies.every(x=>x==='web-locks'),policies.join(','));
+    const ready=p=>p.evaluate(()=>{const b=document.getElementById('outRecordBtn');return !b.disabled&&b.textContent.trim()==='Record'&&!window.ResonancePlayer.state.recording.active;});
+    const rounds=[];
+    for(let i=0;i<ROUNDS;i++){
+      const free=await until(async()=>(await ready(racers[0]))&&(await ready(racers[1])),15000,100);
+      if(!free){rounds.push({i,error:'a window did not become ready'});break;}
+      const before=await Promise.all(racers.map(p=>p.evaluate(()=>({id:window.ResonancePlayer.state.notices.at(-1)?.id||0,sound:window.ResonancePlayer.state.sound.enabled}))));const seen=before.map(b=>b.id);
+      // The same wall-clock instant in both windows (one machine, one clock); each reports whether its button was
+      // enabled when it pressed it and what Record answered.
+      const at=Date.now()+400;
+      const presses=await Promise.all(racers.map(p=>p.evaluate(at=>new Promise(resolve=>{
+        setTimeout(()=>{const b=document.getElementById('outRecordBtn'),enabled=!b.disabled,t=Date.now();b.click();resolve({enabled,t});},Math.max(0,at-Date.now()));}),at)));
+      // Watch both windows for two seconds: how many record at once, at most.
+      let maxActive=0,winner=-1;const t0=Date.now();
+      while(Date.now()-t0<2000){const act=await Promise.all(racers.map(p=>p.evaluate(()=>window.ResonancePlayer.state.recording.active)));
+        maxActive=Math.max(maxActive,act.filter(Boolean).length);if(winner<0)winner=act.indexOf(true);await wait(100);}
+      const loser=winner===0?1:0;
+      const told=winner>=0?await until(()=>racers[loser].evaluate(seen=>window.ResonancePlayer.state.notices.some(n=>n.id>seen&&/Another window of this browser is already recording/.test(n.text)),seen[loser]),3000):false;
+      const loserSound=winner>=0?await racers[loser].evaluate(()=>window.ResonancePlayer.state.sound.enabled):null;
+      rounds.push({i,enabled:presses.map(p=>p.enabled),spreadMs:Math.abs(presses[0].t-presses[1].t),maxActive,winner,told:!!told,loserSound,loserSoundBefore:winner>=0?before[loser].sound:null});
+      if(winner>=0){const dl=racers[winner].waitForEvent('download',{timeout:30000}).catch(()=>null);await racers[winner].click('#outRecordBtn');await dl;}
+    }
+    measurements.recordRace={rounds:rounds.length,wins:[rounds.filter(r=>r.winner===0).length,rounds.filter(r=>r.winner===1).length],maxSpreadMs:Math.max(...rounds.map(r=>r.spreadMs||0)),detail:rounds};
+    check(`${ROUNDS} rounds of Record pressed in two windows at the same instant (both buttons enabled): exactly one recording each time`,
+      rounds.length===ROUNDS&&rounds.every(r=>r.enabled?.every(Boolean)&&r.maxActive===1&&r.winner>=0),
+      `wins ${measurements.recordRace.wins.join('/')}, press spread ≤ ${measurements.recordRace.maxSpreadMs} ms, max active ${Math.max(...rounds.map(r=>r.maxActive||0))}`+(rounds.some(r=>r.error)?` ${rounds.find(r=>r.error).error}`:''));
+    check('the window that lost the race says another window is recording, and did not start its sound',
+      rounds.length===ROUNDS&&rounds.every(r=>r.told&&r.loserSound===r.loserSoundBefore),rounds.filter(r=>!r.told||r.loserSound!==r.loserSoundBefore).map(r=>`${r.i}${r.told?'':' not told'}${r.loserSound!==r.loserSoundBefore?' sound turned on':''}`).join(',')||'every round');
+    // The control (a measurement, not a check): the same simultaneous press in two fresh windows with the lock bypassed
+    // (their announcements alone) shows whether this race would let two through without it. The windows are closed
+    // without saving (two recorders at once is the state the lock exists to prevent).
+    {const ctl=[];for(const label of ['control-a','control-b']){const p=await ctx.newPage();watch(p,label);
+        await p.goto(`${url}/?qual=1&project=${sample}#/output`);await p.waitForSelector('#outRecordBtn');
+        await p.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:20000});ctl.push(p);}
+      const free=await until(async()=>(await ready(ctl[0]))&&(await ready(ctl[1])),15000,100);
+      if(free){await Promise.all(ctl.map(p=>p.evaluate(()=>{window.ResonanceRecording.claim=async()=>({ok:true,policy:'announcements',release:()=>Promise.resolve()});})));
+        const at=Date.now()+400;
+        const enabled=await Promise.all(ctl.map(p=>p.evaluate(at=>new Promise(resolve=>{setTimeout(()=>{const b=document.getElementById('outRecordBtn'),e=!b.disabled;b.click();resolve(e);},Math.max(0,at-Date.now()));}),at)));
+        let maxActive=0;const t0=Date.now();
+        while(Date.now()-t0<2000){const act=await Promise.all(ctl.map(p=>p.evaluate(()=>window.ResonancePlayer.state.recording.active)));maxActive=Math.max(maxActive,act.filter(Boolean).length);await wait(100);}
+        measurements.recordRace.withoutLock={enabled,maxActive};
+        console.log(`(control) the same press with the lock bypassed: ${maxActive} window(s) recording at once`);}
+      for(const p of ctl)await p.close();}
+    // ---- A crashed recorder leaves no stale lock: its renderer is killed while recording, the other window records --
+    {const [a,b]=racers;
+      await until(async()=>(await ready(a))&&(await ready(b)),15000,100);
+      await a.click('#outRecordBtn');
+      const recA=await until(()=>a.evaluate(()=>window.ResonancePlayer.state.recording.active),10000);
+      const heldBefore=await b.evaluate(()=>window.ResonancePlayer.record.heldElsewhere());
+      const refused=await b.evaluate(()=>window.__qual.record());
+      // Page.crash never answers (the renderer dies first): the page's crash event is what says it happened.
+      const crashed=a.waitForEvent('crash',{timeout:15000}).then(()=>true,()=>false);
+      const cdp=await ctx.newCDPSession(a);void cdp.send('Page.crash').catch(()=>{});
+      const didCrash=await crashed;
+      const freedAfterCrash=await until(async()=>(await b.evaluate(()=>window.ResonancePlayer.record.heldElsewhere()))===false,10000);
+      // What b's Record button says now (the windows' announcements: a crashed window never says it stopped).
+      measurements.recordCrash={buttonAfterCrash:(await b.textContent('#outRecordBtn')).trim(),disabledAfterCrash:await b.evaluate(()=>document.getElementById('outRecordBtn').disabled)};
+      const took=await b.evaluate(()=>window.__qual.record());
+      const recB=await until(()=>b.evaluate(()=>window.ResonancePlayer.state.recording.active),10000);
+      check('while one window records, the other cannot (its lock is held there)',recA&&heldBefore===true&&refused?.ok===false&&refused?.reason==='elsewhere',JSON.stringify({recA,heldBefore,refused:refused?.reason}));
+      check('a window that crashes while recording releases the lock at once: the other window records',didCrash&&freedAfterCrash&&took?.ok===true&&recB,JSON.stringify({didCrash,freedAfterCrash,took}));
+      // Stopped without awaiting the page's promise across the evaluate boundary (Playwright reported it garbage
+      // collected while the stop itself had settled); the page records when its stop settles and the check reads that.
+      await b.evaluate(()=>{window.__stopB={};Promise.resolve(window.__qual.stop()).then(r=>{window.__stopB.settled=true;window.__stopB.result=!!r;},e=>{window.__stopB.error=String(e);});});
+      const stopB=await until(()=>b.evaluate(()=>window.__stopB?.settled&&!window.ResonancePlayer.state.recording.active?window.__stopB:null),15000);
+      check('the window that took over after the crash stops its recording normally',!!stopB?.result,JSON.stringify(stopB||await b.evaluate(()=>window.__stopB)));
+      // A crashed window never announces that it stopped; the recorder lock is the evidence that it did not leave a
+      // “Recording in another window” behind in the windows that remain.
+      const recovered=await until(()=>page.evaluate(()=>{const x=document.getElementById('outRecordBtn');return !x.disabled&&x.textContent.trim()==='Record';}),8000);
+      check('after the crash the remaining windows’ Record controls recover (no stale “recording in another window”)',recovered,(await page.textContent('#outRecordBtn')).trim());
+      await a.close().catch(()=>{});await b.close();
+      // The crashed renderer's own console noise is not this page's error.
+      for(let i=errors.length-1;i>=0;i--)if(/^race-a: .*(crash|Target closed|Target crashed)/i.test(errors[i]))errors.splice(i,1);}
     // ---- Keyboard and screenshots ----------------------------------------------------------------------------------
     await page.evaluate(()=>document.querySelector('.ws-output h1').focus());
     const order=[];for(let i=0;i<8;i++){await page.keyboard.press('Tab');order.push(await page.evaluate(()=>document.activeElement.id||document.activeElement.dataset.profile||document.activeElement.textContent.trim().slice(0,24)));}

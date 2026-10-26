@@ -23,6 +23,84 @@ export function generatedName(id){
   for(let i=0;i<12;i++){const name=pick(ONSET)+pick(VOWEL)+pick(CODA)+pick(ENDING);if(!BLOCK.test(name))return name;}
   return 'Aurel';
 }
+// ---- Auto quality ----------------------------------------------------------------------------------------------------
+// Live playback in Auto measures the presented frame rate (wall clock) over half-second windows and moves between the
+// levels with hysteresis (docs/QUALIFICATION.md, "Auto quality"):
+// - down after `downAfter` s of windows under `slow` fps, to the first level whose relative pixel cost (`cost`) is
+//   expected to reach `hold` fps (at least one level: MSAA alone rarely rescues a frame at 18 fps); under `verySlow`
+//   fps for `jumpAfter` s, at once to the level expected to reach `target` fps;
+// - where the browser measures the GPU time of a frame, slow frames lower the level only while the GPU accounts for
+//   at least `gpuShare` of the frame time: frames slowed by the processor or by another program are not made faster by
+//   fewer pixels (they count towards `degraded` instead when under `unusable` fps);
+// - up one level only after `upAfter` s in which the level above is expected to reach `target` fps: from the GPU
+//   time when the browser measures it (and frames not slow now), otherwise from the frame rate (at the display's
+//   refresh rate, `capped`, no headroom is visible in it) and from what was seen at the levels left for slowness in
+//   the last `memory` s — or only the last `recheck` s when the current level runs over `stale`× what that memory
+//   predicts for it (the machine was busy then: another program, a build; or the pixel-cost model does not fit this
+//   GPU, which only a later attempt can tell);
+// - a level that turns slow within `probation` s of stepping up to it was a failed attempt: back one level (to the
+//   level that held), and that level waits three times longer before it is tried again (at most `upMax` s); a level
+//   held through its probation halves its wait again;
+// - frames during `start` s after creation and `settle` s after a change (shader compilation, new render targets)
+//   are not measured; a single gap over `pause` s is a pause (hidden tab, stage not shown), not a slow frame;
+// - `degraded`: under `unusable` fps for `unusableAfter` s at the lowest level (or at a fixed level chosen by the
+//   viewer): no level makes this machine's WebGL usable. It clears after `recoverAfter` s at `slow` fps or better.
+// Pure (time passed in, seconds) so the logic is unit-tested (tests/adaptive-quality.test.js).
+export const AUTO_QUALITY=Object.freeze({window:.5,slow:24,hold:27,downAfter:2,verySlow:12,jumpAfter:1,target:30,capped:55,upAfter:20,upMax:600,probation:10,
+  memory:120,stale:1.2,recheck:20,gpuShare:.5,start:1.5,settle:.75,pause:1,unusable:8,unusableAfter:5,recoverAfter:10,cost:Object.freeze([1.35,1,.5625,.3025])});
+export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=true,config={}}={}){
+  const C={...AUTO_QUALITY,...config},top=levels-1,clampLevel=x=>Math.max(0,Math.min(top,Math.round(Number(x)||0)));
+  floor=clampLevel(floor);level=adaptive?Math.max(floor,clampLevel(level)):floor;
+  let last=null,longGap=false,frames=0,span=0,settle=C.start,slowFor=0,verySlowFor=0,upFor=0,unusableFor=0,recoverFor=0;
+  let holds,seen,sinceUp=Infinity,proving=false,fps=null,degraded=false,changes=0;
+  const forget=()=>{holds=Array(levels).fill(C.upAfter);seen=Array(levels).fill(null);sinceUp=Infinity;proving=false;};forget();
+  const restart=()=>{frames=0;span=0;slowFor=0;verySlowFor=0;upFor=0;unusableFor=0;recoverFor=0;};
+  function to(next,reason,now,f){
+    const from=level;
+    if(next>from){seen[from]={f,at:now};
+      if(sinceUp<C.probation){holds[from]=Math.min(C.upMax,holds[from]*3);next=from+1;reason='failed-step-up';}
+      sinceUp=Infinity;proving=false;}
+    else{sinceUp=0;proving=true;}
+    level=next;changes++;restart();settle=C.settle;
+    return {from,to:next,reason};
+  }
+  return {
+    get level(){return level;},get fps(){return fps;},get degraded(){return degraded;},get changes(){return changes;},get adaptive(){return adaptive;},
+    hold(l){return holds[clampLevel(l)];},
+    // The viewer's choice changed: a fixed level (or Auto's floor) and whether to adapt. Everything is measured anew.
+    configure({floor:f,adaptive:a}={}){if(f!==null&&f!==undefined&&Number.isFinite(Number(f))){floor=clampLevel(f);level=floor;}if(typeof a==='boolean')adaptive=a;
+      last=null;longGap=false;restart();settle=C.settle;degraded=false;fps=null;forget();},
+    // One presented frame at `now` (seconds), with the GPU time per frame (ms) when known. Returns {from, to, reason}
+    // when the level changes, otherwise null.
+    frame(now,gpuMs=null){
+      if(last===null){last=now;return null;}
+      const dt=now-last;last=now;if(!(dt>0))return null;
+      if(dt>C.pause&&!longGap){longGap=true;frames=0;span=0;return null;}
+      longGap=dt>C.pause;
+      sinceUp+=dt;
+      if(settle>0){settle-=dt;return null;}
+      frames++;span+=dt;if(span<C.window)return null;
+      const f=frames/span,w=span;frames=0;span=0;fps=fps===null?f:fps+(f-fps)*.5;
+      const gpu=gpuMs>0,gpuBound=!gpu||gpuMs>=C.gpuShare*1000/f;
+      slowFor=f<C.slow&&gpuBound?slowFor+w:0;verySlowFor=f<C.verySlow&&gpuBound?verySlowFor+w:0;
+      unusableFor=(!adaptive||level>=top||!gpuBound)&&f<C.unusable?unusableFor+w:0;
+      if(unusableFor>=C.unusableAfter)degraded=true;
+      recoverFor=degraded&&f>=C.slow?recoverFor+w:0;if(recoverFor>=C.recoverAfter){degraded=false;recoverFor=0;}
+      if(!adaptive)return null;
+      if(proving&&sinceUp>=C.probation&&f>=C.slow){proving=false;holds[level]=Math.max(C.upAfter,holds[level]/2);}
+      const down=goal=>{const budget=C.cost[level]*f/goal;let n=level+1;while(n<top&&C.cost[n]>budget)n++;return n;};
+      if(level<top&&verySlowFor>=C.jumpAfter)return to(down(C.target),'very-slow',now,f);
+      if(level<top&&slowFor>=C.downAfter)return to(down(C.hold),'slow',now,f);
+      if(level<=floor){upFor=0;return null;}
+      const above=level-1,up=C.cost[above]/C.cost[level];
+      const remembered=()=>seen.every((s,k)=>!s||k>above||s.f*C.cost[k]/C.cost[above]>=C.target||now-s.at>(f>C.stale*s.f*C.cost[k]/C.cost[level]?C.recheck:C.memory));
+      const room=gpu?f>=C.slow&&gpuMs*up<=1000/C.target:(f>=C.capped||f/up>=C.target)&&remembered();
+      upFor=room?upFor+w:0;
+      if(upFor>=holds[above])return to(above,'headroom',now,f);
+      return null;
+    }
+  };
+}
 // The recipe's rendering technique applied to a world's grade (multipliers; identity when the genome has none).
 function withTechnique(g,t){
   if(!t)return g;g={...g};
@@ -33,7 +111,7 @@ function withTechnique(g,t){
   return g;
 }
 // Public labels never receive the project folder name: titles come only from the recipe's approved public title.
-export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',quality=0,adaptive=true,families={},extension=null,assets={}}={}){
+export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',quality=0,adaptive=true,level:startLevel=null,families={},extension=null,assets={}}={}){
   const known=id=>!!(families[id]||BUILTIN[id]);
   if(!recipe||!known(recipe.family))throw new Error('A visual recipe with a known family is required');
   const renderer=new THREE.WebGLRenderer({canvas,antialias:false,preserveDrawingBuffer:film,powerPreference:'high-performance',alpha:false,stencil:false});
@@ -42,14 +120,17 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const pipeline=createPipeline(renderer,{samples:4});
   const overlay=createOverlay();
   let speedK=speed,mode=labels,mood={section:'home',energy:0,tempo:92},beatPhase=0,size=[16,9],pixelRatio=1;
-  // Live playback adapts when frames are slow: first no MSAA, then 75 %, then 55 % resolution. Films keep full quality.
+  // Live playback adapts when frames are slow: first no MSAA, then 75 %, then 55 % resolution. Films keep the fixed
+  // quality they were given (never adaptive). `startLevel`: where Auto starts (the level the previous world in this
+  // window settled at), never above the chosen floor.
   const LEVELS=[{samples:4,scale:1},{samples:0,scale:1},{samples:0,scale:.75},{samples:0,scale:.55}];
-  let level=Math.max(0,Math.min(LEVELS.length-1,Number(quality)||0)),frameEma=1/60,slowFor=0,fastFor=0;
-  function applyLevel(){pipeline.setSamples(LEVELS[level].samples);const k=LEVELS[level].scale;renderer.setPixelRatio(pixelRatio*k);renderer.setSize(size[0],size[1],false);pipeline.setSize(Math.round(size[0]*pixelRatio*k),Math.round(size[1]*pixelRatio*k));}
-  function adapt(dt){if(film||!adaptive||dt<=0)return;frameEma+=(dt-frameEma)*.05;
-    if(frameEma>1/28){slowFor+=dt;fastFor=0;}else if(frameEma<1/55){fastFor+=dt;slowFor=0;}else{slowFor=0;fastFor=0;}
-    if(slowFor>3&&level<LEVELS.length-1){level++;slowFor=0;frameEma=1/45;applyLevel();}
-    else if(fastFor>20&&level>Math.max(0,Number(quality)||0)){level--;fastFor=0;applyLevel();}}
+  const governor=createQualityGovernor({levels:LEVELS.length,floor:Number(quality)||0,level:startLevel??(Number(quality)||0),adaptive:!film&&adaptive});
+  let level=governor.level,applied='';
+  // A level change resizes the render targets (and switches MSAA) only: no shader is recompiled, and nothing is
+  // reallocated when neither the level nor the size changed.
+  function applyLevel(){const k=LEVELS[level].scale,key=`${level}|${size[0]}x${size[1]}|${pixelRatio}`;if(key===applied)return;applied=key;
+    pipeline.setSamples(LEVELS[level].samples);renderer.setPixelRatio(pixelRatio*k);renderer.setSize(size[0],size[1],false);pipeline.setSize(Math.round(size[0]*pixelRatio*k),Math.round(size[1]*pixelRatio*k));}
+  function adapt(){if(film)return;const change=governor.frame(performance.now()/1000,gpuMs);if(change){level=governor.level;applyLevel();}}
   const camera=new THREE.PerspectiveCamera(36,16/9,.1,4000);
   const rig=createCameraRig(camera);
   const model=createModel({speed});
@@ -161,7 +242,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
-    setQuality(q,adapt){if(Number.isFinite(Number(q))){quality=Math.max(0,Math.min(LEVELS.length-1,Number(q)));level=quality;}if(typeof adapt==='boolean')adaptive=adapt;slowFor=0;fastFor=0;applyLevel();},
+    setQuality(q,adapt){governor.configure({floor:q!==null&&q!==undefined&&Number.isFinite(Number(q))?Number(q):undefined,adaptive:typeof adapt==='boolean'?!film&&adapt:undefined});level=governor.level;applyLevel();},
+    // Auto's state for the player: the level, the measured frame rate, and whether no level makes WebGL usable here.
+    performance(){return {level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,changes:governor.changes,adaptive:governor.adaptive};},
     pick(x,y){if(!world.pick)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info);selected=id;return id?world.inspect?.(id,info):null;},
     render,drawOverlay,
     // Every string currently on screen (qualification: the privacy boundary covers labels too).
@@ -170,7 +253,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:history.count,history:history.stats(),
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
-      quality:level,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
+      quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2)};},
     // The context itself is released now (otherwise its GPU memory and buffers wait for the garbage collector).
     dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);world?.dispose();pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}

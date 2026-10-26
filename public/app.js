@@ -91,11 +91,30 @@
   let visible=true;
   // Transient messages for the interface (recording finished early, a pack over budget, …).
   const notices=[];let noticeSeq=0;
-  function notify(text,kind='info'){notices.push({id:++noticeSeq,text:String(text),kind,at:Date.now()});if(notices.length>20)notices.shift();changed('notice');}
+  // `action` (optional): what the message offers, e.g. {label:'Show Monolith', world:'city'}; the interface decides.
+  function notify(text,kind='info',action=null){notices.push({id:++noticeSeq,text:String(text),kind,at:Date.now(),...(action?{action}:{})});if(notices.length>20)notices.shift();changed('notice');}
   if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
   if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
   if(params.get('adapt')==='0'&&!params.has('quality'))qualityChoice='0';
   const qualityLevel=()=>qualityChoice==='auto'?(Number(params.get('quality'))||0):Number(qualityChoice),qualityAdaptive=()=>qualityChoice==='auto';
+  // What Auto found on this machine (host.js createQualityGovernor): the level the last living world settled at (the
+  // next one starts there instead of at High), the measured frame rate, and whether no level makes WebGL usable here.
+  // A machine that cannot render the living world is told so once per quality choice, with the lightweight 2D stage
+  // (Monolith) offered; the world the viewer chose is never switched without them.
+  let rendering={level:null,fps:null,degraded:false},autoLevel=null,degradedWarned=false,renderingCheck=0;
+  function watchRendering(){
+    const now=performance.now();if(FILM||now-renderingCheck<1000||!living)return;renderingCheck=now;
+    const p=living.performance?.()||living.stats?.();if(!p)return;
+    const next={level:Number.isInteger(p.quality??p.level)?(p.quality??p.level):null,fps:Number.isFinite(p.fps)?p.fps:null,degraded:p.degraded===true};
+    const moved=next.level!==rendering.level||next.degraded!==rendering.degraded;rendering=next;
+    if(qualityAdaptive()&&next.level!==null)autoLevel=next.level;
+    if(moved)changed('quality');
+    if(next.degraded&&!degradedWarned&&selectedWorld==='living'){degradedWarned=true;
+      const fps=next.fps===null?'':` (about ${Math.max(1,Math.round(next.fps))} frames per second)`;
+      // Auto reports degraded only when no level helps (the lowest is slow too, or the GPU is not what slows the frames).
+      notify(qualityAdaptive()||qualityLevel()>=3?`This machine cannot draw the living world smoothly at any quality${fps}. Monolith, a lightweight 2D stage, does not need WebGL; the living world stays selected until you choose another world.`
+        :`The living world is too slow at the quality chosen for this device${fps}. Choose Auto in Settings › This device, or Monolith, a lightweight 2D stage that does not need WebGL.`,'warning',{label:'Show Monolith',world:'city'});}
+  }
   if(params.get('style')&&window.ResonanceScore.STYLES.includes(params.get('style')))music.setOptions({style:params.get('style')});
   const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
@@ -522,7 +541,7 @@
         const missing=recipe.unavailable&&(recipe.unavailable.family||recipe.unavailable.pack);
         if(missing&&!candidate){const p=packs.find(x=>x.id===missing),name=p?.name||missing,reason=stoppedPacks.get(missing);
           packNotice=reason?`${name} stopped: ${reason}. Showing the identity without it.`:`${name} is not available${p&&!p.ok?' (its installed files changed)':''}: showing the identity without it.`;}
-        const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:FILM?0:qualityLevel(),adaptive:!FILM&&qualityAdaptive()};
+        const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:FILM?0:qualityLevel(),adaptive:!FILM&&qualityAdaptive(),...(!FILM&&qualityAdaptive()&&autoLevel!==null?{level:autoLevel}:{})};
         if(plan?.pack){
           // An approved pack with code: the same world host, inside the isolated frame.
           const m=await import('/worlds/remote.js');
@@ -643,6 +662,7 @@
       // A pack frame in a film renders when the film captures the frame (__film.frame).
       if(!(FILM&&living.remote))living.render(now,dt,{phase:barPhase});
       if(living.remote)watchBudget();
+      watchRendering();
     }else if(selectedWorld==='construct'&&construct){
       const r=recordFrame?{width:recordFrame.w,height:recordFrame.h}:$('construct').getBoundingClientRect(),dpr=recordFrame?1:Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
@@ -723,10 +743,33 @@
     if(world==='living')void ensureLiving();
   }
   function setRecordSize(v){if(recording.active)return recordSize;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';changed('recording');return recordSize;}
+  // One recording at a time in this browser: the recorder lock (recording.js) is taken before anything starts (the sound,
+  // the recording size) and held until the recorder has stopped, however it stopped (the user, the page, a recorder
+  // error); the page closing or crashing releases it. A window that loses the race is told why and starts nothing.
+  let recordLock=null,recordClaiming=false,recordLockPolicy=null,recordLockGone=Promise.resolve();
+  function releaseRecordLock(lock=recordLock){
+    if(!lock||lock!==recordLock)return recordLockGone;recordLock=null;
+    // Settles when the lock is really free (at most half a second is waited for that).
+    recordLockGone=Promise.race([Promise.resolve(lock.release()).catch(()=>{}),new Promise(r=>setTimeout(r,500))]);return recordLockGone;}
   async function toggleRecord(){
-    if(recording.active){await finishRecording('stopped');return;}
-    const support=recording.supported();if(!support.ok){notify(support.reason,'error');return;}
-    if(previewRecipe){notify('Apply or cancel the preview before recording: a recording shows the saved identity.','warning');return;}
+    if(recording.active){await finishRecording('stopped');return {ok:true,stopped:true};}
+    // A second press while this window is still starting (the sound, the first frame) is not a second recording.
+    if(recordClaiming)return {ok:false,reason:'starting'};
+    const support=recording.supported();if(!support.ok){notify(support.reason,'error');return {ok:false,reason:support.reason};}
+    if(previewRecipe){notify('Apply or cancel the preview before recording: a recording shows the saved identity.','warning');return {ok:false,reason:'preview'};}
+    recordClaiming=true;
+    try{
+      const claim=await window.ResonanceRecording.claim();recordLockPolicy=claim.policy;
+      if(!claim.ok){notify(claim.reason,'warning');changed('recording');return {ok:false,reason:'elsewhere',message:claim.reason};}
+      recordLock=claim;
+      const started=await startRecording();
+      if(started.ok)recording.finished?.then(()=>releaseRecordLock(claim),()=>releaseRecordLock(claim));
+      else await releaseRecordLock(claim);
+      return started;
+    }catch(e){await releaseRecordLock();throw e;}
+    finally{recordClaiming=false;}
+  }
+  async function startRecording(){
     if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
     // A fixed size: the world renders at that size from now on (the stage shows it letterboxed). "stage": the stage's own
     // size (the canvas area, laid out whatever world is showing or loading).
@@ -744,9 +787,10 @@
       // The sound lost (an audio device lost or stalled): the browser's recorder would stall the file, so it is finished
       // and saved now, with the reason.
       audioLostListener:()=>{void finishRecording('the sound stopped: an audio device was lost or stalled');}});
-    if(!started.ok){if(living?.remote)living.record(null);endRecordFrame();notify(started.reason,'error');changed('recording');return;}
+    if(!started.ok){if(living?.remote)living.record(null);endRecordFrame();notify(started.reason,'error');changed('recording');return {ok:false,reason:started.reason};}
     if(!started.audio)notify('Recording without sound: the music output could not be captured.','warning');
     changed('recording');
+    return {ok:true,audio:started.audio,width:started.width,height:started.height};
   }
   function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed');livingSize='';constructSize='';}
   // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
@@ -762,7 +806,10 @@
   // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
   async function finishRecording(reason){
     if(living?.remote)living.record(null);
-    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();changed('recording');
+    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();
+    // The other windows hear that this one stopped (changed('recording')) once its lock is free.
+    if(!recordClaiming)await releaseRecordLock();
+    changed('recording');
     if(!result)return null;
     const file=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;
     lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,presented:result.presented,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
@@ -868,7 +915,7 @@
     get state(){const h=history();return {
       receiver:receiverOk,delayMs,project:selected,model,frame,mode,playing:playback,speed:speedChoice,
       position:{start:h.start||0,end:mode==='live'?Date.now()-delayMs:h.end||0,now:perfNow(),loaded:mode==='live'||!!replay,windows:replay?.entries.length||0,events:h.cues.length},
-      bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.stats?.()?.quality??null,
+      bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.stats?.()?.quality??null,rendering:{...rendering,adaptive:qualityAdaptive()},
       sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0},
       recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:PROFILE_SIZES[recordSize]},
       recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
@@ -878,14 +925,17 @@
     selectProject,setWorld,
     setLabels(m){if(!LABEL_MODES.includes(m)||m===labelMode)return;labelMode=m;living?.setLabels(m);picked=null;changed('labels');},
     setCaptions(on){captions=!!on;if(!captions)$('caption')?.classList.remove('show');changed('labels');},
-    setQuality(q){q=String(q);if(!QUALITY.includes(q)||q===qualityChoice)return;qualityChoice=q;living?.setQuality?.(qualityLevel(),qualityAdaptive());changed('quality');},
+    setQuality(q){q=String(q);if(!QUALITY.includes(q)||q===qualityChoice)return;qualityChoice=q;autoLevel=null;degradedWarned=false;living?.setQuality?.(qualityLevel(),qualityAdaptive());changed('quality');},
     // Music options (style, volume, tempo, tempoMode, texture) apply on the next bar; nothing restarts.
     setMusic(options){music.setOptions(options);changed('sound');},
     toggleSound,
     setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;seek(ts);},
     seekFraction(f){const h=history();if(mode!=='replay'||!replay)return;playback=false;seek(h.start+(h.end-h.start)*clamp(Number(f)||0));},setSpeed,
     setVisible(v){visible=!!v;},
-    record:{toggle:toggleRecord,setSize:setRecordSize,get active(){return recording.active;}},
+    // heldElsewhere(): whether another window of this browser holds the recorder lock (null: no Web Locks here), the
+    // evidence behind a "recording in another window" announcement (a crashed window never says it stopped).
+    record:{toggle:toggleRecord,setSize:setRecordSize,get active(){return recording.active;},get lockPolicy(){return recordLockPolicy||(navigator.locks?.request?'web-locks':'announcements');},
+      async heldElsewhere(){if(recordLock||recordClaiming)return false;return window.ResonanceRecording.held();}},
     exportAudio,
     recipeAction,reloadRecipe,preview,
     reloadPacks:loadPacks,retryPack,
