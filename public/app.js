@@ -542,6 +542,9 @@
           living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),recipe:shown,...options});
         }
         if(id!==selected){disposeLiving();return null;}
+        // A quality chosen while the world was being built (the device settings arrive while its shaders compile) found
+        // no world to tell: the new world gets the current choice, not the one it was started with.
+        if(!FILM&&(options.quality!==qualityLevel()||options.adaptive!==qualityAdaptive()))living.setQuality?.(qualityLevel(),qualityAdaptive());
         livingFor=selected;livingSize='';
         if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());
@@ -747,8 +750,7 @@
   }
   function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed');livingSize='';constructSize='';}
   // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
-  // capture keeps fewer frames than are drawn when drawing is near 30 a second (31 drawn gave 26-28 in the file), so
-  // under 28 drawn the file is likely under 25.
+  // recorder keeps every presented frame up to 30 a second, so the recorded rate is what the file gets.
   function updateRecordPace(){
     const now=performance.now(),st=recording.stats();
     if(now-recordPace.at<5000)return;
@@ -763,7 +765,7 @@
     const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();changed('recording');
     if(!result)return null;
     const file=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;
-    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
+    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,presented:result.presented,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
       size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned,file:result.blob.size?file:null,at:Date.now()};
     if(!result.blob.size){notify(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`,'error');changed('recording');return lastRecording;}
     const url=URL.createObjectURL(result.blob),link=document.createElement('a');
