@@ -13,12 +13,12 @@
 .ws-projects .proj-row:hover{background:var(--bg-3);text-decoration:none}
 .ws-projects .proj-row:focus-visible{outline:none;background:var(--bg-3);box-shadow:inset 0 0 0 2px var(--accent-line)}
 .ws-projects .proj-row.active::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:2px;background:var(--accent)}
-.ws-projects .cell{display:grid;gap:2px;min-width:0;font-size:12.5px}
-.ws-projects .cell .sub{font-size:11.5px;color:var(--text-3);min-width:0}
+.ws-projects .cell{display:grid;gap:2px;min-width:0;font-size:13.5px}
+.ws-projects .cell .sub{font-size:12.5px;color:var(--text-3);min-width:0}
 .ws-projects .cell.num-cell{text-align:right}
 .ws-projects .name-line{display:flex;align-items:center;gap:8px;min-width:0}
-.ws-projects .name-line strong{font-size:13px;font-weight:600;min-width:0}
-.ws-projects .name-line .pill{height:18px;font-size:10.5px;padding:0 7px}
+.ws-projects .name-line strong{font-size:14px;font-weight:600;min-width:0}
+.ws-projects .name-line .pill{height:18px;font-size:11.5px;padding:0 7px}
 .ws-projects .cap{display:flex;align-items:center;gap:7px}
 .ws-projects .proj-empty{padding:28px 16px}
 /* One project */
@@ -27,20 +27,20 @@
 .ws-projects .proj-detail-head .grow{gap:5px}
 .ws-projects .proj-detail-head h1{max-width:100%}
 .ws-projects .proj-meta{display:grid;gap:1px;min-width:0}
-.ws-projects .proj-meta .num{overflow-wrap:anywhere;font-size:11px}
+.ws-projects .proj-meta .num{overflow-wrap:anywhere;font-size:12px}
 .ws-projects .proj-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .ws-projects .proj-cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:28px;align-items:start}
 .ws-projects .proj-cols .section+.section{margin-top:26px}
 .ws-projects .proj-chapter{display:flex;gap:22px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-2)}
 .ws-projects .proj-chapter>div:first-child{display:grid;gap:2px}
-.ws-projects .proj-chapter b{font-size:26px;font-weight:600;line-height:1}
+.ws-projects .proj-chapter b{font-size:28px;font-weight:600;line-height:1}
 .ws-projects .proj-chapter .grow{flex:1;display:grid;gap:6px;min-width:0}
 .ws-projects .proj-progress{height:4px;border-radius:4px;background:var(--bg-5);overflow:hidden}
 .ws-projects .proj-progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
 /* Statistics: a spec sheet (hairlines between values), not a wall of cards. */
 .ws-projects .proj-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;background:var(--line);gap:1px}
 .ws-projects .stat{display:grid;gap:3px;padding:11px 13px;background:var(--bg-1);align-content:start}
-.ws-projects .stat b{font-size:17px;font-weight:550;color:var(--text-1)}
+.ws-projects .stat b{font-size:18px;font-weight:550;color:var(--text-1)}
 .ws-projects .stat b.ok{color:var(--ok)}.ws-projects .stat b.danger{color:var(--danger)}
 .ws-projects .proj-main .kv{margin-top:2px}
 .ws-projects .proj-outcomes .list-row,.ws-projects .proj-agents .list-row,.ws-projects .proj-exports .list-row{padding:8px 2px}
@@ -48,13 +48,13 @@
 .ws-projects .proj-last-rec{margin-top:4px}
 /* Configuration */
 .ws-projects .cfg{display:grid;border-top:1px solid var(--line)}
-.ws-projects .cfg-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;min-height:44px}
+.ws-projects .cfg-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px;min-height:44px}
 .ws-projects .cfg-value{display:grid;min-width:0}
 .ws-projects .cfg-value>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ws-projects .cfg-reset{justify-self:start;margin-top:3px;text-align:left}
 /* Timeline: lane labels, lanes, folded pauses and a cursor that the keyboard and the pointer move. */
 .ws-projects .tl{display:grid;grid-template-columns:78px minmax(0,1fr);gap:10px;padding:14px 16px 10px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1)}
-.ws-projects .tl-labels{display:grid;grid-auto-rows:22px;gap:4px;font:600 10px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.ws-projects .tl-labels{display:grid;grid-auto-rows:22px;gap:4px;font:600 11.5px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
 .ws-projects .tl-body{min-width:0;display:grid;gap:6px}
 .ws-projects .tl-track{position:relative;display:grid;grid-auto-rows:22px;gap:4px;cursor:crosshair;border-radius:4px}
 .ws-projects .tl-track:focus-visible{outline:2px solid var(--accent-line);outline-offset:4px}
@@ -72,11 +72,11 @@
 .ws-projects .tl-break{position:absolute;top:-2px;bottom:-2px;background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(170,190,230,.16) 3px 4px);border-left:1px solid var(--line-2);border-right:1px solid var(--line-2)}
 .ws-projects .tl-cursor{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--text-1);opacity:0;pointer-events:none;transition:opacity var(--t-1)}
 .ws-projects .tl-cursor.on{opacity:.85}
-.ws-projects .tl-tip{position:absolute;bottom:-26px;display:flex;gap:8px;align-items:baseline;padding:4px 9px;border-radius:6px;background:var(--bg-4);border:1px solid var(--line-2);font-size:11.5px;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--t-1);z-index:2;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.ws-projects .tl-tip{position:absolute;bottom:-26px;display:flex;gap:8px;align-items:baseline;padding:4px 9px;border-radius:6px;background:var(--bg-4);border:1px solid var(--line-2);font-size:12.5px;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--t-1);z-index:2;max-width:60%;overflow:hidden;text-overflow:ellipsis}
 .ws-projects .tl-tip.on{opacity:1}
 .ws-projects .tl-tip span{color:var(--text-2);overflow:hidden;text-overflow:ellipsis}
 .ws-projects .tl-axis{position:relative;height:16px}
-.ws-projects .tl-tick{position:absolute;top:0;font-size:10.5px;color:var(--text-3);white-space:nowrap}
+.ws-projects .tl-tick{position:absolute;top:0;font-size:11.5px;color:var(--text-3);white-space:nowrap}
 .ws-projects .tl-tick.end{right:0}
 .ws-projects .tl-legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 2px 0}
 .ws-projects .tl-legend span{display:inline-flex;align-items:center;gap:7px}
@@ -92,7 +92,7 @@
   .ws-projects .proj-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 14px}
   .ws-projects .proj-row .cell:nth-child(2){grid-column:1}.ws-projects .proj-row .cell:nth-child(3){grid-column:2;grid-row:1;text-align:right}
   .ws-projects .proj-row .cell:nth-child(4){grid-column:1}.ws-projects .proj-row .cell:nth-child(6){grid-column:2;grid-row:2}
-  .ws-projects .tl{grid-template-columns:58px minmax(0,1fr);gap:8px;padding:12px 12px 8px}.ws-projects .tl-labels{font-size:9px;letter-spacing:.06em}
+  .ws-projects .tl{grid-template-columns:58px minmax(0,1fr);gap:8px;padding:12px 12px 8px}.ws-projects .tl-labels{font-size:10.5px;letter-spacing:.06em}
 }
 .ws-projects .proj-overview{display:grid;gap:12px}
 .tl-menu .menu-item svg{width:16px;height:16px;flex:none;color:var(--accent)}

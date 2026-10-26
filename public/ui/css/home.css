@@ -1,7 +1,7 @@
 /* Home: the active project beside its live stage, what needs attention, recent projects, and the first-run guide. */
 .ws-home .home-head{align-items:center}
 .ws-home .home-sys{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.ws-home .sys-item{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:26px;border:1px solid var(--line);background:var(--bg-1);font-size:11.5px;color:var(--text-2);white-space:nowrap}
+.ws-home .sys-item{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:26px;border:1px solid var(--line);background:var(--bg-1);font-size:12.5px;color:var(--text-2);white-space:nowrap}
 .ws-home .dot.agent{background:var(--agent)}
 /* The primary area: a 16:9 stage and the project it plays. */
 .ws-home .home-hero{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-4);overflow:hidden}
@@ -16,7 +16,7 @@
 .ws-home .home-kv{grid-template-columns:minmax(92px,max-content) 1fr;gap:5px 14px}
 .ws-home .home-project .callout{padding:9px 12px}
 .ws-home .home-status{list-style:none;margin:0;padding:12px 0 2px;display:grid;gap:9px;border-top:1px solid var(--line)}
-.ws-home .home-status li{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.45;min-width:0}
+.ws-home .home-status li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.45;min-width:0}
 .ws-home .home-status li .dot{margin-top:5px}
 .ws-home .home-status li>div{display:grid;gap:1px;min-width:0;overflow-wrap:anywhere}
 .ws-home .home-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
@@ -26,7 +26,7 @@
 .ws-home .home-lower{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
 .ws-home .home-lower .section+.section{margin-top:0}
 .ws-home .home-attention{display:grid;gap:8px}
-.ws-home .home-calm{display:flex;align-items:center;gap:9px;padding:11px 14px;border:1px dashed var(--line-2);border-radius:var(--r-2);color:var(--text-3);font-size:12.5px}
+.ws-home .home-calm{display:flex;align-items:center;gap:9px;padding:11px 14px;border:1px dashed var(--line-2);border-radius:var(--r-2);color:var(--text-3);font-size:13.5px}
 .ws-home .home-calm svg{width:15px;height:15px;color:var(--ok)}
 .ws-home .home-recent{display:grid;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1);overflow:hidden}
 .ws-home .home-recent-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text-1);text-align:left;position:relative;transition:background var(--t-1)}
@@ -37,7 +37,7 @@
 .ws-home .home-recent-row .grow{flex:1;display:grid;gap:1px;min-width:0}
 .ws-home .name-line{display:flex;align-items:center;gap:8px;min-width:0}
 .ws-home .name-line strong{font-weight:600;min-width:0}
-.ws-home .name-line .pill{height:18px;font-size:10.5px;padding:0 7px;flex:none}
+.ws-home .name-line .pill{height:18px;font-size:11.5px;padding:0 7px;flex:none}
 /* First-run guide: numbered steps on a thin rail; done steps fold to one line. */
 .ws-home .home-guide{overflow:hidden}
 .ws-home .home-guide-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
@@ -46,19 +46,19 @@
 .ws-home .home-steps{list-style:none;margin:0;padding:20px 22px 6px;display:grid}
 .ws-home .home-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
 .ws-home .home-step:not(:last-child)::before{content:'';position:absolute;left:13.5px;top:32px;bottom:4px;width:1px;background:var(--line-2)}
-.ws-home .home-step-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-3);background:var(--bg-1);color:var(--text-3);font:600 12px var(--mono)}
+.ws-home .home-step-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-3);background:var(--bg-1);color:var(--text-3);font:600 13px var(--mono)}
 .ws-home .home-step-mark svg{width:14px;height:14px}
 .ws-home .home-step.done .home-step-mark{background:var(--ok-soft);border-color:rgba(138,248,201,.35);color:var(--ok)}
 .ws-home .home-step.current .home-step-mark{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .ws-home .home-step-text{display:grid;gap:3px;padding-top:4px;min-width:0}
-.ws-home .home-step-text strong{font-size:13.5px;font-weight:600}
+.ws-home .home-step-text strong{font-size:14.5px;font-weight:600}
 .ws-home .home-step.done .home-step-text strong{color:var(--text-2);font-weight:550}
 .ws-home .home-step:not(.done):not(.current) .home-step-text strong{color:var(--text-2)}
-.ws-home .home-step-body{display:grid;gap:9px;margin-top:4px;justify-items:start;font-size:12.5px;color:var(--text-2)}
+.ws-home .home-step-body{display:grid;gap:9px;margin-top:4px;justify-items:start;font-size:13.5px;color:var(--text-2)}
 .ws-home .home-step-body .copy{width:100%;max-width:560px}
 .ws-home .home-cmds{margin:0;padding-left:18px;display:grid;gap:10px;width:100%}
 .ws-home .home-cmds li{display:grid;gap:6px}
-.ws-home .home-cmds li::marker{color:var(--text-3);font-family:var(--mono);font-size:11px}
+.ws-home .home-cmds li::marker{color:var(--text-3);font-family:var(--mono);font-size:12px}
 .ws-home .home-listen{display:flex;align-items:center;gap:9px}
 .ws-home .home-listen .dot.ok{animation:pulse-dot 1.6s infinite}
 /* Reduced motion (the app's setting, else the system's): the listening dot and the Live badge hold still. */

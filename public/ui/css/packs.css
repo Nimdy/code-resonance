@@ -19,13 +19,13 @@
 .ws-packs .pk-row[aria-current="true"].code::before{background:var(--pk-code)}
 .ws-packs .pk-row-main{display:grid;gap:3px;min-width:0}
 .ws-packs .pk-row-title{display:flex;align-items:baseline;gap:8px;min-width:0}
-.ws-packs .pk-row-title strong{font-size:14px;font-weight:600;letter-spacing:-.005em}
-.ws-packs .pk-row-title .num{font-size:11px}
-.ws-packs .pk-row-sub{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:12px}
-.ws-packs .pk-row-desc{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--text-2);margin-top:2px}
+.ws-packs .pk-row-title strong{font-size:15px;font-weight:600;letter-spacing:-.005em}
+.ws-packs .pk-row-title .num{font-size:12px}
+.ws-packs .pk-row-sub{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:13px}
+.ws-packs .pk-row-desc{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:var(--text-2);margin-top:2px}
 .ws-packs .pk-row-side{display:grid;justify-items:end;gap:6px;align-content:center}
-.ws-packs .pk-loading{padding:28px 18px;font-size:12.5px}
-.pk-kind{font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.ws-packs .pk-loading{padding:28px 18px;font-size:13.5px}
+.pk-kind{font:600 11.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
 .pk-kind.code{color:var(--pk-code)}
 /* The glyph: a data pack shows its own palette when it sets one; a code pack the code mark. */
 .pk-glyph{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-3);overflow:hidden;flex:none}
@@ -37,40 +37,40 @@
 .ws-packs .pk-inspector .inspector-head{gap:6px}
 .ws-packs .pk-name{overflow-wrap:anywhere}
 .ws-packs-dialog .pk-pills,.ws-packs .pk-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.ws-packs .pk-desc{color:var(--text-2);font-size:12.5px;line-height:1.55}
-.ws-packs .pk-problems{margin:0;padding-left:18px;display:grid;gap:3px;font-family:var(--mono);font-size:11.5px;overflow-wrap:anywhere}
+.ws-packs .pk-desc{color:var(--text-2);font-size:13.5px;line-height:1.55}
+.ws-packs .pk-problems{margin:0;padding-left:18px;display:grid;gap:3px;font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
 .ws-packs .pk-none{display:grid;justify-items:center;gap:10px;text-align:center;padding:48px 12px;color:var(--text-3)}
 .ws-packs .pk-none svg{width:22px;height:22px}
 .ws-packs .pk-digest{display:grid;gap:6px}
-.ws-packs .pk-digest code{font-size:11px}
+.ws-packs .pk-digest code{font-size:12px}
 .ws-packs .pk-params{display:grid;gap:10px}
 .ws-packs .pk-param{display:grid;gap:2px;padding-bottom:9px;border-bottom:1px solid var(--line)}
 .ws-packs .pk-param:last-child{border-bottom:0;padding-bottom:0}
 .ws-packs .pk-param-head{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
-.ws-packs .pk-param-head strong{font-size:12.5px;font-weight:560}
-.ws-packs .pk-param-head .num{font-size:11px;text-align:right}
+.ws-packs .pk-param-head strong{font-size:13.5px;font-weight:560}
+.ws-packs .pk-param-head .num{font-size:12px;text-align:right}
 .ws-packs .pk-readme{max-height:none}
-.ws-packs .pk-readme .markdown{font-size:12.5px}
+.ws-packs .pk-readme .markdown{font-size:13.5px}
 .ws-packs .inspector-foot{flex-wrap:wrap}.ws-packs .inspector-foot .grow{flex:1}
 /* Tables (files, overrides): monospace, dense, scroll sideways inside their own box only */
 .pk-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-2);max-height:320px;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
-.pk-table{border-collapse:collapse;width:100%;font-size:11.5px}
-.pk-table th{position:sticky;top:0;background:var(--bg-3);color:var(--text-3);font:600 10px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:7px 10px}
+.pk-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.pk-table th{position:sticky;top:0;background:var(--bg-3);color:var(--text-3);font:600 11.5px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:7px 10px}
 .pk-table td{padding:5px 10px;border-top:1px solid var(--line);vertical-align:baseline;overflow-wrap:anywhere}
-.pk-table td.mono{font-size:11px}
+.pk-table td.mono{font-size:12px}
 .pk-table .r{text-align:right;white-space:nowrap}
 .pk-color{display:inline-flex;align-items:center;gap:7px}
 .pk-swatch{display:inline-block;width:11px;height:11px;border-radius:3px;box-shadow:0 0 0 1px var(--line-3) inset}
 /* ---- Creator corner ---- */
 .ws-packs .pk-docs{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:8px}
 .ws-packs .pk-docs-ref{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.ws-packs .pk-doc{display:flex;align-items:center;gap:7px;min-height:30px;text-align:left;padding:0 11px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);font-size:12px;font-weight:550;transition:color var(--t-1),border-color var(--t-1),background var(--t-1)}
+.ws-packs .pk-doc{display:flex;align-items:center;gap:7px;min-height:30px;text-align:left;padding:0 11px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);font-size:13px;font-weight:550;transition:color var(--t-1),border-color var(--t-1),background var(--t-1)}
 .ws-packs .pk-doc:hover{color:var(--text-1);border-color:var(--line-3);background:var(--bg-3)}
 .ws-packs .pk-doc svg{width:14px;height:14px;color:var(--text-3);flex:none}
 .ws-packs .pk-doc>span{min-width:0}
 .ws-packs .pk-doc.lead{align-items:flex-start;padding:10px 12px;border-color:var(--accent-line);color:var(--text-1)}
 .ws-packs .pk-doc.lead svg{color:var(--accent);margin-top:2px}
-.ws-packs .pk-doc.lead>span{display:grid;gap:2px;font-weight:400}.ws-packs .pk-doc.lead strong{font-size:13px;font-weight:600}
+.ws-packs .pk-doc.lead>span{display:grid;gap:2px;font-weight:400}.ws-packs .pk-doc.lead strong{font-size:14px;font-weight:600}
 .ws-packs .pk-link-host{font-size:.92em}
 /* Until the shared .copy rules take these: commands wrap between words, and the Copy button's ring is not clipped. */
 .ws-packs .copy code{overflow-wrap:break-word}.ws-packs .copy .btn:focus-visible{outline-offset:-2px}
@@ -95,8 +95,8 @@
 .ws-packs-dialog .pk-source:disabled{opacity:.5;cursor:progress}
 .ws-packs-dialog .pk-source svg{width:20px;height:20px;color:var(--accent);flex:none;margin-top:1px}
 .ws-packs-dialog .pk-source>span{display:grid;gap:3px}
-.ws-packs-dialog .pk-source strong{font-size:13.5px}
-.ws-packs-dialog .pk-import-status{font-size:12.5px;color:var(--text-2)}.ws-packs-dialog .pk-import-status:empty{display:none}
+.ws-packs-dialog .pk-source strong{font-size:14.5px}
+.ws-packs-dialog .pk-import-status{font-size:13.5px;color:var(--text-2)}.ws-packs-dialog .pk-import-status:empty{display:none}
 .ws-packs-dialog .pk-import-status::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;animation:pulse-dot 1.2s var(--ease) infinite}
 /* The pulse says "working"; with motion reduced (the app's setting, else the system's) a steady dot says it too. */
 html[data-motion="reduce"] .ws-packs-dialog .pk-import-status::before{animation:none}
@@ -104,13 +104,13 @@ html[data-motion="reduce"] .ws-packs-dialog .pk-import-status::before{animation:
 .ws-packs-dialog .pk-report,.ws-packs-dialog .pk-review{display:grid;gap:14px}
 .ws-packs-dialog .pk-report-head,.ws-packs-dialog .pk-review-id{display:flex;align-items:center;gap:12px}
 .ws-packs-dialog .pk-report-head .grow{flex:1;min-width:0}
-.ws-packs-dialog .pk-report-name,.ws-packs-dialog .pk-review-id strong{font-size:15px;font-weight:600}
+.ws-packs-dialog .pk-report-name,.ws-packs-dialog .pk-review-id strong{font-size:16px;font-weight:600}
 .ws-packs-dialog .pk-report-head .pk-pills{margin-top:0}
 .ws-packs-dialog .pill.code{color:var(--pk-code);background:var(--pk-code-soft);border-color:var(--pk-code-line)}
 .ws-packs-dialog .pk-review-block{display:grid;gap:7px}
-.ws-packs-dialog .pk-digest-full{display:block;padding:8px 10px;font-size:11.5px;overflow-wrap:anywhere;background:var(--bg-0);border-color:var(--line-2)}
-.ws-packs-dialog .pk-access,.ws-packs-dialog .pk-warnings,.ws-packs-dialog .pk-errors{margin:0;padding-left:18px;display:grid;gap:4px;font-size:12px;color:var(--text-2)}
-.ws-packs-dialog .pk-errors{color:var(--text-1)}.ws-packs-dialog .pk-errors code{font-size:11px}
+.ws-packs-dialog .pk-digest-full{display:block;padding:8px 10px;font-size:12.5px;overflow-wrap:anywhere;background:var(--bg-0);border-color:var(--line-2)}
+.ws-packs-dialog .pk-access,.ws-packs-dialog .pk-warnings,.ws-packs-dialog .pk-errors{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--text-2)}
+.ws-packs-dialog .pk-errors{color:var(--text-1)}.ws-packs-dialog .pk-errors code{font-size:12px}
 /* Below 1440 the overview stacks above the references, so each reference keeps its name on one line. */
 @media (max-width:1280px){.ws-packs{--inspector:360px}.ws-packs .pk-docs{grid-template-columns:1fr}}
 @media (max-width:1080px){.ws-packs{--inspector:320px}.ws-packs .pk-template{grid-template-columns:1fr;gap:10px}.ws-packs .pk-checks{grid-template-columns:1fr}}

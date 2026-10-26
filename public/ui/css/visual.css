@@ -1,7 +1,7 @@
 /* Visual Studio: the stage as large as the column allows (16:9), a browser strip under it, the World DNA inspector. */
 .ws-visual .vs-main{padding:16px 20px 14px;gap:12px;overflow:hidden}
 .ws-visual .vs-head{display:flex;align-items:baseline;gap:8px 22px;flex-wrap:wrap;flex:none}
-.ws-visual .vs-legend{display:flex;gap:6px 16px;flex-wrap:wrap;margin-left:auto;font-size:11.5px;color:var(--text-3)}
+.ws-visual .vs-legend{display:flex;gap:6px 16px;flex-wrap:wrap;margin-left:auto;font-size:12.5px;color:var(--text-3)}
 .ws-visual .vs-term{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .ws-visual .vs-term i{width:7px;height:7px;border-radius:2px;flex:none}
 .ws-visual .vs-term strong{color:var(--text-2);font-weight:600}
@@ -29,9 +29,9 @@
 .ws-visual .vs-thumb{position:relative;display:block;aspect-ratio:16/9;background:#000;overflow:hidden}
 .ws-visual .vs-thumb-media{position:absolute;inset:0;display:block}
 .ws-visual .vs-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;animation:fade-in var(--t-3) var(--ease)}
-.ws-visual .vs-thumb-cap{position:absolute;left:8px;right:8px;bottom:5px;font-size:10.5px;font-weight:550;color:rgba(232,238,247,.78);text-shadow:0 1px 6px #000,0 0 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-thumb-cap{position:absolute;left:8px;right:8px;bottom:5px;font-size:11.5px;font-weight:550;color:rgba(232,238,247,.78);text-shadow:0 1px 6px #000,0 0 2px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-chips{position:absolute;left:6px;top:6px;right:6px;display:flex;flex-wrap:wrap;gap:4px}
-.ws-visual .vs-chips .pill{height:18px;font-size:10.5px;padding:0 7px;gap:5px;background:rgba(6,9,14,.78);backdrop-filter:blur(6px)}
+.ws-visual .vs-chips .pill{height:18px;font-size:11.5px;padding:0 7px;gap:5px;background:rgba(6,9,14,.78);backdrop-filter:blur(6px)}
 .ws-visual .vs-chips .pill::before{width:5px;height:5px}
 .ws-visual .vs-match{position:absolute;right:6px;top:6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.78);color:var(--warn);backdrop-filter:blur(6px)}
 .ws-visual .vs-match svg{width:12px;height:12px}
@@ -39,13 +39,13 @@
 .ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
 .ws-visual .vs-thumb-tile svg{width:24px;height:24px}
 .ws-visual .vs-card-text{display:grid;gap:2px;padding:8px 11px 10px;min-width:0}
-.ws-visual .vs-card-text strong{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-card-line{font-size:11.5px;line-height:1.35;color:var(--text-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ws-visual .vs-card-why{font-size:11px;line-height:1.4;color:var(--text-4);margin-top:3px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.ws-visual .vs-card-text strong{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-card-line{font-size:12.5px;line-height:1.35;color:var(--text-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ws-visual .vs-card-why{font-size:12px;line-height:1.4;color:var(--text-4);margin-top:3px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 .ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft,rgba(117,237,255,.12));color:var(--accent,#75edff)}
 .ws-visual .vs-essentials-note{margin:0 0 8px}
 .ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:4px 11px 10px;margin-top:auto;min-height:30px}
-.ws-visual .vs-card-foot .pill{height:19px;font-size:10.5px;padding:0 7px}
+.ws-visual .vs-card-foot .pill{height:19px;font-size:11.5px;padding:0 7px}
 .ws-visual .vs-card.preset .vs-card-foot{padding:8px 0 10px}
 .ws-visual .vs-card.preset .vs-card-text{padding:0}
 .ws-visual .vs-card-foot .grow{flex:1}
@@ -54,14 +54,14 @@
 .ws-visual .vs-preset-icon svg{width:15px;height:15px}
 /* Inspector */
 .ws-visual .vs-insp-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.ws-visual .vs-family{font-size:17px;letter-spacing:-.01em}
+.ws-visual .vs-family{font-size:18px;letter-spacing:-.01em}
 .ws-visual .inspector-body{gap:22px}
 .ws-visual .vs-sec{display:grid;gap:12px;min-width:0}
 .ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px}
 .ws-visual .vs-sec-head h3{flex:none}
 .ws-visual .vs-sec-head .rule{flex:1;height:1px;background:var(--line)}
 .ws-visual .vs-kv{grid-template-columns:76px 1fr;gap:6px 12px}
-.ws-visual .vs-kv .pill{height:20px;font-size:11px}
+.ws-visual .vs-kv .pill{height:20px;font-size:12px}
 .ws-visual .vs-actions{display:flex;flex-wrap:wrap;gap:6px}
 .ws-visual .vs-identity-note{display:grid;gap:8px}
 .ws-visual .vs-identity-note:empty{display:none}
@@ -73,7 +73,7 @@
 .ws-visual .vs-param-control{display:grid;gap:4px;min-width:0}
 .ws-visual .vs-param-control .vec3{display:grid;gap:4px}
 .ws-visual .field.pending>.field-head .field-label{color:var(--accent)}
-.ws-visual .field-value{font-size:11px;color:var(--text-3)}
+.ws-visual .field-value{font-size:12px;color:var(--text-3)}
 .ws-visual .vs-error{color:var(--danger);line-height:1.4}
 .ws-visual .vs-error:empty{display:none}
 .ws-visual .vs-input-row .input{flex:1;min-width:0}
@@ -81,7 +81,7 @@
 .ws-visual .vs-aliases>p{margin-bottom:8px}
 .ws-visual .vs-alias{display:grid;gap:6px;padding:9px 0;border-top:1px solid var(--line)}
 .ws-visual .vs-alias-head{display:flex;gap:8px;align-items:baseline;min-width:0}
-.ws-visual .vs-alias-head strong{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-alias-head strong{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-alias-head .grow{flex:1}
 /* The segmented track scrolls (overflow:auto), which clips an outside focus ring: draw it inside the button. */
 .ws-visual .segmented button:focus-visible{outline-offset:-2px}
@@ -101,7 +101,7 @@
 .modal .vs-error{color:var(--danger)}.modal .vs-error:empty{display:none}
 /* Laptops: a shorter strip leaves the stage its height. */
 @media (max-height:780px){.ws-visual .vs-main{padding:12px 16px 10px;gap:9px}.ws-visual .vs-card{flex-basis:164px}.ws-visual .vs-card-line{-webkit-line-clamp:1}.ws-visual .vs-card-why{display:none}
-  .ws-visual .vs-term>span{display:none}.ws-visual .vs-thumb-cap{font-size:9.5px;left:6px;right:6px}.ws-visual .vs-head .title-l{font-size:18px}
+  .ws-visual .vs-term>span{display:none}.ws-visual .vs-thumb-cap{font-size:10.5px;left:6px;right:6px}.ws-visual .vs-head .title-l{font-size:19px}
   .ws-visual .vs-cards{min-height:0}}
 /* Narrow: the inspector stacks below, the stage takes the full width, Apply stays in reach. */
 @media (max-width:900px){

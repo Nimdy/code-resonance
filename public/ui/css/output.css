@@ -14,12 +14,12 @@
 html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 @media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) .ws-output .out-deck .btn.record .dot{animation:none}}
 .ws-output .out-time{display:grid;line-height:1.15;min-width:150px}
-.ws-output .out-clock{font-size:26px;font-weight:500;letter-spacing:.02em;color:var(--text-2)}
+.ws-output .out-clock{font-size:28px;font-weight:500;letter-spacing:.02em;color:var(--text-2)}
 .ws-output .out-clock.live{color:#ffd0d6}
 .ws-output .out-state{color:var(--text-3)}
 .ws-output .out-readouts{display:grid;grid-template-columns:repeat(4,minmax(64px,auto));gap:4px 22px;margin-left:auto}
 .ws-output .out-readout{display:grid;gap:3px}
-.ws-output .out-readout b{font-size:13px;font-weight:550;color:var(--text-1)}
+.ws-output .out-readout b{font-size:14px;font-weight:550;color:var(--text-1)}
 .ws-output .out-readout b.ok{color:var(--ok)}.ws-output .out-readout b.warn{color:var(--warn)}
 .ws-output .out-notice:empty{display:none}
 .ws-output .out-notice{display:grid;gap:8px}
@@ -36,16 +36,16 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-profile:disabled{opacity:.5;cursor:not-allowed}
 .ws-output .out-profile[aria-checked="true"]:disabled{opacity:.8}
 .ws-output .out-profile-head{display:flex;align-items:center;gap:8px}
-.ws-output .out-profile-head strong{font-size:13px;font-weight:600}
-.ws-output .out-tag{margin-left:auto;font-size:10.5px;letter-spacing:.08em;color:var(--text-3);padding:1px 6px;border:1px solid var(--line-2);border-radius:4px}
+.ws-output .out-profile-head strong{font-size:14px;font-weight:600}
+.ws-output .out-tag{margin-left:auto;font-size:11.5px;letter-spacing:.08em;color:var(--text-3);padding:1px 6px;border:1px solid var(--line-2);border-radius:4px}
 .ws-output .out-profile[aria-checked="true"] .out-tag{color:var(--accent);border-color:var(--accent-line)}
-.ws-output .out-profile-meta{display:flex;gap:10px;font-size:11.5px}
+.ws-output .out-profile-meta{display:flex;gap:10px;font-size:12.5px}
 .ws-output .out-dims{color:var(--text-2)}
-.ws-output .out-profile-note{font-size:11.5px;color:var(--text-3);line-height:1.4}
+.ws-output .out-profile-note{font-size:12.5px;color:var(--text-3);line-height:1.4}
 .ws-output .out-profile.obs{border-style:dashed;background:transparent}
 .ws-output .out-profile.obs:hover{background:var(--bg-3)}
 .ws-output .out-facts{padding-top:10px;border-top:1px solid var(--line)}
-.ws-output .out-facts .kv{grid-template-columns:62px 1fr;font-size:12px}
+.ws-output .out-facts .kv{grid-template-columns:62px 1fr;font-size:13px}
 .ws-output .out-side-foot{display:flex;justify-content:flex-start;margin:-6px 0 -6px -8px}
 .ws-output .out-side details.disclosure>.disclosure-body{gap:8px;padding-top:4px}
 /* OBS */
@@ -55,10 +55,10 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-field>.segmented{justify-self:start}
 .ws-output .out-pins{display:grid;gap:8px}
 .ws-output .out-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ws-output #obsUrl code{font-size:12px}
+.ws-output #obsUrl code{font-size:13px}
 .ws-output .out-obs-empty:empty{display:none}
 .ws-output .out-obs-info{display:grid;gap:14px}
-.ws-output .out-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--text-2);font-size:12.5px;line-height:1.5}
+.ws-output .out-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--text-2);font-size:13.5px;line-height:1.5}
 .ws-output .out-steps strong{color:var(--text-1);font-weight:600}
 .ws-output .out-obs-info .callout p+p{margin-top:6px}
 /* The ways out */
@@ -69,7 +69,7 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-kind-icon svg{width:17px;height:17px}
 .ws-output .out-kind-body{display:grid;gap:6px;min-width:0}
 .ws-output .out-kind-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.ws-output .out-kind-head strong{font-size:13px;font-weight:600}
+.ws-output .out-kind-head strong{font-size:14px;font-weight:600}
 .ws-output .out-kind-action{align-self:center}
 .ws-output .out-cmds{display:grid;gap:6px;max-width:760px}
 .ws-output a.btn{color:var(--text-1);text-decoration:none}
