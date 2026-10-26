@@ -101,11 +101,15 @@ A galaxy composed by the software, seen from low over its disc. Gas and dust are
 rotation drawn twice: a crisp sheet in the galactic plane and a soft raymarched volume (bulge light, remnant shells).
 Each arm has the anatomy of a grand-design spiral (a broken dust lane on its inner edge, rose HII knots, blue-white
 clusters, feathers and spurs); the nucleus is a gold-white cusp, the brightest light in the frame. Subsystems are
-star systems packed on the arms; files are planets on Kepler orbits (`public/worlds/stellar.js`).
+star systems packed on the arms, each a beacon so the project reads at a glance: a hard core, a diffraction cross with an
+anamorphic glint, an emission knot in its role's colour (interface blue, services and logic gold, model orange, tests
+violet) and a bubble cleared in the dust, all sized by the subsystem and brighter while work on it is live. Files are
+planets on Kepler orbits (`public/worlds/stellar.js`). The galaxy volume is drawn in the scene, so a shader pack that
+replaces the background keeps the galaxy.
 
 | Moment | Image |
 |---|---|
-| Idle | Gas streams and lanes shear, star clouds evolve, the galaxy rotates, a slow lateral dolly; coronae breathe on the bars; nothing twinkles |
+| Idle | Gas streams and lanes shear, star clouds evolve, the galaxy rotates, a slow lateral dolly; coronae breathe on the bars and the light breathes very slightly with the beat; nothing twinkles |
 | Edit | Rim glow on the planet, its orbit arc lights, its dependency threads show briefly |
 | Structure created / removed | Accretion sparks spiral in / a grey ablation stream blows away |
 | Subsystem created | A dark globule collapses in the disc, the star ignites and blows it open, a light echo crosses the disc |
@@ -113,7 +117,7 @@ star systems packed on the arms; files are planets on Kepler orbits (`public/wor
 | Tests passing | Aurora on the covered planets |
 | Failure | The worst-hit star dims and erupts on one limb; dark dust pillars with crimson rims rise around each strained system; at most 10 % global darkening |
 | Recovery | The pillars thin and dissolve; a serene glow lights the gas |
-| Milestone (lasting) | A hard point-spread spike, then a light echo racing out across the dust lanes; it leaves a remnant shell of broken filaments (rose for a milestone, violet for a refactor) that grows with repetition |
+| Milestone (lasting) | A hard point-spread spike, then a light echo racing out across the dust lanes; it leaves a limb-brightened remnant shell in the disc, centred on the star that earned it (rose with a teal inner edge for a milestone, violet for a refactor), which grows and gains an inner shell with repetition |
 | Agents | Comets with a tapered ion tail and a work stream to the planet being edited, following the observed lifecycle |
 | Mature history | More stars and gas, up to six tidal streams, accumulated remnant shells, asteroid belts and the unlock layers |
 
