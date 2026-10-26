@@ -1,24 +1,46 @@
-// The Performance Stage: the world fills the screen; controls appear when the pointer moves and fade away after a
-// moment. Nothing here is drawn into recordings (they capture the world and its labels only). The title shown is the
-// recipe's approved public title, never the project's folder name.
+// The Performance Stage: the world fills the screen; controls appear when the pointer moves (or a key is pressed) and
+// fade away after a moment, leaving the world alone. Nothing here is drawn into recordings (they capture the world and
+// its labels only). The title shown is the recipe's approved public title, never the project's folder name.
+// Keys: F full screen, Esc twice returns to the Control Center (never while the Stage fills the screen, never in a window
+// opened on the Stage alone, never with the Esc that ended full screen), Space and the arrows drive a replay, M sound,
+// I performance information, ? the list of keys.
 import {h,text,button,select,segmented,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {timecode,clockTime,publicName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
-const IDLE_MS=2600;
+const IDLE_MS=2600,ESC_MS=2500;
 export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecording}){
   styles('stage');
   const offs=[];
   // ---- Top: way back, the public title, presentation options -------------------------------------------------
   const title=h('div',{class:'stage-title'},h('strong',{id:'stageTitle'}),h('span',{id:'stageSub'}));
-  const back=button({label:'Control Center',icon:'back',kind:'ghost',title:'Back to the Control Center',onClick:()=>{const r=store.state.ui.lastRoute;if(r&&r!=='#/stage')location.hash=r;else navigate('home');}});
+  const goBack=()=>{const r=store.state.ui.lastRoute;if(r&&r!=='#/stage')location.hash=r;else navigate('home');};
+  // A window that opened on the Stage itself (the second-monitor window: no earlier page in this window) is a
+  // presentation: Esc never takes it away from the world there; the Control Center button still does.
+  // (present=1 marks the window this Stage's own button opens; history covers one opened from elsewhere, e.g. Home.)
+  const standalone=history.length<=1||new URLSearchParams(location.search).has('present');
+  const presentUrl=()=>{const u=new URL(stageUrl(),location.href);u.searchParams.set('present','1');return u.pathname+u.search+u.hash;};
+  const back=button({label:'Control Center',icon:'back',title:standalone?'Back to the Control Center':'Back to the Control Center (Esc twice)',onClick:goBack,attrs:{class:'btn stage-back'}});
+  // Its key, as everywhere else on the Stage: Esc twice (one Esc only says how to leave).
+  if(!standalone)back.append(h('span',{class:'stage-back-keys','aria-hidden':'true'},h('kbd',{text:'Esc'}),h('kbd',{text:'Esc'})));
   const labels=segmented({label:'Information on the stage',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:{cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'}[m]})),
     value:P.state.labels,onChange:m=>setLabels(m)});
   const quality=select({id:'qualitySelect',label:'Rendering quality on this device',title:'Rendering quality on this device: Auto lowers it only while frames are slow',
     options:P.QUALITY.map(q=>({value:q,label:q==='auto'?'Quality · Auto':`Quality · ${QUALITY_NAMES[q]}`})),value:P.state.quality,onChange:q=>{store.unpin('quality');store.setDevice({quality:q});P.setQuality(q);}});
   const fullBtn=button({icon:'fullscreen',kind:'ghost',title:'Full screen (F)',onClick:()=>toggleFullscreen(),attrs:{'aria-label':'Full screen'}});
-  const popBtn=button({icon:'external',kind:'ghost',title:'Open the Stage in a new window (for a second monitor)',onClick:()=>window.open(stageUrl(),'_blank','noopener'),attrs:{'aria-label':'Open in a new window'}});
-  const infoBtn=button({icon:'info',kind:'ghost',title:'Show performance information',pressed:!!store.state.ui.stageInfo,onClick:()=>{store.setUi({stageInfo:!store.state.ui.stageInfo});infoBtn.setAttribute('aria-pressed',String(!!store.state.ui.stageInfo));renderInfo();},attrs:{'aria-label':'Performance information'}});
-  const top=h('div',{class:'stage-top'},back,title,h('div',{class:'grow'}),labels,quality,infoBtn,popBtn,fullBtn);
+  const popBtn=button({icon:'external',kind:'ghost',title:'Open the Stage in a new window (for a second monitor)',onClick:()=>window.open(presentUrl(),'_blank','noopener'),attrs:{'aria-label':'Open in a new window'}});
+  const toggleInfo=()=>{store.setUi({stageInfo:!store.state.ui.stageInfo});infoBtn.setAttribute('aria-pressed',String(!!store.state.ui.stageInfo));renderInfo();};
+  const infoBtn=button({icon:'info',kind:'ghost',title:'Performance information (I)',pressed:!!store.state.ui.stageInfo,onClick:toggleInfo,attrs:{'aria-label':'Performance information'}});
+  // The keys of the Stage, listed on request (the bottom bar names the three that matter most).
+  const KEYS=[['F','Full screen'],['Esc','Leave full screen'],...(standalone?[]:[['Esc Esc','Back to the Control Center (twice, outside full screen)']]),['Space','Play or pause a replay'],['← →','Back or forward 10 s in a replay'],['M','Sound on or off'],['I','Performance information'],['?','These keys']];
+  const keysCard=h('div',{class:'stage-keys',id:'stageKeys',role:'region','aria-label':'Keyboard shortcuts',hidden:true},
+    h('div',{class:'stage-keys-head'},h('strong',{text:'Keyboard'}),h('span',{text:'Any key or pointer movement shows the controls'})),
+    h('dl',{},...KEYS.flatMap(([k,v])=>[h('dt',{},...k.split(' ').map(x=>h('kbd',{text:x}))),h('dd',{text:v})])));
+  const keysBtn=h('button',{type:'button',class:'btn ghost icon stage-keys-btn',title:'Keyboard shortcuts (?)','aria-label':'Keyboard shortcuts','aria-expanded':'false','aria-controls':'stageKeys'},h('kbd',{text:'?'}));
+  const toggleKeys=(force)=>{const on=force??keysCard.hidden;keysCard.hidden=!on;keysBtn.setAttribute('aria-expanded',String(on));};
+  keysBtn.addEventListener('click',()=>toggleKeys());
+  const top=h('div',{class:'stage-top'},back,title,h('div',{class:'grow'}),
+    h('div',{class:'stage-group stage-present',role:'group','aria-label':'Presentation'},labels,quality),h('span',{class:'stage-sep','aria-hidden':'true'}),
+    h('div',{class:'stage-group',role:'group','aria-label':'Window'},infoBtn,keysBtn,popBtn,fullBtn));
   // ---- Bottom: transport, worlds, sound, record ------------------------------------------------------------------
   const liveBtn=h('button',{type:'button',class:'btn sm',id:'liveBtn','aria-pressed':'true',title:'Follow the work as it happens (about 10 s behind)'},icon('live'),h('span',{text:'Live'}));
   const replayBtn=h('button',{type:'button',class:'btn sm',id:'replayBtn','aria-pressed':'false',title:'Replay the recorded performance'},icon('replay'),h('span',{text:'Replay'}));
@@ -32,19 +54,25 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
   const worlds=h('div',{class:'stage-worlds',role:'group','aria-label':'Visual world'},...P.WORLDS.map(w=>{
     const b=h('button',{type:'button',class:'btn sm world',dataset:{world:w},'aria-pressed':String(P.state.world===w),title:WORLD_NAMES[w]},h('span',{text:w==='living'?'Living':WORLD_NAMES[w].replace('The ','')}));
     b.addEventListener('click',()=>chooseWorld(w));return b;}));
-  const soundBtn=button({icon:'sound-off',kind:'ghost',id:'stageSoundBtn',attrs:{'aria-label':'Sound','aria-pressed':'false'},title:'Sound',onClick:()=>P.toggleSound().catch(e=>toast(`Sound could not start: ${e.message}`,'error'))});
+  const toggleSound=()=>P.toggleSound().catch(e=>toast(`Sound could not start: ${e.message}`,'error'));
+  const soundBtn=button({label:'Sound',icon:'sound-off',id:'stageSoundBtn',attrs:{'aria-pressed':'false',class:'btn ghost sm stage-sound'},title:'Sound (M)',onClick:toggleSound});
   const recBtn=h('button',{type:'button',class:'btn record sm',id:'stageRecordBtn','aria-pressed':'false'},h('span',{class:'dot'}),h('span',{class:'label',text:'Record'}));
   recBtn.addEventListener('click',()=>toggleRecording());
   const bottom=h('div',{class:'stage-bottom'},
     h('div',{class:'transport-row'},h('div',{class:'mode-toggle'},liveBtn,replayBtn),playBtn,h('div',{class:'scrub'},scrub,h('div',{class:'scrub-times'},startLabel,endLabel)),speed),
-    h('div',{class:'transport-row second'},worlds,h('div',{class:'grow'}),soundBtn,recBtn));
+    h('div',{class:'transport-row second'},worlds,h('div',{class:'grow'}),
+      h('div',{class:'stage-hints','aria-hidden':'true'},h('span',{},h('kbd',{text:'F'}),' Full screen'),standalone?null:h('span',{},h('kbd',{text:'Esc'}),h('kbd',{text:'Esc'}),' Control Center'),h('span',{},h('kbd',{text:'?'}),' Keys')),
+      h('div',{class:'grow'}),soundBtn,recBtn));
   // ---- Messages over the stage --------------------------------------------------------------------------------
   const recPill=h('div',{class:'stage-rec',role:'status'});
   const notice=h('div',{class:'stage-notice',role:'status','aria-live':'polite'});
   const picked=h('div',{class:'stage-picked'});
   const info=h('div',{class:'stage-info'});
   const empty=h('div',{class:'stage-empty-msg'});
-  const shell=h('div',{class:'stage-chrome-ui chrome-pass',dataset:{idle:'false'}},top,recPill,notice,empty,picked,info,bottom);
+  // What Esc did (or why it did not leave): shown for a moment in the middle of the world, clear of the transport and
+  // of the world's own title, which sits just above the transport while the world opens.
+  const escHint=h('div',{class:'stage-esc-hint',id:'stageEscHint',role:'status','aria-live':'polite',hidden:true});
+  const shell=h('div',{class:'stage-chrome-ui chrome-pass',dataset:{idle:'false'}},top,recPill,notice,empty,picked,info,keysCard,escHint,bottom);
   chrome.append(shell);
   // ---- Behaviour ---------------------------------------------------------------------------------------------
   // A choice made on the Stage is saved for the project, so every window follows; choosing the global default goes back
@@ -56,19 +84,53 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
     const value=w===(store.state.settings?.stage?.world||'living')?null:w;if((store.preferences()?.world??null)===value)return;
     try{await store.savePreferences({world:value});}catch(e){toast(`Shown here, but not saved for this project: ${e.message}`,'warning');}}
   function toggleFullscreen(){if(document.fullscreenElement)document.exitFullscreen?.();else document.documentElement.requestFullscreen?.().catch(e=>toast(`Full screen is not available: ${e.message}`,'warning'));}
-  const onFull=()=>{const on=!!document.fullscreenElement;fullBtn.replaceChildren(icon(on?'exit-fullscreen':'fullscreen'));fullBtn.title=on?'Leave full screen (F or Esc)':'Full screen (F)';};
+  let leftFullAt=0;
+  const onFull=()=>{const on=!!document.fullscreenElement;if(!on)leftFullAt=performance.now();fullBtn.replaceChildren(icon(on?'exit-fullscreen':'fullscreen'));fullBtn.title=on?'Leave full screen (F or Esc)':'Full screen (F)';};
   document.addEventListener('fullscreenchange',onFull);offs.push(()=>document.removeEventListener('fullscreenchange',onFull));
-  // Controls fade after a moment without movement (never while a control has focus or the pointer is over them).
+  // Controls fade after a moment without movement (never while a control has focus, the pointer is over them or the
+  // list of keys is open: it stays readable until it is closed).
   let idleTimer=null;
   const wake=()=>{shell.dataset.idle='false';document.body.classList.remove('stage-idle');clearTimeout(idleTimer);
-    idleTimer=setTimeout(()=>{if(shell.matches(':hover'))return wake();if(shell.contains(document.activeElement)&&document.activeElement!==document.body&&document.activeElement.matches(':focus-visible'))return wake();
+    idleTimer=setTimeout(()=>{if(shell.matches(':hover')||!keysCard.hidden)return wake();if(shell.contains(document.activeElement)&&document.activeElement!==document.body&&document.activeElement.matches(':focus-visible'))return wake();
       shell.dataset.idle='true';document.body.classList.add('stage-idle');},IDLE_MS);};
   for(const ev of ['mousemove','pointerdown','keydown','touchstart'])addEventListener(ev,wake,{passive:true}),offs.push(()=>removeEventListener(ev,wake));
   wake();
+  // Browser full screen (F11) is not the page's full screen. It is recognised by the window covering the screen with no
+  // browser toolbar left in it. The window's outer size and the screen's are not scaled by page zoom (the viewport's
+  // inner size is), so a maximized window zoomed out never reads as full screen; the toolbar is what the outer height
+  // keeps beyond the viewport, measured at the page's zoom (outer width over inner width: a full-screen Stage has no
+  // side borders or scroll bar).
+  // Note: Playwright's default screen is the viewport and its outer size equals the inner size, so in a test context
+  // without a larger `screen` the Stage reads as F11 full screen and Esc never leaves (stage.qual.js sets a screen).
+  const fillsScreen=()=>{
+    if(matchMedia('(display-mode: fullscreen)').matches)return true;
+    if(!(outerWidth>=screen.width-1&&outerHeight>=screen.height-1)||!innerWidth)return false;
+    return outerHeight-innerHeight*(outerWidth/innerWidth)<8;};
+  let escAt=0,hintTimer=null;
+  const hint=msg=>{escHint.textContent=msg;escHint.hidden=false;clearTimeout(hintTimer);hintTimer=setTimeout(()=>{escHint.hidden=true;},ESC_MS);};
+  function onEscape(){
+    // Focus returns to the ? button only if it was there (opened by a click on it); a card opened with the ? key leaves
+    // focus where it was, so Space still drives a replay.
+    if(!keysCard.hidden){const wasOnBtn=document.activeElement===keysBtn;toggleKeys(false);if(wasOnBtn)keysBtn.focus();return;}
+    // The Esc that ended full screen is the browser's, never a request to leave.
+    if(performance.now()-leftFullAt<700)return;
+    if(standalone){hint('This window presents the Stage: use Control Center at the top left to leave it.');return;}
+    if(fillsScreen()){hint('The Stage fills the screen: leave full screen first (F11), or use Control Center at the top left.');return;}
+    const now=performance.now();
+    if(now-escAt<ESC_MS){escAt=0;escHint.hidden=true;goBack();return;}
+    escAt=now;hint('Press Esc again to return to the Control Center.');
+  }
   const onKey=e=>{
     if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)&&document.activeElement.type!=='range')return;
-    if(document.querySelector('.modal-backdrop'))return;
-    if(e.key==='f'||e.key==='F'){e.preventDefault();toggleFullscreen();}
+    if(document.querySelector('.modal-backdrop,.menu'))return;
+    if(e.key==='Escape'){
+      // Full screen is left by the browser itself; the list of keys closes first; then twice to go back.
+      if(document.fullscreenElement||e.repeat)return;
+      e.preventDefault();onEscape();}
+    else if(e.key==='f'||e.key==='F'){e.preventDefault();toggleFullscreen();}
+    else if(e.key==='?'){e.preventDefault();toggleKeys();}
+    else if((e.key==='m'||e.key==='M')&&!e.repeat){e.preventDefault();toggleSound();}
+    else if((e.key==='i'||e.key==='I')&&!e.repeat){e.preventDefault();toggleInfo();}
     else if(e.key===' '&&P.state.mode==='replay'&&document.activeElement?.tagName!=='BUTTON'){e.preventDefault();P.togglePlay();}
     else if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&P.state.mode==='replay'&&document.activeElement?.id!=='scrub'){e.preventDefault();P.seek(P.state.position.now+(e.key==='ArrowLeft'?-10000:10000)*(P.state.speed||1));}
   };
@@ -88,7 +150,7 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
     speed.value=String(s.speed);speed.disabled=live;
   }
   function renderWorlds(){for(const b of worlds.querySelectorAll('[data-world]'))b.setAttribute('aria-pressed',String(b.dataset.world===P.state.world));}
-  function renderSound(){const on=P.state.sound.enabled;soundBtn.setAttribute('aria-pressed',String(on));soundBtn.replaceChildren(icon(on?'sound-on':'sound-off'));soundBtn.title=on?'Sound on (click to mute)':'Enable sound';}
+  function renderSound(){const on=P.state.sound.enabled;soundBtn.setAttribute('aria-pressed',String(on));soundBtn.replaceChildren(icon(on?'sound-on':'sound-off'),h('span',{text:'Sound'}));soundBtn.title=on?'Sound on: click or M to mute':'Sound off: click or M to turn it on';}
   function renderRecording(){const r=P.state.recording,other=!r.active&&!!store.state.others.recording;
     recBtn.setAttribute('aria-pressed',String(r.active));text(recBtn.querySelector('.label'),r.active?`Stop ${timecode(r.stats.elapsedMs)}`:other?'Recording elsewhere':'Record');recBtn.disabled=other;
     recPill.replaceChildren();if(r.active)recPill.append(h('span',{class:'pill record live',text:`REC ${timecode(r.stats.elapsedMs)} · ${r.size==='stage'?'stage size':r.size}${r.audio&&!r.audioLost?'':' · no sound'}`}));}
@@ -130,5 +192,5 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
     if(t.has('quality'))quality.value=P.state.quality;
     if(store.state.ui.stageInfo&&(t.has('feed')||t.has('frame'))&&performance.now()-infoAt>500){infoAt=performance.now();renderInfo();}
   }));
-  return {unmount(){for(const f of offs)f();clearTimeout(idleTimer);document.body.classList.remove('stage-idle');if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});}};
+  return {unmount(){for(const f of offs)f();clearTimeout(idleTimer);clearTimeout(hintTimer);document.body.classList.remove('stage-idle');if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});}};
 }};
