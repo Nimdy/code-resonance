@@ -333,8 +333,9 @@ export function createFamily(ctx){
         gl_FragColor=vec4(L,T);}`}));
   const galRT=keep(new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,depthBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter}));bgU.uGalTex.value=galRT.texture;
   function renderGalaxy(q){const [w,h]=ctx.pipeline.size,dv=q>=2?4:3,gw=Math.max(1,Math.ceil(w/dv)),gh=Math.max(1,Math.ceil(h/dv));if(galRT.width!==gw||galRT.height!==gh)galRT.setSize(gw,gh);
-    // The face-on gas map keeps its texel-to-pixel ratio: 1024 (512 at slow qualities) at 1080p, smaller for smaller views.
-    const top=q>=2?512:1024,ms=Math.max(256,Math.min(top,Math.round(top*h/1080/64)*64));if(mapRT.width!==ms)mapRT.setSize(ms,ms);
+    // The face-on gas map keeps its texel-to-pixel ratio: 1024 at 1080p, 512 at quality 2, 256 at quality 3 (a machine
+    // without a GPU: the map is most of the frame's cost there), smaller for smaller views.
+    const top=q>=3?256:q>=2?512:1024,ms=Math.max(128,Math.min(top,Math.round(top*h/1080/32)*32));if(mapRT.width!==ms)mapRT.setSize(ms,ms);
     if(ARR!=='cluster')fsPass(mapMat,mapRT);fsPass(marchMat,galRT);}
   // The deep sky (the world's background(); a shader pack may replace it): the baked nebula and dust layers, dimmed where
   // the view crosses the disc (so background galaxies never show through it), and the unlocked sky layers.
