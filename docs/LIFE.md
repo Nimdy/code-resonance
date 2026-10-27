@@ -271,7 +271,7 @@ way there. Catching up is bounded per frame (a few milliseconds, at least 20 ms 
 are hidden anyway; films excepted: a film frame waits for the exact state). While the target is more than three
 seconds ahead the view reports **restoring** with its progress: the inhabitants are hidden and the stage says
 "Restoring the ecosystem for this moment · n %" rather than showing a stale population as if it were the moment's.
-Measured costs are in [QUALIFICATION.md](QUALIFICATION.md#digital-life) and, for far seeks, under
+Measured costs are in [QUALIFICATION.md](QUALIFICATION.md#digital-life-phase-10) and, for far seeks, under
 [Generations](#generations).
 
 ### Live sessions
