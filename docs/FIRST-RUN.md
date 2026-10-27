@@ -1,10 +1,12 @@
-# First run
+# Getting started
 
-From nothing to a project you can watch, hear, record and stream. About ten minutes.
+From nothing to a project you can watch, hear, record and stream, then make it your own. About ten minutes.
 
 ## 1. Start the receiver
 
-Node.js 20 or later.
+Node.js 20 or later, in the Code Resonance folder (it has no dependencies to install). For the Control Center: a
+Chromium-based browser (Chrome or Edge: recording needs one, and other browsers have not been tested) with WebGL2 for
+the living worlds. For capture: VS Code 1.99 or later.
 
 ```bash
 npm start
@@ -39,9 +41,9 @@ code --install-extension code-resonance-0.5.0.vsix
 ```
 
 Open a trusted workspace, click **CR** in the status bar (or **CODE RESONANCE: Start Code Performance**) and accept
-local capture. The project appears in the player's selector within seconds; the performance runs about 10 s behind your
-work (interpretation needs a little hindsight). Capture resumes when VS Code restarts until you stop it from the same
-menu. For WSL or remote workspaces see [WSL.md](WSL.md).
+local capture. The project appears in the project switcher at the top of the Control Center within seconds; the
+performance runs about 10 s behind your work (interpretation needs a little hindsight). Capture resumes when VS Code
+restarts until you stop it from the same menu. For WSL or remote workspaces see [WSL.md](WSL.md).
 
 Optional: let Claude Code join as its own voice, `npm run hooks:claude -- /path/to/project`.
 
@@ -57,10 +59,17 @@ page links there. The Claude Code hooks can also be added or removed from Connec
 on the stage as a preview (*Preview · not saved*), customise its parameters (spectacle, motion, information on the
 stage, the public title, subsystem names, and every genome parameter of the family or pack), then **Apply** — or
 **Cancel**, and nothing changed. Customising locks the identity; *Reset customisations* returns to the generated
-values. Visual presets save a look you want to reuse on other projects.
+values. Visual presets save a look you want to reuse on other projects. The same page chooses the **finish** (Clean,
+Cinematic, Dreamlike; Classic is the look from before finishes) and, under *Digital life*, the inhabitants and how much
+the music moves them (**Music influence** 0, 1 or 2). A project made before these existed says *Made before Phase 11*
+and keeps its look until you choose *Use the Phase 11 finish* (and ecology, where it has digital life).
 
 **Music Studio** sets the style (Ambient, Pulse, Cinematic, Chip), tempo (the project's own or manual), texture and
 volume, for this project or as the global default; changes are heard on the next bar and saved only when you apply.
+New projects play the **composed score**; one made earlier keeps the classic score until you choose *Use the composed
+score* (it can be undone). The composed score's **character** (mood, evolution, melody, rhythm, atmosphere, harmony,
+dynamics, space) and its **balance** (a level and a mute for each voice) shape how it is played; the project's key,
+mode and motif never change. Details: [MUSIC.md](MUSIC.md).
 
 **Quality** (Settings › This device, or on the Stage) sets the rendering level of this machine: *Auto* adapts (it lowers
 quality when frames are slow and climbs back); *High*, *Medium · no MSAA*, *Low · 75 %* and *Lowest · 55 %* fix it.
@@ -70,22 +79,40 @@ quality when frames are slow and climbs back); *High*, *Medium · no MSAA*, *Low
 **Allow this code**. If one misbehaves (an error, no answer for 6 s, too slow, a lost GPU context) it is stopped, the
 reason is shown, and the identity continues without it; **Retry** runs it again. Nothing restarts on its own.
 
-## 5. The Performance Stage
+## 5. Create a composition
+
+The **Artist Studio** (Home › *Create a composition*, or `#/artist`) builds an original look from procedural layers
+(fractals, particle populations, ribbons and flow, structures, atmospheres, lights) over one of the flagship worlds or a
+blank canvas, and decides what each layer reacts to: the music, the project's real engineering events, the digital
+life. Start
+from one of the starters, from a world, or from the blank composition.
+
+- The stage previews the working copy in this window only (*Preview · this window only*); other windows, the OBS view
+  and recordings keep showing the saved look, and Record waits until you apply or cancel.
+- **Save** keeps it in My creations, with its last five versions; **Versions** brings one back.
+- **Apply to project** makes it the project's look everywhere: the Stage, the OBS view, recordings and replays.
+- **Export** writes a data-only pack (no code, nothing about your project) that another installation imports in
+  Visual Packs, without any approval.
+
+Everything about layers, mappings and limits: [ARTIST-STUDIO.md](ARTIST-STUDIO.md).
+
+## 6. The Performance Stage
 
 **Stage** (top bar, rail, or **F** anywhere) shows the world alone. Controls appear when you move the pointer and fade
 after a moment: live or replay, play and scrub, speed, information (Cinematic, Explorer — click the world to inspect it
 —, Stream, Off), world, quality, sound, record, full screen (**F**), and a button to open the Stage in a new window for
 a second monitor. The Stage shows the project's public title only, never its folder name.
 
-## 6. Record
+## 7. Record
 
 **Record** (top bar, Stage, or **Record & Broadcast**) records what the stage shows (the world and its labels, for every
 world and every kind of pack) together with the music, to a WebM file, until you stop it. Profiles: **720p** (the
 default), **1080p** (sharper; the built-in worlds may not hold 30 fps on an integrated GPU) or the stage's size. Only
 one window records at a time. The file downloads when you stop, or when a pack is stopped while recording.
 Chromium-based browsers (Chrome, Edge) and OBS support it; elsewhere the application says recording is unavailable. The
-browser keeps the recording in memory until you stop (about 45 MB per minute); for sessions longer than about half an
-hour, record with OBS. If the sound stops reaching the recording (an audio device disconnected or stalled), the
+browser keeps the recording in memory until you stop (about 60 MB a minute at 720p and 90 MB at 1080p); for sessions
+longer than about half an hour, record with OBS. While a Visual Studio or Artist Studio preview is shown, Record asks
+you to apply or cancel it first: a recording shows what is saved. If the sound stops reaching the recording (an audio device disconnected or stalled), the
 recording is finished and saved at that moment, with the reason. Code Resonance keeps no copy or library of recordings.
 
 The recording contains the stage only: no source, file names, paths, prompts, command text or the receiver's token.
@@ -93,11 +120,38 @@ The recording contains the stage only: no source, file names, paths, prompts, co
 **Record & Broadcast** also renders up to ten minutes of the recorded performance to WAV, offline and deterministic, and
 exports the derived performance data as JSON.
 
-## 7. Stream with OBS
+## 8. Stream with OBS
 
 **Record & Broadcast › OBS** builds the overlay URL (`?overlay=1&sound=1&project=<id>`) with its options and the Browser
 Source settings: 1920×1080 and **Control audio via OBS** ticked. Acceptance procedure and what has been verified:
 [OBS.md](OBS.md).
+
+## Make it yours
+
+**How do I choose or customise a world?** In the Visual Studio: choose a world, preview it, change its parameters, its
+finish and its digital life, then Apply. *Reset customisations* returns to the generated identity.
+
+**How do I tune the music?** In the Music Studio: style, tempo, the composed score's character and balance, for this
+project or as the default for every project, heard from the next bar. [MUSIC.md](MUSIC.md) explains each control.
+
+**How do I create an original composition?** In the Artist Studio (section 5): layers over a world or the blank
+canvas, and what each one reacts to.
+
+**How do I save or restore versions?** **Save** in the Artist Studio keeps the last five versions of a composition;
+**Versions** brings one back. Visual and music presets keep a look or a sound to reuse on other projects.
+
+**How do I share a creation?** **Export** in the Artist Studio (or in Visual Packs, under My creations) gives a `.zip`;
+the other person imports it in Visual Packs and chooses **Use**.
+
+**What is a data-only pack?** A pack with no code: a tuned look of a built-in world, or an Artist Studio creation. It
+is validated and installs without approval, and cannot run anything.
+
+**When does executable approval apply?** Only to shader and world packs, which contain code: they install unapproved
+and run, isolated, only after you review their exact files in Visual Packs and allow them. Any change to their files
+needs a new approval.
+
+**How do I use my creation in OBS?** Apply it to the project, then add that project's overlay URL from Record &
+Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never a preview.
 
 ## Troubleshooting
 
@@ -109,6 +163,7 @@ Source settings: 1920×1080 and **Control audio via OBS** ticked. Acceptance pro
 | No sound | the browser needs a click; or the tab is muted | **Enable sound**; check the tab's audio |
 | Recording says *no sound* | sound was off or the audio output could not be captured | enable sound first, then record |
 | Record says recording is unavailable | the browser lacks MediaRecorder or canvas capture | use Chrome or Edge |
+| *Apply or cancel the … first* when recording | a Visual Studio or Artist Studio preview is shown in this window | apply it or cancel it, then record |
 | *Recording finished early (the sound stopped …)* | the audio device was disconnected or stopped working | reconnect it, check that you hear the music, record again |
 | *… stopped: the pack stopped answering* | a visual pack hung or was too slow for this machine | lower **Quality**, then **Retry**; or choose another look |
 | *… exceeds its declared budget* | the pack draws more than its author declared | it keeps running; lower Quality if frames are slow |
@@ -119,4 +174,5 @@ Source settings: 1920×1080 and **Control audio via OBS** ticked. Acceptance pro
 | *View only · Pair this browser* / changes are refused | this browser is not paired | open the link `npm run pair` prints (once per browser) |
 | In OBS the Construct shows instead of the living world | OBS's browser has no WebGL (typically no usable GPU with hardware acceleration on) | OBS → Settings → Advanced → turn off *Browser Source Hardware Acceleration*, restart OBS |
 
-Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder or its token.
+Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder or its token. Where
+everything is kept, backups, updates and diagnostics: [OPERATIONS.md](OPERATIONS.md).

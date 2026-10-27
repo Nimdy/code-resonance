@@ -16,6 +16,25 @@ function merge(settings){
   }
   return next;
 }
+// The inverse (the Control Center's removal): exactly the adapter's entries leave, and only the groups, events and
+// `hooks` key that they leave empty; every other byte of meaning in the user's file stays.
+const isPlain=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+function unmerge(settings){
+  if(!isPlain(settings.hooks))return settings;
+  const hooks={...settings.hooks};let touched=false;
+  for(const [event,groups] of Object.entries(hooks)){
+    if(!Array.isArray(groups))continue;
+    const kept=[];let changed=false;
+    for(const g of groups){
+      if(!isPlain(g)||!Array.isArray(g.hooks)||!g.hooks.some(h=>h?.command===command)){kept.push(g);continue;}
+      changed=true;const rest=g.hooks.filter(h=>h?.command!==command);if(rest.length)kept.push({...g,hooks:rest});
+    }
+    if(!changed)continue;touched=true;
+    if(kept.length)hooks[event]=kept;else delete hooks[event];
+  }
+  if(!touched)return settings;
+  const next={...settings,hooks};if(!Object.keys(hooks).length)delete next.hooks;return next;
+}
 function main(){
   const args=process.argv.slice(2);const print=args.includes('--print');
   const project=path.resolve(args.find(a=>!a.startsWith('--'))||process.cwd());
@@ -28,4 +47,4 @@ function main(){
   console.log(`Code Resonance hooks added to ${file}\nStart the receiver (npm start) and Claude Code sessions in this project will join the performance.`);
 }
 if(require.main===module)try{main();}catch(e){console.error(e.message);process.exitCode=1;}
-module.exports={merge,EVENTS};
+module.exports={merge,unmerge,EVENTS,adapter,command};

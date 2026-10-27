@@ -4,7 +4,7 @@
 // over it by position only — it is never moved in the document, so a running pack frame is never reloaded — and
 // #stageChrome, a layer above it, carries the view's own controls. The OBS view (?overlay=1) and films (?film=1) show
 // the stage alone with no interface at all.
-import {h,clear,text,button,popover,menuItem,toast,modal,copyable,callout} from './dom.js';
+import {h,clear,text,button,popover,menuItem,toast,modal,copyable} from './dom.js';
 import {icon} from './icons.js';
 import * as store from './store.js';
 import {ago,timecode,projectName,stageWorldName} from './format.js';
@@ -178,7 +178,7 @@ async function boot(){
     document.body.classList.add('overlay');P.setVisible(true);
     await store.start({presentation:true});
     if(!store.state.selected&&params.get('project'))store.select(params.get('project'));
-    store.on(()=>{});return;
+    return;
   }
   root.append(nav,topbar,workspace);root.hidden=false;
   store.on(t=>{updateShell(t);if(t.has('notice'))showNotices();});

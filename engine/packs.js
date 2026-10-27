@@ -20,7 +20,6 @@ const validateSchema=compile(SCHEMA);
 const FILE=new RegExp(SCHEMA.$defs.file.pattern,'u');
 const LIMITS={files:64,fileBytes:1024*1024,totalBytes:8*1024*1024};
 const CODE=/\.(?:js|glsl|frag|vert)$/;
-const BUILTIN=Object.keys(catalog.FAMILIES);
 const sha256=b=>crypto.createHash('sha256').update(b).digest('hex');
 // SDK compatibility: '^1.N' runs on SDK 1.M when M >= N.
 function compatible(manifest,sdk=SDK_VERSION){
@@ -38,9 +37,10 @@ function referenced(m){
 }
 // The parameter catalogue a declarative or shader pack may override: a built-in family's, or an installed world
 // pack's own parameters (as `params.<name>`) plus the shared palette / light / technique entries.
+// A base is an own key of either (never an inherited name such as 'constructor').
 function catalogueOf(base,registry){
-  if(catalog.FAMILIES[base])return {parameters:catalog.FAMILIES[base].parameters,effects:catalog.FAMILIES[base].effects,unlocks:catalog.FAMILIES[base].unlocks,builtin:true};
-  const world=registry?.families?.[base];if(!world)return null;
+  if(Object.hasOwn(catalog.FAMILIES,base))return {parameters:catalog.FAMILIES[base].parameters,effects:catalog.FAMILIES[base].effects,unlocks:catalog.FAMILIES[base].unlocks,builtin:true};
+  const world=registry?.families&&Object.hasOwn(registry.families,base)?registry.families[base]:null;if(!world)return null;
   const parameters={...catalog.COMMON};
   for(const [k,p] of Object.entries(world.parameters||{}))parameters[`params.${k}`]=p.type==='enum'?{type:'enum',values:p.values}:p.type==='boolean'?{type:'boolean'}:{type:p.type,min:p.min,max:p.max};
   return {parameters,effects:[...new Set(Object.values(world.effects||{}))],unlocks:world.ambient?.unlocks||[],builtin:false,world};

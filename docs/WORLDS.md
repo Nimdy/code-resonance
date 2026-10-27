@@ -4,8 +4,9 @@ Code Resonance draws each project as its own generative world: a persistent arti
 (its Visual Recipe), rendered by one of several world families, alive between events, and transformed by what the
 development actually does. Every structure is real project data; the worlds never invent progress.
 
-**Status:** artistic candidates. Technical qualification (determinism, idle life, resources, privacy, performance) is
-not artistic acceptance; that is a human judgement of the images, films and sound.
+**Status:** the three flagship worlds (rebuilt in PR #8) have been reviewed by the owner, and their approved films are
+the baseline later changes are checked against. Technical qualification (determinism, idle life, resources, privacy,
+performance) is separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
 
@@ -37,8 +38,8 @@ subsystems and a title.
   (growing, failing, recovering, idle) is state read from the timeline at render time and never changes the recipe.
 - **Founding.** While a project has fewer than 6 modules the generated recipe is provisional (re-derived on request);
   then it is founded and never re-derived. A chosen or locked recipe is permanent at once.
-- **Artist control.** The World DNA panel (and `POST /api/recipe`, same origin only) offers: automatic, choose a
-  family, regenerate (a new seeded draw, `variant`), lock, spectacle intensity 0-200 %, information mode, subsystem
+- **Artist control.** The Visual Studio (and `POST /api/recipe`, with a control capability) offers: automatic, choose
+  a family, regenerate (a new seeded draw, `variant`), lock, spectacle intensity 0-200 %, information mode, subsystem
   aliases and a title. Inputs are validated; aliases are restricted to letters, digits and basic punctuation.
 - **Reproducibility.** `film.js` writes the exact recipe next to every film (`<film>.recipe.json`) and can render
   with a pinned recipe (`--recipe`).
@@ -181,6 +182,11 @@ The Visual Studio shows why to choose each world, offers six curated looks (two 
 previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials
 group above the full parameter groups.
 
+Three catalogued values currently draw nothing on one world each: `music.reactivity` (*Reactivity*, offered for every
+world, also in the Music Studio) on Machine Cathedral, and `music.beatPulse` (*Beat pulse*) and
+`secondary.blossomScale` (*Blossom scale*) on Fractal Biosphere. They stay in the catalogue because saved recipes and
+packs set them and are validated against it; making them work now would change the approved look of those worlds.
+
 ## Semantic fidelity
 
 Intents are emitted by the reducer next to the facts that justify them and recorded with the timeline.
@@ -249,17 +255,23 @@ Modes: **cinematic** (title card, callouts for structural events and above, mile
 their activity changes), **explorer** (subsystem labels always, click to inspect a structure), **stream** (a lower
 third: public title and family, current event, agent status, validation status), **off**. Text comes only from roles,
 counts, states, activity categories, generated names (pronounceable, derived from salted ids, filtered against crude
-words), user aliases and the **public title**, which exists only when the user sets it in the World DNA panel; without
+words), user aliases and the **public title**, which exists only when the user sets it in the Visual Studio; without
 it the title card shows the family name and the lower third "Code Resonance · <family>". The project folder name is
 never an input (`public/worlds/labels.js`, unit-tested). No path, file name, prompt or source identifier is ever drawn
 (checked in qualification).
 
 ## Music
 
-The score is unchanged. The synthesis is rebalanced for small speakers (see `qualification/results/audio/balance.json`)
-and the energy relaxes after 15 s without a new frame.
+The score, its two versions and how a project's identity chooses one: [MUSIC.md](MUSIC.md). What the worlds and their
+digital life take from the music: [MUSIC.md](MUSIC.md#what-the-visuals-hear) and [LIFE.md](LIFE.md#ecology-v2). When the
+living worlds were introduced (PR #3) the score was unchanged; the synthesis was rebalanced for small speakers (see
+`qualification/results/audio/balance.json`) and the energy relaxes after 15 s without a new frame.
 
-## Frames and films
+## Frames from the PR #3 living worlds (historical)
+
+These frames show the first living worlds (PR #3, commit `3acbbcd`), before PR #8 rebuilt them as the flagship worlds
+described above, so most events below are drawn differently today. Current stills are in
+[worlds/spectacle/](worlds/spectacle/README.md) and [media/](media/README.md).
 
 Frames from the rendered films (the real renderer, frame-exact from the recorded timelines and the pinned recipes in
 `docs/worlds/recipes/`). The films themselves are rendered locally by `qualification/visual/film.js` and are not
@@ -302,4 +314,4 @@ See [docs/packs/README.md](packs/README.md).
 
 ## Qualification
 
-See `docs/QUALIFICATION.md` for commands and measured results.
+Measured results: [QUALIFICATION.md](QUALIFICATION.md). The commands: [ARCHITECTURE.md](../ARCHITECTURE.md#qualification).

@@ -1,5 +1,8 @@
 # Code Resonance — v0.2.0 audit and corrections
 
+> **Historical:** the audit of v0.2.0 that opened PR #1, as written then. The product has changed a great deal since;
+> the current documentation starts at [README.md](../README.md).
+
 Audit of commit `07a2695` (v0.2.0), October 2026. Each finding was reproduced with a probe, a test, or a run in
 the real environment before it was changed. The tests added for each fix fail against v0.2.0.
 

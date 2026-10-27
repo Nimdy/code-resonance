@@ -59,7 +59,7 @@ function request(method,route,body){return new Promise((resolve,reject)=>{
 });}
 const event=(step,ts)=>({v:1,id:crypto.randomUUID(),ts,kind:step.kind,projectId,sessionId,origin:step.fields.meta?.source==='demonstration'?'hook':'unknown',...step.fields});
 (async()=>{
-  console.log(`Open http://127.0.0.1:${port}/?project=${projectId} and click ENABLE SOUND. Fictional session: ${Math.round(t)} s${fast?' (fast mode)':''}.`);
+  console.log(`Open http://127.0.0.1:${port}/?project=${projectId} and click Enable sound. Fictional session: ${Math.round(t)} s${fast?' (fast mode)':''}.`);
   if(fast){
     const base=Date.now()-t*1000;
     for(let i=0;i<script.length;i+=20)await request('POST','/v1/events',{events:script.slice(i,i+20).map(s=>event(s,Math.round(base+s.t*1000)))});

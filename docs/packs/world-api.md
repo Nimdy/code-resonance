@@ -1,4 +1,4 @@
-# World API (SDK 1.1)
+# World API (SDK 1; current 1.2)
 
 A world pack's entry module (`world.entry` in the manifest) is one self-contained ES module. It must not import
 anything (the frame refuses it, and validation rejects it): everything comes through `sdk`.
@@ -59,7 +59,7 @@ interface; read them for complete examples of instancing, shaders, labels and la
 
 | Member | What it is |
 |---|---|
-| `version`, `api` | `'1.1.0'`, `1` |
+| `version`, `api` | `'1.2.0'` (`'1.0.0'` or `'1.1.0'` on older runtimes), `1` (unchanged since 1.0) |
 | `THREE` | three.js r170 |
 | `scene`, `camera`, `renderer`, `film` | your scene, the camera the rig drives, the renderer (in the pack worker, on an `OffscreenCanvas`), whether a film is rendering |
 | `recipe`, `params`, `palette` | the recipe; your declared parameters drawn for this project; palette colours as `THREE.Color` (`primary`, `secondary`, `accent`, `highlight`, `deep`, `haze`, `warning`, `valid`) |

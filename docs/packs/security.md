@@ -7,18 +7,23 @@ there. Data packs and code packs are treated differently.
 
 Validated against the schema and the base family's catalogue (types, ranges, effect polarity), then applied to the
 recipe's genome on the receiver. They contain no code (validation rejects any `.js` or GLSL file in them), so they need
-no approval. Their strings (name, author, description) appear only in the player's panel, as text, never on the Stage.
+no approval. Their strings (name, author, description) appear only in the Control Center, as text, never on the Stage.
+
+Since SDK 1.2 a declarative pack may carry an Artist Studio composition (a creation). It is validated against the
+composition model's allowlists (six layer types, the listed signals and targets, clamped values, at most 8 layers within
+a rendering budget of 100), normalised on the receiver, and drawn by the built-in layer runtime on the player page. It
+cannot reference files, URLs or code, and never runs in the pack frame.
 
 ## Shader and world packs (code)
 
 1. **Installed unapproved.** `scripts/pack.js install` copies the files into `<data>/packs/<id>/` and records each file's
    SHA-256 and a digest of the whole pack. Nothing runs until you approve.
-2. **Explicit approval of exact files.** `scripts/pack.js approve <id>` or the player's REVIEW dialog shows the author,
+2. **Explicit approval of exact files.** `scripts/pack.js approve <id>` or the review in Visual Packs shows the author,
    every file with its size and hash, the digest and the limits below. The approval (in `<data>/packs/trust.json`, mode
    0600) is bound to that digest. Any change to any installed file is detected (the pack is reported as modified, no
    longer counts as approved and its files are no longer served); reinstalling different files drops the approval.
-   Approvals come only from your command line or from the player page itself (same-origin request with the digest you
-   saw).
+   Approvals come only from your command line or from a paired Control Center (a request that carries a control
+   capability and the digest you saw; see [SECURITY.md](../../SECURITY.md)).
 3. **Served as inert text.** The receiver hands out a code pack's files only after approval, as `text/plain` with
    `nosniff` and a sandboxing content policy, so they cannot execute in the player's origin.
 4. **Isolated frame, code in a worker (SDK 1.1).** The player creates `<iframe sandbox="allow-scripts">` for the pack:
@@ -72,7 +77,7 @@ Be clear about the limits before approving a pack:
   what the frame holds: the privacy-safe performance view.
 - **A hung pack costs CPU for a few seconds.** A worker stuck in a loop is detected after 6 s; Chromium then
   force-terminates it about 2 s after its frame is removed (measured), so a hostile pack can occupy one CPU core for
-  roughly 8 s per approval or RETRY. The player and the page stay responsive meanwhile (measured).
+  roughly 8 s per approval or **Retry**. The player and the page stay responsive meanwhile (measured).
 - **Not a boundary against malware running as you**, or against other local users with access to your home directory.
 
 So approval is a real decision: approve only packs from authors you trust, as you would any program you run.

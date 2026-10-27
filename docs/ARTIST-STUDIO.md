@@ -154,8 +154,9 @@ recipe view does not carry them).
 world draws stands in front of it. `world` (integrated): depth-tested with the world, so the world's own forms hide
 and reveal it; an opaque solid structure with normal blending also writes depth. `front`: no depth test, drawn after
 the world. Blends are premultiplied: add, screen (`src + dst·(1 − src)`, the layer's colour clamped to 1) and
-normal. `composition.depthNote(type, depth)` gives the honest description shown with the choice: an atmosphere behind
-the world is a screen-space sky, integrated it is a volume around its anchor, in front it is a veil over the image.
+normal. The wording shown with the choice (the Depth control, the stack's depth groups and each layer's badge) is
+`DEPTH_WORDS` in `composition-text.js`; an atmosphere layer's badge adds "· screen". An atmosphere behind the world is
+a screen-space sky, integrated it is a volume around its anchor, in front it is a veil over the image.
 
 **Layer types.**
 

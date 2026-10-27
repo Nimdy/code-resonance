@@ -1,6 +1,51 @@
 # Changelog
 
-## Unreleased — creative mastering and the Artist Studio
+## Unreleased — integrated into main at the final consolidation (product version still 0.5.0; not released)
+
+Four milestones built on 0.5.0 without changing the product version, then integrated into `main`. Nothing here has
+been released or tagged. The product version is separate from the versions of the data formats, the score, the Visual
+Recipe generator, digital life and the Visual Pack SDK, which these milestones did change: they are listed, with the
+rules that keep existing identities as they were, in [ARCHITECTURE.md](ARCHITECTURE.md#versions-and-compatibility).
+
+### Final consolidation
+
+No intended change of product behaviour. The pull-request stack is integrated into `main` with merge commits
+([integration manifest](docs/history/integration-manifest.md)).
+
+- **Documentation:** an index ([docs/README.md](docs/README.md)) with a map of the history by pull request; a current
+  operations guide (`docs/OPERATIONS.md`) in place of the 0.4.0 alpha notes, which move to `docs/history/`; the
+  getting-started guide covers the creative workflows; ARCHITECTURE is the developer guide with the versions table and
+  the HTTP API; SECURITY covers Artist Studio compositions; historical records are labelled; SDK 1.2 is named as current.
+- **A test** keeps the Control Center's documents, the receiver's allowlist and every Markdown link consistent
+  (`tests/docs.test.js`).
+- **Code:**
+  - Removed dead code: Cathedral layout helpers unused since life grammar v3, the score's uncalled `pitch()`, unread
+    bindings, unused CSS, the Construct's leftover state, and two orphaned composition wording helpers. Score and
+    composition output is unchanged; the digests are pinned.
+  - One source per module system for the music vocabulary (styles, profile keys, mix groups, tempo limits), with
+    parity tests. The Music Studio reads room sizes from the engine.
+  - One reduced-motion rule and one copy of the information-mode descriptions.
+  - The pure quality governor now lives in `public/worlds/quality.js`; the composition export helpers in
+    `public/ui/creations.js`, which also styles the export dialog in Visual Packs; the Claude Code hook format sits
+    with its installer.
+- **Fixes:**
+  - A stopped receiver no longer holds Node open for 10 s.
+  - A preview that settles after the Artist Studio is left no longer re-sets the draft.
+  - The 2D stages' ripple backlog is bounded.
+  - The per-frame state no longer hashes the whole ecosystem to read the quality level.
+  - A test no longer leaks temporary folders.
+- **Validation hardening:**
+  - Composition layer types and pack base families are looked up as own keys only (`constructor` was accepted or
+    crashed).
+  - Values that cannot become a number or a string no longer crash validation.
+  - Validation reports at most 24 problems.
+- **Tooling:**
+  - `npm run check` finds its files itself (`scripts/check.js`, proven to cover the old list).
+  - CI jobs have timeouts with margin and run on pinned `ubuntu-24.04`.
+  - The parameter catalogue is regenerated for SDK 1.2 and guarded by a test.
+  - Personal machine paths are removed from tracked qualification reports.
+
+### Creative mastering and the Artist Studio (PR #11)
 
 Music that develops, digital life that answers it, cinematic finishes, and a workbench for original compositions.
 Built on the digital-life branch (version unchanged); not stable, not released. Existing identities keep their sound
@@ -55,7 +100,59 @@ and image until deliberately upgraded: new behaviour sits behind versions (recip
   - Projects: Composition, Finish and Music profile rows.
 - **Reference packs:** Ember Observatory 1.1.0 and Blueprint Cathedral 1.1.0, clearer over the flagship worlds.
 
-## Unreleased — flagship worlds
+### Digital life (PR #10)
+
+Autonomous inhabitants in the three flagship worlds ([docs/LIFE.md](docs/LIFE.md)). Built on the desktop experience
+(version unchanged); not stable, not released.
+
+- **A deterministic ecosystem** (`public/worlds/life/`): entities with inertia and bounded steering on a fixed step,
+  shared fields they deposit into and sense (trail, energy, disturbance, momentum), sites with conditions, bounded
+  lifecycles that reuse their slots. Checkpoints restore exactly; every frame rate and every seek path reaches the same
+  state.
+- **Three ecologies:** in the Fractal Biosphere pollinators, spores, plankton colonies and drifters gather on the
+  organisms' crowns and move on; in the Stellar Forge dust streams, accretion fragments, charged motes and stellar wind
+  follow the galaxy's rotation and density waves; in the Machine Cathedral couriers, wardens and sparks travel the
+  city's own routes, never through stone.
+- **Engineering, not choreography:** canonical intents become bounded site conditions (novelty, nourishment, strain, a
+  vortex after a validated refactor, a lasting attractor for a verified milestone); a failure scatters life and a
+  recovery lets it return. Inhabitants never stand for agents and are never labelled.
+- **The music's climate:** the score's sections on the performance clock shape the conditions; *Music influence*
+  (`life.music`, 0 to 2) sets how much, and 0 keeps them neutral.
+- **Replays and films** live in generations of ten minutes, so a far seek is bounded; the next generation is prepared in
+  the background and handed over with a crossfade. A live session keeps its population through tempo changes and folds
+  its inputs to bound its memory.
+- **Recipe generator v3** adds `life` to new built-in identities from its own random stream (every v2 value
+  unchanged). Stored identities have no life until the Visual Studio's *Digital life* switch turns it on; life off
+  renders exactly as before.
+- **Auto quality** also steps down when the GPU timer misses part of a slow frame (Stellar Forge at 1920×1080 on the AMD
+  integrated GPU: High at 19 fps before, Low at 57 fps after).
+- **Qualification:** `visual/life.qual.js`, `life-perf.js`, `life-cpu.js` and `life-music.js`; `unchanged.qual.js`
+  compares the worlds with life off; films kept locally.
+
+### Desktop experience (PR #9)
+
+The Control Center redesigned for desktop screens, from 1280×720 to 2560×1440. Built on the flagship worlds (version
+unchanged); not stable, not released.
+
+- **Type and layout:** a readable type scale (body 14 px, nothing under 12 px), a wider rail, top bar and inspector,
+  and pages that use the screen's width (up to 2400 px).
+- **Workspaces:** Home gives the live world most of the screen beside the project, its evidence-based status and its
+  actions; Projects lists projects beside the selected one's timeline, sessions, validations, agents and configuration;
+  the Visual Studio's world fills the main column, with an inspector grouped by creative purpose and Cancel and Apply
+  pinned; the Music Studio brings the live monitor, the musical identity, the styles and the performance controls into
+  one workspace; Visual Packs is a filtered library beside a pack inspector (identity, approval, parameters, files and
+  digests); Connections and Settings put status beside guidance; Record & Broadcast shows a large recording preview;
+  the Stage's navigation is clearer.
+- **One recorder:** a window records only while it holds an exclusive Web Lock, so Record pressed in two windows at
+  the same instant starts exactly one recording (20 of 20 rounds).
+- **Auto quality** steps down within about 2 s of slow frames, straight to a usable level when they are far too slow,
+  and climbs only after a stable period (longer after a failed attempt), using the GPU time where the browser reports
+  it, without recompiling shaders. When no level draws smoothly it says so and offers Monolith; it never switches the
+  world by itself.
+- **Fixes:** no text under 12 px; toasts never cover a pinned inspector footer.
+- **Screenshots** of every workspace at four desktop sizes, before and after (`docs/desktop/`).
+
+### Flagship worlds (PR #8)
 
 The three built-in living worlds rebuilt as flagship worlds, each a different universe with its own visual grammar.
 Built on 0.5.0 (the version is unchanged); not stable, not released.

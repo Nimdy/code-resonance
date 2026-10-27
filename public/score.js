@@ -12,8 +12,6 @@
   if(root)root.ResonanceScore=api;
 })(typeof globalThis!=='undefined'?globalThis:null,function(){
   const SCORE_VERSION=2;
-  const SCALE=[0,2,4,5,7,9,11];
-  const ROOTS={'C#':49,D:50,E:52,'F#':54,G:55,A:57,B:59};
   const STYLES=new Set(['ambient','pulse','cinematic','chip']);
   const NAMES=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
   const MODES={ionian:[0,2,4,5,7,9,11],dorian:[0,2,3,5,7,9,10],lydian:[0,2,4,6,7,9,11],mixolydian:[0,2,4,5,7,9,10],aeolian:[0,2,3,5,7,8,10]};
@@ -35,11 +33,6 @@
   function rng(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
   const pick=(r,list)=>list[Math.floor(r()*list.length)%list.length];
   function weighted(r,list){const total=list.reduce((a,[,w])=>a+w,0);let x=r()*total;for(const [v,w] of list){if((x-=w)<0)return v;}return list[0][0];}
-  // Legacy helper kept for callers of the v1 API.
-  function pitch(degree,octave=0,root='D',shift=0){
-    const d=((degree%7)+7)%7,oct=Math.floor(degree/7);
-    return clamp((ROOTS[root]||50)+SCALE[d]+oct*12+octave*12+shift,25,105);
-  }
   const identities=new Map();
   function createIdentity(seed){
     seed=seed>>>0;
@@ -591,6 +584,6 @@
   }
   const createBarV2=createBar;
   function createBarAny(opts={}){return versionOf(opts.scoreVersion)===3?createBarV3(opts):createBarV2(opts);}
-  return {createBar:createBarAny,createIdentity,accentFigure,chooseSection,activeLayers,hash,random,pitch,noteOf,SECTION_BARS,SCORE_VERSION,STYLES:[...STYLES],
+  return {createBar:createBarAny,createIdentity,accentFigure,chooseSection,activeLayers,hash,random,noteOf,SECTION_BARS,SCORE_VERSION,STYLES:[...STYLES],
     LATEST_VERSION,SCORE_VERSIONS,PROFILE,GROUPS,PASSAGE_BARS,ARC_BARS,profileOf,planAt,conduct,conductAt,milestoneOf,orchestrate,expression,versionOf};
 });

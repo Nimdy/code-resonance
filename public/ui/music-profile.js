@@ -2,7 +2,10 @@
 // controls (public/score.js v3 PROFILE, .5 = as composed) and a level per voice group (GROUPS, 0 mutes, 1 = as
 // composed, 1.5 lifts). They persist like the style and texture (receiver/store.js: global settings, per-project
 // preferences where null inherits, presets) and are resolved with the same precedence. Pure: no DOM, no engine, so the
-// rules are tested in Node (tests/music-profile.test.js).
+// rules are tested in Node (tests/music-profile.test.js), as is their agreement with the score and the receiver.
+export const STYLES=['ambient','pulse','cinematic','chip'];
+// The manual tempo's range, in BPM (the receiver's and the engine's).
+export const TEMPO_MIN=58,TEMPO_MAX=160;
 export const PROFILE_KEYS=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space'];
 export const GROUPS=['pad','bass','melody','counter','arp','perc','atmos'];
 export const AS_COMPOSED=.5;

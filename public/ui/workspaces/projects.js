@@ -5,6 +5,7 @@
 import {h,text,clear,button,pill,callout,emptyState,kv,toast,popover,menuItem,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {ago,clockTime,dateTime,duration,count,projectName,STYLE_NAMES,WORLD_NAMES,LABEL_NAMES} from '../format.js';
+import {PROFILE_KEYS,scoreOf} from '../music-profile.js';
 // ---- Capture state, honestly (shared with Home) --------------------------------------------------------------------
 // The extension announces capture start and stop, but not VS Code closing: "started" is only trusted while editor
 // activity keeps arriving. Historical events are never proof that capture runs now.
@@ -351,8 +352,7 @@ export default {mount(view,ctx){
           ()=>saved?navigate('artist','edit',saved.id):navigate('artist','project'))
         :editRow('Composition','None','No layers over the world','Create',()=>navigate('artist','from',r?.family&&r.familyKind!=='pack'?r.family:'canvas'));
       const finish=r?.genome?.technique?.finish;
-      const profileKeys=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space','mix'],tuned=profileKeys.filter(k=>pm[k]!==null&&pm[k]!==undefined);
-      const score=r?.genome?.music?.score;
+      const tuned=[...PROFILE_KEYS,'mix'].filter(k=>pm[k]!==null&&pm[k]!==undefined),score=scoreOf(r);
       config.replaceChildren(h('div',{class:'cfg'},
         group('Visuals'),
         rowOf('World',WORLD_NAMES[e.world]||e.world,src(e.sources.world),'visual',useGlobal),

@@ -88,3 +88,16 @@ test('Space changes the room and the echo; an upgrade to v3 swaps the bus on the
  v.ctx=ctx;v.graph=v.buildGraph(ctx,ctx.destination);v.output=v.graph.output;v.beginBar();assert.equal(v.graph.version,undefined);
  v.setOptions({scoreVersion:3});v.beginBar();assert.equal(v.graph.version,3);assert.equal(v.bar.scoreVersion,3);assert.equal(v.ctx,ctx);
 });
+test('The engine starts with the receiver\'s default music and keeps the manual tempo in its range',()=>{
+ const m=music(),store=require('../receiver/store'),d=store.SETTINGS_DEFAULTS.music;
+ for(const k of ['style','volume','texture','tempoMode','tempo'])assert.equal(m.options[k],d[k],k);
+ m.setOptions({tempo:1});assert.equal(m.options.tempo,store.TEMPO_MIN);m.setOptions({tempo:1e4});assert.equal(m.options.tempo,store.TEMPO_MAX);
+});
+test('A style\'s room (what the Music Studio shows): fixed for the classic score, opened and closed by Space for the composed',()=>{
+ const R=music().constructor.roomSeconds;
+ // Seconds: the classic score's, then the composed score's at Space 0, .5 and 1.
+ const rooms={ambient:[3.2,2.25,3.75,5.25],pulse:[1.6,1,1.75,2.5],cinematic:[3.6,2.25,4,5.75],chip:[.9,.75,1.25,1.5]};
+ for(const [style,[v2,...v3]] of Object.entries(rooms))[0,.5,1].forEach((space,i)=>{assert.equal(R(style,2,space),v2,style);assert.equal(R(style,3,space),v3[i],`${style} ${space}`);});
+ const m=music();m.setOptions({style:'chip',scoreVersion:3,profile:{space:1}});m.appliedOptions={...m.options};
+ const {ctx}=mockContext3();assert.equal(m.buildGraph(ctx,ctx.destination).roomLength,R('chip',3,1),'the engine builds the room it reports');
+});

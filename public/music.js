@@ -135,7 +135,7 @@
       const makeup=ctx.createGain();makeup.gain.value=1.19;
       g.mix.connect(eq[0]);for(let i=1;i<eq.length;i++)eq[i-1].connect(eq[i]);eq.at(-1).connect(makeup);makeup.connect(comp);g.eq=eq;
       g.dry=ctx.createGain();g.dry.connect(g.mix);
-      g.reverb=ctx.createConvolver();g.reverb.buffer=this.impulse(ctx,REVERB[this.appliedOptions.style]||2.4);
+      g.reverb=ctx.createConvolver();g.reverb.buffer=this.impulse(ctx,ResonanceMusic.roomSeconds(this.appliedOptions.style));
       g.reverbIn=ctx.createGain();g.reverbIn.gain.value=.55;g.reverbIn.connect(g.reverb);g.reverb.connect(g.mix);
       // Ping-pong delay at a dotted eighth, darkened each repeat.
       const dl=ctx.createDelay(2),dr=ctx.createDelay(2),fb=ctx.createGain(),tone=ctx.createBiquadFilter(),merger=ctx.createChannelMerger(2);
@@ -171,12 +171,18 @@
       g.noise=this.noiseBuffer(ctx);g.active=[];g.delays=[dl,dr];g.style=style;g.tempo=this.tempo();g.waves={};
       g.profileKey=JSON.stringify(this.appliedOptions.profile);this.space(g,true);return g;
     }
+    // The length of a style's room in seconds (the Music Studio shows the engine's own): the classic score's is the
+    // style's; the composed score's opens and closes with Space (0..1), in quarter seconds.
+    static roomSeconds(style,version=2,space=.5){
+      const s=Number.isFinite(space)?Math.max(0,Math.min(1,space)):.5;
+      return version===3?Math.round((REVERB3[style]||2.6)*(.6+.85*s)*4)/4:REVERB[style]||2.4;
+    }
     // Space (profile.space): dry and intimate (0) to expansive (1). The room is re-rendered only when its length moves.
     space(g,now=false){
       const s=window.ResonanceScore.profileOf(this.appliedOptions.profile).space,ctx=g.ctx,t=ctx.currentTime;
       const set=(p,v)=>now?p.value=v:p.setTargetAtTime(v,t,.3);
       set(g.reverbIn.gain,.32+.62*s);set(g.revOut.gain,.75+.35*s);set(g.pre.delayTime,.008+.034*s);set(g.delayIn.gain,.22+.34*s);set(g.feedback.gain,.2+.18*s);
-      const len=Math.round((REVERB3[g.style]||2.6)*(.6+.85*s)*4)/4;
+      const len=ResonanceMusic.roomSeconds(g.style,3,s);
       if(g.roomLength!==len){g.roomLength=len;g.reverb.buffer=this.impulse3(ctx,len);}
     }
     // A palette or tempo change re-sizes the room and the echo on the next bar.
@@ -185,7 +191,7 @@
         g.roomLength=null;this.space(g);for(const d of g.delays)d.delayTime.setTargetAtTime(this.stepSeconds()*3,g.ctx.currentTime,.05);return;}
       g.style=this.appliedOptions.style;g.tempo=this.tempo();
       g.mix.gain.setTargetAtTime(TRIM[g.style]||1,g.ctx.currentTime,.1);
-      g.reverb.buffer=this.impulse(g.ctx,REVERB[g.style]||2.4);
+      g.reverb.buffer=this.impulse(g.ctx,ResonanceMusic.roomSeconds(g.style));
       for(const d of g.delays)d.delayTime.setTargetAtTime(this.stepSeconds()*3,g.ctx.currentTime,.05);
     }
     impulse(ctx,seconds){

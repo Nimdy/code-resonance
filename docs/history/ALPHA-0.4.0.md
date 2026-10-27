@@ -1,5 +1,9 @@
 # Code Resonance 0.4.0 alpha 1: installing, what is supported, what to test
 
+> **Historical:** the 0.4.0 alpha 1 candidate (PR #6), as written then. It was never tagged or released, and its
+> instructions predate the Control Center. Current: [OPERATIONS.md](../OPERATIONS.md) and
+> [FIRST-RUN.md](../FIRST-RUN.md).
+
 Code Resonance is in **controlled alpha**: real developers trying it on real projects, with known limitations listed
 below. It is not stable and not production-ready. Nothing leaves your machine: no account, no cloud service.
 
@@ -25,11 +29,11 @@ for the player and recording. A GPU is recommended for the living worlds.
 9. **Replay and export.** **REPLAY** plays the whole recorded history; **AUDIO ↓** renders up to ten minutes to WAV;
    **DATA ↗** exports the derived timeline.
 10. **OBS.** **OBS VIEW ↗** gives the overlay URL; add it as a Browser Source (1920×1080, *Control audio via OBS*).
-    See [OBS.md](OBS.md).
+    See [OBS.md](../OBS.md).
 
-Details and troubleshooting: [FIRST-RUN.md](FIRST-RUN.md). WSL2: [WSL.md](WSL.md). Recording: [RECORDING.md](RECORDING.md).
-Visual packs: [packs/README.md](packs/README.md). Security and privacy: [../SECURITY.md](../SECURITY.md),
-[packs/security.md](packs/security.md).
+Details and troubleshooting: [FIRST-RUN.md](../FIRST-RUN.md). WSL2: [WSL.md](../WSL.md). Recording: [RECORDING.md](../RECORDING.md).
+Visual packs: [packs/README.md](../packs/README.md). Security and privacy: [../SECURITY.md](../../SECURITY.md),
+[packs/security.md](../packs/security.md).
 
 ## Supported environments (what was actually tested)
 
@@ -74,15 +78,15 @@ reduced to a local category; prompt text is not stored unless you opt in. The St
 never show source code, file names, paths, prompts, commands or the project folder name (only a public title you set).
 Visual packs with code run in an isolated frame and worker with no network and no access to the player, only after you
 approve their exact files (a digest), and are stopped if they fail, hang or are far too slow. What a browser cannot
-promise (GPU shaders, side channels) is written down in [packs/security.md](packs/security.md). Full model:
-[../SECURITY.md](../SECURITY.md).
+promise (GPU shaders, side channels) is written down in [packs/security.md](../packs/security.md). Full model:
+[../SECURITY.md](../../SECURITY.md).
 
 ## Recording: which path
 
 - **● RECORD** (Chrome or Edge): short clips and demos, 720p or 1080p, the music included; the file downloads when you
   stop. Up to about half an hour.
 - **OBS** (Browser Source on the OBS VIEW URL, *Control audio via OBS*): streaming and long sessions; memory does not
-  grow with the length. See [OBS.md](OBS.md).
+  grow with the length. See [OBS.md](../OBS.md).
 - **Films** (`qualification/visual/film.js`): frame-exact renders of a recorded performance, for demonstrations.
 
 ## Packaging (reproducible)

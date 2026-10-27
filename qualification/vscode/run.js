@@ -102,7 +102,7 @@ async function main(){
   const vscodePath=await downloadAndUnzipVSCode(VERSION);
   const [cli,...defaults]=resolveCliArgsFromVSCodeExecutablePath(vscodePath);
   const cliArgs=defaults.filter(a=>!/^--(extensions-dir|user-data-dir)=/.test(a));
-  const report={startedAt:new Date().toISOString(),extensionRef:process.env.CR_QUAL_EXTENSION_REF||'working-tree',vscode:{executable:vscodePath},root,port,phases:{}};
+  const report={startedAt:new Date().toISOString(),extensionRef:process.env.CR_QUAL_EXTENSION_REF||'working-tree',vscode:{executable:path.relative(REPO,vscodePath).split(path.sep).join('/')},root,port,phases:{}};
   report.vscode.version=cliRun(cli,[...cliArgs,'--version'],{encoding:'utf8',timeout:60000}).stdout.split('\n')[0];
   log(`VS Code ${report.vscode.version} at ${vscodePath}; workspace ${dirs.workspace}`);
 

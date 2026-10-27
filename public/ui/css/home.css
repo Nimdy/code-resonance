@@ -49,8 +49,8 @@
 .ws-home .home-grid.first-run .home-first .empty-actions{margin-top:8px}
 /* ---- The active project ---- */
 .ws-home .home-project{overflow:hidden}
-.ws-home .home-id{display:grid;gap:10px;padding:18px 20px 16px;min-width:0}
-.ws-home .home-project-top{display:flex;align-items:center;gap:10px;min-height:28px;margin:-4px -8px 0 0}
+.ws-home .home-id{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:18px 20px 16px;min-width:0}
+.ws-home .home-project-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:28px;margin:-4px -8px 0 0}
 .ws-home .home-project-top .grow{flex:1}
 .ws-home .home-project-top .btn{flex-direction:row-reverse;gap:4px;padding:0 6px 0 10px}
 .ws-home .home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:26px;margin-top:-2px}

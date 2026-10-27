@@ -2,186 +2,224 @@
 
 **Make software development visible—and musical.**
 
-Code Resonance is a completely independent, local-first audiovisual instrument for software creation. An opt-in VS Code extension (and, optionally, an AI agent's hooks) reports observable activity. A loopback receiver records it and interprets it in the background. A performance player turns the project's real structure into an evolving visual world and composes a project-specific score that develops as the software does. No Signal/3 dependency, cloud service, model API, GPU, or Docker is required.
+Code Resonance turns real software development into a live audiovisual performance. An opt-in VS Code extension (and,
+optionally, an AI agent's hooks) reports what happens in a project. A receiver on your own machine records it and
+interprets it in the background. The player draws each project as a generative world of its own and plays a score that
+develops as the software does: structure grows, failures bring tension, fixes resolve it, verified milestones leave
+something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
-> **Maturity: 0.5.0 (the Creative Control Center), built on the 0.4.0 alpha 1 controlled-alpha candidate; not released: for real developers on real projects, with the limitations in [docs/ALPHA.md](docs/ALPHA.md); not stable, not production-ready.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, multi-hour soaks and real sessions with the final code, and human listening and viewing evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
+[![The Fractal Biosphere, the Stellar Forge, the Machine Cathedral and an Artist Studio composition, playing a recorded development session](docs/media/preview.webp)](docs/media/code-resonance-demo.mp4)
+
+*An 8-second loop; click it for the 70-second demo reel (MP4). Both are real renders of the player on an AMD integrated
+GPU (WSL2), playing a recorded VS Code session in which six AI agents helped build an app; no event was added or
+removed. The reel's soundtrack is an excerpt of Film 1's composed score: one continuous passage of the music Code
+Resonance composed for that session (Ambient), laid under every part, not music made for the video. What each clip
+shows and where it comes from: [docs/media/README.md](docs/media/README.md).*
+
+| | | |
+|---|---|---|
+| ![Fractal Biosphere](docs/media/world-biosphere.jpg) | ![Stellar Forge](docs/media/world-stellar-forge.jpg) | ![Machine Cathedral](docs/media/world-machine-cathedral.jpg) |
+| **Fractal Biosphere.** Each subsystem grows as an organism; milestone blooms stay, and the digital life gathers on the crowns. | **Stellar Forge.** A verified milestone, *integration validated*, leaves a nova's remnant around the subsystem that earned it. | **Machine Cathedral.** Precincts on black water; verified milestones gild the great spire and leave halo rings. |
+| ![Finishes](docs/media/finishes.jpg) | ![Music influence](docs/media/music-influence.jpg) | ![Aurora Loom](docs/media/artist-aurora-loom.jpg) |
+| **Finishes.** Clean, Cinematic (the default for new identities) and Dreamlike: the same moment, the same camera. | **Music influence** 0, 1 and 2: how much the score moves the digital life; the same performance, the same framing. | **Aurora Loom**, a composition built entirely in the Artist Studio's interface, over the artist canvas. |
+
+| | |
+|---|---|
+| ![The Artist Studio](docs/media/ui-artist-studio.jpg) | ![An Artist Studio preview](docs/media/ui-graphite-signal-preview.jpg) |
+| **The Artist Studio**: the layers by depth, the stage, what the selected layer reacts to, and its controls. | **A preview stays in its window**: other windows, OBS and recordings keep the saved look until *Apply to project*. |
+| ![The Music Studio](docs/media/ui-music-studio.jpg) | ![Visual Packs](docs/media/ui-visual-packs.jpg) |
+| **The Music Studio**: the styles, the composed score's character and the balance of its voices, beside the live monitor and the project's musical identity. | **Visual Packs**: a creation exported from the Artist Studio, installed as data only, with no approval needed. |
+
+Labels on the Stage are public labels (an agent's role, an event's meaning): no file, path or source appears in these
+pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## What it does
 
-- **Observes, privately.** File snapshots for analysis, per-second typing *counts* (never typed text), saves, file operations including files written outside the editor (for example by AI agents), diagnostics, VS Code tasks, terminal command lifecycle with a local *category* (test, build, lint, typecheck, install, git, run — never the command text), and Git commits.
-- **Interprets meaning, not volume.** A TypeScript/JavaScript AST diff recognises components, routes (file-system routers and Express-style), classes, functions, methods, module-level variables, imports and `require`. Inserting lines or re-running green tests earns nothing; generated bulk saturates; removing code is credited when a later test run validates it; recovering a failing suite is a milestone. Other languages produce file-level events.
-- **Represents AI agents honestly.** A Claude Code hook adapter reports prompts (length and fingerprint only), tool use, files touched, subagents and test runs. A file change is attributed to an agent only when it correlates with that agent's own tool event; everything else stays `unknown`. Hidden reasoning is never inferred.
-- **Composes.** Each project gets a persistent musical identity (key, mode, progressions, motif, tempo). Long-term progress unlocks layers chapter by chapter; current activity decides how many play; failing validations bring tension, fixes resolve it, substantial milestones lift the next section. Engineering events become short figures on the beat grid; each agent has its own voice. Four palettes: Ambient, Pulse, Cinematic, Chip.
-- **Grows a world of its own** (default: *Living*). Each project gets a persistent artistic identity (its Visual Recipe) derived from its code: a galaxy of star systems (Stellar Forge), a bioluminescent forest (Fractal Biosphere) or an engineered city (Machine Cathedral), each with its own geometry, materials, atmosphere, motion, camera and effects. The structures are the real architecture (subsystems, files, symbols, dependencies); the world stays alive between events without inventing progress; validated milestones produce rare, proportional spectacle and lasting change; AI agents appear as presences that follow their observed lifecycle. You can keep, change, regenerate or lock the identity. See [docs/WORLDS.md](docs/WORLDS.md). The Construct ([docs/CONSTRUCT.md](docs/CONSTRUCT.md)) and the earlier worlds (Nexus, Monolith, Nebula) remain available; Monolith is the fallback without WebGL.
-- **One clock for sound and image.** Interpretation runs about 10.5 s behind the work; the player schedules every recorded event at its true time on a shared performance clock, so music and visuals coincide and follow the rhythm of the work.
-- **Records and replays.** Every interpretation window is appended to a recorded performance timeline. Replay covers the whole history; re-interpreting a journal reproduces the timeline byte-for-byte. A recorded performance can be rendered frame-exact to a film with its music (`qualification/visual/film.js`).
+- **Observes, privately.** File snapshots for analysis, per-second typing *counts* (never typed text), saves, file
+  operations including files written outside the editor (for example by AI agents), diagnostics, VS Code tasks,
+  terminal commands reduced to a local *category* (test, build, lint, typecheck, install, git, run; never the command
+  text), and Git commits.
+- **Interprets meaning, not volume.** A TypeScript/JavaScript AST diff recognises components, routes, classes,
+  functions, methods, variables and imports (Python and manifests partly; other languages at file level). Inserting
+  lines or re-running green tests earns nothing; removing code counts once a test run validates it; recovering a
+  failing suite is a milestone.
+- **Represents AI agents honestly.** Claude Code's hooks report prompts (length and fingerprint only), tool use, files
+  touched, subagents and test runs. A file change is attributed to an agent only when it follows that agent's own tool
+  event; everything else stays `unknown`. Hidden reasoning is never inferred.
+- **Composes.** Each project has a musical identity (key, mode, progressions, motif, tempo) that never changes. New
+  projects play the composed score: long-form arcs, voice-led harmony, phrases built from the motif; failures bring
+  tension and verified milestones lift the next passage. Four styles: Ambient, Pulse, Cinematic, Chip. Projects made
+  earlier keep the classic score until you upgrade them.
+- **Grows a world of its own.** Each project has a persistent visual identity, its Visual Recipe, derived from its code:
+  a galaxy (Stellar Forge), a bioluminescent reef (Fractal Biosphere) or a cathedral city on water (Machine Cathedral).
+  The structures are the real architecture; the world stays alive between events without inventing progress, and an
+  ecosystem of simulated inhabitants (digital life, which you can turn off) lives in it. The Construct and the Canvas 2D
+  stages (Nexus, Monolith, Nebula) remain available.
+- **Lets you make your own.** The Artist Studio composes original looks from procedural layers that react to the music
+  and to real events, without code. Visual packs (SDK 1.2) add looks, shaders and whole worlds; packs with code run
+  isolated, only after you approve their exact files.
+- **One clock for sound and image.** Interpretation runs about 10.5 s behind the work; every event is played at its
+  true time on a shared performance clock. Replay covers the whole recorded history, and re-interpreting a journal
+  reproduces it byte for byte.
+- **Records and broadcasts.** Record the stage with its music to WebM, add the stage to OBS as a browser source, export
+  the audio to WAV, or render a frame-exact film of a recorded performance.
+
+## Local-first and private
+
+- Capture starts only after you accept it in a trusted VS Code workspace; the receiver listens on loopback only.
+- Source snapshots stay on your machine, for analysis. Typed text is never captured; command lines and prompt text are
+  stored only if you opt in.
+- The Stage, the OBS view, recordings, films and exports never show source, file names, paths, prompts, commands or the
+  project's folder name, only a public title you choose.
+- Changing anything needs a browser you paired once with a private link; an unpaired browser can only watch, play and
+  record.
+- No analytics, telemetry or remote calls. The full model, what is stored where and how to erase it:
+  [SECURITY.md](SECURITY.md).
+
+## Requirements
+
+- **Node.js 20 or later** (CI uses 22). The application has no runtime dependencies: nothing to install.
+- **VS Code 1.99 or later** for capture.
+- **A Chromium-based browser** (Chrome or Edge) for the Control Center and for recording; other browsers have not been
+  tested. **WebGL2** for the flagship worlds, ideally with a GPU; without WebGL2 the player falls back to the Construct
+  (WebGL), then to Monolith (Canvas 2D).
+- The qualification harnesses in `qualification/` have their own dependencies (`cd qualification && npm ci`).
 
 ## Quick start
-
-Requires Node.js 20+ and VS Code 1.99+.
 
 ```bash
 npm start
 ```
 
-The receiver prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, valid 15 minutes). Open it in the
-browser you use for Code Resonance: it opens the **Creative Control Center** and pairs that browser for good, so it may change settings, identities,
-packs and integrations (`npm run pair` prints a new link; VS Code's *Open Code Stage* opens it directly). Without
-pairing the application still shows everything, plays and records, but changes nothing. Then click **Enable sound**
-(browsers need a gesture before audio). With no project yet, Home shows a short setup guide; `npm run demo` posts a
-clearly labelled fictional session. `npm run doctor` checks the setup and says what to fix. Step by step:
-[docs/FIRST-RUN.md](docs/FIRST-RUN.md).
+The receiver listens on `http://127.0.0.1:4174` and keeps its data in `~/.code-resonance` (`RESONANCE_DATA` and
+`RESONANCE_PORT` change them). It prints a **pairing link**, `http://127.0.0.1:4174/#pair=…`: open it in the browser
+you use for Code Resonance. It opens the **Creative Control Center** and pairs that browser once, so it may change
+settings, identities, music, packs and integrations. The link works once, within 15 minutes; `npm run pair` prints a
+new one, and VS Code's *Open Code Stage* opens one directly. An unpaired browser still shows everything, plays and
+records, but changes nothing.
 
-### The application
+Click **Enable sound** (browsers need a gesture before audio). With no project yet, Home shows a short setup guide;
+`npm run demo` posts a clearly labelled fictional session. `npm run doctor` checks the setup and says what to fix.
+Step by step, with troubleshooting: [Getting started](docs/FIRST-RUN.md).
+
+## The VS Code extension
+
+```bash
+npm run package:vsix          # writes code-resonance-0.5.0.vsix, with Node only (Windows, Linux, macOS)
+```
+
+It is not on the Marketplace: install the file yourself, with `code --install-extension code-resonance-0.5.0.vsix`
+or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
+folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
+--install-extension code-resonance-0.5.0.vsix`, then open your project with the same two options.
+
+Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
+accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
+when VS Code restarts until you stop it.
+
+**WSL and remote workspaces:** run the receiver where the extension host runs (inside WSL for a WSL project). Windows
+reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback
+([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
+
+**AI agents:** `npm run hooks:claude -- /path/to/your/project` adds Claude Code hooks to
+`<project>/.claude/settings.local.json` (personal, not committed); the Control Center's Connections can add or remove
+them too, after showing the exact change. The adapter never prints and always exits 0, so it cannot change Claude's
+behaviour. Other tools can report through `node scripts/event.js` (see the script for options).
+
+## The Control Center
+
+One application at `http://127.0.0.1:4174/`, with its state kept by the receiver so every window, the Stage and the OBS
+view agree ([docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md)).
 
 | Workspace | What you do there |
 |---|---|
-| **Home** | See at a glance whether the receiver runs, which project is active, whether capture is really active, what needs attention; create or continue a composition |
-| **Projects** | Browse projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
-| **Visual Studio** | Choose a world, preview it, customise its parameters (generated from the parameter catalogue and pack manifests), choose a finish (Clean, Cinematic, Dreamlike) and how much the music moves its life, apply; presets |
-| **Artist Studio** | Compose your own look from procedural layers (fractals, particle populations, flow fields, structures, atmospheres, lights) over a world or a blank canvas, decide what each responds to (the music, real engineering events, the ecosystem), save versions, apply to a project, export as a data-only pack ([docs/ARTIST-STUDIO.md](docs/ARTIST-STUDIO.md)) |
-| **Music Studio** | The composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and the balance of its voices, style, tempo, texture and volume per project or globally, previewed from the next bar; the project's musical identity; presets ([docs/MUSIC.md](docs/MUSIC.md)) |
-| **Visual Packs** | Your creations, imported creations and looks, shader packs and coded worlds: import (zip or folder), review and approve code packs, revoke, remove, read their documentation |
+| **Home** | Whether the receiver runs, which project is active, whether capture is really active, what needs attention; create or continue a composition |
+| **Projects** | Projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
 | **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code hooks, other agents |
-| **Record & Broadcast** | Recording profiles and state, the OBS browser source, audio and data exports |
-| **Settings** | Global preferences, this device, storage and privacy, diagnostics |
-| **Performance Stage** | The world fills the screen; controls appear on movement and fade (press **F** from anywhere) |
+| **Record & Broadcast** | Recording profiles, the OBS browser source, audio and data exports |
+| **Settings** | Global preferences, this device's quality, where everything is stored, diagnostics, documentation |
 
-How state is shared between the Control Center, the Stage, other windows and the OBS view, and where each setting
-lives: [docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md).
+**Visual Studio.** Choose a world, preview it in this window, customise its parameters, choose a finish (Clean,
+Cinematic, Dreamlike) and how much the music moves its digital life, then apply. Six curated looks and your own
+presets. [docs/WORLDS.md](docs/WORLDS.md), [docs/LIFE.md](docs/LIFE.md).
 
-### Install the VS Code extension
+**Music Studio.** The score a project plays (the classic score, or the composed one with a one-click upgrade), its
+style, tempo, texture and volume, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony,
+dynamics, space) and the balance of its voices, per project or as the default; heard from the next bar.
+[docs/MUSIC.md](docs/MUSIC.md).
 
-```bash
-npm run package:vsix                       # Node only; works on Windows, Linux and macOS
-code --install-extension code-resonance-0.5.0.vsix
-```
+**Artist Studio.** Compose a look from procedural layers (fractals, particle populations, ribbons and flow, structures,
+atmospheres, lights) over a world or a blank canvas, decide what each one reacts to, save versions, apply it to a
+project, export it as a data-only pack. [docs/ARTIST-STUDIO.md](docs/ARTIST-STUDIO.md).
 
-Open a trusted workspace, click the **CR** status-bar item (or run **Code Resonance: Start Code Performance**) and accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes automatically when VS Code restarts until you stop it.
-
-**WSL / Remote:** the extension runs in the workspace extension host. Start the receiver with Node **inside that host** (e.g. in WSL for a WSL project); Windows reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback and its token unchanged ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
-
-### Let an AI agent join (Claude Code)
-
-```bash
-npm run hooks:claude -- /path/to/your/project
-```
-
-This adds command hooks to `<project>/.claude/settings.local.json` (personal, not committed). Claude Code sessions in that project then appear as their own voices. The adapter never prints and always exits 0, so it cannot block or change Claude's behaviour. Set `RESONANCE_CAPTURE_PROMPT_TEXT=1` only if you explicitly want prompt text stored locally.
-
-Other tools can report through `node scripts/event.js --root <project> --provider <name> --kind agent.tool.completed --tool Edit` (see the script for options). This is an integration surface, not proof that a given product is connected.
-
-### OBS browser source
-
-**Record & Broadcast** builds the URL for the active project and explains the Browser Source settings. Existing
-bookmarks keep working:
-
-```
-http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>[&labels=stream][&world=living][&style=ambient]
-```
-
-The overlay shows only the stage; without `world=`/`style=` it follows the project's saved choices and updates when
-they change. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio
-via OBS**). The OBS view never shows source, file names, prompts, command text or the project's folder name, and never
-asks for a control capability. OBS Studio 32 itself was qualified on Linux in a disposable CI machine; on Windows or
-macOS, follow the acceptance procedure in [docs/OBS.md](docs/OBS.md).
-
-### Record and export
-
-- **Record** (top bar, Stage, or Record & Broadcast; one recorder, one recording at a time across windows) records what
-  the stage shows (the world and its labels, for every world including visual packs) with the music, to WebM in real
-  time (Chromium-based browsers; elsewhere the application says recording is unavailable). Profiles: **720p** (the
-  default), **1080p** (for a GPU that keeps up) or the stage's own size. The browser saves the file to its downloads
-  folder; Code Resonance keeps no copy or library. Details: [docs/RECORDING.md](docs/RECORDING.md).
-- **Audio** renders up to 10 minutes of the recorded performance offline to WAV with the current sound settings.
-- **Performance data** exports the derived timeline as JSON (no source, paths or prompts).
-
-### Make your own visuals (Visual Pack SDK)
-
-A visual pack changes how a project looks without changing Code Resonance: **declarative** packs (JSON: parameters,
-palette, light, technique, effect mapping on a built-in family), **shader** packs (GLSL background and post passes,
-procedural effects) and **world** packs (a complete world family). Packs with code run only in a worker inside an
-isolated frame, only after you approve their exact files, and are stopped if they fail, hang or are far too slow.
-Start with [docs/packs/README.md](docs/packs/README.md) (SDK 1.1; [what changed from 1.0](docs/packs/migration.md)):
+**Visual Packs.** Your creations and installed packs: import a `.zip` or a folder, review a code pack's files and
+digest, allow it, revoke or remove it, read its documentation. Make your own with the SDK (1.2; [what changed from
+1.0 and 1.1](docs/packs/migration.md)): [docs/packs/README.md](docs/packs/README.md).
 
 ```bash
 node scripts/pack.js new my-world --kind world --id yourname.my-world
-node scripts/pack.js test my-world        # real browser, real recording
+node scripts/pack.js test my-world        # real browser, real recording (needs qualification/'s npm ci)
 ```
 
-Then import the folder in **Visual Packs** (or `node scripts/pack.js install my-world` and `approve`): code packs are
-installed unapproved and run only after you review their files and digest and allow them.
+`packs/examples/` holds the reference packs: Cymatic Field (a fourth world), Blueprint Cathedral (shader) and Ember
+Observatory (declarative).
 
-`packs/examples/` holds the reference packs: Cymatic Field (a fourth world family), Blueprint Cathedral (shader) and
-Ember Observatory (declarative).
+**Performance Stage.** The world fills the screen; its controls appear on movement and fade. **F** from anywhere; a
+second window for another monitor.
 
-## How it fits together
+## Recording and OBS
 
-```text
-VS Code extension ──┐                         ┌── Nexus / Monolith / Nebula (Canvas2D)
-  (durable outbox)  ├─▶ receiver ─▶ worker ─▶ ├── composition + Web Audio performer
-Agent hooks / CLI ──┘   journal    windows,    └── replay, WebM, WAV export
-                        + blobs    AST diff,
-                                   evolution ─▶ performance.jsonl (recorded timeline)
-```
+- **Record** (top bar, Stage or Record & Broadcast) records what the stage shows, with the music, to WebM in real time
+  in Chromium-based browsers: 720p (the default), 1080p (for a GPU that keeps up) or the stage's own size. One window
+  records at a time. The browser saves the file to its downloads folder and keeps it in memory until you stop (about
+  60 MB a minute at 720p), so use OBS for sessions longer than about half an hour. [docs/RECORDING.md](docs/RECORDING.md).
+- **OBS:** Record & Broadcast builds the browser-source URL for the active project; existing bookmarks keep working:
 
-```text
-extension/   capture, durable outbox, shared path and command rules
-receiver/    loopback HTTP API, journal + content blobs, cached views
-engine/      AST analysis, interpretation (reducer), windowing worker
-public/      engine: score (composition), music (synthesis), app (worlds, clock); ui/ the Control Center and Stage
-sdk/         performance-frame contract, project identity shared with hooks
-scripts/     VSIX packager, demo, generic event CLI, Claude Code hooks, visual pack CLI (pack.js)
-packs/       visual pack schema, reference packs, starter templates
-qualification/  real VS Code, browser, audio and 30-minute session harnesses
-```
+  ```
+  http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>[&labels=stream][&world=living][&style=ambient]
+  ```
 
-Data lives under `~/.code-resonance/` on the machine running the receiver (`RESONANCE_DATA` overrides it, `RESONANCE_PORT` the port); installed visual packs and their approvals under `packs/`. Per project: `events.jsonl` (raw observations, append-only), `blobs/` (compressed snapshots), `performance.jsonl` (recorded timeline, rebuildable), `state.json` and `public.json` (checkpoints).
+  The overlay shows only the stage and follows the project's saved choices; it never asks for a capability. OBS Studio
+  32 was qualified on Linux in a disposable CI machine; on Windows or macOS, follow the procedure in
+  [docs/OBS.md](docs/OBS.md).
+- **Exports:** up to ten minutes of the recorded performance rendered offline to WAV; the derived timeline as JSON (no
+  source, paths or prompts).
 
-| Endpoint | Use |
-|---|---|
-| `GET /health` | Status and timing (window, grace, scan interval) |
-| `GET /api/projects` | Projects, most recent first |
-| `GET /api/project?id=` | Anonymised graph, stats and recent frames (ETag) |
-| `GET /api/timeline?id=&after=&limit=[&fields=intents]` | Recorded performance, paged (`/api/replay` is an alias); `fields=intents` returns only each window's intents |
-| `GET /v1/performance/frames?id=&after=` | Versioned performance frames |
-| `GET /api/export?id=` | Streamed derived export |
-| `POST /v1/events` | Authenticated ingestion (valid events kept, rejections listed) |
-| `POST /v1/flush?id=` / `POST /v1/rebuild?id=` | Authenticated: close the open window / re-interpret from the journal |
-| `GET /api/recipe?id=[&fallback=1]` | The project's Visual Recipe (with its `revision`); `fallback=1` is the identity without packs |
-| `GET /api/packs`, `/api/packs/readme?id=`, `/api/packs/templates` | Installed visual packs (kind, version, digest, files, approval, problems, parameters, usage), READMEs as inert text, starter templates |
-| `GET /api/packs/file?id=&path=` | A pack file as inert text (code packs only once approved) |
-| `GET /api/settings`, `/api/preferences?id=`, `/api/presets`, `/api/catalog`, `/api/recipe/tunable?id=` | Global settings, a project's preferences, presets, parameter catalogues |
-| `GET /api/status`, `/api/evidence?id=`, `/api/integrations` | Receiver health, what was observed per project (capture, reported settings, agents), integrations |
-| `GET /api/changes` | Server-sent events: what changed, so every open view converges |
-| `GET /pack-frame.html` | The isolated frame code packs run in (no connections allowed) |
-| `POST /api/session` | A control capability, for a paired browser only (the pairing key in `receiver-auth.json`) |
-| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}` | Administrative: need the control capability (`X-Resonance-Capability`) |
+## Supported environments and limitations
 
-`POST /v1/*` requires the token in `~/.code-resonance/receiver-auth.json`; the same file holds the pairing key. Never expose either in a stream, an issue or a commit.
+**Verified:** Linux and WSL2 with an AMD integrated GPU (the receiver, the extension in a real VS Code 1.143, the
+Control Center and the worlds, 720p recording), and GitHub's Linux and Windows runners without a GPU (the receiver and
+its tests, the extension, the Stage in Chromium, OBS Studio 32.2 on Linux).
+
+**Not verified:** macOS; Windows or macOS desktops with a GPU; OBS on Windows or macOS; Firefox and Safari; multi-hour
+sessions with the final code; listening and viewing by anyone other than the owner.
+
+**Limits:** semantics are deepest for TypeScript and JavaScript. Source snapshots are captured after you start capture
+unless `resonance.captureDocumentContents` is off, and a file that does not match the secret patterns can still contain
+secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through Claude Code's hooks;
+other agents' file writes are seen but attributed `unknown`. A passing test means the command exited 0, not that the
+software is correct. A replay holds only what was captured. The full list, with data locations, backup, updates and
+rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
+## Versions
+
+0.5.0 is the product version and has not been released. The score (2 or 3), the Visual Recipe generator (4), digital
+life's ecology (1 or 2), the Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older
+identities as they were: [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
+
+## Documentation
+
+[docs/README.md](docs/README.md) is the index: getting started, operations, the creative guides, the developer guide
+([ARCHITECTURE.md](ARCHITECTURE.md)), security ([SECURITY.md](SECURITY.md)), the qualification history and the
+changelog ([CHANGELOG.md](CHANGELOG.md)), with each milestone's pull request.
 
 ## Checks
 
 ```bash
-npm run check          # syntax
-npm test               # unit + integration (no dependencies)
-npm run package:vsix   # builds the VSIX with Node only
+npm run check          # syntax check of the JavaScript modules
+npm test               # unit and integration tests, no dependencies
+npm run package:vsix   # the VSIX, with Node only
 ```
 
-Real-environment qualification lives in `qualification/` (its own `npm install`); see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for the test categories, what CI runs on every pull request, the extended tier, and the evidence.
-
-## Scope and limits
-
-- AST semantics are JS/TS only. Other languages are recorded at file level.
-- Source snapshots are opt-in at capture start and enabled by default afterwards for analysis. Files not matching the secret patterns can still contain secrets: use dedicated projects, disable `resonance.captureDocumentContents` when needed, and never share `~/.code-resonance`.
-- VS Code cannot see every AI tool. Agents are observed through supported hooks (Claude Code today); other agents' file writes are seen but attributed `unknown`.
-- Test success means the observed command exited 0, not that the software is correct.
-- The living worlds need WebGL2 (the Construct needs WebGL); without it the player falls back to Monolith. Measured frame rates are in [docs/QUALIFICATION.md](docs/QUALIFICATION.md); native GPU browsers on Windows and macOS have not been measured. The Canvas2D worlds hold 60 fps (Nexus, Monolith) and ~39 fps (Nebula) at 1400 nodes in headless software rendering.
-- Independent of `Nimdy/signal3-studio`.
-
-See [SECURITY.md](SECURITY.md), [ARCHITECTURE.md](ARCHITECTURE.md), [docs/AUDIT.md](docs/AUDIT.md) and [docs/QUALIFICATION.md](docs/QUALIFICATION.md).
-
-## Platform notes
-
-- **Windows (PowerShell):** `npm ci --offline`, `npm run check`, `npm test`, `npm start`, `npm run package:vsix` (no Bash or `zip` needed). If PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. On GitHub's Windows runners (no GPU): the unit and integration suite, the platform smoke test, the player in Chromium, a visual pack and the extension in a real VS Code all pass; a Windows desktop with a GPU has not been measured.
-- **Linux / WSL2:** qualified in VS Code 1.143 under Xvfb. Run the receiver in the same environment as the extension host.
+On Windows (PowerShell) the same commands work; if PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. Focused checks,
+the qualification harnesses and what CI runs: [ARCHITECTURE.md](ARCHITECTURE.md#focused-checks).

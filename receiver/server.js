@@ -36,7 +36,7 @@ const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 const pageCsp=styles=>`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`;
 // Documentation the Control Center links to, served as inert text: a fixed list, never a path taken from the request.
 const DOCS=new Map([...['packs/README.md','packs/manifest.md','packs/world-api.md','packs/determinism.md','packs/performance.md','packs/security.md','packs/migration.md',
-  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','ALPHA.md','ARTIST-STUDIO.md','MUSIC.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
+  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','ARTIST-STUDIO.md','MUSIC.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
 // The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
 // Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
@@ -131,11 +131,8 @@ async function templates(){
   return {templates:await Promise.all(kinds.map(async kind=>({kind,dir:`packs/template/${kind}`,files:await filesOf(path.join(REPO,'packs','template',kind)),
     command:`npm run pack -- new <dir> --kind ${kind} --id <author.name>`}))),validate:'npm run pack -- validate <dir>',test:'npm run pack -- test <dir> --quick'};
 }
-// ---- Claude Code hooks: the same entries scripts/hooks/install-claude-code.js writes, planned and applied from the
-// Control Center. Removal takes out exactly the adapter's entries (and only the groups, events and `hooks` key that it
-// leaves empty); every other byte of meaning in the user's file stays.
-const CLAUDE_COMMAND=claudeHooks.merge({}).hooks[claudeHooks.EVENTS[0]][0].hooks[0].command;
-const CLAUDE_ADAPTER=path.join(REPO,'scripts','hooks','claude-code.js');
+// ---- Claude Code hooks: the entries scripts/hooks/install-claude-code.js adds (merge) and takes out (unmerge), planned
+// and applied from the Control Center.
 // Accurate to scripts/hooks/claude-code.js (translate()): what leaves Claude Code, and what never does.
 const CLAUDE_CAPTURED=['Session start and end, with the reason Claude Code gives (for example "startup" or "clear")',
   'Prompt submitted: its length and a fingerprint (a truncated SHA-256), not its text',
@@ -147,22 +144,6 @@ const CLAUDE_CAPTURED=['Session start and end, with the reason Claude Code gives
 const CLAUDE_EXCLUDED=['Prompt text (unless RESONANCE_CAPTURE_PROMPT_TEXT=1 is set in the environment Claude Code runs hooks in)',
   'Assistant and subagent message text','Command lines, tool inputs and tool outputs','File contents',
   'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
-function unhook(settings){
-  if(!isPlain(settings.hooks))return settings;
-  const hooks={...settings.hooks};let touched=false;
-  for(const [event,groups] of Object.entries(hooks)){
-    if(!Array.isArray(groups))continue;
-    const kept=[];let changed=false;
-    for(const g of groups){
-      if(!isPlain(g)||!Array.isArray(g.hooks)||!g.hooks.some(h=>h?.command===CLAUDE_COMMAND)){kept.push(g);continue;}
-      changed=true;const rest=g.hooks.filter(h=>h?.command!==CLAUDE_COMMAND);if(rest.length)kept.push({...g,hooks:rest});
-    }
-    if(!changed)continue;touched=true;
-    if(kept.length)hooks[event]=kept;else delete hooks[event];
-  }
-  if(!touched)return settings;
-  const next={...settings,hooks};if(!Object.keys(hooks).length)delete next.hooks;return next;
-}
 async function claudePlan(dataDir,{projectPath,action}={}){
   if(action!=='install'&&action!=='remove')throw coded('invalid','action must be "install" or "remove"',{key:'action'});
   if(typeof projectPath!=='string'||!projectPath||projectPath.length>1024||!path.isAbsolute(projectPath))throw coded('invalid','projectPath must be an absolute path',{key:'projectPath'});
@@ -187,7 +168,7 @@ async function claudePlan(dataDir,{projectPath,action}={}){
   const text=buf&&buf.toString('utf8');let current={};
   if(buf){try{current=JSON.parse(text);}catch{throw coded('invalid-json',`${file} is not valid JSON: fix or remove it first`);}
     if(!isPlain(current))throw coded('invalid-json',`${file} does not hold a JSON object`);}
-  const next=action==='install'?claudeHooks.merge(current):unhook(current),changed=JSON.stringify(next)!==JSON.stringify(current);
+  const next=action==='install'?claudeHooks.merge(current):claudeHooks.unmerge(current),changed=JSON.stringify(next)!==JSON.stringify(current);
   return {file,exists:!!buf,current:text,next:changed||!buf?JSON.stringify(next,null,2)+'\n':text,changed,currentHash:buf?crypto.createHash('sha256').update(buf).digest('hex'):''};
 }
 function createService(options={}) {
@@ -398,7 +379,7 @@ function createService(options={}) {
     const settings=Object.entries(EXTENSION.contributes?.configuration?.properties||{}).map(([id,s])=>({id,type:s.type,default:s.default,description:s.description}));
     return {vscode:{projects:vscode,latestVersion:EXTENSION.version,install:{package:'npm run package:vsix',install:`code --install-extension code-resonance-${EXTENSION.version}.vsix`},
         settings,openSettingsUri:`vscode://${EXTENSION.publisher}.${EXTENSION.name}/settings`},
-      claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:CLAUDE_ADAPTER}:{}),
+      claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:claudeHooks.adapter}:{}),
         command:'npm run hooks:claude -- /path/to/project'},
       generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'}};
   }
@@ -728,7 +709,7 @@ function createService(options={}) {
       await closed;await Promise.allSettled([...writes.values()]);
       // After the last journal append: evidence observed so far is written out.
       await evidence.stop();
-      if(worker){await Promise.race([ask({type:'shutdown'}).catch(()=>{}),new Promise(r=>setTimeout(r,10000))]);await worker.terminate();}
+      if(worker){await Promise.race([ask({type:'shutdown'}).catch(()=>{}),new Promise(r=>setTimeout(r,10000).unref())]);await worker.terminate();}
     }
   };
 }

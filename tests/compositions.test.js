@@ -147,3 +147,9 @@ test('The composition recipe action: switches to its base, tunes what it carries
   assert.equal(recipe.update(g,{type:'composition',composition:null},p,0),g);
   assert.throws(()=>recipe.update(g,{type:'composition'},p,0),/Invalid composition/);
 });
+test('A composition carries every style, profile key and voice group the score has, and nothing else',()=>{
+  const S=require('../public/score.js');
+  for(const style of S.STYLES)assert.equal(C.normalize({music:{style}}).music.style,style);
+  const music=C.normalize({music:{profile:{...S.PROFILE,extra:.5,mix:{...Object.fromEntries(S.GROUPS.map(g=>[g,1])),drums:1}}}}).music;
+  assert.deepEqual(Object.keys(music.profile).filter(k=>k!=='mix'),Object.keys(S.PROFILE));assert.deepEqual(Object.keys(music.profile.mix),S.GROUPS);
+});

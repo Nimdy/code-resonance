@@ -51,7 +51,7 @@ engine, as every window must, and shares the receiver's state.
 | Packs and approvals | receiver `<data>/packs/<id>/`, `<data>/packs/trust.json` | installed files, digest-bound approvals |
 | Temporary preview | the window's memory (and `POST /api/recipe/preview`, which never writes) | a family or parameter being tried; the Artist Studio's working copy |
 | Session runtime | the window's engine | sound on, live/replay, playhead, recording |
-| This device | the browser's `localStorage` | rendering quality |
+| This device | the browser's `localStorage` | rendering quality; the pairing key and a few conveniences (last view, OBS URL options, the Artist Studio's last composition and export author), listed in [SECURITY.md](../SECURITY.md) |
 | Extension-owned | VS Code settings (`resonance.*`) | capture options: read-only here, as *reported* by the extension |
 
 Every receiver document has a schema and a `revision`, is validated on write and on read, and is written atomically.

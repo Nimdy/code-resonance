@@ -2,7 +2,7 @@
  "at": "2026-10-25T03:14:15.267Z",
  "label": "lean-before",
  "driver": "lean",
- "code": "/tmp/claude-1000/-home-nimda-projects-solonerds-projects-code-resonance/611a9390-d8ab-42c0-9483-cec5328bcf74/scratchpad/before-code",
+ "code": "<scratchpad>/before-code",
  "gpu": "amd",
  "minutes": 8,
  "sampleSeconds": 20,
