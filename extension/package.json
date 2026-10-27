@@ -2,7 +2,7 @@
   "name": "code-resonance",
   "displayName": "Code Resonance",
   "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "zerobandwidth",
   "license": "UNLICENSED",
   "engines": {
@@ -24,10 +24,6 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onCommand:resonance.start",
-    "onCommand:resonance.stop",
-    "onCommand:resonance.openStage",
-    "onCommand:resonance.recordPrompt",
     "onStartupFinished"
   ],
   "contributes": {
@@ -47,6 +43,14 @@
       {
         "command": "resonance.recordPrompt",
         "title": "CODE RESONANCE: Record AI Prompt (Explicit)"
+      },
+      {
+        "command": "resonance.openOverlay",
+        "title": "CODE RESONANCE: Open OBS View"
+      },
+      {
+        "command": "resonance.menu",
+        "title": "CODE RESONANCE: Menu"
       }
     ],
     "configuration": {
@@ -69,7 +73,7 @@
         "resonance.includeHidden": {
           "type": "boolean",
           "default": false,
-          "description": "Permit dotfile filenames in initial indexing. Files matching secret exclusions are always omitted."
+          "description": "Capture files inside dot-directories or with dot-filenames (for example .github/ or .eslintrc.js). Files matching secret exclusions are always omitted."
         },
         "resonance.captureDocumentContents": {
           "type": "boolean",
@@ -85,6 +89,11 @@
           "type": "boolean",
           "default": false,
           "description": "Allow explicit Record AI Prompt command to include prompt text. Normally records only length and fingerprint."
+        },
+        "resonance.shareProjectName": {
+          "type": "boolean",
+          "default": true,
+          "description": "Label this project with its folder name in the local player's project list. The name is never drawn on the Stage or OBS view."
         }
       }
     }

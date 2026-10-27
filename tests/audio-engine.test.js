@@ -28,3 +28,34 @@ test('Audio mix controls are clamped before oscillator scheduling',()=>{
  const m=music();m.setOptions({volume:2,tempo:2000,texture:-3});
  assert.equal(m.options.volume,1);assert.equal(m.options.tempo,160);assert.equal(m.options.texture,0);
 });
+test('Queued cues are quantized with per-step and per-bar budgets, highest priority first',()=>{
+ const m=music();m.setProject('budget',{motif:[0,2,4,1],scale:'D'});
+ m.setFrame({projectSeed:11,chapter:3,controls:{tension:0,energy:.5}});m.beginBar();
+ const cue=(type,i,weight=1)=>({cue:{id:`${type}-${i}`,type,weight,detail:{symbolType:'function'}},when:1});
+ m.accents=[cue('symbol.created',1),cue('dependency.added',2),cue('validation.test.passed',3,3),cue('symbol.created',4),cue('agent.tool.completed',5)];
+ const budget={left:6};
+ const first=m.accentsFor(1,0.1,budget);
+ assert.equal(first.length,2);assert.equal(first[0][0].priority,4);assert.equal(budget.left,4);assert.equal(m.milestone,true);
+ m.accents=[cue('symbol.created',6)];m.accentsFor(1,0.1,{left:0}).forEach(()=>assert.fail('bar budget exhausted'));
+ m.accents=[{...cue('symbol.created',7),when:5}];assert.equal(m.accentsFor(1,0.1,{left:6}).length,0);assert.equal(m.accents.length,1);
+});
+// A context that, like OfflineAudioContext while scheduling, never dispatches `ended`: voices must still free up.
+function mockContext(){
+ const param=()=>({value:0,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){},setTargetAtTime(){}});
+ const node=()=>({connect(){},disconnect(){},gain:param(),frequency:param(),detune:param(),Q:param(),pan:param(),delayTime:param(),
+   threshold:param(),knee:param(),ratio:param(),attack:param(),release:param(),start(){},stop(){},type:'',buffer:null,onended:null});
+ let oscillators=0;
+ const ctx={currentTime:0,sampleRate:8000,destination:node(),createGain:node,createStereoPanner:node,createBiquadFilter:node,createBufferSource:node,
+   createDynamicsCompressor:node,createConvolver:node,createDelay:node,createChannelMerger:node,
+   createBuffer:(channels,length)=>{const data=Array.from({length:channels},()=>new Float32Array(length));return {getChannelData:c=>data[c]};},
+   createOscillator:()=>{oscillators++;return node();}};
+ return {ctx,count:()=>oscillators};
+}
+test('Voice budget frees voices by scheduled end time, so long offline renders keep every soft pad',()=>{
+ const m=music();m.setOptions({style:'ambient'});m.appliedOptions={...m.options};
+ const {ctx,count}=mockContext();const g=m.buildGraph(ctx,ctx.destination);
+ const before=count();
+ for(let i=0;i<400;i++)m.voice(g,{instrument:'pad',midi:50,velocity:.17,duration:2,pan:0},i*3);
+ // Each ambient pad voice uses two detuned oscillators.
+ assert((count()-before)>=800,`only ${(count()-before)/2} of 400 soft pad notes were voiced`);
+});

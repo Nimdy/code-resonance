@@ -7,20 +7,32 @@ const crypto=require('node:crypto');
 
 // The extension never awaits this class from an editor change event.
 // Disk batches are written asynchronously, then acknowledged by the receiver.
+// Retryable failures (offline, 5xx, auth not yet available) keep batches queued in order. A batch the receiver
+// permanently rejects (4xx) is moved to rejected/ so one bad event can never stall all later capture.
+const RETRYABLE=new Set([401,403,408,425,429]);
+const KEEP_REJECTED=50;
 class DurableOutbox {
-  constructor({directory,port,authFile=path.join(os.homedir(),'.code-resonance','receiver-auth.json'),onStatus=()=>{}}){
-    this.directory=directory;this.port=port;this.authFile=authFile;this.onStatus=onStatus;
-    this.buffer=[];this.writing=Promise.resolve();this.sending=false;this.serial=0;this.closed=false;
-    this.timer=null;this.networkTimer=null;
+  constructor({directory,port,authFile=path.join(os.homedir(),'.code-resonance','receiver-auth.json'),onStatus=()=>{},maxBytes=256*1024*1024}){
+    this.directory=directory;this.port=port;this.authFile=authFile;this.onStatus=onStatus;this.maxBytes=maxBytes;
+    this.buffer=[];this.writing=Promise.resolve();this.delivering=null;this.serial=0;this.closed=false;
+    this.timer=null;this.networkTimer=null;this.queuedBytes=0;this.online=false;this.onlineWaiters=[];
   }
+  get sending(){return !!this.delivering;}
   async start(){
     await fs.mkdir(this.directory,{recursive:true,mode:0o700});
+    for(const name of await fs.readdir(this.directory).catch(()=>[]))if(name.endsWith('.json'))this.queuedBytes+=(await fs.stat(path.join(this.directory,name)).catch(()=>({size:0}))).size;
     this.timer=setInterval(()=>this.persist().catch(e=>this.onStatus('disk-error',e.message)),500);
     this.networkTimer=setInterval(()=>this.deliver().catch(e=>this.onStatus('offline',e.message)),2000);
     this.timer.unref?.();this.networkTimer.unref?.();
     void this.deliver().catch(()=>{});
   }
-  enqueue(event){if(this.closed) return false;this.buffer.push(event);if(this.buffer.length>=32)void this.persist();return true;}
+  // Resolves after the first successful delivery, so bulk work (baseline indexing) is not queued to an absent receiver.
+  whenOnline(){return this.online?Promise.resolve():new Promise(resolve=>this.onlineWaiters.push(resolve));}
+  enqueue(event){
+    if(this.closed) return false;
+    if(this.queuedBytes>this.maxBytes&&typeof event.content==='string'){this.onStatus('queue-full',this.queuedBytes);return false;}
+    this.buffer.push(event);if(this.buffer.length>=32)void this.persist();return true;
+  }
   persist(){
     const next=this.buffer.splice(0);
     if(!next.length)return this.writing;
@@ -37,7 +49,9 @@ class DurableOutbox {
         const name=`${String(Date.now()).padStart(14,'0')}-${String(this.serial++).padStart(7,'0')}-${crypto.randomBytes(3).toString('hex')}.json`;
         const full=path.join(this.directory,name);
         const tmp=`${full}.tmp`;
-        await fs.writeFile(tmp,JSON.stringify({events}),{mode:0o600});await fs.rename(tmp,full);
+        const body=JSON.stringify({events});
+        await fs.writeFile(tmp,body,{mode:0o600});await fs.rename(tmp,full);
+        this.queuedBytes+=Buffer.byteLength(body);
       }
     }).catch(e=>{
       // Restore from in-memory payload on persistent write failure.
@@ -45,22 +59,39 @@ class DurableOutbox {
     });
     return this.writing;
   }
-  async deliver(){
-    if(this.sending)return;this.sending=true;
-    try{
-      await this.persist();
-      const auth=JSON.parse(await fs.readFile(this.authFile,'utf8'));
-      if(typeof auth.token!=='string'||auth.token.length<40)throw new Error('Receiver authentication missing');
-      const names=(await fs.readdir(this.directory)).filter(n=>n.endsWith('.json')).sort();
-      for(const name of names.slice(0,80)){
-        const file=path.join(this.directory,name);
-        const body=await fs.readFile(file);
-        const result=await this.post(body,auth.token);
-        if(result.statusCode!==202)throw new Error(`Receiver returned HTTP ${result.statusCode}`);
-        await fs.unlink(file);
+  deliver(){
+    if(this.delivering)return this.delivering;
+    this.delivering=this.deliverOnce().finally(()=>{this.delivering=null;});
+    return this.delivering;
+  }
+  async deliverOnce(){
+    await this.persist();
+    const auth=JSON.parse(await fs.readFile(this.authFile,'utf8'));
+    if(typeof auth.token!=='string'||auth.token.length<40)throw new Error('Receiver authentication missing');
+    const names=(await fs.readdir(this.directory)).filter(n=>n.endsWith('.json')).sort();
+    let rejected=0;
+    for(const name of names.slice(0,80)){
+      const file=path.join(this.directory,name);
+      const body=await fs.readFile(file);
+      const result=await this.post(body,auth.token);
+      if(result.statusCode>=400&&result.statusCode<500&&!RETRYABLE.has(result.statusCode)){
+        await this.quarantine(name,result);rejected++;continue;
       }
-      this.onStatus('online',names.length);
-    }finally{this.sending=false;}
+      if(result.statusCode!==202)throw new Error(`Receiver returned HTTP ${result.statusCode}`);
+      await fs.unlink(file);this.queuedBytes=Math.max(0,this.queuedBytes-body.length);
+    }
+    this.online=true;for(const resolve of this.onlineWaiters.splice(0))resolve();
+    this.onStatus(rejected?'rejected':'online',rejected||names.length);
+  }
+  async quarantine(name,result){
+    const dir=path.join(this.directory,'rejected');
+    await fs.mkdir(dir,{recursive:true,mode:0o700});
+    const size=(await fs.stat(path.join(this.directory,name))).size;
+    await fs.rename(path.join(this.directory,name),path.join(dir,name));
+    this.queuedBytes=Math.max(0,this.queuedBytes-size);
+    await fs.writeFile(path.join(dir,name+'.reason'),`HTTP ${result.statusCode}: ${String(result.body).slice(0,500)}\n`,{mode:0o600});
+    const kept=(await fs.readdir(dir)).filter(n=>n.endsWith('.json')).sort();
+    for(const old of kept.slice(0,Math.max(0,kept.length-KEEP_REJECTED))){await fs.rm(path.join(dir,old),{force:true});await fs.rm(path.join(dir,old+'.reason'),{force:true});}
   }
   post(body,token){
     return new Promise((resolve,reject)=>{
@@ -74,7 +105,9 @@ class DurableOutbox {
   }
   async close(){
     this.closed=true;clearInterval(this.timer);clearInterval(this.networkTimer);
-    await this.persist();await this.deliver().catch(e=>this.onStatus('offline',e.message));
+    await this.persist();
+    await this.delivering?.catch(()=>{});
+    await this.deliver().catch(e=>this.onStatus('offline',e.message));
   }
 }
 module.exports={DurableOutbox};

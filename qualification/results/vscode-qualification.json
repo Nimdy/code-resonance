@@ -1,0 +1,292 @@
+{
+  "startedAt": "2026-10-23T18:04:57.421Z",
+  "extensionRef": "working-tree",
+  "vscode": {
+    "executable": "/home/nimda/projects/solonerds-projects/code-resonance/qualification/.vscode-test/vscode-linux-x64-1.143.1/code",
+    "version": "1.143.1"
+  },
+  "root": "/tmp/cr-vscode-qual-kmMLi6",
+  "port": 45467,
+  "phases": {
+    "main": {
+      "phase": "main",
+      "vscodeVersion": "1.143.1",
+      "remoteName": null,
+      "platform": "linux",
+      "checks": [
+        {
+          "name": "extension present in extension host",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "consent prompt shown once and accepted",
+          "pass": true,
+          "detail": "prompts=1"
+        },
+        {
+          "name": "baseline indexed the workspace",
+          "pass": true,
+          "detail": "files=10 symbols=12"
+        },
+        {
+          "name": "baseline not credited as new work",
+          "pass": true,
+          "detail": "created=0"
+        },
+        {
+          "name": "typed React component classified as ui.component (human editor)",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "typed function classified as function",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "typed import classified as dependency.added",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "typed module-level variable classified as variable; local variable not credited",
+          "pass": true,
+          "detail": "variable cues=1"
+        },
+        {
+          "name": "editor keystrokes are observed (document.change or document.edits)",
+          "pass": true,
+          "detail": "document.change=0 document.edits=3"
+        },
+        {
+          "name": "file written outside the editor is observed (watcher snapshot)",
+          "pass": true,
+          "detail": "stats.ts created + format.js modified"
+        },
+        {
+          "name": "external file creation emits file.created",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "external write classified (function created in stats.ts)",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "external change attributed origin unknown, not AI",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "workspace create/rename/delete observed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "task npm test exit codes observed (pass then fail)",
+          "pass": true,
+          "detail": "exit=0,1"
+        },
+        {
+          "name": "passing task classified validation.test.passed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "failing task classified validation.test.failed",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "terminal command start/finish observed",
+          "pass": true,
+          "detail": "exit=0 started=3 finished=3"
+        },
+        {
+          "name": "terminal command text NOT recorded by default",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "terminal `npm test` recognized as a test run",
+          "pass": true,
+          "detail": "v0.2 classifies tests from task names only"
+        },
+        {
+          "name": "diagnostics with errors recorded",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "git commit observed with matching hash",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "hook project id encoding equals vscode.Uri.file().toString()",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "Claude Code session completed",
+          "pass": true,
+          "detail": "{\"exitCode\":0,\"seconds\":15,\"turns\":9,\"costUsd\":0.043807200000000004,\"error\":null,\"stderr\":\"\"}"
+        },
+        {
+          "name": "hook events reach the same project as the extension",
+          "pass": true,
+          "detail": "agent.file.modified,agent.prompt.submitted,agent.response.completed,agent.session.ended,agent.session.started,agent.tool.completed,agent.tool.started"
+        },
+        {
+          "name": "agent prompt text is not persisted (length + fingerprint only)",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "agent file modifications reported with project-relative paths",
+          "pass": true,
+          "detail": "src/api/todos.ts,test/format.test.mjs"
+        },
+        {
+          "name": "extension independently observed the agent-written file",
+          "pass": true,
+          "detail": "via edit"
+        },
+        {
+          "name": "agent change attributed by correlation (not assumed)",
+          "pass": true,
+          "detail": "symbol.created:function"
+        },
+        {
+          "name": "agent test run classified as test with exit code",
+          "pass": true,
+          "detail": "test:0"
+        },
+        {
+          "name": "agent test run contributes a validation cue",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "events queue on disk while receiver is offline",
+          "pass": true,
+          "detail": "outbox batch files=1"
+        },
+        {
+          "name": "outbox drains after receiver restart",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "offline-period events delivered after restart",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "journal preserves per-session event order",
+          "pass": true,
+          "detail": "inversions=0 of 70"
+        },
+        {
+          "name": "public Stage APIs never contain typed text or file paths",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "raw typed text not persisted in the event journal",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "captureDocumentContents=false keeps typed text out of the journal",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "measurements": {
+        "workspaceUri": "file:///tmp/cr-vscode-qual-kmMLi6/workspace/sample-app",
+        "captureOff": {
+          "keystroke": {
+            "n": 275,
+            "p50": 1.25,
+            "p95": 7.32,
+            "p99": 15.33,
+            "max": 16.83
+          },
+          "eventLoopDelayMs": {
+            "p50": 1.15,
+            "p99": 1.88,
+            "max": 6.11
+          },
+          "cpuMsPerKeystroke": 1.354,
+          "outboxBatchFilesWritten": 0
+        },
+        "captureOn": {
+          "keystroke": {
+            "n": 294,
+            "p50": 1.06,
+            "p95": 5.62,
+            "p99": 8.66,
+            "max": 21.48
+          },
+          "eventLoopDelayMs": {
+            "p50": 1.09,
+            "p99": 2.54,
+            "max": 7.83
+          },
+          "cpuMsPerKeystroke": 1.436,
+          "outboxBatchFilesWritten": 0
+        },
+        "extensionHostRssMB": 207,
+        "agentRun": {
+          "exitCode": 0,
+          "seconds": 15,
+          "turns": 9,
+          "costUsd": 0.043807200000000004,
+          "error": null,
+          "stderr": ""
+        },
+        "agentHookKinds": [
+          "agent.file.modified",
+          "agent.prompt.submitted",
+          "agent.response.completed",
+          "agent.session.ended",
+          "agent.session.started",
+          "agent.tool.completed",
+          "agent.tool.started"
+        ],
+        "journal": {
+          "events": 103,
+          "duplicates": 0,
+          "bytes": 37842
+        },
+        "receiverRssMB": 110.5
+      },
+      "notes": [],
+      "projectId": "836237664be50667caf48d2d63e2d6a9eeb6e915309fa991e022803b47a0b2f5",
+      "persistedWorkspaceState": {}
+    },
+    "resume": {
+      "checks": [
+        {
+          "name": "persisted resume flag seeded in state.vscdb",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "capture resumes after a normal VS Code restart, with no prompt (new session + baseline)",
+          "pass": true,
+          "detail": "{\"session\":\"79929774-73b0-4b82-bbb2-7cbce6451cf4\",\"kinds\":[\"workspace.started\",\"project.baseline\",\"document.snapshot\"]}"
+        }
+      ],
+      "notes": []
+    }
+  },
+  "vsixInstall": {
+    "exitCode": 0,
+    "output": "Installing extensions...\nExtension 'code-resonance.vsix' was successfully installed.\n(node:2326625) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `code --trace-deprecation ...` to show where the warning was created)",
+    "listed": "zerobandwidth.code-resonance@0.2.0"
+  }
+}

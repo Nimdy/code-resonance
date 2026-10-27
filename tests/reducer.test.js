@@ -56,3 +56,67 @@ test('Deterministic interpretations from identical journal inputs',()=>{
   function run(){const state=newState(projectId);const cues=apply(state,evt);return {cues,frame:closeBatch(state,cues)};}
   assert.deepEqual(run(),run());
 });
+test('Meaningful activity outweighs volume: line shifts earn nothing, components do, re-running green tests earns nothing',()=>{
+  const state=newState(projectId);
+  const body=Array.from({length:6},(_,i)=>`export function h${i}(req){\n  const u=getUser(req.id);\n  log.info(u);\n  return respond(u);\n}`).join('\n');
+  apply(state,e('document.snapshot',{file:'src/svc.ts',content:body,meta:{reason:'baseline'}}));
+  apply(state,e('document.snapshot',{file:'src/svc.ts',content:'\n// moved\n'+body,meta:{reason:'edit'}}));
+  assert.equal(state.performance.progress,0);
+  apply(state,e('document.snapshot',{file:'src/Card.tsx',content:'export function Card(){return <div/>}',meta:{reason:'edit'}}));
+  const afterComponent=state.performance.progress;assert(afterComponent>1);
+  apply(state,e('task.finished',{meta:{taskName:'npm test',category:'test',exitCode:0}}));
+  const afterFirstPass=state.performance.progress;assert(afterFirstPass>afterComponent);
+  apply(state,e('task.finished',{meta:{taskName:'npm test',category:'test',exitCode:0}}));
+  assert.equal(state.performance.progress,afterFirstPass);
+});
+test('A huge generated file saturates; a validated refactor that removes code is credited',()=>{
+  const state=newState(projectId);
+  const huge=Array.from({length:400},(_,i)=>`export function gen${i}(){ return ${i}; }`).join('\n');
+  apply(state,e('document.snapshot',{file:'src/gen.ts',content:huge,meta:{reason:'edit'}}));
+  assert(state.performance.progress<=6.0001,`progress ${state.performance.progress}`);
+  const before=state.performance.progress;
+  apply(state,e('document.snapshot',{file:'src/gen.ts',content:'export function gen0(){ return 0; }',meta:{reason:'edit'}}));
+  assert.equal(state.performance.progress,before,'removal alone is not progress');
+  const cues=apply(state,e('terminal.command.finished',{meta:{category:'test',exitCode:0}}));
+  assert(cues.some(c=>c.type==='milestone.refactor.validated'&&c.weight>=4));
+});
+test('Tension reflects current state: open errors and failing validations, not accumulated nudges',()=>{
+  const state=newState(projectId);
+  for(let i=0;i<40;i++)apply(state,e('diagnostics.updated',{file:'src/a.ts',meta:{errors:1,warnings:0}}));
+  const oneError=state.performance.tension;assert(oneError>0&&oneError<0.1,`one open error gives mild tension (${oneError})`);
+  apply(state,e('diagnostics.updated',{file:'src/a.ts',meta:{errors:0,warnings:0}}));
+  assert.equal(state.performance.tension,0);
+  apply(state,e('terminal.command.finished',{meta:{category:'build',exitCode:2}}));
+  assert(state.performance.tension>=0.4);
+});
+test('Agents get stable distinct voices; file changes are attributed only when correlated with that agent',()=>{
+  const state=newState(projectId);
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'session-A',tool:'Edit'}}));
+  apply(state,e('agent.tool.completed',{file:'src/b.ts',meta:{provider:'claude-code',agent:'session-B',tool:'Write'}}));
+  const a=apply(state,e('document.snapshot',{file:'src/a.ts',content:'export function fromAgentA(){}',meta:{reason:'external'}}));
+  const human=apply(state,e('document.snapshot',{file:'src/c.ts',content:'export function byUnknown(){}',meta:{reason:'edit'}}));
+  const voices=Object.values(state.agents).map(x=>x.voice).sort();
+  assert.deepEqual(voices,[0,1]);
+  assert(a.some(c=>c.type==='symbol.created'&&c.detail.attribution==='correlated'&&c.detail.agentId===Object.values(state.agents)[0].id));
+  assert(human.every(c=>!c.detail.agentId));
+});
+test('Public graph shows every module and fills its budget with the most meaningful symbols first',()=>{
+  const state=newState(projectId);
+  for(let i=0;i<30;i++)apply(state,e('document.snapshot',{file:`src/m${i}.tsx`,content:`import {x} from './m${(i+1)%30}';\nexport const v${i} = 1;\nexport function helper${i}(){ const local = 2; return local; }\nexport function View${i}(){ return <div/>; }`,meta:{reason:'baseline'}}));
+  const {graph}=publicProjection(state);
+  assert.equal(graph.nodes.filter(n=>n.type==='module').length,30);
+  const order=graph.nodes.filter(n=>n.type!=='module').map(n=>n.type);
+  assert.equal(order[0],'ui.component');assert(order.indexOf('variable')>order.lastIndexOf('ui.component'));
+  assert(!graph.nodes.some(n=>n.type==='callsite'));
+  assert(graph.nodes.filter(n=>n.parent).every(n=>graph.nodes.some(m=>m.id===n.parent)));
+  assert.equal(graph.edges.filter(x=>x.kind==='depends').length,30);
+});
+test('Project name labels the local project list but never enters the recorded performance',()=>{
+  const state=newState(projectId);
+  const cues=apply(state,e('workspace.started',{name:'my-app'}));
+  assert.equal(publicProjection(state).name,'my-app');
+  const frame=closeBatch(state,cues);
+  assert(!JSON.stringify(frame).includes('my-app')&&!JSON.stringify(cues).includes('my-app'));
+  apply(state,e('workspace.started',{}));
+  assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
+});

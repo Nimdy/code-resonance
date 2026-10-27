@@ -1,0 +1,155 @@
+{
+  "at": "2026-10-23T18:54:37.166Z",
+  "projectId": "1af8787a9328f37d3ae9d18745ae66fabd478ec89572210986ccca042a797894",
+  "windows": 222,
+  "durationSec": 1810,
+  "styles": {
+    "ambient": [
+      {
+        "minutes": "0-5",
+        "peak": 0.26,
+        "rmsDb": -23.66,
+        "loudnessRangeDb": 8.39,
+        "silentWindows": 0,
+        "bars": 103,
+        "sections": {
+          "home": 50,
+          "away": 29,
+          "breath": 16,
+          "lift": 8
+        },
+        "chapters": {
+          "1": 45,
+          "2": 58
+        },
+        "layerSets": 2,
+        "chords": 5
+      },
+      {
+        "minutes": "5-10",
+        "peak": 0.26,
+        "rmsDb": -22.01,
+        "loudnessRangeDb": 1.92,
+        "silentWindows": 0,
+        "bars": 102,
+        "sections": {
+          "away": 27,
+          "breath": 19,
+          "home": 48,
+          "lift": 8
+        },
+        "chapters": {
+          "2": 53,
+          "3": 49
+        },
+        "layerSets": 2,
+        "chords": 5
+      },
+      {
+        "minutes": "10-15",
+        "peak": 0.27,
+        "rmsDb": -22.06,
+        "loudnessRangeDb": 1.94,
+        "silentWindows": 0,
+        "bars": 103,
+        "sections": {
+          "breath": 21,
+          "home": 58,
+          "away": 24
+        },
+        "chapters": {
+          "3": 103
+        },
+        "layerSets": 2,
+        "chords": 5
+      },
+      {
+        "minutes": "15-20",
+        "peak": 0.27,
+        "rmsDb": -21.95,
+        "loudnessRangeDb": 1.9,
+        "silentWindows": 0,
+        "bars": 102,
+        "sections": {
+          "home": 54,
+          "away": 24,
+          "lift": 8,
+          "breath": 16
+        },
+        "chapters": {
+          "3": 102
+        },
+        "layerSets": 2,
+        "chords": 5
+      },
+      {
+        "minutes": "20-25",
+        "peak": 0.3,
+        "rmsDb": -21.77,
+        "loudnessRangeDb": 1.64,
+        "silentWindows": 0,
+        "bars": 103,
+        "sections": {
+          "home": 63,
+          "away": 24,
+          "breath": 16
+        },
+        "chapters": {
+          "3": 50,
+          "4": 53
+        },
+        "layerSets": 4,
+        "chords": 5
+      },
+      {
+        "minutes": "25-30",
+        "peak": 0.31,
+        "rmsDb": -21.54,
+        "loudnessRangeDb": 2.52,
+        "silentWindows": 0,
+        "bars": 102,
+        "sections": {
+          "home": 49,
+          "away": 21,
+          "breath": 16,
+          "lift": 16
+        },
+        "chapters": {
+          "4": 102
+        },
+        "layerSets": 4,
+        "chords": 5
+      },
+      {
+        "minutes": "30-30.166666666666668",
+        "peak": 0.26,
+        "rmsDb": -21.83,
+        "loudnessRangeDb": 0.11,
+        "silentWindows": 0,
+        "bars": 4,
+        "sections": {
+          "away": 3,
+          "home": 1
+        },
+        "chapters": {
+          "4": 4
+        },
+        "layerSets": 1,
+        "chords": 2
+      }
+    ]
+  },
+  "chapters": [
+    1,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4
+  ]
+}
