@@ -21,6 +21,9 @@ export const plural=count;
 export function projectName(p){return p?.name||(p?.id?`Project ${p.id.slice(0,8)}`:'No project');}
 // What the Stage may show: only the approved public title, else a generic name.
 export function publicName(recipe){return recipe?.title||'Untitled performance';}
+// The world the Stage draws for a living-world identity: its family, unless a composition replaces it with the artist
+// canvas (as the world's own caption says, host.js labels).
+export function stageWorldName(recipe){return recipe?.composition?.base==='canvas'?'Artist canvas':recipe?.familyName||'Living world';}
 export const STYLE_NAMES={ambient:'Ambient',pulse:'Pulse',cinematic:'Cinematic',chip:'Chip'};
 export const WORLD_NAMES={living:'Living world',construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'};
 export const LABEL_NAMES={cinematic:'Cinematic',explorer:'Explorer',stream:'Stream',off:'Off'};

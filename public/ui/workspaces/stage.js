@@ -6,7 +6,7 @@
 // I performance information, ? the list of keys.
 import {h,text,button,select,segmented,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
-import {timecode,clockTime,publicName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
+import {timecode,clockTime,publicName,stageWorldName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
 const IDLE_MS=2600,ESC_MS=2500;
 export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecording}){
   styles('stage');
@@ -138,7 +138,7 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
   // The fictional demonstration says so here too (this layer is never recorded).
   const demoPill=h('span',{class:'pill warn',text:'Demonstration (fictional)'});title.after(demoPill);
   function renderTitle(){const s=P.state;text(document.getElementById('stageTitle'),publicName(s.recipe));demoPill.hidden=!store.project()?.evidence?.demonstration;
-    text(document.getElementById('stageSub'),`${s.world==='living'?(s.preview?'Preview · ':'')+(s.recipe?.familyName||'Living world'):WORLD_NAMES[s.world]} · ${s.mode==='live'?'Live':'Replay'}`);}
+    text(document.getElementById('stageSub'),`${s.world==='living'?(s.preview?'Preview · ':'')+stageWorldName(s.recipe):WORLD_NAMES[s.world]} · ${s.mode==='live'?'Live':'Replay'}`);}
   function renderTransport(){
     const s=P.state,live=s.mode==='live',pos=s.position;
     liveBtn.setAttribute('aria-pressed',String(live));replayBtn.setAttribute('aria-pressed',String(!live));
