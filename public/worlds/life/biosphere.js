@@ -1,6 +1,6 @@
 // Fractal Biosphere's digital life: an underwater ecology living among the organisms the code grows. Pure (no rendering):
 // the grammar of the ecosystem (life/sim.js) for the world (biosphere.js draws it), tested in Node
-// (tests/life-biosphere.test.js).
+// (tests/life-biosphere*.test.js).
 //
 // Four populations, each with its own rules (no entity knows the choreography; it emerges from local rules and the
 // shared fields):

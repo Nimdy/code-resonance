@@ -5,7 +5,7 @@
 // bridges). Never through a building: every route keeps clear of the towers' footprints and the naves, and the
 // inhabitants only ever follow routes. On a tower they keep to its stone: a shaft climbs the plinth's face, then the
 // wall, stepping in over each setback's ledge (towerProfile: the storeys as the world stacks them, turned with its
-// prisms), WALL off the stone. Pure (no rendering), tested in Node (tests/life-cathedral.test.js).
+// prisms), WALL off the stone. Pure (no rendering), tested in Node (tests/life-cathedral*.test.js).
 //
 // Three kinds of inhabitant (the population is the ecosystem's; their behaviour is this grammar's, in its hooks):
 //  - couriers   carry energy from hub to hub (each precinct's landmark tower is its hub): they choose a destination

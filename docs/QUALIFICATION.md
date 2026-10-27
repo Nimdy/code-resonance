@@ -804,8 +804,8 @@ time. Results: `qualification/results/visual/life*.json`; films in the ignored `
 
 `tests/life-sim.test.js` (the loop, cause by cause: attraction, repulsion, separation, alignment, cohesion, trail and
 momentum deposits, saturation, stability at extreme values, bounded lifecycles, site indices across habitat changes),
-`life-driver.test.js` (bit-identity across paths and frame rates, checkpoints, far seeks, generations and their pinned
-generation-0 digests, live tempo changes and folding, late joins, habitat data after restores), one file per world
+`life-driver*.test.js` (bit-identity across paths and frame rates, checkpoints, far seeks, generations and their pinned
+generation-0 digests, live tempo changes and folding, late joins, habitat data after restores), the world files (`life-biosphere*`, `life-stellar*`, `life-cathedral*`)
 (gathering, failure and recovery responses, routes never through stone, habitat = rendered layout) and
 `adaptive-quality.test.js`.
 

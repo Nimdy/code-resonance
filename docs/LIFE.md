@@ -93,7 +93,7 @@ a film: of the inputs since its generation's warm start and the lasting history 
 [Generations](#generations)): **bit-identical** (the `digest` of every array) after continuous play at any frame rate,
 seeks back and forth, a restored checkpoint, a fresh session or a browser restart, **within the same JavaScript
 engine** (the state is double-precision arithmetic stored in typed arrays; `Math.sin`, `Math.exp`… are the engine's).
-Qualified in Node and Chromium (`tests/life-driver.test.js`, `qualification/visual/life.qual.js`).
+Qualified in Node and Chromium (`tests/life-driver*.test.js`, `qualification/visual/life.qual.js`).
 
 Rendering quality never changes the state: quality decides how many followers are drawn, not what the ecosystem is.
 Images are byte-identical on the same GPU and driver (as the worlds already are); across GPU vendors only the state is
@@ -118,7 +118,7 @@ ecosystem shown at view time `v` is the one of generation `g = floor(v / 600)`; 
 
 - **Generation 0** starts at the performance's origin exactly as before generations: same seed, same inputs, same
   code path. Its states are bit-identical to the driver before generations (digests recorded with that driver and
-  pinned in `tests/life-driver.test.js`, replay and live; the three flagship grammars on the recorded *lumen*
+  pinned in `tests/life-driver-generations.test.js`, replay and live; the three flagship grammars on the recorded *lumen*
   performance checked the same way).
 - **Generation g ≥ 1** starts at its **warm start**, `WARM` = 60 s before its anchor (tick `g × 12 000 − 1 200`), with a
   fresh population (seed `mix(seed, g)`) and a **history pass**: every input at or before the warm start's time is

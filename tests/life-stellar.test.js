@@ -1,27 +1,12 @@
 'use strict';
 // Stellar Forge's digital life (public/worlds/life/stellar.js): the habitat is a pure function of the model and a time
 // and coincides with the world's own layout (public/worlds/stellar-layout.js); systems capture matter into temporary
-// orbits; a failure's disturbance blows matter out of a system and it is recaptured after the recovery; a verified
-// milestone leaves a stronger attractor; matter stays in the disc and its lifecycles stay bounded. Rendering is
-// qualified in a browser (qualification/visual/lab.js).
+// orbits; a failure's disturbance blows matter out of a system and it is recaptured after the recovery; every
+// arrangement has a living disc; the matter map draws lanes only from free dust. Resident populations, lasting
+// attractors, bounds and determinism are in tests/life-stellar-population.test.js; the shared fixture is
+// tests/life-stellar-fixture.js. Rendering is qualified in a browser (qualification/visual/lab.js).
 const test=require('node:test'),assert=require('node:assert/strict');
-const load=()=>Promise.all([import('../public/worlds/model.js'),import('../public/worlds/stellar-layout.js'),import('../public/worlds/life/stellar.js'),
-  import('../public/worlds/life/sim.js'),import('../public/worlds/life/driver.js')]);
-const T0=1750000000000;
-// A project: nG subsystems (the first one the core), each with a few modules on its hex rings.
-function nodes(nG=7,per=5){const out=[];
-  for(let g=0;g<nG;g++){out.push({id:`g${g}`,type:'group',order:g,q:g*3,r:-g,angle:g*.8,counts:{function:3},core:g===0});
-    for(let k=0;k<per+g;k++)out.push({id:`m${g}_${k}`,type:'module',group:`g${g}`,dir:'d',q:g*3+(k%3),r:-g+Math.floor(k/3),state:'committed',counts:{function:2}});}
-  return out;}
-async function setup({recipe={projectSeed:42,genome:{}},nG=7}={}){
-  const [{createModel},{layoutConfig,createLayout},life,{createEcosystem},{lifeScales}]=await load();
-  const model=createModel({speed:1,tempo:96});model.reset({nodes:nodes(nG),edges:[]},T0);
-  const layout=createLayout(layoutConfig(recipe)),grammar=life.createStellarGrammar({layout});
-  const eco=(params={},seed=7)=>{const e=createEcosystem({...grammar.ecosystem(params,seed),seed,params:lifeScales(params)});e.setSites(grammar.habitat(model,T0+60000));e.populate();return e;};
-  return {model,layout,grammar,life,eco,createModel,createLayout,layoutConfig};
-}
-const run=(e,n)=>{for(let k=0;k<n;k++)e.step();};
-function within(e,k,reach){let n=0;const S=e.sites;for(let i=0;i<e.capacity;i++){if(!e.alive[i]||e.sp[i]===3)continue;if(Math.hypot(e.px[i]-S.x[k],e.pz[i]-S.z[k])<S.r[k]+reach)n++;}return n;}
+const {T0,nodes,setup,run}=require('./life-stellar-fixture');
 test('The habitat is a pure function of the model and the time, and its sites are the rendered systems',async()=>{
   const {model,layout,grammar,life,createModel}=await setup();const t=T0+60000;
   const a=grammar.habitat(model,t),b=grammar.habitat(model,t);assert.deepEqual(a,b,'same model and time: same sites');
@@ -90,48 +75,6 @@ test('A failure blows matter out of its system into a halo; after the recovery i
   both(800);a=0;b=0;for(let t=0;t<30;t++){both(40);a+=withinR(e,k,1.6);b+=withinR(c,k,1.6);}
   assert(a>b*.6,`recaptured: ${a} after the recovery, ${b} without the failure`);
   assert(e.sites.state(k).stress<.05,'the strain is cleared');
-});
-test('Every system keeps a resident population; the galactic centre is a weak attractor, never the disc\'s vortex',async()=>{
-  const {eco}=await setup();const e=eco();run(e,1600);const S=e.sites;
-  for(let k=0;k<S.count;k++){if(Math.hypot(S.x[k],S.z[k])<2)continue;let n=0;
-    for(let i=0;i<e.capacity;i++)if(e.alive[i]&&e.sp[i]===1&&Math.hypot(e.px[i]-S.x[k],e.pz[i]-S.z[k])<S.r[k]+3)n++;
-    assert(n>=3,`${S.ids[k]}: ${n} fragments resident`);}
-  // a project without a core subsystem has the nucleus site: it holds a small share of the matter
-  const {eco:eco2,grammar}=await setup({nG:5});
-  const {createModel}=await import('../public/worlds/model.js');const m=createModel({speed:1,tempo:96});
-  m.reset({nodes:nodes(5).map(n=>n.type==='group'?{...n,core:false}:n),edges:[]},T0);
-  const sites=grammar.habitat(m,T0+60000);assert(sites.some(s=>s.id==='#nucleus'),'the nucleus is a site');
-  const f=eco2();f.setSites(sites);run(f,1600);let near=0,all=0;
-  for(let i=0;i<f.capacity;i++){if(!f.alive[i]||f.sp[i]===3)continue;all++;if(Math.hypot(f.px[i],f.pz[i])<4)near++;}
-  assert(near<all*.12,`matter at the galactic centre: ${near} of ${all}`);
-  // the grammar prepares its per-tick tables in hooks.tick (before anything moves), not from inside the current
-  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/worlds/life/stellar.js'),'utf8');
-  assert.equal(typeof grammar.ecosystem().hooks.tick,'function');assert.doesNotMatch(src,/q===0/);
-});
-test('A verified milestone leaves a stronger, wider attractor',async()=>{
-  const {eco}=await setup();const a=eco(),b=eco();const both=n=>{run(a,n);run(b,n);};both(600);
-  // a system that is not the central one
-  const S=a.sites;let k=-1;for(let s=0;s<S.count;s++)if(S.kind[s]<5&&(k<0||S.w[s]<S.w[k]))k=s;
-  a.influence({kind:'lasting',site:S.ids[k],amount:1});both(600);
-  assert.equal(a.sites.state(k).lasting,1);
-  let na=0,nb=0;for(let t=0;t<30;t++){both(40);na+=within(a,k,4.5);nb+=within(b,k,4.5);}
-  assert(na>nb*1.25,`matter around the lasting attractor: ${na}, without the milestone ${nb}`);
-  assert.equal(a.sites.state(k).lasting,1,'it lasts');
-});
-test('Matter stays in the disc and in bounds; lifecycles are bounded; the state is deterministic',async()=>{
-  const {eco,life}=await setup();const e=eco(),f=eco();
-  const quota=life.SHARES.map(s=>Math.floor(e.capacity*s));
-  for(let round=0;round<6;round++){run(e,500);
-    const per=[0,0,0,0];let alive=0;
-    for(let i=0;i<e.capacity;i++){if(!e.alive[i])continue;alive++;per[e.sp[i]]++;
-      assert(Number.isFinite(e.px[i]+e.py[i]+e.pz[i]+e.vx[i]+e.vy[i]+e.vz[i]),'finite');
-      assert(Math.hypot(e.px[i],e.pz[i])<life.RN*1.22,`in the disc (r ${Math.hypot(e.px[i],e.pz[i]).toFixed(2)})`);
-      assert(Math.abs(e.py[i])<=1.6+1e-6,`thin disc (y ${e.py[i]})`);
-      assert(e.age[i]<=e.life[i]+5*20,'departs after its lifetime');}
-    assert(alive<=e.capacity);per.forEach((n,s)=>assert(n<=quota[s]+1,`species ${s}: ${n} of ${quota[s]}`));}
-  let respawned=0;for(let i=0;i<e.capacity;i++)if(e.gen[i]>1)respawned++;assert(respawned>e.capacity*.3,'slots are reused');
-  run(f,3000);assert.equal(f.digest(),e.digest(),'same inputs, same state');
-  const snap=e.snapshot();run(e,200);const d1=e.digest();e.restore(snap);run(e,200);assert.equal(e.digest(),d1,'restore gives the same future');
 });
 test('Every arrangement has a habitat and a living disc',async()=>{
   for(const arrangement of ['spiral','ring','binary-core','cluster']){

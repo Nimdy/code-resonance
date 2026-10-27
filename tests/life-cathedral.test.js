@@ -1,37 +1,14 @@
 'use strict';
 // Machine Cathedral digital life (public/worlds/life/cathedral.js, public/worlds/cathedral-layout.js): the inhabitants'
 // network is derived from the city's own layout (the function the world renders from), they never pass through stone,
-// the routes they travel brighten and draw more traffic, a crowded route sheds traffic to its alternative, a failing
-// precinct is avoided (its maintenance swarm waits at its kerb) and traffic returns once it recovers, lifecycles and
-// state stay bounded and exact. Rendering is looked at in the browser (qualification/visual/lab.js).
+// a failing precinct is avoided (its maintenance swarm waits at its kerb) and traffic returns once it recovers,
+// lifecycles and state stay bounded and exact, and the canonical timeline gives the same moment however it is reached.
+// Trail feedback is in tests/life-cathedral-trails.test.js; congestion, kerb pulses and convoys are in
+// tests/life-cathedral-traffic.test.js; the shared fixture is tests/life-cathedral-fixture.js. Rendering is looked at in
+// the browser (qualification/visual/lab.js).
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
-const load=()=>Promise.all([import('../public/worlds/model.js'),import('../public/worlds/life/cathedral.js'),import('../public/worlds/cathedral-layout.js'),
-  import('../public/worlds/life/sim.js'),import('../public/worlds/life/driver.js'),import('../public/worlds/life/timeline.js')]);
-const T0=1750000000000,T1=T0+10000;
-// A city of precincts (hex plots), each with a landmark and smaller towers; dependencies inside and across precincts.
-function graph({centres,set=[[0,0],[1,0],[0,1],[-1,1],[1,-1]],cross=true,big=9}){
-  const nodes=[],edges=[];
-  Object.entries(centres).forEach(([g,[q0,r0]],gi)=>{nodes.push({id:g,type:'group',order:gi,q:q0,r:r0,counts:{function:12}});
-    set.forEach(([dq,dr],k)=>{const id=`${g}_${k}`,n=k===0?big:2+((gi+k)%4);nodes.push({id,type:'module',group:g,dir:'d',q:q0+dq,r:r0+dr,state:'committed',counts:{function:n}});
-      for(let s=0;s<n;s++)nodes.push({id:`${id}.f${s}`,type:'function',parent:id,slot:s});});
-    if(set.length>=4)edges.push({a:`${g}_1`,b:`${g}_2`,kind:'depends'},{a:`${g}_0`,b:`${g}_3`,kind:'depends'});});
-  const ids=Object.keys(centres);if(cross)ids.forEach((g,k)=>edges.push({a:`${g}_0`,b:`${ids[(k+1)%ids.length]}_0`,kind:'depends',cross:true}));
-  return {nodes,edges};
-}
-const RING={centres:{g0:[0,0],g1:[7,-1],g2:[6,6],g3:[-1,7]}};
-// Mirror-symmetric about z = 0 (a hex plot (q, r) mirrors to (q + r, -r)): from A to B, via C or via D, are the same.
-// (Its towers are square (deco) and turned square to the axes (axisAz 0), so their rings are mirror-symmetric too.)
-const DIAMOND=(near=false)=>({centres:{A:[0,0],B:[9,0],C:[7,-5],D:near?[3,4]:[2,5],F:[-6,0],H:[15,0]},set:[[0,0],[1,0],[1,-1],[0,1]],cross:false,big:6});
-async function city(spec){const [{createModel}]=await load();const m=createModel({});const g=graph(spec);m.applyDelta({keyframe:true,nodes:g.nodes,edges:g.edges},T0,T1);return m;}
-// An ecosystem on a city with the cathedral grammar (no driver: the habitat at the window's end, then ticks).
-async function ecosystem(m,{arch='gothic',params={},opts={},seed=7,capacity=600}={}){
-  const [,G,,{createEcosystem},{lifeScales}]=await load();
-  const grammar=G.createCathedralGrammar({genome:{geometry:{architecture:arch,buttress:1}},axisAz:.4,capacity,...opts});
-  const h=grammar.habitat(m,T1),sites=h.sites,net=h.data;
-  const eco=createEcosystem({...grammar.ecosystem(params,seed),seed,params:lifeScales(params)});eco.setSiteData(h.data);eco.setSites(sites);eco.populate();
-  return {G,grammar,net,eco,sites,awake:i=>eco.alive[i]&&eco.fa[i*2+1]===net.tag};
-}
+const {load,T0,T1,graph,RING,city,ecosystem}=require('./life-cathedral-fixture.js');
 test('Habitat: the network is a pure function of the model and the time; it is the same whatever grammar instance built it',async()=>{
   const [,G]=await load();const m1=await city(RING),m2=await city(RING);
   const a=G.createCathedralGrammar({axisAz:.4}),b=G.createCathedralGrammar({axisAz:.4});
@@ -98,64 +75,6 @@ test('On the stone: shafts and galleries hug each tower\'s own wall at every hei
     assert(n>40,'climbable towers');assert.equal(far,0,`${arch}: every shaft and gallery node is on its tower's stone (within 0.12)`);
     if(arch!=='brutalist')assert(steps>0,'shafts step in at setbacks');}
 });
-// Route choice between two mirror-image routes (A to B via C or via D): the share of A<->B couriers via C.
-async function viaC(m,{seed,params,opts,ticks=3000,prime=null}){
-  const {G,net,eco,awake}=await ecosystem(m,{arch:'deco',seed,params,opts:{axisAz:0,...opts}});
-  const corridor=new Map();
-  for(let e=0;e<net.m;e++){if(net.ek[e]!==G.EDGE.corridor)continue;const a=net.np[net.ea[e]]>=0?net.ea[e]:net.eb[e],mid=a===net.ea[e]?net.eb[e]:net.ea[e];let other=-1;
-    for(let q=net.adjOff[mid];q<net.adjOff[mid+1];q++){const e2=net.adj[q]>>1,u=net.ea[e2]===mid?net.eb[e2]:net.ea[e2];if(net.np[u]>=0&&net.np[u]!==net.np[a])other=net.np[u];}
-    corridor.set(e,[net.precs[net.np[a]].id,net.precs[other].id].sort().join(''));}
-  const use={C:0,D:0},trail={C:0,D:0},all={C:0,D:0};
-  // Priming: light along every route on one side (as if travelled), between A and B.
-  const A=net.precs.find(q=>q.id==='A'),B=net.precs.find(q=>q.id==='B'),lit=[];
-  if(prime)for(let v=0;v<net.n;v++)if((prime==='C'?net.z[v]<-.5:net.z[v]>.5)&&net.x[v]>A.cx-4&&net.x[v]<B.cx+4)lit.push([net.x[v],net.z[v]]);
-  for(let k=0;k<ticks;k++){if(lit.length&&k%40===0)for(const [x,z] of lit)eco.splat(0,x,z,.25);eco.step();if(k<ticks/5)continue;
-    for(let i=0;i<eco.capacity;i++){if(!awake(i)||eco.sp[i]!==0||(eco.ia[i*2+1]&15)!==G.JOB.travel)continue;const pair=corridor.get(eco.ia[i*2]>>1);if(!pair||pair==='CD')continue;
-      const hub=net.hubs[eco.ia[i*2+1]>>8]?.id;if((hub==='B'&&pair.includes('A'))||(hub==='A'&&pair.includes('B')))use[pair.includes('C')?'C':'D']++;}
-    for(let i=0;i<eco.capacity;i++){if(!awake(i))continue;const pair=corridor.get(eco.ia[i*2]>>1);if(pair==='AC'||pair==='AD')all[pair[1]]++;}}
-  for(const [e,pair] of corridor)if(pair==='AC'||pair==='AD')trail[pair[1]]+=eco.sample(0,net.emx[e],net.emz[e]);
-  return {share:use.C/Math.max(1,use.C+use.D),trips:use.C+use.D,trail,all};
-}
-test('Trail feedback: at a junction, travellers take the way that is lit (as a travelled route is)',async()=>{
-  const m=await city(DIAMOND());const seeds=[1,2,3];let on=0,off=0;
-  // The light is where the traffic is: each place's trail follows how many passed there lately.
-  {const {eco}=await ecosystem(m,{arch:'deco',seed:9,opts:{axisAz:0}});const NC=eco.field.nx*eco.field.nz,traffic=new Float64Array(NC);
-    for(let k=0;k<1600;k++){eco.step();for(let q=0;q<NC;q++)traffic[q]=traffic[q]*.993+eco.field.density[q];}   // recent traffic (the light fades in ~7 s)
-    let lit=0,nl=0,dark=0,nd=0;for(let q=0;q<NC;q++){if(traffic[q]>5){lit+=eco.field.data[q];nl++;}else if(traffic[q]<.05){dark+=eco.field.data[q];nd++;}}lit/=nl;dark/=nd;
-    console.log(`# light where traffic passes ${lit.toFixed(3)} (${nl} places), where none passes ${dark.toFixed(4)} (${nd} places)`);assert(nl>50&&lit>20*dark,'routes are lit by their traffic');}
-  // At every fork a travelling courier passes (its ways differently lit), how often it takes the brightest way (the
-  // light as it was when the choice was made), with the trail pull and without.
-  // One side of the city (between A and B, via C) is kept lit, as if travelled, so the forks there offer a lit and a
-  // dark way.
-  async function lift(seed,opts){const {G,net,eco,awake}=await ecosystem(m,{arch:'deco',seed,opts:{axisAz:0,...opts}});
-    const A=net.precs.find(q=>q.id==='A'),B=net.precs.find(q=>q.id==='B'),lit=[];
-    for(let v=0;v<net.n;v++)if(net.z[v]<-.5&&net.x[v]>A.cx-4&&net.x[v]<B.cx+4)lit.push([net.x[v],net.z[v]]);
-    const tr=new Float32Array(net.m*2),prev=new Int32Array(eco.capacity).fill(-1);let best=0,n=0;
-    // (each way's light a little way along it from the junction, as a traveller judges it)
-    const along=(dd,v)=>{const e=dd>>1,w=dd&1?net.ea[e]:net.eb[e],f=Math.min(1,1.8/Math.max(1e-6,net.el[e]));return eco.sample(0,net.x[v]+(net.x[w]-net.x[v])*f,net.z[v]+(net.z[w]-net.z[v])*f);};
-    for(let k=0;k<2400;k++){if(k%40===0)for(const [x,z] of lit)eco.splat(0,x,z,.4);
-      for(let dd=0;dd<net.m*2;dd++)tr[dd]=along(dd,dd&1?net.eb[dd>>1]:net.ea[dd>>1]);
-      for(let i=0;i<eco.capacity;i++)prev[i]=awake(i)&&eco.sp[i]===0&&(eco.ia[i*2+1]&15)===G.JOB.travel?eco.ia[i*2]:-1;
-      eco.step();if(k<400)continue;
-      for(let i=0;i<eco.capacity;i++){const d0=prev[i],d=eco.ia[i*2];if(d0<0||d===d0||!awake(i))continue;const v=d0&1?net.ea[d0>>1]:net.eb[d0>>1];if((d&1?net.eb[d>>1]:net.ea[d>>1])!==v)continue;
-        let hi=-1,lo=Infinity,c=0;for(let q=net.adjOff[v];q<net.adjOff[v+1];q++){const dd=net.adj[q];if(dd===(d0^1))continue;hi=Math.max(hi,tr[dd]);lo=Math.min(lo,tr[dd]);c++;}
-        if(c<2||hi-lo<.05)continue;n++;if(tr[d]===hi)best++;}}
-    return {lift:best/n,n};}
-  for(const seed of seeds){const a=await lift(seed,{}),b=await lift(seed,{trailPull:0});on+=a.lift;off+=b.lift;
-    if(seed===seeds[0])console.log(`# choices at forks: ${a.n} with the pull, ${b.n} without`);}
-  on/=seeds.length;off/=seeds.length;
-  console.log(`# the brightest way taken at a fork: trail pull on ${(100*on).toFixed(1)} %, off ${(100*off).toFixed(1)} %`);
-  assert(on>off+.05,'travellers take the lit way');
-  // The light is the channel: priming one side changes nothing when the pull is off, and nothing is lit without deposits.
-  const c0=await viaC(m,{seed:1,prime:'C',opts:{trailPull:0}}),d0=await viaC(m,{seed:1,prime:'D',opts:{trailPull:0}});assert(Math.abs(c0.share-d0.share)<1e-9,'without the pull the light changes nothing');
-  const z=await viaC(m,{seed:1,params:{trails:0}});assert.equal(z.trail.C+z.trail.D,0,'no trail without deposits');
-});
-test('Congestion: when the shorter route crowds, traffic redistributes to the longer one',async()=>{
-  const m=await city(DIAMOND(true));let on=0,off=0;const seeds=[1,2,3];
-  for(const seed of seeds){const a=await viaC(m,{seed}),b=await viaC(m,{seed,opts:{congestion:false}});on+=a.share;off+=b.share;console.log(`# seed ${seed}: longer route ${a.share.toFixed(3)} with congestion, ${b.share.toFixed(3)} without`);assert(b.share<.5,'the route via D is the shorter one (without congestion most take it)');}
-  on/=seeds.length;off/=seeds.length;console.log(`# share of the longer route: congestion on ${on.toFixed(3)}, off ${off.toFixed(3)}`);
-  assert(on>off+.05,'a crowded route sheds traffic to its alternative');
-});
 test('Failure and recovery: a failing precinct is avoided, its wardens withdraw to its kerb, traffic returns once it recovers',async()=>{
   const m=await city(RING);const {G,net,eco,awake}=await ecosystem(m,{seed:3});const P=net.precs.find(q=>q.id==='g1');
   // (going back in after the recovery: the withdrawn wardens gather at the hub's foot, then climb its shaft together)
@@ -173,22 +92,6 @@ test('Failure and recovery: a failing precinct is avoided, its wardens withdraw 
   assert(during.inside<before.inside*.7,'the failing precinct is avoided');
   assert(during.atKerb>before.atKerb+.5*during.wardens,'its maintenance swarm gathers at its kerb');
   assert(late.inside>during.inside*1.2&&late.atKerb<during.atKerb*.2,'traffic returns after the recovery');
-});
-test('Kerb pulses: traffic along the copings moves in platoons with dark gaps between them, not as an evenly filled ring',async()=>{
-  const m=await city(RING);
-  // Each way round each kerb: the gaps between successive inhabitants along it. In a platoon: a gap under 0.7 units;
-  // dark: the share of the ring in gaps over 2.5 units.
-  async function platoons(pulses){const {G,net,eco,awake}=await ecosystem(m,{seed:6,opts:{pulses},params:{density:1.6}});let close=0,gaps=0,dark=0,nb=0;
-    for(let k=0;k<3000;k++){eco.step();if(k<600||k%10)continue;
-      for(const q of net.precs)for(const dir of [0,1]){const th=[];
-        for(let i=0;i<eco.capacity;i++){if(!awake(i))continue;const d=eco.ia[i*2],e=d>>1;if(net.ek[e]!==G.EDGE.kerb||net.np[net.ea[e]]!==q.k||(d&1)!==dir)continue;
-          const dx=eco.px[i]-q.cx,dz=eco.pz[i]-q.cz;th.push(Math.atan2((-dx*q.sa+dz*q.ca)/q.rz,(dx*q.ca+dz*q.sa)/q.rx));}
-        if(th.length<4)continue;th.sort((a,b)=>a-b);nb++;
-        th.forEach((t,j)=>{const g=((j+1<th.length?th[j+1]:th[0]+2*Math.PI)-t)*q.perim/(2*Math.PI);gaps++;if(g<.7)close++;if(g>2.5)dark+=g/q.perim;});}}
-    return {close:close/gaps,dark:dark/nb,nb};}
-  const on=await platoons(true),off=await platoons(false);
-  console.log(`# kerb traffic: in a platoon ${(100*on.close).toFixed(0)} % (without pulses ${(100*off.close).toFixed(0)} %), ring in dark gaps ${(100*on.dark).toFixed(0)} % (${(100*off.dark).toFixed(0)} %), ${on.nb} samples`);
-  assert(on.nb>500,'kerbs carry traffic');assert(on.close>off.close+.03&&on.dark>off.dark+.05,'the kerb traffic bunches into platoons with dark gaps');
 });
 test('Lifecycles and state: bounded population, valid routes, exact snapshots; the staff grows with the city',async()=>{
   const m=await city(RING);const {G,net,eco,awake,grammar}=await ecosystem(m,{seed:5});
@@ -223,19 +126,4 @@ test('On the canonical timeline: the same moment after continuous play, after se
   const bare=player({cacheMax:0});bare.at(T0+90000);bare.at(T0+30000);bare.at(AT);assert.equal(bare.driver.digest(),want,'no network cache: same state');
   assert(bare.driver.stats().fromCheckpoint>0,'a checkpoint was restored');
   assert(ref.driver.stats().ecosystem.alive>100);
-});
-test('Convoys: each shaft gate lets climbers up in short processions with clear gaps (not an evenly filled column)',async()=>{
-  const m=await city(RING);
-  // Headways (ticks) between successive inhabitants entering hub shafts from the foot, with and without the gates.
-  async function headways(gates){const {G,net,eco,awake}=await ecosystem(m,{seed:4,opts:{gates}});
-    const first=new Set();for(const h of net.hubs){const tw=net.towers[h.tower];const v=tw.dock[tw.shaft];for(let q=net.adjOff[v];q<net.adjOff[v+1];q++){const d=net.adj[q],e=d>>1;if(net.ek[e]===G.EDGE.shaft)first.add((net.ea[e]===v?0:1)|e<<1);}}
-    const was=new Uint8Array(eco.capacity),last=new Map(),gaps=[];
-    for(let k=0;k<4000;k++){eco.step();for(let i=0;i<eco.capacity;i++){const on=awake(i)&&first.has(eco.ia[i*2]);if(on&&!was[i]&&k>400){const d=eco.ia[i*2];if(last.has(d))gaps.push(k-last.get(d));last.set(d,k);}was[i]=on?1:0;}}
-    return gaps;}
-  const on=await headways(true),off=await headways(false);
-  // Gated, the headways are short (inside a convoy) or long (between two openings), rarely in between; ungated they
-  // spread evenly (arrivals as they come). (Spawning at a hub's foot can still put one on a shaft at any time.)
-  const share=(g,lo,hi)=>g.filter(x=>x>=lo&&x<=hi).length/g.length,mid=g=>share(g,14,40);
-  console.log(`# climbers entering hub shafts: gated ${on.length} (in a convoy ${(100*share(on,1,13)).toFixed(0)} %, in between ${(100*mid(on)).toFixed(0)} %), ungated ${off.length} (${(100*share(off,1,13)).toFixed(0)} %, ${(100*mid(off)).toFixed(0)} %)`);
-  assert(on.length>30,'the shafts are climbed');assert(mid(on)<mid(off)*.5,'gated arrivals come in convoys with gaps between them');
 });

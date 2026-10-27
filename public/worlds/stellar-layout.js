@@ -1,7 +1,7 @@
 // Stellar Forge's layout: where each subsystem's star system sits in the galaxy at a moment, as pure functions of a
 // model and a time (no rendering, no THREE), so the world draws it from its own model and the digital life's habitat
 // (life/stellar.js) evaluates it on the timeline's shadow model, as the structure was after each recorded window.
-// Tested in Node (tests/life-stellar.test.js). The arithmetic is the world's own (moved here unchanged).
+// Tested in Node (tests/life-stellar*.test.js). The arithmetic is the world's own (moved here unchanged).
 const TAU=Math.PI*2;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const lerp=(a,b,t)=>a+(b-a)*t;
