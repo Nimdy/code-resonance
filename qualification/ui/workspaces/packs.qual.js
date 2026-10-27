@@ -127,7 +127,7 @@ async function until(fn,timeout=20000,step=250){const t0=Date.now();for(;;){cons
     const quarantined=fs.readdirSync(path.join(env.dir,'packs','.quarantine')).length;
     await page.click('#pkDiscardBtn');await wait(600);
     const discarded=await page.evaluate(()=>({choose:!!document.querySelector('#pkChooseZip')&&!document.querySelector('.pk-import-intro').hidden,report:!!document.getElementById('pkReport')}));
-    check('re-import: "Replaces the installed version 1.0.0", identical files',/Replaces the installed version 1\.0\.0/.test(reimport)&&/identical/.test(reimport),reimport.match(/Replaces[^\n]*\n?[^\n]*/)?.[0]||'');
+    check('re-import: "Replaces the installed version 1.1.0", identical files',/Replaces the installed version 1\.1\.0/.test(reimport)&&/identical/.test(reimport),reimport.match(/Replaces[^\n]*\n?[^\n]*/)?.[0]||'');
     check('Discard: the waiting import is removed on the receiver and the dialog returns to the choice',quarantined===1&&fs.readdirSync(path.join(env.dir,'packs','.quarantine')).length===0&&discarded.choose&&!discarded.report,`${quarantined} waiting before`);
     await page.keyboard.press('Escape');
     await page.click(`.pk-row[data-id="${EMBER}"]`);
@@ -185,10 +185,15 @@ async function until(fn,timeout=20000,step=250){const t0=Date.now();for(;;){cons
     check('usage: GET /api/packs usedBy counts the project, and the library shows it',used&&/Used by 1 project/.test(await until(()=>rowText(page,CYMATIC).then(t=>/Used by 1 project/.test(t||'')&&t),10000)||''),'');
     await page.click(`.pk-row[data-id="${CYMATIC}"]`);await wait(400);
     check('inspector: "On the stage now" while it runs',/On the stage now/.test(await page.evaluate(()=>document.querySelector('.pk-inspector')?.innerText||'')),'');
-    await page.focus(`.pk-row[data-id="${CYMATIC}"]`);await page.keyboard.press('ArrowDown');await wait(300);
+    // The library is grouped by kind (creations and looks, shader packs, coded worlds), so the neighbour is read from
+    // the page: the arrow keys move to it and show it, and back.
+    const order=await page.evaluate(()=>[...document.querySelectorAll('.pk-row')].map(r=>r.dataset.id)),at=order.indexOf(CYMATIC),near=order[at>0?at-1:at+1];
+    const [keyAway,keyBack]=at>0?['ArrowUp','ArrowDown']:['ArrowDown','ArrowUp'];
+    await page.focus(`.pk-row[data-id="${CYMATIC}"]`);await page.keyboard.press(keyAway);await wait(300);
     const arrow=await page.evaluate(()=>({focus:document.activeElement?.dataset?.id,hash:location.hash}));
-    check('keyboard: ArrowDown moves to the next pack in the library and shows it',arrow.focus===EMBER&&arrow.hash===`#/packs/${EMBER}`,JSON.stringify(arrow));
-    await page.keyboard.press('ArrowUp');await wait(300);
+    await page.keyboard.press(keyBack);await wait(300);
+    const returned=await page.evaluate(()=>({focus:document.activeElement?.dataset?.id,hash:location.hash}));
+    check('keyboard: the arrow keys move to the neighbouring pack in the library and show it, and back',!!near&&arrow.focus===near&&arrow.hash===`#/packs/${near}`&&returned.focus===CYMATIC&&returned.hash===`#/packs/${CYMATIC}`,JSON.stringify({order,arrow,returned}));
     for(const [w,h] of [[1440,900],[1280,720],[900,800]]){await page.setViewportSize({width:w,height:h});await wait(400);await shot(page,`library-${w}x${h}`);}
     const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth||[...document.querySelectorAll('.ws-packs .pk-row')].some(r=>r.scrollWidth>r.clientWidth+1));
     check('900 px wide: no horizontal overflow, the inspector stacks below',!overflow&&await page.evaluate(()=>{const a=document.querySelector('.ws-packs .main').getBoundingClientRect(),b=document.querySelector('.pk-inspector').getBoundingClientRect();return b.top>=a.bottom-1;}),'');

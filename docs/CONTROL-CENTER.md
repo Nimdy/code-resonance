@@ -12,11 +12,12 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 
 | Workspace | Route | What it is for |
 |---|---|---|
-| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide |
+| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide; the way into the studios (Create a composition, Continue the last one) |
 | Projects | `#/projects`, `#/projects/<id>` | The projects the receiver knows, their identity, statistics, timeline, agents, exports |
 | Visual Studio | `#/visual` | Worlds, the Visual Recipe (World DNA), metadata-driven parameters, previews, visual presets |
-| Music Studio | `#/music` | Style, tempo, texture, volume, the project's musical identity, music presets |
-| Visual Packs | `#/packs` | Install (zip or folder), review, approve, revoke, remove, inspect packs; creator documentation |
+| Artist Studio | `#/artist`, `#/artist/new/<starter>`, `#/artist/from/<family>`, `#/artist/edit/<id>`, `#/artist/project` | Compositions of procedural layers over a flagship world or the artist canvas, what they react to, previewed on the stage, saved with versions, applied to a project, exported as a pack ([ARTIST-STUDIO.md](ARTIST-STUDIO.md)) |
+| Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
+| Visual Packs | `#/packs` | My creations; installed packs grouped as imported creations and looks, shader packs and full coded worlds; install (zip or folder), review, approve, revoke, remove, inspect; creator documentation |
 | Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code hooks, other agents |
 | Record & Broadcast | `#/output` | Recording profiles and state, the OBS browser source, exports and replay |
 | Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics |
@@ -44,10 +45,11 @@ engine, as every window must, and shares the receiver's state.
 | Scope | Authority | Examples |
 |---|---|---|
 | Global preferences | receiver `<data>/settings.json` (`code-resonance.settings.v1`) | music defaults, master volume, default world, captions, recording profile, interface motion, setup guide |
-| Per-project creative configuration | receiver `<data>/projects/<hash>/recipe.json` (the Visual Recipe) and `preferences.json` (`code-resonance.preferences.v1`) | family, look pack, tuned parameters, spectacle, motion, information mode, public title, aliases; world, music style/tempo/texture |
+| Per-project creative configuration | receiver `<data>/projects/<hash>/recipe.json` (the Visual Recipe) and `preferences.json` (`code-resonance.preferences.v1`) | family, look pack, tuned parameters, spectacle, motion, information mode, public title, aliases, the score version (`music.score`); world, music style/tempo/texture/character/balance |
 | Presets | receiver `<data>/presets.json` (`code-resonance.presets.v1`) | reusable visual and music presets |
+| Compositions | receiver `<data>/compositions.json` (`code-resonance.compositions.v1`) | the Artist Studio's creations, each with its last five versions; the one a project uses is copied into its recipe (`composition`) |
 | Packs and approvals | receiver `<data>/packs/<id>/`, `<data>/packs/trust.json` | installed files, digest-bound approvals |
-| Temporary preview | the window's memory (and `POST /api/recipe/preview`, which never writes) | a family or parameter being tried |
+| Temporary preview | the window's memory (and `POST /api/recipe/preview`, which never writes) | a family or parameter being tried; the Artist Studio's working copy |
 | Session runtime | the window's engine | sound on, live/replay, playhead, recording |
 | This device | the browser's `localStorage` | rendering quality |
 | Extension-owned | VS Code settings (`resonance.*`) | capture options: read-only here, as *reported* by the extension |
@@ -63,7 +65,7 @@ The player before 0.5 kept its choices in the browser's `localStorage`; on first
 ## How views stay consistent
 
 Writes go to the receiver; the receiver announces each change on `GET /api/changes` (server-sent events: `recipe`,
-`preferences`, `settings`, `presets`, `packs`, `projects`, `activity`, `evidence`), and every open window — Control
+`preferences`, `settings`, `presets`, `compositions`, `packs`, `projects`, `activity`, `evidence`), and every open window — Control
 Center, Stage, OBS view — reloads what changed. Settings and preferences are written as field-level patches, so one
 window can never overwrite another window's other choices with stale values. A Visual Studio *Apply* is checked against
 the recipe revision it previewed (`ifRevision`); if another window changed the identity meanwhile, the user chooses
@@ -99,5 +101,8 @@ See [SECURITY.md](../SECURITY.md) and [packs/security.md](packs/security.md).
   capture-start event; the extension does not report closing, so a quiet session is shown as unknown, not as running.
 - VS Code settings are shown as the extension *reported* them (0.5+), with the time; they are changed in VS Code.
 - Demonstration projects (`npm run demo`) are labelled fictional everywhere.
-- Previews are labelled "Preview · not saved"; an unapproved pack never runs because it is previewed.
+- Previews are labelled "Preview · not saved"; an unapproved pack never runs because it is previewed. An Artist Studio
+  preview blocks recording, as a Visual Studio preview does: a recording shows what is saved.
+- An atmospheric layer is labelled a screen-space field; a layer's depth (behind, integrated, in front) is the order it
+  is really drawn in, and the layer stack is listed in that order.
 - Recordings are saved by the browser to its downloads folder; Code Resonance keeps no video library.

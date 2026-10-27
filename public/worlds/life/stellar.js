@@ -37,6 +37,7 @@ import {u01,MODE,DT,CH} from './sim.js';
 export const RN=20;                 // the galaxy's radius in the ecosystem's units
 const KTRAIL=12;                    // trail points per entity (TRAIL_EVERY ticks apart: 1.8 s of history)
 const TAU=Math.PI*2;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const ROLES=['interface','services','model','logic','tests','core'];
 export const NUCLEUS_KIND=6;
 // Matter spawned per species share of the capacity (dust, fragments, motes, wind).
@@ -79,17 +80,19 @@ export function createStellarGrammar({layout,capacity=1100}){
   // looser wave migrating through the disc (its phase turned by the climate's swing) and a few slow eddies. Static parts
   // are tabulated per field cell; per tick only the phases change.
   const NX=64,cw=2*B/NX,NC=NX*NX,V=.42;
+  // (wx, wz: the density waves' share of vx, vz, which ecology 2's music strengthens or calms on its own)
   const tab={vx:new Float32Array(NC),vz:new Float32Array(NC),rx:new Float32Array(NC),rz:new Float32Array(NC),cs2:new Float32Array(NC),sn2:new Float32Array(NC),
-    ed:new Float32Array(NC*6)};
+    ed:new Float32Array(NC*6),wx:new Float32Array(NC),wz:new Float32Array(NC)};
   const EDDY=[[.21,.13,.05,.9],[-.11,.24,-.037,1.7],[.17,-.19,.028,4.1]];   // kx, kz, omega, phase (stream function modes)
   const EKX=new Float64Array(EDDY.map(e=>e[0])),EKZ=new Float64Array(EDDY.map(e=>e[1])),EW=new Float64Array(EDDY.map(e=>e[2]));
   for(let j=0;j<NX;j++)for(let i=0;i<NX;i++){const q=j*NX+i,x=-B+(i+.5)*cw,z=-B+(j+.5)*cw,r=Math.hypot(x,z),qq=r/RN,th=Math.atan2(z,x);
     const ux=r>1e-6?x/r:0,uz=r>1e-6?z/r:0;tab.rx[q]=ux;tab.rz[q]=uz;
     let vt=V*(1-1.2*Math.min(qq,1.25))*Math.min(1,qq/.12),vr=0;
     let cx=0,cz=0;
-    if(ARMED){const psi=ARMS*(th-ARM0-Math.log(Math.max(qq,.05))/TANP),arm=Math.min(1,qq/.2)*(1-Math.min(1,Math.max(0,(qq-.95)/.25)));vt*=1-.3*Math.cos(psi)*arm;vr+=.13*V*Math.sin(psi)*arm;
+    if(ARMED){const psi=ARMS*(th-ARM0-Math.log(Math.max(qq,.05))/TANP),arm=Math.min(1,qq/.2)*(1-Math.min(1,Math.max(0,(qq-.95)/.25)));const vt0=vt;vt*=1-.3*Math.cos(psi)*arm;vr+=.13*V*Math.sin(psi)*arm;
       // the spiral potential: the gas converges onto the arm crest (a density-wave shock), across the arm (grad psi)
-      const gx=(-uz)/Math.max(r,1)-ux/(Math.max(r,1)*TANP),gz=ux/Math.max(r,1)-uz/(Math.max(r,1)*TANP),gl=Math.hypot(gx,gz)||1,c=-.42*V*Math.sin(psi)*arm;cx=gx/gl*c;cz=gz/gl*c;}
+      const gx=(-uz)/Math.max(r,1)-ux/(Math.max(r,1)*TANP),gz=ux/Math.max(r,1)-uz/(Math.max(r,1)*TANP),gl=Math.hypot(gx,gz)||1,c=-.42*V*Math.sin(psi)*arm;cx=gx/gl*c;cz=gz/gl*c;
+      const wt=-.3*Math.cos(psi)*arm*vt0,wr=.13*V*Math.sin(psi)*arm;tab.wx[q]=wt*uz+wr*ux+cx;tab.wz[q]=-wt*ux+wr*uz+cz;}
     else if(ARR==='ring')vr+=-.5*V*(qq-.66)*Math.exp(-((qq-.66)/.35)*((qq-.66)/.35));
     if(CLUSTER)vt*=.5;
     if(qq>1.02)vr-=.6*V*(qq-1.02)/.2;
@@ -97,8 +100,9 @@ export function createStellarGrammar({layout,capacity=1100}){
     tab.vx[q]=vt*uz+vr*ux+cx;tab.vz[q]=-vt*ux+vr*uz+cz;
     const p2=ARMS*(th-ARM0)-9*qq;tab.cs2[q]=Math.cos(p2)*Math.min(1,qq/.25)*(qq<1.05?1:0);tab.sn2[q]=Math.sin(p2)*Math.min(1,qq/.25)*(qq<1.05?1:0);
     for(let m=0;m<3;m++){const [kx,kz,,ph]=EDDY[m];const a=kx*x+kz*z+ph;tab.ed[q*6+m*2]=Math.cos(a);tab.ed[q*6+m*2+1]=Math.sin(a);}}
-  function makeHooks(){
-    let lastT=NaN,wc=1,ws=0,swingNow=0;const ec=new Float64Array(3),es=new Float64Array(3);
+  // E2: ecology 2 (params.ecology === 2): the music shapes the disc's flow, never its rotation.
+  function makeHooks(E2=false){
+    let lastT=NaN,wc=1,ws=0,swingNow=0,curNow=NaN,kW=0,kM=1,kE=1;const ec=new Float64Array(3),es=new Float64Array(3);
     function current(x,y,z,t,cond,out){
       if(t!==lastT||cond.swing!==swingNow){lastT=t;swingNow=cond.swing;const a=t*TAU/90-cond.swing*1.2;wc=Math.cos(a);ws=Math.sin(a);for(let m=0;m<3;m++){ec[m]=Math.cos(EW[m]*t);es[m]=Math.sin(EW[m]*t);}}
       let i=Math.round((x+B)/cw-.5),j=Math.round((z+B)/cw-.5);i=i<0?0:i>=NX?NX-1:i;j=j<0?0:j>=NX?NX-1:j;const q=j*NX+i;
@@ -106,6 +110,14 @@ export function createStellarGrammar({layout,capacity=1100}){
       const w=(tab.sn2[q]*wc-tab.cs2[q]*ws)*.16*V*(1+.4*Math.abs(cond.swing));
       let ex=0,ez=0;for(let m=0;m<3;m++){const c=tab.ed[q*6+m*2]*ec[m]-tab.ed[q*6+m*2+1]*es[m];ex+=c*EKZ[m];ez-=c*EKX[m];}
       const turb=.3*V*(.6+.4*cond.turb);
+      if(E2){
+        // Ecology 2: the sim scales the whole current by the climate's `current`; here that scale is taken back out of
+        // the rotation (the galaxy never turns faster for the music) and given to what the music moves instead: the
+        // density waves' strength (the gas streams across and gathers in the arms), the migrating wave, and the
+        // eddies of regional circulation (exploring music stirs them).
+        if(cond.current!==curNow){curNow=cond.current;kW=clamp(Math.pow(curNow,1.4),.5,2)-1;kM=clamp(Math.pow(curNow,1.2),.6,1.8);}
+        kE=clamp(Math.pow(cond.explore,.5),.7,1.45);const ik=1/curNow;
+        out[0]=(tab.vx[q]+tab.wx[q]*kW+tab.rx[q]*w*kM+ex*turb*kE)*ik;out[1]=0;out[2]=(tab.vz[q]+tab.wz[q]*kW+tab.rz[q]*w*kM+ez*turb*kE)*ik;return;}
       out[0]=tab.vx[q]+tab.rx[q]*w+ex*turb;out[1]=0;out[2]=tab.vz[q]+tab.rz[q]*w+ez*turb;
     }
     // ---- Per tick (hooks.tick, before anything moves): each site's pull, capture radius, sense of rotation, strain --
@@ -130,6 +142,9 @@ export function createStellarGrammar({layout,capacity=1100}){
         ST.G[k]=1.7*S.w[k]*(1+.8*lasting+.3*st.nourish+.9*st.novelty+1.6*rc)*(1-.3*sN)*c.attract*P.attraction*(central?.5:1);
         ST.Rc[k]=S.r[k]*(central?1:1.7)+(central?1.2:1.6+2.2*lasting+2*st.novelty+1.6*rc)+(central?0:(sN+.6*sh)*(S.r[k]*.3+1));ST.stress[k]=sN;ST.recap[k]=rc;ST.shock[k]=sh;
         ST.wind[k]=(.5+.5*S.w[k])*(1+2.2*sN+2*sh)*P.repulsion;
+        // Ecology 2: gathering music concentrates matter around the major systems (the heavier a system, the more it
+        // answers) and widens their reach a little; the turning attractor favours one side of the disc, then another.
+        if(E2){const g=c.gather;ST.G[k]*=api.shiftOf(k)*Math.pow(g,.3+.7*Math.min(1,S.w[k]));ST.Rc[k]*=Math.pow(g,.25);}
         // most systems turn with the galaxy; some against it (regions with a different behaviour)
         const h=u01(api.seed,Math.round(S.x[k]*64),Math.round(S.z[k]*64),77);ST.spin[k]=S.kind[k]===NUCLEUS_KIND?-1:h<.72?-1:1;}
     }
@@ -213,26 +228,31 @@ export function createStellarGrammar({layout,capacity=1100}){
     }
     return {tick:sitesTick,current,steer,spawn,decide};
   }
-  function ecosystem(){
+  // Ecology 2 (respond): dust streams answer the currents and cohesion (filaments tighten and fray), fragments the
+  // gathering around their systems, motes (the most responsive matter) cohesion and activity, the wind activity.
+  function ecosystem(params){
     const species=[
       {name:'dust',share:SHARES[0],radius:.9,sepRadius:.3,maxSpeed:.95,minSpeed:.05,maxForce:1.3,mass:1.4,drag:.04,sep:.6,ali:.75,coh:.18,
         seek:0,orbit:0,curiosity:0,trail:1.1,deposit:.05,carryDeposit:0,energyDeposit:0,flow:0,push:.006,avoid:1.7,wander:.1,wanderJitter:.25,
-        crowd:40,satiate:0,metabolism:0,restBelow:0,disturbBelow:.55,life:[70,200],fade:4,respawn:[1,5],yMin:-YB,yMax:YB,congestion:.002,congestionAbove:30},
+        crowd:40,satiate:0,metabolism:0,restBelow:0,disturbBelow:.55,life:[70,200],fade:4,respawn:[1,5],yMin:-YB,yMax:YB,congestion:.002,congestionAbove:30,
+        respond:{current:1.2,cohesion:1.5,turb:.8,activity:.9}},
       {name:'fragments',share:SHARES[1],radius:.9,sepRadius:.35,maxSpeed:1.3,minSpeed:.08,maxForce:2,mass:1,drag:.06,sep:1.1,ali:.3,coh:.15,
         seek:.35,orbit:1.1,orbitRadius:1.25,orbitSpeed:.45,orbitJitter:.3,orbitBand:.06,curiosity:.005,trail:.35,deposit:.04,carryDeposit:.07,energyDeposit:.015,
-        flow:0,push:.025,avoid:2.2,wander:.16,crowd:26,satiate:.0007,metabolism:.0007,restBelow:0,disturbBelow:.32,life:[45,130],fade:3,respawn:[1,5],yMin:-YB,yMax:YB},
+        flow:0,push:.025,avoid:2.2,wander:.16,crowd:26,satiate:.0007,metabolism:.0007,restBelow:0,disturbBelow:.32,life:[45,130],fade:3,respawn:[1,5],yMin:-YB,yMax:YB,
+        respond:{gather:1.3,activity:.9,explore:.8,cohesion:.8}},
       {name:'motes',share:SHARES[2],radius:1,sepRadius:.26,maxSpeed:1.15,minSpeed:.1,maxForce:2.6,mass:.7,drag:.08,sep:1.5,ali:1.1,coh:.75,
         seek:.3,orbit:.9,orbitRadius:1.7,orbitSpeed:.4,orbitJitter:.25,orbitBand:.1,curiosity:.003,trail:1,deposit:.02,energyDeposit:0,flow:0,push:.02,avoid:3,
-        wander:.3,wanderJitter:.4,crowd:18,satiate:.0009,metabolism:.0008,restBelow:0,disturbBelow:.24,life:[80,220],fade:3,respawn:[1,5],yMin:-YB,yMax:YB},
+        wander:.3,wanderJitter:.4,crowd:18,satiate:.0009,metabolism:.0008,restBelow:0,disturbBelow:.24,life:[80,220],fade:3,respawn:[1,5],yMin:-YB,yMax:YB,
+        respond:{cohesion:1.8,activity:1.3,turb:1.2,explore:1.3,gather:1.1}},
       {name:'wind',share:SHARES[3],radius:.7,sepRadius:.4,maxSpeed:1.4,minSpeed:.2,maxForce:2.2,mass:.6,drag:.25,sep:0,ali:0,coh:0,
         seek:0,orbit:0,curiosity:0,trail:0,deposit:.004,flow:0,push:.11,avoid:0,wander:.12,crowd:99,satiate:0,metabolism:0,restBelow:0,disturbBelow:99,
-        life:[4,9],fade:1,respawn:[.2,1.2],yMin:-YB,yMax:YB,perceive:false}];
+        life:[4,9],fade:1,respawn:[.2,1.2],yMin:-YB,yMax:YB,perceive:false,respond:{activity:1.5,turb:1.2}}];
     // The trail is the disc's memory of its streams (decaying over about 20 s, drifting with the current): the gas reads
     // it, so a stream that matter keeps using glows and migrates with the matter's own drift.
     const relations=[[null,null,null,{avoid:1.4,radius:1.3}],[null,null,null,{avoid:1,radius:1.2}],[null,{chase:.22,radius:1.6},null,{avoid:2.2,radius:1.5}],[]];
     return {capacity,trail:KTRAIL,bounds:{min:[-B,-YB,-B],max:[B,YB,B]},
       field:{nx:NX,nz:NX,decay:{trail:.9975,energy:.993,disturb:.986,flow:.975},diffuse:{trail:.1,energy:.08,disturb:.12,flow:.12},saturate:{trail:4,energy:4,disturb:3,flow:1.2},advect:.9},
-      species,relations,hooks:makeHooks(),siteSlots:[0]};
+      species,relations,hooks:makeHooks(+params?.ecology===2),siteSlots:[0]};
   }
   return {id:'stellar-forge',version:4,ecosystem,habitat,capacity,trail:KTRAIL};
 }

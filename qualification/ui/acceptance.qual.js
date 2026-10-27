@@ -200,7 +200,7 @@ const getJSON=async u=>(await fetch(u)).json();
       }else log('H, I, G skipped (--single-window): three windows rendering at once; run in the extended tier and locally');
       // J: every workspace at desktop, laptop and narrow widths: no horizontal page overflow, the navigation reachable,
       // the workspace loaded (its heading present), keyboard focus visible on the first control.
-      const routes=['home','projects','visual','music','packs','connections','output','settings','stage'];
+      const routes=['home','projects','visual','artist','music','packs','connections','output','settings','stage'];
       for(const [w,h] of QUICK?[[1280,720]]:[[1920,1080],[1440,900],[1280,720],[900,800]]){
         const {page,errors}=await open(await fresh(),`${url}/?project=${sample}#/home`,{width:w,height:h});await ready(page);await wait(1200);
         for(const r of routes){

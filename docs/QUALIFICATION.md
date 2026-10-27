@@ -912,6 +912,79 @@ no diagnostics could be captured and its cause is not established: one intermitt
   are small in distant framings (film C) and its recovery wave is faint under PR #8's own beam. The music's effect on
   behaviour is modest by design.
 
+## Creative mastering and the Artist Studio (Phase 11)
+
+Focused checks only, as the brief asked. All rendering was on the AMD integrated GPU through WSL2 (ANGLE, D3D12) at
+1920×1080. Films, screenshots and audio are in `qualification/results/films/phase11/` (ignored), with a review page.
+
+- **Unit tests:** `npm test` passes 316 tests and `npm run check` passes. New focused tests cover:
+  - score v3: determinism, key, bounds, form, motif return, each control, the mixer, styles, held chords, expression;
+  - v2's output pinned by digest;
+  - the musical clock;
+  - the v3 voices and the Space control;
+  - recipe v4 pins: stripped v4 equals v3;
+  - finishes: Classic is identical to the Phase 10 composite;
+  - ecology 2: music 0 is exactly neutral; music 0/1/2 give different collective behaviour; ecology 1 pins hold;
+  - the music's look (presentation): neutral at 0, a larger range at 2, no step above 2.5 % per tick;
+  - layers: signals (failures are never milestones), a pinned swarm digest, seek equals continuous play, the diff and
+    dispose of `set()`, failure isolation;
+  - compositions: store, versions, revision conflicts, the recipe action, export → import → install, unsafe content;
+  - Music Studio profile precedence and presets.
+- **Product workflows**, through the real Control Center (`qualification/ui/phase11.qual.js`; scenarios A–F of the
+  brief): 74 of 74 checks.
+  - A: the composed score's character and balance reach the engine; a muted voice is absent bar by bar; Cancel, Apply,
+    a preset and a reload.
+  - B: music influence 0/1/2 previewed, applied and replayed.
+  - C/D: compositions from a world and from the blank canvas, saved and applied.
+  - E: an exported pack with no private data, imported in a second installation and used on another project.
+  - F: a WebM recorded with the Stage's Record button, holding VP9 and Opus, not silent.
+
+  Its `--film4` mode built Film 4's composition by clicks and typing.
+- **Existing identities unchanged:** `visual/unchanged.qual.js --baseline 1460cdc` (PR #10's head) passes 4/4. With
+  the classic finish and life off, the built-in worlds render the same frames as before on lumen, excalidraw and self.
+  The acceptance suite now includes `#/artist`: 64/64 at four window sizes, and 28/28 in CI's quick mode.
+- **Music** (`qualification/audio/score-versions.js`, the lumen session, 150 s, real Web Audio):
+
+  | Measure | v2 | v3 |
+  |---|---|---|
+  | Loudness range | 1.6–3.7 LU | 5.5–11.4 LU |
+  | Integrated loudness | −21.9 to −24.9 LUFS | −22.0 to −23.6 LUFS |
+  | True peak | — | at or below −10.2 dBFS |
+
+  - Energy below 120 Hz fell in Ambient (−2.3 → −3.6 dB), Pulse (−4.9 → −6.1) and Chip (−1.9 → −4.1). It rose a
+    little in Cinematic (−3.3 → −2.6).
+  - Review of Film 1's soundtrack found interludes falling silent inside held chords (−44 dB). Fixed: the quietest
+    stretch after the opening is now −30 dB.
+- **Music influence, visible** (Film 2 and per-world clips at 1280×720): the per-second mean luma's swing against
+  music 0 (sd), at music 1 / 2:
+
+  | World | Before | After |
+  |---|---|---|
+  | Biosphere | 0.87 / 1.67 | 2.45 / 5.30 |
+  | Stellar Forge | 0.13 / 0.15 | 4.67 / 9.73 |
+  | Machine Cathedral | 0.05 / 0.08 | 2.02 / 4.55 |
+
+  Frame-to-frame change is the same as at music 0, so there is no flicker. Music 0 renders identically to before.
+- **Performance**, live player, Auto quality, 1080p (`visual/life-perf.js`, now with `--tune` and `--composition`):
+
+  | Scene | fps | GPU per frame |
+  |---|---|---|
+  | Biosphere | 42.1 | 22.7 ms |
+  | Stellar Forge (Auto settles at level 2, as in Phase 10) | 57.9 | 9.8 ms |
+  | Machine Cathedral | 44.4 | 21.0 ms |
+  | Bioluminescent Dream over the Biosphere | 38.7 | — |
+  | Two canvas compositions | 60 (vsync) | about 14 ms |
+
+  - The worlds were measured on new identities: the Cinematic finish, ecology 2, life on.
+  - The Cinematic finish costs about 1 ms of GPU time per frame: Classic Cathedral 46.6 fps (20.0 ms), Classic
+    Biosphere 43.4 fps.
+  - The new life presentation costs nothing measurable: Cathedral 46.7 fps with life on, 46.6 off.
+  - Phase 10 reported Cathedral at about 49 fps. The same machine measured 46.6 with Classic today, life off too.
+
+**Not verified in Phase 11:** human listening and viewing (metrics and our own review of renders only); the Music Studio
+and the Artist Studio on Windows, macOS or OBS; live sessions longer than a few minutes with a composition; frame
+rates on other GPUs; the generation handover with ecology 2 (expected continuous, not measured).
+
 ## Not verified
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A

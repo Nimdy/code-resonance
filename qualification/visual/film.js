@@ -9,8 +9,13 @@
 //        [--look <pack id> (apply a declarative or shader pack)] [--gpu amd (render on the AMD integrated GPU, never NVIDIA)]
 //        [--tune '{"life.enabled":false}' (tuned genome values, as the Visual Studio applies them)]
 //        [--copy (render from a temporary copy of --data: the data directory's recipes are never changed)]
+//        [--music '{"mood":.7,"space":.8,"mix":{"perc":0}}' (the composed score's performance profile; absent = as composed)]
+//        [--score 2|3 (play this score instead of the one the rendered recipe asks for: comparisons only)]
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
-// The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly.
+// The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly; so is
+// the music it was rendered with (<out>.music.json) when --music or --score chose it.
+// The soundtrack plays the score the rendered recipe asks for (genome.music.score; absent = the classic v2 score, so a
+// film recipe from before recipe v4 sounds exactly as it did), the same score the picture's musical clock reads.
 const path=require('node:path');
 const fs=require('node:fs');
 const cp=require('node:child_process');
@@ -22,6 +27,9 @@ const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.ar
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual','film.webm')));
 const fps=Number(arg('fps',30)),speed=Number(arg('speed',1)),width=Number(arg('width',1920)),height=Number(arg('height',1080)),style=arg('style','ambient');
 const world=arg('world','living'),labels=arg('labels','cinematic'),tail=Number(arg('tail',0));
+const musicArg=arg('music',null),scoreArg=arg('score',null);
+if(musicArg!==null){let v;try{v=JSON.parse(musicArg);}catch{throw new Error('--music must be a JSON object, e.g. \'{"mood":.7}\'');}if(!v||typeof v!=='object'||Array.isArray(v))throw new Error('--music must be a JSON object');}
+if(scoreArg!==null&&!['2','3'].includes(scoreArg))throw new Error('--score must be 2 or 3');
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 (async()=>{
   fs.mkdirSync(path.dirname(OUT),{recursive:true});
@@ -44,25 +52,34 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   try{
     const page=await browser.newPage({viewport:{width,height}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-    await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=${world}&labels=${labels}&style=${style}&project=${arg('project')}`);
+    const musicQuery=`${musicArg!==null?`&music=${encodeURIComponent(musicArg)}`:''}${scoreArg!==null?`&score=${scoreArg}`:''}`;
+    await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=${world}&labels=${labels}&style=${style}&project=${arg('project')}${musicQuery}`);
     await page.waitForFunction(()=>!!window.__film);
     const info=await page.evaluate(([project,speed,note])=>window.__film.open({project,speed,note}),[arg('project'),speed,arg('note','')]);
     if(!info.webgl)throw new Error('WebGL unavailable; the Construct cannot render');
     if(info.recipe)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.recipe.json',JSON.stringify(info.recipe,null,1));
     console.log(`world ${info.world}${info.recipe?` · ${info.recipe.familyName} (${info.recipe.source}, variant ${info.recipe.variant})`:''}`);
+    // The music the page's clock reads (the recipe's score, or --score; the --music profile): the soundtrack uses the same.
+    const music={scoreVersion:info.music?.scoreVersion===3?3:2,profile:info.music?.profile||null};
+    console.log(`music ${music.scoreVersion===3?'composed score (v3)':'classic score (v2)'}${music.profile?` · profile ${JSON.stringify(music.profile)}`:''}`);
+    if(musicArg!==null||scoreArg!==null)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.music.json',JSON.stringify({style,...music},null,1));
     const from=Number(arg('from',info.start)),to=Math.min(Number(arg('to',info.end)),info.end)+tail*1000;
     const seconds=(to-from)/1000/speed;
     console.log(`performance ${new Date(from).toISOString()} .. ${new Date(to).toISOString()} (${((to-from)/60000).toFixed(1)} min) -> film ${seconds.toFixed(1)} s at ${speed}x`);
     // Music first: its bars give the section (and so the light) for every moment of the film. Stills skip it unless --sections.
     const stillsOnly=!!arg('stills')&&!process.argv.includes('--sections');
-    const audio=stillsOnly?{bars:[],wav:''}:await page.evaluate(async({from,to,speed,style})=>{
+    const audio=stillsOnly?{bars:[],wav:''}:await page.evaluate(async({from,to,speed,style,scoreVersion,profile})=>{
       const entries=[];let after=-1;
       for(;;){const p=await (await fetch(`/api/timeline?id=${new URLSearchParams(location.search).get('project')}&after=${after}&limit=1000`)).json();entries.push(...p.entries);if(!p.entries.length||entries.length>=p.total)break;after=p.entries.at(-1).seq;}
       const quiet=new Set(['editor.change.observed','editor.newline.inserted','document.baseline.indexed','validation.diagnostics','execution.command.started','agent.tool.started']);
       const timeline=[];for(const e of entries){if(e.end<from-60000||e.start>to)continue;timeline.push({atMs:Math.max(from,e.start),frame:e.frame});
         for(const c of e.cues)if(!quiet.has(c.type))timeline.push({atMs:Math.min(Math.max(c.ts,e.start),e.end-1),cue:c});}
       const bars=[];
-      const buf=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:(to-from)/1000/speed,style,speed,projectId:'film',onBar:b=>bars.push({at:b.perfMs,section:b.section})});
+      // The composed score is rendered on the bar grid of the project's real identity from the first bar (as live playback
+      // does); the classic score keeps the grid its films were rendered with, so they sound exactly as before.
+      const projectSeed=scoreVersion===3?entries.find(e=>Number.isFinite(e.frame?.projectSeed))?.frame.projectSeed:undefined;
+      const buf=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:(to-from)/1000/speed,style,speed,projectId:'film',
+        onBar:b=>bars.push({at:b.perfMs,section:b.section}),scoreVersion,profile,...(Number.isFinite(projectSeed)?{projectSeed}:{})});
       const L=buf.getChannelData(0),R=buf.getChannelData(1),rate=buf.sampleRate,n=buf.length,view=new DataView(new ArrayBuffer(44+n*4));
       const w=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i));};
       w(0,'RIFF');view.setUint32(4,36+n*4,true);w(8,'WAVEfmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,2,true);
@@ -70,7 +87,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
       for(let i=0;i<n;i++){view.setInt16(44+i*4,Math.max(-1,Math.min(1,L[i]))*32767,true);view.setInt16(46+i*4,Math.max(-1,Math.min(1,R[i]))*32767,true);}
       const bytes=new Uint8Array(view.buffer);let bin='';for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
       return {wav:btoa(bin),bars};
-    },{from,to,speed,style});
+    },{from,to,speed,style,...music});
     await page.evaluate(bars=>window.__film.sections(bars),audio.bars);
     const stills=arg('stills')?arg('stills').split(',').map(Number):null;
     const frameMs=1000/fps*speed;

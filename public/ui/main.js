@@ -7,7 +7,7 @@
 import {h,clear,text,button,popover,menuItem,toast,modal,copyable,callout} from './dom.js';
 import {icon} from './icons.js';
 import * as store from './store.js';
-import {ago,timecode,projectName} from './format.js';
+import {ago,timecode,projectName,stageWorldName} from './format.js';
 const P=store.player;
 const params=new URLSearchParams(location.search);
 const host=document.getElementById('stageHost'),chrome=document.getElementById('stageChrome'),root=document.getElementById('app');
@@ -15,6 +15,7 @@ export const WORKSPACES=[
   {id:'home',title:'Home',icon:'home'},
   {id:'projects',title:'Projects',icon:'projects'},
   {id:'visual',title:'Visual Studio',short:'Visual',icon:'visual'},
+  {id:'artist',title:'Artist Studio',short:'Artist',icon:'brush'},
   {id:'music',title:'Music Studio',short:'Music',icon:'music'},
   {id:'packs',title:'Visual Packs',short:'Packs',icon:'packs'},
   {id:'connections',title:'Connections',short:'Connect',icon:'connections'},
@@ -127,7 +128,7 @@ function updateShell(topics){
     text(recordBtn.querySelector('.label'),active?`Stop ${timecode(r.stats.elapsedMs)}${r.audio&&!r.audioLost?'':' · no sound'}`:other?'Recording elsewhere':'Record');
     recordBtn.disabled=other;recordBtn.title=other?'Another window of Code Resonance is recording':active?'Stop and save the recording':'Record the stage and the music to a WebM file';
   }
-  if(!topics||topics.has('world')||topics.has('recipe')){const s=P.state,name=s.world==='living'?(s.recipe?.familyName||'Living world'):({construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'})[s.world];
+  if(!topics||topics.has('world')||topics.has('recipe')){const s=P.state,name=s.world==='living'?stageWorldName(s.recipe):({construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'})[s.world];
     stageBtn.replaceChildren(icon('stage'),h('span',{text:'Stage'}),h('span',{class:'stage-btn-world',text:name||''}));stageBtn.title=`Enter the Performance Stage: ${name} (F)`;}
   if(!topics||topics.has('mode')||topics.has('position')){
     const live=s.mode==='live';modePill.className=`pill ${live?'accent live':'plain'}`;text(modePill,live?'Live':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);

@@ -1,8 +1,8 @@
 {
-  "at": "2026-10-27T09:37:49.910Z",
+  "at": "2026-10-27T17:41:36.376Z",
   "browser": "chromium (playwright-core, headless, SwiftShader)",
   "quick": false,
-  "singleWindow": false,
+  "singleWindow": true,
   "checks": [
     {
       "name": "A: a clean installation starts with no project and says so",
@@ -17,7 +17,7 @@
     {
       "name": "A: the project appears without a reload (change feed)",
       "pass": true,
-      "detail": "after 429 ms"
+      "detail": "after 423 ms"
     },
     {
       "name": "A: the Stage opens on the project with the living world running",
@@ -85,71 +85,6 @@
       "detail": ""
     },
     {
-      "name": "I: a preview shows only in its own window (OBS view and Stage keep the saved identity, nothing stored)",
-      "pass": true,
-      "detail": "[\"fractal-biosphere\",\"stellar-forge\",\"stellar-forge\"]"
-    },
-    {
-      "name": "H: a saved visual change reaches the OBS view and the Stage window",
-      "pass": true,
-      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 13164 ms, new world running in 14437 ms"
-    },
-    {
-      "name": "I: the Stage window kept playing through the change (music not restarted)",
-      "pass": true,
-      "detail": "bar 2 → 14"
-    },
-    {
-      "name": "I: a global setting changed in one window reaches the other",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H: the OBS view shows only the presentation (no interface)",
-      "pass": true,
-      "detail": "[]"
-    },
-    {
-      "name": "H: the OBS view never shows the private project name",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H: the OBS view never requests a control capability",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "G: one recorder: the Stage and the top bar agree, and another window cannot start a second recording",
-      "pass": true,
-      "detail": "[{\"active\":true,\"topbar\":\"true\"},{\"disabled\":true,\"label\":\"Recording elsewhere\"}]"
-    },
-    {
-      "name": "G: the recording finishes as a WebM file with sound",
-      "pass": true,
-      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":7358,\"frames\":19,\"presented\":19,\"bytes\":291890,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1793093800201.webm\",\"at\":1793093800201}"
-    },
-    {
-      "name": "G: the other window can record again once it stopped",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "no page errors (Control Center)",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "no page errors (Stage)",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "no page errors (OBS view)",
-      "pass": true,
-      "detail": ""
-    },
-    {
       "name": "J: home at 1920×1080 loads, fits and keeps navigation reachable",
       "pass": true,
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
@@ -161,6 +96,11 @@
     },
     {
       "name": "J: visual at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: artist at 1920×1080 loads, fits and keeps navigation reachable",
       "pass": true,
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
     },
@@ -220,6 +160,11 @@
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
     },
     {
+      "name": "J: artist at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
       "name": "J: music at 1440×900 loads, fits and keeps navigation reachable",
       "pass": true,
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
@@ -271,6 +216,11 @@
     },
     {
       "name": "J: visual at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: artist at 1280×720 loads, fits and keeps navigation reachable",
       "pass": true,
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
     },
@@ -330,6 +280,11 @@
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
     },
     {
+      "name": "J: artist at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
       "name": "J: music at 900×800 loads, fits and keeps navigation reachable",
       "pass": true,
       "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
@@ -371,8 +326,6 @@
     }
   ],
   "measurements": {
-    "firstProjectMs": 429,
-    "savedChangeReceivedMs": 13164,
-    "savedChangeToViewsMs": 14437
+    "firstProjectMs": 423
   }
 }

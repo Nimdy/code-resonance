@@ -35,8 +35,9 @@ test('Compatibility: a pack runs on the SDK major it names, at or above the mino
   assert.equal(packs.compatible({sdk:'^1.2'},'1.0.0').ok,false);
   assert.equal(packs.compatible({sdk:'^2.0'},'1.9.0').ok,false);
   assert.equal(packs.compatible({},'1.0.0').ok,false);
-  // SDK 1.1 (pack code in a worker, sdk.util.canvas): packs written for 1.0 keep running; the examples declare ^1.0.
-  assert.equal(packs.SDK_VERSION,'1.1.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);
+  // SDK 1.1 (pack code in a worker, sdk.util.canvas), 1.2 (declarative compositions, technique.finish): packs written
+  // for 1.0 keep running; the examples declare ^1.0.
+  assert.equal(packs.SDK_VERSION,'1.2.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);assert.equal(packs.compatible({sdk:'^1.2'},packs.SDK_VERSION).ok,true);
   for(const d of fs.readdirSync(EXAMPLES))assert.equal(packs.compatible(JSON.parse(fs.readFileSync(path.join(EXAMPLES,d,'pack.json'),'utf8'))).ok,true,d);
 });
 test('Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers',t=>{
@@ -107,7 +108,7 @@ test('Recipes: a world pack is a family with seeded, trait-derived parameters; o
   assert.throws(()=>recipe.update(a,{type:'family',family:'halcyon.cymatic-field'},small,0,null),/Unknown family/);
   // An overlay: choosing a look chooses its base family; values, ranges, effects, unlocks and technique apply.
   const look=recipe.update(recipe.generate(small,{now:0}),{type:'pack',pack:'northlight.ember-observatory'},small,0,reg);
-  assert.equal(look.family,'stellar-forge');assert.deepEqual(look.pack,{id:'northlight.ember-observatory',version:'1.0.0',kind:'declarative'});
+  assert.equal(look.family,'stellar-forge');assert.deepEqual(look.pack,{id:'northlight.ember-observatory',version:'1.1.0',kind:'declarative'});
   assert.equal(look.genome.geometry.arrangement,'binary-core');assert(look.genome.geometry.spiralArms>=2&&look.genome.geometry.spiralArms<=3);
   assert.equal(look.genome.effects['milestone.achieved'],'aurora');assert.equal(look.genome.ambient.unlocks[0],'galactic-halo');assert.equal(look.genome.technique.saturation,.82);
   // The pack disappears: served without it, flagged, and not rewritten (reinstalling restores the stored recipe).

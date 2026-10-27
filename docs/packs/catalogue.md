@@ -44,6 +44,23 @@ built-in family, with its range (every family is rendered with all parameters at
 | `camera.drift` | number 0 … 1.5 | idle drift |
 | `agents.form` | `comet`, `probe` | agent form |
 | `agents.tail` | number 0.2 … 2 | agent tail length |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
 | `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
 | `palette.hue` | number 0 … 360 | base hue (degrees) |
 | `palette.primary` | `#rrggbb` | main structure colour |
@@ -62,15 +79,17 @@ built-in family, with its range (every family is rendered with all parameters at
 | `light.vignette` | number 0 … 0.8 | vignette |
 | `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
 | `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
 | `agentProminence` | number 0 … 1 | how prominent agent presences are |
 | `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
 | `technique.exposure` | number 0.5 … 2 | exposure multiplier |
 | `technique.bloom` | number 0 … 3 | bloom multiplier |
 | `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
 | `technique.saturation` | number 0 … 2 | saturation multiplier |
 | `technique.vignette` | number 0 … 2 | vignette multiplier |
 | `technique.grain` | number 0 … 3 | grain multiplier |
-| `technique.aberration` | number 0 … 0.02 | chromatic aberration at the edges (default 0.004) |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
 | `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
 | `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
 
@@ -116,6 +135,23 @@ Ambient layers unlocked by verified milestones, in order: `aurora-veils`, `plasm
 | `camera.drift` | number 0 … 1.5 | idle drift |
 | `agents.form` | `firefly-swarm`, `pollinator` | agent form |
 | `agents.swarm` | integer 8 … 48 | swarm size |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
 | `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
 | `palette.hue` | number 0 … 360 | base hue (degrees) |
 | `palette.primary` | `#rrggbb` | main structure colour |
@@ -134,15 +170,17 @@ Ambient layers unlocked by verified milestones, in order: `aurora-veils`, `plasm
 | `light.vignette` | number 0 … 0.8 | vignette |
 | `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
 | `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
 | `agentProminence` | number 0 … 1 | how prominent agent presences are |
 | `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
 | `technique.exposure` | number 0.5 … 2 | exposure multiplier |
 | `technique.bloom` | number 0 … 3 | bloom multiplier |
 | `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
 | `technique.saturation` | number 0 … 2 | saturation multiplier |
 | `technique.vignette` | number 0 … 2 | vignette multiplier |
 | `technique.grain` | number 0 … 3 | grain multiplier |
-| `technique.aberration` | number 0 … 0.02 | chromatic aberration at the edges (default 0.004) |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
 | `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
 | `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
 
@@ -181,6 +219,23 @@ Ambient layers unlocked by verified milestones, in order: `fireflies`, `blossom-
 | `camera.fov` | integer 24 … 50 | lens: lower values stand the camera farther back with a longer lens |
 | `camera.drift` | number 0 … 1.5 | idle sway: the great spire slides slowly across the moon |
 | `agents.form` | `drone` | agent form |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
 | `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
 | `palette.hue` | number 0 … 360 | base hue (degrees) |
 | `palette.primary` | `#rrggbb` | main structure colour |
@@ -199,15 +254,17 @@ Ambient layers unlocked by verified milestones, in order: `fireflies`, `blossom-
 | `light.vignette` | number 0 … 0.8 | vignette |
 | `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
 | `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
 | `agentProminence` | number 0 … 1 | how prominent agent presences are |
 | `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
 | `technique.exposure` | number 0.5 … 2 | exposure multiplier |
 | `technique.bloom` | number 0 … 3 | bloom multiplier |
 | `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
 | `technique.saturation` | number 0 … 2 | saturation multiplier |
 | `technique.vignette` | number 0 … 2 | vignette multiplier |
 | `technique.grain` | number 0 … 3 | grain multiplier |
-| `technique.aberration` | number 0 … 0.02 | chromatic aberration at the edges (default 0.004) |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
 | `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
 | `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
 

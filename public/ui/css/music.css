@@ -59,6 +59,95 @@
 .ws-music .ms-source{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;min-height:24px}
 .ws-music .ms-source .link-btn{font-size:13px}
 .ws-music .ms-source .warn{font-size:13px}
+/* ---- The score: which one the project plays. Composed: lit by the accent; classic: neutral, resting -------------- */
+.ws-music .ms-score{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 16px;padding:13px 16px 13px 14px;border-radius:var(--r-3);
+  border:1px solid var(--line-2);background:var(--bg-2);position:relative;overflow:hidden}
+.ws-music .ms-score[hidden]{display:none}
+.ws-music .ms-score::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--text-4)}
+.ws-music .ms-score.composed{border-color:var(--accent-line);background:linear-gradient(90deg,rgba(117,237,255,.075),transparent 55%),var(--bg-2)}
+.ws-music .ms-score.composed::before{background:var(--accent)}
+.ws-music .ms-score-mark{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-3)}
+.ws-music .ms-score.composed .ms-score-mark{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent)}
+.ws-music .ms-score-mark svg{width:20px;height:20px}
+.ws-music .ms-score-body{display:grid;gap:3px;min-width:0}
+.ws-music .ms-score-head{display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
+.ws-music .ms-score-title{font-size:16px;font-weight:620;color:var(--text-1)}
+.ws-music .ms-score-text{margin:0;line-height:1.45;max-width:100ch}
+.ws-music .ms-score-state:empty,.ws-music .ms-score .pill:empty,.ws-music .ms-score-text:empty{display:none}
+.ws-music .ms-score-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.ws-music .ms-score-actions [hidden]{display:none}
+/* ---- Character: eight controls, each with its poles and what it changes -------------------------------------------- */
+.ws-music .ms-char{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ws-music .ms-ctl{display:grid;gap:7px;align-content:start;padding:13px 15px 14px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);min-width:0;
+  transition:border-color var(--t-1),background var(--t-1),opacity var(--t-2)}
+.ws-music .ms-ctl:hover{border-color:var(--line-2)}
+/* The value word may drop under the name when a long name and the project ring leave it no room (never cut). */
+.ws-music .ms-ctl-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
+.ws-music .ms-ctl-label{font-size:14.5px;font-weight:600;color:var(--text-1);white-space:nowrap}
+/* This project's own value: a ring after the name (a filled dot is a pending change, as on the other fields) */
+.ws-music .ms-ctl.own .ms-ctl-label::after,.ws-music .ms-ctl.pending .ms-ctl-label::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--accent);margin-left:7px;vertical-align:2px}
+.ws-music .ms-ctl.pending .ms-ctl-label::after{background:var(--accent);border-color:var(--accent)}
+.ws-music .ms-ctl-value{margin-left:auto;display:flex;align-items:baseline;gap:8px;white-space:nowrap;min-width:0}
+.ws-music .ms-ctl-value b{font-size:13.5px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-ctl-value .num{font:12.5px var(--mono);color:var(--text-3);min-width:4ch;text-align:right}
+.ws-music .ms-ctl.pending{border-color:var(--accent-line);border-style:dashed;background:linear-gradient(180deg,rgba(117,237,255,.06),transparent 65%),var(--bg-2)}
+.ws-music .ms-ctl.pending .ms-ctl-value b{color:var(--accent)}
+.ws-music .ms-poles{display:flex;justify-content:space-between;gap:8px;margin-top:-3px;font:600 12px/1.1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-4)}
+.ws-music .ms-ctl-doc{margin:2px 0 0;font-size:13px;line-height:1.45;color:var(--text-3)}
+.ws-music .ms-char.locked .ms-ctl,.ws-music .ms-mixer.locked .ms-ch{opacity:.48}
+.ws-music .ms-char.locked .ms-ctl:hover{border-color:var(--line)}
+/* The classic score: what would shape it, and the way to the score that it shapes */
+.ws-music .ms-lock{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:var(--r-2);border:1px dashed var(--line-3);background:var(--bg-1)}
+.ws-music .ms-lock[hidden]{display:none}
+.ws-music .ms-lock>svg{width:16px;height:16px;color:var(--text-3);flex:none}
+.ws-music .ms-lock .grow{flex:1;min-width:0;display:grid;gap:1px}
+.ws-music .ms-lock strong{color:var(--text-1)}
+/* ---- Balance: one row per voice, like a mixer's channel list; the dot lights while the voice is in the arrangement */
+.ws-music .ms-mixer{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.ws-music .ms-ch{display:grid;grid-template-columns:8px minmax(118px,.8fr) minmax(96px,1.7fr) 54px 28px;align-items:center;gap:12px;padding:7px 8px 7px 14px;
+  border-radius:var(--r-2);background:var(--bg-2);border:1px solid var(--line);min-width:0;transition:border-color var(--t-1),opacity var(--t-2)}
+.ws-music .ms-ch[hidden]{display:none}
+.ws-music .ms-ch-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--line-3);transition:background var(--t-2),box-shadow var(--t-2),border-color var(--t-2)}
+.ws-music .ms-ch-dot.on{background:var(--accent);border-color:var(--accent);box-shadow:0 0 9px rgba(117,237,255,.7)}
+.ws-music .ms-ch-name{display:grid;gap:1px;min-width:0}
+.ws-music .ms-ch-name>span:first-child{font-size:14px;font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-ch-role{font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-ch-value{font:12.5px var(--mono);color:var(--text-2);text-align:right;white-space:nowrap}
+/* 100% (as composed) is marked on the track: two thirds of the way to 150% */
+.ws-music .ms-ch .field-row{position:relative}
+.ws-music .ms-ch .field-row::after{content:'';position:absolute;left:calc(7px + (100% - 14px) * .6667);top:4px;bottom:4px;width:1px;background:var(--line-3);pointer-events:none}
+.ws-music .ms-ch.pending{border-color:var(--accent-line);border-style:dashed}
+/* Muted is resting: the warm colour, as elsewhere in the studio */
+.ws-music .ms-ch.muted .ms-ch-value{color:var(--warn)}
+.ws-music .ms-ch.muted .ms-ch-name>span:first-child{color:var(--text-3)}
+.ws-music .ms-ch.muted .range{opacity:.4}
+.ws-music .ms-ch .btn[aria-pressed="true"]{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.ws-music .ms-mix-note{margin:0}.ws-music .ms-mix-note:empty{display:none}
+/* ---- The shape of a character: eight bars, one per control ------------------------------------------------------- */
+.ws-music .ms-glyph{display:inline-flex;align-items:flex-end;gap:2px;height:18px;flex:none}
+.ws-music .ms-glyph i{display:block;width:4px;border-radius:1.5px;background:var(--accent);opacity:.55}
+.ws-music .ms-glyph.none{width:46px}
+/* ---- Starting points: curated, read-only; the one being previewed is lit ------------------------------------------- */
+.ws-music .ms-starters-head{display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap;margin-top:6px;padding-top:14px;border-top:1px solid var(--line)}
+.ws-music .ms-starters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ws-music .ms-starter{display:grid;grid-template-rows:auto 1fr auto;gap:7px;text-align:left;padding:12px 14px 11px;border-radius:var(--r-3);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-2);
+  min-width:0;transition:border-color var(--t-1),background var(--t-1)}
+.ws-music .ms-starter:hover{border-color:var(--line-3);background:var(--bg-3)}
+.ws-music .ms-starter[aria-pressed="true"]{border-color:var(--accent-line);border-style:dashed;background:linear-gradient(180deg,rgba(117,237,255,.08),transparent 70%),var(--bg-1)}
+.ws-music .ms-starter[aria-pressed="true"] .ms-style-tag{color:var(--accent)}
+.ws-music .ms-starter-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ws-music .ms-starter-head strong{font-size:14.5px;font-weight:620;color:var(--text-1)}
+.ws-music .ms-starter-line{font-size:13px;line-height:1.45}
+.ws-music .ms-starter-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.ws-music .ms-starter-act{font:600 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.ws-music .ms-starter:focus-visible{outline-offset:-2px}
+.ws-music .ms-preset .ms-glyph{margin-right:2px}
+.ws-music .ms-presets-card{container:presets/inline-size}
+@container presets (min-width:780px){.ws-music .ms-starters{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* ---- The form, in the monitor: where the composed score is in its arc ---------------------------------------------- */
+.ws-music .ms-form{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:13.5px;color:var(--text-2)}
+.ws-music .ms-form[hidden]{display:none}
+.ws-music .ms-form-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 /* Performance cards: tempo, texture, output. Equal height in a row; the value's source sits at the foot of each. */
 .ws-music .ms-perf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
 .ws-music .ms-field,.ws-music .ms-card{padding:16px 18px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);min-width:0}
@@ -106,7 +195,10 @@
   .ws-music .ms-style{min-height:150px;padding:15px 16px 13px;gap:10px}
   .ws-music .ms-style-voices{font-size:13.5px;line-height:1.5}
 }
+/* The mixer in two columns once a row can hold a long slider */
+@container desk (min-width:760px){.ws-music .ms-mixer{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}}
 @container desk (min-width:1020px){
+  .ws-music .ms-char{grid-template-columns:repeat(4,minmax(0,1fr))}
   .ws-music .ms-perf{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.05fr)}
   .ws-music .ms-output{grid-column:auto;grid-template-columns:minmax(0,1fr);gap:0}
   .ws-music .ms-output .ms-out+.ms-out{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
@@ -161,6 +253,7 @@
   .ws-music .ms-field,.ws-music .ms-card{padding:20px 22px}.ws-music .ms-perf,.ws-music .ms-lower{gap:18px}
   .ws-music .ms-monitor{padding:20px 22px;gap:16px}.ws-music .ms-readout{padding:11px 14px 12px}.ws-music .ms-readout b{font-size:19px}
   .ws-music .inspector-body{padding:20px 22px 28px}.ws-music .ms-identity{gap:20px}
+  .ws-music .ms-ctl{padding:16px 18px 17px;gap:9px}.ws-music .ms-char{gap:16px}.ws-music .ms-ch{padding:9px 10px 9px 16px}.ws-music .ms-score{padding:16px 20px 16px 18px}
 }
 /* ---- Laptop and narrow windows ------------------------------------------------------------------------------------ */
 @media (max-width:1280px){.ws-music .ms-preview{top:-24px}
@@ -174,4 +267,6 @@
   .ws-music .ms-monitor{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:center}
   .ws-music .ms-live-grid{grid-template-columns:repeat(2,1fr)}.ws-music .ms-readout:nth-child(3){border-left:0}.ws-music .ms-readout:nth-child(n+3){border-top:1px solid var(--line)}
   .ws-music .ms-sound-off{flex-wrap:wrap}.ws-music .ms-perf{grid-template-columns:minmax(0,1fr)}.ws-music .ms-output{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:640px){.ws-music .ms-head{flex-wrap:wrap}.ws-music .ms-styles{grid-template-columns:1fr}.ws-music .ms-monitor{grid-template-columns:1fr}.ws-music .ms-preset{flex-wrap:wrap}.ws-music .ms-scope{min-width:0}}
+@media (max-width:640px){.ws-music .ms-score{grid-template-columns:auto minmax(0,1fr)}.ws-music .ms-score-actions{grid-column:1/-1;align-items:flex-start}
+  .ws-music .ms-ch{grid-template-columns:8px minmax(0,1fr) 54px 28px}.ws-music .ms-ch .field-row{grid-column:2/-1;grid-row:2}.ws-music .ms-starters{grid-template-columns:1fr}
+  .ws-music .ms-head{flex-wrap:wrap}.ws-music .ms-styles{grid-template-columns:1fr}.ws-music .ms-monitor{grid-template-columns:1fr}.ws-music .ms-preset{flex-wrap:wrap}.ws-music .ms-scope{min-width:0}}

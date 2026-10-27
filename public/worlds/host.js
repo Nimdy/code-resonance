@@ -12,7 +12,13 @@ import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
 import {createSdk,validateWorld} from './sdk.js';
 import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
+import {createMusical} from './musical.js';
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
+// Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
+// whose base is the artist canvas runs on the canvas world (canvas.js) instead of the family's; the canvas is never
+// chosen for a project otherwise.
+const compositionOf=r=>r?.composition&&typeof r.composition==='object'&&Array.isArray(r.composition.layers)?r.composition:null;
+const moduleOf=r=>compositionOf(r)?.base==='canvas'?'./canvas.js':BUILTIN[r?.family];
 const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
 const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
 const CODA=['l','r','n','s','th','v','d','m','','',''];
@@ -111,9 +117,44 @@ export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=tru
     }
   };
 }
-// The recipe's rendering technique applied to a world's grade (multipliers; identity when the genome has none).
-function withTechnique(g,t){
+// ---- Finishes ------------------------------------------------------------------------------------------------------
+// Lens and colour profiles over each world's own grade (`technique.finish`; docs/packs/catalogue.md). A finish scales
+// the world's light, then the composite's finishing terms (core.js, FINISH) master it: AgX highlights, an optical fringe
+// (`optical`: a share of the image height in the corners; `technique.aberration` scales it, 0 turns it off), the same
+// lens on the bloom (`fringe`), warm halation hugging the highlights, split toning drawn from the palette (cool depth
+// in the shadows, warmth in the light) and, for Dreamlike, a mist of the wide glow. Classic (or none) is the grade as
+// it always was: the classic composite, untouched.
+export const FINISHES=Object.freeze({
+  // Crisp: restrained bloom that starts higher, almost no fringe, a light vignette, very little grain.
+  clean:Object.freeze({grade:Object.freeze({bloom:.68,threshold:1.2,contrast:1.07,saturation:.97,vignette:.6,grain:.25,streak:.4}),optical:.0006,fringe:0,halation:0,split:.15,mist:0}),
+  // The default for new identities: subtle optical fringe, attractive warm halation, balanced separation, gentle vignette.
+  cinematic:Object.freeze({grade:Object.freeze({bloom:.95,contrast:1.08,saturation:1.04,vignette:.95,grain:.8}),optical:.003,fringe:2.5,halation:.62,split:.6,mist:0}),
+  // Luminous and atmospheric, never blurry: the bloom starts lower and spreads as mist, stronger halation and fringe.
+  dreamlike:Object.freeze({grade:Object.freeze({bloom:1.38,threshold:.8,exposure:1.05,contrast:.93,saturation:1.12,vignette:1.1,grain:.5,streak:1.3}),optical:.0056,fringe:4,halation:1.05,split:1.1,mist:.7})});
+const GRADE_DEFAULTS={exposure:1,bloom:1,threshold:.7,contrast:1,saturation:1.05,vignette:.3,grain:.025,streak:0};
+// The finish's colours from the identity's palette: a hue offset (no luminance) toward its depth colour for the shadows
+// and toward its highlight for the light, each blended with a classic film direction (teal, amber) so a grey palette
+// still separates; halation is film's red-orange warmed toward the highlight; the mist takes a little of it too.
+const TONES=new Map();
+function tonesOf(palette){
+  const key=`${palette?.deep}|${palette?.highlight}`;if(TONES.has(key))return TONES.get(key);
+  const rgb=hex=>{try{return typeof hex==='string'&&/^#[0-9a-f]{6}$/i.test(hex)?new THREE.Color(hex):null;}catch{return null;}};
+  const hue=(c,base,size)=>{const v=new THREE.Vector3(...base),y=x=>x.x*.2126+x.y*.7152+x.z*.0722;
+    if(c){const p=new THREE.Vector3(c.r,c.g,c.b),n=p.clone().subScalar(y(p));if(n.length()>.02)v.multiplyScalar(.55).addScaledVector(n.normalize(),.45);}
+    return v.subScalar(y(v)).setLength(size);};
+  const deep=rgb(palette?.deep),high=rgb(palette?.highlight),lit=high?new THREE.Vector3(high.r,high.g,high.b).divideScalar(Math.max(1e-3,high.r,high.g,high.b)):new THREE.Vector3(1,.85,.7);
+  const out={shadow:hue(deep,[-.8,.18,.58],.045),high:hue(high,[.58,-.09,-.8],.03),halation:new THREE.Vector3(1,.38,.15).lerp(lit,.25),mist:new THREE.Vector3(1,1,1).lerp(lit,.25)};
+  if(TONES.size>32)TONES.clear();TONES.set(key,out);return out;
+}
+// The recipe's rendering technique applied to a world's grade: a finish, then the creator's multipliers (identity when
+// the genome has none; without a finish, or with Classic, exactly the grade it always was).
+export function withTechnique(g,t,palette=null){
   if(!t)return g;g={...g};
+  const f=typeof t.finish==='string'&&Object.hasOwn(FINISHES,t.finish)?FINISHES[t.finish]:null;
+  if(f){for(const [k,m] of Object.entries(f.grade))g[k]=(g[k]??GRADE_DEFAULTS[k])*m;
+    // The world's own fringe (Stellar Forge asks for less) sets the lens's strength until the creator sets one.
+    const tones=tonesOf(palette),k=(Number.isFinite(t.aberration)?t.aberration:g.aberration??.004)/.004;
+    Object.assign(g,{finish:true,tonemap:'agx',optical:f.optical*k,fringe:f.fringe,halation:f.halation,halationTint:tones.halation,split:f.split,splitShadow:tones.shadow,splitHigh:tones.high,mist:f.mist,mistTint:tones.mist});}
   for(const [k,d] of [['exposure',1],['bloom',1],['contrast',1],['saturation',1.05],['vignette',.3],['grain',.025]])if(Number.isFinite(t[k]))g[k]=(g[k]??d)*t[k];
   if(Number.isFinite(t.aberration))g.aberration=t.aberration;
   if(Array.isArray(t.tint))g.tint=(g.tint?g.tint.clone():new THREE.Vector3(1,1,1)).multiply(new THREE.Vector3(...t.tint));
@@ -157,8 +198,11 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // life on asks for a driver (ctx.life.create) with its own grammar. A replay feeds the timeline its recorded windows
   // (prime); a live session the structure it joined with (reset) and what arrives. Packs never get one.
   const lifeTimeline=createLifeTimeline();let lifeDriver=null,lifeReplay=false,lifeBase=null;
+  // What the music is doing at each moment (musical.js), from the same canonical frames: info.music for worlds and layers.
+  const musical=createMusical({timeline:lifeTimeline});
   const lifeOn=r=>r?.familyKind!=='pack'&&!families[r?.family]&&r?.genome?.life?.enabled===true;
-  const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film});
+  // (music: the musical clock's configuration, the score the player plays: ecology 2 reads its climate from it)
+  const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film,music:musical.config});
   const lifeFor=next=>lifeOn(next)?{params:next.genome.life,create(grammar){
     lifeDriver=createLifeDriver({grammar,timeline:lifeTimeline,seed:hash(`${next.projectSeed}/${next.variant||0}/life`),config:lifeConfig,onRebase:b=>{lifeBase=b;}});
     if(lifeBase&&!lifeReplay)lifeDriver.setBase(lifeBase.graph,lifeBase.t,lifeBase.from);return lifeDriver;}}:null;
@@ -183,8 +227,20 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     pipeline.setPost(x.post);return x;
   }
   function disposeExtension(){if(!ext)return;ext.effects?.dispose?.();for(const m of [ext.background,...ext.post].filter(Boolean))m.dispose();pipeline.setPost([]);ext=null;}
+  // ---- Artist layers: created on first use (their modules load then), updated in place when only the composition
+  // changes (the next frame sees it), released with the world they draw into.
+  let layers=null,layersFor=null,layersApi=null;
+  const layersModule=async()=>layersApi||(layersApi=await import('./layers.js').then(async m=>({create:m.createLayers,C:await m.loadComposition()})));
+  let layersBroken=null;
+  async function syncLayers(){
+    layersFor=current?.composition??null;if(!compositionOf(current)){if(layers){layers.dispose();layers=null;}return;}
+    const api=await layersModule(),c=compositionOf(current);if(!c)return;
+    if(!layers)layers=api.create({THREE,scene,camera,quality:()=>level,seed:current.projectSeed>>>0,film,composition:api.C,director:()=>director,speed:()=>speedK,musicAt:T=>musical.at(T),size:()=>pipeline.size});
+    layers.set(c,{anchors:world?.compose?.anchors||null});world?.onComposition?.(c);
+  }
   async function load(next){
-    const mod=families[next.family]||await import(BUILTIN[next.family]);
+    const mod=families[next.family]||await import(moduleOf(next));
+    if(layers){layers.dispose();layers=null;}
     if(world){world.dispose();}
     // Live: the next world's ecosystem starts from the structure as it is now, not from the session's join.
     if(lifeDriver&&!lifeReplay&&!film)lifeDriver.rebase();
@@ -198,11 +254,13 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     else{world=mod.createWorld(createSdk(ctx,{assets,quality:()=>level}));const problems=validateWorld(world);if(problems.length)throw new Error(`World API ${problems.join(', ')}`);}
     ext=extensionFor(next,ctx);
     world.rebuild();snapCamera=true;
+    await syncLayers();
   }
   await load(recipe);
   // ---- Labels -------------------------------------------------------------------------------------------------
   function labelItems(i){
-    return composeLabels({mode,recipe:current,info:i,commands:director.commands,agentName:a=>agents.name(a),world,toScreen:pos=>overlay.project(camera,pos,size[0],size[1]),
+    // On the artist canvas the title card names the canvas, not the family whose identity the recipe keeps.
+    return composeLabels({mode,recipe:compositionOf(current)?.base==='canvas'?{...current,familyName:'Artist canvas'}:current,info:i,commands:director.commands,agentName:a=>agents.name(a),world,toScreen:pos=>overlay.project(camera,pos,size[0],size[1]),
       size,speed:speedK,origin:pinnedStart??startedAt,selected});
   }
   let lastLabels=[];
@@ -222,7 +280,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function frameInfo(t,dt,phase){
     const tsec=(t-model.epoch)/1000;
     return {t,tsec,tview:tsec/speedK,dt,beat:Math.exp(-((phase%1)*16)*.9),barPhase:phase,mood,energy:mood.energy||0,
-      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level};
+      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level,music:musical.at(t)};
   }
   function render(t,dt,{phase=0}={}){
     const began=performance.now();renderer.info.reset();adapt(dt);
@@ -233,7 +291,14 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     // few milliseconds per frame and reports that it is restoring while far behind).
     if(lifeDriver)info.life=lifeDriver.update(info,{budgetMs:film?Infinity:6});
     world.update(info);
-    const goal=world.cameraGoal(info);rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
+    if((current.composition??null)!==layersFor){layersBroken=null;void syncLayers();}
+    const goal=world.cameraGoal(info);
+    // A composition's global mappings bend the world's own camera goal within bounds; its layers follow the camera.
+    if(layers)layers.camera(goal,info);
+    rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
+    // The artist's layers never take the world down: should the layer pass itself fail, layers stop until the
+    // composition changes (each layer's own failures are isolated inside the runtime).
+    if(layers&&!layersBroken)try{layers.update(info);}catch(err){layersBroken=String(err?.message||err).slice(0,160);console.error('artist layers stopped',err);}
     // updateMs is the CPU time of update and the camera (docs/packs/performance.md); afterCamera's camera-dependent
     // offscreen passes are drawing and count as draw time.
     const drawn=performance.now();
@@ -244,8 +309,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     const bg=backgroundMaterial?pipeline.renderBackground(backgroundMaterial):null;
     // Light shafts point at a light the world draws in its own sky: a pack that replaces the sky has none to point at.
     let grade=world.grade?.(info)||{};if(ext?.background&&grade.rays?.length)grade={...grade,rays:[]};
+    if(layers)grade=layers.grade(grade);
     pipeline.render(()=>{if(bg)pipeline.drawBackdrop(bg);const before=renderer.info.render.calls;renderer.render(scene,camera);
-      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique)});
+      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique,current.genome.palette)});
     calls.total=renderer.info.render.calls;
     if(query){gl.endQuery(timer.TIME_ELAPSED_EXT);queries.push(query);}
     if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);
@@ -273,19 +339,26 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       else for(const e of entries)for(const i of e.intents||[])lifeTimeline.intent(i);
       history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
-      world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);stale=true;},
-    setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
+      world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);layers?.onPrime();stale=true;},
+    setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}
+      if(m.music)musical.configure({...m.music,tempo:mood.tempo});},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
     // Replay -> live: a new performance (its origin is set by the next reset; the replay's inputs are not its own).
     newPerformance(){pinnedStart=null;model.clearEpoch();lifeTimeline.clear();lifeReplay=false;lifeBase=null;lifeDriver?.clearBase();stale=true;},
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;
       // Another performance: its ecosystem starts from its own inputs only.
       if(lifeTimeline.items.length){lifeTimeline.clear();lifeReplay=false;}}},
-    async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}
-      // Only the life values changed (life on before and after): the world stays; the ecosystem takes the new values
+    async setRecipe(next){if(!next||!known(next.family))return;
+      // Another world module (a composition moving onto or off the artist canvas): a full load. A change to the
+      // composition alone keeps the world (the next frame applies it to the layers).
+      if(moduleOf(next)!==moduleOf(current))return load(next);
+      // The same world with only its technique changed (the finish, the fringe, the grade multipliers: read every frame,
+      // so a finish previews at once): the world stays as it is.
+      const same=next.family===current.family&&next.variant===current.variant,bare=(r,life)=>{const {technique,...g}=r.genome;if(life)delete g.life;return JSON.stringify(g);};
+      if(same&&bare(next)===bare(current)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}
+      // Only the life values changed too (life on before and after): the world stays; the ecosystem takes the new values
       // (a live session from now on, a replay rebuilt exactly; life/driver.js).
-      const bare=r=>JSON.stringify({...r.genome,life:null});
-      if(lifeDriver&&lifeOn(next)&&next.family===current.family&&next.variant===current.variant&&bare(next)===bare(current)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
+      if(same&&lifeDriver&&lifeOn(next)&&bare(next,true)===bare(current,true)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
       await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
@@ -302,8 +375,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
       quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,gpuTimerBlind:governor.gpuTimerBlind,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2),
-      life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null};},
+      life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null,layers:layers?{...layers.stats(),broken:layersBroken}:null};},
     // The context itself is released now (otherwise its GPU memory and buffers wait for the garbage collector).
-    dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);world?.dispose();lifeDriver?.dispose();lifeDriver=null;pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}
+    dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);layers?.dispose();layers=null;world?.dispose();lifeDriver?.dispose();lifeDriver=null;pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}
   };
 }

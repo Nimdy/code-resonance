@@ -58,7 +58,17 @@ const P={
   bolt:'M13 3 5 13.5h6L10 21l8-10.5h-6z',
   star:'M12 4l2.4 5 5.6.7-4.1 3.8 1.1 5.5L12 16.3 7 19l1.1-5.5L4 9.7l5.6-.7z',
   save:'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
-  grid:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'
+  grid:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+  brush:'M19.5 4.5 13 11M10.5 10.5l3 3M10.5 10.5c-2.6-.4-5 1.2-5 4 0 1.9-.8 3.3-2 4.5 3.1.4 6.3-.3 8-2.4 1-1.2 1.6-2.4 2-3.1',
+  // Small marks for the Artist Studio's layer stack and library.
+  'arrow-up':'M12 19V5M6.5 10.5 12 5l5.5 5.5','arrow-down':'M12 5v14M6.5 13.5 12 19l5.5-5.5',
+  drag:'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01','eye-off':'M3 3l18 18M10.6 6.1A9.7 9.7 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.6 3.3M6.6 6.7C4 8.4 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.3-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  solo:'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z',
+  more:'M6 12h.01M12 12h.01M18 12h.01',link:'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  fractal:'M12 21v-7M12 14 7 9M12 14l5-5M7 9 5 5M7 9l3-4M17 9l-3-4M17 9l2-4',particles:'M5 7h.01M9 5h.01M14 6h.01M18 8h.01M7 12h.01M12 11h.01M17 13h.01M6 17h.01M11 16h.01M15 18h.01M19 17h.01',
+  ribbons:'M3 8c4-4 7 4 11 0s5-2 7 0M3 13c4-4 7 4 11 0s5-2 7 0M3 18c4-4 7 4 11 0s5-2 7 0',structure:'M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 3v18M4 7.5l16 9M20 7.5l-16 9',
+  atmosphere:'M3 9c3-2 6 2 9 0s6-2 9 0M3 14c3-2 6 2 9 0s6-2 9 0M6 19c2-1 4 1 6 0s4-1 6 0',light:'M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1',
+  canvas:'M4 5h16v14H4zM4 15l5-4 4 3 3-2 4 3'
 };
 export function icon(name,size=null){
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');

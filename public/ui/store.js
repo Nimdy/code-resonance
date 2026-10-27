@@ -4,10 +4,13 @@
 //   URL pins (OBS bookmarks: ?world= ?style= ?labels=) > project preference > global setting > built-in default.
 // Session state (sound, recording, playhead) lives in the engine; device state (quality) in localStorage; previews in
 // memory only. Nothing here is a second copy that could drift: every write goes to the receiver and comes back.
+import {resolveMusic,engineOptions,pinOf} from './music-profile.js';
 const P=window.ResonancePlayer;
 const params=new URLSearchParams(location.search);
+// ?music= pins the composed score's performance profile ({"mood":.7,"mix":{"perc":0}}), as ?style= pins the style.
 const pins={world:P.WORLDS.includes(params.get('world'))?params.get('world'):null,style:['ambient','pulse','cinematic','chip'].includes(params.get('style'))?params.get('style'):null,
-  labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null};
+  labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null,
+  profile:pinOf(params.get('music'))};
 const DEVICE_KEY='code-resonance-device-v1',UI_KEY='code-resonance-ui-v1',LEGACY_KEY='code-resonance-player-v1';
 const readLocal=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')||{};}catch{return {};}};
 const writeLocal=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
@@ -19,7 +22,7 @@ function changed(...topics){for(const t of topics)dirty.add(t);if(flushing)retur
 P.on(t=>{for(const x of t)dirty.add(x);changed();});
 export const state={
   projects:[],projectsLoaded:false,selected:'',settings:null,presets:null,catalog:null,status:null,integrations:null,
-  preferences:new Map(),evidence:new Map(),changes:'connecting',others:{recording:null},musicPreview:null,
+  preferences:new Map(),evidence:new Map(),changes:'connecting',others:{recording:null},musicPreview:null,compositions:null,
   device:{quality:'auto',...readLocal(DEVICE_KEY)},ui:readLocal(UI_KEY),errors:{}
 };
 export function on(f){listeners.add(f);return ()=>listeners.delete(f);}
@@ -47,6 +50,14 @@ export async function loadIntegrations(){try{state.integrations=await get('/api/
 export async function saveSettings(patch){const next=await post('/api/settings',{patch});state.settings=next;applyEffective();applyInterface();changed('settings');return next;}
 export async function savePreferences(patch,id=state.selected){if(!id)throw new Error('No project selected');const next=await post(`/api/preferences?id=${encodeURIComponent(id)}`,{patch});state.preferences.set(id,next);if(id===state.selected)applyEffective();changed('preferences');return next;}
 export async function presetAction(body){const next=await post('/api/presets',body);state.presets=next;changed('presets');return next;}
+// Artist compositions (receiver compositions.json): one action per write; the answer (with `created` for a new one)
+// becomes the state. A refused stale write brings the current library back with it.
+export async function loadCompositions(){try{state.compositions=await get('/api/compositions');delete state.errors.compositions;}catch(e){state.errors.compositions=e.message;}changed('compositions');return state.compositions;}
+export async function compositionAction(body){
+  try{const {created,...next}=await post('/api/compositions',body);state.compositions=next;changed('compositions');return {...next,created};}
+  catch(e){if(e.code==='stale'&&e.data?.current){state.compositions=e.data.current;changed('compositions');}throw e;}
+}
+export const composition=id=>state.compositions?.compositions?.find(c=>c.id===id)||null;
 export function setDevice(patch){state.device={...state.device,...patch};writeLocal(DEVICE_KEY,state.device);applyEffective();changed('device');}
 // This device's choices made in another window of this browser apply here too.
 addEventListener('storage',e=>{if(e.key!==DEVICE_KEY)return;state.device={quality:'auto',...readLocal(DEVICE_KEY)};applyEffective();changed('device');});
@@ -57,7 +68,10 @@ export function setUi(patch){state.ui={...state.ui,...patch};writeLocal(UI_KEY,s
 export function select(id){
   if(id===state.selected)return;state.selected=id||'';setUi({project:state.selected});state.musicPreview=null;
   P.selectProject(state.selected);changed('selection');
-  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);}
+  // The recipe says which score the music plays: read it whatever the stage (only the living world loads one itself).
+  // A project with no recorded performance yet has no recipe to read (the receiver answers 404): nothing to ask.
+  const listed=state.projects.find(p=>p.id===state.selected),performed=!listed||listed.updatedAt!==null||listed.frames>0;
+  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);if(performed)void P.reloadRecipe?.()?.catch(()=>null);}
   applyEffective();
 }
 export const project=(id=state.selected)=>state.projects.find(p=>p.id===id)||null;
@@ -66,18 +80,17 @@ export function unpin(key){pins[key]=key==='quality'?false:null;}
 export const pinned=key=>!!pins[key];
 export const preferences=(id=state.selected)=>state.preferences.get(id)||null;
 // ---- Effective configuration --------------------------------------------------------------------------------------
-const DEFAULT_MUSIC={style:'ambient',volume:.55,texture:.58,tempoMode:'project',tempo:92};
+// The music (style, tempo, texture, the composed score's profile and mix) resolves in public/ui/music-profile.js; its score
+// version is the one the recipe shown in this window asks for (an unsaved Visual or Artist Studio preview included).
 export function effective(id=state.selected){
-  const s=state.settings||{},pref=state.preferences.get(id)||{},pm=pref.music||{},gm={...DEFAULT_MUSIC,...(s.music||{})};
-  const pick=k=>pm[k]!==null&&pm[k]!==undefined?pm[k]:gm[k];
-  const music={style:pins.style||pick('style'),texture:pick('texture'),tempoMode:pick('tempoMode'),tempo:pick('tempo'),volume:gm.volume};
+  const s=state.settings||{},pref=state.preferences.get(id)||{},ps=P.state,here=id===ps.project;
+  const {music,sources:ms}=resolveMusic({pins,project:pref.music,global:s.music,recipe:here?ps.preview?.recipe||ps.recipe:null,preview:here&&!!ps.preview});
   const world=pins.world||pref.world||s.stage?.world||'living';
   // The information mode belongs to the project's recipe (null there: follow the global setting).
-  const recipe=id===P.state.project?P.state.recipe:null,own=recipe?.overrides?.labels||null;
+  const recipe=here?ps.recipe:null,own=recipe?.overrides?.labels||null;
   const labels=pins.labels||(P.overlay?'stream':own||s.stage?.labels||'cinematic');
-  const src=k=>pm[k]!==null&&pm[k]!==undefined?'project':'global';
   return {music,world,labels,captions:pins.captions??(s.stage?.captions!==false),quality:state.device.quality||'auto',profile:s.recording?.profile||'720p',
-    sources:{world:pins.world?'url':pref.world?'project':'global',style:pins.style?'url':src('style'),texture:src('texture'),tempoMode:src('tempoMode'),tempo:src('tempo'),
+    sources:{world:pins.world?'url':pref.world?'project':'global',...ms,
       labels:pins.labels?'url':P.overlay?'obs':own?'project':'global',captions:pins.captions!==null&&pins.captions!==undefined?'url':'global'}};
 }
 // Only values whose effective value changed are pushed to the engine: a choice made directly on the engine (a
@@ -89,14 +102,15 @@ export function applyEffective({force=false}={}){
   const push=(k,v,fn)=>{const key=JSON.stringify(v);if(!force&&applied[k]===key)return false;applied[k]=key;fn(v);return true;};
   push('project',state.selected,()=>{applied={project:applied.project};});
   push('world',e.world,v=>P.setWorld(v));
-  push('music',music,v=>P.setMusic(v));
+  push('music',engineOptions(music),v=>P.setMusic(v));
   push('labels',e.labels,v=>P.setLabels(v));push('captions',e.captions,v=>P.setCaptions(v));
   if(!pins.quality)push('quality',e.quality,v=>P.setQuality(v));
   // The recording size cannot change during a recording: it is applied once the recording ends.
   if(!P.record.active)push('profile',e.profile,v=>P.record.setSize(v));
 }
 function applyInterface(){const m=state.settings?.interface?.motion||'system';if(m==='system')delete document.documentElement.dataset.motion;else document.documentElement.dataset.motion=m;}
-// A music preview (Music Studio): heard at once on the next bar, in this window only, until applied or cancelled.
+// A music preview (Music Studio): flat keys as stored (style, texture, mood, mix, …), heard from the next bar, in this
+// window only, until applied or cancelled.
 export function previewMusic(patch){state.musicPreview=patch?{...(state.musicPreview||{}),...patch}:null;applyEffective();changed('musicPreview');}
 // ---- Change feed ----------------------------------------------------------------------------------------------------
 let source=null,retry=null,fallback=null;
@@ -105,7 +119,7 @@ function connectChanges(){
   source=new EventSource('/api/changes');state.changes='connecting';changed('changes');
   source.addEventListener('hello',()=>{state.changes='open';changed('changes');clearInterval(fallback);fallback=null;
     // Anything may have changed while disconnected.
-    void loadProjects();void loadSettings();void loadPresets();void P.reloadPacks();if(state.selected){void loadPreferences();void P.reloadRecipe();}});
+    void loadProjects();void loadSettings();void loadPresets();void loadCompositions();void P.reloadPacks();if(state.selected){void loadPreferences();void P.reloadRecipe();}});
   source.onmessage=e=>{let m;try{m=JSON.parse(e.data);}catch{return;}handleChange(m);};
   source.onerror=()=>{state.changes='closed';changed('changes');try{source.close();}catch{}
     // Without the feed, poll (the receiver may be restarting) and reconnect with backoff.
@@ -120,6 +134,7 @@ function handleChange(m){
     case 'preferences':later(`prefs:${m.projectId}`,()=>loadPreferences(m.projectId),150);later('projects',loadProjects,800);break;
     case 'settings':later('settings',loadSettings,150);break;
     case 'presets':later('presets',loadPresets,150);break;
+    case 'compositions':later('compositions',loadCompositions,150);break;
     case 'packs':later('packs',()=>{void P.reloadPacks();void loadCatalog();void loadProjects();},250);break;
     case 'projects':later('projects',loadProjects,400);break;
     case 'activity':{const p=project(m.projectId);if(p){p.evidence={...(p.evidence||{}),lastReceivedAt:m.receivedAt};changed('projects');}break;}
@@ -145,14 +160,14 @@ if(channel){
     if(held===false&&others.size){others.clear();state.others.recording=null;changed('others');}},2000);
 }
 let wasRecording=false;
-P.on(t=>{if(t.has('recording')&&P.record.active!==wasRecording){wasRecording=P.record.active;announce();if(!wasRecording)applyEffective();}if(t.has('recipe'))applyEffective();});
+P.on(t=>{if(t.has('recording')&&P.record.active!==wasRecording){wasRecording=P.record.active;announce();if(!wasRecording)applyEffective();}if(t.has('recipe')||t.has('preview'))applyEffective();});
 // ---- Start -------------------------------------------------------------------------------------------------------
 export async function start({presentation=false}={}){
   await Promise.all([loadSettings(),loadProjects()]);
   connectChanges();
   if(presentation)return;
   await migrateLegacy();
-  void loadPresets();void loadCatalog();void loadStatus();
+  void loadPresets();void loadCatalog();void loadStatus();void loadCompositions();
   setInterval(()=>{if(!document.hidden)void loadStatus();},15000);
 }
 // The player before 0.5 kept its choices in this browser's storage; they move to the receiver once, so every window

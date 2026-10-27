@@ -225,7 +225,7 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     // (as a person does: the visible switch, whose label toggles the visually hidden input)
     const setSwitch=async(page,p,on)=>{const input=page.locator(`.field[data-path="${p}"] input`).first();if((await input.isChecked())!==on)await page.locator(`.field[data-path="${p}"] .switch`).first().click();};
     r=await recipe();
-    check('a new built-in identity has digital life on (generator v3)',r.genome.life?.enabled===true&&r.recipeVersion===3,JSON.stringify(r.genome.life));
+    check('a new built-in identity has digital life on (generator v4: with the musical ecology)',r.genome.life?.enabled===true&&r.genome.life.ecology===2&&r.recipeVersion===4,JSON.stringify(r.genome.life));
     check('the stage runs the identity\'s ecosystem',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)),JSON.stringify(await lifeOf(A)));
     check('the Digital life switch is among the Essentials, named for what it does',await A.locator('.vs-sec-ess .field[data-path="life.enabled"]').count()===1&&(await A.textContent('.vs-sec-ess .field[data-path="life.enabled"]')).includes('Digital life'));
     check('a Digital life group lists the life controls under their purpose',await A.locator('details[data-purpose="life"] .field[data-path="life.density"]').count()===1&&await A.locator('details[data-purpose="life"] .field[data-path="life.alignment"]').count()===1);

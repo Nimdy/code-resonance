@@ -11,3 +11,6 @@ It contains code, so Code Resonance runs it only in the isolated pack frame and 
     node scripts/pack.js approve northlight.blueprint-cathedral
 
 Then choose **BLUEPRINT CATHEDRAL · MACHINE-CATHEDRAL · CODE** under the look selector. MIT.
+
+**1.1.0** — deeper night haze, so far precincts recede behind near ones instead of standing as one black silhouette,
+and more lit windows for the ink to trace.

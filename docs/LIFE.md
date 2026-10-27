@@ -56,6 +56,93 @@ forgotten when the site disappears.
 | Stellar Forge (`life/stellar.js`) | dust, accretion fragments, charged motes, stellar wind (about 1100) | Matter moves with the galaxy's differential rotation, density waves and eddies; systems capture fragments on eccentric bands; a failure's onset blows a system's halo out and its wind thickens, a recovery draws the matter back; a new system pulls harder for a while; verified milestones are lasting attractors. | Soft tapered ribbons and uneven beaded clumps; the gas map brightens along the streams matter keeps using (a matter map rebuilt from the state each tick). The galaxy stays the protagonist. |
 | Machine Cathedral (`life/cathedral.js`) | couriers, wardens, sparks | Routed on the city's own network (kerbs, docks, shafts on each tower's stone, galleries, spokes, channels, canal corridors, cables), never through stone. Traffic on a route deters the next traveller (congestion) or draws it (trail); shaft gates release climbers in convoys, kerb junctions admit platoons on the precinct's beat. A failure withdraws the wardens from the struck precinct; after a recovery they gather at the hub's foot and climb together. | Lanterns with their own halo shader; copings, channels and cables lit by recent traffic. |
 
+## Ecology v2
+
+`genome.life.ecology: 2` (recipe v4's default for new identities; absent means 1) reads the climate from the music
+itself and lets it shape more than speed. Ecology 1 is the code path as it was, bit for bit (its pinned digests are
+unchanged), so stored identities live exactly as before until they are deliberately upgraded (a `tune`).
+
+**Climate from the music.** The driver keeps its own musical clock (`public/worlds/musical.js`) over the same canonical
+frames, configured from `config.music` (the score version, style, profile and seed the player plays; the host passes
+it in `lifeConfig`). At every tick the expression at that moment (the form's role, energy, harmonic tension, dynamics,
+rhythm, transitions, onsets) becomes targets for the conditions (`driver.js` `climateOf`); the beat grid of the
+performance clock goes with them. It never looks ahead and never listens to the audio device.
+
+| Condition | What the music sets | What the ecology does with it |
+|---|---|---|
+| `current`, `turb`, `cohesion`, `activity`, `attract`, `swing` | energy and dynamics, harmonic tension, onsets, the role | as in ecology 1, felt per species |
+| `gather` | regathering roles and energy up, dispersing roles and calm down | the crowd a site carries, the willingness to gather |
+| `explore` | development, transitions, energy | curiosity, shorter visits, migration, a wider reach |
+| `persist` | sustained passages (little rhythm), releases | how long trails and energy last |
+| `shiftX`, `shiftZ` | a turning attractor: toward the music's home direction in statements and returns, a new direction each other section, leaning with the harmony | which sites appeal, by their direction from the habitat's centre |
+| `glow` | energy, dynamics, a verified milestone's lift (with restraint) | presentation only: the environment's light |
+| `pulse` | the rhythm the arrangement plays, carried by energy | the Machine Cathedral's convoys and pulses on the musical grid |
+
+Roles: development explores, release settles, return regathers, an interlude disperses gently, tension unsettles,
+resolve re-forms the groups, a statement is the ecology's own home. Each condition relaxes at its own pace (light and
+activity in seconds, the attractor and the fields' memory over a passage), and every species feels them through its
+own response weights (`respond`: an exponent per condition), so the same music is read differently by pollinators and
+drifters, dust and motes, couriers and wardens.
+
+**Music influence** (`life.music`) is a perceptual mapping, not one factor: each ask is taken in log space through a
+soft limit per condition, scaled by `m(.75 + .25m)`. **0, independent ecology**: exactly neutral conditions (tested);
+**1, musical ecology**: clearly visible, tasteful; **2, expressive ecology**: unmistakable, saturating at the limits,
+never chaotic.
+
+**Conditions, not choreography.** The music changes fields, incentives, carrying capacities and site appeal; nothing
+places an inhabitant.
+
+- *Fractal Biosphere*: the winner-take-more softens and follows the music's willingness to gather, an organism busy on
+  all its heads saturates and a leaver prefers another organism, the crowd a crown carries follows `gather` and the
+  attractor; attention travels beyond the dominant organism (in the test habitat at music 1, the busiest organism's
+  share of the gatherings falls from about half to a third). Exploring music sends gatherings on; how many pollinators
+  are awake follows what the crowns carry now, so where the habitat cannot feed them all, calm music keeps fewer awake.
+- *Stellar Forge*: the music never turns the galaxy faster: the climate's current is taken out of the rotation and given
+  to the density waves, the migrating wave and the regional eddies; gathering music concentrates matter around the
+  major systems, the attractor favours one side of the disc and then another.
+- *Machine Cathedral*: with rhythm the hubs release their waiting on the beat (one hub a beat, each once a bar, every
+  other beat when it drives hard) and more of the staff waits for it; the beat runs out from each hub along the kerbs;
+  hub weights follow the music's attraction and attractor, and couriers may change course toward the favoured hubs.
+
+**Presentation** (§18, ecology 2 only, never writing the state): Biosphere lifts the light of the smaller gatherings so
+looking around is rewarded; Stellar draws fine tracers where dust streams; the Cathedral's lanterns keep a depth-aware
+floor with a softer core and the travelling ones cut through the fog a little more (no oversized neon dots).
+
+**How the music shows** (`present.js` `musicLook`). Behaviour alone is too subtle at film scale (the inhabitants are
+small, the camera moves), so the relaxed conditions also drive the drawing: factors that are exactly 1 at the neutral
+conditions (music 0 draws exactly what it drew; ecology 1 never asks) and log-linear in them, so music 2 reads about
+twice as strongly as 1. `glow` is light only (no behaviour reads it), so its soft limit is wide and it relaxes over
+3.5 s: a passage's weather, never the beat.
+
+| Factor | From | Biosphere | Stellar Forge | Machine Cathedral |
+|---|---|---|---|---|
+| `light` (modest) | glow | the water's light: haze, caustics, light through the organisms, rays; a quiet passage dims it, a full one brightens the shafts (the deep water keeps its blacks) | the arms' gas | the architecture's light, and widest the city's glow in the low haze and on the horizon |
+| `life` (strong) | glow, gather | the light the life gives crowns, halos and floor (tension, which scatters the groups, dissolves it into sparks) | the gas along the streams | the routes' light on copings, channels, cables, wet floor |
+| `bright`, `size` | glow, activity, gather | pollinators fully, plankton and spores less, drifters least | motes flare, rubble less, dust follows its stream | lanterns |
+| `trail` | persist, activity, turbulence | orbit arcs, seekers' threads, spores' streaks, drifters' wakes | mote ribbons, rubble arcs, dust tracers | the comets' length and how long they stay bright |
+
+Measured on the lumen performance (1280x720, same camera, AMD; `qualification/visual/film.js --copy --tune
+'{"life.music":N}'`). The systematic part (each second's mean luma minus music 0's, standard deviation over the clip)
+before and after, at music 1 / 2; the frame-to-frame change stays as it was (no flicker) and music 0 renders the same
+frames:
+
+| Clip | Sections | Before | After |
+|---|---|---|---|
+| Biosphere 60-150 s (Film 2) | statement, tension, resolve, interlude | 0.87 / 1.67 | 2.45 / 5.30 |
+| Biosphere 100-145 s | tension, resolve, interlude | 0.91 / 1.80 | 2.54 / 5.57 |
+| Stellar Forge 125-170 s | resolve, interlude, return | 0.13 / 0.15 | 4.67 / 9.73 |
+| Machine Cathedral 150-195 s | interlude, return | 0.05 / 0.08 | 2.02 / 4.55 |
+
+(Film 2's mean absolute frame difference against music 0 went from 3.53 / 3.91 to 4.26 / 6.01 of 255.) A statement
+is the ecology's home and stays close to music 0; tension reads in the motion and the scattered light rather than in
+the brightness.
+
+**Determinism.** The music's configuration is part of the parameter key (a checkpoint never crosses a change of score,
+style, profile or seed; a live session keeps its population through one), and a live rebase keeps the frames the musical
+clock still reads. `tests/life-ecology.test.js` plays one performance to each world at music 0, 1 and 2 and checks
+that migrations, attention, the systems' hold on matter and convoys differ clearly, that music 0 is neutral, that runs
+are deterministic and that ecology 1 keeps its pins.
+
 ## Determinism
 
 ### Clock
@@ -242,7 +329,8 @@ a new coding agent, a courier is never a tool call.
 Every value is a scale (1 = the world's own artist-directed behaviour; 0–2 unless noted), so no setting can make the
 simulation unstable: `enabled`, `density` (0–1: the share of the world's inhabitants that live; the world's own
 population is its ceiling), `vitality`, `collective`, `environment`, `trails`, `persistence`, `music`, and the advanced
-`attraction`, `repulsion`, `separation`, `alignment`, `cohesion`, `current`, `diffusion`, `radius`.
+`attraction`, `repulsion`, `separation`, `alignment`, `cohesion`, `current`, `diffusion`, `radius`. `ecology` (1 or 2)
+is a version, not a scale: see [Ecology v2](#ecology-v2).
 
 ## Visual packs
 

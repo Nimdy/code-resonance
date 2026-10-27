@@ -1,7 +1,8 @@
 'use strict';
 // Visual packs (SDK 1): validation, compatibility, installation, removal and trust for the three kinds of pack.
-//  - declarative: data only (parameters, palette, light, technique, effect mapping for an existing family). Validated
-//    against the schema and the base family's catalogue; usable at once.
+//  - declarative: data only (parameters, palette, light, technique, effect mapping for an existing family, and since
+//    SDK 1.2 an artist composition: layers and mappings from public/composition.js's allowlists). Validated against the
+//    schema, the base family's catalogue and the composition model; usable at once.
 //  - shader / world: contain code (GLSL, JavaScript). They are installed untrusted; the player runs them only inside the
 //    isolated pack frame and only after the user approves the exact files (approval is bound to the content digest, so
 //    any change to any file needs a new approval).
@@ -11,7 +12,9 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const {compile}=require('./schema');
 const catalog=require('./catalog');
-const SDK_VERSION='1.1.0';
+const Composition=require('../public/composition.js');
+// 1.2: declarative.composition (Artist Studio creations exported as data-only packs) and technique.finish.
+const SDK_VERSION='1.2.0';
 const SCHEMA=JSON.parse(fs.readFileSync(path.join(__dirname,'../packs/schema/pack.schema.json'),'utf8'));
 const validateSchema=compile(SCHEMA);
 const FILE=new RegExp(SCHEMA.$defs.file.pattern,'u');
@@ -61,6 +64,14 @@ function semantic(m,registry){
         if(!own.includes(catalog.EFFECT_CLASS[type]))err(`/declarative/effects/${type}`,`"${effect}" cannot show a ${catalog.EFFECT_CLASS[type]}`);}
     }
     for(const u of d.unlocks||[])if(!cat.unlocks.includes(u))err('/declarative/unlocks',`"${u}" is not an ambient layer of ${d.base} (${cat.unlocks.join(', ')})`);
+    // A composition stays data: allowlisted layer types and signals within the rendering budget (normalising drops
+    // whatever else it holds). It is drawn on its own base; a canvas composition travels on a built-in family.
+    if(d.composition!==undefined){
+      for(const e of Composition.validate(d.composition))err(`/declarative/composition${e.at?`/${e.at.replace(/\./g,'/')}`:''}`,e.message);
+      const base=Composition.normalize(d.composition).base;
+      if(base!=='canvas'&&base!==d.base)err('/declarative/base',`must be the composition's base, "${base}"`);
+      if(base==='canvas'&&!cat.builtin)err('/declarative/base','a canvas composition is carried by a built-in family');
+    }
   }
   if(m.kind==='shader'){const cat=catalogueOf(m.shader.base);overrides('/shader/overrides',m.shader.overrides,cat);
     for(const [k,p] of Object.entries(m.shader.uniforms||{}))if(p.type!=='enum'&&p.type!=='boolean'&&p.min>p.max)err(`/shader/uniforms/${k}`,'min must not exceed max');}
@@ -187,7 +198,8 @@ function createRegistry(dataDir){
         trusted:exec?!!approved&&approved.digest===report.digest&&!problems.length:true,compatible:compatible(m).ok,ok:!problems.length,problems,installedAt:r.installedAt,dir,
         recorded:new Map((r.files||[]).map(f=>[f.path,f.sha256])),budget:m.world?.budget||m.shader?.budget||null};
       if(m.kind==='world'&&entry.ok){entry.family={id:m.id,name:m.world.family?.name||m.name,parameters:m.world.parameters||{},effects:m.world.effects,ambient:{base:m.world.ambient.base||[],unlocks:m.world.ambient.unlocks},palette:m.world.palette||null,budget:m.world.budget||null};families[m.id]=entry.family;}
-      if(m.kind==='declarative'&&entry.ok)entry.overlay={base:m.declarative.base,overrides:m.declarative.overrides||{},effects:m.declarative.effects||{},unlocks:m.declarative.unlocks||null,technique:m.declarative.technique||null};
+      if(m.kind==='declarative'&&entry.ok)entry.overlay={base:m.declarative.base,overrides:m.declarative.overrides||{},effects:m.declarative.effects||{},unlocks:m.declarative.unlocks||null,technique:m.declarative.technique||null,
+        ...(m.declarative.composition?{composition:Composition.exportable(m.declarative.composition)}:{})};
       if(m.kind==='shader'&&entry.ok)entry.overlay={base:m.shader.base,overrides:m.shader.overrides||{},effects:{},unlocks:null,technique:m.shader.technique||null,uniforms:m.shader.uniforms||{}};
       packs.push(entry);
     }
@@ -201,4 +213,11 @@ function createRegistry(dataDir){
       const buf=fs.readFileSync(path.join(p.dir,file));return sha256(buf)===expected?buf:null;}
   };
 }
-module.exports={SDK_VERSION,SCHEMA,LIMITS,compatible,inspect,install,remove,setTrust,createRegistry,catalogueOf,executable,packsDir};
+// The checks inspect() runs on a manifest alone (schema, compatibility, semantics): for manifests the receiver writes.
+function checkManifest(m,registry=null){
+  const errors=validateSchema(m).map(e=>({at:`pack.json${e.at==='/'?'':e.at}`,message:e.message}));if(errors.length)return errors;
+  const c=compatible(m);if(!c.ok)errors.push({at:'pack.json/sdk',message:c.reason});
+  for(const e of semantic(m,registry))errors.push({at:`pack.json${e.at}`,message:e.message});
+  return errors;
+}
+module.exports={SDK_VERSION,SCHEMA,LIMITS,compatible,inspect,install,remove,setTrust,createRegistry,catalogueOf,executable,packsDir,checkManifest};

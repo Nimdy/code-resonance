@@ -23,17 +23,17 @@ const FAMILIES=[
 // Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
 // a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[
-  {id:'curated:abyss',name:'Bioluminescent abyss',line:'Deep teal water, strong inner light, fireflies in the dark.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2}}},
-  {id:'curated:reef',name:'Sunlit reef',line:'Bright shafts through violet water, translucent fronds swaying.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8}}},
-  {id:'curated:deep-field',name:'Deep field',line:'Seen from farther out: a calm, cool galaxy in a dense starfield.',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85}}},
-  {id:'curated:nursery',name:'Stellar nursery',line:'Warm billowing nebulae, thick dust and bright young plasma.',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06]}}},
-  {id:'curated:vigil',name:'Moonlit vigil',line:'Cold blue night, deep fog, moon rays and a mirror of water.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12]}}},
-  {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0]}}}];
+  {id:'curated:abyss',name:'Bioluminescent abyss',line:'Deep teal water, strong inner light, fireflies in the dark.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2,'technique.finish':'dreamlike'}}},
+  {id:'curated:reef',name:'Sunlit reef',line:'Bright shafts through violet water, translucent fronds swaying.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8,'technique.finish':'cinematic'}}},
+  {id:'curated:deep-field',name:'Deep field',line:'Seen from farther out: a calm, cool galaxy in a dense starfield.',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85,'technique.finish':'clean'}}},
+  {id:'curated:nursery',name:'Stellar nursery',line:'Warm billowing nebulae, thick dust and bright young plasma.',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06],'technique.finish':'dreamlike'}}},
+  {id:'curated:vigil',name:'Moonlit vigil',line:'Cold blue night, deep fog, moon rays and a mirror of water.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12],'technique.finish':'cinematic'}}},
+  {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0],'technique.finish':'cinematic'}}}];
 // The few parameters that change a world the most, shown first; every other one stays under its group.
 const ESSENTIALS={
-  'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','life.enabled'],
-  'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed','life.enabled'],
-  'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows','life.enabled'],
+  'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','life.enabled','life.music'],
+  'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed','life.enabled','life.music'],
+  'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows','life.enabled','life.music'],
   common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
@@ -68,10 +68,30 @@ const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.
 // Cathedral; the numbers are its own fallbacks in public/worlds/cathedral.js), so a control starts from what is shown.
 // Digital life (generator v3): an older identity has none, so its controls start from off and neutral scales.
 const LIFE_OFF={'life.enabled':false,'life.density':1,'life.vitality':1,'life.collective':1,'life.environment':1,'life.trails':1,'life.persistence':1,'life.music':1,
-  'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1};
+  'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1,'life.ecology':1};
 const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF}};
 // Parameters whose last path segment alone would not say what they are (the Essentials list them out of their group).
-const LABEL_OF={'life.enabled':'Digital life'};
+const LABEL_OF={'life.enabled':'Digital life','life.music':'Music influence','life.ecology':'Ecology'};
+// Where a catalogue description says more than the control needs (the music influence explains its scale itself).
+const DOC_OF={'life.music':'How strongly the music shapes the conditions the inhabitants live in: where gathering is easy, how far they roam, the currents and the light. Never where they go.'};
+// Choices named for what they are rather than their stored value.
+const VALUE_LABELS={'life.ecology':{1:'Earlier climate',2:'Musical ecology'}};
+// The music influence scale: what 0, 1 and 2 mean (life.music; docs/LIFE.md).
+const INFLUENCE=[[0,'Independent','The ecology lives by itself: the music changes nothing.'],
+  [1,'Musical','Sections visibly change how the inhabitants gather, roam and glow. The default.'],
+  [2,'Expressive','Unmistakable: each section reshapes the ecosystem, which stays autonomous.']];
+// The finish: a lens and colour profile over the world's own grade (public/worlds/host.js FINISHES). Classic is no
+// finish: the grade exactly as before Phase 11, what an identity saved before it shows until one is chosen.
+const FINISH_LOOKS=[
+  {value:'classic',label:'Classic',line:'The world\'s own grade, exactly as it was before finishes.'},
+  {value:'clean',label:'Clean',line:'Crisp and high-clarity: restrained bloom, almost no colour fringe, very little grain.'},
+  {value:'cinematic',label:'Cinematic',line:'Filmic highlights, a subtle optical fringe toward the edges, warm halation and a gentle vignette. The default for new identities.'},
+  {value:'dreamlike',label:'Dreamlike',line:'Luminous and atmospheric: a soft mist around the light, stronger halation, richer colour separation. Forms stay sharp.'}];
+// Shown in the Finish section (and the Music Studio's score), not again among all parameters.
+const OWN_SECTION=new Set(['technique.finish','technique.aberration','music.score']);
+// The chromatic aberration a world draws when the creator has set none (Stellar Forge asks for less: stellar.js grade).
+const WORLD_ABERRATION={'stellar-forge':.0022};
+const ABERRATION_UNIT=.004;
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
 const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
@@ -193,6 +213,22 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const fLabels=field({label:'Information',doc:'',control:labels});
   // Sliders and rows of choices take the full width under their label (a long track, the same order as every parameter).
   for(const f of [fIntensity,fMotion,fLabels])f.classList.add('stack');
+  // The finish: the lens and colour over the world's grade, previewed at once (the world itself is not rebuilt), with
+  // the chromatic aberration's strength; an identity made before Phase 11 is offered the new finish and ecology.
+  const finishSeg=segmented({label:'Finish',id:'vsFinish',block:true,value:'classic',options:FINISH_LOOKS.map(f=>({value:f.value,label:f.label,title:f.line})),onChange:v=>chooseFinish(v)});
+  const finishLine=h('p',{class:'vs-finish-line small muted',id:'vsFinishLine'});
+  const finishErr=h('div',{class:'vs-error small',role:'alert'});
+  const abOf=v=>+(v*ABERRATION_UNIT/100).toFixed(6);
+  const aberration=slider({min:0,max:500,integer:true,value:100,format:v=>`${v} %`,label:'Chromatic aberration (%)',id:'vsAberration',
+    onInput:v=>setTune('technique.aberration',abOf(v),false),onChange:v=>setTune('technique.aberration',abOf(v),true)});
+  const fAberration=field({label:'Chromatic aberration',doc:' ',control:aberration,onReset:()=>setTune('technique.aberration',null,true)});fAberration.classList.add('stack');
+  const upgradeBox=h('div',{class:'vs-upgrade'});
+  // The way on to deeper composition (layers and reactive mappings over this world): the Artist Studio, from this family.
+  const artistBtn=button({label:'Open in Artist Studio',icon:'brush',kind:'outline',id:'vsArtist',onClick:()=>openArtist()});
+  const compose=h('div',{class:'vs-compose'},h('div',{class:'vs-compose-text'},h('strong',{text:'Make it your own'}),
+    h('span',{class:'small faint',text:'Layers, reactive mappings and a finish of your own over this world.'})),artistBtn);
+  const sectionHead=(title,sub=null,...extra)=>h('div',{class:'vs-sec-head'},h('h3',{class:'eyebrow',text:title}),sub?h('span',{class:'tiny faint',text:sub}):null,h('span',{class:'rule'}),...extra);
+  const finishSection=h('section',{class:'vs-sec vs-sec-finish','aria-label':'Finish'},sectionHead('Finish','lens and colour'),finishSeg,finishLine,finishErr,h('div',{class:'vs-props'},fAberration),upgradeBox,compose);
   // The Essentials (first, open) and every other parameter under its creative purpose (folded).
   const essBox=h('div',{class:'vs-params vs-props vs-ess'});
   const paramsBox=h('div',{class:'vs-params vs-props vs-adv'});
@@ -205,7 +241,6 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const aliasBox=h('div',{class:'vs-aliases',id:'vsAliases'});
   const quality=segmented({label:'Rendering quality on this device',id:'vsQuality',value:P.state.quality,options:P.QUALITY.map(q=>({value:q,label:QUALITY_NAMES[q]})),
     onChange:q=>{S.unpin('quality');S.setDevice({quality:q});P.setQuality(q);}});
-  const sectionHead=(title,sub=null,...extra)=>h('div',{class:'vs-sec-head'},h('h3',{class:'eyebrow',text:title}),sub?h('span',{class:'tiny faint',text:sub}):null,h('span',{class:'rule'}),...extra);
   function buildInspector(){
     clear(body);
     if(!S.state.selected){body.append(emptyState({icon:'visual',title:S.state.projectsLoaded?'No project yet':'Loading projects…',body:S.state.projectsLoaded?'A project appears when capture starts in VS Code. Its world identity is edited here.':null,
@@ -215,7 +250,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     // parameter, then the names the stage shows and this device's rendering quality.
     body.append(
       h('section',{class:'vs-sec vs-sec-identity','aria-label':'Identity'},whyBox,identityBox,lookBox,identityActions,identityNote),
-      essSection,
+      finishSection,essSection,
       h('section',{class:'vs-sec','aria-label':'Presentation'},sectionHead('Presentation','how events are staged'),h('div',{class:'vs-props'},fIntensity,fMotion,fLabels)),
       h('section',{class:'vs-sec','aria-label':'All parameters'},sectionHead('All parameters',null,paramsSummary),paramsBox),
       h('section',{class:'vs-sec','aria-label':'Names on the stage'},sectionHead('Names on the stage'),
@@ -244,7 +279,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   }
   async function loadSpec(){
     const id=projectId,rev=saved?.revision;
-    try{const r=await S.get(`/api/recipe/tunable?id=${enc(id)}`);if(!alive||id!==projectId)return;if(rev!==undefined&&r.revision<rev)return;savedSpec=r;renderParams();}
+    try{const r=await S.get(`/api/recipe/tunable?id=${enc(id)}`);if(!alive||id!==projectId)return;if(rev!==undefined&&r.revision<rev)return;savedSpec=r;renderFinish();renderParams();}
     catch(e){if(alive)text(paramsSummary,`The parameters could not be loaded: ${e.message}`);}
   }
   function resetProject(){
@@ -416,6 +451,22 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(v===null&&!inherited)delete draft.tune[path];
     if(now)void runPreview();else schedulePreview(250);
   }
+  // Classic is the absence of a finish: back to what the saved identity shows needs no value for it.
+  function chooseFinish(v){
+    if(!saved)return;
+    if(!hasIdentity(draft)&&!draft.reset&&v===(getPath(saved.genome,'technique.finish')??'classic')){previewError=null;delete draft.tune['technique.finish'];void runPreview();return;}
+    setTune('technique.finish',v,true);
+  }
+  // An identity made before Phase 11 (generator v4) keeps its classic look and the earlier ecology until it is upgraded
+  // here: the values it lacks, previewed at once, kept by Apply (a tune; the identity's own values stay as they are).
+  function upgradeValues(){
+    const s=saved,spec=savedSpec?.tunable;if(!s||!spec||(Number(s.recipeVersion)||1)>=4)return null;const v={};
+    if(getPath(s.genome,'technique.finish')===undefined&&spec['technique.finish'])v['technique.finish']='cinematic';
+    if(s.genome?.life&&getPath(s.genome,'life.ecology')===undefined&&spec['life.ecology'])v['life.ecology']=2;
+    return Object.keys(v).length?v:null;
+  }
+  function upgrade(values){presetPreview=null;previewError=null;Object.assign(draft.tune,values);void runPreview();}
+  function openArtist(){const s=shown();if(s&&FAMILIES.some(f=>f.id===s.family))navigate('artist','from',s.family);}
   async function previewPreset(p){
     if(!saved)return;
     const x=p.payload||{},identity=x.family?[{type:'family',family:x.family}]:[{type:'automatic'}];
@@ -574,6 +625,35 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     fIntensity.classList.toggle('pending',Object.hasOwn(draft.overrides,'intensity'));fMotion.classList.toggle('pending',Object.hasOwn(draft.overrides,'motion'));fLabels.classList.toggle('pending',Object.hasOwn(draft.overrides,'labels'));
     text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}${ownLabels?'':' Follows the global default (Settings).'}`);
   }
+  function renderFinish(){
+    const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
+    artistBtn.disabled=!builtin;
+    artistBtn.title=builtin?`Compose your own layers and reactive mappings over ${familyName(s.family)} in the Artist Studio`:'The Artist Studio composes over the three built-in worlds';
+    finishSection.hidden=!s||!spec?.['technique.finish'];
+    if(finishSection.hidden)return;
+    const t=s.genome?.technique||{},finish=FINISH_LOOKS.some(f=>f.value===t.finish)?t.finish:'classic',tuned=s.tuning?.family===s.family?s.tuning.values:{};
+    finishSeg.set(finish);text(finishLine,FINISH_LOOKS.find(f=>f.value===finish).line);
+    finishSection.classList.toggle('pending',Object.hasOwn(draft.tune,'technique.finish'));
+    text(finishErr,['technique.finish','technique.aberration'].includes(previewError?.path)?previewError.message:'');
+    // The strength reads in percent of the designed fringe; a world that draws less shows what it draws.
+    const own=WORLD_ABERRATION[s.family]??ABERRATION_UNIT,ab=Number.isFinite(t.aberration)?t.aberration:own;
+    if(!fAberration.contains(document.activeElement))aberration.set(Math.round(ab/ABERRATION_UNIT*100));
+    fAberration.setModified(Object.hasOwn(tuned,'technique.aberration'));fAberration.classList.toggle('pending',Object.hasOwn(draft.tune,'technique.aberration'));
+    const ownNote=own!==ABERRATION_UNIT?` ${familyName(s.family)} draws ${Math.round(own/ABERRATION_UNIT*100)} % unless you set it.`:'';
+    text(fAberration.querySelector('.field-doc'),finish==='classic'?`A colour offset toward the frame's edges. 0 turns it off.${ownNote}`
+      :`An optical fringe: none at the centre, growing toward the corners and strongest on bright light. 100 % is the finish as designed, 0 turns it off. Labels and controls are never affected.${ownNote}`);
+    renderUpgrade();
+  }
+  function renderUpgrade(){
+    clear(upgradeBox);const v=upgradeValues();if(!v)return;
+    const keys=Object.keys(v),what=keys.length>1?'finish and ecology':keys[0]==='technique.finish'?'finish':'ecology';
+    const lacks=[v['technique.finish']?'the classic look':null,v['life.ecology']?'the earlier ecology':null].filter(Boolean).join(' and ');
+    if(keys.every(k=>same(draft.tune[k],v[k])))upgradeBox.append(callout({kind:'accent',icon:'eye',title:`Previewing the Phase 11 ${what}`,
+      body:`${keys.length>1?'The Cinematic finish and the musical ecology, on':'On'} this window's stage only. Apply keeps ${keys.length>1?'them':'it'} for the project; Cancel returns to ${lacks}.`}));
+    else upgradeBox.append(callout({icon:'spark',title:'Made before Phase 11',
+      body:`This identity keeps ${lacks} until you choose otherwise.${v['technique.finish']?' New identities get the Cinematic finish':''}${v['life.ecology']?`${v['technique.finish']?' and':' New identities get'} the musical ecology, where the music shapes how the inhabitants gather, roam and glow`:''}.`,
+      actions:[button({label:`Use the Phase 11 ${what}`,icon:'spark',size:'sm',id:'vsUpgrade',onClick:()=>upgrade(v)})]}));
+  }
   // Parameters are generated from the tunable metadata; rebuilt only when the set of parameters changes.
   let paramSig='',paramFields=new Map();const openGroups=new Set();
   function renderParams(){
@@ -584,7 +664,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const essential=ESSENTIALS[s.family]?[...ESSENTIALS[s.family],...ESSENTIALS.common].filter(p=>spec[p]):[];
       // Purpose → genome group → parameters, each in catalogue order.
       const purposes=new Map();
-      for(const [path,sp] of Object.entries(spec)){if(essential.includes(path))continue;const g=groupOf(path,sp),pid=purposeOf(g);
+      for(const [path,sp] of Object.entries(spec)){if(essential.includes(path)||OWN_SECTION.has(path))continue;const g=groupOf(path,sp),pid=purposeOf(g);
         if(!purposes.has(pid))purposes.set(pid,new Map());const groups=purposes.get(pid);if(!groups.has(g))groups.set(g,[]);groups.get(g).push([path,sp]);}
       const order=[...PURPOSES.map(x=>x.id),'other'].filter(id=>purposes.has(id));
       if(!openGroups.size)(essential.length?['essentials']:order.slice(0,1)).forEach(g=>openGroups.add(g));
@@ -619,6 +699,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const fb=fallbackOf(s,path),base=mod?tuned.base[path]??fb:undefined;
       f.el.setValue(mod?`generated ${base===undefined?'not set':formatParam(f.spec,base)}`:getPath(s.genome,path)===undefined&&fb===undefined?'not set':'');
       text(f.err,previewError?.path===path?previewError.message:'');
+      if(f.scale)for(const st of f.scale.children)st.classList.toggle('on',Math.abs(Number(v)-Number(st.dataset.v))<=.5);
     }
     const n=tuned?Object.keys(tuned.values).length:0;
     text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);
@@ -657,12 +738,16 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const ctrl=parameterControl(spec,valueOf(s,path,spec),{label,onInput:v=>setTune(path,v,false),onChange:v=>setTune(path,v,true)});
     // The toolkit builds on/off switches without a visible label (the field shows it), so the input gets its name here.
     if(ctrl.input&&!ctrl.input.hasAttribute('aria-label'))ctrl.input.setAttribute('aria-label',label);
+    for(const b of ctrl.querySelectorAll?.('button[data-value]')||[]){const name=VALUE_LABELS[path]?.[b.dataset.value];if(name)text(b,name);}
     const err=h('div',{class:'vs-error small',role:'alert'});
-    const el=field({label,doc:docOf(label,spec.doc,path),control:h('div',{class:'vs-param-control'},ctrl,err),value:'',onReset:()=>setTune(path,null,true)});
+    // The music influence spells out its scale under the slider, the band it is in lit.
+    const scale=path==='life.music'?h('div',{class:'vs-scale'},...INFLUENCE.map(([v,name,line])=>h('span',{class:'vs-scale-stop',dataset:{v:String(v)},title:line},
+      h('strong',{text:`${v} · ${name}`}),h('span',{text:line})))):null;
+    const el=field({label,doc:DOC_OF[path]||docOf(label,spec.doc,path),control:h('div',{class:'vs-param-control'},ctrl,scale,err),value:'',onReset:()=>setTune(path,null,true)});
     // A slider, a row of choices or three channels takes the inspector's full width under its label (a track long
     // enough for precise control); a switch, a colour or a select sits beside it.
     if(ctrl.range||ctrl.classList.contains('segmented')||ctrl.classList.contains('vec3'))el.classList.add('stack');
-    el.dataset.path=path;paramFields.set(path,{el,ctrl,spec,err});return el;
+    el.dataset.path=path;paramFields.set(path,{el,ctrl,spec,err,scale});return el;
   }
   function setControl(ctrl,spec,v){if(typeof ctrl.set==='function')ctrl.set(v);else if(ctrl.tagName==='SELECT')ctrl.value=String(v);}
   function renderTitle(){
@@ -793,7 +878,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!alive)return;
     renderHead();renderBrowser();
     if(!saved)return;
-    renderLook();renderOverrides();renderParams();renderTitle();renderAliases();renderQuality();
+    renderLook();renderOverrides();renderFinish();renderParams();renderTitle();renderAliases();renderQuality();
   }
   // ---- Thumbnails: the built-in families rendered from this project, one at a time -----------------------------------
   async function runThumbs(){

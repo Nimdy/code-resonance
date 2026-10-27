@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:code-resonance:visual-pack:v1",
   "title": "Code Resonance visual pack manifest (pack.json), SDK 1",
-  "description": "Three kinds: 'declarative' (data only: parameters, palette, light, technique and effect mapping for an existing family), 'shader' (custom GLSL background and post passes, optional procedural effects, on a built-in family) and 'world' (a complete world family implementing the World API). Shader and world packs contain code: they run isolated and only after the user approves them.",
+  "description": "Three kinds: 'declarative' (data only: parameters, palette, light, technique and effect mapping for an existing family, or an Artist Studio composition), 'shader' (custom GLSL background and post passes, optional procedural effects, on a built-in family) and 'world' (a complete world family implementing the World API). Shader and world packs contain code: they run isolated and only after the user approves them.",
   "type": "object",
   "required": ["schema", "id", "name", "version", "kind", "sdk"],
   "additionalProperties": false,
@@ -58,6 +58,7 @@
       "contrast": {"type": "number", "minimum": 0.7, "maximum": 1.4}, "saturation": {"type": "number", "minimum": 0, "maximum": 2},
       "vignette": {"type": "number", "minimum": 0, "maximum": 2}, "grain": {"type": "number", "minimum": 0, "maximum": 3},
       "aberration": {"type": "number", "minimum": 0, "maximum": 0.02},
+      "finish": {"enum": ["classic", "clean", "cinematic", "dreamlike"], "description": "The cinematic finish (SDK 1.2): classic is the world's own grade."},
       "tint": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "minimum": 0.5, "maximum": 1.5}},
       "lift": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "number", "minimum": -0.05, "maximum": 0.05}}}},
     "budget": {"type": "object", "additionalProperties": false, "description": "What the pack promises to stay within at 1920x1080, full quality.", "properties": {
@@ -72,7 +73,8 @@
         "description": "Genome parameter -> value, or [min, max] for a seeded value per project. Paths and ranges come from the base family's catalogue."},
       "effects": {"$ref": "#/$defs/effects"},
       "unlocks": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"$ref": "#/$defs/name"}},
-      "technique": {"$ref": "#/$defs/technique"}}},
+      "technique": {"$ref": "#/$defs/technique"},
+      "composition": {"type": "object", "maxProperties": 32, "description": "An Artist Studio composition (SDK 1.2): procedural layers, mappings and finish, data only. The receiver validates it against the composition model (public/composition.js): allowlisted layer types and signals, bounded values, the rendering budget."}}},
     "shader": {"type": "object", "required": ["base"], "additionalProperties": false, "properties": {
       "base": {"enum": ["stellar-forge", "fractal-biosphere", "machine-cathedral"]},
       "background": {"$ref": "#/$defs/file", "description": "A fragment shader replacing the family's background (sky, nebula)."},

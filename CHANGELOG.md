@@ -1,5 +1,60 @@
 # Changelog
 
+## Unreleased — creative mastering and the Artist Studio
+
+Music that develops, digital life that answers it, cinematic finishes, and a workbench for original compositions.
+Built on the digital-life branch (version unchanged); not stable, not released. Existing identities keep their sound
+and image until deliberately upgraded: new behaviour sits behind versions (recipe generator v4, score v3, ecology 2).
+
+- **Composed score (v3)** (`public/score.js`, `public/music.js`, [docs/MUSIC.md](docs/MUSIC.md)):
+  - Long-form arcs: statement, development, interlude, return and release.
+  - Antecedent and consequent phrases built from the project's motif, with a second idea per arc.
+  - Voice-led harmony with sevenths, ninths and a resolving suspension; a guide-tone countermelody; a bass that walks
+    or holds a pedal.
+  - Roles that enter and leave at passage boundaries; dynamics that breathe.
+  - Four styles with their own characters.
+  - New voices: a pre-delayed room kept out of the bass, band-limited pulse waves for chip, a kit per style.
+  - The low end rebalanced by arrangement rather than EQ.
+  - Measured on a recorded session: loudness range 1.6–3.7 LU (v2) to 5.5–12 LU (v3) at about −23 LUFS.
+- **Music Studio:**
+  - Character controls: mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space.
+  - A balance (level and mute) for each voice the style can sound.
+  - Four curated starting points; presets that keep the profile.
+  - A one-click upgrade to the composed score.
+- **Musical expression for the visuals** (`public/worlds/musical.js`): the score's conducted state read from recorded
+  frames on the shared clock, never from the audio device.
+- **Ecology 2** ([docs/LIFE.md](docs/LIFE.md)): music shapes conditions, not choreography. That means currents,
+  gathering, exploration, persistence, light, rhythmic pulses and a turning attractor. Each world interprets them its
+  own way:
+  - Biosphere: migrations between crowns, beyond the dominant organism.
+  - Stellar: density waves and streams, with no faster rotation.
+  - Cathedral: convoys on the musical grid, routes and lit channels.
+
+  The music also shows in each world's light, in its inhabitants' brightness, size and traces (presentation only,
+  from the relaxed conditions). Music influence 0 is exactly neutral and renders exactly as before; 1 is musical; 2 is
+  expressive. Against music 0 at the same moment, the picture's systematic swing went from 0.05–0.87 to 2.0–4.7 at
+  music 1 and 4.6–9.7 at music 2 (luma sd), with no flicker.
+- **Finishes** ([docs/WORLDS.md](docs/WORLDS.md)): Clean, Cinematic (the default for new identities) and Dreamlike, in
+  the existing composite pass.
+  - An optical chromatic aberration: radial, spectral, highlight-sensitive.
+  - Fringe on the bloom, halation, split toning that keeps the blacks, and mist.
+  - Classic is bit-identical to before.
+- **Artist Studio** (`#/artist`, [docs/ARTIST-STUDIO.md](docs/ARTIST-STUDIO.md)): compositions of procedural layers
+  over a flagship world or the minimal artist canvas.
+  - Six layer types: fractal geometry, particle populations, ribbons and flow, geometric structures, atmospheric
+    fields, light accents.
+  - Anchors on the project's own structure, honest depth classes, and reactive mappings from musical, canonical
+    engineering and environmental signals.
+  - Preview in one window, save with versions, apply to a project.
+  - Export and import as data-only declarative packs (SDK 1.2): nothing executable, validated, no private data.
+  - Four creator starters and a blank canvas. A layer that fails is set aside with its reason; the rest keeps drawing.
+- **Control Center:**
+  - Home: Create a composition, and Continue.
+  - Visual Studio: Finish, chromatic aberration, a Phase 11 upgrade, and Open in Artist Studio.
+  - Visual Packs: My creations, Imported creations and looks, Shader packs, Full coded worlds.
+  - Projects: Composition, Finish and Music profile rows.
+- **Reference packs:** Ember Observatory 1.1.0 and Blueprint Cathedral 1.1.0, clearer over the flagship worlds.
+
 ## Unreleased — flagship worlds
 
 The three built-in living worlds rebuilt as flagship worlds, each a different universe with its own visual grammar.

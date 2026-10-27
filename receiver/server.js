@@ -16,6 +16,8 @@ const store=require('./store');
 const {createEvidence}=require('./evidence');
 const {createChanges}=require('./changes');
 const {createImports}=require('./pack-import');
+const compositionStore=require('./compositions');
+const Composition=require('../public/composition.js');
 const recipes=require('../engine/recipe');
 const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
@@ -25,7 +27,7 @@ const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
 const PUBLIC=path.join(REPO,'public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
-  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
+  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/composition.js','composition.js'],['/composition-text.js','composition-text.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 // The Control Center's modules: one optional folder level, lowercase names (the pattern alone keeps requests inside public/ui).
 const UI_FILE=/^\/ui\/(?:[a-z0-9-]+\/)?[a-z0-9-]+\.(?:js|css|svg)$/;
 // Windows opens a device for these names (with any extension, before Windows 11): never a file the receiver serves.
@@ -34,7 +36,7 @@ const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 const pageCsp=styles=>`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`;
 // Documentation the Control Center links to, served as inert text: a fixed list, never a path taken from the request.
 const DOCS=new Map([...['packs/README.md','packs/manifest.md','packs/world-api.md','packs/determinism.md','packs/performance.md','packs/security.md','packs/migration.md',
-  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','ALPHA.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
+  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','ALPHA.md','ARTIST-STUDIO.md','MUSIC.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
 // The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
 // Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
@@ -46,7 +48,7 @@ const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Cont
 const INERT=type=>({'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox",'Cross-Origin-Resource-Policy':'same-origin'});
 // Administrative (mutating) routes: a control capability (receiver/control.js) is required before anything else is read.
 const ADMIN=new Set(['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
-  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply']);
+  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply','/api/compositions']);
 // Coded errors of the modules → HTTP status; anything uncoded is a receiver failure (500).
 const STATUS={invalid:400,'invalid-json':400,'pack-unavailable':409,'invalid-archive':400,'unsafe-path':400,'too-large':400,'too-many-files':400,'not-found':404,stale:409,changed:409,'invalid-pack':422,'pending-limit':429};
 const LOOPBACK_HOSTS=['127.0.0.1','::1','localhost'];
@@ -90,7 +92,9 @@ async function readBody(req,res,limit){
 // What the player may know about installed packs (never their location on disk).
 const publicPack=p=>({id:p.id,name:p.name,version:p.version,kind:p.kind,sdk:p.sdk,author:p.author,description:p.description,license:p.license,digest:p.digest,
   files:p.files,executable:p.executable,trusted:p.trusted,compatible:p.compatible,ok:p.ok,problems:p.problems,installedAt:p.installedAt,budget:p.budget,
-  family:p.family?{id:p.family.id,name:p.family.name,effects:p.family.effects,ambient:p.family.ambient,budget:p.family.budget}:null,base:p.overlay?.base||null});
+  family:p.family?{id:p.family.id,name:p.family.name,effects:p.family.effects,ambient:p.family.ambient,budget:p.family.budget}:null,base:p.overlay?.base||null,
+  // A creation (a data-only pack with an Artist Studio composition): the composition itself, normalised, data only.
+  ...(p.overlay?.composition?{composition:p.overlay.composition}:{})});
 const only=(specs,prefix)=>Object.fromEntries(Object.entries(specs).filter(([k])=>k.startsWith(prefix)));
 // The values a pack lets a project tune, in the shape recipes.tunable() describes them (one formatter for both).
 function packParameters(p,snap){
@@ -106,7 +110,8 @@ function catalogView(snap){
   for(const p of snap.packs){
     if(!p.ok||!p.compatible)continue;
     if(p.kind==='world'&&p.family)packFamilies[p.id]={name:p.family.name,parameters:packParameters(p,snap)};
-    if(p.overlay)looks[p.id]={base:p.overlay.base,kind:p.kind,uniforms:p.kind==='shader'?packParameters(p,snap):{}};
+    // A creation is applied as its composition (Visual Packs, Artist Studio), not chosen as a look.
+    if(p.overlay&&!p.overlay.composition)looks[p.id]={base:p.overlay.base,kind:p.kind,uniforms:p.kind==='shader'?packParameters(p,snap):{}};
   }
   return {version:catalog.CATALOG_VERSION,families,packFamilies,looks};
 }
@@ -208,6 +213,7 @@ function createService(options={}) {
   const projectDir=id=>path.join(dataDir,'projects',sha(id));
   const control=createControl(),changes=createChanges();
   const settingsDoc=store.settings(dataDir),presetsDoc=store.presets(dataDir),preferencesOf=id=>store.preferences(projectDir(id));
+  const compositionsDoc=compositionStore.compositions(dataDir);
   const evidence=createEvidence({projectDir,onChange:projectId=>changes.emit('evidence',{projectId})});
   const imports=createImports({dataDir,registry});
   // /api/projects and /api/packs summaries, read from disk once and dropped when the receiver writes what they summarise.
@@ -336,7 +342,7 @@ function createService(options={}) {
   // fallback would replace the stored choice and its tuning for good. Until the pack is installed again, only an action
   // that leaves the missing pack behind applies (another family, automatic, a full regenerate, another look); a batch
   // may continue with any action once one has.
-  const leavesPack=(r,a)=>a?.type==='family'||a?.type==='automatic'||(a?.type==='regenerate'&&!a.keepFamily)||(a?.type==='pack'&&(a.pack!==null||!r.unavailable.family));
+  const leavesPack=(r,a)=>a?.type==='family'||a?.type==='automatic'||(a?.type==='regenerate'&&!a.keepFamily)||(a?.type==='pack'&&(a.pack!==null||!r.unavailable.family))||(a?.type==='composition'&&!!a.composition);
   async function candidate(id,entry,actions){
     const project=JSON.parse(entry.json),known=registry.snapshot(),{stored,revision}=await storedRecipe(id);
     const current=recipes.resolve(stored,project,Date.now(),known).recipe,now=Date.now();
@@ -365,8 +371,12 @@ function createService(options={}) {
   async function packUsage(){
     if(usage)return usage;
     const epoch=usageEpoch,counts=new Map();
+    // A creation (a data pack with a composition) is used by the projects that carry its composition: it is applied as
+    // the project's own composition, never as a pack, so it is recognised by what it holds.
+    const creations=registry.snapshot().packs.filter(p=>p.overlay?.composition).map(p=>[p.id,JSON.stringify(p.overlay.composition)]);
     for(const p of await listProjects()){const {stored:r}=await storedRecipe(p.id);if(!r)continue;
-      for(const id of new Set([r.familyKind==='pack'?r.family:null,r.pack?.id].filter(x=>typeof x==='string')))counts.set(id,(counts.get(id)||0)+1);}
+      const c=creations.length&&r.composition?JSON.stringify(Composition.exportable(r.composition)):null;
+      for(const id of new Set([r.familyKind==='pack'?r.family:null,r.pack?.id,...creations.filter(([,s])=>s===c).map(([id])=>id)].filter(x=>typeof x==='string')))counts.set(id,(counts.get(id)||0)+1);}
     if(epoch===usageEpoch)usage=counts;return counts;
   }
   const publicEvidence=doc=>{const {sessionIds,...editor}=doc.editor;return {...doc,editor};};
@@ -458,8 +468,8 @@ function createService(options={}) {
         // image of another site sends no Origin, so this keeps other pages from taking the 32 listener slots.
         const site=req.headers['sec-fetch-site'],dest=req.headers['sec-fetch-dest'];
         if((site!==undefined&&site!=='same-origin')||(dest!==undefined&&dest!=='empty')){response(res,403,{error:'Same-origin EventSource required',code:'cross-site-refused'});return;}
-        const [s,p]=await Promise.all([settingsDoc.read(),presetsDoc.read()]);
-        changes.handle(req,res,{revision:{settings:s.revision,presets:p.revision}});return;
+        const [s,p,c]=await Promise.all([settingsDoc.read(),presetsDoc.read(),compositionsDoc.read()]);
+        changes.handle(req,res,{revision:{settings:s.revision,presets:p.revision,compositions:c.revision}});return;
       }
       if(req.method==='GET'&&pathname==='/api/status'){response(res,200,await status(control.read(req,expectedOrigins).ok));return;}
       if(req.method==='GET'&&pathname==='/api/catalog'){response(res,200,catalogView(registry.snapshot()));return;}
@@ -523,6 +533,26 @@ function createService(options={}) {
           let next;try{next=await doc.update(type==='settings'?{patch:body.patch,ifRevision:body.ifRevision}:{patch:body,ifRevision:body.ifRevision});}catch(e){failure(res,e);return;}
           changes.emit(type,{revision:next.revision});response(res,200,next);return;
         }
+      }
+      // ---- Artist compositions (the Artist Studio): the library, one action per write, and the export as a data-only pack
+      if(pathname==='/api/compositions'&&(req.method==='GET'||req.method==='POST')){
+        if(req.method==='GET'){response(res,200,compositionStore.view(await compositionsDoc.read()));return;}
+        const body=await readBody(req,res,CONFIG_BYTES);if(!body)return;
+        // New compositions get their id here (the answer names it), never from the request.
+        const created=body.action==='create'||body.action==='duplicate'?compositionsDoc.newId():null;
+        let next;try{next=await compositionsDoc.update({patch:created?{...body,newId:created}:body,ifRevision:body.ifRevision});}
+        catch(e){if(e.code==='stale'){response(res,409,{error:e.message,code:'stale',...(e.key?{key:e.key}:{}),current:compositionStore.view(await compositionsDoc.read())});return;}failure(res,e);return;}
+        changes.emit('compositions',{revision:next.revision});response(res,200,{...compositionStore.view(next),...(created?{created}:{})});return;
+      }
+      if(req.method==='GET'&&pathname==='/api/compositions/export'){
+        const cid=u.searchParams.get('id')||'',entry=(await compositionsDoc.read()).compositions.find(e=>e.id===cid);
+        if(!entry){response(res,404,{error:'Composition not found'});return;}
+        const pack=compositionStore.exportPack(entry,{author:(u.searchParams.get('author')||'').slice(0,80),license:u.searchParams.get('license')||undefined,
+          description:u.searchParams.has('description')?u.searchParams.get('description').slice(0,400):null});
+        // What is exported installs anywhere: the receiver checks it as an import would before handing it out.
+        const problems=packs.checkManifest(pack.manifest,registry.snapshot());
+        if(problems.length){response(res,422,{error:`The composition cannot be exported: ${problems[0].at}: ${problems[0].message}`,code:'invalid-pack'});return;}
+        response(res,200,pack);return;
       }
       if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
       if(req.method==='GET'&&pathname==='/api/projects'){

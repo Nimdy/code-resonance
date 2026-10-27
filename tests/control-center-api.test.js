@@ -12,7 +12,7 @@ const {tempDir,startService}=require('./helpers');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 const NAME='secret-project-name',FILE='src/secret-dir/hidden-file.ts';
 const ADMIN=['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
-  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply'];
+  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply','/api/compositions'];
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 // A path as it appears in text and inside JSON (where Windows backslashes are escaped).
 const forms=p=>[p,JSON.stringify(p).slice(1,-1)];
@@ -139,7 +139,8 @@ test('Settings, preferences and presets round-trip with revisions; stale and inv
   const prefs=await get(`/api/preferences?id=${projectId}`);assert.equal(prefs.revision,0);assert.equal(prefs.world,null);assert.equal(prefs.music.tempo,null);
   r=await send(`/api/preferences?id=${projectId}`,{patch:{world:'nebula',music:{tempo:100}}});assert.equal(r.status,200);assert.equal((await r.json()).revision,1);
   let listed=(await get('/api/projects')).projects.find(p=>p.id===projectId);
-  assert.deepEqual(listed.preferences,{world:'nebula',music:{style:null,texture:null,tempoMode:null,tempo:100}});
+  const inherit={mood:null,evolution:null,melody:null,rhythm:null,atmosphere:null,harmony:null,dynamics:null,space:null,mix:null};
+  assert.deepEqual(listed.preferences,{world:'nebula',music:{style:null,texture:null,tempoMode:null,tempo:100,...inherit}});
   r=await send(`/api/preferences?id=${projectId}`,{patch:{world:null},ifRevision:1});const cleared=await r.json();assert.equal(cleared.world,null);assert.equal(cleared.music.tempo,100);
   assert.equal((await send(`/api/preferences?id=${projectId}`,{patch:{world:'living'},ifRevision:1})).status,409);
   assert.equal((await send(`/api/preferences?id=${projectId}`,{patch:{world:'mars'}})).status,400);
@@ -156,6 +157,17 @@ test('Settings, preferences and presets round-trip with revisions; stale and inv
   assert.equal((await send('/api/presets',{action:'delete',id:'p-000000000000'})).status,404);
   r=await send('/api/presets',{action:'delete',id:p.id});presets=await r.json();assert.equal(presets.presets.length,1);assert.equal(presets.presets[0].kind,'music');
   assert.deepEqual(await get('/api/presets'),presets);
+  // The composed score's performance profile and mix: global, per project (null inherits) and in a preset, through the API.
+  r=await send('/api/settings',{patch:{music:{evolution:.8,space:.25,mix:{perc:0}}}});assert.equal(r.status,200);
+  const g=(await get('/api/settings')).music;assert.equal(g.evolution,.8);assert.equal(g.space,.25);assert.equal(g.mix.perc,0);assert.equal(g.mix.pad,1);assert.equal(g.style,'pulse');
+  r=await send(`/api/preferences?id=${projectId}`,{patch:{music:{atmosphere:.9,mix:{pad:1,bass:.7,melody:1.2,counter:1,arp:1,perc:1,atmos:1.3}}}});assert.equal(r.status,200);
+  const own=(await get(`/api/preferences?id=${projectId}`)).music;assert.equal(own.atmosphere,.9);assert.equal(own.mood,null);assert.equal(own.mix.melody,1.2);
+  assert.equal((await send(`/api/preferences?id=${projectId}`,{patch:{music:{mix:{perc:2}}}})).status,400);
+  const performance={style:'ambient',texture:.5,tempoMode:'project',tempo:92,profile:{mood:.3,evolution:.35,melody:.4,rhythm:.3,atmosphere:.7,harmony:.5,dynamics:.35,space:.75},mix:{pad:.9,bass:.7,melody:.9,counter:.8,arp:.7,perc:1,atmos:1.15}};
+  r=await send('/api/presets',{action:'create',kind:'music',name:'Deep focus',payload:performance});assert.equal(r.status,200);
+  assert.deepEqual((await get('/api/presets')).presets.find(x=>x.name==='Deep focus').payload,performance);
+  assert.deepEqual((await get('/api/presets')).presets.find(x=>x.name==='Calm').payload,{style:'ambient',texture:.4,tempoMode:'manual',tempo:80},'a preset from before keeps its shape');
+  r=await send('/api/presets',{action:'create',kind:'music',name:'Keyed',payload:{...performance,key:'D'}});assert.equal(r.status,400);assert.equal((await r.json()).key,'payload.key');
 });
 test('Recipe batches apply all or nothing against a revision; a preview never writes; the tunable parameters are listed',async t=>{
   const {dir,projectId,send,get}=await start(t);
@@ -199,7 +211,7 @@ test('Recipe batches apply all or nothing against a revision; a preview never wr
 test('Packs: import (ZIP and folder) into quarantine, install unapproved, approve, revoke, remove; the change stream follows every write',async t=>{
   const {svc,dir,base,projectId,send,get}=await start(t);
   const stream=await changeStream(base);t.after(()=>stream.close());
-  const hello=await stream.until(m=>m.event==='hello','hello');assert.deepEqual(hello.data.revision,{settings:0,presets:0});assert(hello.data.at>0);
+  const hello=await stream.until(m=>m.event==='hello','hello');assert.deepEqual(hello.data.revision,{settings:0,presets:0,compositions:0});assert(hello.data.at>0);
   // A world pack (code) as a ZIP with a top-level folder, as archivers make them.
   const archive=zip(filesOf(path.join(EXAMPLES,'cymatic-field'),'cymatic-field/'));
   let r=await send('/api/packs/import',archive,{headers:{'Content-Type':'application/zip'}});assert.equal(r.status,200,await r.clone().text());
@@ -370,7 +382,7 @@ test('Status, documentation and the Control Center files; no public response car
   const life=await fetch(`${base}/worlds/life/sim.js`);assert.equal(life.status,200);assert.match(life.headers.get('content-type'),/^text\/javascript/);
   // Public read routes: none carries the token, a file path sent in events, the data directory or the private name.
   const routes=['/api/status','/api/catalog','/api/packs','/api/packs/templates',`/api/evidence?id=${projectId}`,'/api/settings',`/api/preferences?id=${projectId}`,
-    '/api/presets',`/api/recipe?id=${projectId}`,`/api/recipe/tunable?id=${projectId}`,'/health'];
+    '/api/presets',`/api/recipe?id=${projectId}`,`/api/recipe/tunable?id=${projectId}`,'/health','/api/compositions'];
   for(const route of routes){
     const text=await (await fetch(base+route)).text();
     for(const secret of [svc.token,'secret-dir','hidden-file',FILE,...forms(dir),NAME])assert(!text.includes(secret),`${route} contains ${secret===svc.token?'the token':secret}`);
