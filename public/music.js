@@ -249,7 +249,7 @@
         modGain.gain.setValueAtTime(f*p.index,at);modGain.gain.exponentialRampToValueAtTime(Math.max(1,f*.05),at+p.decay*.7);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(Math.max(.0002,amp),at+.006);
         out.gain.exponentialRampToValueAtTime(.0001,at+p.decay);end=at+p.decay+.05;
-        car.start(at);mod.start(at);car.stop(end);mod.stop(end);nodes.push(car,mod,modGain);car.onended=()=>this.release(nodes);
+        car.start(at);mod.start(at);car.stop(end);mod.stop(end);nodes.push(car,mod,modGain);car.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
       }else{
         const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.Q.value=p.q||.7;filter.connect(out);nodes.push(filter);
         const cutoff=(p.cutoff||2000)*(.55+.9*this.appliedOptions.texture);
@@ -275,7 +275,7 @@
           end=hold+p.release*1.6;
         }
         for(const o of oscs){o.start(at);o.stop(end);}
-        nodes.push(...oscs);oscs[0].onended=()=>this.release(nodes);
+        nodes.push(...oscs);oscs[0].onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
       }
       g.active.push(end);
     }
@@ -314,7 +314,7 @@
         mod.connect(mg);mg.connect(car.frequency);car.connect(out);car2.connect(g2);g2.connect(out);
         mg.gain.setValueAtTime(f*p.fm.index,at);mg.gain.exponentialRampToValueAtTime(Math.max(1,f*.03),at+p.decay*.45);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(Math.max(.0002,amp),at+.008);out.gain.exponentialRampToValueAtTime(.0001,at+p.decay);
-        end=at+p.decay+.05;for(const o of [car,mod,car2]){o.start(at);o.stop(end);}nodes.push(car,mod,mg,car2,g2);car.onended=()=>this.release(nodes);g.active.push(end);return;
+        end=at+p.decay+.05;for(const o of [car,mod,car2]){o.start(at);o.stop(end);}nodes.push(car,mod,mg,car2,g2);car.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);g.active.push(end);return;
       }
       const filter=ctx.createBiquadFilter();filter.type=p.noise?'bandpass':'lowpass';filter.Q.value=p.noise?p.noise.q:(p.q||.6);filter.connect(out);nodes.push(filter);
       const cutoff=(p.cutoff||2000)*tex;
@@ -349,7 +349,7 @@
         end=hold+p.release*1.6;
       }
       for(const o of oscs){o.start(at);o.stop(end);}
-      nodes.push(...oscs);oscs[0].onended=()=>this.release(nodes);
+      nodes.push(...oscs);oscs[0].onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
       g.active.push(end);
     }
     // v3 percussion: each style's own kit (chip a noise channel and a pitched square), softer transients, and the
@@ -365,7 +365,7 @@
         const o=ctx.createOscillator();if(chip&&role==='kick')o.setPeriodicWave(this.wave(g,'duty50'));else o.type='sine';
         const top=role==='taiko'?92:chip?220:108,low=role==='taiko'?50:chip?58:46,decay=role==='taiko'?.85:chip?.14:.34;
         o.frequency.setValueAtTime(top,at);o.frequency.exponentialRampToValueAtTime(low,at+(role==='taiko'?.16:.09));o.connect(out);nodes.push(o);
-        end=env(v*(chip?.5:.85),.003,decay);o.start(at);o.stop(end);o.onended=()=>this.release(nodes);
+        end=env(v*(chip?.5:.85),.003,decay);o.start(at);o.stop(end);o.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
         if(role==='taiko'){const {src}=noise('lowpass',420,.7);src.start(at,.21);src.stop(at+.2);send(.42);}
         else if(!chip){const {src}=noise('highpass',3200,.7);src.start(at,.37);src.stop(at+.008);}
       }else{
@@ -376,7 +376,7 @@
         if(role==='riser'||role==='texture')flt.frequency.exponentialRampToValueAtTime(role==='riser'?6200:2400,at+attack);
         if(role==='snare'&&!chip){const body=ctx.createOscillator(),bg=ctx.createGain();body.type='triangle';body.frequency.setValueAtTime(200,at);body.frequency.exponentialRampToValueAtTime(150,at+.06);
           body.connect(bg);bg.connect(out);bg.gain.value=.5;body.start(at);body.stop(at+.12);nodes.push(body,bg);}
-        end=env(v*gain,attack,decay);src.start(at,(note.midi*.013+(role==='wash'?.3:0))%.8);src.stop(end);src.onended=()=>this.release(nodes);
+        end=env(v*gain,attack,decay);src.start(at,(note.midi*.013+(role==='wash'?.3:0))%.8);src.stop(end);src.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
         if(role==='texture'||role==='riser'||role==='wash')send(.55);else if(role==='snare')send(.12);
       }
       g.active.push(end);
@@ -390,7 +390,7 @@
         o.frequency.setValueAtTime(top,at);o.frequency.exponentialRampToValueAtTime(low,at+.12);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(v*.9,at+.004);out.gain.exponentialRampToValueAtTime(.0001,at+decay);
         if(note.instrument==='taiko'){const s=ctx.createGain();s.gain.value=.35;pan.connect(s);s.connect(g.reverbIn);nodes.push(s);}
-        o.connect(out);end=at+decay+.02;o.start(at);o.stop(end);nodes.push(o);o.onended=()=>this.release(nodes);
+        o.connect(out);end=at+decay+.02;o.start(at);o.stop(end);nodes.push(o);o.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
       }else{
         const src=ctx.createBufferSource(),filter=ctx.createBiquadFilter();src.buffer=g.noise;src.connect(filter);filter.connect(out);nodes.push(src,filter);
         const shape={hat:['highpass',8200,.0,.05,.22],shaker:['bandpass',5200,.012,.09,.16],snare:['bandpass',1900,.0,.16,.42],texture:['bandpass',900,note.duration*.5,note.duration*.5,.16],riser:['highpass',500,note.duration*.92,.08,.2]}[note.instrument]||['highpass',6000,0,.05,.2];
@@ -398,7 +398,7 @@
         if(note.instrument==='riser'||note.instrument==='texture')filter.frequency.exponentialRampToValueAtTime(note.instrument==='riser'?7000:2400,at+attack);
         out.gain.setValueAtTime(.0001,at);out.gain.exponentialRampToValueAtTime(Math.max(.0002,v*gain),at+Math.max(.003,attack));out.gain.exponentialRampToValueAtTime(.0001,at+attack+decay);
         if(note.instrument==='texture'||note.instrument==='riser'){const s=ctx.createGain();s.gain.value=.5;pan.connect(s);s.connect(g.reverbIn);nodes.push(s);}
-        end=at+attack+decay+.02;src.start(at,(note.midi*0.013)%0.8);src.stop(end);src.onended=()=>this.release(nodes);
+        end=at+attack+decay+.02;src.start(at,(note.midi*0.013)%0.8);src.stop(end);src.onended=()=>this.release(nodes);g.pending?.push([end,nodes]);
       }
       g.active.push(end);
     }
@@ -544,14 +544,21 @@
       const stepDur=m.stepSeconds(),barMs=stepDur*STEPS*1000;
       let i=0;const events=timeline.slice().sort((a,b)=>a.atMs-b.atMs);
       m.barIndex=Math.ceil(startMs/barMs);t=speed===1?(m.barIndex*barMs-startMs)/1000:0;
-      while(t<durationSec){
+      // The score is scheduled a window ahead of the rendering, as the live scheduler does, and finished voices are
+      // disconnected as it goes (an offline context never says a voice ended): scheduling the whole piece up front left
+      // every voice of it in the graph, and each render quantum then walked all of them (renders slowed with length).
+      g.pending=[];const CHUNK=2;
+      const scheduleUntil=limit=>{while(t<Math.min(limit,durationSec)){
         const perf=startMs+t*1000*speed;
         while(i<events.length&&events[i].atMs<=perf+stepDur*1000*speed){if(events[i].frame)m.setFrame(events[i].frame,events[i].atMs);if(events[i].cue)m.accents.push({cue:events[i].cue,when:Math.max(t,(events[i].atMs-startMs)/1000/speed)});i++;}
         if(m.step===0){m.perfNow=perf;m.beginBar();m.budget={left:6};}
         for(const e of m.bar.steps[m.step])m.voice(g,e,t+(m.step%2?(m.bar.swing||0)*stepDur:0));
         for(const notes of m.accentsFor(t,stepDur,m.budget))for(const n of notes)m.voice(g,n,t+n.offset*stepDur);
         m.step=(m.step+1)%STEPS;t+=stepDur;
-      }
+      }};
+      const prune=now=>{g.pending=g.pending.filter(([end,nodes])=>{if(end<now-.25){m.release(nodes);return false;}return true;});};
+      scheduleUntil(CHUNK+1);
+      for(let s=CHUNK;s<durationSec-CHUNK*.5;s+=CHUNK)ctx.suspend(s).then(()=>{scheduleUntil(s+CHUNK+1);prune(s);return ctx.resume();});
       return ctx.startRendering();
     }
   }
