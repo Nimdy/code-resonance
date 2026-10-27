@@ -222,7 +222,8 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     check('the second window converges on the applied identity (change feed)',conv&&await B.evaluate(()=>window.ResonancePlayer.state.recipe.revision)===r.revision,`revision ${r.revision}`);
     // ---- Digital life: preview, adjust, cancel, apply, reload; a preview never reaches the other window ---------------
     const lifeOf=page=>page.evaluate(()=>{const l=window.__worldStats?.()?.life;return l?{grammar:l.grammar,alive:l.ecosystem?.alive??0}:null;});
-    const setSwitch=async(page,p,on)=>{const input=page.locator(`.field[data-path="${p}"] input`).first();if((await input.isChecked())!==on)await input.click();};
+    // (as a person does: the visible switch, whose label toggles the visually hidden input)
+    const setSwitch=async(page,p,on)=>{const input=page.locator(`.field[data-path="${p}"] input`).first();if((await input.isChecked())!==on)await page.locator(`.field[data-path="${p}"] .switch`).first().click();};
     r=await recipe();
     check('a new built-in identity has digital life on (generator v3)',r.genome.life?.enabled===true&&r.recipeVersion===3,JSON.stringify(r.genome.life));
     check('the stage runs the identity\'s ecosystem',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)),JSON.stringify(await lifeOf(A)));
