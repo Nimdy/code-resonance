@@ -212,19 +212,21 @@ export const FIELD={
 };
 // Per-ribbon constants (seeded): its seed point's home, drift phases, its orbit axis and band, the wind direction.
 export function ribbonSeeds(seed,count,field){
-  const r=rng(seed),wy=r()*TAU,out=[];
+  // One field for the whole layer (its phases from a stream of their own): the ribbons are streamlines of the same
+  // currents, so neighbours flow together instead of each following a private field.
+  const r=rng(seed),wy=r()*TAU,out=[],f=rng((seed^0x5bd1e995)>>>0),fph=[f()*TAU,f()*TAU,f()*TAU];
   for(let j=0;j<count;j++){const a=r()*TAU,u=r(),v=r(),ph=[r()*TAU,r()*TAU,r()*TAU],tilt=(r()-.5)*1.1,yaw=r()*TAU;
     const axis=rotate([0,1,0],[Math.cos(yaw),0,Math.sin(yaw)],tilt),band=.45+.55*r();let home;
     if(field==='orbit'){const p=perp(axis),q=rotate(p,axis,a);home=[q[0]*band,q[1]*band,q[2]*band];}
     else if(field==='spiral'){home=[Math.cos(a)*(1+.2*u),(v-.5)*.25,Math.sin(a)*(1+.2*u)];}
     else if(field==='wind'){const s=(u-.5)*2,h=(v-.5)*.9;home=[-Math.cos(wy)*1.1-Math.sin(wy)*s,h,-Math.sin(wy)*1.1+Math.cos(wy)*s];}
     else{const d=Math.cbrt(u)*.9,ph2=Math.acos(2*v-1);home=[Math.sin(ph2)*Math.cos(a)*d,Math.cos(ph2)*d*.7,Math.sin(ph2)*Math.sin(a)*d];}
-    out.push({home,ph,axis,band,wind:[Math.cos(wy),0,Math.sin(wy)],drift:r()*TAU,hue:r()});}
+    out.push({home,ph,fph,axis,band,wind:[Math.cos(wy),0,Math.sin(wy)],drift:r()*TAU,hue:r()});}
   return out;
 }
 // Integrates ribbon j's streamline at time t into out (M points, xyz). length: its arc length in site radii.
 export function streamline(out,M,rib,field,{t=0,length=1,turbulence=.4}={}){
-  const F=FIELD[field]||FIELD.curl,c={ph:rib.ph,axis:rib.axis,band:rib.band,wind:rib.wind,turb:turbulence},v=[0,0,0];
+  const F=FIELD[field]||FIELD.curl,c={ph:rib.fph||rib.ph,axis:rib.axis,band:rib.band,wind:rib.wind,turb:turbulence},v=[0,0,0];
   // The seed drifts slowly about its home (the ribbon sways and wanders, never jumps).
   let x=rib.home[0]+.12*Math.sin(t*.13+rib.drift),y=rib.home[1]+.08*Math.sin(t*.11+rib.drift*2),z=rib.home[2]+.12*Math.cos(t*.09+rib.drift);
   const h=length*2.4/(M-1);let px=0,py=0,pz=0;
