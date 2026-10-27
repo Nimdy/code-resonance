@@ -73,6 +73,15 @@ export default {mount(view,ctx){
     out.push(agents.length?line('agent',agentMain,isDemo(pr)?'Fictional agent events written by the demo':'Through hooks: sessions, tools and files only','agents'):line('','No agent activity observed',null,'agents'));
     return out;
   }
+  // The panel is rebuilt whenever the project's data arrives (recipe, evidence, preferences…), for a second or two after
+  // a project is chosen. Its actions keep their elements across rebuilds, so a click that straddles one (pressed on the
+  // old button, released on the new) is not lost. Their handlers read the current project when clicked.
+  const actions={
+    details:button({label:'Project details',icon:'chevron-right',kind:'ghost',size:'sm',title:'Activity, evidence and settings of this project',onClick:()=>{const p=S.project();if(p)navigate('projects',p.id);},attrs:fk('details')}),
+    stage:button({label:'Open Stage',icon:'stage',kind:'primary',size:'lg',id:'homeOpenStage',title:'The full-screen performance (F)',onClick:openStage,attrs:fk('open-stage')}),
+    window:button({label:'Open in new window',icon:'external',kind:'outline',size:'lg',title:'Open the Stage in a new window (for a second monitor or OBS preview)',onClick:openWindow,attrs:fk('open-window')}),
+    visual:button({label:'Visual Studio',icon:'visual',kind:'outline',size:'sm',title:'This project’s visual identity',onClick:()=>navigate('visual'),attrs:fk('visual')}),
+    music:button({label:'Music Studio',icon:'music',kind:'outline',size:'sm',title:'This project’s music',onClick:()=>navigate('music'),attrs:fk('music')})};
   function renderProject(){
     const pr=S.project();
     if(!pr){swap(projectEl,[h('div',{class:'home-id home-project-empty'},h('span',{class:'eyebrow',text:'Active project'}),h('p',{class:'muted',text:'No project is selected. Choose one from Recent projects or the project menu above.'}))]);return;}
@@ -82,21 +91,15 @@ export default {mount(view,ctx){
     const visual=world==='living'?[h('span',{text:r?.familyName||r?.family||'Living world'}),r?h('span',{class:'home-id-state',text:familyLine(r)}):null]:[h('span',{text:WORLD_NAMES[world]||world})];
     swap(projectEl,[
       h('div',{class:'home-id'},
-        h('div',{class:'home-project-top'},h('span',{class:'eyebrow',text:'Active project'}),isDemo(pr)?pill(DEMO_LABEL,'warn'):null,h('span',{class:'grow'}),
-          button({label:'Project details',icon:'chevron-right',kind:'ghost',size:'sm',title:'Activity, evidence and settings of this project',onClick:()=>navigate('projects',pr.id),attrs:fk('details')})),
+        h('div',{class:'home-project-top'},h('span',{class:'eyebrow',text:'Active project'}),isDemo(pr)?pill(DEMO_LABEL,'warn'):null,h('span',{class:'grow'}),actions.details),
         h('h2',{class:'title-l home-name',id:'homeProjectName',text:projectName(pr),title:projectName(pr)}),
         h('div',{class:'faint small home-private'},icon('lock'),pr.name?'Private workspace name · never on the Stage':'The extension did not share a name: shown by its id'),
         h('dl',{class:'kv home-kv'},h('dt',{text:'Public title'}),h('dd',{class:r?.title?'':'faint',id:'homePublicTitle',text:r?.title?`“${r.title}”`:'No public title — the Stage shows a generic name'}),
           h('dt',{text:world==='living'?'Visual identity':'World'}),h('dd',{class:'home-id-visual'},...visual.filter(Boolean))),
         isDemo(pr)?callout({kind:'warn',icon:'info',body:'Demonstration (fictional): produced by npm run demo on this computer. Nothing in it comes from real work.'}):null),
       h('div',{class:'home-actions'},
-        h('div',{class:'home-actions-main'},
-          button({label:'Open Stage',icon:'stage',kind:'primary',size:'lg',id:'homeOpenStage',title:'The full-screen performance (F)',onClick:openStage,attrs:fk('open-stage')}),
-          button({label:'Open in new window',icon:'external',kind:'outline',size:'lg',title:'Open the Stage in a new window (for a second monitor or OBS preview)',onClick:openWindow,attrs:fk('open-window')})),
-        h('div',{class:'home-links'},
-          button({label:'Visual Studio',icon:'visual',kind:'outline',size:'sm',title:'This project’s visual identity',onClick:()=>navigate('visual'),attrs:fk('visual')}),
-          button({label:'Music Studio',icon:'music',kind:'outline',size:'sm',title:'This project’s music',onClick:()=>navigate('music'),attrs:fk('music')}),
-          ...creationLinks(r))),
+        h('div',{class:'home-actions-main'},actions.stage,actions.window),
+        h('div',{class:'home-links'},actions.visual,actions.music,...creationLinks(r))),
       h('div',{class:'home-cap'},h('h3',{class:'eyebrow',text:'Capture & agents'}),
         h('ul',{class:'home-status',id:'homeStatus','aria-label':'Capture status'},...statusLines(pr)))]);
   }
