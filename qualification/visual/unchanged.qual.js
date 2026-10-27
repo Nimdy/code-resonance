@@ -24,6 +24,9 @@ async function render(root,browser,set){
     await svc.flush();const project=projectOf(dir);
     const r=await adminPost(svc,`/api/recipe?id=${project}`,{action:{type:'family',family:set.family}});
     if(!r.ok)throw new Error(await r.text());
+    // Generator v3 gives a new built-in identity digital life (docs/LIFE.md); the world itself is compared with it off,
+    // which renders exactly as before (a tree without digital life has nothing to turn off).
+    if(fs.existsSync(path.join(root,'public/worlds/life/driver.js'))){const t=await adminPost(svc,`/api/recipe?id=${project}`,{action:{type:'tune',values:{'life.enabled':false}}});if(!t.ok)throw new Error(await t.text());}
     const page=await browser.newPage({viewport:{width:960,height:540}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&labels=off&project=${project}`);await page.waitForFunction(()=>!!window.__film);
     const info=await page.evaluate(p=>window.__film.open({project:p,speed:1}),project);
