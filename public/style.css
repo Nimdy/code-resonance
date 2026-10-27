@@ -27,3 +27,9 @@ body.overlay .stage-empty{display:none !important}body.overlay .stage-lower-left
   text-shadow:0 1px 12px rgba(5,8,14,.9);opacity:0;transition:opacity .6s,transform .6s;pointer-events:none;white-space:nowrap;z-index:3}
 .caption.show{opacity:.92;transform:translate(-50%,0)}
 body.overlay .caption{bottom:56px;font-size:18px}
+
+/* The living world: WebGL canvas plus a label layer that never takes pointer events. */
+#world,#worldOverlay{position:absolute;inset:0;width:100%;height:100%;display:block}#worldOverlay{pointer-events:none}#world.hidden,#worldOverlay.hidden,.caption.hidden{display:none}
+.panel.left{overflow-y:auto}.panel.left::-webkit-scrollbar{width:4px}.panel.left::-webkit-scrollbar-thumb{background:#23374e}
+.dna{display:flex;flex-direction:column;gap:9px;margin:12px 0 4px}.dna-family{display:flex;flex-direction:column;gap:4px}.dna-family strong{font:13px var(--mono);letter-spacing:.12em;color:#e3ecfb}.dna-family span{font:9px var(--mono);letter-spacing:.1em;color:#6c7d98}
+.dna-actions{display:flex;gap:6px}.dna-actions .action{flex:1;padding:8px 6px}

@@ -1,0 +1,154 @@
+{
+ "schema": "code-resonance.recipe.v1",
+ "recipeVersion": 1,
+ "rendererVersion": 1,
+ "projectSeed": 2269940080,
+ "variant": 0,
+ "source": "generated",
+ "locked": false,
+ "founded": true,
+ "createdAt": 1792756800000,
+ "traits": {
+  "modules": 450,
+  "districts": 9,
+  "symbols": 3073,
+  "ui": 0.085,
+  "uiModules": 0.349,
+  "routes": 0,
+  "model": 0.168,
+  "functions": 0.471,
+  "languages": {
+   "js": 0.024,
+   "tsx": 0.53,
+   "ts": 0.447
+  },
+  "dependencyDensity": 3.522,
+  "crossDensity": 1.004,
+  "hubness": 0.486,
+  "branching": 0.113,
+  "depth": 6.829,
+  "tests": 0.127,
+  "agents": 0,
+  "agentShare": 0,
+  "validations": {
+   "passed": 0,
+   "failed": 0
+  }
+ },
+ "family": "machine-cathedral",
+ "familyName": "Machine Cathedral",
+ "familyScores": {
+  "stellar-forge": 1.276,
+  "fractal-biosphere": 1.486,
+  "machine-cathedral": 1.518
+ },
+ "genome": {
+  "geometry": {
+   "architecture": "brutalist",
+   "setback": 0.26,
+   "spire": 0.682,
+   "buttress": 0.172
+  },
+  "secondary": {
+   "mechanisms": 0.607,
+   "windows": 0.62,
+   "beacons": 0.799
+  },
+  "space": {
+   "spread": 0.966,
+   "streets": 0.998
+  },
+  "atmosphere": {
+   "weather": "steam",
+   "fog": 0.461,
+   "motes": 0.643,
+   "searchlights": 0.366
+  },
+  "material": {
+   "stone": 0.391,
+   "metal": 0.591,
+   "glass": 0.38
+  },
+  "motion": {
+   "mechanism": 0.796,
+   "breath": 8,
+   "turbulence": 0.337
+  },
+  "camera": {
+   "personality": "architectural",
+   "distance": 1.016,
+   "elevation": 0.341,
+   "fov": 38,
+   "drift": 0.354
+  },
+  "agents": {
+   "form": "drone"
+  },
+  "effects": {
+   "subsystem.created": "foundation",
+   "module.created": "raise",
+   "structure.created": "storey",
+   "structure.removed": "dismantle",
+   "subsystem.connected": "lock-mechanism",
+   "validation.failed": "stress-fracture",
+   "validation.passed": "window-scan",
+   "validation.recovered": "restore",
+   "refactor.validated": "reassemble",
+   "milestone.achieved": "illumination",
+   "repository.checkpoint": "set-in-stone",
+   "world.expanded": "district-lights"
+  },
+  "palette": {
+   "scheme": "triad",
+   "hue": 47.1,
+   "primary": "#e1c046",
+   "secondary": "#42d7b7",
+   "accent": "#cb4eee",
+   "highlight": "#d4e8cf",
+   "deep": "#061408",
+   "haze": "#143d24",
+   "warning": "#ef3948",
+   "valid": "#e8d37d"
+  },
+  "light": {
+   "exposure": 1.129,
+   "bloom": 0.977,
+   "bloomThreshold": 0.749,
+   "contrast": 1.026,
+   "grain": 0.025,
+   "vignette": 0.22
+  },
+  "ambient": {
+   "base": [
+    "motes",
+    "window-breath",
+    "conduit-flow",
+    "fog"
+   ],
+   "unlocks": [
+    "searchlights",
+    "mechanisms",
+    "beacons",
+    "aurora-glass"
+   ]
+  },
+  "music": {
+   "reactivity": 0.42,
+   "beatPulse": 0.443
+  },
+  "agentProminence": 0.6,
+  "limits": {
+   "detail": 0.515,
+   "maxParticles": 17652,
+   "maxLabels": 5
+  }
+ },
+ "overrides": {
+  "intensity": 1,
+  "motion": 1,
+  "atmosphere": 1,
+  "labels": "cinematic"
+ },
+ "aliases": {},
+ "title": null
+}

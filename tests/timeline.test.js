@@ -57,6 +57,18 @@ test('Graph deltas replayed from the timeline reconstruct the live graph',async 
   assert.deepEqual([...nodes.values()].sort((a,b)=>a.id.localeCompare(b.id)),[...live.graph.nodes].sort((a,b)=>a.id.localeCompare(b.id)));
   assert.deepEqual([...edges.keys()].sort(),live.graph.edges.map(key).sort());
 });
+test('The intents view of the timeline carries every window\'s intents and nothing else',async t=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const s=await start(t,dir);
+  await session(s);
+  const full=(await s.get(`/api/timeline?id=${projectId}&limit=2000`)).entries;
+  const view=[];let after=-1;
+  for(;;){const page=await s.get(`/api/timeline?id=${projectId}&after=${after}&limit=2&fields=intents`);if(!page.entries.length)break;view.push(...page.entries);after=page.entries.at(-1).seq;}
+  assert.deepEqual(view.map(e=>e.seq),full.map(e=>e.seq));
+  for(const e of view)assert.deepEqual(Object.keys(e).filter(k=>k!=='seq'),e.intents?['intents']:[]);
+  assert.deepEqual(view.flatMap(e=>e.intents||[]),full.flatMap(e=>e.intents||[]));
+  assert(view.some(e=>e.intents?.length),'the session records intents');
+});
 test('An older interpretation is rebuilt from the journal on start; frames after the last checkpoint are regenerated',async t=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
   let s=await start(t,dir);

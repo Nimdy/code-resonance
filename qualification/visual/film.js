@@ -4,6 +4,10 @@
 //
 // node visual/film.js --data <receiver-data> --project <id> [--from ms] [--to ms] [--speed 2] [--fps 30]
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
+//        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
+//        [--note "text shown on every frame"]
+// --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
+// The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly.
 const path=require('node:path');
 const fs=require('node:fs');
 const cp=require('node:child_process');
@@ -14,21 +18,29 @@ const {createService}=require(path.join(REPO,'receiver/server'));
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual','film.webm')));
 const fps=Number(arg('fps',30)),speed=Number(arg('speed',1)),width=Number(arg('width',1920)),height=Number(arg('height',1080)),style=arg('style','ambient');
+const world=arg('world','living'),labels=arg('labels','cinematic'),tail=Number(arg('tail',0));
+const {sha}=require(path.join(REPO,'receiver/protocol'));
 (async()=>{
   fs.mkdirSync(path.dirname(OUT),{recursive:true});
-  const svc=await createService({port:0,dataDir:path.resolve(arg('data'))}).start();
+  const dataDir=path.resolve(arg('data'));
+  // A pinned recipe is installed before the receiver starts, so the player loads exactly that identity.
+  if(arg('recipe')){const dir=path.join(dataDir,'projects',sha(arg('project')));fs.copyFileSync(path.resolve(arg('recipe')),path.join(dir,'recipe.json'));}
+  const svc=await createService({port:0,dataDir}).start();
   // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
   await svc.flush();
+  if(arg('family')){const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${arg('project')}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'family',family:arg('family')}})});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
   const browser=await chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
   const started=Date.now();
   try{
     const page=await browser.newPage({viewport:{width,height}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-    await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=construct&style=${style}&project=${arg('project')}`);
+    await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=${world}&labels=${labels}&style=${style}&project=${arg('project')}`);
     await page.waitForFunction(()=>!!window.__film);
-    const info=await page.evaluate(([project,speed])=>window.__film.open({project,speed}),[arg('project'),speed]);
+    const info=await page.evaluate(([project,speed,note])=>window.__film.open({project,speed,note}),[arg('project'),speed,arg('note','')]);
     if(!info.webgl)throw new Error('WebGL unavailable; the Construct cannot render');
-    const from=Number(arg('from',info.start)),to=Math.min(Number(arg('to',info.end)),info.end);
+    if(info.recipe)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.recipe.json',JSON.stringify(info.recipe,null,1));
+    console.log(`world ${info.world}${info.recipe?` · ${info.recipe.familyName} (${info.recipe.source}, variant ${info.recipe.variant})`:''}`);
+    const from=Number(arg('from',info.start)),to=Math.min(Number(arg('to',info.end)),info.end)+tail*1000;
     const seconds=(to-from)/1000/speed;
     console.log(`performance ${new Date(from).toISOString()} .. ${new Date(to).toISOString()} (${((to-from)/60000).toFixed(1)} min) -> film ${seconds.toFixed(1)} s at ${speed}x`);
     // Music first: its bars give the section (and so the light) for every moment of the film. Stills skip it unless --sections.

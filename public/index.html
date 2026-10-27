@@ -38,10 +38,22 @@
         <div class="chapter-card"><span class="eyebrow">CURRENT MOVEMENT</span><div class="chapter"><span id="chapter">01</span><span class="chapter-name" id="chapterName">ORIGIN</span></div><div class="chapter-rule"><div id="chapterFill"></div></div></div>
         <div class="section-label studio-label"><span class="eyebrow">WORLD / VISUAL LANGUAGE</span><span class="rule"></span></div>
         <div class="worlds" role="group" aria-label="Visual world">
-          <button class="world active" data-world="construct" aria-pressed="true"><span>⬢</span>CONSTRUCT</button>
+          <button class="world active" data-world="living" aria-pressed="true"><span>✺</span>LIVING</button>
+          <button class="world" data-world="construct" aria-pressed="false"><span>⬢</span>CONSTRUCT</button>
           <button class="world" data-world="nexus" aria-pressed="false"><span>◉</span>NEXUS</button>
           <button class="world" data-world="city" aria-pressed="false"><span>▥</span>MONOLITH</button>
           <button class="world" data-world="nebula" aria-pressed="false"><span>✧</span>NEBULA</button>
+        </div>
+        <div class="section-label studio-label"><span class="eyebrow">WORLD DNA / IDENTITY</span><span class="rule"></span></div>
+        <div class="dna">
+          <div class="dna-family"><strong id="dnaFamily">—</strong><span id="dnaSource"></span></div>
+          <label class="visually-hidden" for="dnaFamilySelect">World family</label>
+          <select id="dnaFamilySelect" class="sound-select"><option value="">AUTOMATIC · FROM THE CODE</option><option value="stellar-forge">STELLAR FORGE</option><option value="fractal-biosphere">FRACTAL BIOSPHERE</option><option value="machine-cathedral">MACHINE CATHEDRAL</option></select>
+          <div class="dna-actions"><button class="action" id="dnaRegenerate" title="A new seeded draw of the identity">REGENERATE</button><button class="action" id="dnaLock" aria-pressed="false" title="Keep this identity permanently">LOCK</button></div>
+          <label class="control-line" for="intensitySlider">SPECTACLE <span id="intensityReadout">100%</span></label>
+          <input type="range" id="intensitySlider" min="0" max="200" value="100" aria-label="Effect intensity">
+          <label class="control-line" for="labelsSelect">INFORMATION</label>
+          <select id="labelsSelect" class="sound-select"><option value="cinematic">CINEMATIC</option><option value="explorer">EXPLORER · CLICK TO INSPECT</option><option value="stream">STREAM · LOWER THIRD</option><option value="off">OFF</option></select>
         </div>
         <div class="section-label studio-label"><span class="eyebrow">SCORE / SYNTHESIS</span><span class="rule"></span></div>
         <div class="sound-controls">
@@ -68,6 +80,8 @@
         <div class="stage-top"><span class="eyebrow">02 / THE LIVING STRUCTURE</span><div><span id="stageMode">NEXUS / GENERATIVE STAGE</span><span class="live-indicator" id="liveIndicator">LIVE</span></div></div>
         <div class="canvas-wrap"><canvas id="stage" aria-label="Animated representation of software architecture and musical energy"></canvas>
           <canvas id="construct" class="hidden" aria-label="The Construct: the software as an illuminated architectural model being built"></canvas>
+          <canvas id="world" class="hidden" aria-label="The project's living world, generated from its code and its development"></canvas>
+          <canvas id="worldOverlay" class="hidden" aria-hidden="true"></canvas>
           <div class="caption" id="caption" aria-live="polite"></div>
           <div class="stage-overlay stage-empty" id="stageEmpty"><div class="empty-orbit"></div><span class="eyebrow">NO PROJECT ACTIVITY YET</span><h1>Give your code<br>a <i>pulse.</i></h1><p>Start the receiver, then run <strong>Code Resonance: Start Code Performance</strong> in VS Code. You can also run the included demo.</p></div>
           <div class="stage-lower-left"><span class="stage-subtle">ENGINE</span><strong>SOURCE → STRUCTURE → SOUND</strong></div>

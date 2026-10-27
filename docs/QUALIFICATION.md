@@ -138,11 +138,68 @@ Technical results only; whether it is good to watch is a human judgement that ha
   browsers (Windows ANGLE D3D11, macOS Metal) were not measured.
 - **Privacy:** no file paths in the page (a real path from the sample is checked), no page errors.
 
+## Living worlds (Phase 3, artistic candidates)
+
+Technical results only; artistic acceptance is a human judgement that has not been made. Datasets are built by
+`visual/datasets.js`: the committed Lumen Recipes recording; a **supplemental** copy of it with a 100 s pause inserted
+after the first commit (real events, timestamps after the pause shifted; labelled in its README, its project name and
+on every frame of its film); the first 450 source files of an Excalidraw checkout indexed as an existing project; and
+Code Resonance's own first-parent git history (38 commits) replayed as a 20-minute session.
+
+- **Identities** (`visual/recipes.js`, pinned in `docs/worlds/recipes/`): Lumen Recipes generates Stellar Forge
+  (scores 1.74 / 1.55 / 0.43 for Stellar / Biosphere / Cathedral), Code Resonance generates Machine Cathedral
+  (0.97 / 0.78 / 1.14), Excalidraw generates Machine Cathedral by a narrow margin (1.28 / 1.49 / 1.52, decided by the
+  seeded share); for the comparison Excalidraw is also shown with Fractal Biosphere chosen by hand (`source: "user"`).
+- **Draw calls** (scene pass): Stellar Forge 13, Fractal Biosphere 7, Machine Cathedral 8 on the 450-file Excalidraw
+  snapshot (the Construct: 3,622). The full frame adds the background, bloom chain and grade (21-27 passes).
+- **Frame rate**, live player, 1920×1080, Excalidraw 450 files, 8 s after settling (`visual/worlds.qual.js`):
+
+  | Renderer | Stellar Forge | Fractal Biosphere | Machine Cathedral |
+  |---|---|---|---|
+  | AMD Radeon integrated GPU, WSL2 (ANGLE GL → Mesa d3d12), full quality | 28.1 fps | 25.5 fps (27.3 adaptive) | 34.5 fps |
+  | SwiftShader (CPU), full quality | 2.3 fps | 2.2 fps | 2.2 fps |
+
+  Scene update is 0.2-0.6 ms and command submission 0.3-0.4 ms per frame; the remaining time is GPU fill (HDR,
+  4× MSAA, bloom, full-screen sky). Live playback lowers MSAA and resolution when frames are slow (films never do).
+  The RTX 5090 was not used. Native browsers (Windows ANGLE D3D11, macOS Metal) were not measured.
+- **Film rendering** is frame-exact and independent of machine speed: about 0.27 s per 1080p frame on SwiftShader.
+- **Determinism:** the same recording, recipe and moment render byte-identical frames in two browser sessions, also
+  when one session first played another moment (Lumen / Stellar Forge, Excalidraw / Biosphere, Code Resonance /
+  Cathedral).
+- **Idle life** (Stellar Forge): between samples taken 10, 40, 70 and 100 s after the last Lumen event the mean
+  absolute luminance change is 26.8, 25.5 and 28.7 (0-255), while the structure (17 planets, 31 moons, 12 links,
+  6 systems) and the 205 recorded intents stay exactly the same; the director reports idle from the 40 s sample on.
+  The idle check runs on Stellar Forge only; the other families' idle motion is visible in the films, not measured.
+- **Resources:** switching the recipe 9 times through the three families (Stellar → Biosphere → Cathedral, three
+  rounds) brings Stellar Forge back to 20 geometries and 13 textures, the same as on its first build.
+- **Privacy:** 61 distinct label strings, collected every 3 s through the whole Lumen session in cinematic mode and for
+  10 s in stream mode, contain no path, file name (with or without extension), distinctive folder name or camelCase /
+  snake_case identifier (41 patterns from the recording's real files). An earlier version of this check matched path
+  segments as substrings and flagged "Agent 5 · searching" (search.js) and "Integration validated" (validate.js); it
+  now matches whole words, and deliberate leaks such as "RecipeCard", "models.js" or "src/data/store.js" are caught.
+- **Films against the PR #2 baseline** (`construct-lumen-recipes.webm` vs `living-lumen-recipes.webm`, both decoded to
+  320×180 grey at 10 fps; "lit" = more than 25 levels above the frame's median, "changing" = more than 6 levels between
+  frames 0.1 s apart): lit pixels 13.9 % → 25.9 % (median), pixels changing per 0.1 s 2.33 % → 6.06 % (median) and
+  7.29 % → 24.84 % (p90); in the quiet 60-70 s window 0.34 % → 1.11 %; in the 90 s idle tail after the session 3.07 %.
+  These say the new film is brighter, fuller and more animated, not that it is better art.
+- **Film audio** (same films, ffmpeg ebur128): the Lumen session -23.9 LUFS integrated, the idle tail -24.2 LUFS with no
+  silent stretch.
+- **Live priming:** opening the live view (not a replay) on Lumen Recipes primes the director with 205 of 205 recorded
+  intents, read through the timeline's intents view (`/api/timeline?fields=intents`) without a page limit. The
+  previous client read at most 10,000 windows from the start; no recording that long was available, so the
+  difference itself is covered by a unit test of the intents view, not by a long live session.
+- **Agents in Lumen Recipes:** 142 lifecycle intents from 6 agents; each presence appears with its session, follows
+  its tool activity (reading, searching, editing, running, testing) and departs when its session ends.
+- **Music balance** (`audio/balance.js`, the real Lumen timeline through the PR #2 and the current `music.js`):
+  integrated loudness -23.1 → -23.5 LUFS, true peak -12.1 → -11.1 dBFS, energy below 120 Hz -1.5 dB relative,
+  above 200 Hz +4.2 dB, above 2 kHz +10 dB, stereo phase correlation 0.79 → 0.52. Not yet reviewed by ear.
+
 ## Not verified
 
 - Native Windows and macOS (no Windows Node, and WSL interop is disabled in this environment). VS Code Remote-SSH.
 - Native GPU browsers (GPU numbers above are through WSL2's translation layer); Firefox and Safari.
-- Artistic acceptance of the Construct, and whether people who do not code understand it without explanation.
+- Artistic acceptance of the Construct and of the living worlds (Stellar Forge, Fractal Biosphere, Machine Cathedral),
+  and whether people who do not code understand them without explanation.
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
@@ -150,5 +207,7 @@ Technical results only; whether it is good to watch is a human judgement that ha
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - `npm test` failed once (one receiver test) while the machine was saturated by parallel renders; it did not
-  reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured.
+  reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured. On this branch one run in 13
+  failed one test (89/90) right after a full browser qualification; that output was not captured either, and the 12
+  later runs (5 of them during two parallel film renders) passed 90/90. The flaky test is not identified.
 - AI agents other than Claude Code.

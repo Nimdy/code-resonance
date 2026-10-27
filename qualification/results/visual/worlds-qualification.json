@@ -1,0 +1,344 @@
+{
+  "at": "2026-10-24T03:34:09.195Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "determinism: lumen (stellar-forge) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "bd2c361e7e743bc7 / bd2c361e7e743bc7"
+    },
+    {
+      "name": "no page errors: lumen (stellar-forge)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: excalidraw (fractal-biosphere) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "b381c568c87795b1 / b381c568c87795b1"
+    },
+    {
+      "name": "no page errors: excalidraw (fractal-biosphere)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: self (machine-cathedral) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "c7133b018185b807 / c7133b018185b807"
+    },
+    {
+      "name": "no page errors: self (machine-cathedral)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "performance: stellar-forge on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "13 draw calls; 2.3 fps full quality, 2.3 fps adaptive (level 0) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "name": "no page errors in the live player: stellar-forge",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "performance: fractal-biosphere on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "7 draw calls; 2.2 fps full quality, 2.2 fps adaptive (level 0) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "name": "no page errors in the live player: fractal-biosphere",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "performance: machine-cathedral on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "8 draw calls; 2.2 fps full quality, 2.2 fps adaptive (level 0) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+    },
+    {
+      "name": "no page errors in the live player: machine-cathedral",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "idle life: the image keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 26.79, 25.45, 28.73 (0-255)"
+    },
+    {
+      "name": "idle life: no structure or event appears while idle",
+      "pass": true,
+      "detail": "{\"p\":17,\"m\":31,\"l\":12,\"sys\":6,\"i\":205}"
+    },
+    {
+      "name": "idle life: the director reports idle",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "privacy: no label contains a path, file name or source identifier",
+      "pass": true,
+      "detail": "61 distinct label strings checked"
+    },
+    {
+      "name": "resources: switching worlds 9 times leaves GPU geometries and textures at their level",
+      "pass": true,
+      "detail": "geometries 20->20, textures 13->13"
+    },
+    {
+      "name": "live: opening the live view primes the whole intent history",
+      "pass": true,
+      "detail": "205 of 205 recorded intents"
+    },
+    {
+      "name": "no page errors in the live view",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "idle": {
+      "seconds": "10-100 after the last event",
+      "meanAbsLumaDiff": [
+        26.79,
+        25.45,
+        28.73
+      ],
+      "structure": "{\"p\":17,\"m\":31,\"l\":12,\"sys\":6,\"i\":205}",
+      "phases": [
+        "active",
+        "idle",
+        "idle",
+        "idle"
+      ]
+    },
+    "labels": [
+      "1 agent present",
+      "1 component",
+      "1 under strain",
+      "10 validated",
+      "3 under strain",
+      "5 under strain",
+      "8 under strain",
+      "A new star ignites",
+      "Agent 1 · disconnected",
+      "Agent 1 · editing",
+      "Agent 1 · working on a request",
+      "Agent 2 · disconnected",
+      "Agent 2 · working on a request",
+      "Agent 3 · connected",
+      "Agent 3 · disconnected",
+      "Agent 3 · editing",
+      "Agent 3 · running",
+      "Agent 3 · working on a request",
+      "Agent 4 · connected",
+      "Agent 4 · disconnected",
+      "Agent 4 · testing",
+      "Agent 4 · waiting for the next prompt",
+      "Agent 4 · working on a request",
+      "Agent 4: testing",
+      "Agent 4: working on a request",
+      "Agent 5 · connected",
+      "Agent 5 · disconnected",
+      "Agent 5 · reading",
+      "Agent 5 · running",
+      "Agent 5 · searching",
+      "Agent 5 · waiting for the next prompt",
+      "Agent 5 · working on a request",
+      "Agent 6 · disconnected",
+      "Agent 6 · testing",
+      "Agent 6 · working on a request",
+      "Alyror ↔ Vauos",
+      "Building",
+      "Committed · 1 world set in orbit",
+      "Committed · the work is set in place",
+      "Deen · tests",
+      "Integration validated",
+      "Integration · two systems connect",
+      "Ioeoel · logic",
+      "New structure enters orbit",
+      "Nova · Integration validated",
+      "Recovered · 8 worlds repaired",
+      "Recovery",
+      "Stellar Forge · a generative world from this project's code",
+      "Tests fail · storms on 8 worlds",
+      "Tests pass · 2 worlds validated",
+      "The forge grows · chapter 2",
+      "The forge grows · chapter 3",
+      "accumulated structure",
+      "commit observed",
+      "lumen-recipes",
+      "lumen-recipes · Stellar Forge",
+      "milestone · verified by a passing test run",
+      "observed failing run",
+      "observed passing run",
+      "the tests pass again",
+      "verified by a passing test run"
+    ],
+    "worldSwitching": [
+      {
+        "geometries": 20,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 20,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 14,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 15,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 20,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 14,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 15,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 20,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 14,
+        "textures": 13,
+        "heap": 11200000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 15,
+        "textures": 13,
+        "heap": 11200000
+      }
+    ],
+    "performance": {
+      "stellar-forge": {
+        "full": {
+          "fps": 2.3,
+          "quality": 0,
+          "drawCalls": 13,
+          "passes": 27,
+          "triangles": 308000,
+          "points": 23568,
+          "updateMs": 0.42,
+          "drawMs": 1.75,
+          "geometries": 20,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 2.3,
+          "quality": 0,
+          "drawCalls": 13,
+          "passes": 27,
+          "triangles": 308000,
+          "points": 23568,
+          "updateMs": 0.33,
+          "drawMs": 0.57,
+          "geometries": 20,
+          "textures": 13
+        }
+      },
+      "fractal-biosphere": {
+        "full": {
+          "fps": 2.2,
+          "quality": 0,
+          "drawCalls": 7,
+          "passes": 21,
+          "triangles": 90984,
+          "points": 7326,
+          "updateMs": 0.43,
+          "drawMs": 1.45,
+          "geometries": 14,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 2.2,
+          "quality": 0,
+          "drawCalls": 7,
+          "passes": 21,
+          "triangles": 90984,
+          "points": 7326,
+          "updateMs": 0.33,
+          "drawMs": 0.57,
+          "geometries": 14,
+          "textures": 13
+        }
+      },
+      "machine-cathedral": {
+        "full": {
+          "fps": 2.2,
+          "quality": 0,
+          "drawCalls": 8,
+          "passes": 22,
+          "triangles": 85158,
+          "points": 5403,
+          "updateMs": 0.65,
+          "drawMs": 1.43,
+          "geometries": 15,
+          "textures": 13
+        },
+        "adaptive": {
+          "fps": 2.2,
+          "quality": 0,
+          "drawCalls": 8,
+          "passes": 22,
+          "triangles": 85158,
+          "points": 5403,
+          "updateMs": 0.44,
+          "drawMs": 0.56,
+          "geometries": 15,
+          "textures": 13
+        }
+      }
+    },
+    "privacyPatterns": 41,
+    "live": {
+      "recorded": 205,
+      "primed": 205,
+      "phase": "idle"
+    }
+  },
+  "reruns": [
+    {
+      "at": "2026-10-24T03:45:12.485Z",
+      "sections": [
+        "idle"
+      ],
+      "reason": "privacy checker matched path segments as substrings (\"searching\" vs search.js); changed to whole-word matching"
+    },
+    {
+      "at": "2026-10-24T04:00:53.837Z",
+      "sections": [
+        "live"
+      ]
+    }
+  ]
+}

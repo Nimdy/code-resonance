@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-24T00:48:05.443Z",
+  "project": "c6c876a59a66",
+  "seconds": 240,
+  "style": "ambient",
+  "base": "HEAD",
+  "results": {
+    "baseline": {
+      "integratedLufs": -23.1,
+      "loudnessRangeLu": 3.8,
+      "truePeakDbfs": -12.1,
+      "rmsDb": -22.18962,
+      "below120HzDb": -23.066091,
+      "above200HzDb": -31.722841,
+      "above2kHzDb": -50.735704,
+      "stereoPhaseCorrelation": 0.788
+    },
+    "current": {
+      "integratedLufs": -23.5,
+      "loudnessRangeLu": 3.4,
+      "truePeakDbfs": -11.1,
+      "rmsDb": -24.34794,
+      "below120HzDb": -26.738729,
+      "above200HzDb": -29.712989,
+      "above2kHzDb": -42.939035,
+      "stereoPhaseCorrelation": 0.522
+    }
+  },
+  "delta": {
+    "lufs": -0.4,
+    "lowShareDb": -1.5,
+    "above200ShareDb": 4.2,
+    "above2kShareDb": 10,
+    "correlation": -0.266
+  }
+}

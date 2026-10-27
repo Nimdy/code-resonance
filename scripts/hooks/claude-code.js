@@ -3,7 +3,8 @@
 // Claude Code hook adapter (https://code.claude.com/docs/en/hooks). Configure it as a `command` hook; it reads the
 // documented hook JSON from stdin and forwards only what Code Resonance needs:
 //  - prompts and assistant messages: length + fingerprint only (text only with RESONANCE_CAPTURE_PROMPT_TEXT=1);
-//  - tool use: tool name, project-relative file path, and for Bash a command *category* and exit code;
+//  - tool use: tool name, the project-relative file it edits or reads, and for Bash a command *category* and exit code
+//    (a read names its file so the player can show where an agent looks; only edits attribute later changes);
 //  - subagents: their own agent id, so each subagent is a distinct, attributable voice.
 // It never prints to stdout and always exits 0, so it cannot block or alter Claude's behaviour.
 const fs=require('node:fs');
@@ -16,6 +17,7 @@ const {isFileEligible,classifyCommand}=require('../../extension/filters');
 const DATA=process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance');
 const PROVIDER='claude-code';
 const FILE_TOOLS=new Set(['Edit','Write','MultiEdit','NotebookEdit']);
+const READ_TOOLS=new Set(['Read','NotebookRead']);
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
 function relativeFile(root,file){
   if(typeof file!=='string'||!file)return undefined;
@@ -33,10 +35,11 @@ function translate(input,now=Date.now()){
     meta:{provider:PROVIDER,source:'claude-code-hook',agent:agent.slice(0,120),...meta},...extra});
   const tool=typeof input.tool_name==='string'?input.tool_name.slice(0,40):'';
   const toolInput=input.tool_input&&typeof input.tool_input==='object'?input.tool_input:{};
-  const file=FILE_TOOLS.has(tool)?relativeFile(root,toolInput.file_path||toolInput.notebook_path):undefined;
+  const target=FILE_TOOLS.has(tool)||READ_TOOLS.has(tool)?relativeFile(root,toolInput.file_path||toolInput.notebook_path):undefined;
+  const file=FILE_TOOLS.has(tool)?target:undefined;
   const category=tool==='Bash'?classifyCommand(toolInput.command):undefined;
   const toolMeta={tool,...(category?{category}:{})};
-  const withFile=file?{file}:{};
+  const withFile=target?{file:target}:{};
   const capture=process.env.RESONANCE_CAPTURE_PROMPT_TEXT==='1';
   switch(input.hook_event_name){
     case 'SessionStart':return [base('agent.session.started',{reason:String(input.source||'')})];
@@ -45,7 +48,7 @@ function translate(input,now=Date.now()){
     case 'PreToolUse':return [base('agent.tool.started',toolMeta,withFile)];
     case 'PostToolUse':{
       const out=[base('agent.tool.completed',{...toolMeta,result:'succeeded',...(tool==='Bash'?{exitCode:0}:{})},withFile)];
-      if(file)out.push(base('agent.file.modified',{tool},withFile));
+      if(file)out.push(base('agent.file.modified',{tool},{file}));
       return out;
     }
     case 'PostToolUseFailure':{
