@@ -220,8 +220,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   async function show(){
     // The living world draws compositions: a project shown on a classic stage gets it here, for the preview only.
     if(S.effective().world!=='living'){P.setWorld('living');localWorld=true;}
-    try{await P.preview(candidate);previewing=true;S.setDraft('Artist Studio preview');}
-    catch(e){toast(e.message,'warning');candidate=null;previewing=false;S.setDraft(null);return;}
+    try{await P.preview(candidate);if(!alive)return;previewing=true;S.setDraft('Artist Studio preview');}
+    catch(e){if(!alive)return;toast(e.message,'warning');candidate=null;previewing=false;S.setDraft(null);return;}
     const m=session.work?.music;
     if(m){S.previewMusic({...(m.style?{style:m.style}:{}),...(m.profile?{profile:m.profile}:{})});musicOn=true;}
     else if(musicOn){musicOn=false;S.previewMusic(null);}
