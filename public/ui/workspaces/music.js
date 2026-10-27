@@ -479,6 +479,7 @@ export default {mount(view,{store:S,player:P,chrome}){
       r.el.classList.toggle('pending',r.key in d);r.el.classList.toggle('own',scope==='project'&&own(r.key)!==null);}
     charReset.hidden=!on||PROFILE_KEYS.every(k=>same(shown(k),.5));
     sourceLine(charSource,PROFILE_KEYS,'Character',m=>profileWords(m).toLowerCase());
+    if(S.pinned('profile'))charSource.append(h('span',{class:'warn',text:`This window's address pins part of the character or balance (?music=); saved choices apply elsewhere.`}));
     // Only the voices this style can sound with this character (score.js orchestrate), whatever their level.
     const avail=soundingGroups(window.ResonanceScore,style,Object.fromEntries(PROFILE_KEYS.map(k=>[k,shown(k)]))),m=shownMix(),base=mixOf(saved('mix'))||DEFAULT_MIX;
     for(const r of chRows){const v=m[r.g],muted=v===0,name=GROUP_INFO[r.g].name;
