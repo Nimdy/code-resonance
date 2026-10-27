@@ -876,6 +876,17 @@ export function createFamily(ctx){
   function onPrime(){for(const v of U.uWave.value)v.y=-1e5;for(const v of groundU.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of pillarU.uCol.value)v.z=-1e5;
     for(const L of Object.values(transients))L.length=0;pulses.clear();lastBloomKey='';agentState.clear();}
   makeCrowns(false);
+  // ---- Composition anchors (layers.js): the organisms (mid-height, rooted at their base), the work, the branch tips,
+  // the reef's edge. Read-only: they follow the organisms' current size and sway and never change the world.
+  const composeA={center:new THREE.Vector3(),extent:6,floor:0,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:8,y:0}};
+  function composeAnchors(i){
+    if(!forest)return composeA;composeA.center.set(centre.x,canopyH*.35,centre.z);composeA.extent=extent;composeA.boundary.radius=extent*1.25;
+    composeA.subsystems=orgList.filter(o=>o.removed>=1e5).map(o=>({id:o.id,pos:v3(o.root).setY(hOf(o)*.5),base:v3(o.root),size:Math.max(rOf(o),hOf(o)*.45)}));
+    const ids=forest.moduleIds,n=Math.min(64,ids.length);composeA.nodes=[];for(let k=0;k<n;k++){const p=anchorPos(ids[Math.floor(k*ids.length/n)]);if(p)composeA.nodes.push({pos:p});}
+    const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&forest.anchors.has(a.fileId));
+    const at=att&&(i.t-att.at)/ctx.speed()/1000<30?subjectOf(att)?.pos:busy?anchorPos(busy.fileId):null;composeA.active.pos.copy(at||composeA.center);
+    return composeA;}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    compose:{camera,scene,anchors:composeAnchors},
     ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }

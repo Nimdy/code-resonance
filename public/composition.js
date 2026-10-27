@@ -27,33 +27,35 @@
   const ANCHORS=['center','subsystems','largest','active','nodes','boundary','camera','point'];
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const HEX=/^#[0-9a-f]{6}$/i;
-  // Parameter spec: [key, type, min|options, max, default, group]. Types: number, int, enum, color, bool.
-  const P=(key,type,a,b,d,group='appearance')=>({key,type,...(type==='enum'?{options:a}:{min:a,max:b}),default:d,group});
+  // Parameter spec: [key, type, min|options, max, default, group, live]. Types: number, int, enum, color, bool.
+  // live: false marks a value that shapes the layer's geometry (its form is rebuilt when it changes): it is edited, never
+  // animated, so mappings cannot target it (targetsOf).
+  const P=(key,type,a,b,d,group='appearance',live=true)=>({key,type,...(type==='enum'?{options:a}:{min:a,max:b}),default:d,group,...(live?{}:{live:false})});
   const COLOR=(key,d,group='appearance')=>({key,type:'color',default:d,group});
   const LAYERS={
     fractal:{label:'Fractal geometry',cost:p=>4+Math.pow(p.branching,p.depth)*p.instances*.012,params:[
-      P('form','enum',['tree','fern','coral','lightning','spiral'],0,'tree','form'),P('depth','int',2,7,5,'form'),P('branching','int',2,4,2,'form'),
-      P('spread','number',0,1,.5,'form'),P('scale','number',.1,3,1,'form'),P('instances','int',1,24,5,'form'),P('growth','number',0,1,1,'form'),
+      P('form','enum',['tree','fern','coral','lightning','spiral'],0,'tree','form'),P('depth','int',2,7,5,'form',false),P('branching','int',2,4,2,'form',false),
+      P('spread','number',0,1,.5,'form',false),P('scale','number',.1,3,1,'form'),P('instances','int',1,24,5,'form',false),P('growth','number',0,1,1,'form'),
       P('material','enum',['filament','crystal','vein'],0,'filament'),COLOR('color','#5ff2d6'),COLOR('tip','#c58bff'),P('width','number',.2,3,1),P('glow','number',0,3,1),
       P('sway','number',0,1,.35,'motion'),P('speed','number',0,2,.5,'motion')]},
     particles:{label:'Particle population',cost:p=>3+p.count/1000*9*(1+p.trail),params:[
-      P('count','int',200,6000,1800,'form'),P('distribution','enum',['cloud','disc','shell','anchors'],0,'cloud','form'),P('spread','number',.1,3,1,'form'),
+      P('count','int',200,6000,1800,'form',false),P('distribution','enum',['cloud','disc','shell','anchors'],0,'cloud','form'),P('spread','number',.1,3,1,'form'),
       P('size','number',.2,4,1),COLOR('color','#9fe8ff'),COLOR('colorB','#ffb6e6'),P('glow','number',0,3,1),P('sparkle','number',0,1,.3),P('trail','number',0,1,.3),
       P('behavior','enum',['swarm','orbit','drift','flock'],0,'swarm','motion'),P('cohesion','number',0,1,.5,'motion'),P('separation','number',0,1,.4,'motion'),
       P('alignment','number',0,1,.5,'motion'),P('attraction','number',-1,1,.3,'motion'),P('speed','number',0,2,.6,'motion'),P('lifetime','number',.5,20,8,'motion')]},
     ribbons:{label:'Ribbons & flow',cost:p=>2+p.count*p.length*.35,params:[
-      P('count','int',4,64,18,'form'),P('length','number',.1,1,.5,'form'),P('scale','number',.2,3,1,'form'),P('field','enum',['curl','orbit','spiral','wind'],0,'curl','form'),
+      P('count','int',4,64,18,'form',false),P('length','number',.1,1,.5,'form'),P('scale','number',.2,3,1,'form'),P('field','enum',['curl','orbit','spiral','wind'],0,'curl','form'),
       P('width','number',.2,3,1),P('taper','number',0,1,.6),COLOR('color','#7fd8ff'),COLOR('colorB','#ffd27f'),P('glow','number',0,3,1.2),
       P('turbulence','number',0,1,.4,'motion'),P('speed','number',0,2,.5,'motion')]},
     structure:{label:'Geometric structure',cost:p=>2+p.count*p.detail*.4,params:[
-      P('shape','enum',['rings','lattice','polyhedron','orbits','arches'],0,'rings','form'),P('count','int',1,24,4,'form'),P('radius','number',.1,3,1,'form'),
-      P('detail','int',1,5,3,'form'),P('thickness','number',.1,2,.5),P('wire','bool',0,1,true),COLOR('color','#a6c8ff'),P('glow','number',0,3,.8),
+      P('shape','enum',['rings','lattice','polyhedron','orbits','arches'],0,'rings','form'),P('count','int',1,24,4,'form',false),P('radius','number',.1,3,1,'form'),
+      P('detail','int',1,5,3,'form',false),P('thickness','number',.1,2,.5),P('wire','bool',0,1,true),COLOR('color','#a6c8ff'),P('glow','number',0,3,.8),
       P('rotation','number',0,2,.3,'motion'),P('wobble','number',0,1,.2,'motion')]},
     atmosphere:{label:'Atmospheric field',cost:()=>6,params:[
       P('style','enum',['haze','aurora','gradient','nebula'],0,'haze','form'),P('scale','number',.2,3,1,'form'),P('height','number',0,1,.5,'form'),
       COLOR('color','#1e3a5f'),COLOR('colorB','#6b3fa0'),P('intensity','number',0,2,.6),P('noise','number',0,1,.5),P('speed','number',0,1,.2,'motion')]},
     light:{label:'Light accents',cost:p=>1+p.count*.25,params:[
-      P('style','enum',['glow','pulse','flare','beacon'],0,'glow','form'),P('count','int',1,16,3,'form'),P('size','number',.1,3,1,'form'),
+      P('style','enum',['glow','pulse','flare','beacon'],0,'glow','form'),P('count','int',1,16,3,'form',false),P('size','number',.1,3,1,'form'),
       COLOR('color','#ffd9a8'),P('intensity','number',0,4,1.2),P('falloff','number',0,1,.5),P('speed','number',0,2,.5,'motion')]}
   };
   // Every layer also has these; mappings may target them.
@@ -76,10 +78,19 @@
   ].map(([id,label,doc])=>({id,label,doc,group:id.split('.')[0]}));
   const SIGNAL_IDS=new Set(SIGNALS.map(s=>s.id));
   const CURVES=['linear','smooth','sharp','pulse'];
+  // The artist canvas's own settings: its sky (zenith and horizon colours), the camera's orbit (0 still … 1 one turn in two
+  // minutes) and distance, and the floor (0: only the horizon; up to 1: the floor's grid and the subsystems' marks).
+  const CANVAS=[COLOR('background','#04060c'),COLOR('horizon','#14223a'),P('orbit','number',0,1,.25),P('distance','number',.5,2,1),P('floor','number',0,1,.4)];
   // Composition-level targets (bounded camera motion and finish emphasis).
   const GLOBAL_TARGETS=[P('camera.sway','number',0,1,0),P('camera.zoom','number',-.3,.3,0),P('finish.bloom','number',-.5,.5,0),P('finish.exposure','number',-.3,.3,0)];
   function specOf(type){const t=LAYERS[type];if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
-  function targetsOf(type){return (specOf(type)||[]).filter(p=>p.type==='number'||p.type==='int');}
+  function targetsOf(type){return (specOf(type)||[]).filter(p=>(p.type==='number'||p.type==='int')&&p.live!==false);}
+  // What a depth class actually does for a layer type (shown with the choice: a screen-space effect is never presented
+  // as geometry in the world).
+  const DEPTH_NOTES={
+    atmosphere:{behind:'A sky behind the whole world (screen-space, at the far plane)',world:'A glowing volume around its anchor, depth-tested with the world',front:'A veil over the whole image (screen-space)'},
+    default:{behind:'Drawn behind everything in the world',world:'Integrated: hidden and revealed by the world\'s own forms',front:'Drawn over the world (always in front)'}};
+  function depthNote(type,depth){return (DEPTH_NOTES[type]||DEPTH_NOTES.default)[depth]||'';}
   const str=(v,n)=>typeof v==='string'?v.replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,n):'';
   const idOf=v=>typeof v==='string'&&/^[a-z0-9-]{1,40}$/.test(v)?v:null;
   function value(spec,v){
@@ -139,8 +150,7 @@
     return {schema:SCHEMA,version:VERSION,id:idOf(c?.id)||null,name:str(c?.name,LIMITS.name)||'Untitled composition',
       description:str(c?.description,240),base,finish:FINISHES.includes(c?.finish)?c.finish:null,
       tuning:base==='canvas'?{}:tuningOf(c?.tuning),music:musicOf(c?.music),
-      canvas:base==='canvas'?{background:value(COLOR('background','#04060c'),c?.canvas?.background),horizon:value(COLOR('horizon','#14223a'),c?.canvas?.horizon),
-        orbit:value(P('orbit','number',0,1,.25),c?.canvas?.orbit),distance:value(P('distance','number',.5,2,1),c?.canvas?.distance)}:null,
+      canvas:base==='canvas'?Object.fromEntries(CANVAS.map(s=>[s.key,value(s,c?.canvas?.[s.key])])):null,
       layers,mappings:(Array.isArray(c?.mappings)?c.mappings:[]).map(m=>mappingOf(m,GLOBAL_TARGETS)).filter(Boolean).slice(0,LIMITS.globalMappings)};
   }
   function costOf(layer){const t=LAYERS[layer.type];return t?Math.round(t.cost(layer.params)*10)/10:0;}
@@ -170,46 +180,59 @@
   }
   function layer(type,over={}){const spec=specOf(type),params={};for(const s of spec)params[s.key]=s.default;
     return layerOf({type,...over,params:{...params,...over.params}},0);}
-  // Creator starters: complete, editable compositions that show different combinations of layers and mappings.
+  // Creator starters: complete, editable compositions that show different combinations of layers and mappings. Each
+  // mapping has room to move (a base value below the top of its range), and each starter answers both the music and
+  // the real engineering events (verified milestones, failures, recoveries, structure created).
+  const M=(signal,target,amount,curve='smooth',smoothing=1,min=0,max=1)=>({signal,target,amount,curve,smoothing,min,max});
   const STARTERS=[
-    {id:'starter-blank',name:'Blank composition',description:'The artist canvas: a quiet horizon and nothing else. Add layers from the library.',base:'canvas',finish:'cinematic',layers:[]},
-    {id:'starter-bioluminescent-dream',name:'Bioluminescent Dream',description:'Organic and slow: fractal filaments over the Biosphere, drifting spores and a breathing haze.',base:'fractal-biosphere',finish:'dreamlike',
+    {id:'starter-blank',name:'Blank composition',description:'The artist canvas: a quiet horizon and the project\'s subsystems as faint marks on the floor. Add layers from the library.',base:'canvas',finish:'cinematic',layers:[]},
+    {id:'starter-bioluminescent-dream',name:'Bioluminescent Dream',description:'Organic and slow: coral filaments beside the Biosphere\'s organisms, drifting spores, a breathing haze, lanterns that blaze at verified milestones.',base:'fractal-biosphere',finish:'dreamlike',
       tuning:{'palette.hue':172},music:{style:'ambient',profile:{atmosphere:.8,evolution:.45,rhythm:.25}},layers:[
-      layer('fractal',{id:'filaments',name:'Mycelium filaments',depth:'world',anchor:{kind:'subsystems'},params:{form:'coral',depth:5,instances:6,color:'#3cf2c8',tip:'#b98cff',glow:1.4,sway:.5},
-        mappings:[{signal:'music.dynamics',target:'glow',amount:.35,curve:'smooth',smoothing:1.5,min:0,max:1},{signal:'eng.creation',target:'growth',amount:.3,curve:'smooth',smoothing:2,min:.4,max:1}]}),
-      layer('particles',{id:'spores',name:'Drifting spores',depth:'world',anchor:{kind:'center'},params:{count:2200,behavior:'drift',color:'#a8fff0',colorB:'#e6b8ff',size:.8,trail:.5,speed:.35},
-        mappings:[{signal:'music.melody',target:'brightness',amount:.4,curve:'smooth',smoothing:.8,min:0,max:1}]}),
-      layer('atmosphere',{id:'haze',name:'Breathing haze',depth:'behind',params:{style:'haze',color:'#0b3b3a',colorB:'#3a1f5c',intensity:.7},
-        mappings:[{signal:'music.phrase',target:'intensity',amount:.25,curve:'smooth',smoothing:2,min:0,max:1}]})]},
-    {id:'starter-celestial-motion',name:'Celestial Motion',description:'Orbital and luminous: rings and ribbons in orbit over the Stellar Forge, beacons that answer milestones.',base:'stellar-forge',finish:'cinematic',
-      music:{style:'cinematic',profile:{evolution:.7,dynamics:.7}},layers:[
-      layer('structure',{id:'orbits',name:'Orbital rings',depth:'world',anchor:{kind:'center'},params:{shape:'orbits',count:7,radius:1.6,color:'#9ec5ff',glow:.9,rotation:.25},
-        mappings:[{signal:'music.tension',target:'wobble',amount:.4,curve:'smooth',smoothing:1,min:0,max:.7}]}),
-      layer('ribbons',{id:'streams',name:'Orbital streams',depth:'world',anchor:{kind:'center'},params:{field:'orbit',count:28,length:.7,color:'#7fb8ff',colorB:'#ffcf8a',glow:1.4},
-        mappings:[{signal:'music.energy',target:'speed',amount:.5,curve:'smooth',smoothing:1.5,min:0,max:1}]}),
-      layer('light',{id:'beacons',name:'Milestone beacons',depth:'front',anchor:{kind:'largest',index:0},params:{style:'beacon',count:1,color:'#ffe2b0',intensity:1},
-        mappings:[{signal:'eng.milestone',target:'intensity',amount:.8,curve:'smooth',smoothing:1,min:0,max:1}]})]},
-    {id:'starter-signal-architecture',name:'Signal Architecture',description:'Precise and technical: lattices over the Machine Cathedral, signal ribbons that carry the rhythm.',base:'machine-cathedral',finish:'clean',
+      layer('atmosphere',{id:'haze',name:'Breathing haze',depth:'behind',params:{style:'haze',color:'#0b3b3a',colorB:'#3a1f5c',intensity:.55,height:.45,noise:.6,speed:.15},
+        mappings:[M('music.phrase','intensity',.25,'smooth',2)]}),
+      layer('fractal',{id:'filaments',name:'Mycelium filaments',depth:'world',anchor:{kind:'subsystems'},params:{form:'coral',depth:5,instances:6,scale:1.3,width:.8,growth:.72,color:'#3cf2c8',tip:'#b98cff',glow:1.4,sway:.5},
+        mappings:[M('music.dynamics','glow',.35,'smooth',1.5),M('eng.creation','growth',.3,'smooth',2,.4,1)]}),
+      layer('particles',{id:'spores',name:'Drifting spores',depth:'world',anchor:{kind:'center'},params:{count:2200,behavior:'drift',spread:1.1,color:'#a8fff0',colorB:'#e6b8ff',size:.8,glow:1.2,sparkle:.45,trail:.45,
+        cohesion:.15,separation:.3,alignment:.2,attraction:.2,speed:.3,lifetime:12},
+        mappings:[M('music.melody','brightness',.4,'smooth',.8)]}),
+      layer('light',{id:'lanterns',name:'Milestone lanterns',depth:'world',anchor:{kind:'subsystems'},params:{style:'glow',count:6,size:.6,color:'#7dffe0',intensity:.45,falloff:.65,speed:.4},
+        mappings:[M('eng.milestone','intensity',.7,'smooth',1.2)]})]},
+    {id:'starter-celestial-motion',name:'Celestial Motion',description:'Orbital and luminous: an orrery and orbiting streams over the Stellar Forge, motes circling every star system, a beacon that answers verified milestones.',base:'stellar-forge',finish:'cinematic',
+      music:{style:'cinematic',profile:{evolution:.7,dynamics:.7}},mappings:[M('music.dynamics','camera.sway',.5,'smooth',3)],layers:[
+      layer('structure',{id:'orbits',name:'Orrery',depth:'world',anchor:{kind:'center'},params:{shape:'orbits',count:7,radius:1.5,detail:3,thickness:.45,color:'#9ec5ff',glow:.9,rotation:.25},
+        mappings:[M('music.tension','wobble',.4,'smooth',1,0,.7)]}),
+      layer('ribbons',{id:'streams',name:'Orbital streams',depth:'world',anchor:{kind:'center'},params:{field:'orbit',count:28,length:.7,scale:1.15,width:.8,taper:.7,color:'#7fb8ff',colorB:'#ffcf8a',glow:1.4,turbulence:.3,speed:.4},
+        mappings:[M('music.energy','speed',.5,'smooth',1.5)]}),
+      layer('particles',{id:'motes',name:'Circling motes',depth:'world',anchor:{kind:'subsystems'},params:{count:1600,behavior:'orbit',distribution:'shell',spread:1.2,size:.6,color:'#cfe3ff',colorB:'#ffd9a8',glow:1.1,sparkle:.3,trail:.6,
+        alignment:.6,separation:.35,cohesion:.2,attraction:.4,speed:.5,lifetime:14},
+        mappings:[M('music.density','brightness',.3,'smooth',1.5),M('eng.creation','speed',.3,'smooth',1.5)]}),
+      layer('light',{id:'beacons',name:'Milestone beacon',depth:'front',anchor:{kind:'largest',index:0},params:{style:'beacon',count:1,size:1.2,color:'#ffe2b0',intensity:.3,falloff:.55},
+        mappings:[M('eng.milestone','intensity',.9,'smooth',1)]})]},
+    {id:'starter-signal-architecture',name:'Signal Architecture',description:'Precise and technical: a crystal lattice over the main precinct, instrument rings around the city, signal paths that carry the rhythm, lamps for failures and recoveries.',base:'machine-cathedral',finish:'clean',
       music:{style:'pulse',profile:{rhythm:.65,mood:.55}},layers:[
-      layer('structure',{id:'lattice',name:'Signal lattice',depth:'world',anchor:{kind:'subsystems'},params:{shape:'lattice',count:3,radius:.7,detail:3,color:'#8fd3ff',glow:.7,rotation:.1},
-        mappings:[{signal:'music.beat',target:'glow',amount:.35,curve:'pulse',smoothing:0,min:0,max:1}]}),
-      layer('ribbons',{id:'signals',name:'Signal paths',depth:'world',anchor:{kind:'nodes'},params:{field:'wind',count:24,length:.4,width:.6,color:'#6ff0ff',colorB:'#ffffff',glow:1.6,turbulence:.15},
-        mappings:[{signal:'music.rhythm',target:'speed',amount:.6,curve:'smooth',smoothing:.4,min:0,max:1},{signal:'eng.activity',target:'brightness',amount:.4,curve:'smooth',smoothing:1,min:0,max:1}]}),
-      layer('light',{id:'failure',name:'Fault lamps',depth:'front',anchor:{kind:'active'},params:{style:'pulse',count:2,color:'#ff7a5c',intensity:0},
-        mappings:[{signal:'eng.failure',target:'intensity',amount:.6,curve:'smooth',smoothing:1,min:0,max:1}]})]},
-    {id:'starter-abstract-resonance',name:'Abstract Resonance',description:'Mathematical and rhythmic, on the artist canvas: spirals, a flocking field and an aurora shaped by the music.',base:'canvas',finish:'dreamlike',
-      canvas:{background:'#05040d',horizon:'#1b1240',orbit:.35,distance:1},music:{style:'ambient',profile:{evolution:.8,melody:.65}},layers:[
-      layer('atmosphere',{id:'aurora',name:'Aurora',depth:'behind',params:{style:'aurora',color:'#1d6b8f',colorB:'#7a2fa8',intensity:.9,speed:.25},
-        mappings:[{signal:'music.tension',target:'hue',amount:.25,curve:'smooth',smoothing:2,min:.3,max:.8}]}),
-      layer('fractal',{id:'spirals',name:'Resonant spirals',depth:'world',anchor:{kind:'center'},params:{form:'spiral',depth:6,instances:3,scale:1.4,color:'#7ef9ff',tip:'#ff8ad8',glow:1.6},
-        mappings:[{signal:'music.phrase',target:'growth',amount:.6,curve:'smooth',smoothing:.5,min:.2,max:1},{signal:'eng.activity',target:'sway',amount:.5,curve:'smooth',smoothing:1,min:0,max:1}]}),
-      layer('particles',{id:'flock',name:'Resonant flock',depth:'world',anchor:{kind:'center'},params:{count:2600,behavior:'flock',distribution:'shell',color:'#bff6ff',colorB:'#ffc2f0',size:.9,trail:.4},
-        mappings:[{signal:'music.energy',target:'cohesion',amount:.5,curve:'smooth',smoothing:1,min:0,max:1},{signal:'music.bar',target:'brightness',amount:.3,curve:'pulse',smoothing:0,min:0,max:1}]}),
-      layer('structure',{id:'rings',name:'Harmonic rings',depth:'front',anchor:{kind:'center'},params:{shape:'rings',count:5,radius:1.2,thickness:.3,color:'#d9c2ff',glow:.6},
-        mappings:[{signal:'music.dynamics',target:'scale',amount:.3,curve:'smooth',smoothing:1,min:0,max:1}]})]}
+      layer('structure',{id:'lattice',name:'Signal lattice',depth:'world',anchor:{kind:'largest',index:0},params:{shape:'lattice',count:4,radius:1.1,detail:3,thickness:.35,color:'#8fd3ff',glow:.6,rotation:.06},
+        mappings:[M('music.beat','glow',.35,'pulse',0)]}),
+      layer('structure',{id:'rings',name:'Instrument rings',depth:'world',anchor:{kind:'boundary'},params:{shape:'rings',count:3,radius:1,detail:4,thickness:.25,color:'#7fdcff',glow:.45,rotation:.05},
+        mappings:[M('music.section','glow',.3,'smooth',.6)]}),
+      layer('ribbons',{id:'signals',name:'Signal paths',depth:'world',anchor:{kind:'nodes'},params:{field:'wind',count:24,scale:2.4,length:.55,width:.55,taper:.5,color:'#6ff0ff',colorB:'#ffffff',glow:1.5,turbulence:.15,speed:.5},
+        mappings:[M('music.rhythm','speed',.6,'smooth',.4),M('eng.activity','brightness',.4,'smooth',1)]}),
+      layer('light',{id:'failure',name:'Fault lamps',depth:'front',anchor:{kind:'active'},params:{style:'pulse',count:2,size:.8,color:'#ff7a5c',intensity:0,falloff:.5},
+        mappings:[M('eng.failure','intensity',.6,'smooth',1)]}),
+      layer('light',{id:'recovery',name:'Recovery light',depth:'front',anchor:{kind:'active'},params:{style:'glow',count:1,size:1.1,color:'#b8ffe4',intensity:0,falloff:.4},
+        mappings:[M('eng.recovery','intensity',.55,'smooth',1.2)]})]},
+    {id:'starter-abstract-resonance',name:'Abstract Resonance',description:'Mathematical and rhythmic, on the artist canvas: spirals that grow through each phrase, a flocking field, an aurora that turns with the harmony, rings that breathe with the dynamics.',base:'canvas',finish:'dreamlike',
+      canvas:{background:'#05040d',horizon:'#1b1240',orbit:.35,distance:1,floor:.3},music:{style:'ambient',profile:{evolution:.8,melody:.65}},mappings:[M('music.energy','finish.bloom',.25,'smooth',2)],layers:[
+      layer('atmosphere',{id:'aurora',name:'Aurora',depth:'behind',params:{style:'aurora',color:'#1d6b8f',colorB:'#7a2fa8',intensity:.9,height:.45,noise:.6,speed:.25},
+        mappings:[M('music.tension','hue',.25,'smooth',2,.3,.8)]}),
+      layer('fractal',{id:'spirals',name:'Resonant spirals',depth:'world',anchor:{kind:'center'},params:{form:'spiral',depth:6,branching:3,instances:3,scale:1.1,spread:.55,width:.9,growth:.45,color:'#7ef9ff',tip:'#ff8ad8',glow:1.6,sway:.3},
+        mappings:[M('music.phrase','growth',.6,'smooth',1.2,.2,1),M('eng.activity','sway',.5,'smooth',1)]}),
+      layer('particles',{id:'flock',name:'Resonant flock',depth:'world',anchor:{kind:'center'},params:{count:2600,behavior:'flock',distribution:'shell',spread:1.2,color:'#bff6ff',colorB:'#ffc2f0',size:.9,glow:1.1,trail:.4},
+        mappings:[M('music.energy','cohesion',.5,'smooth',1),M('music.bar','brightness',.3,'pulse',0)]}),
+      layer('structure',{id:'rings',name:'Harmonic rings',depth:'front',anchor:{kind:'center'},params:{shape:'rings',count:5,radius:1.2,detail:3,thickness:.3,color:'#d9c2ff',glow:.6,rotation:.2},
+        mappings:[M('music.dynamics','scale',.12,'smooth',1)]})]}
   ].map(c=>Object.freeze(normalize(c)));
   // Only non-private material is ever exported: no project, path or recipe identity, only the composition itself.
   function exportable(c){const n=normalize(c);delete n.id;return n;}
-  return {SCHEMA,VERSION,LIMITS,BASES,FINISHES,DEPTHS,BLENDS,ANCHORS,LAYERS,COMMON,SIGNALS,CURVES,GLOBAL_TARGETS,STARTERS,
-    specOf,targetsOf,normalize,validate,costOf,budgetOf,applyMappings,shape,layer,exportable};
+  return {SCHEMA,VERSION,LIMITS,BASES,FINISHES,DEPTHS,BLENDS,ANCHORS,LAYERS,COMMON,SIGNALS,CURVES,GLOBAL_TARGETS,CANVAS,STARTERS,
+    specOf,targetsOf,depthNote,normalize,validate,costOf,budgetOf,applyMappings,shape,layer,exportable};
 });
