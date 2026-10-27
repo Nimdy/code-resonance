@@ -940,6 +940,9 @@ Focused checks only, as the brief asked. All rendering was on the AMD integrated
   - F: a WebM recorded with the Stage's Record button, holding VP9 and Opus, not silent.
 
   Its `--film4` mode built Film 4's composition by clicks and typing.
+- **Existing identities unchanged:** `visual/unchanged.qual.js --baseline 1460cdc` (PR #10's head) passes 4/4. With
+  the classic finish and life off, the built-in worlds render the same frames as before on lumen, excalidraw and self.
+  The acceptance suite now includes `#/artist`: 64/64 at four window sizes, and 28/28 in CI's quick mode.
 - **Music** (`qualification/audio/score-versions.js`, the lumen session, 150 s, real Web Audio):
 
   | Measure | v2 | v3 |
