@@ -286,7 +286,7 @@
   function selectProject(id){
     id=typeof id==='string'?id:'';if(id===selected&&(model||!id))return;
     selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];previewRecipe=null;previewNotice='';disposeLiving();resetScene({nodes:[],edges:[]});
-    scene.pulses.length=0;scene.comets.clear();music.resync();frame=null;firstBar=null;barNumber=0;
+    scene.pulses.length=0;scene.ripples.length=0;scene.comets.clear();music.resync();frame=null;firstBar=null;barNumber=0;
     $('stageEmpty')?.classList.toggle('hidden',!!id);
     changed('project','model','feed','frame','recipe','preview','position');
     if(mode==='replay')changeMode('replay');else{pollProject();}
@@ -343,6 +343,9 @@
     }
     for(const c of scene.comets.values()){c.x+=(c.tx-c.x)*Math.min(1,dt*1.6);c.y+=(c.ty-c.y)*Math.min(1,dt*1.6);c.trail.push([c.x,c.y]);if(c.trail.length>28)c.trail.shift();}
     for(const [v,c] of scene.comets)if(now-c.last>45000)scene.comets.delete(v);
+    // Pulses and ripples age with the scene, drawn or not: a 2D stage shown later never bursts a backlog.
+    for(let i=scene.pulses.length-1;i>=0;i--){const p=scene.pulses[i];p.age+=dt;if(p.age>p.life)scene.pulses.splice(i,1);}
+    for(let i=scene.ripples.length-1;i>=0;i--){const r=scene.ripples[i];r.age+=dt;if(r.age>2.4)scene.ripples.splice(i,1);}
   }
   // Birth is a flash and a growing ring; death a fade. Visible-from time keeps future nodes hidden until born.
   function life(n,now){if(n.born>now)return 0;if(n.dying!==null)return clamp(1-(now-n.dying)/1500);return 1;}
@@ -401,24 +404,21 @@
     }
     g.globalAlpha=1;
   }
-  function drawPulses(dt,mapXY){
+  function drawPulses(mapXY){
     const scale=Math.min(scaledW,scaledH);
     for(let i=scene.pulses.length-1;i>=0;i--){
-      const p=scene.pulses[i];p.age+=dt;
-      if(p.age>p.life){scene.pulses.splice(i,1);continue;}
-      const [x,y]=mapXY(scene.nodes.get(p.node)||p),r=(p.age*p.speed)*scale,alpha=(1-p.age/p.life)*.7;
+      const p=scene.pulses[i],[x,y]=mapXY(scene.nodes.get(p.node)||p),r=(p.age*p.speed)*scale,alpha=(1-p.age/p.life)*.7;
       g.strokeStyle=opacity(p.color,alpha);g.lineWidth=1.6-p.age*.6;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.stroke();
     }
     for(let i=scene.ripples.length-1;i>=0;i--){
-      const r=scene.ripples[i];r.age+=dt;if(r.age>2.4){scene.ripples.splice(i,1);continue;}
-      const f=r.age/2.4,radius=(r.inward?1-f:f)*Math.max(scaledW,scaledH)*.6;
+      const r=scene.ripples[i],f=r.age/2.4,radius=(r.inward?1-f:f)*Math.max(scaledW,scaledH)*.6;
       g.strokeStyle=opacity(r.color,(1-f)*.45);g.lineWidth=2.5*(1-f)+.5;g.beginPath();g.arc(scaledW/2,scaledH/2,Math.max(1,radius),0,Math.PI*2);g.stroke();
     }
   }
   function camera(){const w=scaledW,h=scaledH,s=Math.min(w,h)*.45/Math.max(.08,scene.view);return n=>[w/2+n.x*s,h/2+n.y*s*.86];}
   function drawNexus(t,dt,now,pulse){
     const w=scaledW,h=scaledH,mapXY=camera();
-    drawCore(t,pulse);drawEdges(now,w,h,mapXY,pulse);drawNodes(now,mapXY,pulse,1);drawComets(w,h,mapXY);drawPulses(dt,mapXY);
+    drawCore(t,pulse);drawEdges(now,w,h,mapXY,pulse);drawNodes(now,mapXY,pulse,1);drawComets(w,h,mapXY);drawPulses(mapXY);
   }
   function drawNebula(t,dt,now,pulse){
     const w=scaledW,h=scaledH,size=Math.min(w,h),cx=w*.5,cy=h*.51;
@@ -430,7 +430,7 @@
     // Additive light is normalised by node count, so large projects stay luminous instead of blowing out white.
     const density=clamp(Math.sqrt(140/Math.max(140,scene.nodes.size)),.18,1);
     drawEdges(now,w,h,mapXY,pulse*.5);drawNodes(now,mapXY,pulse,density*.8);g.restore();
-    drawComets(w,h,mapXY);drawPulses(dt,mapXY);
+    drawComets(w,h,mapXY);drawPulses(mapXY);
   }
   function drawCity(t,dt,now,pulse){
     const w=scaledW,h=scaledH,modules=[...scene.nodes.values()].filter(n=>n.type==='module');
@@ -478,7 +478,7 @@
     }
     const fallback=camera();
     drawComets(w,h,n=>positions.get(n.parent||n.id)||fallback(n));
-    drawPulses(dt,n=>positions.get(n.parent||n.id)||fallback(n));
+    drawPulses(n=>positions.get(n.parent||n.id)||fallback(n));
   }
   // ---- The Construct (WebGL), loaded on demand; Monolith is the fallback where WebGL is unavailable ----------
   function replaySpeed(){return FILM?filmSpeed:mode==='replay'?speedChoice||1:1;}
