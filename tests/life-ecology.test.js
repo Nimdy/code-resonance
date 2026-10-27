@@ -52,6 +52,15 @@ test('Deterministic: the same digest twice, by a far seek and by continuous play
   assert.equal(p.driver.digest(),q.driver.digest(),'rebuilt exactly');
   const r=await player({entries,params:{ecology:2,music:1.5}});r.set({music:MUSIC});r.at(T0+200000);assert.notEqual(r.driver.digest(),q.driver.digest(),'the music matters');
 });
+test('A live session tuned to ecology 2 keeps its population and lives on with the new conditions',async()=>{
+  const [{NEUTRAL2}]=await load();
+  const l=await player({entries:recording(20),live:true,prime:false});l.set({music:MUSIC});l.play(T0,T0+60000,20);const before=l.driver.ecosystem.px.slice();
+  l.set({params:{ecology:2,music:2}});l.at(T0+60000);assert.deepEqual(Array.from(l.driver.ecosystem.px),Array.from(before),'the population continues from where it was');
+  l.play(T0+60000,T0+150000,20);const e=l.driver.ecosystem;
+  assert.deepEqual(Object.keys(e.cond).sort(),Object.keys(NEUTRAL2).sort(),'all the conditions');
+  for(let i=0;i<e.capacity;i++)if(e.alive[i])assert(Number.isFinite(e.px[i]+e.py[i]+e.pz[i]+e.vx[i]+e.vz[i]),`entity ${i} finite`);
+  assert(Object.entries(e.cond).some(([k,v])=>Math.abs(v-NEUTRAL2[k])>.05),'the music reaches it');
+});
 test('Ecology 1 is the ecosystem as it was: absent or 1, the pinned digests (generation 0, before generations)',async()=>{
   const entries=recording(66);
   for(const params of [{},{ecology:1}]){const p=await player({entries,params});p.set({music:MUSIC});p.at(T0+61234);assert.equal(p.driver.digest(),'5b020b5a',JSON.stringify(params));}

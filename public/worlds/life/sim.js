@@ -447,7 +447,9 @@ export function createEcosystem(spec){
   const ARRAYS={perc,wv,px,py,pz,vx,vy,vz,qx,qy,qz,en,age,life,fade,wa,wb,fa,sp,mode,alive,modeT,gen,carry,tgt,ia,dead,tx,ty,tz,field,visits,sx,sy,sz,sr,sw,sKind};
   function snapshot(){const a={};for(const [k,v] of Object.entries(ARRAYS))a[k]=v.slice();
     return {tick,arrays:a,nSites,siteIds:siteIds.slice(),siteState:structuredClone(siteState),cond:{...cond},target:{...target},grid:{...grid}};}
-  function restore(s){for(const [k,v] of Object.entries(ARRAYS))v.set(s.arrays[k]);tick=s.tick;nSites=s.nSites;siteIds=s.siteIds.slice();siteState=structuredClone(s.siteState);cond={...s.cond};target={...s.target};grid={...(s.grid||{beat:0,per:0})};
+  function restore(s){for(const [k,v] of Object.entries(ARRAYS))v.set(s.arrays[k]);tick=s.tick;nSites=s.nSites;siteIds=s.siteIds.slice();siteState=structuredClone(s.siteState);
+    // (an ecology 1 state taken into ecology 2, a live session tuned to it: the conditions it did not have start neutral)
+    cond=ECO2?{...COND1,...COND2,...s.cond}:{...s.cond};target=ECO2?{...COND1,...COND2,...s.target}:{...s.target};grid={...(s.grid||{beat:0,per:0})};
     if(ECO2)feel();}
   // A digest of the whole state (tests: exact equality of two runs; FNV over the raw bytes).
   function digest(){let h=2166136261;for(const v of Object.values(ARRAYS)){const b=new Uint8Array(v.buffer,v.byteOffset,v.byteLength);for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619);}}
