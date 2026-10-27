@@ -990,7 +990,9 @@
     window.__film={
       async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
         if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
-        // The music the film's soundtrack must be rendered with (film.js passes it to renderOffline).
+        // The music the film's soundtrack must be rendered with (film.js passes it to renderOffline). The Construct loads
+        // no recipe of its own: the project's saved one still says which score it plays.
+        if(!living&&!recipe)await reloadRecipe().catch(()=>null);
         return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null,
           music:{scoreVersion:filmScore(),profile:filmMusic.profile}};},
       sections(list){filmSections=list;},
