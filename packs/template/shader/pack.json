@@ -1,0 +1,19 @@
+{
+  "$schema": "https://code-resonance.invalid/pack.schema.json",
+  "schema": "code-resonance.pack.v1",
+  "id": "you.my-look",
+  "name": "My Look",
+  "version": "0.1.0",
+  "kind": "shader",
+  "sdk": "^1.0",
+  "author": {"name": "Your Name"},
+  "description": "A starter shader pack: a custom background and one post pass on Fractal Biosphere.",
+  "license": "MIT",
+  "shader": {
+    "base": "fractal-biosphere",
+    "background": "shaders/background.frag",
+    "post": ["shaders/post.frag"],
+    "uniforms": {"uWarmth": {"type": "number", "min": 0, "max": 1}},
+    "technique": {"saturation": 1.1}
+  }
+}

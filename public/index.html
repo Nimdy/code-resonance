@@ -49,11 +49,17 @@
           <div class="dna-family"><strong id="dnaFamily">—</strong><span id="dnaSource"></span></div>
           <label class="visually-hidden" for="dnaFamilySelect">World family</label>
           <select id="dnaFamilySelect" class="sound-select"><option value="">AUTOMATIC · FROM THE CODE</option><option value="stellar-forge">STELLAR FORGE</option><option value="fractal-biosphere">FRACTAL BIOSPHERE</option><option value="machine-cathedral">MACHINE CATHEDRAL</option></select>
+          <label class="visually-hidden" for="dnaPackSelect">Look</label>
+          <select id="dnaPackSelect" class="sound-select" title="Visual packs installed with scripts/pack.js"><option value="">NO LOOK PACK</option></select>
+          <div id="dnaNotice" class="dna-notice hidden" role="status"></div>
+          <div id="dnaPacks" class="dna-packs"></div>
           <div class="dna-actions"><button class="action" id="dnaRegenerate" title="A new seeded draw of the identity">REGENERATE</button><button class="action" id="dnaLock" aria-pressed="false" title="Keep this identity permanently">LOCK</button></div>
           <label class="control-line" for="intensitySlider">SPECTACLE <span id="intensityReadout">100%</span></label>
           <input type="range" id="intensitySlider" min="0" max="200" value="100" aria-label="Effect intensity">
           <label class="control-line" for="labelsSelect">INFORMATION</label>
           <select id="labelsSelect" class="sound-select"><option value="cinematic">CINEMATIC</option><option value="explorer">EXPLORER · CLICK TO INSPECT</option><option value="stream">STREAM · LOWER THIRD</option><option value="off">OFF</option></select>
+          <label class="control-line" for="dnaTitle">PUBLIC TITLE</label>
+          <input id="dnaTitle" class="dna-title" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Generic (the folder name is never shown)" title="Shown on the Stage, OBS and films only when you set it here">
         </div>
         <div class="section-label studio-label"><span class="eyebrow">SCORE / SYNTHESIS</span><span class="rule"></span></div>
         <div class="sound-controls">
@@ -102,6 +108,21 @@
         <div class="right-footer"><span>INTERPRETATION IS NOT PROOF OF CORRECTNESS.</span><span>LOCAL RECEIVER · NO CLOUD</span></div>
       </aside>
     </main>
+  </div>
+  <div id="packReview" class="pack-review hidden" role="dialog" aria-modal="true" aria-labelledby="packReviewTitle">
+    <div class="pack-review-card">
+      <span class="eyebrow">VISUAL PACK WITH CODE</span>
+      <h2 id="packReviewTitle"></h2>
+      <p id="packReviewMeta" class="pack-review-meta"></p>
+      <p id="packReviewDescription"></p>
+      <ul id="packReviewFiles" class="pack-review-files"></ul>
+      <p class="pack-warning">This pack runs in an isolated frame: no network, no access to the receiver, your files, your recordings or this player.
+        It receives only the privacy-safe performance view (salted ids, counts, timings). Browsers cannot fully sandbox GPU shaders: a hostile or
+        buggy shader can freeze or crash this tab or the graphics driver, and GPU timing can leak coarse information. A frame can also navigate itself
+        or use browser features outside the content policy to make requests, carrying only that privacy-safe view. Allow only packs from authors you
+        trust; any change to any of its files needs a new approval.</p>
+      <div class="pack-review-actions"><button class="action" id="packReviewCancel">CANCEL</button><button class="action primary" id="packReviewAllow">ALLOW THIS CODE</button></div>
+    </div>
   </div>
 </body>
 </html>

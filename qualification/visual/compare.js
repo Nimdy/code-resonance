@@ -9,7 +9,8 @@ const args=process.argv.slice(2);const outIndex=args.indexOf('--out');const out=
 const cols=Number(args.includes('--cols')?args[args.indexOf('--cols')+1]:2);
 const panels=args.filter((a,i)=>i!==outIndex&&i!==outIndex+1&&a!=='--cols'&&args[i-1]!=='--cols').map(a=>{const k=a.indexOf('=');return {label:a.slice(0,k),file:a.slice(k+1)};});
 if(!out||!panels.length)throw new Error('usage: compare.js --out sheet.jpg "label=frame.jpg" ...');
-const esc=s=>s.replace(/\\/g,'\\\\').replace(/:/g,'\\:').replace(/'/g,"\\\\'");
+// ffmpeg's filter quoting cannot carry a straight apostrophe inside quotes: labels use the typographic one.
+const esc=s=>s.replace(/\\/g,'\\\\').replace(/:/g,'\\:').replace(/'/g,'\u2019');
 const inputs=panels.flatMap(p=>['-i',p.file]);
 const scaled=panels.map((p,i)=>`[${i}:v]scale=960:540,drawbox=y=ih-46:w=iw:h=46:color=black@0.55:t=fill,drawtext=fontfile=${FONT}:text='${esc(p.label)}':fontcolor=white:fontsize=21:x=18:y=h-33[p${i}]`);
 const rows=[];for(let r=0;r*cols<panels.length;r++){const idx=panels.map((_,i)=>i).slice(r*cols,r*cols+cols);while(idx.length<cols)idx.push(null);

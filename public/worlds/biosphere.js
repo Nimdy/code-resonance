@@ -427,7 +427,7 @@ export function createFamily(ctx){
       case 'validation.passed':return {text:`Tests pass · ${plural(n,'branch').replace('branchs','branches')} glow`,sub:'observed passing run',position:pos,color:'#9dffcf'};
       case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'branch').replace('branchs','branches')} green again`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
       case 'refactor.validated':return {text:'Refactor validated · the organism reshapes',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
-      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`A fractal bloom · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
+      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'glow-wave':'A glow wave',regreen:'Regreening',metamorphosis:'Metamorphosis'})[c.effect]||'A fractal bloom'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · spores of ${plural(n,'branch').replace('branchs','branches')} rise`:'Committed · the growth is set',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The ecosystem grows · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(2)};
       default:return null;}}
@@ -440,13 +440,16 @@ export function createFamily(ctx){
   function inspect(id,i){if(!id)return null;if(id.startsWith('org:')){const o=orgs.get(id.slice(4));return o?{position:o.top.clone(),text:orgName(o.id),sub:`${plural(o.members.length,'module')} · organism of this subsystem`}:null;}
     const m=model.modules.get(id),b=branchOf.get(id);if(!m||!b)return null;const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
     return {position:swayed(b.tip,b.flex,i.tview),text:`A branch · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'leaf').replace('leafs','leaves')} · ${plural(deps,'vine')} · ${ctx.name(m.group)}`};}
-  function stats(){return {organisms:orgs.size,segments:segCount,leaves:leafCount,vines:vineCount,spores:sporeCount,species,terrain,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
+  function stats(){return {organisms:orgs.size,segments:segCount,leaves:leafCount,vines:vineCount,spores:sporeCount,crowns:crownCount,species,terrain,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1)};}
   function dispose(){for(const o of [ground,barkMesh,leafMesh,vineMesh,sporePoints,agentPoints,burstPoints,crownMesh]){scene.remove(o);o.geometry.dispose();o.material.dispose();}sky.dispose();cyl.dispose();ribbon.dispose();}
   // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified milestones before t.
   function onPrime(t,tsec){for(const v of common.uWaves.value)v.w=-1e5;for(const v of ground.material.uniforms.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;flashes.length=0;
     crownCount=0;crownLevel.clear();crowns.commit(0);const keep=info;
-    for(const c of ctx.director.commands){if(c.effect!=='fractal-bloom'||c.at>t)continue;info={...keep,tsec:(c.at-model.epoch)/1000};
-      if(model.version!==builtVersion)build(t);const list=orgsOf(c.subject?.fileIds);for(const o of (list.length?list:[...orgs.values()].slice(0,1))){const lvl=(crownLevel.get(o.id)||0)+1;crownLevel.set(o.id,lvl);crown(o,lvl,pal.secondary,pal.valid);}}
+    // One entry per (milestone, subject) with how many times it happened, however long ago (director.lasting()).
+    for(const c of ctx.director.lasting()){if(c.effect!=='fractal-bloom'||c.first>t)continue;
+      if(model.version!==builtVersion)build(t);const list=orgsOf(c.subject?.fileIds);
+      for(let n=0;n<c.count;n++){const at=c.times[n-(c.count-c.times.length)]??c.first;info={...keep,tsec:(at-model.epoch)/1000};
+        for(const o of (list.length?list:[...orgs.values()].slice(0,1))){const lvl=(crownLevel.get(o.id)||0)+1;crownLevel.set(o.id,lvl);crown(o,lvl,pal.secondary,pal.valid);}}}
     info=keep;}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
 }

@@ -5,13 +5,14 @@
 // node visual/film.js --data <receiver-data> --project <id> [--from ms] [--to ms] [--speed 2] [--fps 30]
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
 //        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
-//        [--note "text shown on every frame"]
+//        [--note "text shown on every frame"] [--pack <dir> (install and approve a visual pack in --data first)]
+//        [--look <pack id> (apply a declarative or shader pack)] [--gpu amd (render on the AMD integrated GPU, never NVIDIA)]
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
 // The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly.
 const path=require('node:path');
 const fs=require('node:fs');
 const cp=require('node:child_process');
-const {chromium}=require('playwright-core');
+const {launch,rendererOf}=require('./harness');
 const ffmpeg=require('ffmpeg-static');
 const REPO=path.resolve(__dirname,'../..');
 const {createService}=require(path.join(REPO,'receiver/server'));
@@ -25,11 +26,16 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   const dataDir=path.resolve(arg('data'));
   // A pinned recipe is installed before the receiver starts, so the player loads exactly that identity.
   if(arg('recipe')){const dir=path.join(dataDir,'projects',sha(arg('project')));fs.copyFileSync(path.resolve(arg('recipe')),path.join(dir,'recipe.json'));}
+  // A visual pack for this film: installed into the film's data directory and approved there (local qualification).
+  if(arg('pack')){const packs=require(path.join(REPO,'engine/packs'));const r=packs.install(path.resolve(arg('pack')),dataDir);if(r.executable)packs.setTrust(r.id,dataDir,{trusted:true});console.log(`pack ${r.id} ${r.version} (${r.kind})`);}
   const svc=await createService({port:0,dataDir}).start();
   // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
   await svc.flush();
+  if(arg('look')){const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${arg('project')}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'pack',pack:arg('look')}})});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
   if(arg('family')){const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${arg('project')}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'family',family:arg('family')}})});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
-  const browser=await chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+  const browser=await launch(arg('gpu',null));
+  const renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
+  if(arg('gpu')==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}
   const started=Date.now();
   try{
     const page=await browser.newPage({viewport:{width,height}});

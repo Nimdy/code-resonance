@@ -22,6 +22,8 @@
   const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;setText('barCounter',`BAR ${String(index-firstBar+1).padStart(3,'0')}`);if(s)section=s;if(key)setText('seedLabel',key.toUpperCase());});
   let selectedWorld='living',recorder=null,recordChunks=[],recordStreams=[];
   let living=null,livingLoading=null,livingFailed=false,livingFor='',recipe=null;
+  // Visual packs installed with scripts/pack.js (GET /api/packs); code packs run only in the isolated pack frame.
+  let packs=[],packNotice='',reviewing=null;const stoppedPacks=new Set();
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
   let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12},filmNote='';
@@ -78,7 +80,8 @@
   function schedule(entry,{animate=true,from=-Infinity}={}){
     at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);});
     // Canonical intents (engine/intents.js) drive the living world's effects at their own recorded times.
-    for(const intent of entry.intents||[]){const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));}
+    // Each intent carries its recorded position (window, index): with its timestamp, the canonical order of history.
+    (entry.intents||[]).forEach((intent,k)=>{if(intent.ord===undefined)intent.ord=entry.seq*65536+k;const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));});
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
@@ -264,8 +267,9 @@
     g.globalAlpha=.75+.25*Math.sin(t*.3);g.drawImage(starfield,0,0);g.globalAlpha=1;
   }
   // Breathing on the bar grid, from the music when playing or from the deterministic grid when muted.
+  let forcedPhase=null;
   function beat(){
-    const p=music.phase();if(p){barPhase=p.phase;if(p.section)section=p.section;}
+    const p=music.phase();if(forcedPhase!==null)barPhase=forcedPhase;else if(p){barPhase=p.phase;if(p.section)section=p.section;}
     else{const stepMs=60000/((window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92)*4);barPhase=((perfNow()/(stepMs*16))%1+1)%1;}
     const q=(barPhase*4)%1;return Math.exp(-q*5);
   }
@@ -429,6 +433,21 @@
   // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
   function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
   function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;}
+  async function loadPacks(){try{packs=(await getJSON('/api/packs'))?.json?.packs||[];}catch{packs=[];}syncPackControls();return packs;}
+  // What a recipe needs from a pack with code: its approved files for the isolated frame, or why it cannot run.
+  async function packRuntime(r){
+    const id=r.familyKind==='pack'?r.family:r.pack?.kind==='shader'?r.pack.id:null;if(!id)return null;
+    const p=(await loadPacks()).find(x=>x.id===id);
+    if(!p||!p.ok||!p.compatible)return {blocked:'unavailable',id,name:p?.name||id};
+    if(stoppedPacks.has(id))return {blocked:'stopped',id,name:p.name};
+    if(!p.trusted)return {blocked:'approval',id,name:p.name};
+    const read=async file=>{const res=await fetch(`/api/packs/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(file)}`,{cache:'no-store'});
+      if(!res.ok)throw new Error(`${file}: HTTP ${res.status}`);return /\.(?:png|jpg)$/.test(file)?res.arrayBuffer():res.text();};
+    const manifest=JSON.parse(await read('pack.json')),files={};
+    for(const f of p.files)if(f.path!=='pack.json'&&!/^(?:README|LICENSE)/.test(f.path))files[f.path]=await read(f.path);
+    const spec=manifest.kind==='world'?{entry:manifest.world.entry}:{background:manifest.shader.background||null,post:manifest.shader.post||[],effects:manifest.shader.effects||null};
+    return {pack:{id,name:p.name,kind:p.kind,...spec},files};
+  }
   function ensureLiving(){
     if(living&&livingFor===selected)return Promise.resolve(living);
     if(livingFailed||!selected||!model)return Promise.resolve(null);
@@ -436,9 +455,25 @@
     livingLoading=(async()=>{
       try{
         const r=await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}`);if(!r)return null;
-        const m=await import('/worlds/host.js');if(living)disposeLiving();
-        recipe=r.json;
-        living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),film:FILM,speed:replaySpeed(),recipe,labels:labelMode,project:{name:model?.name||null},quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'});
+        const plan=await packRuntime(r.json).catch(e=>({blocked:'unavailable',name:String(e.message)}));
+        if(living)disposeLiving();
+        recipe=r.json;packNotice='';
+        const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:Number(params.get('quality'))||0,adaptive:params.get('adapt')!=='0'};
+        if(plan?.pack){
+          // An approved pack with code: the same world host, inside the isolated frame.
+          const m=await import('/worlds/remote.js');
+          living=await m.createRemoteWorld($('world').parentElement,{...plan,recipe,...options,epoch:replay?.entries.length?replay.start:null});
+          // A pack that fails or misbehaves is stopped for this session; the identity without it takes over.
+          living.onError(message=>{stoppedPacks.add(plan.pack.id);packNotice=`${plan.pack.name} stopped: ${message}`;syncPackControls();
+            if(!FILM){disposeLiving();if(selectedWorld==='living')void ensureLiving();}});
+        }else{
+          // A pack that needs approval (or is missing) is not run: the identity without it is shown instead.
+          let shown=recipe;
+          if(plan?.blocked){packNotice=plan.blocked==='approval'?`${plan.name} contains code and is not approved: showing the identity without it.`:plan.blocked==='stopped'?(packNotice||`${plan.name} was stopped: showing the identity without it.`):`${plan.name} is not available: showing the identity without it.`;
+            shown=(await getJSON(`/api/recipe?id=${encodeURIComponent(selected)}&fallback=1`))?.json||recipe;}
+          const m=await import('/worlds/host.js');
+          living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),recipe:shown,...options});
+        }
         livingFor=selected;livingSize='';
         if(replay?.entries.length)living.setEpoch(replay.start);
         living.reset(constructGraph(),perfNow());
@@ -456,15 +491,51 @@
     // The whole history's intents (the intents view is small), so unlocks and lasting blooms match a full replay.
     const id=selected,intents=[];let after=-1;
     for(let page=0;page<1000;page++){const r=(await getJSON(`/api/timeline?id=${encodeURIComponent(id)}&after=${after}&limit=2000&fields=intents`))?.json;if(!r||!r.entries.length||selected!==id)break;
-      for(const e of r.entries)if(e.intents?.length)intents.push({intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
+      for(const e of r.entries)if(e.intents?.length)intents.push({seq:e.seq,intents:e.intents});after=r.entries.at(-1).seq;if(after>=r.total-1)break;}
     if(world===living&&mode==='live'&&selected===id)living.prime(intents,perfNow());
   }
   async function recipeAction(action){
     if(!selected)return;
     const res=await fetch(`/api/recipe?id=${encodeURIComponent(selected)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
-    if(!res.ok)return;recipe=await res.json();await living?.setRecipe(recipe);syncRecipePanel();
+    if(!res.ok)return;const before=recipe;recipe=await res.json();
+    // A change of runtime (built-in family, pack world, shader look) builds a new world; otherwise the recipe updates it.
+    const runtime=r=>r?.familyKind==='pack'?`world:${r.family}`:r?.pack?.kind==='shader'?`shader:${r.pack.id}`:'builtin';
+    if(runtime(before)!==runtime(recipe)||living?.remote){disposeLiving();recipe=null;if(selectedWorld==='living')await ensureLiving();}
+    else await living?.setRecipe(recipe);
+    syncRecipePanel();
+  }
+  function syncPackControls(){
+    if(!$('dnaPackSelect'))return;
+    const family=$('dnaFamilySelect'),look=$('dnaPackSelect');
+    for(const o of [...family.options])if(o.dataset.pack)o.remove();
+    for(const p of packs.filter(p=>p.kind==='world'&&p.ok&&p.compatible)){const o=new Option(`${p.name.toUpperCase()} · PACK${p.trusted?'':' · NEEDS APPROVAL'}`,p.id);o.dataset.pack='1';family.add(o);}
+    look.replaceChildren(new Option('NO LOOK PACK',''));
+    for(const p of packs.filter(p=>(p.kind==='declarative'||p.kind==='shader')&&p.ok&&p.compatible))look.add(new Option(`${p.name.toUpperCase()} · ${p.base.toUpperCase()}${p.kind==='shader'?' · CODE':''}`,p.id));
+    look.value=recipe?.pack?.id||'';if(recipe?.source==='user')family.value=recipe.family;
+    const list=$('dnaPacks');list.replaceChildren();
+    for(const p of packs.filter(p=>p.executable)){
+      const row=document.createElement('div');row.className='dna-pack';const label=document.createElement('span');
+      label.textContent=`${p.name} · ${p.ok?(p.trusted?'approved':'not approved'):'problems'}`;label.title=p.ok?`${p.id} ${p.version}`:p.problems.join('\n');row.append(label);
+      if(p.ok){const b=document.createElement('button');b.className='action';b.textContent=p.trusted?'REVOKE':'REVIEW';b.addEventListener('click',()=>p.trusted?setTrust(p,false):review(p));row.append(b);}
+      list.append(row);
+    }
+    $('dnaNotice').textContent=packNotice;$('dnaNotice').classList.toggle('hidden',!packNotice);
+  }
+  // Approval of a pack with code: the user sees its author, files and digest, and the isolation limits, then decides.
+  function review(p){
+    reviewing=p;setText('packReviewTitle',`${p.name} ${p.version}`);
+    setText('packReviewMeta',`${p.kind==='world'?'World family':'Shader pack'} · ${p.author?.name||'unknown author'} · ${p.id} · digest ${p.digest.slice(0,16)}`);
+    setText('packReviewDescription',p.description||'');
+    const files=$('packReviewFiles');files.replaceChildren(...p.files.map(f=>{const li=document.createElement('li');li.textContent=`${f.path}  ${f.size} B  ${f.sha256.slice(0,12)}`;return li;}));
+    $('packReview').classList.remove('hidden');$('packReviewCancel').focus();
+  }
+  async function setTrust(p,trusted){
+    const res=await fetch('/api/packs/trust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:p.id,digest:p.digest,trusted})});
+    if(!res.ok){packNotice=(await res.json().catch(()=>({}))).error||'Approval failed';syncPackControls();return;}
+    await loadPacks();disposeLiving();if(selectedWorld==='living')void ensureLiving();
   }
   function syncRecipePanel(){
+    syncPackControls();
     if(!$('dnaFamily'))return;
     setText('dnaFamily',recipe?recipe.familyName.toUpperCase():'—');
     setText('dnaSource',recipe?`${recipe.source==='user'?'CHOSEN':'FROM THE CODE'}${recipe.locked?' · LOCKED':recipe.founded?'':' · PROVISIONAL'} · V${recipe.variant}`:'');
@@ -472,6 +543,7 @@
     $('dnaLock').setAttribute('aria-pressed',String(!!recipe?.locked));setText('dnaLock',recipe?.locked?'UNLOCK':'LOCK');
     const k=Math.round((recipe?.overrides?.intensity??1)*100);$('intensitySlider').value=String(k);setText('intensityReadout',`${k}%`);
     $('labelsSelect').value=labelMode;
+    if(document.activeElement!==$('dnaTitle'))$('dnaTitle').value=recipe?.title||'';
   }
   function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();living.pick(e.clientX-r.left,e.clientY-r.top);});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
@@ -480,8 +552,9 @@
     caption={text,at:perfNow()};if(params.get('captions')==='0')return;
     const el=$('caption');el.textContent=text;el.classList.add('show');clearTimeout(captionTimer);if(!FILM)captionTimer=setTimeout(()=>el.classList.remove('show'),3800);
   }
-  function showWorldCanvas(){const l=selectedWorld==='living'&&!!living,c=!l&&selectedWorld==='construct'&&construct;
-    $('world').classList.toggle('hidden',!l);$('worldOverlay').classList.toggle('hidden',!l);$('caption').classList.toggle('hidden',l);
+  function showWorldCanvas(){const l=selectedWorld==='living'&&!!living,c=!l&&selectedWorld==='construct'&&construct,remote=!!living?.remote;
+    $('world').classList.toggle('hidden',!l||remote);$('worldOverlay').classList.toggle('hidden',!l||remote);$('caption').classList.toggle('hidden',l);
+    if(remote)living.frame.classList.toggle('hidden',!l);
     $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));}
   let lastPaint=performance.now(),clock=0,constructSize='',livingSize='';
   function renderAt(dt,now){
@@ -492,12 +565,13 @@
     showWorldCanvas();
     if(selectedWorld==='living'&&(!living||livingFor!==selected)&&model)void ensureLiving();
     if(selectedWorld==='living'&&living){
-      const r=$('world').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
+      const r=(living.remote?living.frame:$('world')).getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
       if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
       living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
-      living.render(now,dt,{phase:barPhase});
+      // A pack frame in a film renders when the film captures the frame (__film.frame).
+      if(!(FILM&&living.remote))living.render(now,dt,{phase:barPhase});
     }else if(selectedWorld==='construct'&&construct){
       const r=$('construct').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
@@ -550,6 +624,8 @@
   }
   async function toggleRecord(){
     if(recorder){if(recorder.state==='recording')recorder.stop();return;}
+    // A pack frame's canvas belongs to another (isolated) document: render a film instead (qualification/visual/film.js).
+    if(selectedWorld==='living'&&living?.remote){setText('recordBtn','FILMS ONLY');setTimeout(()=>setText('recordBtn','● RECORD'),2500);return;}
     const source=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas;
     if(!window.MediaRecorder||!source.captureStream){alert('WebM recording requires a browser with MediaRecorder and canvas.captureStream support.');return;}
     if(!soundEnabled)await toggleSound();
@@ -666,12 +742,17 @@
   dom.sound.addEventListener('click',()=>toggleSound().catch(e=>{console.error(e);setText('soundBtn','AUDIO ERROR');}));
   for(const btn of document.querySelectorAll('[data-world]'))btn.addEventListener('click',()=>setWorld(btn.dataset.world));
   bindWorldCanvas($('world'));
+  $('dnaPackSelect').addEventListener('change',()=>recipeAction({type:'pack',pack:$('dnaPackSelect').value||null}).catch(console.error));
+  $('packReviewCancel').addEventListener('click',()=>{reviewing=null;$('packReview').classList.add('hidden');});
+  $('packReviewAllow').addEventListener('click',()=>{const p=reviewing;reviewing=null;$('packReview').classList.add('hidden');if(p)setTrust(p,true).catch(console.error);});
   $('dnaFamilySelect').addEventListener('change',()=>{const v=$('dnaFamilySelect').value;recipeAction(v?{type:'family',family:v}:{type:'automatic'}).catch(console.error);});
   $('dnaRegenerate').addEventListener('click',()=>recipeAction({type:'regenerate',keepFamily:recipe?.source==='user'}).catch(console.error));
   $('dnaLock').addEventListener('click',()=>recipeAction({type:'lock',locked:!recipe?.locked}).catch(console.error));
   $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
   $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
   $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
+  // The public title is the only project name the Stage may show, and only once the user sets it here.
+  $('dnaTitle').addEventListener('change',()=>recipeAction({type:'title',title:$('dnaTitle').value.trim()||null}).catch(console.error));
   $('musicStyle').addEventListener('change',()=>{music.setOptions({style:$('musicStyle').value});syncPlayerControls();storePrefs();});
   for(const [id,key,convert] of [['volumeSlider','volume',v=>v/100],['tempoSlider','tempo',v=>v],['textureSlider','texture',v=>v/100]]){
     $(id).addEventListener('input',()=>{music.setOptions({[key]:convert(Number($(id).value)),...(key==='tempo'?{tempoMode:'manual'}:{})});syncPlayerControls();storePrefs();});
@@ -696,13 +777,16 @@
         return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null};},
       sections(list){filmSections=list;},
       seek(t){filmTime=t;seek(t);},
-      frame(t,dt){
-        filmTime=t;replayPos=t;
+      // phase (optional): the bar phase to render with (qualification: does the world follow the beat?).
+      async frame(t,dt,phase=null){
+        filmTime=t;replayPos=t;forcedPhase=Number.isFinite(phase)?phase:null;
         while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=t+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
         renderAt(dt,t);
+        // A pack frame renders the exact frame with its labels and hands back a bitmap.
+        const bitmap=selectedWorld==='living'&&living?.remote?await living.capture(t,dt,{phase:barPhase}):null;
         // Composite the stage with the caption layer so the film carries the narration.
-        const src=selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas,out=document.createElement('canvas');out.width=src.width;out.height=src.height;
-        const g2=out.getContext('2d');g2.drawImage(src,0,0);
+        const src=bitmap||(selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas),out=document.createElement('canvas');out.width=src.width;out.height=src.height;
+        const g2=out.getContext('2d');g2.drawImage(src,0,0);bitmap?.close();
         if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);
           // A film can carry a persistent note (e.g. that a fixture is supplemental or a family was chosen by hand).
           if(filmNote){const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}
@@ -719,13 +803,15 @@
       world(){return living?.world||null;},
       labels(){return living?.labels()||[];},
       async setRecipe(r){await living?.setRecipe(r);return living?.recipe?.family;},
+      // A World DNA action as the panel sends it (switching between built-in families and packs rebuilds the world).
+      async recipeAction(action){await recipeAction(action);return {family:recipe?.family,remote:!!living?.remote,frames:document.querySelectorAll('iframe.pack-frame').length};},
       setLabels(m){living?.setLabels(m);},
       memory(){const s=living?.stats();return {geometries:s?.geometries,textures:s?.textures,heap:performance.memory?performance.memory.usedJSHeapSize:null};}
     };
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
     window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();
-    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
+    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,10000);void loadPacks();
     setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
     pollProjects().then(pollProject);requestAnimationFrame(paint);
     if(selectedWorld==='construct')void ensureConstruct();

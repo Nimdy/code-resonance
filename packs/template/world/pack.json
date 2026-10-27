@@ -1,0 +1,27 @@
+{
+  "$schema": "https://code-resonance.invalid/pack.schema.json",
+  "schema": "code-resonance.pack.v1",
+  "id": "you.my-world",
+  "name": "My World",
+  "version": "0.1.0",
+  "kind": "world",
+  "sdk": "^1.0",
+  "author": {"name": "Your Name"},
+  "description": "A starter world: subsystems are rings of light, modules are glowing spheres. Replace everything.",
+  "license": "MIT",
+  "world": {
+    "entry": "world.js",
+    "family": {"name": "My World"},
+    "parameters": {
+      "spin": {"type": "number", "min": 0.02, "max": 0.12, "description": "idle rotation speed"},
+      "size": {"type": "number", "min": 0.8, "max": 1.4, "from": {"trait": "depth", "scale": 0.08}, "description": "sphere size, larger for symbol-rich modules"}
+    },
+    "effects": {
+      "subsystem.created": "bloom", "module.created": "spark", "structure.created": "spark", "structure.removed": "fade",
+      "subsystem.connected": "link", "validation.failed": "alarm", "validation.passed": "glow", "validation.recovered": "glow",
+      "refactor.validated": "glow", "milestone.achieved": "crown", "repository.checkpoint": "wave", "world.expanded": "wave"
+    },
+    "ambient": {"base": ["spin"], "unlocks": ["halo"]},
+    "budget": {"drawCalls": 8, "passes": 30, "triangles": 400000, "points": 10000, "textures": 16, "updateMs": 4}
+  }
+}

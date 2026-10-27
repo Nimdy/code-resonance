@@ -523,7 +523,7 @@ export function createFamily(ctx){
       case 'validation.passed':return {text:`Tests pass · ${plural(n,'world')} validated`,sub:'observed passing run',position:pos,color:'#9dffcf'};
       case 'validation.recovered':return {text:`Recovered · ${plural(d.repaired||n,'world')} repaired`,sub:'the tests pass again',position:pos,color:'#9dffcf',banner:'Recovery',bannerSub:'the tests pass again'};
       case 'refactor.validated':return {text:'Refactor validated · the system consolidates',sub:plural(d.removedSymbols||0,'symbol')+' removed',position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
-      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`Nova · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
+      case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({aurora:'Aurora','calm-pulse':'Calm pulse','accretion-collapse':'Collapse'})[c.effect]||'Nova'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'world')} set in orbit`:'Committed · the work is set in place',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The forge grows · chapter ${d.chapter}`,sub:'accumulated structure',position:new THREE.Vector3()};
       default:return null;}}

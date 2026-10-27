@@ -1,0 +1,87 @@
+{
+  "at": "2026-10-24T14:12:15.329Z",
+  "dataset": "lumen-long (supplemental: 300 sessions of the real Lumen events)",
+  "checks": [
+    {
+      "name": "PR #3 baseline: with only the newest 30,000 intents, the early verified milestones are lost",
+      "pass": true,
+      "detail": "PR #3 shows 0 of 2 ambient unlocks and 0 of 2 lasting blooms at the end"
+    },
+    {
+      "name": "replay: after a seek deep into the history the player folds exactly the intents before it",
+      "pass": true,
+      "detail": "player {\"folded\":49381,\"unlocked\":2,\"lasting\":2,\"agentNumbers\":[]} / fold {\"folded\":49381,\"unlocked\":2,\"lasting\":2,\"agentNumbers\":[]}"
+    },
+    {
+      "name": "replay: memory stays bounded (at most 30,000 raw intents however long the history)",
+      "pass": true,
+      "detail": "{\"folded\":49381,\"raw\":21381,\"checkpoints\":24,\"parked\":0,\"base\":28000,\"late\":0,\"covered\":0,\"refolded\":0,\"jumps\":0}"
+    },
+    {
+      "name": "replay: early verified milestones still unlock ambient layers and keep their lasting blooms",
+      "pass": true,
+      "detail": "2 unlocked, 163 crown instances"
+    },
+    {
+      "name": "replay: a minute of playback inside a session matches the fold (agents present, numbered by session)",
+      "pass": true,
+      "detail": "player {\"folded\":49430,\"unlocked\":2,\"lasting\":2,\"agentNumbers\":[1798]} / fold {\"folded\":49430,\"unlocked\":2,\"lasting\":2,\"agentNumbers\":[1798]}"
+    },
+    {
+      "name": "no page errors in the long replay",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "replay: the same moment renders the same frame regardless of seek history (long history)",
+      "pass": true,
+      "detail": "2db1c1e9b944d13b / 2db1c1e9b944d13b"
+    },
+    {
+      "name": "live: opening the live view primes all intents of a long history, with its early milestones",
+      "pass": true,
+      "detail": "49546 of 49546 intents, 2 unlocked, raw window 21546, 5117 ms"
+    },
+    {
+      "name": "no page errors in the live view (long history)",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "dataset": {
+      "windows": 12796,
+      "intents": 49546,
+      "milestones": 2,
+      "sessions": 1800
+    },
+    "pr3": {
+      "unlocked": 0,
+      "blooms": 0,
+      "truth": {
+        "folded": 49546,
+        "unlocked": 2,
+        "lasting": 2,
+        "agentNumbers": []
+      }
+    },
+    "openMs": 1410,
+    "seekQuietMs": 115,
+    "history": {
+      "folded": 49381,
+      "raw": 21381,
+      "checkpoints": 24,
+      "parked": 0,
+      "base": 28000,
+      "late": 0,
+      "covered": 0,
+      "refolded": 0,
+      "jumps": 0
+    },
+    "crownsAtQuiet": 163,
+    "seekInsideMs": 29,
+    "heapMB": 73.1,
+    "livePrimeMs": 5117
+  }
+}

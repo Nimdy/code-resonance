@@ -12,7 +12,7 @@
 | Command category (test, build, lint, …) and exit code | yes, classified inside the extension | journal | as cues |
 | AI prompts and assistant messages (hooks) | length + fingerprint; text only with `RESONANCE_CAPTURE_PROMPT_TEXT=1` | journal | never |
 | File paths | project-relative, secret patterns excluded | journal | **never** (salted hashed ids only) |
-| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | player project list only; never drawn on the Stage or OBS view |
+| Project folder name | with `resonance.shareProjectName` (default on) | receiver state | player project list only; never drawn on the Stage, OBS view or films (their titles are generic unless you set a **public title** in the World DNA panel) |
 
 Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inserted text even if an old extension sends it; existing journals from v0.2 may still contain it — delete them (below) if that matters.
 
@@ -25,6 +25,7 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - HTTP responses send `no-store` and `nosniff`; the player uses a self-only CSP and no CDNs.
 - The Claude Code adapter never writes to stdout and always exits 0, so it cannot alter Claude's decisions. It is installed per project in `.claude/settings.local.json`, which is not committed.
 - No analytics, telemetry, accounts, cloud APIs or remote model calls.
+- **Visual packs.** Declarative packs are validated data. Packs with code (GLSL, JavaScript) are installed unapproved, run only after you approve their exact files (approval bound to a content digest), are served to the player as inert text, and execute only in an isolated frame (`sandbox="allow-scripts"`, opaque origin, `connect-src 'none'`, no workers, frames, popups or WebRTC) fed with a whitelisted, privacy-safe performance view. Browsers cannot fully sandbox GPU shaders (hangs, driver crashes, timing side channels) or stop a frame from navigating itself: approve only packs you trust. Details: [docs/packs/security.md](docs/packs/security.md).
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data

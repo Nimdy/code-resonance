@@ -12,11 +12,18 @@ const gzip=promisify(zlib.gzip);
 const {Worker}=require('node:worker_threads');
 const {validateEvent,sha}=require('./protocol');
 const recipes=require('../engine/recipe');
+const packs=require('../engine/packs');
 const VERSION=require('../package.json').version;
 const PUBLIC=path.resolve(__dirname,'../public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
   ['/construct.js','construct.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
+// The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
+// the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
+const FRAME_HTML='<!doctype html><html><head><meta charset="utf-8"><title>Code Resonance visual pack</title>'+
+  '<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}</style></head>'+
+  '<body><canvas id="world"></canvas><canvas id="overlay"></canvas><script type="module" src="/worlds/frame.js"></script></body></html>';
+const FRAME_PERMISSIONS='camera=(), microphone=(), geolocation=(), display-capture=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), hid=(), bluetooth=(), payment=(), fullscreen=()';
 const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
 function response(res,code,obj){res.writeHead(code,JSON_HEADERS);res.end(JSON.stringify(obj));}
 function validId(id){return typeof id==='string'&&/^[a-z0-9-]{12,128}$/i.test(id);}
@@ -43,6 +50,7 @@ function createService(options={}) {
   let lastReceivedAt=0;
   // Derived views are cached in memory, fed by the worker; requests never parse checkpoint files.
   const projections=new Map();const timelines=new Map();
+  const registry=packs.createRegistry(dataDir);
   const projectDir=id=>path.join(dataDir,'projects',sha(id));
   function appendEvents(projectId,events) {
     const previous=writes.get(projectId)||Promise.resolve();
@@ -142,11 +150,20 @@ function createService(options={}) {
   async function readRecipe(id){try{return JSON.parse(await fs.readFile(path.join(projectDir(id),'recipe.json'),'utf8'));}catch{return null;}}
   async function writeRecipe(id,recipe){const f=path.join(projectDir(id),'recipe.json'),tmp=`${f}.${process.pid}.tmp`;await fs.writeFile(tmp,JSON.stringify(recipe,null,1),{mode:0o600});await fs.rename(tmp,f);}
   function loadRecipe(id,entry){return withRecipeLock(id,async()=>{
-    const stored=await readRecipe(id);const {recipe,changed}=recipes.resolve(stored,JSON.parse(entry.json));
+    const stored=await readRecipe(id);const {recipe,changed}=recipes.resolve(stored,JSON.parse(entry.json),Date.now(),registry.snapshot());
     if(changed)await writeRecipe(id,recipe);return recipe;});}
   function editRecipe(id,entry,action){return withRecipeLock(id,async()=>{
-    const project=JSON.parse(entry.json);const current=recipes.resolve(await readRecipe(id),project).recipe;
-    const next=recipes.update(current,action,project);await writeRecipe(id,next);return next;});}
+    const project=JSON.parse(entry.json),known=registry.snapshot();const current=recipes.resolve(await readRecipe(id),project,Date.now(),known).recipe;
+    const next=recipes.update(current,action,project,Date.now(),known);await writeRecipe(id,next);return next;});}
+  // What the player may know about installed packs (never their location on disk).
+  const publicPack=p=>({id:p.id,name:p.name,version:p.version,kind:p.kind,sdk:p.sdk,author:p.author,description:p.description,license:p.license,digest:p.digest,
+    files:p.files,executable:p.executable,trusted:p.trusted,compatible:p.compatible,ok:p.ok,problems:p.problems,installedAt:p.installedAt,
+    family:p.family?{id:p.family.id,name:p.family.name,effects:p.family.effects,ambient:p.family.ambient,budget:p.family.budget}:null,base:p.overlay?.base||null});
+  async function readBody(req,res,limit){
+    if((req.headers['content-type']||'').split(';')[0]!=='application/json'){response(res,415,{error:'Expected application/json'});return null;}
+    let size=0;const chunks=[];for await(const chunk of req){size+=chunk.length;if(size>limit){response(res,413,{error:'Too large'});return null;}chunks.push(chunk);}
+    try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{response(res,400,{error:'Invalid JSON'});return null;}
+  }
   async function exportProject(res,id,entry){
     const p=JSON.parse(entry.json);
     res.writeHead(200,{...JSON_HEADERS,'Content-Disposition':`attachment; filename="code-resonance-${id.slice(0,10)}.json"`});
@@ -164,18 +181,47 @@ function createService(options={}) {
       const allowedHost=/^(?:localhost|127\.0\.0\.1|\[::1\]):\d+$/.test(hostHeader);
       if(!allowedHost){response(res,403,{error:'Localhost Host header required'});return;}
       const expectedOrigins=[`http://localhost:${actualPort}`,`http://127.0.0.1:${actualPort}`,`http://[::1]:${actualPort}`];
-      if(req.headers.origin&&!expectedOrigins.includes(req.headers.origin)){response(res,403,{error:'Cross-origin access forbidden'});return;}
       const u=new URL(req.url,`http://localhost:${actualPort}`);
       const pathname=u.pathname;
       const worldFile=/^\/worlds\/[a-z0-9-]+\.js$/.test(pathname)?pathname.slice(1):null;
+      // The pack frame has an opaque origin ("null"): it may fetch the public world modules and three.js, nothing else.
+      const frameAsset=req.method==='GET'&&req.headers.origin==='null'&&(worldFile||pathname==='/vendor/three.module.min.js');
+      if(req.headers.origin&&!expectedOrigins.includes(req.headers.origin)&&!frameAsset){response(res,403,{error:'Cross-origin access forbidden'});return;}
       if(req.method==='GET'&&(FILENAMES.has(pathname)||worldFile)){
         const f=path.join(PUBLIC,worldFile||FILENAMES.get(pathname));
         if(worldFile&&!fss.existsSync(f)){response(res,404,{error:'Not found'});return;}
         const source=await fs.readFile(f);
         res.writeHead(200,{'Content-Type':MIME[path.extname(f)],'Cache-Control':'no-store',
           'Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
-          'X-Content-Type-Options':'nosniff'});
+          'X-Content-Type-Options':'nosniff',...(frameAsset?{'Access-Control-Allow-Origin':'*'}:{})});
         res.end(source);return;
+      }
+      if(req.method==='GET'&&pathname==='/pack-frame.html'){
+        // CSP source lists cannot name IPv6 literals: the frame works when the player is opened on localhost or 127.0.0.1.
+        const named=expectedOrigins.filter(o=>!o.includes('[')),scripts=named.flatMap(o=>[`${o}/worlds/`,`${o}/vendor/`]).join(' ');
+        res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
+          'Permissions-Policy':FRAME_PERMISSIONS,'Cross-Origin-Resource-Policy':'same-origin',
+          'Content-Security-Policy':`default-src 'none'; script-src ${scripts} blob:; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors ${named.join(' ')}`});
+        res.end(FRAME_HTML);return;
+      }
+      // ---- Visual packs: installed with scripts/pack.js; the player lists them, reads approved files, records approvals.
+      if(req.method==='GET'&&pathname==='/api/packs'){response(res,200,{sdk:packs.SDK_VERSION,packs:registry.list().map(publicPack)});return;}
+      if(req.method==='GET'&&pathname==='/api/packs/file'){
+        const p=registry.get(u.searchParams.get('id')||''),file=u.searchParams.get('path')||'';
+        // Code is handed out only for approved packs, as inert text (the player passes it to the isolated frame).
+        if(!p||!p.ok||(p.executable&&!p.trusted)){response(res,p?403:404,{error:p?'This pack contains code and has not been approved':'Pack not found'});return;}
+        const buf=registry.read(p.id,file);if(!buf){response(res,404,{error:'File not found'});return;}
+        res.writeHead(200,{'Content-Type':/\.(?:png|jpg)$/.test(file)?'application/octet-stream':'text/plain; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',
+          'Content-Security-Policy':"default-src 'none'; sandbox",'Cross-Origin-Resource-Policy':'same-origin'});
+        res.end(buf);return;
+      }
+      if(req.method==='POST'&&pathname==='/api/packs/trust'){
+        // Approvals come from the player page itself (same origin), for the exact files the user reviewed (digest).
+        if(!req.headers.origin||!expectedOrigins.includes(req.headers.origin)){response(res,403,{error:'Same-origin request required'});return;}
+        const body=await readBody(req,res,4096);if(!body)return;
+        if(typeof body.id!=='string'||typeof body.digest!=='string'||typeof body.trusted!=='boolean'){response(res,400,{error:'Expected {id, digest, trusted}'});return;}
+        try{response(res,200,publicPack(packs.setTrust(body.id,dataDir,{digest:body.digest,trusted:body.trusted})));}catch(e){response(res,400,{error:e.message});}
+        return;
       }
       if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
       if(req.method==='GET'&&pathname==='/api/projects'){response(res,200,{projects:await listProjects()});return;}
@@ -215,6 +261,8 @@ function createService(options={}) {
           try{response(res,200,await editRecipe(id,entry,body.action));}catch(e){response(res,400,{error:e.message});}
           return;
         }
+        // fallback=1: the identity without any pack (shown while a pack with code awaits approval); never stored.
+        if(u.searchParams.get('fallback')==='1'){const stored=await readRecipe(id);response(res,200,recipes.resolve(stored,JSON.parse(entry.json),Date.now(),{byId:{},families:{}}).recipe);return;}
         response(res,200,await loadRecipe(id,entry));return;
       }
       if(req.method==='GET'&&pathname==='/api/export'){

@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T04:37:12.113Z",
+  "at": "2026-10-24T15:51:37.170Z",
   "seconds": 180,
   "styles": {
     "ambient": {
@@ -11,7 +11,7 @@
         "median": -23.4,
         "p95": -21.4
       },
-      "loudnessRangeDb": 6.691,
+      "loudnessRangeDb": 6.69,
       "silentWindows": 1,
       "silentAt": [
         0
@@ -19,7 +19,7 @@
       "windows": 60,
       "beforeTensionDb": -24.641,
       "tensionDb": -23.597,
-      "renderSeconds": 40.1
+      "renderSeconds": 57.2
     },
     "pulse": {
       "peak": 0.331,
@@ -36,7 +36,7 @@
       "windows": 60,
       "beforeTensionDb": -24.547,
       "tensionDb": -23.306,
-      "renderSeconds": 52.9
+      "renderSeconds": 76.5
     },
     "cinematic": {
       "peak": 0.307,
@@ -53,7 +53,7 @@
       "windows": 60,
       "beforeTensionDb": -24.526,
       "tensionDb": -23.388,
-      "renderSeconds": 45.6
+      "renderSeconds": 64
     },
     "chip": {
       "peak": 0.274,
@@ -70,7 +70,7 @@
       "windows": 60,
       "beforeTensionDb": -24.807,
       "tensionDb": -23.179,
-      "renderSeconds": 118.6
+      "renderSeconds": 133
     }
   },
   "checks": [
