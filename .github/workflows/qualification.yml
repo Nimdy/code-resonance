@@ -12,12 +12,13 @@ name: qualification
 # choose; the flagship worlds at full quality need a GPU (measured on one in the render lab and the extended tier).
 # The expensive tier (full pack suites, long recordings, soak, native Windows browser and VS Code, OBS) is in
 # extended.yml. The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
+# Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   workflow_dispatch:
   pull_request:
 jobs:
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     defaults:
       run:
@@ -41,8 +42,9 @@ jobs:
           name: browser-qualification
           path: qualification/results
   packs:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    # The shader pack's quick suite takes about 25 min in software rendering, and the dependency install up to 12 min.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -66,7 +68,7 @@ jobs:
           name: pack-${{ matrix.pack }}
           path: qualification/results/visual/pack-*.json
   runtime:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
       run:
@@ -93,7 +95,7 @@ jobs:
             qualification/results/robustness
             qualification/results/recording
   ui:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     defaults:
       run:
@@ -118,7 +120,7 @@ jobs:
           name: ui-qualification
           path: qualification/results/ui
   vscode:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
       run:
