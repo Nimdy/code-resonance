@@ -215,7 +215,7 @@ its pairing link), the tests (each makes and removes its own temporary directori
 ## Focused checks
 
 ```bash
-npm run check                                  # syntax of every module
+npm run check                                  # syntax check of the JavaScript modules
 npm test                                       # unit and integration (node:test, no dependencies)
 node --test tests/recipe.test.js               # one area at a time
 npm run package:vsix                           # the VSIX, built with Node only
