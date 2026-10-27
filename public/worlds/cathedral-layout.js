@@ -118,14 +118,45 @@ export function partsTop(tp,top,o){
   return base;
 }
 export const wallR=tp=>tp.R0*1.1;
+// The orientation of the towers' prisms (the world's frustum of `sides` faces turned by axisAz + pi / sides): n faces,
+// v0 the direction (atan2(z, x)) of a vertex; the faces' normals lie half-way between the vertices.
+export const prismOf=(o,axisAz)=>({n:o.A.sides,v0:Math.PI/2-axisAz-Math.PI/o.A.sides});
+// The stone profile of a tower at time t (the world's stack without the assembly animation): the plinth, each storey
+// born and standing (its stage's setback and its kind's girth), the band of the rest or a chapel, as prisms
+// [{y0, y1, r}] (r: the circumradius at the foot, the widest), and the pinnacles standing on each setback's ledge
+// [{x, z, r, y0, y1}]. Its height is towerTop's.
+export function towerProfile(model,tp,t,o){
+  const m=tp.m,born=x=>model.bornAt(x)<=t,gone=x=>x.removed!==null&&x.removed<=t,arch=o.archName,R0=tp.R0,out=[],pins=[];
+  if(!born(m)||gone(m))return {segs:out,pins};
+  const gothicLike=arch==='gothic'||arch==='spire',stageN=arch==='spire'?4:3,stepK=.05+.3*o.setback,rf=j=>Math.max(.55,1-stepK*Math.floor(j/stageN));
+  const rot=(o.axisAz||0)+Math.PI/o.A.sides,N=tp.shown.length;
+  out.push({y0:0,y1:.24,r:R0*1.5});let y=.24,prevR=0;
+  tp.shown.forEach((s,j)=>{const K=KINDS[s.kind],rb=R0*K.r*rf(j);
+    if(j>0&&j%stageN===0&&arch!=='brutalist'&&!tp.carpet&&prevR>0){const st=Math.floor(j/stageN),rr=prevR*(arch==='gothic'?.985:1)*.96;
+      for(let q=0;q<4;q++){const a=rot+(q+.5)/4*Math.PI*2+(o.A.sides===8?Math.PI/8:Math.PI/4);pins.push({x:tp.x+Math.cos(a)*rr,z:tp.z+Math.sin(a)*rr,r:.045+.01*st,y0:y-.05,y1:y+.2+.05*st});
+        if(gothicLike&&N>=6)for(const sgn of [-1,1]){const a2=a+sgn*.32;pins.push({x:tp.x+Math.cos(a2)*rr*.98,z:tp.z+Math.sin(a2)*rr*.98,r:.025,y0:y-.05,y1:y+.11+.02*st});}}}
+    if(born(s)&&!gone(s)){const h=storeyH(s.kind,tp.hk,arch);out.push({y0:y,y1:y+h,r:rb});y+=h;}
+    prevR=rb;});
+  const extra=tp.total-N,topR=N?R0*KINDS[tp.shown[N-1].kind].r*rf(N-1)*(arch==='gothic'?.985:1):R0;
+  if(extra>0){const h=Math.min(.9,.14*Math.log2(1+extra))*tp.hk;out.push({y0:y,y1:y+h,r:topR*.98});y+=h;}
+  if(!N&&extra<=0){out.push({y0:y,y1:y+.32,r:R0*.9});y+=.32;}
+  return {segs:out,pins,top:Math.max(.3,y),topR};
+}
 // The solid stone of a standing tower once complete (for its inhabitants' routes and their clearance tests): vertical
 // cylinders {x,z,r,y0,y1} (plinth, the body up to its roof's foot with the roof's pinnacles, buttress piers, brutalist
 // columns) and capsules {a:[x,y,z],b:[x,y,z],r} (flying buttresses: pier top, arch crown, wall). axisAz: the world's
 // processional axis (its towers' orientation); ang: the precinct's axis.
-export function solidsOf(tp,top,o,axisAz,ang){
+// prof (optional, towerProfile): the body as its stacked prisms (each {x, z, r, y0, y1, n, f}: f the direction of a
+// face's normal) with the setback pinnacles, and the roof's foot above it, instead of one cylinder of the widest girth.
+export function solidsOf(tp,top,o,axisAz,ang,prof=null){
   const N=tp.shown.length,R0=tp.R0,x=tp.x,z=tp.z,gothicLike=o.archName==='gothic'||o.archName==='spire',base=.24,out=[];
-  out.push({x,z,r:R0*1.5,y0:-1,y1:base});
-  out.push({x,z,r:R0*1.1,y0:-1,y1:top+.7});
+  if(prof&&prof.segs.length){const P=prismOf(o,axisAz),f=P.v0+Math.PI/P.n;
+    prof.segs.forEach((g,k)=>out.push({x,z,r:g.r,y0:k?g.y0:-1,y1:g.y1,n:P.n,f}));
+    for(const p of prof.pins)out.push({x:p.x,z:p.z,r:p.r,y0:p.y0,y1:p.y1});
+    // The roof's foot (lantern, gablets, pinnacles round it).
+    out.push({x,z,r:prof.topR*1.08+.04,y0:top-.03,y1:top+.7});}
+  else{out.push({x,z,r:R0*1.5,y0:-1,y1:base});
+    out.push({x,z,r:R0*1.1,y0:-1,y1:top+.7});}
   if(gothicLike&&N>=5&&!tp.carpet&&tp.sd<o.buttressK+.15){const SIDES=o.A.sides,rot=axisAz+Math.PI/SIDES,H=Math.max(.5,(top-base)*.3),off=R0*1.9,rw=R0*.95;
     for(let j=0;j<4;j++){const a=rot+(j+.5)/4*Math.PI*2+(SIDES===8?Math.PI/8:0),ca=Math.cos(a),sa=Math.sin(a);
       out.push({x:x+ca*off,z:z+sa*off,r:.12,y0:-1,y1:base+H+.34,angle:a});
@@ -139,5 +170,8 @@ export function solidsOf(tp,top,o,axisAz,ang){
 export function solidDist(s,px,py,pz){
   if(s.a){const [ax,ay,az]=s.a,[bx,by,bz]=s.b,dx=bx-ax,dy=by-ay,dz=bz-az,L2=dx*dx+dy*dy+dz*dz;let u=L2>0?((px-ax)*dx+(py-ay)*dy+(pz-az)*dz)/L2:0;u=u<0?0:u>1?1:u;
     const ex=ax+dx*u-px,ey=ay+dy*u-py,ez=az+dz*u-pz;return Math.sqrt(ex*ex+ey*ey+ez*ez)-s.r;}
-  const h=Math.hypot(px-s.x,pz-s.z)-s.r,v=py<s.y0?s.y0-py:py>s.y1?py-s.y1:0;return v>0?(h>0?Math.hypot(h,v):v):h;
+  const dx=px-s.x,dz=pz-s.z,hd=Math.sqrt(dx*dx+dz*dz),v=py<s.y0?s.y0-py:py>s.y1?py-s.y1:0;let h=hd-s.r;
+  // A prism: the distance to the plane of its nearest face (exact on a face, less near an edge: never more).
+  if(s.n&&h<.4){const k=2*Math.PI/s.n;let a=Math.atan2(dz,dx)-s.f;a-=Math.round(a/k)*k;h=hd*Math.cos(a)-s.r*Math.cos(Math.PI/s.n);}
+  return v>0?(h>0?Math.hypot(h,v):v):h;
 }

@@ -1,9 +1,11 @@
 // Machine Cathedral: the digital life of the machine-city. Small luminous servitors run the cathedral's own network of
 // routes, derived from its stone (cathedral-layout.js): along the lit copings of the precincts' kerbs, over the floor
-// between towers and along the dependency channels, up shafts on the towers' flanks to galleries under their roofs, low
-// over the mirror canals between precincts, and across the cables slung between precincts (the energy bridges). Never
-// through a building: every route keeps clear of the towers' footprints and the naves, and the inhabitants only ever
-// follow routes. Pure (no rendering), tested in Node (tests/life-cathedral.test.js).
+// between towers and along the dependency channels, up shafts on the towers' own walls to galleries ringing them under
+// their roofs, low over the mirror canals between precincts, and across the cables slung between precincts (the energy
+// bridges). Never through a building: every route keeps clear of the towers' footprints and the naves, and the
+// inhabitants only ever follow routes. On a tower they keep to its stone: a shaft climbs the plinth's face, then the
+// wall, stepping in over each setback's ledge (towerProfile: the storeys as the world stacks them, turned with its
+// prisms), WALL off the stone. Pure (no rendering), tested in Node (tests/life-cathedral.test.js).
 //
 // Three kinds of inhabitant (the population is the ecosystem's; their behaviour is this grammar's, in its hooks):
 //  - couriers   carry energy from hub to hub (each precinct's landmark tower is its hub): they choose a destination
@@ -19,33 +21,45 @@
 //  - sparks     signal carriers: fast, along the trunk (kerbs, canals, shafts, galleries, cables), released by the hubs
 //               in waves that run round the city on the machine's cycle.
 // Every courier, warden and spark keeps to the right of its lane (two-way traffic passes), queues behind the one ahead
-// on the same stretch, and slows before a junction.
+// on the same stretch, and slows before a junction. Kerbs carry platoons: traffic joins a kerb only while its junction
+// is open (a short window on the precinct's beat), and a wave runs round each coping each way, speeding and holding the
+// traffic on it, so it moves in pulses with dark gaps between them. The shafts are gated: each tower lets climbers up (and down from its
+// crown) in short convoys on its own phase of the machine's cycle, so a shaft pulses with small processions and the
+// others queue at its foot (and give up after a while). Wardens leave a tower together, on their precinct's beat, so
+// they travel in small groups. A failing precinct's shaft and galleries empty fast (its wardens drop to the kerb and
+// wait there in a ring, couriers bound for it turn away); when it recovers the wardens go back in on its beat, briskly
+// along the floor to its hub's foot, gather there, and climb its shaft together on a later beat (a procession).
 //
 // Feedback: every inhabitant lays trail where it goes (the sim's trail field) and pushes the flow field along its way;
 // a crowd deposits disturbance (congestion); couriers leave energy at the hubs they reach. The world lights its copings,
 // channels and cables from these fields (the routes brighten, flow and fade with their traffic), and the next choices
 // read them back.
 //
-// Determinism: the network is a pure function of the shadow model and the time (habitat), cached by a content key that
-// a dedicated site carries into the ecosystem ("net:<key>"); each inhabitant's route state lives in the ecosystem's
-// scratch arrays (ia: directed edge and job; fa: timer and the network tag it was placed on), so snapshots restore it.
-// Random choices come from the ecosystem's own stream (api.random).
+// Determinism: the network is a pure function of the shadow model and the time; habitat() returns it as the habitat's
+// data, which the driver hands to the ecosystem with the sites and again after every restore (eco.siteData): the
+// network is never looked up in a cache (a small one only saves rebuilding it). Each inhabitant's route state lives in
+// the ecosystem's scratch arrays (ia: directed edge and job; fa: timer and the network tag it was placed on), so
+// snapshots restore it; per-tick tables (traffic per edge, gates) are rebuilt by the tick hook from that state. Random
+// choices come from the ecosystem's own stream (api.random) or, for a group's shared choice, from the seed and the beat.
 import {CH,u01} from './sim.js';
-import {layoutOptions,precincts,towerPlans,linkPlans,footprint,towerTop,naveOf,cableShape,partsTop,wallR,solidsOf,solidDist} from '../cathedral-layout.js';
-export const GRAMMAR_ID='machine-cathedral',GRAMMAR_VERSION=1;
+import {layoutOptions,precincts,towerPlans,linkPlans,footprint,towerTop,naveOf,cableShape,solidsOf,solidDist,towerProfile,prismOf} from '../cathedral-layout.js';
+export const GRAMMAR_ID='machine-cathedral',GRAMMAR_VERSION=3;
 export const EDGE={kerb:0,spoke:1,channel:2,lane:3,dock:4,shaft:5,gallery:6,corridor:7,cable:8};
 export const EDGE_NAMES=['kerb','spoke','channel','lane','dock','shaft','gallery','corridor','cable'];
 const KIND_COST=[1,1.05,.85,1.1,1.1,1.25,1.1,1,.7];          // route cost per unit length (cables are fast)
-const LANE=[.05,.06,.06,.06,.045,.06,.045,.12,.035];          // keep-right lane offset
+const LANE=[.05,.06,.06,.06,.045,.025,.01,.12,.035];          // keep-right lane offset (shafts and galleries hug the wall)
 const KIND_SPEED=[1,1,1,1,.55,.8,.7,1.1,1.45];
 export const BOUND=56,YTOP=23;                                  // the routes and fields lie within x, z in ±BOUND
 const PARK=BOUND+2.5;                                           // the reserve: inhabitants not yet awake wait out here
-export const MARGIN=.14;                                        // clearance kept from architecture
+export const MARGIN=.14,WALL=.05,OWN=.035;                      // clearance kept from architecture; on a tower's own stone
+                                                                // its shafts and galleries keep WALL off it (at least OWN)
 const CYCLE=48;                                                 // the machine's dispatch cycle (ticks: 2.4 s)
 export const SPECIES=['courier','warden','spark'];
 const S_WARDEN=1,S_SPARK=2;
 // Jobs (ia[2i+1] = job | aux << 4 | dest << 8).
 export const JOB={travel:0,dwell:1,wait:2,go:3,up:4,circle:5,down:6,edge:7,patrol:8,migrate:9,linger:10};
+const AUX_HOLD=8,AUX_WITHDRAWN=4;                                // aux flags: queued at a gate; withdrawn from a failure
+const GATE=CYCLE*2,GATE_EVERY=6;                                 // a shaft's gate: its period and the headway (ticks)
 const fnv=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
 const r3=x=>Math.round(x*1000);
 // ---- The navigable network -------------------------------------------------------------------------------------------
@@ -57,14 +71,14 @@ const r3=x=>Math.round(x*1000);
 // plinth, buttresses and flying buttresses, columns; cathedral-layout.js solidsOf), all with MARGIN; a blocked edge is
 // left out. A tower's outworks are passed outside (dock ring, the shaft's foot); above them the shaft and galleries
 // hug the wall.
-export function buildNetwork(model,t,o){
+export function buildNetwork(model,t,o,opts={}){
   const pr=precincts(model,o),offsets=new Map(pr.map(p=>[p.d.id,p.off])),plans=towerPlans(model,o,offsets),S=o.S;
   const alive=m=>model.bornAt(m)<=t&&(m.removed===null||m.removed>t);const axisOf=new Map(pr.map(p=>[p.d.id,p.ang]));
   // Standing towers (with their height now) and obstacles.
   const towers=[],tIndex=new Map();
   plans.forEach((tp,k)=>{if(!alive(tp.m))return;const top=towerTop(model,tp,t,o);if(top<=0)return;
-    const rf=footprint(tp,o),solids=solidsOf(tp,top,o,o.axisAz||0,axisOf.get(tp.m.group)||0);tIndex.set(tp.m.id,towers.length);
-    towers.push({id:tp.m.id,plan:k,x:tp.x,z:tp.z,rf,rd:(rf+MARGIN)/Math.cos(Math.PI/8)+.01,rw:(wallR(tp)+MARGIN)/Math.cos(Math.PI/8)+.01,yIn:partsTop(tp,top,o)+.22,solids,top,great:tp.great,total:tp.total,group:tp.m.group,prec:-1,dock:[],crown:[],shaft:-1,galleries:[]});});
+    const prof=towerProfile(model,tp,t,o),rf=footprint(tp,o),solids=solidsOf(tp,top,o,o.axisAz||0,axisOf.get(tp.m.group)||0,prof);tIndex.set(tp.m.id,towers.length);
+    towers.push({id:tp.m.id,plan:k,x:tp.x,z:tp.z,rf,rd:(rf+MARGIN)/Math.cos(Math.PI/8)+.01,prof:prof.segs,R0:tp.R0,solids,top,great:tp.great,total:tp.total,group:tp.m.group,prec:-1,dock:[],crown:[],shaft:-1,galleries:[]});});
   const precs=[];
   for(const p of pr){const members=p.members.filter(m=>tIndex.has(m.id));if(!members.length)continue;
     const born=Math.min(...p.members.map(m=>model.bornAt(m)));const nave=born<=t?naveOf(p,o):null;
@@ -94,7 +108,7 @@ export function buildNetwork(model,t,o){
   // A segment in the air (shafts, galleries, cables): clear of every solid of every tower near it (its own included,
   // with a slightly smaller margin) and of the naves, tested every few centimetres.
   function airClear(ax,ay,az,bx,by,bz,own=-1,skip2=-1){const L=Math.hypot(bx-ax,by-ay,bz-az),n=Math.max(1,Math.ceil(L/.07));
-    if(near(ax,az,bx,bz,k=>{if(k===skip2)return false;const sl=towers[k].solids,m=k===own?MARGIN*.7:MARGIN;for(let s=0;s<=n;s++){const u=s/n,x=ax+(bx-ax)*u,y=ay+(by-ay)*u,z=az+(bz-az)*u;for(const so of sl)if(solidDist(so,x,y,z)<m)return true;}return false;}))return false;
+    if(near(ax,az,bx,bz,k=>{if(k===skip2)return false;const sl=towers[k].solids,m=k===own?OWN:MARGIN;for(let s=0;s<=n;s++){const u=s/n,x=ax+(bx-ax)*u,y=ay+(by-ay)*u,z=az+(bz-az)*u;for(const so of sl)if(solidDist(so,x,y,z)<m)return true;}return false;}))return false;
     for(const q of precs)if(q.nave&&naveHit(q,ax,az,bx,bz,ay,by))return false;return true;}
   // Nodes and edges.
   const NX=[],NY=[],NZ=[],NK=[],NP=[],NT=[],EA=[],EB=[],EK=[];
@@ -102,8 +116,15 @@ export function buildNetwork(model,t,o){
   const edgeSet=new Map();
   const edge=(a,b,kind)=>{if(a<0||b<0||a===b)return -1;const key=a<b?a*1e7+b:b*1e7+a;if(edgeSet.has(key)){const e=edgeSet.get(key);if(kind===EDGE.channel)EK[e]=kind;return e;}EA.push(a);EB.push(b);EK.push(kind);edgeSet.set(key,EA.length-1);return EA.length-1;};
   const FLOOR=.12,kerbY=.055*S+.07,ANG=8;
+  // The towers' rings (docks, shafts, galleries) are turned with their prisms: node j lies towards a vertex (a0 + j/8 of a
+  // turn: on an octagon every node faces an edge of the stone, on a square every other one), so a ring hugging the wall
+  // runs parallel to its faces, WALL off the stone.
+  const PR=prismOf(o,o.axisAz||0),A0=PR.v0,PN=PR.n;
+  const angOf=j=>A0+j/ANG*Math.PI*2;
+  // The radius of node j of a ring WALL outside a prism of circumradius r (the prism's faces pushed out by WALL).
+  const hugR=(r,j)=>{const k=2*Math.PI/PN;let a=angOf(j)-(A0+Math.PI/PN);a-=Math.round(a/k)*k;return (r*Math.cos(Math.PI/PN)+WALL)/Math.cos(a);};
   // Kerb rings.
-  for(const q of precs){const perim=Math.PI*(3*(q.rx+q.rz)-Math.sqrt((3*q.rx+q.rz)*(q.rx+3*q.rz)));const n=Math.max(16,Math.min(96,Math.round(perim/.9)));
+  for(const q of precs){const perim=Math.PI*(3*(q.rx+q.rz)-Math.sqrt((3*q.rx+q.rz)*(q.rx+3*q.rz)));const n=Math.max(16,Math.min(96,Math.round(perim/.9)));q.perim=perim;q.pulses=Math.max(2,Math.round(perim/(opts.pulseL??6)));
     for(let j=0;j<n;j++){const a=j/n*Math.PI*2,lx=Math.cos(a)*q.rx,lz=Math.sin(a)*q.rz;const x=q.cx+lx*q.ca-lz*q.sa,z=q.cz+lx*q.sa+lz*q.ca;
       q.kerb.push(Math.abs(x)<BOUND-2&&Math.abs(z)<BOUND-2&&pointClear(x,z,kerbY)?node(x,kerbY,z,EDGE.kerb,q.k):-1);}
     for(let j=0;j<n;j++){const a=q.kerb[j],b=q.kerb[(j+1)%n];if(a>=0&&b>=0&&clear(NX[a],NZ[a],NX[b],NZ[b],kerbY,kerbY))edge(a,b,EDGE.kerb);}}
@@ -114,41 +135,57 @@ export function buildNetwork(model,t,o){
     const curve=u=>sh.ya+(sh.yb-sh.ya)*u-sh.sag*4*u*(1-u);const u0=A.rd/sh.d,u1=1-B.rd/sh.d;
     cables.push({a,b,sh,curve,u0,u1});A.galleries.push(curve(u0));B.galleries.push(curve(u1));}
   for(let k=0;k<towers.length;k++){const tw=towers[k];if(tw.dead)continue;const q=precs[tw.prec];
-    for(let j=0;j<ANG;j++){const a=j/ANG*Math.PI*2,x=tw.x+Math.cos(a)*tw.rd,z=tw.z+Math.sin(a)*tw.rd;
+    for(let j=0;j<ANG;j++){const a=angOf(j),x=tw.x+Math.cos(a)*tw.rd,z=tw.z+Math.sin(a)*tw.rd;
       tw.dock.push(Math.abs(x)<BOUND-2&&Math.abs(z)<BOUND-2&&pointClear(x,z,FLOOR,k)?node(x,FLOOR,z,EDGE.dock,q.k,k):-1);}
     for(let j=0;j<ANG;j++){const a=tw.dock[j],b=tw.dock[(j+1)%ANG];if(a>=0&&b>=0&&clear(NX[a],NZ[a],NX[b],NZ[b],FLOOR,FLOOR,k))edge(a,b,EDGE.dock);}
-    // The shaft: from the dock, a step in over the plinth to the wall, then straight up the wall to the gallery under
-    // the roof, on the flank farthest from the tower's outworks (buttresses, columns) and, among those, facing out.
-    // Galleries (cable anchors) above the outworks ring the wall; lower ones ring the outworks, reached by a spur.
-    const crownY=Math.min(YTOP-.5,Math.max(.45,tw.top*.92)),yLow=.46,hugs=crownY>yLow+.12;
-    const levels=[...new Set(tw.galleries.filter(y=>y>FLOOR+.2&&y<crownY-.15).map(y=>+y.toFixed(4)))].sort((a,b)=>a-b);
+    // The shaft runs on the stone: from the dock in along the floor to the plinth's foot, up its face, in over its top to
+    // the wall, then up the wall to the crown under the roof, stepping in over each setback's ledge (and out under a
+    // wider storey) so it keeps WALL off the stone at every height. On the flank farthest from the tower's outworks
+    // (buttresses, columns) and, among those, facing out. Galleries (the crown, the cables' anchors) ring the wall at
+    // their height; a node or stretch the outworks block is left out, and a shaft the stone blocks is not built.
+    const crownY=Math.min(YTOP-.5,Math.max(.42,Math.min(tw.top*.92,tw.top-.22)));
+    const levels=[...new Set(tw.galleries.filter(y=>y>FLOOR+.5&&y<crownY-.15).map(y=>+y.toFixed(4)))].sort((a,b)=>a-b);
+    // Vertical runs of the wall above the plinth: storeys of nearly the same girth share one (the widest), a short one
+    // joins its neighbour; each run [y0, y1] at girth r. The shaft steps between runs at h (on the ledge, or under the
+    // overhang).
+    const prof=tw.prof,yP=prof[0].y1,runs=[];
+    for(const g of prof.slice(1)){const L=runs[runs.length-1];if(L&&Math.abs(g.r-L.r)<.035){L.r=Math.max(L.r,g.r);L.y1=g.y1;}else runs.push({y0:g.y0,y1:g.y1,r:g.r});}
+    for(let again=true;again&&runs.length>1;){again=false;for(let r=0;r<runs.length;r++){const R=runs[r];if(R.y1-R.y0>=.34)continue;const o2=r>0?r-1:r+1,O=runs[o2];
+      O.r=Math.max(O.r,R.r);O.y0=Math.min(O.y0,R.y0);O.y1=Math.max(O.y1,R.y1);runs.splice(r,1);again=true;break;}}
+    if(!runs.length)runs.push({y0:yP,y1:tw.top,r:prof[0].r*.8});
+    const steps=[];for(let r=0;r+1<runs.length;r++){const yb=runs[r].y1;steps.push(runs[r+1].r<runs[r].r?yb+WALL+.01:yb-WALL-.03);}
     const outAngles=tw.solids.filter(x=>x.angle!==undefined).map(x=>x.angle);
-    const cands=[];for(let j=0;j<ANG;j++){if(tw.dock[j]<0)continue;const a=j/ANG*Math.PI*2;let cl=Math.PI;for(const b of outAngles){const d=Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));cl=Math.min(cl,d);}
+    const cands=[];for(let j=0;j<ANG;j++){if(tw.dock[j]<0)continue;const a=angOf(j);let cl=Math.PI;for(const b of outAngles){const d=Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));cl=Math.min(cl,d);}
       cands.push([j,Math.min(cl,Math.PI/2.5)*10+Math.cos(a)*(tw.x-q.cx)+Math.sin(a)*(tw.z-q.cz)]);}
     cands.sort((x,y)=>y[1]-x[1]||x[0]-y[0]);
-    const at=(j,r,y)=>{const a=j/ANG*Math.PI*2;return [tw.x+Math.cos(a)*r,y,tw.z+Math.sin(a)*r];};
+    const at=(j,r,y)=>{const a=angOf(j);return [tw.x+Math.cos(a)*r,y,tw.z+Math.sin(a)*r];};
     const segOk=(P,Q)=>airClear(P[0],P[1],P[2],Q[0],Q[1],Q[2],k);
-    let best=-1;
-    for(const [j] of cands.slice(0,4)){const D=[NX[tw.dock[j]],NY[tw.dock[j]],NZ[tw.dock[j]]];
-      if(!hugs){if(segOk(D,at(j,tw.rd,crownY))){best=j;break;}continue;}
-      const P1=at(j,tw.rd,yLow),P2=at(j,tw.rw,yLow),P3=at(j,tw.rw,crownY);if(segOk(D,P1)&&segOk(P1,P2)&&segOk(P2,P3)){best=j;break;}}
+    // The shaft's path for node j: points [x, y, z] and, where a gallery rings the wall, [x, y, z, level, girth]. A step
+    // in over a ledge the setback's pinnacles crowd climbs above them first.
+    const path=j=>{const D=[NX[tw.dock[j]],NY[tw.dock[j]],NZ[tw.dock[j]]],rp=hugR(prof[0].r,j),y1=yP+WALL+.01,P=[];
+      if(tw.rd-rp>.08)P.push(at(j,rp,FLOOR));
+      P.push(at(j,rp,y1));
+      let y=y1,r=0;const top=crownY,lv=[...levels,top];
+      P.push(at(j,hugR(runs[0].r,j),y1));
+      for(;;){let ys=r<steps.length?steps[r]:Infinity;
+        if(ys<top&&runs[r+1].r<runs[r].r)for(const up of [0,.3,.55]){const y2=ys+up;if(y2>=top||segOk(at(j,hugR(runs[r].r,j),y2),at(j,hugR(runs[r+1].r,j),y2))){ys=y2;break;}}
+        const yTo=Math.min(ys,top);
+        for(const g of lv)if(g>y+.04&&g<=yTo+1e-9){const p=at(j,hugR(runs[r].r,j),g);p.push(g,runs[r].r);P.push(p);}
+        if(ys>=top)break;
+        y=ys;if(!(Math.abs(P[P.length-1][1]-y)<1e-9))P.push(at(j,hugR(runs[r].r,j),y));r++;P.push(at(j,hugR(runs[r].r,j),y));}
+      return {D,P};};
+    let best=-1,bestPath=null;
+    for(const [j] of cands){const {D,P}=path(j);let ok=P.length>0;let prev=D;for(const p of P){if(!segOk(prev,p)){ok=false;break;}prev=p;}if(ok){best=j;bestPath=P;break;}}
     if(best<0)continue;tw.shaft=best;
     const ring=(y,r)=>{const ids=[];
-      for(let j=0;j<ANG;j++){const P=at(j,r,y);ids.push(tw.dock[j]>=0&&airClear(P[0],P[1],P[2],P[0],P[1],P[2],k)?node(P[0],P[1],P[2],EDGE.gallery,q.k,k):-1);}
+      for(let j=0;j<ANG;j++){const P=at(j,hugR(r,j),y);ids.push(tw.dock[j]>=0&&airClear(P[0],P[1],P[2],P[0],P[1],P[2],k)?node(P[0],P[1],P[2],EDGE.gallery,q.k,k):-1);}
       for(let j=0;j<ANG;j++){const a=ids[j],b=ids[(j+1)%ANG];if(a>=0&&b>=0&&airClear(NX[a],NY[a],NZ[a],NX[b],NY[b],NZ[b],k))edge(a,b,EDGE.gallery);}return ids;};
-    let prev=tw.dock[best];
-    if(hugs){const P1=at(best,tw.rd,yLow),P2=at(best,tw.rw,yLow);const n1=node(...P1,EDGE.shaft,q.k,k),n2=node(...P2,EDGE.shaft,q.k,k);edge(prev,n1,EDGE.shaft);edge(n1,n2,EDGE.shaft);prev=n2;}
-    let gi=0;tw.galleries=[];
-    for(const y of levels){const hugY=hugs&&y>=tw.yIn,r=hugY?tw.rw:tw.rd;
-      if(hugs&&y<=yLow+.02)continue;
-      const ids=ring(y,r);if(ids[best]<0)continue;
-      if(hugY){edge(prev,ids[best],EDGE.shaft);prev=ids[best];}
-      else{const P=at(best,tw.rw,y);if(!hugs){edge(prev,ids[best],EDGE.shaft);prev=ids[best];}
-        else if(segOk(P,[NX[ids[best]],NY[ids[best]],NZ[ids[best]]])){const sn=node(...P,EDGE.shaft,q.k,k);edge(prev,sn,EDGE.shaft);edge(sn,ids[best],EDGE.gallery);prev=sn;}else continue;}
-      tw.galleries[gi++]={y,ids};}
-    tw.crown=ring(crownY,hugs&&crownY>=tw.yIn?tw.rw:tw.rd);tw.crownY=crownY;
-    if(tw.crown[best]>=0&&(hugs&&crownY<tw.yIn)){const P=at(best,tw.rw,crownY),sn=node(...P,EDGE.shaft,q.k,k);edge(prev,sn,EDGE.shaft);if(segOk(P,[NX[tw.crown[best]],NY[tw.crown[best]],NZ[tw.crown[best]]]))edge(sn,tw.crown[best],EDGE.gallery);else tw.crown=tw.crown.map(()=>-1);}
-    else if(tw.crown[best]>=0)edge(prev,tw.crown[best],EDGE.shaft);else tw.crown=tw.crown.map(()=>-1);
+    let prev=tw.dock[best],gi=0;tw.galleries=[];tw.crown=new Array(ANG).fill(-1);
+    for(const p of bestPath){const lvl=p[3];
+      if(lvl!==undefined){const ids=ring(lvl,p[4]);if(ids[best]<0)break;edge(prev,ids[best],EDGE.shaft);prev=ids[best];
+        if(lvl===crownY)tw.crown=ids;else tw.galleries[gi++]={y:lvl,ids};continue;}
+      const n=node(p[0],p[1],p[2],EDGE.shaft,q.k,k);edge(prev,n,EDGE.shaft);prev=n;}
+    tw.crownY=crownY;
     tw.galleryAt=y=>{let g=null,d=Infinity;for(const x of tw.galleries)if(Math.abs(x.y-y)<d){d=Math.abs(x.y-y);g=x;}if(Math.abs(crownY-y)<d&&tw.crown.some(v=>v>=0)){g={y:crownY,ids:tw.crown};}return g;};}
   // Floor: spokes to the kerb, lanes between neighbouring towers, channels along dependencies.
   const facing=(tw,x,z)=>{let best=-1,bs=-Infinity;for(let j=0;j<ANG;j++){if(tw.dock[j]<0)continue;const a=j/ANG*Math.PI*2,s=Math.cos(a)*(x-tw.x)+Math.sin(a)*(z-tw.z);if(s>bs){bs=s;best=j;}}return best<0?-1:tw.dock[best];};
@@ -225,7 +262,7 @@ function networkKey(model,t,o){
   const pr=precincts(model,o),offsets=new Map(pr.map(p=>[p.d.id,p.off]));let s=`${o.archName}|${r3(o.S)}|${r3(o.streetK)}|${r3(o.buttressK)}|${r3(o.axisAz||0)}|`;
   for(const p of pr){const born=Math.min(...p.members.map(m=>model.bornAt(m)));s+=`P${p.d.id}:${r3(p.c.x)},${r3(p.c.z)},${r3(p.rx)},${r3(p.rz)},${r3(p.ang)},${r3(p.ex)},${r3(p.ez)},${p.members.length},${born<=t?1:0};`;}
   const plans=towerPlans(model,o,offsets);
-  for(const tp of plans){const m=tp.m;if(!(model.bornAt(m)<=t&&(m.removed===null||m.removed>t)))continue;s+=`T${m.id}:${r3(tp.x)},${r3(tp.z)},${r3(tp.R0)},${tp.shown.length},${tp.carpet?1:0}${tp.great?1:0},${r3(towerTop(model,tp,t,o))},${r3(tp.sd)};`;}
+  for(const tp of plans){const m=tp.m;if(!(model.bornAt(m)<=t&&(m.removed===null||m.removed>t)))continue;s+=`T${m.id}:${r3(tp.x)},${r3(tp.z)},${r3(tp.R0)},${tp.shown.length},${tp.carpet?1:0}${tp.great?1:0},${r3(towerTop(model,tp,t,o))},${r3(tp.sd)},${tp.shown.map(x=>model.bornAt(x)<=t&&!(x.removed!==null&&x.removed<=t)?1:0).join('')};`;}
   for(const l of model.links.values())if(model.bornAt(l)<=t&&(l.removed===null||l.removed>t))s+=`L${l.key}${l.cross?'x':''};`;
   return fnv(s).toString(36)+s.length.toString(36);
 }
@@ -248,30 +285,46 @@ const dockTable=(net,k)=>table(net,`d${k}`,()=>dijkstra(net,net.towers[k].dock,A
 const crownTable=(net,k)=>table(net,`c${k}`,()=>dijkstra(net,net.towers[k].crown,ALL,net.towers[k].prec));
 const kerbTable=(net,p)=>table(net,`k${p}`,()=>dijkstra(net,net.precs[p].kerb,ALL,p));
 // ---- The grammar ---------------------------------------------------------------------------------------------------------
-// opts: {genome} (the recipe's genome: layout parameters), {congestion, trailPull, capacity} (tests and tuning).
+// opts: {genome} (the recipe's genome: layout parameters), {congestion, trailPull, gates, pulses, capacity, cacheMax}
+// (tests and tuning).
 export function createCathedralGrammar(opts={}){
   const o={...layoutOptions(opts.genome||{}),axisAz:Number.isFinite(opts.axisAz)?opts.axisAz:0};
-  const congestion=opts.congestion??true,trailPull=opts.trailPull??3,CAP=opts.capacity??960;
-  const cache=new Map(),CACHE_MAX=opts.cacheMax??192;   // networks by content key (least recently used dropped first)
+  const gates=opts.gates??true,pulses=opts.pulses??true,PULSE_A=opts.pulseA??.42,PULSE_C=opts.pulseC??.62,congestion=opts.congestion??true,trailPull=opts.trailPull??4,CAP=opts.capacity??960;
+  // Built networks by content key: a speed-up only (rebuilding is pure); the ecosystem never looks its network up here,
+  // it gets it from the habitat's data (eco.siteData), which the driver supplies with the sites and after every restore.
+  const cache=new Map(),CACHE_MAX=opts.cacheMax??8;
   let lastNet=null;
   function remember(key,net){cache.delete(key);cache.set(key,net);while(cache.size>CACHE_MAX)cache.delete(cache.keys().next().value);}
   // The machine's staff grows with the city: how many of each kind are awake on a network (the rest wait in reserve).
   function awake(net){const towers=net.stats.towers,want=Math.max(net.n?200:0,Math.min(CAP,110+20*towers+30*net.precs.length));return want/CAP;}
-  function networkFor(model,t){const key=networkKey(model,t,o);let net=cache.get(key);if(!net){net=buildNetwork(model,t,o);net.key=key;net.tag=(fnv(key)&0xffffff)||1;net.awake=awake(net);}remember(key,net);lastNet=net;return net;}
-  // Per ecosystem: the network it currently has (from its sites), and per-tick traffic on each directed edge.
+  function networkFor(model,t){const key=networkKey(model,t,o);let net=cache.get(key);if(!net){net=buildNetwork(model,t,o,{pulseL:opts.pulseL});net.key=key;net.tag=(fnv(key)&0xffffff)||1;net.awake=awake(net);}remember(key,net);lastNet=net;return net;}
+  // Per ecosystem: the network it currently has (its site data) and per-tick tables (traffic per directed edge, strain
+  // per precinct, gates), all rebuilt from the ecosystem's state by the tick hook: nothing here outlives a tick.
   const states=new WeakMap();
-  function stateOf(api){let s=states.get(api);if(!s){const cap=api.capacity;s={ids:null,net:null,lastI:1e9,tick:-1,occ:null,order:new Int32Array(cap),gap:new Float32Array(cap),prog:new Float32Array(cap),
-      hubW:null,start:[],quota:[]};
+  function stateOf(api){let s=states.get(api);if(!s){const cap=api.capacity;s={ids:null,idsNet:null,net:null,occ:null,order:new Int32Array(cap),gap:new Float32Array(cap),prog:new Float32Array(cap),
+      hubW:null,start:[],quota:[],strain:null,relUp:null,relDown:null,phase:null,beat:null,climb:null,window:GATE};
       // The species' slot ranges (as the ecosystem assigns them): the first `awake` share of each range is awake.
       let used=0;api.species.forEach((sp,k)=>{const q=k===api.NS-1?cap-used:Math.floor(cap*sp.share);s.start.push(used);s.quota.push(q);used+=q;});
       states.set(api,s);}
-    if(s.ids!==api.sites.ids){s.ids=api.sites.ids;const id=s.ids.find(x=>x.startsWith('net:'));const key=id?id.slice(4):null;s.net=key?cache.get(key)||null:null;if(s.net)remember(key,s.net);s.occ=s.net?new Uint16Array(s.net.m*2):null;s.hubW=s.net?new Float32Array(s.net.hubs.length):null;
-      s.hubSite=s.net?s.net.hubs.map(h=>api.sites.ids.indexOf(h.id)):null;s.precHub=s.net?s.net.precs.map(q=>s.net.hubs.findIndex(h=>h.prec===q.k)):null;s.precSite=s.net?s.net.precs.map(q=>api.sites.ids.indexOf(q.id)):null;}
+    const net=api.siteData&&api.siteData.tag?api.siteData:null;
+    if(s.net!==net){s.net=net;
+      s.occ=net?new Uint16Array(net.m*2):null;s.hubW=net?new Float32Array(net.hubs.length):null;s.strain=net?new Uint8Array(net.precs.length):null;s.stress=net?new Float32Array(net.precs.length):null;
+      const nt=net?net.towers.length:0;s.relUp=new Int32Array(nt).fill(-1);s.relK=new Int32Array(net?net.n:0).fill(-1);s.relDown=new Int32Array(nt).fill(-1);s.phase=new Int32Array(nt);s.climb=new Uint8Array(nt);
+      if(net){const nh=Math.max(1,net.hubs.length);
+        // Each precinct's beat (its hub's turn in the wave that runs round the city) and each tower's gate phase on it.
+        s.beat=net.precs.map(q=>{const h=net.hubs.findIndex(x=>x.prec===q.k);return Math.floor((h>=0?h:q.k)*CYCLE/nh);});
+        net.towers.forEach((tw,k)=>{if(tw.dead||tw.prec<0)return;const q=net.precs[tw.prec],hub=q.hub>=0?net.towers[q.hub]:null;s.phase[k]=(s.beat[tw.prec]*2+k*11)%GATE;
+          // Wardens climb the hub and the tall towers (a small chapel tower's shaft would run over its glazed face).
+          s.climb[k]=tw.crown.some(v=>v>=0)&&(k===q.hub||tw.great||!hub||tw.top>=hub.top*.55)?1:0;});}}
+    if(s.ids!==api.sites.ids||s.idsNet!==s.net){s.ids=api.sites.ids;s.idsNet=s.net;const n=s.net;
+      s.hubSite=n?n.hubs.map(h=>api.sites.ids.indexOf(h.id)):null;s.precHub=n?n.precs.map(q=>n.hubs.findIndex(h=>h.prec===q.k)):null;s.precSite=n?n.precs.map(q=>api.sites.ids.indexOf(q.id)):null;}
     return s;}
-  // ---- Per tick: traffic per directed edge (count, order along it) and the attraction of each hub. ---------------------
+  // ---- Per tick (the tick hook, before anything moves): traffic per directed edge (count, order along it), the strain
+  // of each precinct, the attraction of each hub and the gates' state. -------------------------------------------------
   function newTick(api,s){
-    // (everything here is recomputed from the ecosystem's state: nothing carries over between ticks)
     s.gap.fill(Infinity);const net=s.net;if(!net)return;const cap=api.capacity,ia=api.ia,fa=api.fa,alive=api.alive,occ=s.occ;occ.fill(0);
+    s.relUp.fill(-1);s.relDown.fill(-1);s.relK.fill(-1);
+    const organise=Math.max(0,Math.min(1,(api.cond.cohesion-.6)/.65));s.window=13+Math.round(20*(1-organise));
     const prog=s.prog,order=s.order;let n=0;
     for(let i=0;i<cap;i++){if(!alive[i]||fa[i*2+1]!==net.tag)continue;const d=ia[i*2];if(d<0||d>=net.m*2)continue;occ[d]++;const e=d>>1,a=d&1?net.eb[e]:net.ea[e],b=d&1?net.ea[e]:net.eb[e];
       prog[i]=(api.px[i]-net.x[a])*(net.x[b]-net.x[a])+(api.py[i]-net.y[a])*(net.y[b]-net.y[a])+(api.pz[i]-net.z[a])*(net.z[b]-net.z[a]);prog[i]/=Math.max(1e-6,net.el[e]);order[n++]=i;}
@@ -282,11 +335,35 @@ export function createCathedralGrammar(opts={}){
     for(let d=0;d<M;d++){const a=st2[d+1],b=a+occ[d];
       for(let k=a+1;k<b;k++){const i=slots[k];let j=k-1;while(j>=a&&(prog[slots[j]]>prog[i]||prog[slots[j]]===prog[i]&&slots[j]>i)){slots[j+1]=slots[j];j--;}slots[j+1]=i;}
       for(let k=a;k<b;k++)s.gap[slots[k]]=k+1<b?prog[slots[k+1]]-prog[slots[k]]:Infinity;}
-    // Hubs: energetic, nourished, new, lastingly crowned; strained ones repel.
+    // Strain (a failing precinct) and the hubs: energetic, nourished, new, lastingly crowned; strained ones repel.
     const st=k=>k>=0?api.sites.state(k):null;
+    // A failing precinct is strained as a whole: its strain covers it to the kerb (the corridors into it go dark and
+    // repel route choices), as long as it lasts.
+    net.precs.forEach((q,p)=>{const x=st(s.precSite[p]),k=x?x.stress:0;s.strain[p]=k>.2?1:0;s.stress[p]=k;if(k>.05)api.disc(CH.disturb,q.cx,q.cz,Math.max(q.rx,q.rz)*1.5,.03*k*api.params.environment);});
     net.hubs.forEach((h,k)=>{const t=net.towers[h.tower],x=st(s.hubSite[k]);const e=api.sample(CH.energy,t.x,t.z),d=api.sample(CH.disturb,t.x,t.z);
       let w=(.35+.5*Math.min(2,e))*(1+(x?x.nourish*.8+x.novelty*2.5+x.lasting*.9:0))*Math.sqrt(net.precs[h.prec].members)/(1+2.5*d);if(x)w*=1-.95*Math.min(1,x.stress*2.5);s.hubW[k]=Math.max(0,w);});
   }
+  // A shaft's gate: entering a shaft upward from the tower's foot, or downward from its crown, is allowed only while the
+  // tower's gate is open (a window of its cycle), one inhabitant per headway: climbers go up and down in short convoys.
+  // Returns true when inhabitant i must wait at node v before taking directed edge nd.
+  function gateClosed(api,s,i,v,nd){
+    const net=s.net,e=nd>>1;if(!gates||net.ek[e]!==EDGE.shaft)return false;const t=net.nt[v];if(t<0)return false;const tw=net.towers[t];if(tw.dead||tw.prec<0||s.strain[tw.prec])return false;
+    const w=toNode(net,nd),dy=net.y[w]-net.y[v];let rel=null,off=0;
+    if(net.nk[v]===EDGE.dock&&dy>-.02)rel=s.relUp;else if(dy<-.02&&net.y[v]>=(tw.crownY??Infinity)-.01){rel=s.relDown;off=GATE>>1;}else return false;
+    const ph=(api.tick+s.phase[t]+off)%GATE;
+    // (wardens sent back in after a recovery go up as one long procession: a dispatch wave out of the hub's foot)
+    if(off===0&&auxOf(api.ia[i*2+1])&AUX_WITHDRAWN){if(ph%3!==0||rel[t]===api.tick)return true;}
+    else if(ph>=s.window||ph%GATE_EVERY!==0||rel[t]===api.tick)return true;
+    rel[t]=api.tick;return false;}
+  // A kerb's junctions: traffic joining a kerb from a spoke, a channel or a canal corridor merges only while the junction
+  // is open (a short window on the precinct's beat, each junction a little later than the last round the ring: the
+  // window travels with the kerb's pulses), one every other tick; the others queue at the junction. Joiners go on
+  // together, so the kerb carries platoons with dark gaps between them.
+  function kerbClosed(api,s,i,v,d,nd){
+    const net=s.net;if(!pulses||net.ek[nd>>1]!==EDGE.kerb||d<0||net.ek[d>>1]===EDGE.kerb)return false;const p=net.np[v];if(p<0||s.strain[p])return false;
+    const ph=(api.tick+s.beat[p]+(v*13)%CYCLE)%CYCLE;
+    if(ph>=10+Math.round(8*organiseOf(api))||ph&1||s.relK[v]===api.tick)return true;
+    s.relK[v]=api.tick;return false;}
   // ---- Steering --------------------------------------------------------------------------------------------------------
   const out={x:0,y:0,z:0};
   // A point on directed edge d at progress u (clamped), offset to the right of its lane.
@@ -301,9 +378,10 @@ export function createCathedralGrammar(opts={}){
     for(let h=0;h<nh;h++){const D=hubTable(net,h,spark);const d=D[v];let w=Number.isFinite(d)&&net.hubs[h].prec!==here?s.hubW[h]/(1+d/18):0;W[h]=w;total+=w;}
     if(total<=0)return -1;let u=api.random(i,salt)*total;for(let h=0;h<nh;h++){u-=W[h];if(u<=0&&W[h]>0)return h;}for(let h=nh-1;h>=0;h--)if(W[h]>0)return h;return -1;}
   // Choose a tower to inspect in precinct p (energetic, unstrained), reachable from v.
-  function chooseTower(api,s,i,v,p,salt){const net=s.net,q=net.precs[p];if(!q)return -1;let total=0;const W=chooseTower.w||(chooseTower.w=[]);W.length=0;
+  // rnd (optional): a random draw shared by a group (wardens leaving on the same beat choose the same tower).
+  function chooseTower(api,s,i,v,p,salt,rnd=null){const net=s.net,q=net.precs[p];if(!q)return -1;let total=0;const W=chooseTower.w||(chooseTower.w=[]);W.length=0;
     for(const k of q.towers){const tw=net.towers[k];if(tw.shaft<0){W.push(0);continue;}const e=api.sample(CH.energy,tw.x,tw.z),d=api.sample(CH.disturb,tw.x,tw.z);const w=(.3+Math.min(2,e))*(k===q.hub?1.6:1)/(1+3*d)*(1+tw.top*.08);W.push(w);total+=w;}
-    for(let tries=0;tries<3&&total>0;tries++){let u=api.random(i,salt+tries)*total,pick=-1;for(let j=0;j<W.length;j++){u-=W[j];if(u<=0&&W[j]>0){pick=j;break;}}if(pick<0)break;
+    for(let tries=0;tries<3&&total>0;tries++){let u=(rnd?rnd(tries):api.random(i,salt+tries))*total,pick=-1;for(let j=0;j<W.length;j++){u-=W[j];if(u<=0&&W[j]>0){pick=j;break;}}if(pick<0)break;
       const k=q.towers[pick];if(Number.isFinite(dockTable(net,k)[v]))return k;total-=W[pick];W[pick]=0;}
     return -1;}
   // The next stretch from node v (arrived along directed edge d) for inhabitant i: weighted by the goal's remaining cost,
@@ -318,9 +396,14 @@ export function createCathedralGrammar(opts={}){
       if(opt.kinds){w*=opt.kinds[net.ek[e]]??1;}
       if(opt.up!==undefined){const dy=net.y[w2]-net.y[v];if(opt.up>0&&dy>.05)w*=opt.up;}
       if(opt.dir!==undefined&&net.ek[e]===EDGE.gallery){w*=(dd&1)===opt.dir?3:.3;}
-      const tr=api.sample(CH.trail,net.emx[e],net.emz[e]),di=api.sample(CH.disturb,net.emx[e],net.emz[e]);
-      w*=(1+trailPull*Math.min(3,tr))*Math.exp(-2.4*di);
-      const cap=Math.max(1,net.el[e]/.9),o1=s.occ[dd];if(congestion)w*=Math.exp(-o1/cap*(opt.crowd??1));
+      // The light and the disturbance a little way along it (a stretch's own light, not its junction's: the field is
+      // coarser than a junction, so sampling near the node would give every way the same light).
+      const fr=Math.min(1,1.8/Math.max(1e-6,net.el[e])),qx=net.x[v]+(net.x[w2]-net.x[v])*fr,qz=net.z[v]+(net.z[w2]-net.z[v])*fr;
+      const tr=api.sample(CH.trail,qx,qz),di=api.sample(CH.disturb,qx,qz);
+      // A lit way pulls by how much brighter it is than the others (a power of its light: around a busy hub every way is
+      // lit, and a linear pull would hardly tell them apart); a disturbed one repels.
+      w*=Math.pow(.2+Math.min(2,tr),trailPull)*Math.exp(-4*di);
+      const cap=Math.max(1,net.el[e]/.9),o1=s.occ[dd];if(congestion)w*=Math.exp(-1.8*o1/cap*(opt.crowd??1));
       if(opt.convoy)w*=1+opt.convoy*Math.min(2,o1/cap);
       C[n]=dd;W[n]=w;total+=w;n++;}
     if(!n)return back>=0?back:-1;
@@ -342,7 +425,7 @@ export function createCathedralGrammar(opts={}){
     if(k!==S_WARDEN&&net.hubs.length){for(let t=0;t<4;t++){const h=net.hubs[Math.floor(r(20+t)*net.hubs.length)%net.hubs.length],tw=net.towers[h.tower];const v=tw.dock[Math.floor(r(30+t)*8)%8];if(ok(v))return v;}}
     let total=0;for(const q of net.precs)total+=Math.sqrt(q.members);
     for(let t=0;t<6;t++){let u=r(40+t)*total,q=net.precs[0];for(const p of net.precs){u-=Math.sqrt(p.members);if(u<=0){q=p;break;}}
-      const k2=q.towers[Math.floor(r(50+t)*q.towers.length)%q.towers.length],tw=net.towers[k2];const v=r(60+t)<.3?q.kerb[Math.floor(r(70+t)*q.kerb.length)%q.kerb.length]:tw.dock[Math.floor(r(80+t)*8)%8];if(ok(v))return v;}
+      const k2=q.towers[Math.floor(r(50+t)*q.towers.length)%q.towers.length],tw=net.towers[k2];const v=r(60+t)<.18?q.kerb[Math.floor(r(70+t)*q.kerb.length)%q.kerb.length]:tw.dock[Math.floor(r(80+t)*8)%8];if(ok(v))return v;}
     for(let v=0;v<net.n;v++)if(ok(v))return v;return -1;}
   function place(api,s,i,v,fresh){const net=s.net;const k=net.adjOff[v],d=net.adj[k+Math.floor(api.random(i,3)*(net.adjOff[v+1]-k))%(net.adjOff[v+1]-k)];
     const dd=fromNode(net,d)===v?d:d^1;api.ia[i*2]=dd;api.fa[i*2+1]=net.tag;
@@ -365,6 +448,9 @@ export function createCathedralGrammar(opts={}){
     const net=s.net,sp=api.sp[i],st=api.ia[i*2+1];let job=jobOf(st),aux=auxOf(st),dest=destOf(st);const cond=api.cond;
     const organise=Math.max(0,Math.min(1,(cond.cohesion-.6)/.65));
     if(sp!==S_WARDEN){const spark=sp===S_SPARK,mask=spark?TRUNK:ALL;
+      if(job===JOB.travel){
+        // Bound for a failing precinct: turn away to another hub (the corridors into it go dark).
+        if(net.hubs[dest]&&s.strain[net.hubs[dest].prec]){const h=chooseHub(api,s,i,v,spark,22);if(h>=0&&h!==dest)dest=h;else{job=JOB.dwell;api.fa[i*2]=1;}}}
       if(job===JOB.travel){const D=net.hubs[dest]?hubTable(net,dest,spark):null;
         if(!D||!Number.isFinite(D[v])){job=JOB.dwell;api.fa[i*2]=.5;}
         else if(D[v]<1e-6){// Delivered: energy into the hub, then circle its foot for a while.
@@ -380,43 +466,57 @@ export function createCathedralGrammar(opts={}){
     // Wardens.
     const p=net.np[v]>=0?net.np[v]:precOfWarden(net,st);const q=net.precs[p];
     const strained=q&&s.precSite[p]>=0?api.sites.state(s.precSite[p]).stress>.2:false;
-    if(strained&&job!==JOB.edge&&job!==JOB.patrol&&job!==JOB.migrate&&q){job=JOB.edge;}
+    if(strained&&job!==JOB.edge&&job!==JOB.patrol&&job!==JOB.migrate&&q){job=JOB.edge;aux=(aux|AUX_WITHDRAWN)&~AUX_HOLD;}
     const convoy=.6*organise+.2;
     for(let guard=0;guard<3;guard++){
       switch(job){
         case JOB.edge:{const D=kerbTable(net,p);if(!Number.isFinite(D[v])){job=JOB.go;dest=q?.hub??0;continue;}if(D[v]<1e-6){job=JOB.patrol;api.fa[i*2]=4+api.random(i,9)*6;continue;}
           api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,ALL,{prec:p,tau:1.2,crowd:.3});}
-        case JOB.patrol:{if(!strained&&api.fa[i*2]<=0){const k=chooseTower(api,s,i,v,p,12);if(k>=0){job=JOB.go;dest=k;continue;}}
+        // (withdrawn wardens wait for the precinct's beat after a recovery: steer sends them back in together)
+        case JOB.patrol:{if(!strained&&!(aux&AUX_WITHDRAWN)&&api.fa[i*2]<=0){const k=chooseTower(api,s,i,v,p,12);if(k>=0){job=JOB.go;dest=k;continue;}}
           api.ia[i*2+1]=pack(JOB.patrol,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.kerb,{crowd:.15,convoy:.2});}
         case JOB.migrate:{const D=net.hubs[dest]?hubTable(net,dest,false):null;if(!D||!Number.isFinite(D[v])){job=JOB.linger;api.fa[i*2]=1;dest=Math.max(0,net.nt[v]);continue;}
           if(D[v]<1e-6){job=JOB.go;const k=chooseTower(api,s,i,v,net.hubs[dest].prec,13);dest=k>=0?k:net.hubs[dest].tower;continue;}
           api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,ALL,{tau:1.6});}
         case JOB.go:{const tw=net.towers[dest];if(!tw||tw.prec<0){job=JOB.linger;api.fa[i*2]=0;continue;}const D=dockTable(net,dest);if(!Number.isFinite(D[v])){job=JOB.linger;api.fa[i*2]=0;continue;}
-          if(D[v]<1e-6){job=tw.crown.some(x=>x>=0)&&api.random(i,14)<.85?JOB.up:JOB.linger;api.fa[i*2]=2+api.random(i,15)*3;continue;}
+          if(D[v]<1e-6){
+            // (back from a failure: they gather at the hub's foot and wait for the beat that sends them up together)
+            if(aux&AUX_WITHDRAWN&&s.climb[dest]){job=JOB.linger;api.fa[i*2]=3.6+api.random(i,15);continue;}
+            job=s.climb[dest]&&api.random(i,14)<.85?JOB.up:JOB.linger;aux&=~AUX_WITHDRAWN;api.fa[i*2]=2+api.random(i,15)*3;continue;}
           api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,ALL,{prec:tw.prec,tau:1.4,convoy});}
         case JOB.up:{const D=crownTable(net,dest);if(!Number.isFinite(D[v])){job=JOB.linger;continue;}
-          if(D[v]<1e-6){job=JOB.circle;aux=api.random(i,16)<.5?0:1;api.fa[i*2]=6+api.random(i,17)*10;continue;}
+          if(D[v]<1e-6){job=JOB.circle;aux=(aux&~(1|AUX_WITHDRAWN))|(api.random(i,16)<.5?0:1);api.fa[i*2]=6+api.random(i,17)*10;continue;}
           api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,ALL,{prec:net.towers[dest].prec,tau:.8,crowd:.3});}
         case JOB.circle:{if(api.fa[i*2]<=0){job=JOB.down;continue;}api.splat(CH.energy,net.x[v],net.z[v],.004);
-          api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.gallery,{dir:aux,crowd:.3});}
+          api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.gallery,{dir:aux&1,crowd:.3});}
         case JOB.down:{const D=dockTable(net,dest);if(!Number.isFinite(D[v])||D[v]<1e-6){job=JOB.linger;api.fa[i*2]=1+api.random(i,18)*2;continue;}
           api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,ALL,{prec:net.towers[dest].prec,tau:.8,crowd:.3});}
         default:{// linger at a tower's foot, then choose the next tower (or go and explore a new precinct).
+          if(aux&AUX_WITHDRAWN){api.ia[i*2+1]=pack(JOB.linger,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.dock,{crowd:.2});}
           if(api.fa[i*2]<=0){
             let nov=-1,nv=.25;net.hubs.forEach((h,k)=>{const x=s.hubSite[k]>=0?api.sites.state(s.hubSite[k]):null;if(x&&x.novelty>nv&&h.prec!==p){nv=x.novelty;nov=k;}});
-            if(nov>=0&&api.random(i,19)<.3){job=JOB.migrate;dest=nov;continue;}
-            const k=chooseTower(api,s,i,v,p,20);if(k>=0&&k!==dest){job=JOB.go;dest=k;continue;}api.fa[i*2]=1;}
+            if(nov>=0&&api.random(i,19)<.45){job=JOB.migrate;dest=nov;continue;}
+            // The precinct's wardens leaving in the same beat choose the same tower: they travel as a small group.
+            const wave=p>=0?Math.floor((api.tick+s.beat[p])/GATE):0;
+            const k=chooseTower(api,s,i,v,p,20,p>=0?n=>u01(api.seed^0x5bd1,p,wave,n+1):null);if(k>=0&&k!==dest){job=JOB.go;dest=k;continue;}api.fa[i*2]=1;}
           api.ia[i*2+1]=pack(JOB.linger,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.dock|1<<EDGE.lane|1<<EDGE.channel,{prec:p>=0?p:undefined,kinds:[1,1,1.5,1,1,0,0,0,0],crowd:.5,convoy});}
       }
     }
     api.ia[i*2+1]=pack(JOB.linger,aux,dest);return nextEdge(api,s,i,v,d,null,1<<EDGE.dock);
   }
   const SPEED=[1.05,.62,2.1];
+  const organiseOf=api=>Math.max(0,Math.min(1,(api.cond.cohesion-.6)/.65));
   const isAwake=(api,s,i)=>{const k=api.sp[i];return i-s.start[k]<Math.round(s.quota[k]*s.net.awake);};
   function park(api,i){const k=i%((2*BOUND)|0),row=Math.floor(i/((2*BOUND)|0));teleport(api,i,-PARK,.4+row*1.7,-BOUND+.5+k);api.fa[i*2+1]=-1;api.ia[i*2]=-1;}
+  const slowJob=j=>j===JOB.dwell||j===JOB.wait||j===JOB.linger||j===JOB.patrol;
+  function speedOf(api,s,i,sp,e,job,pers,pE,aux=0){
+    let v=SPEED[sp]*pers*(.75+.25*api.cond.activity)*KIND_SPEED[s.net.ek[e]];
+    if(slowJob(job))v*=job===JOB.patrol?(pE>=0&&s.strain[pE]?.15:.45):.35;
+    else if(job===JOB.edge)v*=1.9;   // leaving a failing tower: quickly
+    else if(aux&AUX_WITHDRAWN&&(job===JOB.go||job===JOB.up))v*=1.6;   // going back in after a recovery: briskly, together
+    return v;}
   function steer(api,i,f){
     const s=stateOf(api);
-    if(i<=s.lastI)newTick(api,s);s.lastI=i;
     const net=s.net;
     if(!net||!net.m||!isAwake(api,s,i)){if(api.fa[i*2+1]!==-1)park(api,i);f[0]=-api.vx[i]*4;f[1]=-api.vy[i]*4;f[2]=-api.vz[i]*4;return;}
     if(api.fa[i*2+1]!==net.tag&&!relocate(api,s,i)){f[0]=f[1]=f[2]=0;return;}
@@ -428,18 +528,50 @@ export function createCathedralGrammar(opts={}){
     const x=api.px[i],y=api.py[i],z=api.pz[i];
     let e=d>>1,L=net.el[e],a=fromNode(net,d),b=toNode(net,d);
     let u=((x-net.x[a])*(net.x[b]-net.x[a])+(y-net.y[a])*(net.y[b]-net.y[a])+(z-net.z[a])*(net.z[b]-net.z[a]))/Math.max(1e-6,L);
-    const cond=api.cond,pers=.85+.3*u01(api.seed,i,api.gen[i],77);
-    let speed=SPEED[sp]*pers*(.75+.25*cond.activity)*KIND_SPEED[net.ek[e]];
-    const job=jobOf(api.ia[i*2+1]);if(job===JOB.dwell||job===JOB.wait||job===JOB.linger||job===JOB.patrol)speed*=job===JOB.patrol?.45:.35;
-    const look=.16+.06*Math.min(2,speed);
-    // Reaching the end of the stretch: choose the next one.
-    if(u>L-look*.9){const nd=arrive(api,s,i,b,d);if(nd>=0&&nd!==d){d=nd;api.ia[i*2]=d;e=d>>1;L=net.el[e];a=fromNode(net,d);b=toNode(net,d);
-        u=((x-net.x[a])*(net.x[b]-net.x[a])+(y-net.y[a])*(net.y[b]-net.y[a])+(z-net.z[a])*(net.z[b]-net.z[a]))/Math.max(1e-6,L);
-        speed=SPEED[sp]*pers*(.75+.25*cond.activity)*KIND_SPEED[net.ek[e]];const j2=jobOf(api.ia[i*2+1]);if(j2===JOB.dwell||j2===JOB.wait||j2===JOB.linger||j2===JOB.patrol)speed*=j2===JOB.patrol?.45:.35;}}
-    // Queue behind the one ahead; slow before a junction (not at a pass-through node).
-    const gap=s.gap[i];if(gap<.5)speed*=Math.max(.12,Math.min(1,(gap-.1)/.4));
+    let st=api.ia[i*2+1],job=jobOf(st);const pE=net.np[a]>=0?net.np[a]:net.np[b];
+    if(sp===S_WARDEN&&pE>=0){
+      // A failing precinct: its wardens leave the towers at once (a climber turns round) and make for the kerb.
+      if(s.strain[pE]&&(job===JOB.up||job===JOB.circle||job===JOB.go||job===JOB.linger||job===JOB.down)){
+        api.ia[i*2+1]=st=pack(JOB.edge,(auxOf(st)|AUX_WITHDRAWN)&~AUX_HOLD,destOf(st));job=JOB.edge;
+        if(net.y[b]>net.y[a]+.05){d^=1;api.ia[i*2]=d;const t=a;a=b;b=t;u=L-u;}}
+      // Recovered: the withdrawn wardens go back in together, on the precinct's beat (to its hub, up its shaft).
+      else if(!s.strain[pE]&&job===JOB.patrol&&(auxOf(st)&AUX_WITHDRAWN)&&(api.tick+s.beat[pE])%CYCLE===0){
+        const hub=net.precs[pE].hub;api.ia[i*2+1]=st=pack(hub>=0?JOB.go:JOB.linger,hub>=0?AUX_WITHDRAWN:0,Math.max(0,hub));job=jobOf(st);}
+      // Gathered at the hub's foot: up the shaft together, on a later beat (a procession once the recovery's light fades).
+      else if(!s.strain[pE]&&job===JOB.linger&&(auxOf(st)&AUX_WITHDRAWN)&&api.fa[i*2]<=0&&(api.tick+s.beat[pE])%CYCLE===0){
+        api.ia[i*2+1]=st=pack(JOB.up,auxOf(st),destOf(st));job=JOB.up;}}
+    const pers=.85+.3*u01(api.seed,i,api.gen[i],77);
+    let speed=speedOf(api,s,i,sp,e,job,pers,pE,auxOf(st));
+    // (on the stone, shafts and galleries, the look-ahead is short: a turn there never cuts across a corner of the wall)
+    const ek0=net.ek[e],look=ek0===EDGE.shaft||ek0===EDGE.gallery?.06+.02*Math.min(2,speed):.16+.06*Math.min(2,speed);
+    // Reaching the end of the stretch: choose the next one (or wait at a closed gate).
+    if(u>L-look*.9){const nd=arrive(api,s,i,b,d);
+      if(nd>=0&&nd!==d){
+        if(kerbClosed(api,s,i,b,d,nd)){}   // (queued at the junction: stays at the end of its stretch)
+        else if(gateClosed(api,s,i,b,nd)){
+          // Queued at the gate: wait (a while), then give up: a courier delivers at the foot, a warden lingers there.
+          const v2=api.ia[i*2+1],aux=auxOf(v2);
+          if(!(aux&AUX_HOLD)){api.ia[i*2+1]=pack(jobOf(v2),aux|AUX_HOLD,destOf(v2));api.fa[i*2]=3.5+api.random(i,23)*3;}
+          else if(api.fa[i*2]<=0){const j=jobOf(v2),down=net.y[toNode(net,nd)]<net.y[b];
+            if(down){api.ia[i*2+1]=pack(j,aux&~AUX_HOLD,destOf(v2));d=nd;}
+            else if(sp===S_WARDEN){api.ia[i*2+1]=pack(JOB.linger,aux&~AUX_HOLD,destOf(v2));api.fa[i*2]=1+api.random(i,24)*2;}
+            else{const t=net.nt[b];if(t>=0&&sp!==S_SPARK)api.splat(CH.energy,net.towers[t].x,net.towers[t].z,.12);api.ia[i*2+1]=pack(JOB.dwell,0,0);api.fa[i*2]=2+api.random(i,24)*4;}}}
+        else{const v2=api.ia[i*2+1];if(auxOf(v2)&AUX_HOLD)api.ia[i*2+1]=pack(jobOf(v2),auxOf(v2)&~AUX_HOLD,destOf(v2));d=nd;}
+        if(d!==api.ia[i*2]){api.ia[i*2]=d;e=d>>1;L=net.el[e];a=fromNode(net,d);b=toNode(net,d);
+          u=((x-net.x[a])*(net.x[b]-net.x[a])+(y-net.y[a])*(net.y[b]-net.y[a])+(z-net.z[a])*(net.z[b]-net.z[a]))/Math.max(1e-6,L);}
+        speed=speedOf(api,s,i,sp,e,jobOf(api.ia[i*2+1]),pers,pE,auxOf(api.ia[i*2+1]));}}
+    // Queue behind the one ahead (closer on a shaft: climbers go in convoys); slow before a junction.
+    const gap=s.gap[i],hw=net.ek[e]===EDGE.shaft?.24:.5;if(gap<hw)speed*=Math.max(.12,Math.min(1,(gap-.08)/(hw-.08)));
     const degB=net.adjOff[b+1]-net.adjOff[b];if(degB>2){const left=L-u;if(left<.6)speed*=.55+.45*Math.max(0,left)/.6;}
-    const side=1;const p=lanePoint(net,d,Math.max(0,u)+look,side);
+    // Along a kerb the traffic moves in pulses: a wave of the machine's cycle runs round the coping each way (a few per
+    // ring, at about the pace of each kind of traffic) and speeds or holds whoever is on it, so the traffic bunches into
+    // platoons with dark gaps between them; organised (sustained) music strengthens it, and a failing precinct has none.
+    if(pulses&&net.ek[e]===EDGE.kerb&&pE>=0&&!s.strain[pE]&&!slowJob(jobOf(api.ia[i*2+1]))){const q=net.precs[pE],dx=x-q.cx,dz=z-q.cz;
+      const th=Math.atan2((-dx*q.sa+dz*q.ca)/q.rz,(dx*q.ca+dz*q.sa)/q.rx);
+      const c=PULSE_C,lam=q.perim/q.pulses;
+      const ph=q.pulses*(d&1?-th:th)-2*Math.PI*c*api.tick/20/lam+s.beat[pE]*.37+(d&1)*1.9;
+      speed*=1+(PULSE_A+.15*organiseOf(api))*Math.cos(ph);}
+    const p=lanePoint(net,d,Math.max(0,u)+look,1);
     let dx=p.x-x,dy=p.y-y,dz=p.z-z;const dist=Math.sqrt(dx*dx+dy*dy+dz*dz)||1e-6;const want=Math.min(speed,dist*6);dx=dx/dist*want;dy=dy/dist*want;dz=dz/dist*want;
     const KG=10;f[0]=(dx-api.vx[i])*KG;f[1]=(dy-api.vy[i])*KG;f[2]=(dz-api.vz[i])*KG;
     // Never below the floor: a descent brakes before it.
@@ -450,26 +582,28 @@ export function createCathedralGrammar(opts={}){
     id:GRAMMAR_ID,version:GRAMMAR_VERSION,
     ecosystem(params,seed){void params;void seed;
       const base={routes:1,radius:1.6,sepRadius:.08,sep:0,ali:0,coh:0,seek:0,orbit:0,curiosity:0,trail:0,avoid:0,flow:0,wander:0,wanderJitter:0,
-        minSpeed:0,maxForce:34,mass:1,drag:.08,carryDeposit:0,energyDeposit:0,yMin:.04,yMax:YTOP+1,congestion:congestion?.003:0,congestionAbove:7,fade:2,respawn:[1,5]};
-      return {capacity:CAP,trail:6,bounds:{min:[-BOUND-4,-.5,-BOUND-4],max:[BOUND+4,YTOP+1,BOUND+4]},
-        field:{nx:96,nz:96,min:[-BOUND,-BOUND],max:[BOUND,BOUND],decay:{trail:.993,energy:.996,disturb:.99,flow:.96},diffuse:{trail:.05,energy:.06,disturb:.08,flow:.1},saturate:{trail:4,energy:3,disturb:4,flow:2},advect:.15},
+        minSpeed:0,maxForce:34,mass:1,drag:.08,carryDeposit:0,energyDeposit:0,yMin:.04,yMax:YTOP+1,congestion:congestion?.003:0,congestionAbove:7,fade:2,respawn:[1,5],
+        perceive:false};   // steered by the routes alone: no neighbour scan (queues come from the per-edge traffic table)
+      return {capacity:CAP,trail:10,bounds:{min:[-BOUND-4,-.5,-BOUND-4],max:[BOUND+4,YTOP+1,BOUND+4]},
+        field:{nx:96,nz:96,min:[-BOUND,-BOUND],max:[BOUND,BOUND],decay:{trail:.993,energy:.996,disturb:.99,flow:.96},diffuse:{trail:.012,energy:.06,disturb:.08,flow:.1},saturate:{trail:4,energy:3,disturb:4,flow:2},advect:.15},
         species:[{...base,name:'courier',share:.44,maxSpeed:1.6,deposit:.005,push:.05,life:[150,420]},
                  {...base,name:'warden',share:.38,maxSpeed:1.1,deposit:.0035,push:.03,life:[200,600]},
                  {...base,name:'spark',share:.18,maxSpeed:3.2,deposit:.003,push:.04,life:[60,200],respawn:[.5,3]}],
-        hooks:{steer,spawn(api,i,k,r,o2){const s=stateOf(api),net=s.net;const v=net&&isAwake(api,s,i)?startNode(api,net,i,k,r):-1;
+        hooks:{tick(api){newTick(api,stateOf(api));},steer,spawn(api,i,k,r,o2){const s=stateOf(api),net=s.net;const v=net&&isAwake(api,s,i)?startNode(api,net,i,k,r):-1;
           if(v<0){const kk=i%((2*BOUND)|0),row=Math.floor(i/((2*BOUND)|0));o2[0]=-PARK;o2[1]=.4+row*1.7;o2[2]=-BOUND+.5+kk;api.fa[i*2+1]=-1;api.ia[i*2]=-1;return;}
           o2[0]=net.x[v];o2[1]=net.y[v];o2[2]=net.z[v];place(api,s,i,v,false);}}};
     },
-    // Sites: one per standing precinct (influences land on them: the default siteOf maps a file to its precinct) and one
-    // naming the network the inhabitants navigate.
+    // Sites: one per standing precinct (influences land on them: the default siteOf maps a file to its precinct); data:
+    // the network the inhabitants navigate (null before the city stands), handed to the ecosystem by the driver.
     habitat(model,t){
       const net=networkFor(model,t);
       const sites=net.precs.map(q=>({id:q.id,x:q.cx,y:1,z:q.cz,r:Math.max(q.rx,q.rz)*.45,w:Math.sqrt(q.members),kind:1}));
-      if(net.n)sites.push({id:`net:${net.key}`,x:0,y:0,z:0,r:.05,w:1e6,kind:9});
-      return sites;
+      return {sites,data:net.n?net:null};
     },
     // The network an ecosystem's inhabitants are on (presentation and tests), or null.
     networkOf(api){return api?stateOf(api).net:lastNet;},
+    // How strained the precinct of inhabitant i's stretch is (0..1; presentation: a failure's cold on its lanterns).
+    strainOf(api,i){const s=stateOf(api),n=s.net,d=api.ia[i*2];if(!n||!s.stress||d<0||d>=n.m*2)return 0;const e=d>>1,p=n.np[n.ea[e]]>=0?n.np[n.ea[e]]:n.np[n.eb[e]];return p>=0?Math.min(1,s.stress[p]):0;},
     networkAt:networkFor,
     jobOf:v=>jobOf(v),destOf:v=>destOf(v),
     get cacheSize(){return cache.size;}
