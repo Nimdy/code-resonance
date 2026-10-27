@@ -107,7 +107,7 @@ test('Recipes: a world pack is a family with seeded, trait-derived parameters; o
   assert.throws(()=>recipe.update(a,{type:'family',family:'halcyon.cymatic-field'},small,0,null),/Unknown family/);
   // An overlay: choosing a look chooses its base family; values, ranges, effects, unlocks and technique apply.
   const look=recipe.update(recipe.generate(small,{now:0}),{type:'pack',pack:'northlight.ember-observatory'},small,0,reg);
-  assert.equal(look.family,'stellar-forge');assert.deepEqual(look.pack,{id:'northlight.ember-observatory',version:'1.0.0',kind:'declarative'});
+  assert.equal(look.family,'stellar-forge');assert.deepEqual(look.pack,{id:'northlight.ember-observatory',version:'1.1.0',kind:'declarative'});
   assert.equal(look.genome.geometry.arrangement,'binary-core');assert(look.genome.geometry.spiralArms>=2&&look.genome.geometry.spiralArms<=3);
   assert.equal(look.genome.effects['milestone.achieved'],'aurora');assert.equal(look.genome.ambient.unlocks[0],'galactic-halo');assert.equal(look.genome.technique.saturation,.82);
   // The pack disappears: served without it, flagged, and not rewritten (reinstalling restores the stored recipe).

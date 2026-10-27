@@ -127,7 +127,7 @@ async function until(fn,timeout=20000,step=250){const t0=Date.now();for(;;){cons
     const quarantined=fs.readdirSync(path.join(env.dir,'packs','.quarantine')).length;
     await page.click('#pkDiscardBtn');await wait(600);
     const discarded=await page.evaluate(()=>({choose:!!document.querySelector('#pkChooseZip')&&!document.querySelector('.pk-import-intro').hidden,report:!!document.getElementById('pkReport')}));
-    check('re-import: "Replaces the installed version 1.0.0", identical files',/Replaces the installed version 1\.0\.0/.test(reimport)&&/identical/.test(reimport),reimport.match(/Replaces[^\n]*\n?[^\n]*/)?.[0]||'');
+    check('re-import: "Replaces the installed version 1.1.0", identical files',/Replaces the installed version 1\.1\.0/.test(reimport)&&/identical/.test(reimport),reimport.match(/Replaces[^\n]*\n?[^\n]*/)?.[0]||'');
     check('Discard: the waiting import is removed on the receiver and the dialog returns to the choice',quarantined===1&&fs.readdirSync(path.join(env.dir,'packs','.quarantine')).length===0&&discarded.choose&&!discarded.report,`${quarantined} waiting before`);
     await page.keyboard.press('Escape');
     await page.click(`.pk-row[data-id="${EMBER}"]`);

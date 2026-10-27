@@ -112,9 +112,44 @@ export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=tru
     }
   };
 }
-// The recipe's rendering technique applied to a world's grade (multipliers; identity when the genome has none).
-function withTechnique(g,t){
+// ---- Finishes ------------------------------------------------------------------------------------------------------
+// Lens and colour profiles over each world's own grade (`technique.finish`; docs/packs/catalogue.md). A finish scales
+// the world's light, then the composite's finishing terms (core.js, FINISH) master it: AgX highlights, an optical fringe
+// (`optical`: a share of the image height in the corners; `technique.aberration` scales it, 0 turns it off), the same
+// lens on the bloom (`fringe`), warm halation hugging the highlights, split toning drawn from the palette (cool depth
+// in the shadows, warmth in the light) and, for Dreamlike, a mist of the wide glow. Classic (or none) is the grade as
+// it always was: the classic composite, untouched.
+export const FINISHES=Object.freeze({
+  // Crisp: restrained bloom that starts higher, almost no fringe, a light vignette, very little grain.
+  clean:Object.freeze({grade:Object.freeze({bloom:.8,threshold:1.1,contrast:1.05,saturation:.98,vignette:.65,grain:.3,streak:.5}),optical:.0008,fringe:0,halation:0,split:.3,mist:0}),
+  // The default for new identities: subtle optical fringe, attractive warm halation, balanced separation, gentle vignette.
+  cinematic:Object.freeze({grade:Object.freeze({bloom:.95,contrast:1.03,saturation:1.03,vignette:.85,grain:.8}),optical:.003,fringe:2.5,halation:.45,split:.75,mist:0}),
+  // Luminous and atmospheric, never blurry: the bloom starts lower and spreads as mist, stronger halation and fringe.
+  dreamlike:Object.freeze({grade:Object.freeze({bloom:1.15,threshold:.9,exposure:1.03,contrast:.95,saturation:1.08,vignette:.95,grain:.65,streak:1.2}),optical:.0048,fringe:3.5,halation:.8,split:1,mist:.45})});
+const GRADE_DEFAULTS={exposure:1,bloom:1,threshold:.7,contrast:1,saturation:1.05,vignette:.3,grain:.025,streak:0};
+// The finish's colours from the identity's palette: a hue offset (no luminance) toward its depth colour for the shadows
+// and toward its highlight for the light, each blended with a classic film direction (teal, amber) so a grey palette
+// still separates; halation is film's red-orange warmed toward the highlight; the mist takes a little of it too.
+const TONES=new Map();
+function tonesOf(palette){
+  const key=`${palette?.deep}|${palette?.highlight}`;if(TONES.has(key))return TONES.get(key);
+  const rgb=hex=>{try{return typeof hex==='string'&&/^#[0-9a-f]{6}$/i.test(hex)?new THREE.Color(hex):null;}catch{return null;}};
+  const hue=(c,base,size)=>{const v=new THREE.Vector3(...base),y=x=>x.x*.2126+x.y*.7152+x.z*.0722;
+    if(c){const p=new THREE.Vector3(c.r,c.g,c.b),n=p.clone().subScalar(y(p));if(n.length()>.02)v.multiplyScalar(.55).addScaledVector(n.normalize(),.45);}
+    return v.subScalar(y(v)).setLength(size);};
+  const deep=rgb(palette?.deep),high=rgb(palette?.highlight),lit=high?new THREE.Vector3(high.r,high.g,high.b).divideScalar(Math.max(1e-3,high.r,high.g,high.b)):new THREE.Vector3(1,.85,.7);
+  const out={shadow:hue(deep,[-.8,.18,.58],.045),high:hue(high,[.58,-.09,-.8],.03),halation:new THREE.Vector3(1,.38,.15).lerp(lit,.25),mist:new THREE.Vector3(1,1,1).lerp(lit,.25)};
+  if(TONES.size>32)TONES.clear();TONES.set(key,out);return out;
+}
+// The recipe's rendering technique applied to a world's grade: a finish, then the creator's multipliers (identity when
+// the genome has none; without a finish, or with Classic, exactly the grade it always was).
+export function withTechnique(g,t,palette=null){
   if(!t)return g;g={...g};
+  const f=typeof t.finish==='string'&&Object.hasOwn(FINISHES,t.finish)?FINISHES[t.finish]:null;
+  if(f){for(const [k,m] of Object.entries(f.grade))g[k]=(g[k]??GRADE_DEFAULTS[k])*m;
+    // The world's own fringe (Stellar Forge asks for less) sets the lens's strength until the creator sets one.
+    const tones=tonesOf(palette),k=(Number.isFinite(t.aberration)?t.aberration:g.aberration??.004)/.004;
+    Object.assign(g,{finish:true,tonemap:'agx',optical:f.optical*k,fringe:f.fringe,halation:f.halation,halationTint:tones.halation,split:f.split,splitShadow:tones.shadow,splitHigh:tones.high,mist:f.mist,mistTint:tones.mist});}
   for(const [k,d] of [['exposure',1],['bloom',1],['contrast',1],['saturation',1.05],['vignette',.3],['grain',.025]])if(Number.isFinite(t[k]))g[k]=(g[k]??d)*t[k];
   if(Number.isFinite(t.aberration))g.aberration=t.aberration;
   if(Array.isArray(t.tint))g.tint=(g.tint?g.tint.clone():new THREE.Vector3(1,1,1)).multiply(new THREE.Vector3(...t.tint));
@@ -248,7 +283,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     // Light shafts point at a light the world draws in its own sky: a pack that replaces the sky has none to point at.
     let grade=world.grade?.(info)||{};if(ext?.background&&grade.rays?.length)grade={...grade,rays:[]};
     pipeline.render(()=>{if(bg)pipeline.drawBackdrop(bg);const before=renderer.info.render.calls;renderer.render(scene,camera);
-      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique)});
+      calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique,current.genome.palette)});
     calls.total=renderer.info.render.calls;
     if(query){gl.endQuery(timer.TIME_ELAPSED_EXT);queries.push(query);}
     if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);
@@ -285,11 +320,14 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;
       // Another performance: its ecosystem starts from its own inputs only.
       if(lifeTimeline.items.length){lifeTimeline.clear();lifeReplay=false;}}},
-    async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}
-      // Only the life values changed (life on before and after): the world stays; the ecosystem takes the new values
+    async setRecipe(next){if(!next||!known(next.family))return;
+      // The same world with only its technique changed (the finish, the fringe, the grade multipliers: read every frame,
+      // so a finish previews at once): the world stays as it is.
+      const same=next.family===current.family&&next.variant===current.variant,bare=(r,life)=>{const {technique,...g}=r.genome;if(life)delete g.life;return JSON.stringify(g);};
+      if(same&&bare(next)===bare(current)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}
+      // Only the life values changed too (life on before and after): the world stays; the ecosystem takes the new values
       // (a live session from now on, a replay rebuilt exactly; life/driver.js).
-      const bare=r=>JSON.stringify({...r.genome,life:null});
-      if(lifeDriver&&lifeOn(next)&&next.family===current.family&&next.variant===current.variant&&bare(next)===bare(current)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
+      if(same&&lifeDriver&&lifeOn(next)&&bare(next,true)===bare(current,true)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
       await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.

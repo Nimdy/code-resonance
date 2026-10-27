@@ -87,11 +87,16 @@ test('Choosing "automatic" returns to the identity the code would generate, keep
   const back=recipe.update(chosen,{type:'automatic'},p);
   assert.equal(back.family,generated.family);assert.equal(back.source,'generated');assert.equal(back.overrides.intensity,.4);
 });
-test('Generated identities are pinned: generator v3, what v3 keeps from v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
+test('Generated identities are pinned: generator v4, what v4 keeps from v3, what v3 keeps from v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
-  assert.equal(recipe.RECIPE_VERSION,3);
-  const v3=['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome);
+  assert.equal(recipe.RECIPE_VERSION,4);
+  const v4=['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome);
+  assert.equal(h(v4),'d27fb424f09b9362');
+  // v4 only added three values, drawn from no random stream: without them every genome is exactly v3's (key order too).
+  assert(v4.every(g=>g.technique?.finish==='cinematic'&&g.music.score===3&&g.life.ecology===2));
+  const v3=v4.map(g=>{const c=JSON.parse(JSON.stringify(g));delete c.technique.finish;if(!Object.keys(c.technique).length)delete c.technique;delete c.music.score;delete c.life.ecology;return c;});
   assert.equal(h(v3),'ccb6221a53e0c619');
+  assert.equal(h(['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619','the v3 generator is kept for older identities');
   // v3 only added digital life (its own random stream): without `life` every genome is exactly v2's.
   assert(v3.every(g=>g.life?.enabled===true));
   assert.equal(h(v3.map(g=>{const c={...g};delete c.life;return c;})),'96bd1fb42ab0c111');
@@ -99,7 +104,34 @@ test('Generated identities are pinned: generator v3, what v3 keeps from v2, and 
   // v2 changed only what it meant to: Stellar Forge is identical to v1, Machine Cathedral keeps every v1 value (its two
   // added values come from their own stream), Fractal Biosphere chooses its species from the data. Stored recipes are
   // never re-derived once founded, so existing projects keep their identity whatever the generator does.
-  assert.equal(h(strip(recipe.generate(p,{family:'stellar-forge',now:0}).genome)),'024d658c1eb3fc83');
-  const c=strip(recipe.generate(p,{family:'machine-cathedral',now:0}).genome);delete c.atmosphere.shafts;delete c.material.wetness;
+  assert.equal(h(strip(recipe.generate(p,{family:'stellar-forge',now:0,version:3}).genome)),'024d658c1eb3fc83');
+  const c=strip(recipe.generate(p,{family:'machine-cathedral',now:0,version:3}).genome);delete c.atmosphere.shafts;delete c.material.wetness;
   assert.equal(h(c),'51647ee6517edb4c');
+});
+test('Generator v4: new identities get the cinematic finish, the composed score and the musical ecology; stored older identities never gain them by themselves',()=>{
+  const tiny={projectId:'v4-tiny-00000001',graph:{nodes:[{id:'m',type:'module',counts:{}}],edges:[]},stats:{}};
+  const grown={...tiny,graph:{nodes:Array.from({length:30},(_,i)=>({id:`m${i}`,type:'module',counts:{class:3}})),edges:[]}};
+  const fresh=recipe.generate(tiny,{now:0});
+  assert.equal(fresh.recipeVersion,4);assert.equal(fresh.genome.technique.finish,'cinematic');assert.equal(fresh.genome.music.score,3);assert.equal(fresh.genome.life.ecology,2);
+  // A provisional identity saved by generator v3 is redrawn as v3: it stays without the v4 values (and says so).
+  const v3=recipe.generate(tiny,{now:0,version:3});
+  assert.equal(v3.recipeVersion,3);assert.equal(v3.genome.technique,undefined);assert.equal(v3.genome.music.score,undefined);assert.equal(v3.genome.life.ecology,undefined);
+  for(const project of [tiny,grown]){const r=recipe.resolve(v3,project,5).recipe;
+    assert.equal(r.recipeVersion,3);assert.equal(r.genome.technique?.finish,undefined);assert.equal(r.genome.music.score,undefined);assert.equal(r.genome.life.ecology,undefined);}
+  // So does one from before digital life (v2: no life); it is redrawn exactly as it was before v4 existed.
+  const {life,...v2genome}=v3.genome,v2={...v3,recipeVersion:2,genome:v2genome};
+  const again=recipe.resolve(v2,tiny,5).recipe;assert.equal(again.recipeVersion,3);assert.equal(again.genome.technique,undefined);assert.equal(again.genome.music.score,undefined);
+  // Founded or locked older identities are served as stored.
+  const founded={...v3,founded:true};assert.equal(recipe.resolve(founded,grown,5).recipe,founded);
+  // A look over an older identity keeps its generator; a new identity (family, regenerate, automatic) is drawn with v4.
+  assert.equal(recipe.update(v3,{type:'pack',pack:null},tiny,0).genome.technique,undefined);
+  for(const a of [{type:'family',family:'machine-cathedral'},{type:'regenerate'},{type:'regenerate',keepFamily:true},{type:'automatic'}]){
+    const r=recipe.update(v3,a,tiny,0);assert.equal(r.recipeVersion,4,a.type);assert.equal(r.genome.technique.finish,'cinematic',a.type);assert.equal(r.genome.music.score,3,a.type);}
+  // The deliberate upgrade is a tune: exact values, locked, and the older generator stays on record.
+  const up=recipe.update(v3,{type:'tune',values:{'technique.finish':'cinematic','life.ecology':2,'music.score':3}},tiny,0);
+  assert.deepEqual([up.genome.technique.finish,up.genome.life.ecology,up.genome.music.score,up.recipeVersion,up.locked],['cinematic',2,3,3,true]);
+  assert.deepEqual(up.tuning.base,{'life.ecology':null,'music.score':null,'technique.finish':null});
+  // Reset returns it to exactly what it was.
+  assert.equal(JSON.stringify(recipe.update(up,{type:'tune-reset'},tiny,0).genome),JSON.stringify(v3.genome));
+  for(const [path,bad] of [['technique.finish','filmic'],['music.score',4],['life.ecology',3]])assert.throws(()=>recipe.update(v3,{type:'tune',values:{[path]:bad}},tiny,0),new RegExp(path.replace('.','\\.')));
 });

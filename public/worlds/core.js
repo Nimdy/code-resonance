@@ -25,8 +25,8 @@ float h11(float n){return fract(sin(n)*43758.5453123);}
 `;
 // ---- Post-processing --------------------------------------------------------------------------------------------
 const QUAD_VS='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';
-function pass(fragmentShader,uniforms){
-  const material=new THREE.ShaderMaterial({uniforms,vertexShader:QUAD_VS,fragmentShader,depthTest:false,depthWrite:false});
+function pass(fragmentShader,uniforms,defines=null){
+  const material=new THREE.ShaderMaterial({uniforms,vertexShader:QUAD_VS,fragmentShader,depthTest:false,depthWrite:false,...(defines?{defines}:{})});
   const scene=new THREE.Scene();scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),material));return {scene,material,uniforms};
 }
 // Bloom: soft-threshold prefilter, then a dual-filter downsample/upsample chain (cheap and wide), all half-float.
@@ -52,8 +52,22 @@ export function createPipeline(renderer,{samples=4}={}){
   // up to two screen-space lights, exposure, tone mapping (ACES, or AgX: highlights roll off into colour instead of
   // clipping to white), contrast/saturation, vignette, grain. Every addition defaults to off, so a world (or a visual
   // pack) that does not ask for it renders exactly as before.
-  const composite=pass(`varying vec2 vUv;uniform sampler2D src,bloom,wide;uniform float exposure,bloomStrength,contrast,saturation,vignette,grain,time,aberration,flash,tonemap,streak,rayDecay;
+  // A finish (host.js FINISHES) draws with the same source compiled with FINISH defined: an optical lens instead of the
+  // channel offset, a fringe on the bloom, halation, mist and split toning. Without FINISH the preprocessor leaves the
+  // classic shader token for token, so a recipe without a finish renders bit for bit as before.
+  const COMPOSITE=`varying vec2 vUv;uniform sampler2D src,bloom,wide;uniform float exposure,bloomStrength,contrast,saturation,vignette,grain,time,aberration,flash,tonemap,streak,rayDecay;
     uniform vec4 waves[4];uniform vec4 rays[2];uniform vec3 rayColor[2];uniform vec2 aspect;uniform vec3 lift,tint,bloomTint,streakTint;
+#ifdef FINISH
+    uniform float optical,fringe,halation,split,mist;uniform vec3 halationTint,splitShadow,splitHigh,mistTint;
+    // Lateral chromatic aberration as a lens makes it: a short spectrum along the radius (red from outside, green at the
+    // pixel, blue from inside, each channel a blend of taps, so an edge grades through its colours instead of splitting
+    // into three outlines). The full fringe where light is bright; ordinary contrast edges keep about a third of it.
+    vec3 lens(vec2 uv,vec2 o){
+      vec3 a=texture2D(src,uv+o).rgb,b=texture2D(src,uv+o*.5).rgb,m=texture2D(src,uv).rgb,d=texture2D(src,uv-o*.5).rgb,e=texture2D(src,uv-o).rgb;
+      vec3 f=vec3(a.r*.4+b.r*.35+m.r*.25,b.g*.2+m.g*.6+d.g*.2,m.b*.25+d.b*.35+e.b*.4);
+      float k=smoothstep(.6,2.4,max(dot(a,vec3(.2126,.7152,.0722)),dot(e,vec3(.2126,.7152,.0722))));
+      return mix(m,f,.38+.62*k);}
+#endif
     vec3 aces(vec3 x){const float a=2.51,b=.03,c=2.43,d=.59,e=.14;return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.,1.);}
     // Minimal AgX (Troy Sobotka's transform, polynomial fit by Benjamin Wrensch), punchy look; returns display-linear.
     vec3 agx(vec3 c){const mat3 m=mat3(.842479062253094,.0423282422610123,.0423756549057051,.0784335999999992,.878468636469772,.0784336,.0792237451477643,.0791661274605434,.879142973793104);
@@ -65,9 +79,24 @@ export function createPipeline(renderer,{samples=4}={}){
     float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
     void main(){vec2 uv=vUv;
       for(int i=0;i<4;i++){vec4 w=waves[i];if(w.w<=0.)continue;vec2 d=(uv-w.xy)*aspect;float r=length(d);float band=exp(-pow((r-w.z)*18.,2.));uv-=normalize(d+1e-5)/aspect*band*w.w*.035;}
+#ifdef FINISH
+      // The offset grows smoothly from nothing at the centre to optical (a share of the image height) in the corners,
+      // isotropic in pixels and flattening at the frame's edge (no smear where the image ends).
+      vec2 c=uv-.5,pc=c*aspect;float rad=min(1.,length(pc)/length(aspect*.5));
+      vec2 off=pc/max(length(pc),1e-4)/aspect*optical*rad*rad*(3.-2.*rad);
+      vec3 col=lens(uv,off);
+      // The bloom through the same lens (its colours separate a little more, as a halo's do), halation (the tight part of
+      // the glow hugging the highlights, half its own colour and half film's warmth whatever the light's colour) and
+      // mist (the wide glow laid softly over the image).
+      vec3 bl=texture2D(bloom,uv).rgb,wd=texture2D(wide,uv).rgb;if(fringe>0.)bl=vec3(texture2D(bloom,uv+off*fringe).r,bl.g,texture2D(bloom,uv-off*fringe).b);
+      col+=bl*bloomStrength*.22*bloomTint;
+      vec3 tight=max(bl-wd,0.);tight=mix(tight,vec3(dot(tight,vec3(.2126,.7152,.0722))),.5);
+      col+=tight*halation*halationTint*bloomStrength*.22+wd*mist*mistTint*.35;
+#else
       vec2 c=uv-.5;float edge=dot(c,c);
       vec3 col=vec3(texture2D(src,uv+c*aberration*edge).r,texture2D(src,uv).g,texture2D(src,uv-c*aberration*edge).b);
       col+=texture2D(bloom,uv).rgb*bloomStrength*.22*bloomTint;
+#endif
       // Anamorphic streak: the wide bloom level stretched horizontally (a lens's horizontal flare on bright points).
       if(streak>0.){vec3 st=vec3(0.);for(int k=-6;k<=6;k++){float o=float(k)/6.;st+=texture2D(wide,uv+vec2(o*.22,0.)).rgb*exp(-abs(o)*3.);}col+=st/5.*streak*streakTint;}
       // Light shafts: the bloom gathered along the line toward each light (screen-space god rays).
@@ -76,13 +105,23 @@ export function createPipeline(renderer,{samples=4}={}){
       col*=exposure*(1.+flash*.6);col=tonemap>.5?agx(col*tint):aces(col*tint);
       col=pow(col,vec3(1./2.2));
       float l=dot(col,vec3(.2126,.7152,.0722));col=mix(vec3(l),col,saturation);col=(col-.5)*contrast+.5+lift;
+#ifdef FINISH
+      // Split toning: the shadows lean one way and the highlights the other (hue only: the offsets carry no luminance),
+      // black and white stay neutral.
+      if(split>0.){float y=clamp(dot(col,vec3(.2126,.7152,.0722)),0.,1.),hw=smoothstep(.42,.95,y);col+=split*(splitShadow*(1.-hw)*smoothstep(0.,.2,y)*(1.-y)+splitHigh*hw*(1.-y*.6));}
+#endif
       col*=1.-vignette*smoothstep(.15,.9,length(c*vec2(1.15,1.)));
       col+=(h(vUv*vec2(1920.,1080.)+fract(time*.731)*vec2(37.,91.))-.5)*grain;
-      gl_FragColor=vec4(clamp(col,0.,1.),1.);}`,
+      gl_FragColor=vec4(clamp(col,0.,1.),1.);}`;
+  const composite=pass(COMPOSITE,
     {src:{value:null},bloom:{value:null},exposure:{value:1},bloomStrength:{value:1},contrast:{value:1},saturation:{value:1.05},vignette:{value:.3},grain:{value:.025},
      time:{value:0},aberration:{value:.004},flash:{value:0},waves:{value:[0,1,2,3].map(()=>new THREE.Vector4())},aspect:{value:new THREE.Vector2(1,1)},lift:{value:new THREE.Vector3()},tint:{value:new THREE.Vector3(1,1,1)},
      wide:{value:null},tonemap:{value:0},streak:{value:0},streakTint:{value:new THREE.Vector3(1,1,1)},bloomTint:{value:new THREE.Vector3(1,1,1)},
-     rays:{value:[new THREE.Vector4(),new THREE.Vector4()]},rayColor:{value:[new THREE.Vector3(1,1,1),new THREE.Vector3(1,1,1)]},rayDecay:{value:.96}});
+     rays:{value:[new THREE.Vector4(),new THREE.Vector4()]},rayColor:{value:[new THREE.Vector3(1,1,1),new THREE.Vector3(1,1,1)]},rayDecay:{value:.96},
+     optical:{value:0},fringe:{value:0},halation:{value:0},split:{value:0},mist:{value:0},halationTint:{value:new THREE.Vector3(1,.4,.18)},splitShadow:{value:new THREE.Vector3()},
+     splitHigh:{value:new THREE.Vector3()},mistTint:{value:new THREE.Vector3(1,1,1)}});
+  // The finished composite shares the classic one's uniforms; compiled the first time a finish is drawn.
+  let finished=null;const finishPass=()=>finished||(finished=pass(COMPOSITE,composite.uniforms,{FINISH:''}));
   let width=4,height=4;
   // Optional full-screen passes on the HDR scene before bloom (visual packs): ping-pong half-float targets.
   // The targets exist only while passes are set, so worlds without post-processing pay nothing for them.
@@ -99,8 +138,11 @@ export function createPipeline(renderer,{samples=4}={}){
   }
   // Grade options: tonemap 'aces' (default) | 'agx'; streak (0 = off) with streakTint; bloomTint (halation colour);
   // rays: up to two {x, y (0..1 screen), strength, color: THREE.Color|Vector3} light shafts, rayDecay (0.9..0.99).
+  // finish: true draws the finished composite with optical (the lens's fringe in the corners, a share of the image
+  // height), fringe (the bloom's, × optical), halation with halationTint, split toning (splitShadow / splitHigh: hue
+  // offsets) and mist with mistTint; `aberration` is then unused.
   function render(drawScene,{bloom=1,threshold=.7,exposure=1,contrast=1,saturation=1.05,vignette=.3,grain=.025,time=0,flash=0,waves=[],lift=null,tint=null,aberration=.004,
-    tonemap='aces',streak=0,streakTint=null,bloomTint=null,rays=[],rayDecay=.96}={}){
+    tonemap='aces',streak=0,streakTint=null,bloomTint=null,rays=[],rayDecay=.96,finish=false,optical=0,fringe=0,halation=0,halationTint=null,split=0,splitShadow=null,splitHigh=null,mist=0,mistTint=null}={}){
     renderer.setRenderTarget(scene);renderer.setClearColor(0x000000,1);renderer.clear(true,true,true);drawScene(scene);
     let hdr=scene.texture;
     post.forEach((m,i)=>{const target=postTargets[i%2];if(m.uniforms.tInput)m.uniforms.tInput.value=hdr;if(m.uniforms.uRes)m.uniforms.uRes.value.set(width,height);
@@ -119,14 +161,16 @@ export function createPipeline(renderer,{samples=4}={}){
     u.streakTint.value.set(1,1,1);if(streakTint)u.streakTint.value.set(streakTint.x??streakTint.r,streakTint.y??streakTint.g,streakTint.z??streakTint.b);
     u.bloomTint.value.set(1,1,1);if(bloomTint)u.bloomTint.value.set(bloomTint.x??bloomTint.r,bloomTint.y??bloomTint.g,bloomTint.z??bloomTint.b);
     for(let i=0;i<2;i++){const r=rays[i];if(r&&r.strength>0){u.rays.value[i].set(r.x,r.y,r.strength,0);const c=r.color;u.rayColor.value[i].set(c?.x??c?.r??1,c?.y??c?.g??1,c?.z??c?.b??1);}else u.rays.value[i].set(0,0,0,0);}
-    renderer.setRenderTarget(null);renderer.render(composite.scene,ortho);
+    if(finish){u.optical.value=optical;u.fringe.value=fringe;u.halation.value=halation;u.split.value=split;u.mist.value=mist;const v3=(t,x,d)=>t.set(x?.x??x?.r??d,x?.y??x?.g??d,x?.z??x?.b??d);
+      v3(u.halationTint.value,halationTint,1);v3(u.splitShadow.value,splitShadow,0);v3(u.splitHigh.value,splitHigh,0);v3(u.mistTint.value,mistTint,1);}
+    renderer.setRenderTarget(null);renderer.render((finish?finishPass():composite).scene,ortho);
   }
   // A background pass (nebula, sky) rendered at half resolution into its own target and drawn first into the scene.
   const bgScene=new THREE.Scene(),bgMesh=new THREE.Mesh(new THREE.PlaneGeometry(2,2));bgMesh.frustumCulled=false;bgScene.add(bgMesh);
   function renderBackground(material){bgMesh.material=material;renderer.setRenderTarget(background);renderer.render(bgScene,ortho);return background.texture;}
   const backdrop=pass('varying vec2 vUv;uniform sampler2D src;void main(){gl_FragColor=vec4(texture2D(src,vUv).rgb,1.);}',{src:{value:null}});
   function drawBackdrop(texture){backdrop.uniforms.src.value=texture;renderer.render(backdrop.scene,ortho);}
-  function dispose(){for(const t of [scene,background,...down,...up,...postTargets])t.dispose();for(const p of [prefilter,downPass,upPass,composite,backdrop])p.material.dispose();bgMesh.geometry.dispose();postMesh.geometry.dispose();}
+  function dispose(){for(const t of [scene,background,...down,...up,...postTargets])t.dispose();for(const p of [prefilter,downPass,upPass,composite,finished,backdrop].filter(Boolean))p.material.dispose();bgMesh.geometry.dispose();postMesh.geometry.dispose();}
   return {setSize,setSamples,setPost,render,renderBackground,drawBackdrop,dispose,get size(){return [width,height];}};
 }
 export const BACKGROUND_VS='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';

@@ -64,6 +64,41 @@ Generator v2 (`RECIPE_VERSION` 2) draws the Fractal Biosphere's dominant species
 Machine Cathedral's light shafts and wetness from a separate random stream (`genome-added`), so every value generated
 by v1 is unchanged; `tests/recipe.test.js` pins both.
 
+Generator v4 (Phase 11) adds three values drawn from no random stream, so a v4 genome without them is the v3 genome
+exactly: the Cinematic finish (`technique.finish`, built-in identities only: a pack's world or look keeps its
+author's grade), the composed score (`music.score` 3) and, where digital life is generated, the musical ecology
+(`life.ecology` 2). An identity saved before v4 never gains them by itself (a provisional one is redrawn with v3); the
+Visual Studio offers it "Use the Phase 11 finish and ecology", a tune, and the Music Studio the composed score.
+
+### Finishes
+
+A finish is a lens and colour profile over each world's own grade, applied by the host every frame
+(`public/worlds/host.js` `FINISHES`) in the one rendering pipeline: no second renderer and no extra render target.
+Classic, or no finish, is the classic composite exactly; a finish draws the same composite source compiled with
+`FINISH` defined (`public/worlds/core.js`), which adds:
+
+- **Optical chromatic aberration** instead of the classic channel offset: a short spectrum along the radius (each
+  channel a blend of five taps, so an edge grades through its colours instead of splitting into three outlines), from
+  nothing at the centre to its strength in the corners, flattening at the frame's edge; full on highlights, about a
+  third on ordinary contrast edges. `technique.aberration` is the creator's strength (0.004, shown as 100 %, is the
+  finish as designed; 0 turns it off); Stellar Forge's own lighter fringe holds until one is set. Labels, captions and
+  the interface are drawn on the 2D overlay canvas and never pass through it.
+- **The bloom through the same lens** (its colours separate a little more, as a halo's do), **halation** (the tight
+  part of the glow, film's red-orange warmed toward the palette's highlight), **split toning** (hue-only offsets from
+  the palette's depth and highlight colours, blended with teal and amber) and, for Dreamlike, **mist** (the wide glow
+  laid softly over the image). All three tone-map with AgX.
+
+| Finish | Character |
+|---|---|
+| Classic | The world's grade exactly as before finishes (identities saved before Phase 11) |
+| Clean | Crisp: restrained bloom that starts higher, a sub-pixel fringe, a light vignette, very little grain |
+| Cinematic | The default for new identities: about 3 px of fringe in the corners at 1080p, warm halation, balanced colour separation, a gentler vignette |
+| Dreamlike | Luminous: mist around the light, stronger halation, richer separation, an artistic fringe; the image itself stays sharp |
+
+A change to the technique alone (finish, fringe, multipliers) previews at once: the host keeps the world and reads
+the new technique on the next frame. `tests/finish.test.js` pins the classic composite token for token and checks that
+the technique without a finish, or with Classic, gives exactly the grade it always did.
+
 ## World families
 
 The three built-in families are three different universes, each with its own visual grammar: an idle life that is

@@ -184,6 +184,27 @@
 .ws-visual .vs-param-control .vec3 .field-row{gap:8px}
 .ws-visual .vs-param-control .vec3 .tiny{width:12px}
 .ws-visual .field.pending>.field-head .field-label{color:var(--accent)}
+/* Finish: four choices across the full width, what the chosen one does under them (two lines reserved, so switching
+   does not move the controls below), then the fringe's strength and, for an older identity, the upgrade. */
+.ws-visual .vs-sec-finish .segmented button{flex:1 1 0;min-width:0;padding:0 6px}
+.ws-visual .vs-finish-line{margin:0;line-height:1.5;min-height:3em;max-width:62ch}
+.ws-visual .vs-sec-finish.pending .vs-sec-head h3{color:var(--accent)}
+.ws-visual .vs-sec-finish .vs-props .field{padding:2px 0 0}
+.ws-visual .vs-upgrade{display:grid}
+.ws-visual .vs-upgrade:empty{display:none}
+/* Make it your own: the way on to the Artist Studio, a line of why beside the button (under it when narrow). */
+.ws-visual .vs-compose{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:12px 14px;border-radius:var(--r-2);border:1px dashed var(--line-3);background:linear-gradient(120deg,rgba(117,237,255,.05),transparent 60%)}
+.ws-visual .vs-compose-text{display:grid;gap:2px;flex:1 1 180px;min-width:0}
+.ws-visual .vs-compose-text strong{font-size:13.5px;font-weight:600;color:var(--text-1)}
+.ws-visual .vs-compose .btn{flex:none}
+/* The music influence scale under its slider: 0, 1 and 2 named and explained, the band the value is in lit. */
+.ws-visual .vs-scale{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:4px}
+.ws-visual .vs-scale-stop{display:grid;gap:2px;align-content:start;min-width:0;padding:6px 8px;border-radius:var(--r-1);border:1px solid var(--line);font-size:12px;line-height:1.35;color:var(--text-3);
+  transition:border-color var(--t-1),background var(--t-1),color var(--t-1)}
+.ws-visual .vs-scale-stop strong{font-size:12px;font-weight:600;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-visual .vs-scale-stop.on{border-color:var(--accent-line);background:var(--accent-soft);color:var(--text-2)}
+.ws-visual .vs-scale-stop.on strong{color:var(--accent)}
+@container vs-insp (max-width:340px){.ws-visual .vs-scale-stop>span{display:none}}
 /* Parameter groups: a heading-sized summary with the count and how many are customised */
 .ws-visual .vs-params{display:grid;gap:0}
 .ws-visual .vs-params details.disclosure{border-top:1px solid var(--line);padding-top:0}
@@ -245,6 +266,8 @@
   /* What the state means and what customising does are the tooltips of the state pill and the customisation line; the
      look pack's description is its select's tooltip (its purpose is in the label). */
   .ws-visual .vs-state-why,.ws-visual .vs-lock-note,.ws-visual .vs-look .field-doc,.ws-visual .vs-essentials-note{display:none}
+  /* The fringe's description gives way, and the influence scale keeps its names (each stop's line is its tooltip). */
+  .ws-visual .vs-sec-finish .field-doc,.ws-visual .vs-scale-stop>span,.ws-visual .vs-compose-text>span{display:none}
   .ws-visual .vs-sec-identity{gap:10px}.ws-visual .vs-identity-note:not(:has(>:not(.vs-lock-note))){display:none}}
 /* Narrow: the inspector stacks below, the stage takes the full width, Apply stays in reach. */
 @media (max-width:900px){
