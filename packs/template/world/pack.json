@@ -5,7 +5,7 @@
   "name": "My World",
   "version": "0.1.0",
   "kind": "world",
-  "sdk": "^1.0",
+  "sdk": "^1.1",
   "author": {"name": "Your Name"},
   "description": "A starter world: subsystems are rings of light, modules are glowing spheres. Replace everything.",
   "license": "MIT",

@@ -13,7 +13,7 @@ Rules that follow:
 - **Time from the frame only.** Never `Date.now()`, `performance.now()` or animation-frame timestamps. Shader time is
   `frame.tsec` (seconds since the recording's start: small numbers, full float32 precision); durations use
   `tsec / sdk.speed()`.
-- **Randomness from seeds only.** `sdk.random(key)` or `sdk.util.hash` / `rand` of stable keys (ids). In the pack frame,
+- **Randomness from seeds only.** `sdk.random(key)` or `sdk.util.hash` / `rand` of stable keys (ids). In the pack worker,
   `Math.random` and `Date.now` are replaced by values derived from the frame time, so an accident stays deterministic,
   but do not rely on that.
 - **Closed forms over accumulation.** Compute positions and effects as functions of time since an event (store the

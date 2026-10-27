@@ -10,16 +10,40 @@ it exceeds its budget:
 | `passes` | all draw calls of the frame: background, scene, your post passes, bloom chain, grade |
 | `triangles`, `points` | primitives drawn |
 | `updateMs` | CPU time of `update` + camera per frame (moving average) |
-| fps | frames rendered per second where the world renders (the pack frame counts its own frames) |
+| fps | frames rendered per second where the world renders (the pack worker counts its own frames) |
+| `gpuMs` | GPU time of the whole frame, where the driver offers timer queries (SwiftShader and many integrated GPUs do not) |
 
 Defaults when a manifest declares no budget: 40 draw calls, 40 passes, 2,000,000 triangles, 500,000 points, 8 ms.
+
+In the player, a pack that stays above 1.25× any declared budget figure for ten seconds gets a notice in the World DNA
+panel (it keeps running: adaptive quality and the watchdog below deal with real trouble).
 
 ## Adaptive quality
 
 Live playback lowers quality when frames are slow (more than ~36 ms for three seconds): level 1 drops MSAA, level 2
 renders at 75 % resolution, level 3 at 55 %; it climbs back after twenty fast seconds. `frame.quality` tells your world
 the level: at 2 and above, halve particle counts and expensive loops (the reference world halves its sand). Films always
-render at level 0, frame-exact.
+render at level 0, frame-exact. Viewers can fix the level instead (World DNA → Quality: Auto, High, Medium, Low,
+Lowest); a fixed level does not adapt.
+
+## Live delivery and the watchdog
+
+Since SDK 1.1 your world renders in a worker and every frame is acknowledged to the player:
+
+- **At most one frame in flight.** When your world is slower than the display, the player skips presentation frames
+  (counted) instead of queueing them, and the worker drops a live frame that a newer one has made obsolete. Your world
+  never falls behind by more than a frame.
+- **Events are never skipped.** Structure, cues, intents, priming and recipe changes are delivered in order, always;
+  the qualification checks that every one sent reaches the world while frames are being skipped.
+- **Films are exact.** A film frame is awaited at its exact time; if it does not arrive within 60 s the film fails with
+  an explicit error (no frame is substituted).
+- **The watchdog.** The pack is stopped (the user is told why, the built-in identity takes over, the recipe keeps your
+  pack, and RETRY runs it again; nothing restarts on its own) when: a frame is not acknowledged within 6 s; fewer than
+  20 frames arrive in 20 s (under 1 fps); your code throws; the GPU context is lost; the worker floods the player with
+  more than 1,000 messages a second; or the frame navigates. A hidden tab is never judged (browsers throttle it).
+
+Measured with the testing fixtures in `packs/testing/` (`qualification/visual/robustness.qual.js`): see
+`docs/QUALIFICATION.md`.
 
 ## Habits that keep worlds fast
 

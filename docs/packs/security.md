@@ -21,19 +21,31 @@ no approval. Their strings (name, author, description) appear only in the player
    saw).
 3. **Served as inert text.** The receiver hands out a code pack's files only after approval, as `text/plain` with
    `nosniff` and a sandboxing content policy, so they cannot execute in the player's origin.
-4. **Isolated frame.** The player creates `<iframe sandbox="allow-scripts">` for the pack: an opaque origin (no access
-   to the player, its storage or cookies, no popups, no forms, no top navigation) whose content policy is
-   `default-src 'none'; connect-src 'none'; script-src <the public world modules> blob:; worker-src 'none'; frame-src
-   'none' …` and whose permissions policy denies camera, microphone, location, clipboard, USB, serial, HID, Bluetooth,
-   payment and display capture. The pack's code arrives from the player as text and runs from `blob:` URLs. The frame
-   removes WebRTC before any pack code exists. The receiver answers the frame's opaque origin only for the public world
-   modules and three.js; every API request from it is refused.
-5. **Stopped on misbehaviour.** An exception in pack code, or the frame navigating itself away, stops the pack for the
-   session; the player shows the identity without it.
+4. **Isolated frame, code in a worker (SDK 1.1).** The player creates `<iframe sandbox="allow-scripts">` for the pack:
+   an opaque origin (no access to the player, its storage or cookies, no popups, no forms, no top navigation) whose
+   content policy is `default-src 'none'; connect-src 'none'; script-src <the public world modules> blob:; worker-src
+   blob:; frame-src 'none' …` and whose permissions policy denies camera, microphone, location, clipboard, USB, serial,
+   HID, Bluetooth, payment and display capture. The frame's page runs no pack code: it starts a dedicated worker from a
+   `blob:` URL (so the worker inherits the frame's content policy), hands it the canvases as `OffscreenCanvas`, and
+   relays only known message types in both directions. The pack's code arrives from the player as text, after the
+   player has checked every file against its approved SHA-256 and the set against the approved digest, and runs in that
+   worker from `blob:` URLs. A worker has no DOM, cannot navigate the frame and has no WebRTC. The receiver answers the
+   frame's opaque origin only for the public world modules and three.js (the script policy names those two paths); every
+   API request from it is refused.
+5. **Bounded and watched.** Every frame is acknowledged, at most one is in flight, and the player validates what comes
+   back (only pixels, label strings and plain statistics, sanitised; acknowledgements for requests it never made are
+   ignored). The pack is stopped for the session when its code throws, it stops answering for 6 s, it delivers under
+   1 fps, its GPU context is lost, its worker floods the relay (over 1,000 messages a second: the frame terminates the
+   worker), its frame navigates, its approval is revoked, or its installed files change (noticed within 5 s; a changed
+   file is never served). The player shows the identity without it; nothing restarts on its own.
 
-The compatibility tests verify points 1, 4 and 5 from inside a real frame: fetch, XHR, WebSocket, `sendBeacon`,
-images, prefetch links, dynamic import, workers, popups, WebRTC, storage, cookies and the parent document, aimed at the
-receiver and at an outside listener that must receive nothing.
+The compatibility tests verify points 1, 4 and 5 from inside a real frame and from inside the pack worker: fetch,
+XHR, WebSocket, `sendBeacon`, images, prefetch links, dynamic import and `importScripts` (receiver API and outside),
+nested workers' network access, popups, WebRTC, IndexedDB, Cache Storage, cookies, the DOM and the parent, aimed at the
+receiver and at an outside listener that must receive nothing. `qualification/visual/robustness.qual.js` drives the
+hostile fixtures in `packs/testing/` (a probe that tries all of this from the worker and then floods the relay, a pack
+that hangs, one that throws, one that loses its GPU context, one far too slow) and revokes, modifies and navigates
+running packs.
 
 ## The performance view
 
@@ -54,9 +66,13 @@ Be clear about the limits before approving a pack:
   driver (and with it other applications), or exploit driver bugs. Browsers mitigate (shader validation, watchdog
   resets) but do not prevent this.
 - **Side channels.** GPU and CPU timing can leak coarse information between pages.
-- **Ways out of the frame.** The content policy cannot stop a frame from navigating itself, and some browser features
-  sit outside it. Code Resonance stops a pack whose frame navigates, and removes WebRTC, but a single navigation
-  request may already have left. What could travel is only what the frame holds: the privacy-safe performance view.
+- **Ways out of the frame.** Since SDK 1.1 pack code runs in a worker, which cannot navigate the frame or use WebRTC,
+  the two channels a content policy cannot close for a document. The frame's own page (Code Resonance's relay, no pack
+  code) is still watched: a frame that navigates is stopped. Browser bugs remain possible; what could travel is only
+  what the frame holds: the privacy-safe performance view.
+- **A hung pack costs CPU for a few seconds.** A worker stuck in a loop is detected after 6 s; Chromium then
+  force-terminates it about 2 s after its frame is removed (measured), so a hostile pack can occupy one CPU core for
+  roughly 8 s per approval or RETRY. The player and the page stay responsive meanwhile (measured).
 - **Not a boundary against malware running as you**, or against other local users with access to your home directory.
 
 So approval is a real decision: approve only packs from authors you trust, as you would any program you run.

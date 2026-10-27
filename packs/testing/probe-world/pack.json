@@ -1,0 +1,35 @@
+{
+  "schema": "code-resonance.pack.v1",
+  "id": "testing.probe-world",
+  "name": "Test fixture probe world",
+  "version": "1.0.0",
+  "kind": "world",
+  "sdk": "^1.0",
+  "author": {
+    "name": "Code Resonance tests"
+  },
+  "description": "TEST FIXTURE, not a visual pack: a hostile pack stand-in that tries every way out of its sandbox and reports what it reached.",
+  "license": "MIT",
+  "world": {
+    "entry": "world.js",
+    "effects": {
+      "subsystem.created": "pulse",
+      "module.created": "pulse",
+      "structure.created": "pulse",
+      "structure.removed": "fade",
+      "subsystem.connected": "pulse",
+      "validation.failed": "alarm",
+      "validation.passed": "glow",
+      "validation.recovered": "glow",
+      "refactor.validated": "glow",
+      "milestone.achieved": "crown",
+      "repository.checkpoint": "pulse",
+      "world.expanded": "pulse"
+    },
+    "ambient": {
+      "unlocks": [
+        "halo"
+      ]
+    }
+  }
+}

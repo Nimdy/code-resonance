@@ -20,8 +20,10 @@ test('Claude Code hook payloads become privacy-preserving, valid events',()=>{
     const write=translate({...common,hook_event_name:'PostToolUse',tool_name:'Write',tool_input:{file_path:path.join(root,'src/api/stats.ts'),content:'SECRET_CONTENT'},tool_response:{filePath:'x',type:'create'}});
     assert.deepEqual(write.map(e=>e.kind),['agent.tool.completed','agent.file.modified']);
     assert.equal(write[0].file,'src/api/stats.ts');assert(!JSON.stringify(write).includes('SECRET_CONTENT'));
-    const bash=translate({...common,hook_event_name:'PostToolUseFailure',tool_name:'Bash',tool_input:{command:'npm test -- --token=abc'},error:'Exit code 1\nFAIL'});
-    assert.equal(bash[0].meta.category,'test');assert.equal(bash[0].meta.exitCode,1);assert(!JSON.stringify(bash).includes('abc'));
+    // The planted secret must not be a hex string: event and project ids are random hex and would contain "abc" in
+    // about 2 % of runs (that was this suite's intermittent failure).
+    const bash=translate({...common,hook_event_name:'PostToolUseFailure',tool_name:'Bash',tool_input:{command:'npm test -- --token=Sekret_Token_Qx'},error:'Exit code 1\nFAIL'});
+    assert.equal(bash[0].meta.category,'test');assert.equal(bash[0].meta.exitCode,1);assert(!JSON.stringify(bash).includes('Sekret_Token_Qx'));
     const ok=translate({...common,hook_event_name:'PostToolUse',tool_name:'Bash',tool_input:{command:'npm test'},tool_response:{stdout:'',stderr:'',interrupted:false}});
     assert.equal(ok[0].meta.exitCode,0);
     const outside=translate({...common,hook_event_name:'PreToolUse',tool_name:'Edit',tool_input:{file_path:'/etc/passwd'}});

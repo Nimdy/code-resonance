@@ -5,7 +5,7 @@
   "name": "My Look",
   "version": "0.1.0",
   "kind": "shader",
-  "sdk": "^1.0",
+  "sdk": "^1.1",
   "author": {"name": "Your Name"},
   "description": "A starter shader pack: a custom background and one post pass on Fractal Biosphere.",
   "license": "MIT",

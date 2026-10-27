@@ -8,7 +8,7 @@
 //   node scripts/pack.js approve <id> [--yes]   allow an installed shader / world pack to run (its exact files)
 //   node scripts/pack.js revoke <id>
 //   node scripts/pack.js remove <id>
-//   node scripts/pack.js test <dir> [--gpu amd] compatibility tests in a real browser (needs qualification/ npm ci)
+//   node scripts/pack.js test <dir> [--gpu amd] [--quick] compatibility tests in a real browser (needs qualification/ npm ci)
 //   node scripts/pack.js catalogue              print the parameter catalogue (docs/packs/catalogue.md)
 // --data <dir> selects the receiver data directory (default: $RESONANCE_DATA or ~/.code-resonance).
 const fs=require('node:fs');
@@ -24,11 +24,11 @@ const positional=args.filter((a,i)=>!a.startsWith('--')&&!(i>0&&args[i-1].starts
 const [command,target]=positional;
 const DATA=path.resolve(flag('data')||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
 const GPU_WARNING=[
-  'Code in a visual pack runs in an isolated frame: no network access, no access to the receiver, your files,',
-  'your recordings or the player; it receives only the privacy-safe performance view (salted ids, counts, timings).',
+  'Code in a visual pack runs in a worker inside an isolated frame: no network access, no access to the receiver, your',
+  'files, your recordings or the player; it receives only the privacy-safe performance view (salted ids, counts, timings).',
   'Browsers cannot fully sandbox GPU shaders: a hostile or buggy shader can freeze or crash the browser tab or the',
-  'graphics driver, and GPU timing can leak coarse information between pages. A frame can also navigate itself or use',
-  'browser features outside the content policy to make requests, carrying only that privacy-safe view.',
+  'graphics driver, and GPU timing can leak coarse information between pages. A pack that hangs is stopped after 6 s but',
+  'can keep a processor core busy a few seconds longer. Browser bugs remain possible.',
   'Approve only packs from authors you trust. Any change to any file of the pack needs a new approval.'];
 function print(report){
   const m=report.manifest||{};
@@ -84,10 +84,10 @@ function scaffold(dir,kind,id,name){
       packs.setTrust(p.id,DATA,{digest:p.digest,trusted:true});console.log(`Approved ${p.id} (digest ${p.digest.slice(0,16)}).`);return;}
     case 'revoke':{if(!target)throw new Error('usage: pack.js revoke <id>');packs.setTrust(target,DATA,{trusted:false});console.log(`Revoked ${target}.`);return;}
     case 'remove':{if(!target)throw new Error('usage: pack.js remove <id>');packs.remove(target,DATA);console.log(`Removed ${target}.`);return;}
-    case 'test':{if(!target)throw new Error('usage: pack.js test <dir> [--gpu amd]');
+    case 'test':{if(!target)throw new Error('usage: pack.js test <dir> [--gpu amd] [--quick]');
       const harness=path.join(__dirname,'..','qualification','visual','pack.qual.js');
       if(!fs.existsSync(path.join(__dirname,'..','qualification','node_modules','playwright-core')))throw new Error('Run "npm ci" in qualification/ first (it provides the headless browser driver).');
-      const r=cp.spawnSync(process.execPath,[harness,path.resolve(target),...(flag('gpu')?['--gpu',flag('gpu')]:[])],{stdio:'inherit',cwd:path.join(__dirname,'..','qualification')});
+      const r=cp.spawnSync(process.execPath,[harness,path.resolve(target),...(flag('gpu')?['--gpu',flag('gpu')]:[]),...(process.argv.includes('--quick')?['--quick']:[])],{stdio:'inherit',cwd:path.join(__dirname,'..','qualification')});
       process.exitCode=r.status??1;return;}
     case 'catalogue':{
       const catalog=require('../engine/catalog');const out=[`# Parameter catalogue (SDK ${packs.SDK_VERSION}, catalogue ${catalog.CATALOG_VERSION})`,'',

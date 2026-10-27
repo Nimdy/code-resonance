@@ -124,7 +124,7 @@
     async stop(){
       if(!this.enabled)return;
       this.enabled=false;clearInterval(this.timer);this.timer=null;
-      const active=this.ctx,master=this.output;this.ctx=null;this.output=null;this.recordNode=null;this.graph=null;this.analyser=null;
+      const active=this.ctx,master=this.output;this.ctx=null;this.output=null;this.recordNode=null;this.graph=null;this.analyser=null;this.pilotNode=null;
       if(active&&master){try{master.gain.setTargetAtTime(0,active.currentTime,.06);await new Promise(r=>setTimeout(r,170));await active.close();}catch{}}
     }
     get stream(){return this.recordNode?.stream||null;}
@@ -280,6 +280,24 @@
     }
     // Compatibility with the v0.2 player: an immediate cue becomes a quantized accent.
     accent(type,cue){if(this.ctx&&this.enabled)this.enqueue(cue||{id:type,type,weight:1,detail:{}},this.clock?this.clock():0);}
+    // Qualification only (recording synchronisation): a 2 kHz click at a performance time, mapped to the audio clock
+    // exactly as cues are, so a recording's picture and sound can be compared at a known moment.
+    marker(atMs){
+      if(!this.ctx||!this.output)return false;
+      const when=this.clock?this.ctx.currentTime+(atMs-this.clock())/1000/this.speed:this.ctx.currentTime+.05;if(when<this.ctx.currentTime)return false;
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=2000;
+      g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(.8,when+.002);g.gain.exponentialRampToValueAtTime(.001,when+.04);
+      o.connect(g);g.connect(this.output);o.start(when);o.stop(when+.05);return true;
+    }
+    // Qualification only (recording continuity): a steady 12 kHz pilot tone at -40 dBFS into the same output, so any
+    // gap in a recording's audio path shows as a gap in the pilot, whatever the music is doing.
+    pilot(on){
+      if(!this.ctx||!this.output)return false;
+      if(this.pilotNode){try{this.pilotNode.stop();}catch{}this.pilotNode=null;}
+      if(!on)return true;
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.frequency.value=12000;g.gain.value=.01;o.connect(g);g.connect(this.output);o.start();
+      this.pilotNode=o;return true;
+    }
     // Offline render of a recorded performance: [{atMs, frame?, cue?}] sorted by time, starting at startMs.
     // `speed` replays the performance faster than real time while the music keeps its tempo; onBar reports each bar's
     // audio time and the performance time it corresponds to (used to keep a rendered film's light in step with the score).

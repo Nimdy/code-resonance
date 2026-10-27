@@ -1,0 +1,42 @@
+{
+  "schema": "code-resonance.pack.v1",
+  "id": "testing.hanging-world",
+  "name": "Test fixture hanging world",
+  "version": "1.0.0",
+  "kind": "world",
+  "sdk": "^1.0",
+  "author": {
+    "name": "Code Resonance tests"
+  },
+  "description": "TEST FIXTURE, not a visual pack: enters an endless loop on its 40th frame (a pack that never returns).",
+  "license": "MIT",
+  "world": {
+    "entry": "world.js",
+    "effects": {
+      "subsystem.created": "pulse",
+      "module.created": "pulse",
+      "structure.created": "pulse",
+      "structure.removed": "fade",
+      "subsystem.connected": "pulse",
+      "validation.failed": "alarm",
+      "validation.passed": "glow",
+      "validation.recovered": "glow",
+      "refactor.validated": "glow",
+      "milestone.achieved": "crown",
+      "repository.checkpoint": "pulse",
+      "world.expanded": "pulse"
+    },
+    "ambient": {
+      "unlocks": [
+        "halo"
+      ]
+    },
+    "budget": {
+      "drawCalls": 4,
+      "passes": 30,
+      "triangles": 5000,
+      "points": 100,
+      "updateMs": 2
+    }
+  }
+}

@@ -1,6 +1,13 @@
 name: qualification
-# Real-environment checks: Chromium (Stage, audio) and a real VS Code extension host under Xvfb.
-# The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
+# Required, on every pull request: real-environment checks in headless Chromium (software rendering: SwiftShader) and
+# a real VS Code extension host under Xvfb.
+#   browser   the Stage and the audio engine
+#   packs     each reference visual pack (declarative, shader, world) through the compatibility tests, quick mode
+#   runtime   the pack runtime's robustness (slow, hanging and failing test fixtures; quick mode) and live recording
+#             of the four renderer categories (real WebM files measured with ffmpeg; quick mode)
+#   vscode    the extension in a real VS Code
+# The expensive tier (full pack suites, long recordings, soak, native Windows browser and VS Code, OBS) is in
+# extended.yml. The real-agent scenario (CR_QUAL_AGENT=claude) needs credentials and is run manually, not here.
 on:
   workflow_dispatch:
   pull_request:
@@ -27,6 +34,52 @@ jobs:
         with:
           name: browser-qualification
           path: qualification/results
+  packs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [ember-observatory, blueprint-cathedral, cymatic-field]
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node ../scripts/pack.js test ../packs/examples/${{ matrix.pack }} --quick
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pack-${{ matrix.pack }}
+          path: qualification/results/visual/pack-*.json
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: qualification
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - run: node visual/robustness.qual.js --quick
+      # A fixed lower rendering level so the software renderer presents enough frames for the recording to be measured.
+      - run: node visual/recording.qual.js --quick --quality 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-qualification
+          path: |
+            qualification/results/robustness
+            qualification/results/recording
   vscode:
     runs-on: ubuntu-latest
     timeout-minutes: 30

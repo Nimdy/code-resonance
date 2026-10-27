@@ -154,10 +154,12 @@ async function mainPhase(){
   else{
     const ok=await runTask(testTask);
     const formatPath=path.join(WS,'src/lib/format.js');const good=fs.readFileSync(formatPath,'utf8');
-    fs.writeFileSync(formatPath,good.replace("count === 1 ? '' : 's'","count === 1 ? 's' : ''"));
+    // Break the test (and record that the change took, so an unexpected exit code can be told apart from a missed edit).
+    const target="count === 1 ? '' : 's'",broken=good.replace(target,"count === 1 ? 's' : ''");fs.writeFileSync(formatPath,broken);
+    const applied=good.includes(target)&&fs.readFileSync(formatPath,'utf8')===broken;
     const bad=await runTask(testTask);fs.writeFileSync(formatPath,good);
     await waitFor(async()=>{tl=await cues(pid);return tl.some(c=>c.type==='validation.test.failed');},15000,1000);
-    check('task npm test exit codes observed (pass then fail)',ok===0&&bad===1,`exit=${ok},${bad}`);
+    check('task npm test exit codes observed (pass then fail)',ok===0&&bad===1,`exit=${ok},${bad}; failing edit applied: ${applied}`);
     check('passing task classified validation.test.passed',tl.some(c=>c.type==='validation.test.passed'));
     check('failing task classified validation.test.failed',tl.some(c=>c.type==='validation.test.failed'));
   }
@@ -214,7 +216,9 @@ async function mainPhase(){
   await startReceiver();
   const drained=await waitFor(()=>outboxFiles(pid).length===0,30000,500);
   check('outbox drains after receiver restart',!!drained);
-  check('offline-period events delivered after restart',journal(pid).some(e=>e.kind==='document.snapshot'&&e.file==='src/lib/offline.js'));
+  // The file written while offline reaches the outbox when its watcher event does, which may be after the first drain.
+  const offline=await waitFor(()=>journal(pid).some(e=>e.kind==='document.snapshot'&&e.file==='src/lib/offline.js'),15000,500);
+  check('offline-period events delivered after restart',!!offline);
 
   step('ordering + privacy');
   // Ordering, duplicates and privacy of what was persisted.

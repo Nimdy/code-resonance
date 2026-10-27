@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased — Product hardening: recording, bounded pack runtime, qualification
+
+- **Live recording for every world:** ● RECORD records the presented stage (built-in worlds, declarative, shader and world
+  packs) with the music through one player-owned compositor canvas and the music's own output stream; packs composite
+  their frame and labels in their worker. Restart-safe (each recording clones the audio track), finishes and saves when
+  a pack is stopped, explains when the browser cannot record, shows elapsed time and *NO SOUND*.
+- **Visual Pack SDK 1.1:** pack code runs in a dedicated worker inside the isolated frame (a hang no longer blocks the
+  player; no DOM, no navigation, no WebRTC for pack code); `sdk.util.canvas`. 1.0 packs run unchanged
+  (`docs/packs/migration.md`).
+- **Bounded delivery and a watchdog:** acknowledged renders, at most one in flight, skipped presentation frames counted,
+  semantic messages never dropped (counted on both sides), exact film frames or an explicit error; packs are stopped on
+  no answer (6 s), under 1 fps, exceptions, GPU context loss, message floods, navigation, revocation or modified files,
+  with the reason shown, the built-in identity shown instead, the recipe kept, and RETRY (no automatic restarts).
+- **Integrity:** the player verifies every pack file's SHA-256 and the digest before running it; the receiver notices
+  files changed after installation while it runs; the pack frame's policy carries its own sandbox; frame bitmaps are
+  size-bounded.
+- **Quality control:** World DNA → Quality (Auto, High, Medium, Low, Lowest); a notice when a pack exceeds its declared
+  budget.
+- **Testing fixtures** (`packs/testing/`, not packs): slow, failing, hanging, context-loss and hostile-probe worlds.
+- **Qualification:** recording (`visual/recording.qual.js`, measured from the WebM files with ffmpeg: streams, frame
+  timing, sound continuity, flash/click synchronisation), runtime robustness (`visual/robustness.qual.js`), multi-hour
+  soak (`visual/soak.qual.js`), OBS Studio in a disposable CI machine (`obs/obs.qual.js`), platform smoke test
+  (`platform/smoke.js`), unit-suite stress runner (`unit-stress.js`). CI: reference packs, runtime and native Windows in
+  the required tier; an extended tier by label.
+- **First run:** `npm run doctor`, `docs/FIRST-RUN.md` (with troubleshooting), `docs/WSL.md`, `docs/OBS.md`.
+- **Recording and lost sound:** an audio device that disconnects or stalls stops the music's audio clock, and the
+  browser's recorder then stalls the whole file (its WebM muxer waits for sound). The recorder watches its sound (track
+  ended or muted, audio clock stopped, digital silence while the music plays) and then finishes and saves the recording
+  at once, with the reason.
+- **Fixes:** a receiver restart stopped a running pack ("removed") and, rebuilding the world while the receiver was
+  down, the player gave up the living world for the Construct for good (network failures now retry); turning sound off
+  while recording threw (a removed variable); a recording started during a world switch could take a hidden canvas's
+  size (320×180); a pack's stop reason was lost when the identity without it loaded; the mood was posted to packs every
+  frame (now on change); the two intermittent `npm test` failures (a planted secret colliding with random hex ids;
+  cleanup hooks removing a receiver's directory before stopping it).
+
 ## Unreleased — The Construct (candidate for visual review)
 
 - Interpretation v5/v6: architectural districts from folder structure, a persisted site plan (nothing ever moves), stable storey order per file, building states (draft, committed, validated, stressed) localized to the files a test run or commit covers, rename-preserving identities, location on cues, salted public ids.

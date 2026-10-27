@@ -16,10 +16,11 @@ const packs=require('../engine/packs');
 const VERSION=require('../package.json').version;
 const PUBLIC=path.resolve(__dirname,'../public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
-  ['/construct.js','construct.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
+  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 // The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
+// Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
 const FRAME_HTML='<!doctype html><html><head><meta charset="utf-8"><title>Code Resonance visual pack</title>'+
   '<style>html,body{margin:0;height:100%;overflow:hidden;background:#000}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}</style></head>'+
   '<body><canvas id="world"></canvas><canvas id="overlay"></canvas><script type="module" src="/worlds/frame.js"></script></body></html>';
@@ -157,7 +158,7 @@ function createService(options={}) {
     const next=recipes.update(current,action,project,Date.now(),known);await writeRecipe(id,next);return next;});}
   // What the player may know about installed packs (never their location on disk).
   const publicPack=p=>({id:p.id,name:p.name,version:p.version,kind:p.kind,sdk:p.sdk,author:p.author,description:p.description,license:p.license,digest:p.digest,
-    files:p.files,executable:p.executable,trusted:p.trusted,compatible:p.compatible,ok:p.ok,problems:p.problems,installedAt:p.installedAt,
+    files:p.files,executable:p.executable,trusted:p.trusted,compatible:p.compatible,ok:p.ok,problems:p.problems,installedAt:p.installedAt,budget:p.budget,
     family:p.family?{id:p.family.id,name:p.family.name,effects:p.family.effects,ambient:p.family.ambient,budget:p.family.budget}:null,base:p.overlay?.base||null});
   async function readBody(req,res,limit){
     if((req.headers['content-type']||'').split(';')[0]!=='application/json'){response(res,415,{error:'Expected application/json'});return null;}
@@ -191,17 +192,21 @@ function createService(options={}) {
         const f=path.join(PUBLIC,worldFile||FILENAMES.get(pathname));
         if(worldFile&&!fss.existsSync(f)){response(res,404,{error:'Not found'});return;}
         const source=await fs.readFile(f);
+        // The OBS view (?overlay=1) also allows inline styles: OBS applies a Browser Source's custom CSS (by default a
+        // transparent background) as an inline style. The page renders no untrusted markup.
+        const styles=pathname==='/'&&u.searchParams.has('overlay')?"'self' 'unsafe-inline'":"'self'";
         res.writeHead(200,{'Content-Type':MIME[path.extname(f)],'Cache-Control':'no-store',
-          'Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
+          'Content-Security-Policy':`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`,
           'X-Content-Type-Options':'nosniff',...(frameAsset?{'Access-Control-Allow-Origin':'*'}:{})});
         res.end(source);return;
       }
       if(req.method==='GET'&&pathname==='/pack-frame.html'){
         // CSP source lists cannot name IPv6 literals: the frame works when the player is opened on localhost or 127.0.0.1.
+        // `sandbox allow-scripts` in the policy too: the page has an opaque origin even if opened on its own.
         const named=expectedOrigins.filter(o=>!o.includes('[')),scripts=named.flatMap(o=>[`${o}/worlds/`,`${o}/vendor/`]).join(' ');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
           'Permissions-Policy':FRAME_PERMISSIONS,'Cross-Origin-Resource-Policy':'same-origin',
-          'Content-Security-Policy':`default-src 'none'; script-src ${scripts} blob:; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors ${named.join(' ')}`});
+          'Content-Security-Policy':`default-src 'none'; script-src ${scripts} blob:; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src blob:; manifest-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors ${named.join(' ')}; sandbox allow-scripts`});
         res.end(FRAME_HTML);return;
       }
       // ---- Visual packs: installed with scripts/pack.js; the player lists them, reads approved files, records approvals.

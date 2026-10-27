@@ -4,7 +4,7 @@
 
 Code Resonance is a completely independent, local-first audiovisual instrument for software creation. An opt-in VS Code extension (and, optionally, an AI agent's hooks) reports observable activity. A loopback receiver records it and interprets it in the background. A performance player turns the project's real structure into an evolving visual world and composes a project-specific score that develops as the software does. No Signal/3 dependency, cloud service, model API, GPU, or Docker is required.
 
-> **Maturity: v0.3 prototype.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2, Xvfb), in headless Chromium, and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** native Windows and macOS, GPU-accelerated browsers, OBS Studio itself, multi-hour real sessions, and human listening evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
+> **Maturity: v0.3 prototype.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, a completed multi-hour soak and multi-hour real sessions, and human listening evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
 
 ## What it does
 
@@ -24,7 +24,7 @@ Requires Node.js 20+ and VS Code 1.99+.
 npm start
 ```
 
-Open **http://127.0.0.1:4174/** and click **ENABLE SOUND** (browsers require a gesture before audio). To preview without VS Code, run `npm run demo` in a second terminal; it posts 20 fictional events.
+Open **http://127.0.0.1:4174/** and click **ENABLE SOUND** (browsers require a gesture before audio). To preview without VS Code, run `npm run demo` in a second terminal; it posts 20 fictional events. `npm run doctor` checks the setup (receiver, token, projects, packs, WSL) and says what to fix. Step by step, with troubleshooting: [docs/FIRST-RUN.md](docs/FIRST-RUN.md).
 
 ### Install the VS Code extension
 
@@ -35,7 +35,7 @@ code --install-extension code-resonance-0.3.0.vsix
 
 Open a trusted workspace, click the **CR** status-bar item (or run **Code Resonance: Start Code Performance**) and accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes automatically when VS Code restarts until you stop it.
 
-**WSL / Remote:** the extension runs in the workspace extension host. Start the receiver with Node **inside that host** (e.g. in WSL for a WSL project) and forward port 4174 if you watch from Windows. Never bind the receiver publicly.
+**WSL / Remote:** the extension runs in the workspace extension host. Start the receiver with Node **inside that host** (e.g. in WSL for a WSL project); Windows reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback and its token unchanged ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
 
 ### Let an AI agent join (Claude Code)
 
@@ -52,14 +52,14 @@ Other tools can report through `node scripts/event.js --root <project> --provide
 Use **OBS VIEW ↗** in the player, or point a Browser Source (1920×1080) at:
 
 ```
-http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=nexus&style=ambient
+http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient
 ```
 
-The overlay hides every control and shows only the stage. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio via OBS**). The Stage never shows source, file names, prompts or command text. *OBS Studio itself has not been tested yet.*
+The overlay hides every control and shows only the stage. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio via OBS**). The Stage never shows source, file names, prompts or command text. OBS Studio 32 itself was qualified on Linux in a disposable CI machine (the overlay renders and moves, the music reaches OBS's mixer, OBS records both); on Windows or macOS, follow the acceptance procedure in [docs/OBS.md](docs/OBS.md).
 
 ### Record and export
 
-- **● RECORD** captures the canvas and the music to WebM in real time (Chromium-based browsers).
+- **● RECORD** records what the stage shows (the world and its labels, for every world including visual packs, which composite their frames in their isolated worker) with the music, to WebM in real time (Chromium-based browsers; elsewhere the player says recording is unavailable). The file contains the stage only: no source, paths, prompts, commands or credentials.
 - **AUDIO ↓** renders up to 10 minutes of the recorded performance offline to WAV, from the replay position (or the latest 10 minutes). The render is deterministic: the same performance and palette give the same audio.
 - **DATA ↗** exports the derived performance timeline as JSON (no source, paths or prompts).
 
@@ -67,8 +67,9 @@ The overlay hides every control and shows only the stage. OBS's browser allows a
 
 A visual pack changes how a project looks without changing Code Resonance: **declarative** packs (JSON: parameters,
 palette, light, technique, effect mapping on a built-in family), **shader** packs (GLSL background and post passes,
-procedural effects) and **world** packs (a complete world family). Packs with code run only in an isolated frame and
-only after you approve their exact files. Start with [docs/packs/README.md](docs/packs/README.md):
+procedural effects) and **world** packs (a complete world family). Packs with code run only in a worker inside an
+isolated frame, only after you approve their exact files, and are stopped if they fail, hang or are far too slow.
+Start with [docs/packs/README.md](docs/packs/README.md) (SDK 1.1; [what changed from 1.0](docs/packs/migration.md)):
 
 ```bash
 node scripts/pack.js new my-world --kind world --id yourname.my-world
@@ -128,7 +129,7 @@ npm test               # unit + integration (no dependencies)
 npm run package:vsix   # builds the VSIX with Node only
 ```
 
-Real-environment qualification lives in `qualification/` (its own `npm install`); see [docs/QUALIFICATION.md](docs/QUALIFICATION.md).
+Real-environment qualification lives in `qualification/` (its own `npm install`); see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for the test categories, what CI runs on every pull request, the extended tier, and the evidence.
 
 ## Scope and limits
 
@@ -143,5 +144,5 @@ See [SECURITY.md](SECURITY.md), [ARCHITECTURE.md](ARCHITECTURE.md), [docs/AUDIT.
 
 ## Platform notes
 
-- **Windows (PowerShell):** `npm ci --offline`, `npm run check`, `npm test`, `npm start`, `npm run package:vsix` (no Bash or `zip` needed). If PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. *Native Windows has not yet been qualified.*
+- **Windows (PowerShell):** `npm ci --offline`, `npm run check`, `npm test`, `npm start`, `npm run package:vsix` (no Bash or `zip` needed). If PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. On GitHub's Windows runners (no GPU): the unit and integration suite, the platform smoke test, the player in Chromium, a visual pack and the extension in a real VS Code all pass; a Windows desktop with a GPU has not been measured.
 - **Linux / WSL2:** qualified in VS Code 1.143 under Xvfb. Run the receiver in the same environment as the extension host.

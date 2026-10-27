@@ -1,10 +1,11 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs/promises'),os=require('node:os'),path=require('node:path');
-const {createService}=require('../receiver/server');const {sha}=require('../receiver/protocol');
+const fs=require('node:fs/promises'),path=require('node:path');
+const {sha}=require('../receiver/protocol');
+const {tempDir,startService}=require('./helpers');
 const projectId=sha('timeline-test');
 async function start(t,dir,extra={}){
-  const service=await createService({port:0,dataDir:dir,sortIntervalMs:600000,windowMs:300,graceMs:50,...extra}).start();t.after(()=>service.stop());
+  const service=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000,windowMs:300,graceMs:50,...extra});
   const url=`http://127.0.0.1:${service.port}`;
   const auth={Authorization:`Bearer ${service.token}`};
   return {service,url,
@@ -25,7 +26,7 @@ async function session(s){
   await s.post([ev('agent.tool.completed',{file:'src/c.ts',meta:{provider:'claude-code',agent:'s1',tool:'Write'}}),snap('src/c.ts','export const c = () => 3;')]);await s.flush();
 }
 test('Re-interpreting the journal reproduces the recorded performance exactly',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-timeline-');
   const s=await start(t,dir);
   await session(s);
   const live=await fs.readFile(perfFile(dir),'utf8');
@@ -37,7 +38,7 @@ test('Re-interpreting the journal reproduces the recorded performance exactly',a
   assert.equal(await fs.readFile(perfFile(dir),'utf8'),live);
 });
 test('Graph deltas replayed from the timeline reconstruct the live graph',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-timeline-');
   const s=await start(t,dir);
   await session(s);
   const nodes=new Map(),edges=new Map();const key=e=>`${e.a}>${e.b}>${e.kind}`;
@@ -58,7 +59,7 @@ test('Graph deltas replayed from the timeline reconstruct the live graph',async 
   assert.deepEqual([...edges.keys()].sort(),live.graph.edges.map(key).sort());
 });
 test('The intents view of the timeline carries every window\'s intents and nothing else',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-timeline-');
   const s=await start(t,dir);
   await session(s);
   const full=(await s.get(`/api/timeline?id=${projectId}&limit=2000`)).entries;
@@ -70,7 +71,7 @@ test('The intents view of the timeline carries every window\'s intents and nothi
   assert(view.some(e=>e.intents?.length),'the session records intents');
 });
 test('An older interpretation is rebuilt from the journal on start; frames after the last checkpoint are regenerated',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-timeline-');
   let s=await start(t,dir);
   await session(s);
   const live=await fs.readFile(perfFile(dir),'utf8');
@@ -88,7 +89,7 @@ test('An older interpretation is rebuilt from the journal on start; frames after
   assert.equal((await s.get(`/api/project?id=${projectId}`)).interpretationVersion,require('../engine/reducer').INTERPRETATION_VERSION);
 });
 test('Project view supports conditional requests',async t=>{
-  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'cr-timeline-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));
+  const dir=tempDir(t,'cr-timeline-');
   const s=await start(t,dir);
   await s.post([snap('src/a.ts','export function a(){}')]);await s.flush();
   const first=await fetch(`${s.url}/api/project?id=${projectId}`);const etag=first.headers.get('etag');

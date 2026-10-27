@@ -1,0 +1,78 @@
+{
+  "at": "2026-10-24T17:45:47.280Z",
+  "platform": "linux",
+  "release": "6.6.87.2-microsoft-standard-WSL2",
+  "node": "v22.22.2",
+  "checks": [
+    {
+      "name": "platform",
+      "pass": true,
+      "detail": "linux 6.6.87.2-microsoft-standard-WSL2 · Node v22.22.2 · data directory “/tmp/cr smoke xrXA3c/receiver data”"
+    },
+    {
+      "name": "receiver: starts as a process on loopback and announces its address",
+      "pass": true,
+      "detail": "http://127.0.0.1:44627 in 29 ms"
+    },
+    {
+      "name": "receiver: health endpoint answers",
+      "pass": true,
+      "detail": "version 0.3.0"
+    },
+    {
+      "name": "receiver: token written to the data directory",
+      "pass": true,
+      "detail": "receiver-auth.json mode 600"
+    },
+    {
+      "name": "project identity: the VS Code file URI of a workspace with spaces and non-ASCII characters",
+      "pass": true,
+      "detail": "file:///tmp/cr%20smoke%20xrXA3c/My%20Project%20%28%C3%9Cn%C3%AFcode%29 → 223329bf9b462d0c"
+    },
+    {
+      "name": "ingestion: events without the token are refused",
+      "pass": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "name": "ingestion: events with the token are accepted",
+      "pass": true,
+      "detail": "HTTP 202"
+    },
+    {
+      "name": "projection: the project appears with its structure",
+      "pass": true,
+      "detail": "3 nodes"
+    },
+    {
+      "name": "player: page and scripts served",
+      "pass": true,
+      "detail": "/ 200, /app.js 200, /worlds/pack-worker.js 200"
+    },
+    {
+      "name": "receiver lifecycle: stopped and started again, the project and the token are kept",
+      "pass": true,
+      "detail": "3 nodes after restart"
+    },
+    {
+      "name": "pack CLI: validate, install, approve, list",
+      "pass": true,
+      "detail": "0/0/0/0 · halcyon.cymatic-field            1.0.0    world        approved"
+    },
+    {
+      "name": "packs: the approved pack is listed and its files served",
+      "pass": true,
+      "detail": "trusted true, world.js HTTP 200"
+    },
+    {
+      "name": "packs: a file changed after approval is reported and never served",
+      "pass": true,
+      "detail": "ok false, trusted false, world.js HTTP 403"
+    },
+    {
+      "name": "receiver: refuses a non-loopback bind unless explicitly allowed",
+      "pass": true,
+      "detail": "  if(!['127.0.0.1','::1','localhost'].includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');"
+    }
+  ]
+}

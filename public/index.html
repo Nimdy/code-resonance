@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/style.css">
   <script src="/score.js" defer></script>
   <script src="/music.js" defer></script>
+  <script src="/recording.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -58,6 +59,8 @@
           <input type="range" id="intensitySlider" min="0" max="200" value="100" aria-label="Effect intensity">
           <label class="control-line" for="labelsSelect">INFORMATION</label>
           <select id="labelsSelect" class="sound-select"><option value="cinematic">CINEMATIC</option><option value="explorer">EXPLORER · CLICK TO INSPECT</option><option value="stream">STREAM · LOWER THIRD</option><option value="off">OFF</option></select>
+          <label class="control-line" for="qualitySelect">QUALITY</label>
+          <select id="qualitySelect" class="sound-select" title="Lower it if frames are slow; AUTO lowers it only while needed"><option value="auto">AUTO · ADAPTS WHEN SLOW</option><option value="0">HIGH</option><option value="1">MEDIUM · NO MSAA</option><option value="2">LOW · 75 % RESOLUTION</option><option value="3">LOWEST · 55 % RESOLUTION</option></select>
           <label class="control-line" for="dnaTitle">PUBLIC TITLE</label>
           <input id="dnaTitle" class="dna-title" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Generic (the folder name is never shown)" title="Shown on the Stage, OBS and films only when you set it here">
         </div>
@@ -116,10 +119,10 @@
       <p id="packReviewMeta" class="pack-review-meta"></p>
       <p id="packReviewDescription"></p>
       <ul id="packReviewFiles" class="pack-review-files"></ul>
-      <p class="pack-warning">This pack runs in an isolated frame: no network, no access to the receiver, your files, your recordings or this player.
-        It receives only the privacy-safe performance view (salted ids, counts, timings). Browsers cannot fully sandbox GPU shaders: a hostile or
-        buggy shader can freeze or crash this tab or the graphics driver, and GPU timing can leak coarse information. A frame can also navigate itself
-        or use browser features outside the content policy to make requests, carrying only that privacy-safe view. Allow only packs from authors you
+      <p class="pack-warning">This pack runs in a worker inside an isolated frame: no network, no access to the receiver, your files, your recordings
+        or this player. It receives only the privacy-safe performance view (salted ids, counts, timings). Browsers cannot fully sandbox GPU shaders: a
+        hostile or buggy shader can freeze or crash this tab or the graphics driver, and GPU timing can leak coarse information. A pack that hangs is
+        stopped after 6 s but can keep a processor core busy a few seconds longer. Browser bugs remain possible. Allow only packs from authors you
         trust; any change to any of its files needs a new approval.</p>
       <div class="pack-review-actions"><button class="action" id="packReviewCancel">CANCEL</button><button class="action primary" id="packReviewAllow">ALLOW THIS CODE</button></div>
     </div>

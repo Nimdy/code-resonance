@@ -1,4 +1,8 @@
 name: validation
+# Required, on every push and pull request: syntax, the unit and integration suite (npm test), the VSIX package.
+# Native Windows runs on pull requests and on main only (Windows runner minutes count double): the same suite plus the
+# platform smoke test (the receiver as a real process, paths with spaces, the token, a restart, the pack CLI and
+# integrity). No test is retried: a failure fails the run.
 on:
   push:
   pull_request:
@@ -13,3 +17,22 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run package:vsix
+      - run: node qualification/platform/smoke.js
+  windows:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm test
+      - run: npm run package:vsix
+      - run: node qualification/platform/smoke.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-validation
+          path: qualification/results/platform
