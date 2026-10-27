@@ -15,7 +15,7 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 | Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide |
 | Projects | `#/projects`, `#/projects/<id>` | The projects the receiver knows, their identity, statistics, timeline, agents, exports |
 | Visual Studio | `#/visual` | Worlds, the Visual Recipe (World DNA), metadata-driven parameters, previews, visual presets |
-| Music Studio | `#/music` | Style, tempo, texture, volume, the project's musical identity, music presets |
+| Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
 | Visual Packs | `#/packs` | Install (zip or folder), review, approve, revoke, remove, inspect packs; creator documentation |
 | Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code hooks, other agents |
 | Record & Broadcast | `#/output` | Recording profiles and state, the OBS browser source, exports and replay |
@@ -44,7 +44,7 @@ engine, as every window must, and shares the receiver's state.
 | Scope | Authority | Examples |
 |---|---|---|
 | Global preferences | receiver `<data>/settings.json` (`code-resonance.settings.v1`) | music defaults, master volume, default world, captions, recording profile, interface motion, setup guide |
-| Per-project creative configuration | receiver `<data>/projects/<hash>/recipe.json` (the Visual Recipe) and `preferences.json` (`code-resonance.preferences.v1`) | family, look pack, tuned parameters, spectacle, motion, information mode, public title, aliases; world, music style/tempo/texture |
+| Per-project creative configuration | receiver `<data>/projects/<hash>/recipe.json` (the Visual Recipe) and `preferences.json` (`code-resonance.preferences.v1`) | family, look pack, tuned parameters, spectacle, motion, information mode, public title, aliases, the score version (`music.score`); world, music style/tempo/texture/character/balance |
 | Presets | receiver `<data>/presets.json` (`code-resonance.presets.v1`) | reusable visual and music presets |
 | Packs and approvals | receiver `<data>/packs/<id>/`, `<data>/packs/trust.json` | installed files, digest-bound approvals |
 | Temporary preview | the window's memory (and `POST /api/recipe/preview`, which never writes) | a family or parameter being tried |

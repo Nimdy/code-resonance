@@ -82,15 +82,17 @@ test('Concurrent updates are serialized: every one applies, revisions are consec
   assert.ok(raced.filter(r=>r.status==='rejected').every(r=>r.reason.code==='stale'));
   assert.deepEqual(await leftovers(dir),[]);
 });
+// The composed score's profile and mix in a project's preferences: all inherit (null) until the project sets them.
+const INHERIT_PROFILE={mood:null,evolution:null,melody:null,rhythm:null,atmosphere:null,harmony:null,dynamics:null,space:null,mix:null};
 test('Preferences: null inherits, a whole section can be cleared, the file lives in the project directory',async t=>{
   const dir=path.join(tempDir(t,'cr-store-'),'projects','abc'),prefs=store.preferences(dir);
-  assert.deepEqual(await prefs.read(),{schema:'code-resonance.preferences.v1',revision:0,world:null,music:{style:null,texture:null,tempoMode:null,tempo:null}});
+  assert.deepEqual(await prefs.read(),{schema:'code-resonance.preferences.v1',revision:0,world:null,music:{style:null,texture:null,tempoMode:null,tempo:null,...INHERIT_PROFILE}});
   let doc=await prefs.update({patch:{world:'nexus',music:{style:'pulse',tempo:120,tempoMode:'manual'}}});
-  assert.deepEqual({world:doc.world,music:doc.music},{world:'nexus',music:{style:'pulse',texture:null,tempoMode:'manual',tempo:120}});
+  assert.deepEqual({world:doc.world,music:doc.music},{world:'nexus',music:{style:'pulse',texture:null,tempoMode:'manual',tempo:120,...INHERIT_PROFILE}});
   doc=await prefs.update({patch:{world:null,music:{tempo:null}}});
   assert.equal(doc.world,null);assert.equal(doc.music.tempo,null);assert.equal(doc.music.style,'pulse');
   doc=await prefs.update({patch:{music:null}});
-  assert.deepEqual(doc.music,{style:null,texture:null,tempoMode:null,tempo:null});assert.equal(doc.revision,3);
+  assert.deepEqual(doc.music,{style:null,texture:null,tempoMode:null,tempo:null,...INHERIT_PROFILE});assert.equal(doc.revision,3);
   for(const [patch,key] of [[{world:'mars'},'world'],[{music:{volume:.5}},'music.volume'],[{music:{texture:2}},'music.texture'],[{music:{tempo:'fast'}},'music.tempo'],[{stage:{}},'stage']])
     await rejects(prefs.update({patch}),'invalid',key);
   assert.ok(JSON.parse(await fs.readFile(path.join(dir,'preferences.json'),'utf8')).revision===3);
@@ -159,4 +161,47 @@ test('Presets are limited to 200 and an invalid presets file reads as empty',asy
   // Duplicate ids make the file invalid as a whole.
   await fs.writeFile(file,JSON.stringify({schema:'code-resonance.presets.v1',revision:9,presets:[many[0],many[0]]}));
   const doc=await presets.read();assert.deepEqual(doc.presets,[]);assert.equal(doc.revision,9);
+});
+test('The music profile and mix: saved globally, per project (null inherits) and in presets; the mix is one value',async t=>{
+  const root=tempDir(t,'cr-store-'),settings=store.settings(root),prefs=store.preferences(path.join(root,'projects','abc'));
+  // The receiver's lists are the score's own.
+  const score=require('../public/score');
+  assert.deepEqual(store.PROFILE_KEYS,Object.keys(score.PROFILE));assert.deepEqual(store.MIX_GROUPS,score.GROUPS);
+  assert.deepEqual(store.SETTINGS_DEFAULTS.music.mix,score.profileOf(null).mix,'the default mix is the score\'s: everything as composed');
+  for(const k of store.PROFILE_KEYS)assert.equal(store.SETTINGS_DEFAULTS.music[k],score.PROFILE[k]);
+  // Global: a field patch keeps the rest; the mix merges by group and is validated whole.
+  let s=await settings.update({patch:{music:{mood:.8,space:.2,mix:{perc:0,atmos:1.4}}}});
+  assert.equal(s.music.mood,.8);assert.equal(s.music.space,.2);assert.equal(s.music.melody,.5);assert.equal(s.music.style,'ambient');
+  assert.deepEqual(s.music.mix,{pad:1,bass:1,melody:1,counter:1,arp:1,perc:0,atmos:1.4});
+  s=await settings.update({patch:{music:{mix:{bass:.6}}}});assert.deepEqual(s.music.mix,{pad:1,bass:.6,melody:1,counter:1,arp:1,perc:0,atmos:1.4});
+  for(const [patch,key] of [[{music:{mood:1.2}},'music.mood'],[{music:{harmony:'rich'}},'music.harmony'],[{music:{space:null}},'music.space'],
+    [{music:{mix:{perc:1.6}}},'music.mix.perc'],[{music:{mix:{perc:-.1}}},'music.mix.perc'],[{music:{mix:{drums:1}}},'music.mix.drums'],[{music:{mix:null}},'music.mix'],[{music:{mix:[1]}},'music.mix']])
+    await assert.rejects(settings.update({patch}),e=>e.code==='invalid'&&e.key===key,key);
+  assert.equal((await settings.read()).revision,2,'refused writes change nothing');
+  // A settings file from before the profile reads with it as composed.
+  await fs.writeFile(settings.file,JSON.stringify({schema:'code-resonance.settings.v1',revision:9,music:{style:'chip',volume:.4,texture:.3,tempoMode:'project',tempo:92}}));
+  const old=await settings.read();assert.equal(old.revision,9);assert.equal(old.music.style,'chip');assert.equal(old.music.rhythm,.5);assert.deepEqual(old.music.mix,store.SETTINGS_DEFAULTS.music.mix);
+  // Per project: each control inherits until set; the mix replaces as one value (groups left out play as composed).
+  let p=await prefs.update({patch:{music:{evolution:.9,mix:{melody:1.3,perc:0}}}});
+  assert.equal(p.music.evolution,.9);assert.equal(p.music.mood,null);assert.deepEqual(p.music.mix,{pad:1,bass:1,melody:1.3,counter:1,arp:1,perc:0,atmos:1});
+  p=await prefs.update({patch:{music:{mix:{arp:.5}}}});assert.deepEqual(p.music.mix,{pad:1,bass:1,melody:1,counter:1,arp:.5,perc:1,atmos:1});
+  p=await prefs.update({patch:{music:{evolution:null,mix:null}}});assert.equal(p.music.evolution,null);assert.equal(p.music.mix,null);
+  for(const [patch,key] of [[{music:{dynamics:2}},'music.dynamics'],[{music:{mix:{lead:1}}},'music.mix.lead'],[{music:{mix:{pad:'1'}}},'music.mix.pad'],[{music:{mix:3}},'music.mix']])
+    await assert.rejects(prefs.update({patch}),e=>e.code==='invalid'&&e.key===key,key);
+  // Presets: a preset saved before the profile is valid and keeps its exact shape; a new one carries profile and mix.
+  const presets=store.presets(root,{now:()=>5});
+  const before={style:'chip',texture:.3,tempoMode:'manual',tempo:100};
+  let doc=await presets.update({patch:{action:'create',kind:'music',name:'Before',payload:before}});
+  assert.deepEqual(doc.presets[0].payload,before);
+  const full={style:'cinematic',texture:.62,tempoMode:'project',tempo:92,profile:{mood:.6,evolution:.7,melody:.7,rhythm:.5,atmosphere:.6,harmony:.75,dynamics:.8,space:.8},mix:{pad:1,bass:.9,melody:1.1,counter:1.15,arp:.85,perc:.9,atmos:1.1}};
+  doc=await presets.update({patch:{action:'create',kind:'music',name:'Opening',payload:full}});
+  assert.deepEqual(doc.presets[1].payload,full);
+  // A partial profile is completed as composed; the update path validates the same way.
+  doc=await presets.update({patch:{action:'update',id:doc.presets[0].id,payload:{...before,profile:{rhythm:.8}}}});
+  assert.deepEqual(doc.presets[0].payload.profile,{...score.PROFILE,rhythm:.8});assert.equal(doc.presets[0].payload.mix,undefined);
+  for(const [payload,key] of [[{...before,profile:{tempo:1}},'payload.profile.tempo'],[{...before,profile:{mood:-1}},'payload.profile.mood'],[{...before,profile:null},'payload.profile'],
+    [{...before,mix:{perc:9}},'payload.mix.perc'],[{...before,mix:{kick:0}},'payload.mix.kick'],[{...before,key:'D'},'payload.key'],[{...before,motif:[0,2]},'payload.motif']])
+    await assert.rejects(presets.update({patch:{action:'create',kind:'music',name:'X',payload}}),e=>e.code==='invalid'&&e.key===key,key);
+  // The file round-trips (validated on read as on write).
+  assert.deepEqual((await presets.read()).presets.map(x=>x.payload),doc.presets.map(x=>x.payload));
 });

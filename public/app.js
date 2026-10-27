@@ -116,6 +116,13 @@
         :`The living world is too slow at the quality chosen for this device${fps}. Choose Auto in Settings › This device, or Monolith, a lightweight 2D stage that does not need WebGL.`,'warning',{label:'Show Monolith',world:'city'});}
   }
   if(params.get('style')&&window.ResonanceScore.STYLES.includes(params.get('style')))music.setOptions({style:params.get('style')});
+  // Film mode has no Control Center: the score version is the rendered recipe's (genome.music.score; absent = the classic
+  // score) unless the film asks for another (?score=), and the composed score's profile is the film's own (?music=, the
+  // film.js --music flag; absent = as composed). The offline soundtrack is rendered with the same values (film.js).
+  const filmMusic=FILM?{score:['2','3'].includes(params.get('score'))?Number(params.get('score')):null,profile:(()=>{
+    try{const v=JSON.parse(params.get('music')||'null');return v&&typeof v==='object'&&!Array.isArray(v)?window.ResonanceScore.profileOf(v):null;}catch{return null;}})()}:null;
+  if(FILM)music.setOptions({profile:filmMusic.profile});
+  function filmScore(){const v=filmMusic.score??window.ResonanceScore.versionOf((living?.recipe||recipe)?.genome?.music?.score);if(music.options.scoreVersion!==v)music.setOptions({scoreVersion:v});return v;}
   const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
   // Section colour temperature: the image follows the music's form.
@@ -656,7 +663,7 @@
     if(selectedWorld==='living'&&living){
       const r=recordFrame?{width:recordFrame.w,height:recordFrame.h}:(living.remote?living.frame:$('world')).getBoundingClientRect(),dpr=recordFrame?1:Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
-      if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
+      if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;filmScore();}
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
       living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo,
         music:{version:music.options.scoreVersion||2,style:music.options.style,profile:music.options.profile||null,seed:frame?.projectSeed||hash(selected)}});
@@ -843,8 +850,12 @@
       const timeline=[];
       for(const e of replay.entries){if(e.end<from-60000||e.start>to)continue;timeline.push({atMs:Math.max(from,e.start),frame:e.frame});
         for(const c of e.cues)if(!QUIET.has(c.type))timeline.push({atMs:cueTime(c,e),cue:c});}
+      // The file plays what this window plays: the same score version, profile and mix (an unsaved preview included), on
+      // the bar grid of the project's real identity from the first bar (projectSeed), as live playback does.
+      const projectSeed=frame?.projectSeed??timeline.find(x=>Number.isFinite(x.frame?.projectSeed))?.frame.projectSeed;
       const buffer=await window.ResonanceMusic.renderOffline({timeline:timeline.filter(x=>x.atMs>=from-1),startMs:from,durationSec:Math.max(5,(to-from)/1000),
-        style:music.options.style,texture:music.options.texture,tempoMode:music.options.tempoMode,tempo:music.options.tempo,volume:Math.max(.4,music.options.volume),projectId:selected});
+        style:music.options.style,texture:music.options.texture,tempoMode:music.options.tempoMode,tempo:music.options.tempo,volume:Math.max(.4,music.options.volume),projectId:selected,
+        scoreVersion:music.options.scoreVersion||2,profile:music.options.profile||null,...(Number.isFinite(projectSeed)?{projectSeed}:{})});
       // The file name never carries the project's folder name (only its public title, or a short id).
       const name=(recipe?.title||selected.slice(0,10)).replace(/[^a-z0-9-]+/gi,'-');
       const url=URL.createObjectURL(wav(buffer)),link=document.createElement('a');
@@ -917,7 +928,10 @@
       receiver:receiverOk,delayMs,project:selected,model,frame,mode,playing:playback,speed:speedChoice,
       position:{start:h.start||0,end:mode==='live'?Date.now()-delayMs:h.end||0,now:perfNow(),loaded:mode==='live'||!!replay,windows:replay?.entries.length||0,events:h.cues.length},
       bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.stats?.()?.quality??null,rendering:{...rendering,adaptive:qualityAdaptive()},
-      sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0},
+      // The bar being played: its score version, the voice groups in the arrangement now and, for the composed score, its
+      // place in the form (the Music Studio's monitor).
+      sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0,
+        score:soundEnabled&&music.bar?music.bar.scoreVersion||2:null,layers:soundEnabled&&music.bar?.layers?[...music.bar.layers]:null,form:soundEnabled&&music.bar?.form?{...music.bar.form}:null},
       recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:PROFILE_SIZES[recordSize]},
       recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
       worldStatus:{loading:!!livingLoading,running:!!living,remote:!!living?.remote,pack:living?.pack?{id:living.pack.id,name:living.pack.name}:null,failed:livingFailed,construct:!!construct,constructFailed,
@@ -927,7 +941,8 @@
     setLabels(m){if(!LABEL_MODES.includes(m)||m===labelMode)return;labelMode=m;living?.setLabels(m);picked=null;changed('labels');},
     setCaptions(on){captions=!!on;if(!captions)$('caption')?.classList.remove('show');changed('labels');},
     setQuality(q){q=String(q);if(!QUALITY.includes(q)||q===qualityChoice)return;qualityChoice=q;autoLevel=null;degradedWarned=false;living?.setQuality?.(qualityLevel(),qualityAdaptive());changed('quality');},
-    // Music options (style, volume, tempo, tempoMode, texture) apply on the next bar; nothing restarts.
+    // Music options (style, volume, tempo, tempoMode, texture, scoreVersion, profile {mood, …, mix}) apply on the next
+    // bar; nothing restarts. They pass through as given (the Control Center resolves them: ui/music-profile.js).
     setMusic(options){music.setOptions(options);changed('sound');},
     toggleSound,
     setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;seek(ts);},
@@ -975,7 +990,11 @@
     window.__film={
       async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
         if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
-        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null};},
+        // The music the film's soundtrack must be rendered with (film.js passes it to renderOffline). The Construct loads
+        // no recipe of its own: the project's saved one still says which score it plays.
+        if(!living&&!recipe)await reloadRecipe().catch(()=>null);
+        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null,
+          music:{scoreVersion:filmScore(),profile:filmMusic.profile}};},
       sections(list){filmSections=list;},
       seek(t){filmTime=t;seek(t);},
       // phase (optional): the bar phase to render with (qualification: does the world follow the beat?).
