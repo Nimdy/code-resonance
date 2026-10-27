@@ -1,5 +1,24 @@
 # Qualification — what was verified, where, and what was not
 
+> **Historical engineering evidence**, recorded milestone by milestone and kept as measured then: later milestones
+> add to it, they never rewrite it. Running the checks: [ARCHITECTURE.md](../ARCHITECTURE.md#qualification). What is
+> verified and what is not today: [OPERATIONS.md](OPERATIONS.md).
+
+| Section | Pull request |
+|---|---|
+| [VS Code extension host](#vs-code-extension-host-real), [Receiver and interpretation](#receiver-and-interpretation-real-code), [Browser](#browser-chromium-headless-software-rendering), [Audio](#audio), [30-minute real-code session](#30-minute-real-code-session), [Soak](#soak) | #1 baseline audit and qualification |
+| [The Construct](#the-construct-candidate-visual-world) | #2 the Construct |
+| [Living worlds](#living-worlds-phase-3-artistic-candidates) | #3 living worlds |
+| [Privacy repair](#privacy-repair-phase-4), [Long histories](#long-histories-phase-4), [Visual packs](#visual-packs-phase-4-artistic-candidates) | #4 Visual Pack SDK |
+| [Product hardening](#product-hardening-recording-bounded-pack-runtime-platforms) | #5 product hardening |
+| [Alpha candidate](#alpha-candidate-memory-synchronisation-recording-sizes) | #6 alpha candidate |
+| [Creative Control Center](#creative-control-center-phase-6) | #7 Creative Control Center |
+| none: the flagship worlds were reviewed through their films, referred to under Digital life | #8 flagship worlds |
+| [Auto quality](#auto-quality-desktop-milestone) (its rule revised in #10) | #9 desktop experience |
+| [Digital life](#digital-life-phase-10) | #10 digital life |
+| [Creative mastering and the Artist Studio](#creative-mastering-and-the-artist-studio-phase-11) | #11 Artist Studio |
+| [Not verified](#not-verified) (cumulative, from #1 on) | all |
+
 All results below come from runs in this repository's `qualification/` harnesses (raw JSON in
 `qualification/results/`). Environment: Ubuntu 24.04 on WSL2 (Linux 6.6), Node 22.22, 24 cores, Xvfb; VS Code 1.143.1
 (downloaded test instance with isolated profile); Chromium from Playwright 1.62 (headless, software rendering).
@@ -956,6 +975,10 @@ and the Artist Studio on Windows, macOS or OBS; live sessions longer than a few 
 rates on other GPUs; the generation handover with ecology 2 (expected continuous, not measured).
 
 ## Not verified
+
+> Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI
+> ([Product hardening › Platforms](#platforms)), and the owner approved the PR #8 films of the flagship worlds
+> ([Digital life › Nothing else changed](#nothing-else-changed)). The current list: [OPERATIONS.md](OPERATIONS.md#current-limitations).
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A
   Windows browser or OBS on Windows reaching a receiver in WSL2.
