@@ -161,7 +161,7 @@
   // Schedules one recorded window: its frame at the window start, each cue at its own time.
   // Cues before `from` (e.g. earlier in a window that a seek lands inside) join the feed silently, never as a burst.
   function schedule(entry,{animate=true,from=-Infinity}={}){
-    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);});
+    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);if(entry.frame)living?.observe?.(entry.frame,entry.start);});
     // Canonical intents (engine/intents.js) drive the living world's effects at their own recorded times.
     // Each intent carries its recorded position (window, index): with its timestamp, the canonical order of history.
     (entry.intents||[]).forEach((intent,k)=>{if(intent.ord===undefined)intent.ord=entry.seq*65536+k;const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));});

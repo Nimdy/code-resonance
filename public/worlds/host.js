@@ -10,6 +10,8 @@ import {createAgents} from './agents.js';
 import {createHistory} from './history.js';
 import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
 import {createSdk,validateWorld} from './sdk.js';
+import {createLifeTimeline} from './life/timeline.js';
+import {createLifeDriver} from './life/driver.js';
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
 const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
 const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
@@ -143,13 +145,22 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const director=createDirector({recipe,intensity:recipe.overrides?.intensity??1}),agents=createAgents();
   const history=createHistory({step:i=>{agents.record(i);return director.process(i);},snapshot:()=>({d:director.snapshot(),a:agents.snapshot()}),restore:x=>{director.restore(x.d);agents.restore(x.a);}});
   const timing={update:0,draw:0},calls={scene:0,total:0,triangles:0,points:0},expressed={};
+  // Digital life (life/driver.js): the canonical timeline outlives world switches; a built-in world whose recipe has
+  // life on asks for a driver (ctx.life.create) with its own grammar. A replay feeds the timeline its recorded windows
+  // (prime); a live session the structure it joined with (reset) and what arrives. Packs never get one.
+  const lifeTimeline=createLifeTimeline();let lifeDriver=null,lifeReplay=false,lifeBase=null;
+  const lifeOn=r=>r?.familyKind!=='pack'&&!families[r?.family]&&r?.genome?.life?.enabled===true;
+  const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film});
+  const lifeFor=next=>lifeOn(next)?{params:next.genome.life,create(grammar){
+    lifeDriver=createLifeDriver({grammar,timeline:lifeTimeline,seed:hash(`${next.projectSeed}/${next.variant||0}/life`),config:lifeConfig});
+    if(lifeBase&&!lifeReplay)lifeDriver.setBase(lifeBase.graph,lifeBase.t);return lifeDriver;}}:null;
   // GPU time of the whole frame (background, scene, post, bloom, grade) where the driver offers timer queries; results
   // arrive a few frames later and feed a moving average. Null when unsupported (SwiftShader, many drivers).
   const gl=renderer.getContext(),timer=gl.getExtension('EXT_disjoint_timer_query_webgl2'),queries=[];let gpuMs=null;
   function gpuPoll(){while(queries.length&&gl.getQueryParameter(queries[0],gl.QUERY_RESULT_AVAILABLE)){const q=queries.shift(),ns=gl.getQueryParameter(q,gl.QUERY_RESULT);gl.deleteQuery(q);
     if(!gl.getParameter(timer.GPU_DISJOINT_EXT)){const ms=ns/1e6;gpuMs=gpuMs===null?ms:gpuMs+(ms-gpuMs)*.1;}}}
   const contextFor=next=>({THREE,renderer,scene,camera,model,recipe:next,get director(){return director;},get agents(){return agents;},pipeline,film,
-    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id)});
+    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id),life:lifeFor(next)});
   // A shader pack's slots: shared uniforms (time, beat, energy, palette, camera) plus the pack's own values.
   function extensionFor(next,ctx){
     if(!extension)return null;
@@ -167,6 +178,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   async function load(next){
     const mod=families[next.family]||await import(BUILTIN[next.family]);
     if(world){world.dispose();}
+    lifeDriver?.dispose();lifeDriver=null;
     disposeExtension();
     if(scene)scene.traverse(o=>{o.geometry?.dispose?.();const m=o.material;if(m)(Array.isArray(m)?m:[m]).forEach(x=>{for(const v of Object.values(x.uniforms||{}))v?.value?.isTexture&&v.value.dispose();x.dispose();});});
     scene=new THREE.Scene();current=next;
@@ -184,7 +196,11 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       size,speed:speedK,origin:pinnedStart??startedAt,selected});
   }
   let lastLabels=[];
-  function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);g.restore();}
+  function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);if(info.life?.restoring)drawRestoring(g,w,h,info.life.progress);g.restore();}
+  // While the ecosystem is being rebuilt for a moment far from the last one, the world says so (its inhabitants are
+  // hidden meanwhile: never a stale population shown as if it were this moment's).
+  function drawRestoring(g,w,h,p){const k=w/1920;g.save();g.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g.textAlign='right';g.fillStyle='rgba(232,238,248,.78)';
+    g.shadowColor='rgba(0,0,0,.8)';g.shadowBlur=8*k;g.fillText(`Restoring the ecosystem for this moment · ${Math.round(p*100)} %`,w-40*k,h-40*k);g.restore();}
   // ---- Frame ----------------------------------------------------------------------------------------------------
   const inverse=new THREE.Matrix4();
   function updateExtension(i){
@@ -203,6 +219,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     if(startedAt===null)startedAt=t;
     dt=Math.min(.1,Math.max(0,dt));
     info=frameInfo(t,dt,phase);stale=false;
+    // The ecosystem reaches this frame's view time first (films wait for the exact state; live playback catches up a
+    // few milliseconds per frame and reports that it is restoring while far behind).
+    if(lifeDriver)info.life=lifeDriver.update(info,{budgetMs:film?Infinity:6});
     world.update(info);
     const goal=world.cameraGoal(info);rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
     // updateMs is the CPU time of update and the camera (docs/packs/performance.md); afterCamera's camera-dependent
@@ -219,27 +238,43 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       calls.scene=renderer.info.render.calls-before;calls.triangles=renderer.info.render.triangles;calls.points=renderer.info.render.points;},{time:info.tview,...withTechnique(grade,current.genome.technique)});
     calls.total=renderer.info.render.calls;
     if(query){gl.endQuery(timer.TIME_ELAPSED_EXT);queries.push(query);}
-    if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);}
+    if(overlayCanvas){const g=overlayCanvas.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);lastLabels=labelItems(info);overlay.draw(g,overlayCanvas.width,overlayCanvas.height,lastLabels,overlayCanvas.width/1920);
+      if(info.life?.restoring)drawRestoring(g,overlayCanvas.width,overlayCanvas.height,info.life.progress);}
     timing.update+=(drawn-began-timing.update)*.1;timing.draw+=(performance.now()-drawn-timing.draw)*.1;
   }
   return {
     get world(){return world;},get recipe(){return current;},
-    reset(graph,t){model.reset(graph,t);world.rebuild();snapCamera=true;stale=true;},
-    applyDelta(delta,start,end){model.applyDelta(delta,start,end);world.onDelta?.(delta,start,end);},
+    reset(graph,t){model.reset(graph,t);world.rebuild();snapCamera=true;stale=true;
+      // Live: the structure as the session was joined (a replay's structure is its recorded windows only).
+      if(!lifeReplay&&graph&&Number.isFinite(t)){lifeBase={graph:{nodes:graph.nodes.map(n=>({...n})),edges:graph.edges.map(e=>({...e}))},t};lifeDriver?.setBase(lifeBase.graph,t);}},
+    applyDelta(delta,start,end){model.applyDelta(delta,start,end);world.onDelta?.(delta,start,end);lifeTimeline.structure(delta,start,end);},
+    // A recorded window's frame (its controls give the ecosystem's musical climate).
+    observe(frame,start){lifeTimeline.frame(frame,start);},
     cue(c,t){model.cue(c,t);world.onCue?.(c,t);},
     // A recorded intent at its time: folded (exactly, also when it arrives late) and expressed if the world has an effect.
-    intent(i,t){if(stale&&Number.isFinite(t)){info=frameInfo(t,0,info?.barPhase||0);world.update(info);stale=false;}const r=history.add(i);if(r.cmd?.effect){expressed[r.cmd.effect]=(expressed[r.cmd.effect]||0)+1;world.effect(r.cmd,info);ext?.effects?.effect?.(r.cmd,info);}},
+    intent(i,t){lifeTimeline.intent(i);if(stale&&Number.isFinite(t)){info=frameInfo(t,0,info?.barPhase||0);world.update(info);stale=false;}const r=history.add(i);if(r.cmd?.effect){expressed[r.cmd.effect]=(expressed[r.cmd.effect]||0)+1;world.effect(r.cmd,info);ext?.effects?.effect?.(r.cmd,info);}},
     // After a seek: intents before t set the director (cooldowns, unlocks) and agent lifecycles, without effects.
     // Intents at or after the seek point are forgotten, so the schedule delivers them again as fresh events.
     prime(entries,t){
       const list=[];for(const e of entries)(e.intents||[]).forEach((i,k)=>{if(i.ord===undefined&&Number.isInteger(e.seq))i.ord=e.seq*65536+k;if(i.ts<t)list.push(i);});
+      // A replay (its windows carry structure) gives the ecosystem its whole recorded timeline; a live session's history
+      // brings intents only (from before the session's origin they set lasting conditions only).
+      if(entries.some(e=>e.graph)){if(!lifeReplay){lifeReplay=true;lifeDriver?.clearBase();}lifeTimeline.prime(entries);}
+      else for(const e of entries)for(const i of e.intents||[])lifeTimeline.intent(i);
       history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
       world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);stale=true;},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
-    setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;}},
-    async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}await load(next);},
+    setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;
+      // Another performance: its ecosystem starts from its own inputs only.
+      if(lifeTimeline.items.length){lifeTimeline.clear();lifeReplay=false;}}},
+    async setRecipe(next){if(!next||!known(next.family))return;if(next.family===current.family&&next.variant===current.variant&&JSON.stringify(next.genome)===JSON.stringify(current.genome)){current=next;director.setIntensity(next.overrides?.intensity??1);return;}
+      // Only the life values changed (life on before and after): the world stays; the ecosystem takes the new values
+      // (a live session from now on, a replay rebuilt exactly; life/driver.js).
+      const bare=r=>JSON.stringify({...r.genome,life:null});
+      if(lifeDriver&&lifeOn(next)&&next.family===current.family&&next.variant===current.variant&&bare(next)===bare(current)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
+      await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
     setQuality(q,adapt){governor.configure({floor:q!==null&&q!==undefined&&Number.isFinite(Number(q))?Number(q):undefined,adaptive:typeof adapt==='boolean'?!film&&adapt:undefined});level=governor.level;applyLevel();},
@@ -254,8 +289,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:history.count,history:history.stats(),
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
       quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
-      programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2)};},
+      programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2),
+      life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null};},
     // The context itself is released now (otherwise its GPU memory and buffers wait for the garbage collector).
-    dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);world?.dispose();pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}
+    dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);world?.dispose();lifeDriver?.dispose();lifeDriver=null;pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}
   };
 }
