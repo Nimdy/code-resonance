@@ -53,5 +53,9 @@ score version does not change the product version.
 
 ## Result
 
-The merge record (each PR's merge commit, the consolidation PR and the final `main` tree) is appended below once the
-integration is complete.
+Merge SHAs only exist once the merges happen, after this file is committed. The merge record (each PR's merge commit,
+the consolidation PR, and the final `main` SHA and tree) is therefore posted as a comment on the consolidation pull
+request on GitHub, not committed here.
+
+Each merge commit's tree equals its PR head's tree, because the chain is linear. So `main` after the last merge has
+exactly the tree of the consolidation branch's head.
