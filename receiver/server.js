@@ -728,7 +728,7 @@ function createService(options={}) {
       await closed;await Promise.allSettled([...writes.values()]);
       // After the last journal append: evidence observed so far is written out.
       await evidence.stop();
-      if(worker){await Promise.race([ask({type:'shutdown'}).catch(()=>{}),new Promise(r=>setTimeout(r,10000))]);await worker.terminate();}
+      if(worker){await Promise.race([ask({type:'shutdown'}).catch(()=>{}),new Promise(r=>setTimeout(r,10000).unref())]);await worker.terminate();}
     }
   };
 }
