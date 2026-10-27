@@ -69,7 +69,9 @@ export function select(id){
   if(id===state.selected)return;state.selected=id||'';setUi({project:state.selected});state.musicPreview=null;
   P.selectProject(state.selected);changed('selection');
   // The recipe says which score the music plays: read it whatever the stage (only the living world loads one itself).
-  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);void P.reloadRecipe?.()?.catch(()=>null);}
+  // A project with no recorded performance yet has no recipe to read (the receiver answers 404): nothing to ask.
+  const listed=state.projects.find(p=>p.id===state.selected),performed=!listed||listed.updatedAt!==null||listed.frames>0;
+  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);if(performed)void P.reloadRecipe?.()?.catch(()=>null);}
   applyEffective();
 }
 export const project=(id=state.selected)=>state.projects.find(p=>p.id===id)||null;
