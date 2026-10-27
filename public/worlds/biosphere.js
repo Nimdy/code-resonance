@@ -545,7 +545,10 @@ export function createFamily(ctx){
       // Fields -> the organisms' light.
       if(eco!==texEco){ftex?.dispose();ftex=lifeFieldTexture(THREE,eco,{scale:[1.2,2,2.5,6]});texEco=eco;U.uLifeF.value=ftex.texture;
         const f=eco.field;U.uLifeB.value.set(f.min[0],f.min[1],f.max[0]-f.min[0],f.max[1]-f.min[1]);}
-      ftex.update();U.uLifeK.value=show;
+      // Ecology 2: the light the life gives the organisms follows the music's illumination (glow, a relaxed
+      // condition of the ecosystem: brighter as a passage opens up, dimmer as it settles).
+      const E2=v.ecology===2,gk=E2?Math.pow(Math.max(.5,Math.min(1.7,eco.cond.glow??1)),.8):1;
+      ftex.update();U.uLifeK.value=show*gk;
       const S=eco.sites;if(S.ids!==idsRef){idsRef=S.ids;siteOfOrg.clear();S.ids.forEach((id,k)=>siteOfOrg.set(id,k));}
       for(const L of [U.uLifeO,U.uLifeC,U.uLifeD])for(const v4 of L.value)v4.set(0,0,0,0);
       // The water's flinch after a failure anywhere (kept alike by every crown): every crown's glow drops by up to
@@ -555,8 +558,11 @@ export function createFamily(ctx){
       nAg=0;for(const st of agentState.values()){if(nAg>=10)break;AG[nAg*3]=st.pos.x;AG[nAg*3+1]=st.pos.y;AG[nAg*3+2]=st.pos.z;nAg++;}
       // Per organism (its one or two heads): each head's glow, the organism's lasting and strain; each head's centre
       // and reach.
+      // (ecology 2: a smaller gathering's light is lifted more than a full one's, so the secondary gatherings read
+      // around the scene and looking around is rewarded; a full crown is unchanged)
+      const lit=E2?g=>Math.pow(Math.min(1,g||0),.72):g=>Math.min(1,g||0);
       for(const o of orgList){const k=siteOfOrg.get(o.id);if(k===undefined)continue;const st=S.state(k),j=o.index%MAXO,k2=siteOfOrg.get(`${o.id}#h1`),st2=k2!==undefined?S.state(k2):null;
-        U.uLifeO.value[j].set(st?Math.min(1,st.glow||0)*(1-.5*flinch):0,st?Math.min(1,st.lasting/2):0,st2?Math.min(1,st2.glow||0)*(1-.5*flinch):0,st?st.stress:0);U.uLifeC.value[j].set(S.x[k],S.y[k],S.z[k],S.r[k]);
+        U.uLifeO.value[j].set(st?lit(st.glow)*(1-.5*flinch):0,st?Math.min(1,st.lasting/2):0,st2?lit(st2.glow)*(1-.5*flinch):0,st?st.stress:0);U.uLifeC.value[j].set(S.x[k],S.y[k],S.z[k],S.r[k]);
         if(st2)U.uLifeD.value[j].set(S.x[k2],S.y[k2],S.z[k2],S.r[k2]);}
       // Inhabitants.
       const q=Math.max(0,Math.min(3,i.quality|0)),a=v.alpha,tv=i.tview;C=pts.arrays.lC;SZ=pts.arrays.lS;PP=pts.arrays.position;

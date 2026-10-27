@@ -1170,7 +1170,11 @@ export function createFamily(ctx){
       if(fieldEco!==eco){fieldTex?.dispose();fieldTex=lifeFieldTexture(THREE,eco,{scale:[3,2.5,2,7]});fieldEco=eco;fieldTick=-1;lifeMapU.uLifeF.value=fieldTex.texture;}
       if(fieldTick!==eco.tick){fieldTex.update();mMap.build(eco);matterTex.needsUpdate=true;fieldTick=eco.tick;}
       const turn=layout.armTurn(galR),F0=eco.field.min[0];lifeU.uLifeT.value.set(turn,galR/LIFE_RN);
-      lifeMapU.uLifeX.value.set(turn,F0,eco.field.max[0]-F0,v.fadeIn);
+      // Ecology 2: the streams read more clearly (the gas along them glows with the music's light, a little above
+      // ecology 1 at its neutral) and dust riding a strong stream draws a brighter tracer: the matter's movement
+      // shows without the galaxy turning any faster.
+      const E2=v.ecology===2,gk=E2?.8+.35*Math.max(.5,Math.min(1.7,eco.cond.glow??1)):1;
+      lifeMapU.uLifeX.value.set(turn,F0,eco.field.max[0]-F0,v.fadeIn*gk);
       const q=Math.min(3,Math.max(0,i.quality|0)),RS=RSEG[q],alpha=v.alpha,tv=i.tview,S=eco.sites,nS=S.count,seed=eco.seed;
       // how strained a system looks (a verified failure: about .3 of stress), its failure's shock, its recovery
       let hk=-1,hv=0;
@@ -1207,6 +1211,8 @@ export function createFamily(ctx){
           const tr=Math.min(1,Math.max(0,(eco.sample(0,P3[0],P3[2])-.5)/1.6)),bd=br*(1+.6*tr);
           point(P3[0],y,P3[2],r,g,b,bd,SZ[0]);
           const F=DUSTF[q]+Math.round(DUSTX[q]*tr);for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:.9,lag:1}))break;point(P4[0],y+(P4[1]-P3[1])*.2*FLAT,P4[2],r,g,b,bd*.7,SZ[0]*.85);nf++;}
+          // (ecology 2: a seeded third of the dust on a strong stream draws a fine tapered tracer along its own path)
+          if(E2&&RS[0]&&tr>.18&&u01(seed,e,gen,93)<.34)ribbon(e,P3,3,8+8*tr,r,g,b,bd*(.9+1.6*tr)*gk,.03);
           }
         else if(s===1){// fragments: rubble. One soft grain elongated along its motion, one or two smaller beads trailing it
           // at seeded lags, sizes and brightness (never a string of equal pearls)
