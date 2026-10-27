@@ -227,6 +227,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const artistBtn=button({label:'Open in Artist Studio',icon:'brush',kind:'outline',id:'vsArtist',onClick:()=>openArtist()});
   const compose=h('div',{class:'vs-compose'},h('div',{class:'vs-compose-text'},h('strong',{text:'Make it your own'}),
     h('span',{class:'small faint',text:'Layers, reactive mappings and a finish of your own over this world.'})),artistBtn);
+  const sectionHead=(title,sub=null,...extra)=>h('div',{class:'vs-sec-head'},h('h3',{class:'eyebrow',text:title}),sub?h('span',{class:'tiny faint',text:sub}):null,h('span',{class:'rule'}),...extra);
   const finishSection=h('section',{class:'vs-sec vs-sec-finish','aria-label':'Finish'},sectionHead('Finish','lens and colour'),finishSeg,finishLine,finishErr,h('div',{class:'vs-props'},fAberration),upgradeBox,compose);
   // The Essentials (first, open) and every other parameter under its creative purpose (folded).
   const essBox=h('div',{class:'vs-params vs-props vs-ess'});
@@ -240,7 +241,6 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const aliasBox=h('div',{class:'vs-aliases',id:'vsAliases'});
   const quality=segmented({label:'Rendering quality on this device',id:'vsQuality',value:P.state.quality,options:P.QUALITY.map(q=>({value:q,label:QUALITY_NAMES[q]})),
     onChange:q=>{S.unpin('quality');S.setDevice({quality:q});P.setQuality(q);}});
-  const sectionHead=(title,sub=null,...extra)=>h('div',{class:'vs-sec-head'},h('h3',{class:'eyebrow',text:title}),sub?h('span',{class:'tiny faint',text:sub}):null,h('span',{class:'rule'}),...extra);
   function buildInspector(){
     clear(body);
     if(!S.state.selected){body.append(emptyState({icon:'visual',title:S.state.projectsLoaded?'No project yet':'Loading projects…',body:S.state.projectsLoaded?'A project appears when capture starts in VS Code. Its world identity is edited here.':null,
