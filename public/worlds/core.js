@@ -108,7 +108,7 @@ export function createPipeline(renderer,{samples=4}={}){
 #ifdef FINISH
       // Split toning: the shadows lean one way and the highlights the other (hue only: the offsets carry no luminance),
       // black and white stay neutral.
-      if(split>0.){float y=clamp(dot(col,vec3(.2126,.7152,.0722)),0.,1.),hw=smoothstep(.42,.95,y);col+=split*(splitShadow*(1.-hw)*smoothstep(0.,.2,y)*(1.-y)+splitHigh*hw*(1.-y*.6));}
+      if(split>0.){float y=clamp(dot(col,vec3(.2126,.7152,.0722)),0.,1.),hw=smoothstep(.42,.95,y);col+=split*(splitShadow*(1.-hw)*smoothstep(.04,.3,y)*(1.-y)+splitHigh*hw*(1.-y*.6));}
 #endif
       col*=1.-vignette*smoothstep(.15,.9,length(c*vec2(1.15,1.)));
       col+=(h(vUv*vec2(1920.,1080.)+fract(time*.731)*vec2(37.,91.))-.5)*grain;

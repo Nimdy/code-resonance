@@ -128,7 +128,7 @@ export const FINISHES=Object.freeze({
   // Crisp: restrained bloom that starts higher, almost no fringe, a light vignette, very little grain.
   clean:Object.freeze({grade:Object.freeze({bloom:.8,threshold:1.1,contrast:1.05,saturation:.98,vignette:.65,grain:.3,streak:.5}),optical:.0008,fringe:0,halation:0,split:.3,mist:0}),
   // The default for new identities: subtle optical fringe, attractive warm halation, balanced separation, gentle vignette.
-  cinematic:Object.freeze({grade:Object.freeze({bloom:.95,contrast:1.03,saturation:1.03,vignette:.85,grain:.8}),optical:.003,fringe:2.5,halation:.45,split:.75,mist:0}),
+  cinematic:Object.freeze({grade:Object.freeze({bloom:.93,contrast:1.08,saturation:1.04,vignette:.95,grain:.8}),optical:.003,fringe:2.5,halation:.5,split:.5,mist:0}),
   // Luminous and atmospheric, never blurry: the bloom starts lower and spreads as mist, stronger halation and fringe.
   dreamlike:Object.freeze({grade:Object.freeze({bloom:1.15,threshold:.9,exposure:1.03,contrast:.95,saturation:1.08,vignette:.95,grain:.65,streak:1.2}),optical:.0048,fringe:3.5,halation:.8,split:1,mist:.45})});
 const GRADE_DEFAULTS={exposure:1,bloom:1,threshold:.7,contrast:1,saturation:1.05,vignette:.3,grain:.025,streak:0};
