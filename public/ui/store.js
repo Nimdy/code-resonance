@@ -4,10 +4,13 @@
 //   URL pins (OBS bookmarks: ?world= ?style= ?labels=) > project preference > global setting > built-in default.
 // Session state (sound, recording, playhead) lives in the engine; device state (quality) in localStorage; previews in
 // memory only. Nothing here is a second copy that could drift: every write goes to the receiver and comes back.
+import {resolveMusic,engineOptions,pinOf} from './music-profile.js';
 const P=window.ResonancePlayer;
 const params=new URLSearchParams(location.search);
+// ?music= pins the composed score's performance profile ({"mood":.7,"mix":{"perc":0}}), as ?style= pins the style.
 const pins={world:P.WORLDS.includes(params.get('world'))?params.get('world'):null,style:['ambient','pulse','cinematic','chip'].includes(params.get('style'))?params.get('style'):null,
-  labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null};
+  labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null,
+  profile:pinOf(params.get('music'))};
 const DEVICE_KEY='code-resonance-device-v1',UI_KEY='code-resonance-ui-v1',LEGACY_KEY='code-resonance-player-v1';
 const readLocal=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')||{};}catch{return {};}};
 const writeLocal=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
@@ -66,18 +69,17 @@ export function unpin(key){pins[key]=key==='quality'?false:null;}
 export const pinned=key=>!!pins[key];
 export const preferences=(id=state.selected)=>state.preferences.get(id)||null;
 // ---- Effective configuration --------------------------------------------------------------------------------------
-const DEFAULT_MUSIC={style:'ambient',volume:.55,texture:.58,tempoMode:'project',tempo:92};
+// The music (style, tempo, texture, the composed score's profile and mix) resolves in public/ui/music-profile.js; its score
+// version is the one the recipe shown in this window asks for (an unsaved Visual or Artist Studio preview included).
 export function effective(id=state.selected){
-  const s=state.settings||{},pref=state.preferences.get(id)||{},pm=pref.music||{},gm={...DEFAULT_MUSIC,...(s.music||{})};
-  const pick=k=>pm[k]!==null&&pm[k]!==undefined?pm[k]:gm[k];
-  const music={style:pins.style||pick('style'),texture:pick('texture'),tempoMode:pick('tempoMode'),tempo:pick('tempo'),volume:gm.volume};
+  const s=state.settings||{},pref=state.preferences.get(id)||{},ps=P.state,here=id===ps.project;
+  const {music,sources:ms}=resolveMusic({pins,project:pref.music,global:s.music,recipe:here?ps.preview?.recipe||ps.recipe:null,preview:here&&!!ps.preview});
   const world=pins.world||pref.world||s.stage?.world||'living';
   // The information mode belongs to the project's recipe (null there: follow the global setting).
-  const recipe=id===P.state.project?P.state.recipe:null,own=recipe?.overrides?.labels||null;
+  const recipe=here?ps.recipe:null,own=recipe?.overrides?.labels||null;
   const labels=pins.labels||(P.overlay?'stream':own||s.stage?.labels||'cinematic');
-  const src=k=>pm[k]!==null&&pm[k]!==undefined?'project':'global';
   return {music,world,labels,captions:pins.captions??(s.stage?.captions!==false),quality:state.device.quality||'auto',profile:s.recording?.profile||'720p',
-    sources:{world:pins.world?'url':pref.world?'project':'global',style:pins.style?'url':src('style'),texture:src('texture'),tempoMode:src('tempoMode'),tempo:src('tempo'),
+    sources:{world:pins.world?'url':pref.world?'project':'global',...ms,
       labels:pins.labels?'url':P.overlay?'obs':own?'project':'global',captions:pins.captions!==null&&pins.captions!==undefined?'url':'global'}};
 }
 // Only values whose effective value changed are pushed to the engine: a choice made directly on the engine (a
@@ -89,14 +91,15 @@ export function applyEffective({force=false}={}){
   const push=(k,v,fn)=>{const key=JSON.stringify(v);if(!force&&applied[k]===key)return false;applied[k]=key;fn(v);return true;};
   push('project',state.selected,()=>{applied={project:applied.project};});
   push('world',e.world,v=>P.setWorld(v));
-  push('music',music,v=>P.setMusic(v));
+  push('music',engineOptions(music),v=>P.setMusic(v));
   push('labels',e.labels,v=>P.setLabels(v));push('captions',e.captions,v=>P.setCaptions(v));
   if(!pins.quality)push('quality',e.quality,v=>P.setQuality(v));
   // The recording size cannot change during a recording: it is applied once the recording ends.
   if(!P.record.active)push('profile',e.profile,v=>P.record.setSize(v));
 }
 function applyInterface(){const m=state.settings?.interface?.motion||'system';if(m==='system')delete document.documentElement.dataset.motion;else document.documentElement.dataset.motion=m;}
-// A music preview (Music Studio): heard at once on the next bar, in this window only, until applied or cancelled.
+// A music preview (Music Studio): flat keys as stored (style, texture, mood, mix, …), heard from the next bar, in this
+// window only, until applied or cancelled.
 export function previewMusic(patch){state.musicPreview=patch?{...(state.musicPreview||{}),...patch}:null;applyEffective();changed('musicPreview');}
 // ---- Change feed ----------------------------------------------------------------------------------------------------
 let source=null,retry=null,fallback=null;
@@ -145,7 +148,7 @@ if(channel){
     if(held===false&&others.size){others.clear();state.others.recording=null;changed('others');}},2000);
 }
 let wasRecording=false;
-P.on(t=>{if(t.has('recording')&&P.record.active!==wasRecording){wasRecording=P.record.active;announce();if(!wasRecording)applyEffective();}if(t.has('recipe'))applyEffective();});
+P.on(t=>{if(t.has('recording')&&P.record.active!==wasRecording){wasRecording=P.record.active;announce();if(!wasRecording)applyEffective();}if(t.has('recipe')||t.has('preview'))applyEffective();});
 // ---- Start -------------------------------------------------------------------------------------------------------
 export async function start({presentation=false}={}){
   await Promise.all([loadSettings(),loadProjects()]);
