@@ -4,7 +4,7 @@
 // to change them in VS Code, never a control that looks like it changes VS Code. Claude Code hooks are written only after
 // the exact change to the file was shown and accepted, and only if the file is still the one that was shown.
 // Project ids never appear as text (they look like secrets and mean nothing to people): names or short labels only.
-import {h,text,button,segmented,section,disclosure,pill,callout,copyable,toast,styles,reducedMotion} from '../dom.js';
+import {h,button,segmented,section,disclosure,pill,callout,copyable,toast,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
 import {ago,dateTime,duration,count,projectName} from '../format.js';
 import {openDoc} from '../markdown.js';
