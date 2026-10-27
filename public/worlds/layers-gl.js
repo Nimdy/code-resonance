@@ -83,7 +83,7 @@ vec3 sway(vec3 p,float t,float ph){float k=uSway*.11*pow(clamp(t,0.,1.),1.6);
 void main(){float g=uGrowth;if(abs(uForm-3.)<.5)g*=smoothstep(0.,.12,fract(uClock*.3+aPh.x));
   vec3 p=place(spin(position+sway(position,aTip.x,aPh.x*6.28),aTip.w),aTip.z);vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
   float s=uWidth*.05*aTip.y*siteSize(aTip.z),px=s/(uPx*max(.05,-mv.z));gl_PointSize=clamp(px,1.5,40.);
-  vA=smoothstep(aTip.x-.02,aTip.x+.04,g)*min(1.,px/2.);vTw=.7+.3*sin(uClock*2.3+aPh.y*40.);${FAR}}`;
+  vA=smoothstep(aTip.x-.06,aTip.x,g)*min(1.,px/2.);vTw=.7+.3*sin(uClock*2.3+aPh.y*40.);${FAR}}`;
 const TIP_FS=COMMON+`uniform vec3 uTip;uniform float uGlow,uScreen;varying float vA,vTw;
 void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;float I=exp(-r*6.)+exp(-r*2.)*.2;
   vec3 rgb=hueShift(uTip,uHue)*I*vA*vTw*uBright*(.5+uGlow)*uOpacity;float a=min(1.,I)*vA*uOpacity;${OUT}}`;
@@ -268,6 +268,7 @@ function createStructure(THREE,env){
   function build(cfg,sites){
     disposeGeo();const p=cfg.params,n=Math.max(1,Math.min(MAXS,sites.length));
     form=structure({shape:p.shape,count:p.count,detail:p.detail,thickness:p.thickness,seed:hash(`${cfg.seed}/${cfg.id}/structure`)});lines=form.lineCount;
+    for(let k=0;k<GROUPS;k++){uniforms.uGroup.value[k].set(0,1,0,0);uniforms.uGroupC.value[k].set(0,0,0,0);}
     form.groups.forEach((g,k)=>{if(k>=GROUPS)return;uniforms.uGroup.value[k].set(g.axis[0],g.axis[1],g.axis[2],0);uniforms.uGroupC.value[k].set(g.centre[0],g.centre[1],g.centre[2],g.rate);});
     // Lines: instanced bands (instances are lines x sites: a site index per instance block via a second instancing level
     // is not available, so the line list is repeated per site).
@@ -294,7 +295,8 @@ function createStructure(THREE,env){
     update(p,F){setSites(uniforms,F.sites);const u=uniforms;u.uColor.value.set(p.color);u.uGlow.value=p.glow;u.uThick.value=p.thickness;u.uWobble.value=p.wobble;u.uScale.value=p.radius*p.scale;
       u.uPulse.value=p.shape==='lattice'||p.shape==='polyhedron'?1:p.shape==='arches'?.5:0;u.uSolid.value=p.wire?0:1;u.uEdge.value=p.wire?1:.55;
       // Turning: each group's angle advances with the rotation (integrated, so a mapped rotation never jumps).
-      for(let g=0;g<GROUPS;g++){const C=u.uGroupC.value[g];u.uGroup.value[g].w=C.w?F.spin*C.w*6:0;}u.uSpin.value=F.spin*2;
+      // Orrery bodies: an outer orbit takes about half a minute at rotation .25, the innermost a few seconds.
+      for(let g=0;g<GROUPS;g++){const C=u.uGroupC.value[g];u.uGroup.value[g].w=C.w?F.spin*C.w*6:0;}u.uSpin.value=F.spin*.8;
       // An opaque solid occludes the world behind it.
       mats.surf.depthWrite=p.opacity>.995&&F.blend==='normal'&&F.depth==='world';},
     stats:()=>({segments:objects[0]?.geometry.instanceCount||0,points:form?.pointCount||0,draws:objects.length}),
