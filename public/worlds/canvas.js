@@ -21,7 +21,7 @@ void main(){vec4 w=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(w.xyz/w.w-uCam);f
   c*=e<0.?mix(1.,.3,smoothstep(0.,-.3,e)):1.;
   c+=(h(gl_FragCoord.xy+fract(uTime))-.5)/255.;gl_FragColor=vec4(max(c,0.),1.);}`;
 const FLOOR_VS='varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}';
-const FLOOR_FS=`varying vec3 vW;uniform vec3 uBase,uLine,uHorizon;uniform vec2 uCentre;uniform float uExtent,uFloor,uTime;
+const FLOOR_FS=`varying vec3 vW;uniform vec3 uBase,uLine,uHorizon,uRim;uniform vec2 uCentre;uniform float uExtent,uFloor,uTime;
 uniform vec4 uMarks[${MARKS}];uniform vec4 uMarkC[${MARKS}];uniform vec4 uRipples[${RIPPLES}];uniform vec4 uRippleC[${RIPPLES}];
 void main(){vec2 p=vW.xz-uCentre;float r=length(p),step=max(1.,uExtent/4.);
   // A polar grid (rings and 24 rays), antialiased, fading into the distance: scale and depth, never a pattern.
@@ -32,11 +32,13 @@ void main(){vec2 p=vW.xz-uCentre;float r=length(p),step=max(1.,uExtent/4.);
   // The project's subsystems: a soft pool of light and a fine rim each.
   for(int i=0;i<${MARKS};i++){vec4 m=uMarks[i];if(m.w<=0.)continue;float d=length(vW.xz-m.xy),R=m.z;
     float pool=exp(-d*d/(R*R)*1.6),rim=exp(-pow((d-R)/(R*.05+.03),2.));c+=uMarkC[i].rgb*(pool*.22+rim*.75)*m.w*uFloor;
-    c+=vec3(1.,.78,.45)*exp(-pow((d-R*1.18)/(R*.04+.03),2.))*uMarkC[i].a*uFloor;}
+    c+=uRim*exp(-pow((d-R*1.18)/(R*.04+.03),2.))*uMarkC[i].a*uFloor;}
   // Canonical events: rings travelling out from where they happened.
   for(int i=0;i<${RIPPLES};i++){vec4 q=uRipples[i];float age=uTime-q.w;if(age<0.||age>9.)continue;float d=length(vW.xz-q.xy),rad=age*q.z;
     c+=uRippleC[i].rgb*exp(-pow((d-rad)/(.25+age*.06),2.))*exp(-age*.5)*uRippleC[i].a;}
   vec3 v=normalize(cameraPosition-vW);c+=uHorizon*pow(1.-clamp(v.y,0.,1.),6.)*.5;
+  // Aerial perspective: the far floor dissolves into the sky's horizon light, so the two meet without a seam.
+  c=mix(c,uHorizon*1.55,smoothstep(uExtent*1.6,uExtent*9.,r));
   gl_FragColor=vec4(c,1.);}`;
 const AGENT_VS='attribute vec4 aC;uniform float uPx;varying vec4 vC;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(.35/(uPx*max(.1,-mv.z)),2.,28.);vC=aC;}';
 const AGENT_FS='varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;float I=exp(-r*6.)+exp(-r*2.)*.3;gl_FragColor=vec4(vC.rgb*I*vC.a*1.6,1.);}';
@@ -48,7 +50,7 @@ export function createFamily(ctx){
   // ---- Sky and floor ---------------------------------------------------------------------------------------------------
   const sky=new THREE.ShaderMaterial({uniforms:{uTop:{value:new THREE.Color()},uHorizon:{value:new THREE.Color()},uCam:{value:new THREE.Vector3()},uInv:{value:new THREE.Matrix4()},
     uTime:{value:0},uGlow:{value:1},uStars:{value:1}},vertexShader:BACKGROUND_VS,fragmentShader:SKY_FS,depthTest:false,depthWrite:false});
-  const FU={uBase:{value:new THREE.Color()},uLine:{value:new THREE.Color()},uHorizon:{value:new THREE.Color()},uCentre:{value:new THREE.Vector2()},uExtent:{value:10},uFloor:{value:.4},uTime:{value:0},
+  const FU={uBase:{value:new THREE.Color()},uLine:{value:new THREE.Color()},uHorizon:{value:new THREE.Color()},uRim:{value:new THREE.Color(1,.78,.45)},uCentre:{value:new THREE.Vector2()},uExtent:{value:10},uFloor:{value:.4},uTime:{value:0},
     uMarks:{value:Array.from({length:MARKS},()=>new THREE.Vector4())},uMarkC:{value:Array.from({length:MARKS},()=>new THREE.Vector4(1,1,1,0))},
     uRipples:{value:Array.from({length:RIPPLES},()=>new THREE.Vector4(0,0,1,-1e5))},uRippleC:{value:Array.from({length:RIPPLES},()=>new THREE.Vector4())}};
   const floorMat=new THREE.ShaderMaterial({uniforms:FU,vertexShader:FLOOR_VS,fragmentShader:FLOOR_FS});
@@ -59,7 +61,11 @@ export function createFamily(ctx){
   const agentPoints=new THREE.Points(agentGeo,agentMat);agentPoints.frustumCulled=false;agentPoints.renderOrder=20;scene.add(agentPoints);
   function applyConfig(){const bg=col(cfg.background),hz=col(cfg.horizon);sky.uniforms.uTop.value.copy(bg);sky.uniforms.uHorizon.value.copy(hz);
     FU.uBase.value.copy(bg).multiplyScalar(.42).lerp(hz,.06);FU.uLine.value.copy(hz).lerp(new THREE.Color(1,1,1),.35).multiplyScalar(.55);FU.uHorizon.value.copy(hz);
-    FU.uFloor.value=clamp(Number(cfg.floor??DEFAULTS.floor));sky.uniforms.uStars.value=.4+FU.uFloor.value;}
+    FU.uFloor.value=clamp(Number(cfg.floor??DEFAULTS.floor));sky.uniforms.uStars.value=.4+FU.uFloor.value;
+    // The verified-milestone rim keeps its warmth on a coloured canvas and turns to a quiet warm grey on a monochrome
+    // one (it still marks the milestone; it no longer breaks the palette).
+    const chroma=Math.max(hz.r,hz.g,hz.b)-Math.min(hz.r,hz.g,hz.b),grey=(hz.r+hz.g+hz.b)/3,warmth=.25+.75*clamp(chroma*6);
+    FU.uRim.value.setRGB(1,.78,.45).lerp(new THREE.Color(.9,.88,.85),1-warmth);}
   applyConfig();
   // ---- Layout: the persisted site plan, scaled to the canvas ---------------------------------------------------------------
   const subs=new Map();let subList=[],nodes=[],centre=new THREE.Vector3(),extent=10,builtVersion=-1,builtAt=-Infinity,k=1;

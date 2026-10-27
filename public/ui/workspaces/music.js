@@ -54,7 +54,7 @@ const CONTROLS=[
 const CONTROL=Object.fromEntries(CONTROLS.map(c=>[c.key,c]));
 const wordOf=(k,v)=>{const w=CONTROL[k].words;return k==='evolution'?w[v<.34?0:v<.67?1:2]:w[Math.min(4,Math.floor(v*5))];};
 // The voice groups of the composed score (its roles), named for what they do in the music.
-const GROUP_INFO={pad:{name:'Pads',role:'Harmony bed'},bass:{name:'Bass',role:'Foundation'},melody:{name:'Melody',role:'Lead line'},counter:{name:'Counter-melody',role:'Answering voice'},
+const GROUP_INFO={pad:{name:'Pads',role:'Harmony bed'},bass:{name:'Bass',role:'Foundation'},melody:{name:'Melody',role:'Lead line'},counter:{name:'Counterline',role:'Answering melody'},
   arp:{name:'Arpeggio',role:'Moving support'},perc:{name:'Percussion',role:''},atmos:{name:'Atmosphere',role:'Shimmer and transitions'}};
 const PERC_ROLE={ambient:'Shaker',pulse:'Kick, snare, hats',cinematic:'Taiko',chip:'Kick, snare, hats'};
 // The genome's music response (engine/catalog.js COMMON): part of the visual identity, tuned through the recipe.

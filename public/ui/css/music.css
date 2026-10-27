@@ -81,7 +81,8 @@
 .ws-music .ms-ctl{display:grid;gap:7px;align-content:start;padding:13px 15px 14px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);min-width:0;
   transition:border-color var(--t-1),background var(--t-1),opacity var(--t-2)}
 .ws-music .ms-ctl:hover{border-color:var(--line-2)}
-.ws-music .ms-ctl-head{display:flex;align-items:baseline;gap:8px;min-width:0}
+/* The value word may drop under the name when a long name and the project ring leave it no room (never cut). */
+.ws-music .ms-ctl-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}
 .ws-music .ms-ctl-label{font-size:14.5px;font-weight:600;color:var(--text-1);white-space:nowrap}
 /* This project's own value: a ring after the name (a filled dot is a pending change, as on the other fields) */
 .ws-music .ms-ctl.own .ms-ctl-label::after,.ws-music .ms-ctl.pending .ms-ctl-label::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--accent);margin-left:7px;vertical-align:2px}

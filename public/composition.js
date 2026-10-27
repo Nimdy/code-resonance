@@ -52,7 +52,7 @@
       P('detail','int',1,5,3,'form',false),P('thickness','number',.1,2,.5),P('wire','bool',0,1,true),COLOR('color','#a6c8ff'),P('glow','number',0,3,.8),
       P('rotation','number',0,2,.3,'motion'),P('wobble','number',0,1,.2,'motion')]},
     atmosphere:{label:'Atmospheric field',cost:()=>6,params:[
-      P('style','enum',['haze','aurora','gradient','nebula'],0,'haze','form'),P('scale','number',.2,3,1,'form'),P('height','number',0,1,.5,'form'),
+      P('style','enum',['haze','aurora','gradient','nebula'],0,'haze','form'),P('scale','number',.2,3,1,'form'),P('height','number',0,1,.3,'form'),
       COLOR('color','#1e3a5f'),COLOR('colorB','#6b3fa0'),P('intensity','number',0,2,.6),P('noise','number',0,1,.5),P('speed','number',0,1,.2,'motion')]},
     light:{label:'Light accents',cost:p=>1+p.count*.25,params:[
       P('style','enum',['glow','pulse','flare','beacon'],0,'glow','form'),P('count','int',1,16,3,'form',false),P('size','number',.1,3,1,'form'),

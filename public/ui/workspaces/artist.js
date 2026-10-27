@@ -415,7 +415,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       ...Object.keys(C.LAYERS).map(type=>{const cost=C.costOf(C.layer(type,START[type]||{})),fits=spent+cost<=C.LIMITS.budget&&session.work.layers.length<C.LIMITS.layers;
         const b=h('button',{type:'button',class:'menu-item ar-add-item',disabled:!fits,dataset:{type}},h('span',{class:'ar-glyph'},icon(type)),
           h('span',{class:'grow'},h('strong',{text:W.LAYER_WORDS[type].name}),h('span',{text:W.LAYER_WORDS[type].line})),h('span',{class:'tiny faint num ar-add-cost',text:fits?`${Math.round(cost)}`:'over budget'}));
-        b.addEventListener('click',()=>{close();addLayer(type);});return b;})),{width:400});
+        b.addEventListener('click',()=>{close();addLayer(type);});return b;}),
+      // Layers are data only. Someone who wants their own shader or a whole world in code writes a Visual Pack (it runs
+      // isolated and is approved by the person who installs it).
+      h('div',{class:'ar-add-code tiny faint'},h('span',{text:'Need your own shader or a world written in code? '}),
+        h('button',{type:'button',class:'linklike',text:'Visual Pack SDK',onClick:()=>{close();openDoc('packs/README.md');}}),h('span',{text:' (shader and world packs, run isolated after approval).'}))),{width:400});
   }
   // ---- Layer stack ---------------------------------------------------------------------------------------------------
   function renderStack(){
