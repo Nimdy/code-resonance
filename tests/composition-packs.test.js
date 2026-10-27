@@ -82,6 +82,10 @@ test('Unsafe content is refused: code in a data pack, unknown layer types or sig
   for(const type of ['constructor','__proto__','toString'])assert(write(`proto-${type}`,m({layers:[{type}]})).some(e=>/composition\/layers\/0\/type: unknown layer type/.test(e)),type);
   assert.equal(C.validate({layers:[{type:['light']}]}).length,1,'a list is not a layer type');
   assert.equal(C.validate({layers:Array.from({length:1000},()=>({}))}).length,24,'the first 24 problems only');
+  // A value with no primitive form ({"toString":1}) is a bad value like any other, never a crash.
+  const odd={toString:1};
+  assert(write('object',m({layers:[{type:'light',seed:odd,params:{intensity:odd},anchor:{kind:'point',x:odd},mappings:[{signal:odd}]},{type:odd}],music:{profile:{mood:odd}}})).some(e=>/unknown signal/.test(e)));
+  assert.equal(C.normalize({layers:[{type:'light',params:{intensity:odd}}]}).layers[0].params.intensity,C.specOf('light').find(p=>p.key==='intensity').default);
   assert(write('base',m(C.exportable(starter('starter-celestial-motion')))).some(e=>/must be the composition's base, "stellar-forge"/.test(e)));
   assert(write('old-sdk',m(C.exportable(starter('starter-bioluminescent-dream')),{sdk:'^1.3'})).some(e=>/needs SDK 1\.3/.test(e)));
   assert(write('shape',m('layers')).some(e=>/composition: must be object/.test(e)));
