@@ -26,4 +26,5 @@ export function stageWorldName(recipe){return recipe?.composition?.base==='canva
 export const STYLE_NAMES={ambient:'Ambient',pulse:'Pulse',cinematic:'Cinematic',chip:'Chip'};
 export const WORLD_NAMES={living:'Living world',construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'};
 export const LABEL_NAMES={cinematic:'Cinematic',explorer:'Explorer',stream:'Stream',off:'Off'};
+export const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
 export const QUALITY_NAMES={auto:'Auto',0:'High',1:'Medium',2:'Low',3:'Lowest'};
