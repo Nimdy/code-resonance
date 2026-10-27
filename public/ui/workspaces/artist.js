@@ -703,7 +703,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(previewing)badge.append(h('span',{class:'pill accent',id:'arBadge',text:'Preview · this window only'}),session.work?h('span',{class:'pill plain',text:session.work.name}):null);
     else badge.append(h('span',{class:'pill plain',id:'arBadge',text:'Saved look'}));
     if(localWorld)badge.append(h('span',{class:'pill plain',text:'Living world shown for the preview'}));
-    const msg=P.state.preview?.notice||P.state.worldStatus?.notice;
+    const msg=P.state.preview?.notice||P.state.worldStatus?.notice,failedLayers=P.state.worldStatus?.layerFailures||[];
+    // A layer that could not be drawn: named, with the reason; the composition (and the rest of it) is kept.
+    if(failedLayers.length)stageNote.append(h('div',{class:'callout danger',id:'arLayerFailure'},icon('warn'),h('div',{class:'callout-body'},
+      h('strong',{text:failedLayers.length===1?`“${failedLayers[0].name}” could not be drawn`:`${failedLayers.length} layers could not be drawn`}),
+      h('div',{class:'small',text:`${failedLayers.map(f=>`${f.name}: ${f.message}`).join(' · ')}. The composition is kept as it is; change the layer, or remove it, and it is tried again. The other layers and the world keep drawing.`}))));
     if(msg)stageNote.append(h('div',{class:'callout'},icon('info'),h('div',{class:'callout-body',text:msg})));
     else if(!S.state.selected)stageNote.append(h('div',{class:'callout'},icon('info'),h('div',{class:'callout-body',text:'Select a project: compositions are previewed on a project’s real structure and recorded events.'})));
   }

@@ -83,3 +83,23 @@ test('Two runtimes fed the same frames draw the same layers (films are rendered 
       if(o.geometry?.attributes?.position&&o.isPoints)out.push(Array.from(o.geometry.attributes.position.array.slice(0,24)).join());});r.layers.dispose();return out;};
   assert.deepEqual(run(),run());
 });
+test('A layer that fails is set aside with its reason; the others keep drawing; it is retried only once it is changed',async()=>{
+  const {THREE,L}=await load();
+  // A composition model whose mappings throw for one layer: the failure happens while drawing that layer.
+  // (The starter's one particle population is the layer that fails: its spec is the only one with a behaviour.)
+  const broken=new Set(['particles']),model={...C,applyMappings:(params,mappings,signal,spec)=>{if(broken.has('particles')&&spec.some(p=>p.key==='behavior'))throw new Error('this layer cannot be drawn');return C.applyMappings(params,mappings,signal,spec);}};
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,16/9,.1,4000);camera.position.set(30,12,30);camera.lookAt(0,0,0);
+  const layers=L.createLayers({THREE,scene,camera,composition:model,director:()=>({commands:[],activityAt:()=>.3}),musicAt:music,seed:42,size:()=>[1920,1080]});
+  const frame=k=>{const tview=k/60,t=T0+tview*1000;layers.update({t,tview,dt:1/60,music:music(t),activity:.3,agents:[]});};
+  const c=structuredClone(C.STARTERS.find(s=>s.id==='starter-bioluminescent-dream'));
+  layers.set(c,{anchors:ANCHORS});for(let k=0;k<6;k++)assert.doesNotThrow(()=>frame(k));
+  let s=layers.stats();assert.deepEqual(s.failed.map(f=>f.id),['spores']);assert.match(s.failed[0].message,/cannot be drawn/);assert.equal(s.failed[0].name,'Drifting spores');
+  const group=scene.getObjectByName('layer:spores');assert.equal(group.visible,false);assert.equal(group.children.length,0);
+  assert(scene.getObjectByName('layer:filaments').children.length>0,'the other layers still draw');
+  // The same definition is not rebuilt every frame (no loop of failures)…
+  const created=s.created;layers.set(structuredClone(c),{anchors:ANCHORS});frame(7);assert.equal(layers.stats().created,created);assert.equal(layers.stats().failed.length,1);
+  // …a change to the layer tries it again, and a working layer clears the failure.
+  broken.clear();const d=structuredClone(c);d.layers.find(l=>l.id==='spores').params.size=1.2;layers.set(d,{anchors:ANCHORS});frame(8);frame(9);
+  s=layers.stats();assert.deepEqual(s.failed,[]);assert(scene.getObjectByName('layer:spores').children.length>0);
+  layers.dispose();
+});

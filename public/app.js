@@ -102,8 +102,16 @@
   // A machine that cannot render the living world is told so once per quality choice, with the lightweight 2D stage
   // (Monolith) offered; the world the viewer chose is never switched without them.
   let rendering={level:null,fps:null,degraded:false},autoLevel=null,degradedWarned=false,renderingCheck=0;
+  // Artist layers that could not be drawn (host.js / layers.js isolate them): published on the world topic when the
+  // list changes, so the Artist Studio can say which layer failed and why while the rest keeps drawing.
+  let failuresSig='[]',failures=[];
+  const layerFailures=()=>failures.map(f=>({...f}));
+  function watchLayers(){
+    const s=living?.remote?null:living?.stats?.()?.layers,list=s?[...(s.failed||[]),...(s.broken?[{id:null,name:'All layers',type:null,message:s.broken}]:[])]:[];
+    const sig=JSON.stringify(list);if(sig!==failuresSig){failuresSig=sig;failures=list;changed('world');}
+  }
   function watchRendering(){
-    const now=performance.now();if(FILM||now-renderingCheck<1000||!living)return;renderingCheck=now;
+    const now=performance.now();if(FILM||now-renderingCheck<1000||!living)return;renderingCheck=now;watchLayers();
     const p=living.performance?.()||living.stats?.();if(!p)return;
     const next={level:Number.isInteger(p.quality??p.level)?(p.quality??p.level):null,fps:Number.isFinite(p.fps)?p.fps:null,degraded:p.degraded===true};
     const moved=next.level!==rendering.level||next.degraded!==rendering.degraded;rendering=next;
@@ -935,7 +943,7 @@
       recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:PROFILE_SIZES[recordSize]},
       recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
       worldStatus:{loading:!!livingLoading,running:!!living,remote:!!living?.remote,pack:living?.pack?{id:living.pack.id,name:living.pack.name}:null,failed:livingFailed,construct:!!construct,constructFailed,
-        notice:packNotice,stopped:stoppedPack&&stoppedPacks.has(stoppedPack.id)?{id:stoppedPack.id,name:stoppedPack.name,reason:stoppedPacks.get(stoppedPack.id)}:null},
+        notice:packNotice,layerFailures:layerFailures(),stopped:stoppedPack&&stoppedPacks.has(stoppedPack.id)?{id:stoppedPack.id,name:stoppedPack.name,reason:stoppedPacks.get(stoppedPack.id)}:null},
       exporting,picked,notices:notices.slice()};},
     selectProject,setWorld,
     setLabels(m){if(!LABEL_MODES.includes(m)||m===labelMode)return;labelMode=m;living?.setLabels(m);picked=null;changed('labels');},

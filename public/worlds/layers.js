@@ -30,6 +30,12 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
   const signals=createSignals({music:musicAt,activity:T=>director()?.activityAt(T)??0,commands:()=>director()?.commands||[],speed});
   const stack=new Map(),env={THREE,quality,random:key=>rng(hash(`${seed>>>0}/${key}`))};
   const counters={created:0,rebuilt:0,disposed:0};
+  // A layer that fails (building or drawing) is set aside with its reason, its resources released and its definition
+  // remembered: it is not rebuilt every frame, only when the artist changes it. The rest of the composition and the
+  // world carry on.
+  const failed=new Map();
+  const failure=(l,err)=>{const e=stack.get(l.id);if(e){try{e.renderer.dispose();}catch{}e.group.visible=false;for(const o of [...e.group.children])e.group.remove(o);e.key=null;}
+    failed.set(l.id,{def:JSON.stringify(l),name:l.name,type:l.type,message:String(err?.message||err).slice(0,160)});};
   let comp=null,anchors=null,lastTview=null,active=null,global={'camera.sway':0,'camera.zoom':0,'finish.bloom':0,'finish.exposure':0},drawn={points:0,segments:0,draws:0};
   function create(l){
     const r=RENDERERS[l.type](THREE,env),group=new THREE.Group();group.name=`layer:${l.id}`;root.add(group);
@@ -43,7 +49,9 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
     comp=c?C.normalize(c):null;
     const want=new Map((comp?.layers||[]).map(l=>[l.id,l]));
     for(const e of [...stack.values()]){const l=want.get(e.id);if(!l||l.type!==e.type)remove(e);}
-    (comp?.layers||[]).forEach((l,i)=>{const e=stack.get(l.id)||create(l);e.cfg=l;e.index=i;});
+    for(const id of [...failed.keys()])if(!want.has(id))failed.delete(id);
+    (comp?.layers||[]).forEach((l,i)=>{if(failed.get(l.id)?.def===JSON.stringify(l))return;failed.delete(l.id);
+      try{const e=stack.get(l.id)||create(l);e.cfg=l;e.index=i;}catch(err){failure(l,err);}});
     if(!comp)global={'camera.sway':0,'camera.zoom':0,'finish.bloom':0,'finish.exposure':0};
     return comp;
   }
@@ -96,8 +104,9 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
     global=C.applyMappings({'camera.sway':0,'camera.zoom':0,'finish.bloom':0,'finish.exposure':0},comp.mappings,(id,s)=>signals.get(id,s),C.GLOBAL_TARGETS);
     const h=size()[1],uPx=2*Math.tan((camera.fov||36)*Math.PI/360)/Math.max(1,h),q=quality(),k=speed()>0?speed():1;
     const solo=comp.layers.some(l=>l.enabled&&l.solo);drawn={points:0,segments:0,draws:0};
-    for(const l of comp.layers){const e=stack.get(l.id);if(!e)continue;
+    for(const l of comp.layers){const e=stack.get(l.id);if(!e||failed.has(l.id))continue;
       const visible=l.enabled&&(!solo||l.solo);e.group.visible=visible;if(!visible)continue;
+      try{
       const spec=C.specOf(l.type),p=C.applyMappings(l.params,l.mappings,(id,s)=>signals.get(id,s),spec),sites=sitesFor(l,A);
       const key=e.renderer.key(l,sites);
       if(key!==e.key){if(e.key!==null)counters.rebuilt++;e.key=key;e.renderer.build(l,sites);for(const o of [...e.group.children])e.group.remove(o);for(const o of e.renderer.objects)e.group.add(o);e.state='';}
@@ -117,7 +126,8 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
         tickParams:(t,run)=>{const T=info.t+(t-tv)*1000*k,sim=l.mappings.filter(m=>SIM_KEYS.has(m.target));if(!sim.length)return l.params;
           const sig=(id,s)=>{const raw=signals.at(id,T);if(!(s>0))return raw;const key=`${id}|${s}`,f=run.filters.get(key);const v=f===undefined?raw:f+(raw-f)*(1-Math.exp(-SWARM_DT/s));run.filters.set(key,v);return v;};
           return C.applyMappings(l.params,sim,sig,spec);}});
-      const s=e.renderer.stats();drawn.points+=s.points||0;drawn.segments+=s.segments||0;drawn.draws+=s.draws||0;}
+      const s=e.renderer.stats();drawn.points+=s.points||0;drawn.segments+=s.segments||0;drawn.draws+=s.draws||0;
+      }catch(err){failure(l,err);}}
   }
   return {
     set,update,
@@ -130,7 +140,8 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
     // After a seek: no smoothed value and no clock carries over; populations restart from their generation.
     onPrime(){signals.reset();lastTview=null;active=null;},
     get composition(){return comp;},get signals(){return signals;},get root(){return root;},
-    stats(){return comp?{layers:comp.layers.filter(l=>l.enabled).length,cost:C.budgetOf(comp).used,points:drawn.points,segments:drawn.segments,drawCalls:drawn.draws,...counters}:{layers:0,cost:0,points:0,segments:0,drawCalls:0,...counters};},
+    stats(){const f=[...failed].map(([id,x])=>({id,name:x.name,type:x.type,message:x.message}));
+      return comp?{layers:comp.layers.filter(l=>l.enabled).length,cost:C.budgetOf(comp).used,points:drawn.points,segments:drawn.segments,drawCalls:drawn.draws,failed:f,...counters}:{layers:0,cost:0,points:0,segments:0,drawCalls:0,failed:f,...counters};},
     ids:()=>[...stack.keys()],
     dispose(){for(const e of [...stack.values()])remove(e);scene.remove(root);comp=null;}
   };

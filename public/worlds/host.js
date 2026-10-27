@@ -231,6 +231,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // changes (the next frame sees it), released with the world they draw into.
   let layers=null,layersFor=null,layersApi=null;
   const layersModule=async()=>layersApi||(layersApi=await import('./layers.js').then(async m=>({create:m.createLayers,C:await m.loadComposition()})));
+  let layersBroken=null;
   async function syncLayers(){
     layersFor=current?.composition??null;if(!compositionOf(current)){if(layers){layers.dispose();layers=null;}return;}
     const api=await layersModule(),c=compositionOf(current);if(!c)return;
@@ -290,12 +291,14 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     // few milliseconds per frame and reports that it is restoring while far behind).
     if(lifeDriver)info.life=lifeDriver.update(info,{budgetMs:film?Infinity:6});
     world.update(info);
-    if((current.composition??null)!==layersFor)void syncLayers();
+    if((current.composition??null)!==layersFor){layersBroken=null;void syncLayers();}
     const goal=world.cameraGoal(info);
     // A composition's global mappings bend the world's own camera goal within bounds; its layers follow the camera.
     if(layers)layers.camera(goal,info);
     rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
-    if(layers)layers.update(info);
+    // The artist's layers never take the world down: should the layer pass itself fail, layers stop until the
+    // composition changes (each layer's own failures are isolated inside the runtime).
+    if(layers&&!layersBroken)try{layers.update(info);}catch(err){layersBroken=String(err?.message||err).slice(0,160);console.error('artist layers stopped',err);}
     // updateMs is the CPU time of update and the camera (docs/packs/performance.md); afterCamera's camera-dependent
     // offscreen passes are drawing and count as draw time.
     const drawn=performance.now();
@@ -372,7 +375,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
       quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,gpuTimerBlind:governor.gpuTimerBlind,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2),
-      life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null,layers:layers?layers.stats():null};},
+      life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null,layers:layers?{...layers.stats(),broken:layersBroken}:null};},
     // The context itself is released now (otherwise its GPU memory and buffers wait for the garbage collector).
     dispose(){disposeExtension();for(const q of queries.splice(0))gl.deleteQuery(q);layers?.dispose();layers=null;world?.dispose();lifeDriver?.dispose();lifeDriver=null;pipeline.dispose();renderer.dispose();renderer.forceContextLoss?.();}
   };
