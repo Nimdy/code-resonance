@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {translate}=require('../scripts/hooks/claude-code');
-const {merge}=require('../scripts/hooks/install-claude-code');
+const {merge,unmerge}=require('../scripts/hooks/install-claude-code');
 const {vscodeFileUri,projectIdForRoot}=require('../sdk/project-id');
 const {validateEvent}=require('../receiver/protocol');
 test('Project identity matches VS Code Uri.file().toString() encoding',()=>{
@@ -45,4 +45,7 @@ test('Hook installer is idempotent and preserves existing settings',()=>{
   assert.deepEqual(second,first);
   assert.deepEqual(first.permissions,{allow:['Bash(ls)']});
   assert.equal(first.hooks.PostToolUse.length,2);
+  // Removal is its inverse: the user's own settings come back exactly, and an emptied hooks key goes.
+  assert.deepEqual(unmerge(first),{permissions:{allow:['Bash(ls)']},hooks:{PostToolUse:[{matcher:'Edit',hooks:[{type:'command',command:'lint'}]}]}});
+  assert.deepEqual(unmerge(merge({model:'opus'})),{model:'opus'});
 });

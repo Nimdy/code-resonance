@@ -13,7 +13,6 @@ const VALID_KINDS = new Set([
   'agent.file.modified','instrument.note',
   'agent.session.started','agent.session.ended','agent.subagent.started','agent.subagent.stopped'
 ]);
-const EXTENSIONS = new Set(['.js','.jsx','.mjs','.cjs','.ts','.tsx','.mts','.cts','.json','.css','.html','.py','.go','.rs','.md']);
 // Shared with the extension so it can never send a path the receiver would reject.
 const EXCLUDE_PARTS = new Set(filters.EXCLUDED_DIRS);
 const SECRET_FILE = filters.SECRET_FILE;
@@ -84,4 +83,4 @@ function validateEvent(value) {
   if (value.text !== undefined) result.text=cleanString(value.text,12000);
   return result;
 }
-module.exports={VALID_KINDS,REPORTED_META,EXTENSIONS,SECRET_FILE,EXCLUDE_PARTS,sha,safeRelative,validateEvent};
+module.exports={VALID_KINDS,REPORTED_META,SECRET_FILE,EXCLUDE_PARTS,sha,safeRelative,validateEvent};

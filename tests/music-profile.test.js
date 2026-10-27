@@ -105,3 +105,9 @@ test('Presets carry the whole performance; a preset from before sets only what i
   // Distinct: every pair differs by a clear margin somewhere in the profile, beyond the style.
   for(const a of M.STARTERS)for(const b of M.STARTERS)if(a!==b)assert(M.PROFILE_KEYS.some(k=>Math.abs(a.payload.profile[k]-b.payload.profile[k])>=.2),`${a.name} / ${b.name}`);
 });
+test('One music vocabulary: the interface\'s styles and defaults are the score\'s and the receiver\'s',async()=>{
+  const M=await load(),{STYLE_NAMES}=await import('../public/ui/format.js');
+  assert.deepEqual(M.STYLES,score.STYLES);assert.deepEqual(Object.keys(STYLE_NAMES),score.STYLES,'every style has its name');
+  assert.deepEqual(M.DEFAULT_MUSIC,store.SETTINGS_DEFAULTS.music);assert.deepEqual([M.TEMPO_MIN,M.TEMPO_MAX],[store.TEMPO_MIN,store.TEMPO_MAX]);
+  for(const v of [undefined,null,2,3,'3','2',4,'x'])assert.equal(M.scoreOf({genome:{music:{score:v}}}),score.versionOf(v),String(v));
+});

@@ -1,9 +1,9 @@
 'use strict';
-// Auto quality (public/worlds/host.js createQualityGovernor): how quickly live playback steps down on a slow machine,
+// Auto quality (public/worlds/quality.js createQualityGovernor): how quickly live playback steps down on a slow machine,
 // that it does not oscillate, and when it reports that no level makes WebGL usable. Frame times are simulated; the
 // real-browser measurements are in docs/QUALIFICATION.md ("Auto quality").
 const test=require('node:test'),assert=require('node:assert/strict');
-const load=()=>import('../public/worlds/host.js');
+const load=()=>import('../public/worlds/quality.js');
 // Presents frames for `seconds` from `t` at the frame rate `fps(level, t)` (fps may be fractional); returns the end time
 // and every level change with the time it happened.
 function run(g,fps,seconds,t=0){const end=t+seconds,changes=[];

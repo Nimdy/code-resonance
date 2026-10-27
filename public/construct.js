@@ -32,7 +32,6 @@ const ease=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;};
 const easeOut=x=>1-Math.pow(1-clamp(x),3);
 // Fully faded objects are hidden, so they cost no draw call (it matters with hundreds of buildings).
 function fade(o,opacity){if(!o)return;o.material.opacity=opacity;o.visible=opacity>.002;}
-function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 const plot=(q,r)=>({x:SQRT3*q+SQRT3/2*r,z:1.5*r});
 function radialTexture(stops){
   const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
@@ -83,7 +82,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
   const tileEdges=new THREE.EdgesGeometry(tileGeo);
   const ringGeo=new THREE.RingGeometry(.74,.84,6,1);ringGeo.rotateX(-Math.PI/2);
   const districts=new Map(),buildings=new Map(),tiers=new Map(),links=new Map(),agents=new Map(),effects=[];
-  let stepMs=60000/(92*4),mood='home',energy=0,lastCaptionAt=-1e12,extent=4,attention=null,focus=new THREE.Vector3(),distance=11,lampTarget=null,lampAt=-1e12;
+  let stepMs=60000/(92*4),mood='home',energy=0,lastCaptionAt=-1e12,extent=4,attention=null;
   const view={target:new THREE.Vector3(),distance:11,shift:0};
   // Callers pass performance time. Animations run in viewer time (performance time / replay speed) so pacing stays
   // natural at any replay speed, while starts are snapped to the music's step grid in performance time.
@@ -343,7 +342,6 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
           if(d.cross){const a=buildings.get(d.fileId),e=buildings.get(d.targetId);if(a&&e){noteAttention({x:(a.x+e.x)/2,z:(a.z+e.z)/2},at,2.2);caption(at,'Two subsystems connect',2);}}}
         break;
       }
-      case 'editor.change.observed':if(b){lampTarget=b.id;lampAt=at;}break;
       case 'agent.tool.started':case 'agent.tool.completed':case 'agent.file.modified':{
         if(b&&voice!==null)sendDrone(voice,b,at);else if(voice!==null){const a=drone(voice);a.active=at;a.g.visible=true;}
         if(voice!==null){const a=drone(voice);a.lastTool=at;

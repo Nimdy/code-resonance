@@ -10,21 +10,20 @@
 import {h,text,button,segmented,slider,section,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {projectName,STYLE_NAMES} from '../format.js';
-import {PROFILE_KEYS,GROUPS,MUSIC_KEYS,DEFAULT_MUSIC,DEFAULT_MIX,STARTERS,mixOf,sameMix,scoreOf,soundingGroups,presetPayload,presetValues} from '../music-profile.js';
-const STYLES=['ambient','pulse','cinematic','chip'];
+import {STYLES,TEMPO_MIN,TEMPO_MAX,PROFILE_KEYS,GROUPS,MUSIC_KEYS,DEFAULT_MUSIC,DEFAULT_MIX,STARTERS,mixOf,sameMix,scoreOf,soundingGroups,presetPayload,presetValues} from '../music-profile.js';
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
-// What each palette really plays and its room, in seconds. The engine does not export these, so they are mirrored
-// here: keep them in step with public/music.js and public/score.js. The classic score (v2): `voices` (music.js PATCH,
-// score.js INSTRUMENT) and `room` (music.js REVERB). The composed score (v3): `composed`, what createBarV3 writes for
-// each style through music.js PATCH3, and `room3` (music.js REVERB3), which Space scales (roomOf).
+// What each palette really plays. The engine does not export these, so they are mirrored here: keep them in step with
+// public/music.js and public/score.js. The classic score (v2): `voices` (music.js PATCH, score.js INSTRUMENT). The
+// composed score (v3): `composed`, what createBarV3 writes for each style through music.js PATCH3. The room comes from
+// the engine itself (roomOf).
 const STYLE_INFO={
-  ambient:{tag:'Drift',voices:'Sine bass, slow-swelling saw pads, soft triangle arpeggios, shaker. No drums.',room:3.2,room3:3.6,
+  ambient:{tag:'Drift',voices:'Sine bass, slow-swelling saw pads, soft triangle arpeggios, shaker. No drums.',
     composed:'No drums: a high, breathy flute melody over warm pads, harp and glass details, tonic pedals in interludes.'},
-  pulse:{tag:'Synth',voices:'Saw pads and bass, saw arpeggios, kick on every beat, snare and hats.',room:1.6,room3:1.7,
+  pulse:{tag:'Synth',voices:'Saw pads and bass, saw arpeggios, kick on every beat, snare and hats.',
     composed:'Drums that change with each section and drop out in releases, syncopated developments, fills into returns.'},
-  cinematic:{tag:'Score',voices:'Warm three-voice pads with vibrato, triangle bass, taiko, shaker.',room:3.6,room3:3.9,
+  cinematic:{tag:'Score',voices:'Warm three-voice pads with vibrato, triangle bass, taiko, shaker.',
     composed:'A string ostinato in developments, taiko only at section starts and in fills, swells and washes at the turns.'},
-  chip:{tag:'Digital',voices:'Square-wave voices, triangle bass, kick on every beat, snare and hats.',room:.9,room3:1.1,
+  chip:{tag:'Digital',voices:'Square-wave voices, triangle bass, kick on every beat, snare and hats.',
     composed:'Band-limited pulse waves, fast arpeggios, melodies answered in echo canons, four-on-the-floor developments.'}
 };
 const MODE_HINT={ionian:'major',aeolian:'natural minor',dorian:'minor with a bright sixth',lydian:'major with a raised fourth',mixolydian:'major with a flat seventh'};
@@ -96,8 +95,8 @@ export default {mount(view,{store:S,player:P,chrome}){
   // loads). With no project, the controls edit the global defaults, which the composed score of any project will use.
   const composed=()=>!S.state.selected||chosenScore!==2;
   const projectBpm=style=>identity?identity.tempo[style]:null;
-  // The room a style plays in: the classic score's is fixed; the composed score's opens and closes with Space (music.js space()).
-  const roomOf=style=>{const i=STYLE_INFO[style];return composed()?Math.round(i.room3*(.6+.85*shown('space'))*4)/4:i.room;};
+  // The room a style plays in, the engine's own (music.js roomSeconds): Space opens and closes the composed score's.
+  const roomOf=style=>window.ResonanceMusic.roomSeconds(style,composed()?3:2,shown('space'));
   const tempoText=(mode,bpm,style)=>mode==='manual'?`Manual · ${bpm} BPM`:`From the project${projectBpm(style)?` · ${projectBpm(style)} BPM`:''}`;
   // ---- Preview: one source of truth (store.state.musicPreview); this view only edits it ------------------------------
   function setPreview(next){const p={...next},v=S.state.musicPreview?.volume;if(v!==undefined)p.volume=v;S.previewMusic(null);if(Object.keys(p).length)S.previewMusic(p);}
@@ -226,10 +225,10 @@ export default {mount(view,{store:S,player:P,chrome}){
   const mixNote=h('p',{class:'small faint ms-mix-note'}),mixSource=h('div',{class:'ms-source'});
   const mixLock=lockNote();
   // ---- Tempo and texture -------------------------------------------------------------------------------------------
-  const startTempo=()=>{const st=shown('style');return saved('tempoMode')==='manual'?saved('tempo'):Math.min(160,Math.max(58,projectBpm(st)||saved('tempo')));};
+  const startTempo=()=>{const st=shown('style');return saved('tempoMode')==='manual'?saved('tempo'):Math.min(TEMPO_MAX,Math.max(TEMPO_MIN,projectBpm(st)||saved('tempo')));};
   const tempoSeg=segmented({label:'Tempo source',id:'musicTempoMode',options:[{value:'project',label:'From the project'},{value:'manual',label:'Manual'}],value:shown('tempoMode'),
     onChange:v=>v==='manual'?edit({tempoMode:'manual',tempo:startTempo()}):edit({tempoMode:'project'})});
-  const tempoSlider=slider({min:58,max:160,integer:true,value:shown('tempo'),label:'Manual tempo in BPM',id:'musicTempo',format:v=>String(v),onInput:v=>edit({tempoMode:'manual',tempo:v})});
+  const tempoSlider=slider({min:TEMPO_MIN,max:TEMPO_MAX,integer:true,value:shown('tempo'),label:'Manual tempo in BPM',id:'musicTempo',format:v=>String(v),onInput:v=>edit({tempoMode:'manual',tempo:v})});
   const tempoRead=h('span',{class:'field-value num'});
   const tempoHint=h('div',{class:'field-doc'});
   const timing=h('dl',{class:'ms-timing'});

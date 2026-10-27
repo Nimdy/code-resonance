@@ -109,15 +109,6 @@ export function linkPlans(model,districtOf){
 export function cableShape(br,ax,az,topA,bx,bz,topB){
   const ya=Math.max(.8,topA*(.62+.4*br.ha)),yb=Math.max(.8,topB*(.62+.4*br.hb)),d=Math.sqrt((bx-ax)*(bx-ax)+(bz-az)*(bz-az));return {ya,yb,sag:d*.06,d};
 }
-// The height below which a tower's outworks stand around it (gothic buttress piers with their pinnacles and flying
-// buttresses, brutalist columns): above it, the wall itself (radius wallR) is the outermost stone.
-export function partsTop(tp,top,o){
-  const N=tp.shown.length,gothicLike=o.archName==='gothic'||o.archName==='spire',base=.24;
-  if(gothicLike&&N>=5&&!tp.carpet&&tp.sd<o.buttressK+.15){const H=Math.max(.5,(top-base)*.3),y0=base+H+.2,y1=Math.min(top-.1,y0+(top-y0)*.3+.2);return Math.max(y1,base+H+.34);}
-  if(o.archName==='brutalist'&&N>=3&&!tp.carpet)return base+Math.max(.5,(top-base)*.82);
-  return base;
-}
-export const wallR=tp=>tp.R0*1.1;
 // The orientation of the towers' prisms (the world's frustum of `sides` faces turned by axisAz + pi / sides): n faces,
 // v0 the direction (atan2(z, x)) of a vertex; the faces' normals lie half-way between the vertices.
 export const prismOf=(o,axisAz)=>({n:o.A.sides,v0:Math.PI/2-axisAz-Math.PI/o.A.sides});

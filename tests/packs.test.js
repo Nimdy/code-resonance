@@ -40,6 +40,10 @@ test('Compatibility: a pack runs on the SDK major it names, at or above the mino
   assert.equal(packs.SDK_VERSION,'1.2.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);assert.equal(packs.compatible({sdk:'^1.2'},packs.SDK_VERSION).ok,true);
   for(const d of fs.readdirSync(EXAMPLES))assert.equal(packs.compatible(JSON.parse(fs.readFileSync(path.join(EXAMPLES,d,'pack.json'),'utf8'))).ok,true,d);
 });
+test('Pack code is told the SDK version its compatibility was checked against',async()=>{
+  // Two copies by necessity: the pack frame's CSP serves only /worlds/ and /vendor/, and the engine cannot require ESM.
+  assert.equal((await import('../public/worlds/sdk.js')).SDK_VERSION,packs.SDK_VERSION);
+});
 test('Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers',t=>{
   assert(errorsOf(t,declarative({overrides:{'geometry.nonsense':1}})).some(e=>/not a parameter/.test(e)));
   assert(errorsOf(t,declarative({overrides:{'geometry.spiralArms':40}})).some(e=>/integer in \[1, 6\]/.test(e)));
@@ -51,6 +55,9 @@ test('Declarative packs are checked against their base family: parameters, range
   assert.deepEqual(errorsOf(t,declarative({effects:{'milestone.achieved':'aurora'}})),[]);
   assert(errorsOf(t,declarative({unlocks:['fireflies']})).some(e=>/not an ambient layer/.test(e)));
   assert(errorsOf(t,{...declarative(),declarative:{base:'nobody.unknown'}}).some(e=>/unknown family/.test(e)));
+  // A base is a family's own name: an inherited one is unknown, with or without overrides and ambient layers.
+  for(const d of [{},{overrides:{'palette.hue':1}},{unlocks:['halo']}])
+    assert(errorsOf(t,{...declarative(),declarative:{base:'constructor',...d}}).some(e=>/unknown family "constructor"/.test(e)),JSON.stringify(d));
 });
 test('Code packs: one self-contained module with the right export; data packs contain no code',t=>{
   assert.deepEqual(errorsOf(t,world(),{'world.js':WORLD_JS}),[]);

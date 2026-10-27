@@ -15,6 +15,8 @@
 })(typeof globalThis!=='undefined'?globalThis:null,function(){
   const SCHEMA='code-resonance.composition.v1',VERSION=1;
   const LIMITS={layers:8,mappings:6,globalMappings:4,name:48,budget:100,tuning:48,versions:5};
+  // validate() reports the first problems only: a large crafted pack.json would otherwise list one per entry.
+  const MAX_PROBLEMS=24;
   const BASES=['fractal-biosphere','stellar-forge','machine-cathedral','canvas'];
   const FINISHES=['clean','cinematic','dreamlike'];
   // Depth is where a layer is drawn: behind the world, integrated with it (depth-tested), or in front of it. All three
@@ -26,6 +28,9 @@
   // (normalised -1..1 of the world's extent).
   const ANCHORS=['center','subsystems','largest','active','nodes','boundary','camera','point'];
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  // Values from JSON are converted without trusting them: an object with no primitive value ({"toString":1}) converts
+  // to NaN or '' instead of throwing.
+  const num=v=>{try{return Number(v);}catch{return NaN;}},text=v=>{try{return String(v);}catch{return '';}};
   const HEX=/^#[0-9a-f]{6}$/i;
   // Parameter spec: [key, type, min|options, max, default, group, live]. Types: number, int, enum, color, bool.
   // live: false marks a value that shapes the layer's geometry (its form is rebuilt when it changes): it is edited, never
@@ -83,7 +88,9 @@
   const CANVAS=[COLOR('background','#04060c'),COLOR('horizon','#14223a'),P('orbit','number',0,1,.25),P('distance','number',.5,2,1),P('floor','number',0,1,.4)];
   // Composition-level targets (bounded camera motion and finish emphasis).
   const GLOBAL_TARGETS=[P('camera.sway','number',0,1,0),P('camera.zoom','number',-.3,.3,0),P('finish.bloom','number',-.5,.5,0),P('finish.exposure','number',-.3,.3,0)];
-  function specOf(type){const t=LAYERS[type];if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
+  // A layer type is one of LAYERS' own names, as a string: never an inherited key ('constructor') or a coerced value.
+  const typeOf=t=>typeof t==='string'&&Object.hasOwn(LAYERS,t)?LAYERS[t]:null;
+  function specOf(type){const t=typeOf(type);if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
   function targetsOf(type){return (specOf(type)||[]).filter(p=>(p.type==='number'||p.type==='int')&&p.live!==false);}
   // What a depth class actually does for a layer type (shown with the choice: a screen-space effect is never presented
   // as geometry in the world).
@@ -97,28 +104,28 @@
     if(spec.type==='enum')return spec.options.includes(v)?v:spec.default;
     if(spec.type==='color')return typeof v==='string'&&HEX.test(v)?v.toLowerCase():spec.default;
     if(spec.type==='bool')return typeof v==='boolean'?v:spec.default;
-    const n=Number(v);if(!Number.isFinite(n))return spec.default;
+    const n=num(v);if(!Number.isFinite(n))return spec.default;
     return spec.type==='int'?Math.round(clamp(n,spec.min,spec.max)):clamp(n,spec.min,spec.max);
   }
   function anchorOf(a){
     const kind=ANCHORS.includes(a?.kind)?a.kind:'center',out={kind};
-    if(kind==='point')for(const k of ['x','y','z'])out[k]=clamp(Number(a?.[k])||0,-1,1);
-    if(kind==='largest')out.index=Math.round(clamp(Number(a?.index)||0,0,15));
+    if(kind==='point')for(const k of ['x','y','z'])out[k]=clamp(num(a?.[k])||0,-1,1);
+    if(kind==='largest')out.index=Math.round(clamp(num(a?.index)||0,0,15));
     return out;
   }
   function mappingOf(m,targets){
     if(!SIGNAL_IDS.has(m?.signal))return null;const t=targets.find(p=>p.key===m.target);if(!t)return null;
-    const lo=clamp(Number(m.min)||0,0,1),hi=clamp(Number.isFinite(Number(m.max))?Number(m.max):1,0,1);
-    return {signal:m.signal,target:t.key,amount:clamp(Number(m.amount)||0,-1,1),curve:CURVES.includes(m.curve)?m.curve:'smooth',
-      smoothing:clamp(Number(m.smoothing)||0,0,4),min:Math.min(lo,hi),max:Math.max(lo,hi)};
+    const lo=clamp(num(m.min)||0,0,1),hi=clamp(Number.isFinite(num(m.max))?num(m.max):1,0,1);
+    return {signal:m.signal,target:t.key,amount:clamp(num(m.amount)||0,-1,1),curve:CURVES.includes(m.curve)?m.curve:'smooth',
+      smoothing:clamp(num(m.smoothing)||0,0,4),min:Math.min(lo,hi),max:Math.max(lo,hi)};
   }
   function layerOf(l,i){
-    const t=LAYERS[l?.type];if(!t)return null;const spec=specOf(l.type),params={};
+    const t=typeOf(l?.type);if(!t)return null;const spec=specOf(l.type),params={};
     for(const s of spec)params[s.key]=value(s,l.params?.[s.key]);
     const targets=targetsOf(l.type);
     return {id:idOf(l.id)||`l${i+1}`,type:l.type,name:str(l.name,LIMITS.name)||t.label,enabled:l.enabled!==false,solo:l.solo===true,
       blend:BLENDS.includes(l.blend)?l.blend:'add',depth:DEPTHS.includes(l.depth)?l.depth:'world',anchor:anchorOf(l.anchor),
-      seed:Math.round(clamp(Number(l.seed)||0,0,9999)),params,
+      seed:Math.round(clamp(num(l.seed)||0,0,9999)),params,
       mappings:(Array.isArray(l.mappings)?l.mappings:[]).map(m=>mappingOf(m,targets)).filter(Boolean).slice(0,LIMITS.mappings)};
   }
   const TUNING_PATH=/^[A-Za-z][A-Za-z0-9]*(\.[A-Za-z0-9]+){1,3}$/;
@@ -132,11 +139,15 @@
     }
     return out;
   }
+  // The music a composition may carry: the score's styles, profile keys and voice groups (public/score.js STYLES, PROFILE,
+  // GROUPS). Written out because this model also runs where no score is loaded (a pack frame); a test keeps them equal.
+  const MUSIC_STYLES=['ambient','pulse','cinematic','chip'];
+  const PROFILE_KEYS=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space'],MIX_GROUPS=['pad','bass','melody','counter','arp','perc','atmos'];
   function musicOf(m){
     if(!m||typeof m!=='object')return null;const out={};
-    if(['ambient','pulse','cinematic','chip'].includes(m.style))out.style=m.style;
-    if(m.profile&&typeof m.profile==='object'){const p={};for(const k of ['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space']){const v=Number(m.profile[k]);if(Number.isFinite(v))p[k]=clamp(v,0,1);}
-      if(m.profile.mix&&typeof m.profile.mix==='object'){p.mix={};for(const g of ['pad','bass','melody','counter','arp','perc','atmos']){const v=Number(m.profile.mix[g]);if(Number.isFinite(v))p.mix[g]=clamp(v,0,1.5);}}
+    if(MUSIC_STYLES.includes(m.style))out.style=m.style;
+    if(m.profile&&typeof m.profile==='object'){const p={};for(const k of PROFILE_KEYS){const v=num(m.profile[k]);if(Number.isFinite(v))p[k]=clamp(v,0,1);}
+      if(m.profile.mix&&typeof m.profile.mix==='object'){p.mix={};for(const g of MIX_GROUPS){const v=num(m.profile.mix[g]);if(Number.isFinite(v))p.mix[g]=clamp(v,0,1.5);}}
       out.profile=p;}
     return Object.keys(out).length?out:null;
   }
@@ -153,9 +164,10 @@
       canvas:base==='canvas'?Object.fromEntries(CANVAS.map(s=>[s.key,value(s,c?.canvas?.[s.key])])):null,
       layers,mappings:(Array.isArray(c?.mappings)?c.mappings:[]).map(m=>mappingOf(m,GLOBAL_TARGETS)).filter(Boolean).slice(0,LIMITS.globalMappings)};
   }
-  function costOf(layer){const t=LAYERS[layer.type];return t?Math.round(t.cost(layer.params)*10)/10:0;}
+  function costOf(layer){const t=typeOf(layer?.type);return t?Math.round(t.cost(layer.params)*10)/10:0;}
   function budgetOf(c){const n=normalize(c);const used=n.layers.reduce((a,l)=>a+(l.enabled?costOf(l):0),0);return {used:Math.round(used*10)/10,limit:LIMITS.budget,layers:n.layers.length,maxLayers:LIMITS.layers};}
-  // Problems a caller should show or refuse: [{at, message}]. Normalising never throws; validation explains.
+  // Problems a caller should show or refuse: [{at, message}], the first MAX_PROBLEMS. Normalising never throws;
+  // validation explains.
   function validate(c){
     const errors=[];
     if(!c||typeof c!=='object'||Array.isArray(c))return [{at:'',message:'A composition is an object'}];
@@ -164,10 +176,10 @@
     const layers=Array.isArray(c.layers)?c.layers:[];
     if(c.layers!==undefined&&!Array.isArray(c.layers))errors.push({at:'layers',message:'layers must be a list'});
     if(layers.length>LIMITS.layers)errors.push({at:'layers',message:`at most ${LIMITS.layers} layers`});
-    layers.forEach((l,i)=>{if(!LAYERS[l?.type])errors.push({at:`layers.${i}.type`,message:`unknown layer type ${String(l?.type).slice(0,24)}`});
-      for(const [j,m] of (Array.isArray(l?.mappings)?l.mappings:[]).entries())if(!SIGNAL_IDS.has(m?.signal))errors.push({at:`layers.${i}.mappings.${j}`,message:`unknown signal ${String(m?.signal).slice(0,32)}`});});
+    layers.forEach((l,i)=>{if(!typeOf(l?.type))errors.push({at:`layers.${i}.type`,message:`unknown layer type ${text(l?.type).slice(0,24)}`});
+      for(const [j,m] of (Array.isArray(l?.mappings)?l.mappings:[]).entries())if(!SIGNAL_IDS.has(m?.signal))errors.push({at:`layers.${i}.mappings.${j}`,message:`unknown signal ${text(m?.signal).slice(0,32)}`});});
     let spent=0;for(const [i,l] of layers.slice(0,LIMITS.layers).entries()){const n=layerOf(l,i);if(!n)continue;spent+=costOf(n);if(spent>LIMITS.budget){errors.push({at:`layers.${i}`,message:`over the rendering budget (${LIMITS.budget})`});break;}}
-    return errors;
+    return errors.slice(0,MAX_PROBLEMS);
   }
   // A mapping's contribution in the target's own units, from a signal value (0..1) already smoothed by the caller.
   function shape(curve,x){x=clamp(x,0,1);return curve==='linear'?x:curve==='sharp'?x*x*x:curve==='pulse'?Math.pow(x,6):x*x*(3-2*x);}

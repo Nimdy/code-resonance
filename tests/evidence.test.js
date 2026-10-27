@@ -5,7 +5,7 @@ const {sha,validateEvent}=require('../receiver/protocol');
 const {translate}=require('../scripts/hooks/claude-code');
 const {createEvidence,compact,SCHEMA}=require('../receiver/evidence');
 const {createChanges}=require('../receiver/changes');
-const {tempDir}=require('./helpers');
+const {tempDir,track}=require('./helpers');
 const projectId=sha('evidence-test');
 const T0=Date.parse('2026-10-20T10:00:00Z');
 let seq=0;
@@ -46,7 +46,8 @@ async function setup(t,options={}){
   const projectDir=id=>path.join(dataDir,'projects',sha(id));
   const changes=[];
   const evidence=createEvidence({projectDir,onChange:id=>changes.push(id),...options});
-  t.after(()=>evidence.stop());
+  // Stopped before its directory is removed: stop() writes the evidence out (and would recreate the directory).
+  track(t,evidence);
   const dir=projectDir(projectId);await fs.mkdir(dir,{recursive:true});
   let receivedAt=T0+10_000_000;
   // What appendEvents does: journal first (content already replaced by its hash), then observe.

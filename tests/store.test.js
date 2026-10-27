@@ -7,6 +7,9 @@ const rejects=(p,code,key)=>assert.rejects(p,e=>{assert.equal(e.code,code);if(ke
 const leftovers=async dir=>(await fs.readdir(dir)).filter(n=>n.endsWith('.tmp'));
 // Warnings about invalid files are expected in some tests; keep the output readable.
 function quiet(t){const warn=console.warn,seen=[];console.warn=(...a)=>seen.push(a.join(' '));t.after(()=>{console.warn=warn;});return seen;}
+test('The label modes a setting accepts are the ones the world host draws',async()=>{
+  assert.deepEqual(store.LABELS,(await import('../public/worlds/labels.js')).LABEL_MODES);
+});
 test('Settings read as the defaults at revision 0 until the first write creates the file',async t=>{
   const dir=tempDir(t,'cr-store-'),settings=store.settings(dir);
   const doc=await settings.read();
