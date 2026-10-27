@@ -9,7 +9,7 @@ import {h,text,button,segmented,disclosure,pill,callout,emptyState,kv,copyable,m
 import {icon} from '../icons.js';
 import {dateTime,bytes,count,projectName} from '../format.js';
 import {renderMarkdown,openDoc,DOCS} from '../markdown.js';
-import {exportDialog,applyMusicOf} from './artist.js';
+import {exportDialog,applyMusicOf} from '../creations.js';
 // The pack limits of engine/packs.js (LIMITS) and the receiver's import body limit, checked here first so a person is
 // told at once, before anything is uploaded. The receiver checks again.
 const LIMITS={files:64,fileBytes:1024*1024,totalBytes:8*1024*1024,archiveBytes:12*1024*1024};
