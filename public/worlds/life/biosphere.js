@@ -125,20 +125,28 @@ export function biosphereGrammar(recipe){
   // heavy and hardly flee a disturbance (they come to graze at the edge of one). Spores do not perceive neighbours: they
   // are the water's haze, moved by the current, the structures and the momentum the others leave (a drifter grazing
   // through a cloud pushes it aside through its wake).
+  // Ecology 2 (respond): how each population feels the musical conditions (an exponent per condition; 1: as it is).
+  // Pollinators answer exploration, gathering and the turning attractor most; spores are the water's haze, carried by
+  // its currents and turbulence; plankton colonies tighten and loosen with cohesion; drifters hardly notice the music
+  // (slow scavengers: they stir at disturbances and changes, not at a phrase).
   const SPECIES_SPEC=[
     {name:'pollinator',share:.1,radius:1,sepRadius:.4,maxSpeed:1.15,minSpeed:.2,maxForce:2.6,mass:1,drag:.1,sep:1.6,ali:.2,coh:.1,
       seek:1.4,orbit:1.6,orbitRadius:.78,orbitSpeed:.45,orbitJitter:.25,orbitBand:.32,curiosity:0,
       trail:1.1,deposit:.006,carryDeposit:.03,energyDeposit:.006,flow:.25,push:.025,avoid:2.2,wander:.45,wanderJitter:.35,
-      crowd:9,satiate:.0012,metabolism:.0005,restBelow:.08,restRecover:.002,disturbBelow:.3,life:[70,200],fade:2.5,respawn:[1,6],yMin:.8,yMax:12},
+      crowd:9,satiate:.0012,metabolism:.0005,restBelow:.08,restRecover:.002,disturbBelow:.3,life:[70,200],fade:2.5,respawn:[1,6],yMin:.8,yMax:12,
+      respond:{activity:1,explore:1.3,gather:1.2,cohesion:.6,turb:.8,current:.7}},
     {name:'spore',share:.31,radius:.5,sepRadius:.22,maxSpeed:.9,minSpeed:.03,maxForce:1.6,mass:.6,drag:.25,sep:1.2,ali:0,coh:0,
       orbit:0,curiosity:0,trail:0,deposit:0,carryDeposit:0,energyDeposit:0,flow:1.6,push:0,avoid:1.6,wander:.18,wanderJitter:.5,
-      crowd:30,metabolism:0,restBelow:-1,disturbBelow:.25,settle:0,settleFlow:.5,life:[45,130],fade:3,respawn:[1,5],yMin:.25,yMax:11,yHold:.05,perceive:false},
+      crowd:30,metabolism:0,restBelow:-1,disturbBelow:.25,settle:0,settleFlow:.5,life:[45,130],fade:3,respawn:[1,5],yMin:.25,yMax:11,yHold:.05,perceive:false,
+      respond:{current:1.6,turb:1.4,activity:.8}},
     {name:'plankton',share:.45,radius:.9,sepRadius:.22,maxSpeed:1,minSpeed:.12,maxForce:2.2,mass:.8,drag:.15,sep:1.05,ali:.9,coh:1.05,
       orbit:0,curiosity:0,trail:0,deposit:0,carryDeposit:0,energyDeposit:0,flow:.6,push:.006,avoid:2.4,wander:.3,wanderJitter:.35,
-      crowd:14,metabolism:.0004,restBelow:.1,restRecover:.0025,disturbBelow:.25,life:[120,360],fade:3,respawn:[1,6],yMin:1,yMax:8,yHold:.15,yRest:.7},
+      crowd:14,metabolism:.0004,restBelow:.1,restRecover:.0025,disturbBelow:.25,life:[120,360],fade:3,respawn:[1,6],yMin:1,yMax:8,yHold:.15,yRest:.7,
+      respond:{cohesion:1.6,activity:.9,current:1.1,gather:1.2,explore:.9}},
     {name:'drifter',share:.14,radius:1,sepRadius:.8,maxSpeed:.45,minSpeed:.05,maxForce:1,mass:2.2,drag:.2,sep:2,ali:0,coh:0,
       orbit:0,curiosity:0,trail:-.5,deposit:0,carryDeposit:0,energyDeposit:0,flow:.35,push:.025,avoid:.35,wander:.5,wanderJitter:.2,
-      crowd:30,metabolism:0,restBelow:-1,disturbBelow:5,life:[160,420],fade:5,respawn:[2,8],yMin:.3,yMax:3.2,yHold:.1}];
+      crowd:30,metabolism:0,restBelow:-1,disturbBelow:5,life:[160,420],fade:5,respawn:[2,8],yMin:.3,yMax:3.2,yHold:.1,
+      respond:{activity:.45,turb:.5,current:.6,cohesion:.5,explore:.4}}];
   // Between species: plankton colonies part around pollinators and drifters; drifters graze through spore clouds
   // (spores are pushed aside); pollinators keep clear of drifters.
   const RELATIONS=[
@@ -184,8 +192,19 @@ export function biosphereGrammar(recipe){
     // is derived from the state each tick, so a restored past never reads a stale value.
     const nov=new Float32Array(64),AP=new Float64Array(64),STR=new Float32Array(64),VR=new Float32Array(64);
     const streamTo=new Int16Array(64),streamT=new Int32Array(64),strained=new Int16Array(64);let nNov=0,nStr=0,FL=0,AW=0;
+    // Ecology 2: the crowd a crown carries now (gather: calm music, small gatherings), each organism's visitors over
+    // all its heads, and how the pollinators and plankton feel the music this tick.
+    const CG=new Float32Array(64),OV=new Float32Array(64),OC=new Float32Array(64);let E2=false,GA=1,EXP=1,ACTP=1,FOLLOW=.75,WTM=1.5,PLR=1,PLG=1;
     function perTick(api){
       ensure(api);const S=api.sites,c=api.cond,P=api.params,t=api.tick;nNov=0;nStr=0;FL=0;let jump=0,feed=0;
+      if((E2=api.ecology===2)){GA=api.felt(POLLINATOR,'gather');EXP=api.felt(POLLINATOR,'explore');ACTP=api.felt(POLLINATOR,'activity');
+        // (a group follows its leaver less when the music disperses, more when it regathers)
+        FOLLOW=clamp(.58*Math.pow(GA,.8),.3,.8);
+        // (and the winner-take-more itself: regathering music concentrates them on the few best crowns, dispersing
+        // music spreads them over many)
+        WTM=clamp(1.5*Math.sqrt(GA),1,2.2);PLR=Math.sqrt(api.felt(PLANKTON,'explore'));PLG=Math.sqrt(api.felt(PLANKTON,'gather'));
+        // (the crowd a crown carries also follows the turning attractor: favoured crowns hold larger gatherings)
+        OV.fill(0);OC.fill(0);for(let o=0;o<nO;o++){CG[o]=CAP[o]*GA*Math.pow(api.shiftOf(oc[o]),1.2);OV[MAIN[o]]+=S.visits[oc[o]];OC[MAIN[o]]+=CG[o];}}
       for(let o=0;o<nO;o++){const k=oc[o],st=S.state(k);streamTo[o]=-1;streamT[o]=-1;
         if(!st){AP[o]=0;nov[o]=0;STR[o]=0;continue;}
         if(st.nectar===undefined){st.nectar=1;st.glow=0;st.strained=0;st.revive=0;st.ps=st.stress;st.flinch=0;}
@@ -196,7 +215,7 @@ export function biosphereGrammar(recipe){
         st.revive*=REVIVE;
         // The organism's conditions (its first head's), the head's own nectar and glow.
         const sm=MAIN[o]!==k&&S.state(MAIN[o])||st;
-        if(sm.stress<.35)feed+=CAP[o];
+        if(sm.stress<.35)feed+=E2?CG[o]:CAP[o];
         const v=S.visits[k],occ=v/CAP[o],lasting=Math.min(2,sm.lasting);
         st.nectar=clamp(st.nectar+REGEN*(1+lasting)-DRINK*v);
         st.glow+=(Math.min(1,(occ*1.1)**1.5)-st.glow)*GLOW_K;
@@ -206,16 +225,22 @@ export function biosphereGrammar(recipe){
         // visit (a scent, scaled as their trails are) and lay trails around it, so a gathering draws more of them.
         // The organisms the eye goes to (focal) are the usual attractors; a lasting attractor (a verified milestone)
         // outweighs that.
-        let a=S.w[k]*(1+1.5*sm.novelty+2*lasting+.8*sm.nourish+8*sm.revive)*(.4+.6*FOC[o]);
+        // Ecology 2 softens the winner-take-more (focal weight, the visitors' own mark, a power of 1.5 instead of the
+        // square), saturates an organism already busy on all its heads, and lets the turning attractor move the
+        // appeal around the habitat: attention travels beyond the dominant organism.
+        let a=S.w[k]*(1+1.5*sm.novelty+2*lasting+.8*sm.nourish+8*sm.revive)*(E2?.6+.4*FOC[o]:.4+.6*FOC[o]);
         a*=.6+.5*Math.min(1.5,api.sample(CH.energy,S.x[k],S.z[k]));
-        a*=(1+.4*Math.min(3,api.sample(CH.trail,S.x[k],S.z[k])))*(1+v*P.trails/2);
-        a*=.15+.85*st.nectar;a*=a;
-        a*=1/(1+occ*occ*occ);a*=1-.95*sm.stress;
+        a*=(1+.4*Math.min(3,api.sample(CH.trail,S.x[k],S.z[k])))*(E2?1+Math.min(v,CG[o])*P.trails/4:1+v*P.trails/2);
+        a*=.15+.85*st.nectar;
+        if(E2){const og=v/CG[o],oo=OV[MAIN[o]]/Math.max(1,OC[MAIN[o]]);a=Math.pow(a,WTM)*api.shiftOf(k)/(1+og*og*og)/(1+.8*oo*oo);}
+        else{a*=a;a*=1/(1+occ*occ*occ);}
+        a*=1-.95*sm.stress;
         AP[o]=Math.max(0,a*c.attract*P.attraction);}
       // The flinch is kept by every crown alike (site conditions: snapshots carry it), so it is the whole habitat's.
       if(jump>0){const f=Math.min(1,.55+jump);for(let o=0;o<nO;o++){const st=S.state(oc[o]);if(st)st.flinch=Math.max(st.flinch,f);}FL=Math.max(FL,f);}
       // How many pollinators the habitat can feed: those beyond it stay dormant (resting low and dim) and wake as
       // organisms appear, so a young world is not sprinkled with pollinators that have nowhere to go.
+      // (ecology 2: what the crowns carry now, so calm music keeps fewer of them awake and gathering music more)
       AW=Math.round(1.3*feed);
       // Streams: who left each crown most recently, and for where (those leaving after follow them).
       const cap=api.capacity,ia=api.ia;
@@ -224,17 +249,21 @@ export function biosphereGrammar(recipe){
     }
     // Pollinators: the crown to visit (a weighted draw from the entity's own random stream); nearer is a little better.
     const W=new Float64Array(64);
+    // (ecology 2: exploration widens the reach, and a pollinator leaving a head prefers another organism to the
+    // leaving organism's other heads)
     function chooseCrown(api,i,avoid){
-      const S=api.sites,x=api.px[i],z=api.pz[i];let total=0;
-      for(let o=0;o<nO;o++){const k=oc[o];let a=AP[o]/(1+hyp(S.x[k]-x,S.z[k]-z)/12);if(k===api.tgt[i]||k===avoid)a*=.06;W[o]=a;total+=a;}
+      const S=api.sites,x=api.px[i],z=api.pz[i],reach=E2?12*Math.sqrt(EXP):12,mo=E2&&avoid>=0&&orgOfSite[avoid]>=0?MAIN[orgOfSite[avoid]]:-1;let total=0;
+      for(let o=0;o<nO;o++){const k=oc[o];let a=AP[o]/(1+hyp(S.x[k]-x,S.z[k]-z)/reach);if(k===api.tgt[i]||k===avoid)a*=.06;else if(MAIN[o]===mo)a*=.35;W[o]=a;total+=a;}
       if(total<=0)return -1;let u=api.random(i,7)*total;for(let o=0;o<nO;o++){u-=W[o];if(u<=0)return oc[o];}return oc[nO-1];
     }
     // A pollinator leaves its crown: it follows whoever left the same crown just before (a stream toward the next
     // crown), or chooses for itself; it carries the crown's influence for a while (a stronger trail).
     function leave(api,i,k){
       const o=orgOfSite[k];let q=-1;
-      if(o>=0){const s=streamTo[o];if(s>=0&&s!==k&&api.random(i,11)<.75){const so=orgOfSite[s];if(so>=0&&STR[so]<.3)q=s;}}
+      if(o>=0){const s=streamTo[o];if(s>=0&&s!==k&&api.random(i,11)<FOLLOW){const so=orgOfSite[s];if(so>=0&&STR[so]<.3)q=s;}}
       if(q<0)q=chooseCrown(api,i,k);
+      // (ecology 2: never for a crown already carrying all it can: it explores instead, and rests if none has room)
+      if(E2&&q>=0&&orgOfSite[q]>=0&&api.sites.visits[q]>=CG[orgOfSite[q]]*1.1)q=-1;
       // (Fed, it has turned the nectar into the influence it carries: hungry again by the next crown.)
       api.carry[i]=Math.round((api.en[i]>.7?10:5)*HZ);api.en[i]=Math.min(api.en[i],.6);api.ia[i*2]=k;api.ia[i*2+1]=api.tick;
       if(q>=0&&q!==k&&api.random(i,12)<.85){api.tgt[i]=q;return MODE.seek;}
@@ -293,7 +322,8 @@ export function biosphereGrammar(recipe){
             if(m!==MODE.rest){const g=api.gradient(CH.energy,x,z),gl=hyp(g[0],g[1]);const c=gl>1e-4?Math.min(1,gl*2)/gl*1.1:0;gx=g[0]*c;gz=g[1]*c;
               // Colonies live near the organisms (not in the open water): a gentle pull toward the nearest organism.
               let best=1e9,bx=0,bz=0,br=1;for(let o=0,b=0;o<nOB;o++,b+=8){const ex=OB[b]-x,ez=OB[b+2]-z,d2=ex*ex+ez*ez;if(d2<best){best=d2;bx=ex;bz=ez;br=OB[b+3];}}
-              const d=Math.sqrt(best),R0=br*2.4+1;if(d>R0&&d<18){const c=Math.min(.45,(d-R0)*.12)/d;gx+=bx*c;gz+=bz*c;}}
+              // (ecology 2: exploring music lets them range further out, gathering music draws them in closer)
+              const d=Math.sqrt(best),R0=E2?(br*2.4+1)*PLR:br*2.4+1;if(d>R0&&d<18){const c=(E2?Math.min(.45*PLG,(d-R0)*.12):Math.min(.45,(d-R0)*.12))/d;gx+=bx*c;gz+=bz*c;}}
             api.fa[o2]=gx;api.fa[o2+1]=gz;
             // Feeding where the water is rich (energy restores them).
             api.en[i]=Math.min(1.05,api.en[i]+.003*Math.min(2,api.sample(CH.energy,x,z)));}
@@ -316,11 +346,11 @@ export function biosphereGrammar(recipe){
           if(i>=AW)return MODE.rest;
           if(m===MODE.explore){
             // While the water flinches nobody goes to a crown; as it passes they come back, a few at first.
-            if(api.en[i]>=s.restBelow&&api.modeT[i]>3*HZ&&dist<s.disturbBelow&&api.random(i,1)<curiosity*api.cond.activity*api.params.vitality*clamp(1-FL*1.7)){
+            if(api.en[i]>=s.restBelow&&api.modeT[i]>3*HZ&&dist<s.disturbBelow&&api.random(i,1)<(E2?curiosity*ACTP*api.params.vitality*Math.pow(EXP,.8):curiosity*api.cond.activity*api.params.vitality)*clamp(1-FL*1.7)){
               // A crown already full (or drunk dry) is left alone for now: it keeps exploring, or rests a while (dormant,
               // low and dim), so a small habitat is not swamped by pollinators it cannot feed.
               const q=chooseCrown(api,i,-1);if(q<0)return -1;const st=api.sites.state(q);
-              if(api.sites.visits[q]<CAP[orgOfSite[q]]*1.1&&st.nectar>.15){api.tgt[i]=q;return MODE.seek;}
+              if(api.sites.visits[q]<(E2?CG:CAP)[orgOfSite[q]]*1.1&&st.nectar>.15){api.tgt[i]=q;return MODE.seek;}
               if(api.random(i,5)<.8)return MODE.rest;}
             return -1;
           }
@@ -333,12 +363,14 @@ export function biosphereGrammar(recipe){
             const S=api.sites;if(hyp(S.x[q]-api.px[i],S.z[q]-api.pz[i])<S.r[q]*2)return MODE.orbit;return -1;}
           if(m===MODE.orbit){
             if(dist>s.disturbBelow*1.3||STR[o]>.25||FL>.45&&api.random(i,14)<.25)return MODE.disperse;
-            const st=api.sites.state(q),occ=api.sites.visits[q]/CAP[o];
+            const st=api.sites.state(q),occ=api.sites.visits[q]/(E2?CG:CAP)[o];
             // Fed, the nectar running out, more visitors than the crown carries, or no room at all: it peels away.
             if(api.en[i]>=1)return leave(api,i,q);
             if(st.nectar<.3&&api.random(i,2)<.012+.03*(1-st.nectar/.3))return leave(api,i,q);
             if(occ>1.15&&api.random(i,3)<.012*(occ-1))return leave(api,i,q);
-            if(nb>s.crowd*api.params.collective*2.4&&api.random(i,4)<.02)return leave(api,i,q);
+            if(nb>s.crowd*api.params.collective*(E2?2.4*GA:2.4)&&api.random(i,4)<.02)return leave(api,i,q);
+            // (ecology 2: a crown the turning attractor has moved away from loses its visitors to the ones it favours)
+            if(E2&&api.modeT[i]>4*HZ){const sh=api.shiftOf(q);if(sh<.85&&api.random(i,16)<.012*(.85-sh)*EXP)return leave(api,i,q);}
             return MODE.orbit;
           }
           return -1;

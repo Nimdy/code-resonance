@@ -196,7 +196,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // What the music is doing at each moment (musical.js), from the same canonical frames: info.music for worlds and layers.
   const musical=createMusical({timeline:lifeTimeline});
   const lifeOn=r=>r?.familyKind!=='pack'&&!families[r?.family]&&r?.genome?.life?.enabled===true;
-  const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film});
+  // (music: the musical clock's configuration, the score the player plays: ecology 2 reads its climate from it)
+  const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film,music:musical.config});
   const lifeFor=next=>lifeOn(next)?{params:next.genome.life,create(grammar){
     lifeDriver=createLifeDriver({grammar,timeline:lifeTimeline,seed:hash(`${next.projectSeed}/${next.variant||0}/life`),config:lifeConfig,onRebase:b=>{lifeBase=b;}});
     if(lifeBase&&!lifeReplay)lifeDriver.setBase(lifeBase.graph,lifeBase.t,lifeBase.from);return lifeDriver;}}:null;

@@ -1076,12 +1076,17 @@ export function createFamily(ctx){
     const grammar=createCathedralGrammar({genome:G,axisAz}),driver=ctx.life.create(grammar);
     const spec=grammar.ecosystem({},0),CAPN=spec.capacity,FMAX=2,TK=spec.trail,PN=CAPN*9;   // (leaders, followers and comet points: bounded, checked)
     const pts=pointBuffers({aC:4,aS:3},PN),segs=pointBuffers({aC:4},CAPN*(TK-1)*2);
-    // aS: world size, smallest size on screen (px), halo (0..1).
-    const LIFE_VS=`${FOG}attribute vec4 aC;attribute vec3 aS;uniform float uPx;varying vec4 vC;varying float vH;void main(){vec3 p=position;p.y*=uMirror;vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
-      gl_PointSize=clamp(aS.x*uPx*210./max(.5,-mv.z),aS.y*uPx,18.*uPx);vH=aS.z;vC=vec4(aC.rgb*(1.-fogAmt(p)*.65),aC.a);}`;
-    const LIFE_FS=`varying vec4 vC;varying float vH;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;
-      float core=exp(-r*mix(5.,40.,vH))*(1.+1.4*vH),halo=exp(-r*4.)*(1.-r)*.7*vH;gl_FragColor=vec4(vC.rgb*(core+halo)*vC.a,0.);}`;
-    const ptMat=additive(new THREE.ShaderMaterial({uniforms:{...common},vertexShader:LIFE_VS,fragmentShader:LIFE_FS}));
+    // aS: world size, smallest size on screen (px), halo (0..1). aC.a: 1, or above 1 for a lantern on its way along a
+    // route (ecology 2's selective glow).
+    // Ecology 2 (uLifeE 1; 0 is exactly the drawing before): far from the camera a lantern keeps a slightly larger
+    // floor and a wider, softer core with less halo (a small clear light, never a neon disc), and the ones travelling
+    // the routes cut through the fog a little more, so inhabitants and their routes read at a distance.
+    const LIFE_VS=`${FOG}attribute vec4 aC;attribute vec3 aS;uniform float uPx,uLifeE;varying vec4 vC;varying float vH,vF;void main(){vec3 p=position;p.y*=uMirror;vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      float far=uLifeE*smoothstep(28.,110.,-mv.z),sel=uLifeE*max(0.,aC.a-1.)*far;
+      gl_PointSize=clamp(aS.x*uPx*210./max(.5,-mv.z),aS.y*uPx*(1.+.3*far),18.*uPx);vH=aS.z;vF=far;vC=vec4(aC.rgb*(1.-fogAmt(p)*.65*(1.-.5*sel))*(1.+.5*sel),min(aC.a,1.));}`;
+    const LIFE_FS=`varying vec4 vC;varying float vH,vF;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;
+      float core=exp(-r*mix(5.,40.,vH)*(1.-.45*vF))*(1.+1.4*vH)*(1.-.3*vF),halo=exp(-r*4.)*(1.-r)*.7*vH*(1.-.35*vF);gl_FragColor=vec4(vC.rgb*(core+halo)*vC.a,0.);}`;
+    const lifeE={value:0},ptMat=additive(new THREE.ShaderMaterial({uniforms:{...common,uLifeE:lifeE},vertexShader:LIFE_VS,fragmentShader:LIFE_FS}));
     const segMat=additive(new THREE.ShaderMaterial({uniforms:{...common},vertexShader:`${FOG}attribute vec4 aC;varying vec4 vC;void main(){vec3 p=position;p.y*=uMirror;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);vC=vec4(aC.rgb*aC.a*(1.-fogAmt(p)*.8),1.);}`,
       fragmentShader:`varying vec4 vC;void main(){gl_FragColor=vec4(vC.rgb,0.);}`}));
     const points=new THREE.Points(pts.geometry,ptMat),lines=new THREE.LineSegments(segs.geometry,segMat);
@@ -1110,9 +1115,12 @@ export function createFamily(ctx){
     function update(i){
       const v=i.life;if(!v||!v.eco||v.restoring){hide();return;}
       const eco=v.eco,net=grammar.networkOf(eco);if(!net){hide();return;}
+      // Ecology 2: the routes' light follows the music's illumination (the architecture brightens as a passage opens
+      // up and dims as it settles), and the lanterns get their distance treatment (uLifeE).
+      const E2=v.ecology===2,lk=E2?v.fadeIn*Math.pow(Math.max(.5,Math.min(1.7,eco.cond.glow??1)),.8):v.fadeIn;lifeE.value=E2?1:0;
       // The traffic field (once per tick), its light (trail) and its dimming (disturbance) faded with the population.
-      if(texTick!==eco.tick||texK!==v.fadeIn){texTick=eco.tick;texK=v.fadeIn;const F=eco.field,NC=F.nx*F.nz,d=F.data;
-        for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3*texK);texBuf[q*4+1]=b8(d[2*NC+q]/2.5*texK);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
+      if(texTick!==eco.tick||texK!==lk){texTick=eco.tick;texK=lk;const F=eco.field,NC=F.nx*F.nz,d=F.data,dk=v.fadeIn;
+        for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3*texK);texBuf[q*4+1]=b8(d[2*NC+q]/2.5*dk);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
       cables(eco,net,v);
       const q=quality,alpha=v.alpha,tv=i.tview,tag=net.tag,K=eco.K,head=eco.trailHead,PMAX=pts.capacity??PN;let n=0,nf=0,ns=0,nc=0;
       for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==tag)continue;const vis=lifeVisibility(eco,e,v);if(vis<=.01)continue;
@@ -1123,7 +1131,7 @@ export function createFamily(ctx){
         // (wardens going back in after a recovery, gathered at the hub's foot and climbing together, burn brighter)
         const back=k===1&&g<=0&&(eco.ia[e*2+1]>>4&4)&&(job===J.go||job===J.linger||job===J.up);
         const bk=vis*JOB_K[job]*(back?1.35:1),moving=job===J.travel||job===J.up||job===J.down||job===J.go||job===J.edge||job===J.migrate;
-        pts.write('position',n,p3[0],p3[1],p3[2]);pts.write('aC',n,cc.r*bk,cc.g*bk,cc.b*bk,1);pts.write('aS',n,SIZE[k],MINPX[k]*(.7+.3*JOB_K[job]),HALO[k]);n++;
+        pts.write('position',n,p3[0],p3[1],p3[2]);pts.write('aC',n,cc.r*bk,cc.g*bk,cc.b*bk,E2&&moving?1.6:1);pts.write('aS',n,SIZE[k],MINPX[k]*(.7+.3*JOB_K[job]),HALO[k]);n++;
         // The light trail: the recorded path, newest first, fading. Couriers and sparks draw it as a comet of soft points
         // (the heading in light), slow wardens as a short faint line. A jump (a relocation) or a sharp turn (a shaft's
         // step onto a gallery or a ledge, a corner) ends it: no hook is ever drawn in the air.

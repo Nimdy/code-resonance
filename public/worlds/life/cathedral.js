@@ -322,6 +322,10 @@ export function createCathedralGrammar(opts={}){
   // ---- Per tick (the tick hook, before anything moves): traffic per directed edge (count, order along it), the strain
   // of each precinct, the attraction of each hub and the gates' state. -------------------------------------------------
   function newTick(api,s){
+    // Ecology 2: the musical grid this tick (a beat begins: the hubs release their waiting in turn, one hub a beat,
+    // each once a bar, or every other beat when the rhythm drives hard; below a trace of rhythm the machine keeps its
+    // own cycle).
+    if((s.E2=api.ecology===2)){const g=api.grid,b=Math.floor(g.beat),pl=api.cond.pulse;s.onBeat=b!==Math.floor(g.beat-g.per);s.mBeat=b;s.beatPh=g.beat-b;s.every=pl>.6?2:4;s.music=pl>=.08;}
     s.gap.fill(Infinity);const net=s.net;if(!net)return;const cap=api.capacity,ia=api.ia,fa=api.fa,alive=api.alive,occ=s.occ;occ.fill(0);
     s.relUp.fill(-1);s.relDown.fill(-1);s.relK.fill(-1);
     const organise=Math.max(0,Math.min(1,(api.cond.cohesion-.6)/.65));s.window=13+Math.round(20*(1-organise));
@@ -341,7 +345,9 @@ export function createCathedralGrammar(opts={}){
     // repel route choices), as long as it lasts.
     net.precs.forEach((q,p)=>{const x=st(s.precSite[p]),k=x?x.stress:0;s.strain[p]=k>.2?1:0;s.stress[p]=k;if(k>.05)api.disc(CH.disturb,q.cx,q.cz,Math.max(q.rx,q.rz)*1.5,.03*k*api.params.environment);});
     net.hubs.forEach((h,k)=>{const t=net.towers[h.tower],x=st(s.hubSite[k]);const e=api.sample(CH.energy,t.x,t.z),d=api.sample(CH.disturb,t.x,t.z);
-      let w=(.35+.5*Math.min(2,e))*(1+(x?x.nourish*.8+x.novelty*2.5+x.lasting*.9:0))*Math.sqrt(net.precs[h.prec].members)/(1+2.5*d);if(x)w*=1-.95*Math.min(1,x.stress*2.5);s.hubW[k]=Math.max(0,w);});
+      let w=(.35+.5*Math.min(2,e))*(1+(x?x.nourish*.8+x.novelty*2.5+x.lasting*.9:0))*Math.sqrt(net.precs[h.prec].members)/(1+2.5*d);if(x)w*=1-.95*Math.min(1,x.stress*2.5);
+      // (ecology 2: the music's attraction and its turning attractor choose which hubs the traffic makes for)
+      if(s.E2)w*=Math.pow(api.cond.attract,.8)*api.shiftOf(s.hubSite[k]);s.hubW[k]=Math.max(0,w);});
   }
   // A shaft's gate: entering a shaft upward from the tower's foot, or downward from its crown, is allowed only while the
   // tower's gate is open (a window of its cycle), one inhabitant per headway: climbers go up and down in short convoys.
@@ -387,7 +393,8 @@ export function createCathedralGrammar(opts={}){
   // The next stretch from node v (arrived along directed edge d) for inhabitant i: weighted by the goal's remaining cost,
   // the trail (travelled routes are easier), disturbance (failures, congestion) and traffic already on it.
   function nextEdge(api,s,i,v,d,D,mask,opt={}){
-    const net=s.net,cond=api.cond,back=d>=0?d^1:-1,tau=(opt.tau??1.6)*(.7+.3*cond.turb);let total=0,n=0;const C=nextEdge.c||(nextEdge.c=new Int32Array(64)),W=nextEdge.w||(nextEdge.w=new Float64Array(64));
+    // (ecology 2: exploring music widens the choice of ways)
+    const net=s.net,cond=api.cond,back=d>=0?d^1:-1,tau=(opt.tau??1.6)*(.7+.3*cond.turb)*(s.E2?Math.sqrt(cond.explore):1);let total=0,n=0;const C=nextEdge.c||(nextEdge.c=new Int32Array(64)),W=nextEdge.w||(nextEdge.w=new Float64Array(64));
     const deg=net.adjOff[v+1]-net.adjOff[v];
     for(let k=net.adjOff[v];k<net.adjOff[v+1]&&n<64;k++){const dd=net.adj[k],e=dd>>1;if(!(mask>>net.ek[e]&1))continue;if(dd===back&&deg>1)continue;
       const w2=dd&1?net.ea[e]:net.eb[e];if(opt.prec!==undefined&&net.np[w2]!==opt.prec&&net.np[w2]>=0)continue;
@@ -450,14 +457,19 @@ export function createCathedralGrammar(opts={}){
     if(sp!==S_WARDEN){const spark=sp===S_SPARK,mask=spark?TRUNK:ALL;
       if(job===JOB.travel){
         // Bound for a failing precinct: turn away to another hub (the corridors into it go dark).
-        if(net.hubs[dest]&&s.strain[net.hubs[dest].prec]){const h=chooseHub(api,s,i,v,spark,22);if(h>=0&&h!==dest)dest=h;else{job=JOB.dwell;api.fa[i*2]=1;}}}
+        if(net.hubs[dest]&&s.strain[net.hubs[dest].prec]){const h=chooseHub(api,s,i,v,spark,22);if(h>=0&&h!==dest)dest=h;else{job=JOB.dwell;api.fa[i*2]=1;}}
+        // (ecology 2: bound for a hub the music's turning attractor has swung well away from, it may change course at
+        // a junction: the city's flows bend toward the hubs the music favours now)
+        else if(s.E2&&net.hubs[dest]){const sh=api.shiftOf(s.hubSite[dest]);if(sh<.75&&api.random(i,25)<.3*(.75-sh)){const h=chooseHub(api,s,i,v,spark,26);if(h>=0)dest=h;}}}
       if(job===JOB.travel){const D=net.hubs[dest]?hubTable(net,dest,spark):null;
         if(!D||!Number.isFinite(D[v])){job=JOB.dwell;api.fa[i*2]=.5;}
         else if(D[v]<1e-6){// Delivered: energy into the hub, then circle its foot for a while.
-          const tw=net.towers[net.hubs[dest].tower];if(!spark)api.splat(CH.energy,tw.x,tw.z,.18);job=JOB.dwell;api.fa[i*2]=(spark?.6:3)+api.random(i,6)*(spark?1.2:5);}
+          // (ecology 2: lively music shortens the stay, so more of the staff is on the move; a release lengthens it)
+          const tw=net.towers[net.hubs[dest].tower];if(!spark)api.splat(CH.energy,tw.x,tw.z,.18);job=JOB.dwell;api.fa[i*2]=((spark?.6:3)+api.random(i,6)*(spark?1.2:5))/(s.E2?Math.pow(api.felt(sp,'activity'),1.2):1);}
         else{api.ia[i*2+1]=pack(job,aux,dest);return nextEdge(api,s,i,v,d,D,mask,{tau:spark?1.4:2.4,crowd:spark?.4:1});}}
       if(job===JOB.dwell||job===JOB.wait){
-        if(job===JOB.dwell&&api.fa[i*2]<=0){job=api.random(i,7)<organise*.85+(spark?.35:0)?JOB.wait:-1;}
+        // (ecology 2: rhythmic music gathers more of them to wait for the beat that releases a convoy)
+        if(job===JOB.dwell&&api.fa[i*2]<=0){job=api.random(i,7)<(s.E2?organise*.5+.6*cond.pulse:organise*.85)+(spark?.35:0)?JOB.wait:-1;}
         if(job===-1){const h=chooseHub(api,s,i,v,spark,8);if(h>=0){api.ia[i*2+1]=pack(JOB.travel,0,h);return nextEdge(api,s,i,v,d,hubTable(net,h,spark),mask,{tau:spark?1.4:2.4});}job=JOB.dwell;api.fa[i*2]=1;}
         api.ia[i*2+1]=pack(job,aux,dest);
         // Circle the foot (dock ring) or wait along the kerb; never wander off.
@@ -467,7 +479,7 @@ export function createCathedralGrammar(opts={}){
     const p=net.np[v]>=0?net.np[v]:precOfWarden(net,st);const q=net.precs[p];
     const strained=q&&s.precSite[p]>=0?api.sites.state(s.precSite[p]).stress>.2:false;
     if(strained&&job!==JOB.edge&&job!==JOB.patrol&&job!==JOB.migrate&&q){job=JOB.edge;aux=(aux|AUX_WITHDRAWN)&~AUX_HOLD;}
-    const convoy=.6*organise+.2;
+    const convoy=(.6*organise+.2)*(s.E2?Math.pow(cond.gather,.8):1);
     for(let guard=0;guard<3;guard++){
       switch(job){
         case JOB.edge:{const D=kerbTable(net,p);if(!Number.isFinite(D[v])){job=JOB.go;dest=q?.hub??0;continue;}if(D[v]<1e-6){job=JOB.patrol;api.fa[i*2]=4+api.random(i,9)*6;continue;}
@@ -510,7 +522,7 @@ export function createCathedralGrammar(opts={}){
   function park(api,i){const k=i%((2*BOUND)|0),row=Math.floor(i/((2*BOUND)|0));teleport(api,i,-PARK,.4+row*1.7,-BOUND+.5+k);api.fa[i*2+1]=-1;api.ia[i*2]=-1;}
   const slowJob=j=>j===JOB.dwell||j===JOB.wait||j===JOB.linger||j===JOB.patrol;
   function speedOf(api,s,i,sp,e,job,pers,pE,aux=0){
-    let v=SPEED[sp]*pers*(.75+.25*api.cond.activity)*KIND_SPEED[s.net.ek[e]];
+    let v=SPEED[sp]*pers*(.75+.25*(s.E2?api.felt(sp,'activity'):api.cond.activity))*KIND_SPEED[s.net.ek[e]];
     if(slowJob(job))v*=job===JOB.patrol?(pE>=0&&s.strain[pE]?.15:.45):.35;
     else if(job===JOB.edge)v*=1.9;   // leaving a failing tower: quickly
     else if(aux&AUX_WITHDRAWN&&(job===JOB.go||job===JOB.up))v*=1.6;   // going back in after a recovery: briskly, together
@@ -522,7 +534,8 @@ export function createCathedralGrammar(opts={}){
     if(api.fa[i*2+1]!==net.tag&&!relocate(api,s,i)){f[0]=f[1]=f[2]=0;return;}
     const sp=api.sp[i];let d=api.ia[i*2];
     // Waiting at a hub's foot for the machine's cycle: the hubs release in turn, a wave running round the city.
-    if(jobOf(api.ia[i*2+1])===JOB.wait&&d>=0){const v=toNode(net,d),h=s.precHub[net.np[v]]??0;if((api.tick+Math.floor(h*CYCLE/Math.max(1,net.hubs.length)))%CYCLE===0){
+    // (ecology 2, with rhythm in the music: on the musical grid instead, each hub on its own beat of the bar)
+    if(jobOf(api.ia[i*2+1])===JOB.wait&&d>=0){const v=toNode(net,d),h=s.precHub[net.np[v]]??0;if(s.music?s.onBeat&&(s.mBeat+Math.max(0,h))%s.every===0:(api.tick+Math.floor(h*CYCLE/Math.max(1,net.hubs.length)))%CYCLE===0){
       const hd=chooseHub(api,s,i,v,sp===S_SPARK,21);if(hd>=0)api.ia[i*2+1]=pack(JOB.travel,0,hd);}}if(d<0||d>=net.m*2){relocate(api,s,i);d=api.ia[i*2];}
     if(api.fa[i*2]>0)api.fa[i*2]-=1/20;
     const x=api.px[i],y=api.py[i],z=api.pz[i];
@@ -570,7 +583,10 @@ export function createCathedralGrammar(opts={}){
       const th=Math.atan2((-dx*q.sa+dz*q.ca)/q.rz,(dx*q.ca+dz*q.sa)/q.rx);
       const c=PULSE_C,lam=q.perim/q.pulses;
       const ph=q.pulses*(d&1?-th:th)-2*Math.PI*c*api.tick/20/lam+s.beat[pE]*.37+(d&1)*1.9;
-      speed*=1+(PULSE_A+.15*organiseOf(api))*Math.cos(ph);}
+      speed*=1+(PULSE_A+.15*organiseOf(api))*Math.cos(ph);
+      // Ecology 2: the musical beat leaves each hub and runs out along the kerbs (about six units a beat), so the
+      // platoons on a coping surge as it passes them and the city's traffic breathes on the grid without moving as one.
+      if(s.music&&q.hub>=0){const hb=net.towers[q.hub],u2=s.beatPh-Math.hypot(x-hb.x,z-hb.z)/6,f2=u2-Math.floor(u2),env=(1-f2)*(1-f2)*(1-f2);speed*=1+.45*api.cond.pulse*(env-.25);}}
     const p=lanePoint(net,d,Math.max(0,u)+look,1);
     let dx=p.x-x,dy=p.y-y,dz=p.z-z;const dist=Math.sqrt(dx*dx+dy*dy+dz*dz)||1e-6;const want=Math.min(speed,dist*6);dx=dx/dist*want;dy=dy/dist*want;dz=dz/dist*want;
     const KG=10;f[0]=(dx-api.vx[i])*KG;f[1]=(dy-api.vy[i])*KG;f[2]=(dz-api.vz[i])*KG;
@@ -586,9 +602,11 @@ export function createCathedralGrammar(opts={}){
         perceive:false};   // steered by the routes alone: no neighbour scan (queues come from the per-edge traffic table)
       return {capacity:CAP,trail:10,bounds:{min:[-BOUND-4,-.5,-BOUND-4],max:[BOUND+4,YTOP+1,BOUND+4]},
         field:{nx:96,nz:96,min:[-BOUND,-BOUND],max:[BOUND,BOUND],decay:{trail:.993,energy:.996,disturb:.99,flow:.96},diffuse:{trail:.012,energy:.06,disturb:.08,flow:.1},saturate:{trail:4,energy:3,disturb:4,flow:2},advect:.15},
-        species:[{...base,name:'courier',share:.44,maxSpeed:1.6,deposit:.005,push:.05,life:[150,420]},
-                 {...base,name:'warden',share:.38,maxSpeed:1.1,deposit:.0035,push:.03,life:[200,600]},
-                 {...base,name:'spark',share:.18,maxSpeed:3.2,deposit:.003,push:.04,life:[60,200],respawn:[.5,3]}],
+        // (ecology 2, respond: couriers answer activity and exploration, wardens gathering more than pace, sparks the
+        // music's energy most)
+        species:[{...base,name:'courier',share:.44,maxSpeed:1.6,deposit:.005,push:.05,life:[150,420],respond:{activity:1.1,explore:1.2}},
+                 {...base,name:'warden',share:.38,maxSpeed:1.1,deposit:.0035,push:.03,life:[200,600],respond:{activity:.6,gather:1.3}},
+                 {...base,name:'spark',share:.18,maxSpeed:3.2,deposit:.003,push:.04,life:[60,200],respawn:[.5,3],respond:{activity:1.4}}],
         hooks:{tick(api){newTick(api,stateOf(api));},steer,spawn(api,i,k,r,o2){const s=stateOf(api),net=s.net;const v=net&&isAwake(api,s,i)?startNode(api,net,i,k,r):-1;
           if(v<0){const kk=i%((2*BOUND)|0),row=Math.floor(i/((2*BOUND)|0));o2[0]=-PARK;o2[1]=.4+row*1.7;o2[2]=-BOUND+.5+kk;api.fa[i*2+1]=-1;api.ia[i*2]=-1;return;}
           o2[0]=net.x[v];o2[1]=net.y[v];o2[2]=net.z[v];place(api,s,i,v,false);}}};
