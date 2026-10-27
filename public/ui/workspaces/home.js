@@ -95,9 +95,17 @@ export default {mount(view,ctx){
           button({label:'Open in new window',icon:'external',kind:'outline',size:'lg',title:'Open the Stage in a new window (for a second monitor or OBS preview)',onClick:openWindow,attrs:fk('open-window')})),
         h('div',{class:'home-links'},
           button({label:'Visual Studio',icon:'visual',kind:'outline',size:'sm',title:'This project’s visual identity',onClick:()=>navigate('visual'),attrs:fk('visual')}),
-          button({label:'Music Studio',icon:'music',kind:'outline',size:'sm',title:'This project’s music',onClick:()=>navigate('music'),attrs:fk('music')}))),
+          button({label:'Music Studio',icon:'music',kind:'outline',size:'sm',title:'This project’s music',onClick:()=>navigate('music'),attrs:fk('music')}),
+          ...creationLinks(r))),
       h('div',{class:'home-cap'},h('h3',{class:'eyebrow',text:'Capture & agents'}),
         h('ul',{class:'home-status',id:'homeStatus','aria-label':'Capture status'},...statusLines(pr)))]);
+  }
+  // The way into the Artist Studio: a new composition on this project's world, and the one last worked on.
+  function creationLinks(r){
+    const last=S.composition?.(S.state.ui.artistLast);
+    const from=r?.family&&r.familyKind!=='pack'?r.family:'canvas';
+    return [button({label:'Create a composition',icon:'brush',kind:'outline',size:'sm',id:'homeCreate',title:'Artist Studio: procedural layers, your palette, what reacts to the music and to real events',onClick:()=>navigate('artist','from',from),attrs:fk('create')}),
+      last?button({label:`Continue ${last.composition.name}`,icon:'chevron-right',kind:'outline',size:'sm',id:'homeContinue',title:`Open ${last.composition.name} in the Artist Studio`,onClick:()=>navigate('artist','edit',last.id),attrs:fk('continue')}):null];
   }
   function renderChrome(){
     const s=P.state;text(modeBadge,s.mode==='live'?'Live · about 10 s behind':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);
@@ -222,7 +230,7 @@ export default {mount(view,ctx){
   if(!S.state.integrations)void S.loadIntegrations();
   if(!S.state.status)void S.loadStatus();
   if(S.state.selected&&!S.state.evidence.has(S.state.selected))void S.loadEvidence(S.state.selected);
-  const T={project:['projects','selection','evidence','recipe','world','receiver','changes','settings','preferences'],
+  const T={project:['projects','selection','evidence','recipe','world','receiver','changes','settings','preferences','compositions'],
     attention:['receiver','packs','notice','world','sound','projects','selection','settings'],recent:['projects','selection','evidence'],guide:['status','integrations','projects','sound','settings','changes','receiver','selection'],
     layout:['projects','receiver'],chrome:['mode','position','preview']};
   let wasSupported=P.state.recording.supported.ok;

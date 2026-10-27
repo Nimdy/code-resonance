@@ -327,6 +327,7 @@ export default {mount(view,ctx){
           button({label:'Record & Broadcast',icon:'broadcast',size:'sm',kind:'ghost',title:'Recording and the OBS view',onClick:()=>navigate('output')}))));
     }
     // ---- Configuration: the effective values and where each comes from --------------------------------------
+    const FINISHES={classic:'Classic',clean:'Clean',cinematic:'Cinematic',dreamlike:'Dreamlike'},json=x=>JSON.stringify(x);
     function renderConfig(){
       const e=S.effective(id),pref=S.state.preferences.get(id),pm=pref?.music||{},gs=S.state.settings,r=active()?P.state.recipe:recipe||p()?.recipe;
       const src=k=>k==='url'?'Pinned in this window’s address':k==='project'?'This project':'Global default';
@@ -342,13 +343,26 @@ export default {mount(view,ctx){
         title:'Remove this project’s own world so it follows the default world in Settings',onClick:async()=>{
           try{await S.savePreferences({world:null},id);toast('This project now follows the default world.','ok');}catch(err){toast(`Not saved: ${err.message}`,'error');}}}):null;
       const group=t=>h('div',{class:'cfg-group eyebrow',text:t});
+      // The Artist Studio's composition this project shows, its cinematic finish and its musical performance profile.
+      const comp=r?.composition||null,saved=comp?.id?S.composition(comp.id):null;
+      const editRow=(k,v,from,label,onClick)=>h('div',{class:['cfg-row',own(from)?'own':'']},h('span',{class:'faint',text:k}),h('span',{class:'cfg-value'},h('span',{text:v}),h('span',{class:'faint tiny cfg-from',text:from})),
+        button({label,size:'sm',kind:'ghost',attrs:{'aria-label':`${label} ${k.toLowerCase()}`},onClick:()=>{if(!active())S.select(id);onClick();}}));
+      const compRow=comp?editRow('Composition',comp.name,saved?`Saved with this project’s identity · from My creations${json(saved.composition)===json(comp)?'':' (an earlier version)'}`:'Saved with this project’s identity · from a shared pack','Edit',
+          ()=>saved?navigate('artist','edit',saved.id):navigate('artist','project'))
+        :editRow('Composition','None','No layers over the world','Create',()=>navigate('artist','from',r?.family&&r.familyKind!=='pack'?r.family:'canvas'));
+      const finish=r?.genome?.technique?.finish;
+      const profileKeys=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space','mix'],tuned=profileKeys.filter(k=>pm[k]!==null&&pm[k]!==undefined);
+      const score=r?.genome?.music?.score;
       config.replaceChildren(h('div',{class:'cfg'},
         group('Visuals'),
         rowOf('World',WORLD_NAMES[e.world]||e.world,src(e.sources.world),'visual',useGlobal),
         rowOf('Visual identity',r?.familyName||r?.family||'Not generated yet',r?familyLine(r):'Generated when first shown','visual'),
+        compRow,
+        rowOf('Finish',FINISHES[finish]||'Classic',finish?'Saved with this project’s identity':'The world’s own grade','visual'),
         rowOf('Information',LABEL_NAMES[labels||gs?.stage?.labels]||labels||'—',labels?'Saved with this project’s identity':'Global default','visual'),
         group('Music'),
         rowOf('Music style',STYLE_NAMES[e.music.style]||e.music.style,src(e.sources.style),'music'),
+        rowOf('Music profile',`${score===3?'Composed score':'Classic score'}${tuned.length?` · ${count(tuned.length,'value')} set for this project`:' · default performance'}`,tuned.length?'This project':score===3?'Saved with this project’s identity':'Global default','music'),
         rowOf('Tempo',e.music.tempoMode==='manual'?`${e.music.tempo} BPM`:'Follows the project',musicSrc('tempoMode'),'music'),
         rowOf('Texture',Number.isFinite(e.music.texture)?`${Math.round(e.music.texture*100)}%`:'—',musicSrc('texture'),'music'),
         group('Stage'),
@@ -385,7 +399,7 @@ export default {mount(view,ctx){
         if(t.has('projects')||t.has('selection')||t.has('evidence')||t.has('recipe'))renderHead();
         if(t.has('evidence')){renderAgents();if(model)renderOverview();}
         if(t.has('selection')){void loadRecipe();renderExports();if(model){renderSessions();renderOutcomes();}}
-        if(t.has('preferences')||t.has('settings')||t.has('selection')||(t.has('recipe')&&active()))renderConfig();
+        if(t.has('preferences')||t.has('settings')||t.has('selection')||t.has('compositions')||(t.has('recipe')&&active()))renderConfig();
         if(t.has('export')||t.has('receiver'))renderExports();
         if(t.has('recording')&&P.state.recording.last!==lastRec){lastRec=P.state.recording.last;renderExports();}
       },

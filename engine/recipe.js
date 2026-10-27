@@ -29,6 +29,7 @@
 // gets them again, a family change drops them.
 const {sha}=require('../receiver/protocol');
 const catalog=require('./catalog');
+const Composition=require('../public/composition.js');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
 const RECIPE_VERSION=4;      // generator: bump when the same inputs would produce a different genome
                              // (2: Fractal Biosphere species from the data; Machine Cathedral shafts and wetness added;
@@ -353,14 +354,14 @@ function resolve(stored,project,now=Date.now(),registry=null){
   const missing=availability(stored,registry);
   if(stored&&missing){
     // Tuning applies to the family it was made on: kept over a missing look, inactive (null) on a fallback family.
-    const keep=x=>Object.assign(retune(x,stored.tuning,registry),{overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,unavailable:missing});
+    const keep=x=>Object.assign(retune(x,stored.tuning,registry),{overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,...(stored.composition?{composition:stored.composition}:{}),unavailable:missing});
     const version=generatorOf(stored);
     if(missing.family)return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,traits:stored.founded?stored.traits:null,now,registry,version})),changed:false};
     return {recipe:keep(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,traits:stored.traits,now,registry,version})),changed:false};
   }
   if(stored?.pack){const p=usable(registry,stored.pack.id);
     if(p&&p.version!==stored.pack.version){const next=retune(Object.assign(generate(project,{seed:stored.projectSeed,variant:stored.variant||0,family:stored.family,pack:p.id,traits:stored.traits,now,registry,version:generatorOf(stored)}),
-      {overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,locked:stored.locked,source:stored.source}),stored.tuning,registry);return {recipe:next,changed:true};}}
+      {overrides:stored.overrides,aliases:stored.aliases||{},title:stored.title??null,locked:stored.locked,source:stored.source,...(stored.composition?{composition:stored.composition}:{})}),stored.tuning,registry);return {recipe:next,changed:true};}}
   if(stored&&stored.schema===RECIPE_SCHEMA&&(stored.founded||stored.locked))return {recipe:stored,changed:false};
   const next=generate(project,{seed:stored?.projectSeed,variant:stored?.variant||0,now,registry,version:generatorOf(stored)});
   if(stored){next.overrides={...DEFAULT_OVERRIDES,...stored.overrides};next.aliases=stored.aliases||{};next.title=stored.title??null;retune(next,stored.tuning,registry);}
@@ -368,12 +369,50 @@ function resolve(stored,project,now=Date.now(),registry=null){
   return {recipe:changed?next:stored,changed};
 }
 const ALIAS=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
-// User actions: choose a family or a pack, regenerate, lock, adjust overrides, name subsystems, tune genome values.
-// Inputs are validated. A regenerated genome keeps the tuning when the family stays (retune checks the family);
-// `automatic` and a full `regenerate` are new identities and drop it.
+// ---- Compositions (the Artist Studio) -------------------------------------------------------------------------------
+// recipe.composition: the applied artist composition (public/composition.js, normalize()d), or absent. The world host
+// draws its layers inside the family's own world, or replaces the world with the artist canvas (base 'canvas'); the
+// genome stays the family's, so the project's structure and its digital life remain. Applying one switches to the
+// family it is based on when that is another, tunes the world values it carries (tunable, valid ones only: anything
+// else is ignored, never forced) and its finish, and makes the identity deliberate (locked and founded) as tuning does.
+// What a previous composition tuned is withdrawn where it is still in force (a value changed since is the user's).
+const sameValue=(a,b)=>JSON.stringify(a).toLowerCase()===JSON.stringify(b).toLowerCase();
+const tunedBy=c=>c?{...c.tuning,...(c.finish?{'technique.finish':c.finish}:{})}:{};
+function withdraw(r,prior,next,registry){
+  const t=r.tuning;if(!prior||!t||t.family!==r.family)return r;
+  const own=tunedBy(prior),stays=tunedBy(next),values={};
+  for(const [k,v] of Object.entries(own))if(!Object.hasOwn(stays,k)&&Object.hasOwn(t.values,k)&&sameValue(t.values[k],v))values[k]=null;
+  return Object.keys(values).length?tune(r,values,registry):r;
+}
+function compose(recipe,input,project,now,registry){
+  const prior=recipe.composition||null;
+  if(input===null){if(!prior)return recipe;const {composition:_c,unavailable:_u,...rest}=withdraw(recipe,prior,null,registry);return {...rest,locked:true,founded:true};}
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('Invalid composition: an object, or null to remove it');
+  const problems=Composition.validate(input);
+  if(problems.length)throw new Error(`Invalid composition: ${problems[0].at?`${problems[0].at}: `:''}${problems[0].message}`);
+  const next=Composition.normalize(input);let r=recipe;
+  if(FAMILIES.includes(next.base)&&next.base!==r.family)r=update(r,{type:'family',family:next.base},project,now,registry);
+  // The canvas replaces a built-in world; a project on a world pack takes its own generated family under it.
+  else if(next.base==='canvas'&&r.familyKind==='pack')r=update(r,{type:'automatic'},project,now,registry);
+  // A shader look runs in the isolated frame, which draws no layers: the composition takes its place.
+  if(r.pack?.kind==='shader')r=update(r,{type:'pack',pack:null},project,now,registry);
+  r=withdraw(r,prior,next,registry);
+  const spec=tunable(r,registry),values={};
+  for(const [k,v] of Object.entries(tunedBy(next)))if(Object.hasOwn(spec,k)&&exact(spec[k],v))values[k]=v;
+  r=tune(r,values,registry);
+  // Until the catalogue lists the finish as tunable it is written as it is (the host reads genome.technique.finish).
+  if(next.finish&&!Object.hasOwn(values,'technique.finish')){const genome=clone(r.genome);setPath(genome,'technique.finish',next.finish);r={...r,genome};}
+  const {unavailable:_u,...out}=r;
+  return {...out,composition:next,locked:true,founded:true};
+}
+// User actions: choose a family or a pack, regenerate, lock, adjust overrides, name subsystems, tune genome values,
+// apply a composition. Inputs are validated. A regenerated genome keeps the tuning when the family stays (retune
+// checks the family); `automatic` and a full `regenerate` are new identities and drop it. An applied composition
+// stays with its family (a canvas composition while the family stays) and goes with the identities that drop tuning.
 function update(recipe,action,project,now=Date.now(),registry=null){
   const drop=recipe.tuning===undefined?undefined:null;
-  const keep=(r,tuning=recipe.tuning)=>retune(Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title}),tuning,registry);
+  const carry=r=>{const c=recipe.composition;if(c&&(c.base===r.family||(c.base==='canvas'&&r.family===recipe.family)))r.composition=c;return r;};
+  const keep=(r,tuning=recipe.tuning,withComposition=true)=>{const out=retune(Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title}),tuning,registry);return withComposition?carry(out):out;};
   const pack=recipe.pack?.id||null;
   switch(action?.type){
     case 'family':{if(!FAMILIES.includes(action.family)&&!packFamily(registry,action.family))throw new Error('Unknown family');
@@ -386,12 +425,15 @@ function update(recipe,action,project,now=Date.now(),registry=null){
       if(action.pack===null)return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:recipe.family,traits:recipe.traits,now,registry,version:generatorOf(recipe)}));
       const p=typeof action.pack==='string'?usable(registry,action.pack):null;
       if(!p||!p.overlay)throw new Error('Unknown or unusable pack');
+      // A creation (a data-only pack carrying a composition) is applied as its composition, never as an overlay: the
+      // world keeps its digital life and the project its identity.
+      if(p.overlay.composition)return compose(recipe,p.overlay.composition,project,now,registry);
       // Choosing a look chooses its family too.
       return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:p.overlay.base,pack:p.id,traits:recipe.traits,now,registry,version:generatorOf(recipe)}));}
     case 'regenerate':{const r=generate(project,{seed:recipe.projectSeed,variant:(recipe.variant||0)+1,traits:recipe.founded?recipe.traits:null,now,registry});
       if(action.keepFamily)return keep(generate(project,{seed:recipe.projectSeed,variant:r.variant,family:recipe.family,pack,traits:r.traits,now,registry}));
-      return keep(Object.assign(r,{locked:true,founded:true,source:'user'}),drop);}
-    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now,registry}),drop);
+      return keep(Object.assign(r,{locked:true,founded:true,source:'user'}),drop,false);}
+    case 'automatic':return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,traits:recipe.founded?recipe.traits:null,now,registry}),drop,false);
     case 'lock':return {...recipe,locked:action.locked!==false,founded:recipe.founded||action.locked!==false};
     case 'overrides':{const o={...recipe.overrides};
       for(const k of ['intensity','motion','atmosphere'])if(action[k]!==undefined){const v=Number(action[k]);if(!Number.isFinite(v))throw new Error(`Invalid ${k}`);o[k]=round(clamp(v,0,2));}
@@ -404,6 +446,7 @@ function update(recipe,action,project,now=Date.now(),registry=null){
     case 'title':{if(action.title!==null&&(typeof action.title!=='string'||!ALIAS.test(action.title)))throw new Error('Invalid title');return {...recipe,title:action.title||null};}
     case 'tune':return tune(recipe,action.values,registry);
     case 'tune-reset':return untune(recipe);
+    case 'composition':return compose(recipe,action.composition,project,now,registry);
     default:throw new Error('Unknown action');
   }
 }

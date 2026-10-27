@@ -198,3 +198,25 @@ html[data-motion="reduce"] .ws-packs-dialog .pk-import-status::before{animation:
 @media (max-width:1080px){.ws-packs{--inspector:340px}}
 @media (max-width:900px){.ws-packs .page{overflow:visible;flex:none}.ws-packs>.main,.ws-packs>.inspector{min-height:auto}
   .ws-packs .pk-head{background:var(--bg-1)}.ws-packs-dialog .pk-sources{grid-template-columns:1fr}}
+/* ---- My creations (the Artist Studio's compositions) and the library's groups ---- */
+.ws-packs .pk-mine{container:pkmine/inline-size;overflow:hidden}
+.ws-packs .pk-mine-list{display:grid}
+.ws-packs .pk-mine-empty{display:grid;gap:10px;justify-items:start;padding:16px 20px;max-width:90ch;line-height:1.5}
+.ws-packs .pk-mine-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:"glyph text here" "glyph actions actions";column-gap:14px;row-gap:8px;align-items:center;padding:12px 18px 12px 20px}
+.ws-packs .pk-mine-row+.pk-mine-row{border-top:1px solid var(--line)}
+.ws-packs .pk-mine-row>.pk-glyph{grid-area:glyph}
+.ws-packs .pk-mine-text{grid-area:text;display:grid;min-width:0;line-height:1.35}
+.ws-packs .pk-mine-text strong{font-size:15px;font-weight:620}
+.ws-packs .pk-mine-row>.pill{grid-area:here}
+.ws-packs .pk-mine-actions{grid-area:actions;display:flex;gap:6px;flex-wrap:wrap}
+@container pkmine (min-width:760px){.ws-packs .pk-mine-row{grid-template-columns:40px minmax(0,1fr) auto auto;grid-template-areas:"glyph text here actions"}}
+.ws-packs .pk-list>li.pk-group{display:flex;align-items:baseline;gap:12px;padding:16px 18px 8px 20px;background:var(--bg-1);border-top:1px solid var(--line)}
+.ws-packs .pk-list>li.pk-group:first-child{border-top:0}
+.ws-packs .pk-list>li.pk-group .eyebrow{flex:none;color:var(--text-2)}
+.ws-packs .pk-list>li.pk-group .small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-packs .pk-list>li.pk-group .pk-group-count{margin-left:auto;flex:none}
+.ws-packs .pk-list>li.pk-group+li{border-top:0}
+.ws-packs .pk-comp-layers{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:10px}
+.ws-packs .pk-comp-layers>li{display:grid;gap:3px;padding-left:12px;border-left:2px solid var(--accent-line)}
+.ws-packs .pk-comp-layer{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.ws-packs .pk-comp-map{line-height:1.45}

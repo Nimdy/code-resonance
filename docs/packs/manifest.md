@@ -32,6 +32,34 @@ the base family's [catalogue](catalogue.md), effect polarity, referenced files, 
 `base` is a built-in family or an installed world pack (then `overrides` use `params.<name>` plus the shared palette,
 light and technique entries). A number may be a `[min, max]` range: each project gets its own seeded value. `effects`
 re-maps intents to other effect presets of the same polarity; `unlocks` orders the family's ambient layers.
+`technique.finish` (SDK 1.2) chooses the cinematic finish: `classic` (the world's own grade), `clean`, `cinematic` or
+`dreamlike`.
+
+### `declarative.composition` (SDK 1.2): a creation
+
+An Artist Studio composition travels as a declarative pack (the Studio's *Export* writes one; declare `"sdk": "^1.2"`):
+
+```json
+"declarative": {
+  "base": "fractal-biosphere",
+  "composition": {
+    "schema": "code-resonance.composition.v1", "version": 1, "name": "Neon Mycelium", "base": "fractal-biosphere",
+    "finish": "dreamlike", "tuning": {"palette.hue": 172}, "music": {"style": "ambient", "profile": {"atmosphere": 0.8}},
+    "layers": [{"id": "filaments", "type": "fractal", "name": "Mycelium filaments", "depth": "world", "blend": "add",
+      "anchor": {"kind": "subsystems"}, "params": {"form": "coral", "color": "#3cf2c8", "glow": 1.4},
+      "mappings": [{"signal": "music.dynamics", "target": "glow", "amount": 0.35, "curve": "smooth", "smoothing": 1.5, "min": 0, "max": 1}]}],
+    "mappings": []
+  }
+}
+```
+
+It is data only and validated against the composition model (`public/composition.js`): six layer types (`fractal`,
+`particles`, `ribbons`, `structure`, `atmosphere`, `light`), the signals and targets it lists, at most 8 layers within a
+rendering budget of 100, values clamped, unknown keys dropped, names kept as text without markup characters. An unknown
+layer type or signal, too many layers or a composition over the budget is an error. `base` must be the composition's
+own; a composition on the artist canvas (`"base": "canvas"`) is carried by any built-in family. An installed creation is
+listed under *Imported creations*: **Use** applies its composition to a project (the project keeps its own structure,
+events and digital life), **Open in Artist Studio** makes an editable copy. It is never offered as a look.
 
 ## `shader`
 

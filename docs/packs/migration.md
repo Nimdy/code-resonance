@@ -1,3 +1,12 @@
+# SDK 1.2 and 1.1: what changed, and migrating
+
+## SDK 1.2: creations and finishes
+
+SDK 1.2 adds two optional, data-only fields and changes nothing else: `declarative.composition` (an Artist Studio
+composition, see [the manifest](manifest.md)) and `technique.finish` (`classic`, `clean`, `cinematic`, `dreamlike`). A
+pack that uses either declares `"sdk": "^1.2"`; every pack written for `^1.0` or `^1.1` runs unchanged, and `sdk.version`
+is `'1.2.0'` (`sdk.api` stays `1`). World and shader packs do not have to know about compositions.
+
 # SDK 1.1: what changed, and migrating from 1.0
 
 SDK 1.1 keeps the 1.0 contract (manifest schema `code-resonance.pack.v1`, the World API, the `sdk` object, the shader

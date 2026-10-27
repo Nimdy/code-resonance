@@ -35,8 +35,9 @@ test('Compatibility: a pack runs on the SDK major it names, at or above the mino
   assert.equal(packs.compatible({sdk:'^1.2'},'1.0.0').ok,false);
   assert.equal(packs.compatible({sdk:'^2.0'},'1.9.0').ok,false);
   assert.equal(packs.compatible({},'1.0.0').ok,false);
-  // SDK 1.1 (pack code in a worker, sdk.util.canvas): packs written for 1.0 keep running; the examples declare ^1.0.
-  assert.equal(packs.SDK_VERSION,'1.1.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);
+  // SDK 1.1 (pack code in a worker, sdk.util.canvas), 1.2 (declarative compositions, technique.finish): packs written
+  // for 1.0 keep running; the examples declare ^1.0.
+  assert.equal(packs.SDK_VERSION,'1.2.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);assert.equal(packs.compatible({sdk:'^1.2'},packs.SDK_VERSION).ok,true);
   for(const d of fs.readdirSync(EXAMPLES))assert.equal(packs.compatible(JSON.parse(fs.readFileSync(path.join(EXAMPLES,d,'pack.json'),'utf8'))).ok,true,d);
 });
 test('Declarative packs are checked against their base family: parameters, ranges, effect polarity, ambient layers',t=>{

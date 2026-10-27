@@ -12,7 +12,7 @@ const {tempDir,startService}=require('./helpers');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 const NAME='secret-project-name',FILE='src/secret-dir/hidden-file.ts';
 const ADMIN=['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
-  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply'];
+  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply','/api/compositions'];
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 // A path as it appears in text and inside JSON (where Windows backslashes are escaped).
 const forms=p=>[p,JSON.stringify(p).slice(1,-1)];
@@ -211,7 +211,7 @@ test('Recipe batches apply all or nothing against a revision; a preview never wr
 test('Packs: import (ZIP and folder) into quarantine, install unapproved, approve, revoke, remove; the change stream follows every write',async t=>{
   const {svc,dir,base,projectId,send,get}=await start(t);
   const stream=await changeStream(base);t.after(()=>stream.close());
-  const hello=await stream.until(m=>m.event==='hello','hello');assert.deepEqual(hello.data.revision,{settings:0,presets:0});assert(hello.data.at>0);
+  const hello=await stream.until(m=>m.event==='hello','hello');assert.deepEqual(hello.data.revision,{settings:0,presets:0,compositions:0});assert(hello.data.at>0);
   // A world pack (code) as a ZIP with a top-level folder, as archivers make them.
   const archive=zip(filesOf(path.join(EXAMPLES,'cymatic-field'),'cymatic-field/'));
   let r=await send('/api/packs/import',archive,{headers:{'Content-Type':'application/zip'}});assert.equal(r.status,200,await r.clone().text());
@@ -382,7 +382,7 @@ test('Status, documentation and the Control Center files; no public response car
   const life=await fetch(`${base}/worlds/life/sim.js`);assert.equal(life.status,200);assert.match(life.headers.get('content-type'),/^text\/javascript/);
   // Public read routes: none carries the token, a file path sent in events, the data directory or the private name.
   const routes=['/api/status','/api/catalog','/api/packs','/api/packs/templates',`/api/evidence?id=${projectId}`,'/api/settings',`/api/preferences?id=${projectId}`,
-    '/api/presets',`/api/recipe?id=${projectId}`,`/api/recipe/tunable?id=${projectId}`,'/health'];
+    '/api/presets',`/api/recipe?id=${projectId}`,`/api/recipe/tunable?id=${projectId}`,'/health','/api/compositions'];
   for(const route of routes){
     const text=await (await fetch(base+route)).text();
     for(const secret of [svc.token,'secret-dir','hidden-file',FILE,...forms(dir),NAME])assert(!text.includes(secret),`${route} contains ${secret===svc.token?'the token':secret}`);
