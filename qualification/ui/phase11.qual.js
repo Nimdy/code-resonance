@@ -107,18 +107,22 @@ async function scenarioA(browser,env){
     let o=await opts(p);
     check('Evolution and Atmosphere reach the engine profile',Math.abs(o.profile.evolution-.85)<1e-9&&Math.abs(o.profile.atmosphere-.8)<1e-9,`evolution ${o.profile.evolution}, atmosphere ${o.profile.atmosphere}`);
     check('the preview bar names the change, nothing saved',await p.isVisible('#musicPreviewBar')&&/Evolution|Character/.test(await p.textContent('#musicPreviewBar')));
-    // The balance: the pads lowered, the melody raised, the arpeggio muted (its group leaves the bar's arrangement).
+    // The balance: the pads lowered, the melody raised, and a voice that is sounding now muted: it leaves the arrangement
+    // of the following bars (observed bar by bar; the bar in progress may still hold it).
     const avail=await p.evaluate(()=>[...document.querySelectorAll('#musicMixer .ms-ch')].filter(e=>!e.hidden).map(e=>e.dataset.group));note('mixerGroups',avail);
     check('the mixer shows the groups Ambient can sound (no percussion at this rhythm)',avail.includes('pad')&&avail.includes('melody')&&!avail.includes('perc'),avail.join(','));
     await p.fill('#musicMix-pad','60');await p.fill('#musicMix-melody','130');
-    const muteGroup=avail.includes('arp')?'arp':'counter';
+    const sounding=await poll(()=>p.evaluate(g=>{const l=window.ResonancePlayer.state.sound.layers||[];return g.find(x=>l.includes(x))||null;},['arp','counter','atmos','bass'].filter(g=>avail.includes(g))),20000);
+    const muteGroup=sounding||'arp';
+    const layers0=await p.evaluate(()=>window.ResonancePlayer.state.sound.layers);
     await p.click(`#musicMixer .ms-ch[data-group="${muteGroup}"] [data-act="mute"]`);
     o=await opts(p);
     check('the balance reaches the engine (pad 0.6, melody 1.3, one group muted)',o.profile.mix.pad===.6&&o.profile.mix.melody===1.3&&o.profile.mix[muteGroup]===0,JSON.stringify(o.profile.mix));
-    const layers0=await p.evaluate(()=>window.ResonancePlayer.state.sound.layers);
-    const gone=await until(p,g=>{const l=window.ResonancePlayer.state.sound.layers;return Array.isArray(l)&&!l.includes(g)&&l.length>0;},muteGroup,20000);
-    const layers1=await p.evaluate(()=>window.ResonancePlayer.state.sound.layers);note('barLayers',{before:layers0,after:layers1});
-    check(`the muted ${muteGroup} leaves the bar's arrangement`,gone,`${JSON.stringify(layers0)} → ${JSON.stringify(layers1)}`);
+    const bars=[];{let last=null;const t0=Date.now();while(bars.length<4&&Date.now()-t0<25000){const b=await p.evaluate(()=>({bar:window.ResonancePlayer.state.bar,layers:window.ResonancePlayer.state.sound.layers}));
+      if(b.bar!==last){last=b.bar;bars.push(b);}await sleep(150);}}
+    const after=bars.slice(1);note('barLayers',{muted:muteGroup,before:layers0,after:after.map(b=>`${b.bar}: ${b.layers?.join(',')}`)});
+    check(`the muted ${muteGroup}, sounding before, is out of the next bars' arrangement`,!!sounding&&layers0?.includes(muteGroup)&&after.length===3&&after.every(b=>b.layers?.length&&!b.layers.includes(muteGroup)),
+      `before ${JSON.stringify(layers0)} · then ${after.map(b=>`bar ${b.bar} [${b.layers?.join(',')}]`).join(' ')}`);
     const heard=await level(p);note('levelPreview',heard);
     check('the changed performance is audible',heard.rms>0,JSON.stringify(heard));
     // Cancel: the saved performance comes back, nothing was saved.
@@ -155,7 +159,7 @@ async function scenarioA(browser,env){
     check('after reload: the controls show them and the preset is listed',ui.ambient==='true'&&ui.evolution==='85'&&ui.atmosphere==='80'&&ui.pad==='60'&&ui.preset.includes('Lumen night drift'),JSON.stringify(ui));
     await p.click('#musicEnableSound');await until(p,()=>window.ResonancePlayer.state.sound.enabled);
     check('after reload: the saved result is heard (score v3, the muted group stays out)',await until(p,g=>{const s=window.ResonancePlayer.state.sound;return s.score===3&&Array.isArray(s.layers)&&s.layers.length>0&&!s.layers.includes(g);},muteGroup,20000));
-    const after=await level(p);note('levelAfterReload',after);check('after reload: audible',after.rms>0,JSON.stringify(after));
+    const heardAgain=await level(p);note('levelAfterReload',heardAgain);check('after reload: audible',heardAgain.rms>0,JSON.stringify(heardAgain));
     await until(p,()=>!!document.querySelector('#musicForm:not([hidden])'),null,8000);
     // The evidence: the composed score, its style cards, the character and the balance in one view (scrolled as a
     // person would, the wheel over the desk).
