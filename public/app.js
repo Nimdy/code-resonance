@@ -927,7 +927,6 @@
   function setSpeed(k){k=Number(k);if(![1,4,16].includes(k)||k===speedChoice)return;const pos=perfNow();speedChoice=k;
     if(mode==='replay'){music.setClock(perfNow,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());replayPos=pos;replayClock=performance.now();seek(pos);}changed('position');}
   // ---- The engine's interface ---------------------------------------------------------------------------------
-  const PROFILE_SIZES={'720p':[1280,720],'1080p':[1920,1080]};
   const player={
     WORLDS,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
     on(f){listeners.add(f);return ()=>listeners.delete(f);},
@@ -940,7 +939,7 @@
       // place in the form (the Music Studio's monitor).
       sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0,
         score:soundEnabled&&music.bar?music.bar.scoreVersion||2:null,layers:soundEnabled&&music.bar?.layers?[...music.bar.layers]:null,form:soundEnabled&&music.bar?.form?{...music.bar.form}:null},
-      recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:PROFILE_SIZES[recordSize]},
+      recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:RECORD_SIZES[recordSize]},
       recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
       worldStatus:{loading:!!livingLoading,running:!!living,remote:!!living?.remote,pack:living?.pack?{id:living.pack.id,name:living.pack.name}:null,failed:livingFailed,construct:!!construct,constructFailed,
         notice:packNotice,layerFailures:layerFailures(),stopped:stoppedPack&&stoppedPacks.has(stoppedPack.id)?{id:stoppedPack.id,name:stoppedPack.name,reason:stoppedPacks.get(stoppedPack.id)}:null},
