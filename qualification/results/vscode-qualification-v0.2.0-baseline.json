@@ -2,7 +2,7 @@
   "startedAt": "2026-10-23T18:06:06.875Z",
   "extensionRef": "07a2695",
   "vscode": {
-    "executable": "/home/nimda/projects/solonerds-projects/code-resonance/qualification/.vscode-test/vscode-linux-x64-1.143.1/code",
+    "executable": "qualification/.vscode-test/vscode-linux-x64-1.143.1/code",
     "version": "1.143.1"
   },
   "root": "/tmp/cr-vscode-qual-KBFqgE",
