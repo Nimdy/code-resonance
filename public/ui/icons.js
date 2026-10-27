@@ -78,4 +78,3 @@ export function icon(name,size=null){
   const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',P[name]||P.info);svg.append(path);
   return svg;
 }
-export const ICONS=Object.keys(P);

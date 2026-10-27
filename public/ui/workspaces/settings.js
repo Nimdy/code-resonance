@@ -2,14 +2,11 @@
 // receiver's settings.json (every window and the OBS view follow them); this device's choices stay in this browser;
 // music defaults and visual identity have their own studios and are only linked from here (one place for each).
 // Storage, diagnostics and the documentation are read-only: erasing data is explained, never a button.
-import {h,text,button,select,segmented,toggle,callout,copyable,kv,toast,setLabel,styles} from '../dom.js';
+import {h,text,button,select,segmented,toggle,callout,copyable,kv,toast,setLabel,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
-import {duration,clockTime,projectName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
+import {duration,clockTime,projectName,WORLD_NAMES,LABEL_NAMES,LABEL_DOCS,QUALITY_NAMES} from '../format.js';
 import {openDoc,DOCS} from '../markdown.js';
-const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
 const QUALITY_DOCS={auto:'Lowers the resolution within about two seconds of slow frames (straight to the lowest level when far too slow) and climbs back only after a stable period. If no level draws smoothly, it says so and offers Monolith, a 2D stage.',0:'Full resolution with 4× anti-aliasing.',1:'Full resolution, no anti-aliasing.',2:'75 % resolution.',3:'55 % resolution: for machines without a capable GPU.'};
-// Scrolling follows the app's Motion setting first, then the system's (html[data-motion] is set only when not "system").
-const smooth=()=>{const m=document.documentElement.dataset.motion;return m==='full'||(m!=='reduce'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)?'smooth':'auto';};
 const SECTIONS=[['global','Global','All windows and OBS','globe'],['device','This device','This browser only','monitor'],['storage','Storage & privacy','Where everything lives','folder'],
   ['diagnostics','Diagnostics','What this window sees','cpu'],['about','About','Versions and guides','info']];
 // A path breaks after its separators (never inside a folder name) when it has to wrap.
@@ -120,7 +117,7 @@ export default {mount(view,{store:S,player:P,navigate}){
       panel('Documentation','Opens here, from this receiver',h('div',{class:'panel-body'},h('div',{class:'set-docs'},...ABOUT_DOCS.map(d=>h('button',{type:'button',class:'set-doc',dataset:{doc:d},onClick:()=>openDoc(d)},icon('doc'),h('span',{text:DOCS[d]||d}),h('span',{class:'faint tiny num',text:d}))))))));
   // ---- Layout: a section index (with each section's scope) beside the sections ------------------------------------
   const nav=h('nav',{class:'set-nav','aria-label':'Settings sections'},...SECTIONS.map(([id,t,hint,ic])=>h('a',{href:`#set-${id}`,dataset:{target:id},onClick:e=>{e.preventDefault();
-    const target=document.getElementById(`set-${id}`);target.scrollIntoView({behavior:smooth(),block:'start'});target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}},
+    const target=document.getElementById(`set-${id}`);target.scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});target.setAttribute('tabindex','-1');target.focus({preventScroll:true});}},
     icon(ic),h('span',{class:'set-nav-text'},h('span',{class:'set-nav-label',text:t}),h('span',{class:'set-nav-hint',text:hint})))));
   const content=h('div',{class:'set-content'},globalSection,deviceSection,storageSection,diagSection,aboutSection);
   const page=h('div',{class:'page ws-settings'},h('div',{class:'page-inner'},

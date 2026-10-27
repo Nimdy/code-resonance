@@ -92,12 +92,6 @@
   const typeOf=t=>typeof t==='string'&&Object.hasOwn(LAYERS,t)?LAYERS[t]:null;
   function specOf(type){const t=typeOf(type);if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
   function targetsOf(type){return (specOf(type)||[]).filter(p=>(p.type==='number'||p.type==='int')&&p.live!==false);}
-  // What a depth class actually does for a layer type (shown with the choice: a screen-space effect is never presented
-  // as geometry in the world).
-  const DEPTH_NOTES={
-    atmosphere:{behind:'A sky behind the whole world (screen-space, at the far plane)',world:'A glowing volume around its anchor, depth-tested with the world',front:'A veil over the whole image (screen-space)'},
-    default:{behind:'Drawn behind everything in the world',world:'Integrated: hidden and revealed by the world\'s own forms',front:'Drawn over the world (always in front)'}};
-  function depthNote(type,depth){return (DEPTH_NOTES[type]||DEPTH_NOTES.default)[depth]||'';}
   const str=(v,n)=>typeof v==='string'?v.replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,n):'';
   const idOf=v=>typeof v==='string'&&/^[a-z0-9-]{1,40}$/.test(v)?v:null;
   function value(spec,v){
@@ -246,5 +240,5 @@
   // Only non-private material is ever exported: no project, path or recipe identity, only the composition itself.
   function exportable(c){const n=normalize(c);delete n.id;return n;}
   return {SCHEMA,VERSION,LIMITS,BASES,FINISHES,DEPTHS,BLENDS,ANCHORS,LAYERS,COMMON,SIGNALS,CURVES,GLOBAL_TARGETS,CANVAS,STARTERS,
-    specOf,targetsOf,depthNote,normalize,validate,costOf,budgetOf,applyMappings,shape,layer,exportable};
+    specOf,targetsOf,normalize,validate,costOf,budgetOf,applyMappings,shape,layer,exportable};
 });

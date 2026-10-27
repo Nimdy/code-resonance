@@ -11,7 +11,7 @@
 // refuses is rolled back and its message shown where it was made.
 import {h,text,clear,button,field,select,segmented,slider,parameterControl,humanize,formatParam,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
-import {WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES,publicName,count} from '../format.js';
+import {WORLD_NAMES,LABEL_NAMES,LABEL_DOCS,QUALITY_NAMES,publicName,count} from '../format.js';
 // Each built-in family with the reason to choose it: what the code becomes, and what its moments look like.
 const FAMILIES=[
   {id:'fractal-biosphere',name:'Fractal Biosphere',line:'A recursive undersea forest grown from the code',
@@ -94,7 +94,6 @@ const WORLD_ABERRATION={'stellar-forge':.0022};
 const ABERRATION_UNIT=.004;
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
-const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
 // Rendered thumbnails, kept across visits: one per (project, saved revision, family).
 const THUMBS=new Map();
 const enc=encodeURIComponent;

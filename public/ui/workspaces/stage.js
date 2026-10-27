@@ -6,7 +6,7 @@
 // I performance information, ? the list of keys.
 import {h,text,button,select,segmented,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
-import {timecode,clockTime,publicName,stageWorldName,WORLD_NAMES,LABEL_NAMES,QUALITY_NAMES} from '../format.js';
+import {timecode,clockTime,publicName,stageWorldName,WORLD_NAMES,LABEL_NAMES,LABEL_DOCS,QUALITY_NAMES} from '../format.js';
 const IDLE_MS=2600,ESC_MS=2500;
 export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecording}){
   styles('stage');
@@ -22,7 +22,7 @@ export default {mount(view,{store,player:P,navigate,chrome,stageUrl,toggleRecord
   const back=button({label:'Control Center',icon:'back',title:standalone?'Back to the Control Center':'Back to the Control Center (Esc twice)',onClick:goBack,attrs:{class:'btn stage-back'}});
   // Its key, as everywhere else on the Stage: Esc twice (one Esc only says how to leave).
   if(!standalone)back.append(h('span',{class:'stage-back-keys','aria-hidden':'true'},h('kbd',{text:'Esc'}),h('kbd',{text:'Esc'})));
-  const labels=segmented({label:'Information on the stage',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:{cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'}[m]})),
+  const labels=segmented({label:'Information on the stage',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:LABEL_DOCS[m]})),
     value:P.state.labels,onChange:m=>setLabels(m)});
   const quality=select({id:'qualitySelect',label:'Rendering quality on this device',title:'Rendering quality on this device: Auto lowers it only while frames are slow',
     options:P.QUALITY.map(q=>({value:q,label:q==='auto'?'Quality · Auto':`Quality · ${QUALITY_NAMES[q]}`})),value:P.state.quality,onChange:q=>{store.unpin('quality');store.setDevice({quality:q});P.setQuality(q);}});
