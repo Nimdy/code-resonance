@@ -15,6 +15,8 @@
 })(typeof globalThis!=='undefined'?globalThis:null,function(){
   const SCHEMA='code-resonance.composition.v1',VERSION=1;
   const LIMITS={layers:8,mappings:6,globalMappings:4,name:48,budget:100,tuning:48,versions:5};
+  // validate() reports the first problems only: a large crafted pack.json would otherwise list one per entry.
+  const MAX_PROBLEMS=24;
   const BASES=['fractal-biosphere','stellar-forge','machine-cathedral','canvas'];
   const FINISHES=['clean','cinematic','dreamlike'];
   // Depth is where a layer is drawn: behind the world, integrated with it (depth-tested), or in front of it. All three
@@ -83,7 +85,9 @@
   const CANVAS=[COLOR('background','#04060c'),COLOR('horizon','#14223a'),P('orbit','number',0,1,.25),P('distance','number',.5,2,1),P('floor','number',0,1,.4)];
   // Composition-level targets (bounded camera motion and finish emphasis).
   const GLOBAL_TARGETS=[P('camera.sway','number',0,1,0),P('camera.zoom','number',-.3,.3,0),P('finish.bloom','number',-.5,.5,0),P('finish.exposure','number',-.3,.3,0)];
-  function specOf(type){const t=LAYERS[type];if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
+  // A layer type is one of LAYERS' own names, as a string: never an inherited key ('constructor') or a coerced value.
+  const typeOf=t=>typeof t==='string'&&Object.hasOwn(LAYERS,t)?LAYERS[t]:null;
+  function specOf(type){const t=typeOf(type);if(!t)return null;const own=new Set(t.params.map(p=>p.key));return [...t.params,...COMMON.filter(p=>!own.has(p.key))];}
   function targetsOf(type){return (specOf(type)||[]).filter(p=>(p.type==='number'||p.type==='int')&&p.live!==false);}
   // What a depth class actually does for a layer type (shown with the choice: a screen-space effect is never presented
   // as geometry in the world).
@@ -113,7 +117,7 @@
       smoothing:clamp(Number(m.smoothing)||0,0,4),min:Math.min(lo,hi),max:Math.max(lo,hi)};
   }
   function layerOf(l,i){
-    const t=LAYERS[l?.type];if(!t)return null;const spec=specOf(l.type),params={};
+    const t=typeOf(l?.type);if(!t)return null;const spec=specOf(l.type),params={};
     for(const s of spec)params[s.key]=value(s,l.params?.[s.key]);
     const targets=targetsOf(l.type);
     return {id:idOf(l.id)||`l${i+1}`,type:l.type,name:str(l.name,LIMITS.name)||t.label,enabled:l.enabled!==false,solo:l.solo===true,
@@ -153,9 +157,10 @@
       canvas:base==='canvas'?Object.fromEntries(CANVAS.map(s=>[s.key,value(s,c?.canvas?.[s.key])])):null,
       layers,mappings:(Array.isArray(c?.mappings)?c.mappings:[]).map(m=>mappingOf(m,GLOBAL_TARGETS)).filter(Boolean).slice(0,LIMITS.globalMappings)};
   }
-  function costOf(layer){const t=LAYERS[layer.type];return t?Math.round(t.cost(layer.params)*10)/10:0;}
+  function costOf(layer){const t=typeOf(layer?.type);return t?Math.round(t.cost(layer.params)*10)/10:0;}
   function budgetOf(c){const n=normalize(c);const used=n.layers.reduce((a,l)=>a+(l.enabled?costOf(l):0),0);return {used:Math.round(used*10)/10,limit:LIMITS.budget,layers:n.layers.length,maxLayers:LIMITS.layers};}
-  // Problems a caller should show or refuse: [{at, message}]. Normalising never throws; validation explains.
+  // Problems a caller should show or refuse: [{at, message}], the first MAX_PROBLEMS. Normalising never throws;
+  // validation explains.
   function validate(c){
     const errors=[];
     if(!c||typeof c!=='object'||Array.isArray(c))return [{at:'',message:'A composition is an object'}];
@@ -164,10 +169,10 @@
     const layers=Array.isArray(c.layers)?c.layers:[];
     if(c.layers!==undefined&&!Array.isArray(c.layers))errors.push({at:'layers',message:'layers must be a list'});
     if(layers.length>LIMITS.layers)errors.push({at:'layers',message:`at most ${LIMITS.layers} layers`});
-    layers.forEach((l,i)=>{if(!LAYERS[l?.type])errors.push({at:`layers.${i}.type`,message:`unknown layer type ${String(l?.type).slice(0,24)}`});
+    layers.forEach((l,i)=>{if(!typeOf(l?.type))errors.push({at:`layers.${i}.type`,message:`unknown layer type ${String(l?.type).slice(0,24)}`});
       for(const [j,m] of (Array.isArray(l?.mappings)?l.mappings:[]).entries())if(!SIGNAL_IDS.has(m?.signal))errors.push({at:`layers.${i}.mappings.${j}`,message:`unknown signal ${String(m?.signal).slice(0,32)}`});});
     let spent=0;for(const [i,l] of layers.slice(0,LIMITS.layers).entries()){const n=layerOf(l,i);if(!n)continue;spent+=costOf(n);if(spent>LIMITS.budget){errors.push({at:`layers.${i}`,message:`over the rendering budget (${LIMITS.budget})`});break;}}
-    return errors;
+    return errors.slice(0,MAX_PROBLEMS);
   }
   // A mapping's contribution in the target's own units, from a signal value (0..1) already smoothed by the caller.
   function shape(curve,x){x=clamp(x,0,1);return curve==='linear'?x:curve==='sharp'?x*x*x:curve==='pulse'?Math.pow(x,6):x*x*(3-2*x);}

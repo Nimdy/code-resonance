@@ -78,6 +78,10 @@ test('Unsafe content is refused: code in a data pack, unknown layer types or sig
   assert(write('signal',m({layers:[{type:'light',mappings:[{signal:'net.fetch',target:'glow'}]}]})).some(e=>/unknown signal/.test(e)));
   assert(write('budget',m({layers:Array.from({length:6},()=>({type:'particles',params:{count:6000,trail:1}}))})).some(e=>/over the rendering budget/.test(e)));
   assert(write('count',m({layers:Array.from({length:9},()=>({type:'light'}))})).some(e=>/at most 8 layers/.test(e)));
+  // A layer type is one of the model's own names, as a string: an inherited name or a list is unknown, never a crash.
+  for(const type of ['constructor','__proto__','toString'])assert(write(`proto-${type}`,m({layers:[{type}]})).some(e=>/composition\/layers\/0\/type: unknown layer type/.test(e)),type);
+  assert.equal(C.validate({layers:[{type:['light']}]}).length,1,'a list is not a layer type');
+  assert.equal(C.validate({layers:Array.from({length:1000},()=>({}))}).length,24,'the first 24 problems only');
   assert(write('base',m(C.exportable(starter('starter-celestial-motion')))).some(e=>/must be the composition's base, "stellar-forge"/.test(e)));
   assert(write('old-sdk',m(C.exportable(starter('starter-bioluminescent-dream')),{sdk:'^1.3'})).some(e=>/needs SDK 1\.3/.test(e)));
   assert(write('shape',m('layers')).some(e=>/composition: must be object/.test(e)));
