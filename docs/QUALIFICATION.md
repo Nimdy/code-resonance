@@ -10,38 +10,8 @@ restart resume. The browser job passed every Stage check and the 60-second audio
 
 ## How to run
 
-```bash
-cd qualification && npm ci
-npx playwright-core install chromium                  # once, if not cached
-xvfb-run -a node vscode/run.js                        # real VS Code extension host (+ CR_QUAL_AGENT=claude for a real agent)
-CR_QUAL_EXTENSION_REF=<git ref> xvfb-run -a node vscode/run.js   # qualify the extension as of any commit
-node browser/stage.qual.js [path-to-a-real-repo]      # Stage in Chromium
-node browser/audio.qual.js                            # offline renders, loudness metrics, WAV excerpts
-node browser/soak.qual.js                             # long live playback (CR_SOAK_MINUTES)
-node session/history-session.js <repo> /tmp/cr-session 120 30   # build a 30-minute real-code session
-node session/session.qual.js /tmp/cr-session <projectId>          # render and analyse it
-node visual/datasets.js results/datasets --excalidraw <repo> --self <repo> --long 300   # datasets for the visual checks
-node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance]
-node visual/history.qual.js                           # long histories, synthetic, up to 1,000,000 intents
-node visual/long.qual.js                              # long-history replay in the player (lumen-long fixture)
-node visual/unchanged.qual.js [--baseline <ref>]      # built-in worlds render the same frames as a baseline commit
-node visual/pack.qual.js <pack dir> [--gpu amd]       # visual pack compatibility (= node scripts/pack.js test)
-node visual/catalogue.qual.js                         # every family at the extremes of its parameter catalogue
-node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
-node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
-node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart
-node visual/sync.qual.js [--gpu amd]                  # recording synchronisation per condition (worlds, sizes, load, switching, live)
-node visual/memory.qual.js [--gpu amd] [--gc-each] [--experiments ...]   # renderer memory forensics (lean driver: no DevTools Network)
-node visual/memory-detached.qual.js [--gpu amd]       # control: the same session with and without a DevTools Network client
-node visual/memory-recorder.qual.js / memory-lifecycle.qual.js   # browser behaviour isolated on a blank page (recorder; workers, WebGL)
-xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
-node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
-node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
-node ui/serve.js [--port 4180] [--empty]              # an isolated installation to review the Control Center (prints a pairing link)
-node ui/run-all.js [--jobs 3] [--only home,visual] [--quick]   # the interface: every workspace's suite + the acceptance suite
-node ui/acceptance.qual.js [--quick]                  # cross-view acceptance (first run, pairing, projects, OBS, recording, layouts)
-node ui/screenshots.js [--gpu amd]                    # review screenshots into docs/control-center/
-```
+The commands for every harness, and what CI runs today, are in [ARCHITECTURE.md](../ARCHITECTURE.md#qualification) (moved
+there at the final consolidation, with the harnesses added since). As run during these milestones:
 
 **Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):
 modules and the receiver's HTTP API in-process. *Platform smoke* (`platform/smoke.js`, every push, both platforms): the
