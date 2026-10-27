@@ -151,8 +151,8 @@ test('Habitat data travels with the sites: after a restore the ecosystem holds t
   const withData={...grammar,habitat:(model,t)=>{const sites=grammar.habitat(model,t);return {sites,data:{key:sites.map(s=>s.id).join(',')}};}};
   const timeline=createLifeTimeline();timeline.prime(recording(30));
   const driver=createLifeDriver({grammar:withData,timeline,seed:5,config:()=>({speed:1,tempo:96,epoch:T0,params:{}}),score});
-  driver.update({tview:250});const late=driver.ecosystem.siteData.key;
-  driver.update({tview:30});const early=driver.ecosystem.siteData.key;
+  driver.update({tview:250},{budgetMs:1e9});const late=driver.ecosystem.siteData.key;
+  driver.update({tview:30},{budgetMs:1e9});const early=driver.ecosystem.siteData.key;
   assert.notEqual(late,early,'the habitat grew between the two moments');
   assert.equal(early,driver.ecosystem.sites.ids.join(','),'restored: the data matches the restored sites');
   assert.equal(driver.stats().fromCheckpoint>0||driver.stats().resets>1,true);
