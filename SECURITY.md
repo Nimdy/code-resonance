@@ -13,6 +13,7 @@
 | AI prompts and assistant messages (hooks) | length + fingerprint; text only with `RESONANCE_CAPTURE_PROMPT_TEXT=1` | journal | never |
 | File paths | project-relative, secret patterns excluded | journal | **never** (salted hashed ids only) |
 | Project folder name | with `resonance.shareProjectName` (default on) | receiver state | the Control Center only (labelled as private); never drawn on the Stage, OBS view, films or file names (their titles are generic unless you set a **public title** in Visual Studio) |
+| Artist Studio compositions (the names, descriptions, layers and mappings you make) | made by you | `compositions.json` in the receiver's data, with the last five versions of each; the one a project uses is copied into its recipe | drawn as the applied look; an **export** holds the composition, a generated README, the author name and licence you type and a pack id `creator.<name>-<6 hex>`, never a project's name, paths, ids, recipe or anything about the computer |
 
 Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inserted text even if an old extension sends it; existing journals from v0.2 may still contain it — delete them (below) if that matters.
 
@@ -20,8 +21,8 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 
 - The receiver binds to loopback by default and refuses other interfaces unless `RESONANCE_ALLOW_REMOTE=1`. Requests need a localhost `Host` header; cross-origin requests are refused (DNS-rebinding protection).
 - Ingestion (`/v1/*`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time.
-- **Administrative changes** (settings, project preferences, presets, recipes, pack import/install/approval/removal, the
-  Claude Code hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
+- **Administrative changes** (settings, project preferences, presets, recipes, Artist Studio compositions, pack
+  import/install/approval/removal, the Claude Code hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
   request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
   whatever headers it forges), with the page's own Origin and fetch metadata, that presents the receiver's **pairing
   key** (also in `receiver-auth.json`, so only your account can read it). A browser receives the key once, in the
@@ -54,12 +55,20 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - The Claude Code adapter never writes to stdout and always exits 0, so it cannot alter Claude's decisions. It is installed per project in `.claude/settings.local.json`, which is not committed.
 - No analytics, telemetry, accounts, cloud APIs or remote model calls.
 - **Visual packs.** Declarative packs are validated data. Packs with code (GLSL, JavaScript) are installed unapproved, run only after you approve their exact files (approval bound to a content digest), are served to the player as inert text, and execute only in a dedicated worker inside an isolated frame (`sandbox="allow-scripts"`, opaque origin, `connect-src 'none'`, no frames or popups; the worker has no DOM, cannot navigate and has no WebRTC) fed with a whitelisted, privacy-safe performance view. Frames are acknowledged and bounded; a pack that throws, stops answering, is far too slow, loses its GPU context, floods messages, navigates, is revoked or whose files change is stopped. Browsers cannot fully sandbox GPU shaders (hangs, driver crashes, timing side channels), and an approved pack can still waste CPU, memory or GPU time until it is stopped: approve only packs you trust. Details: [docs/packs/security.md](docs/packs/security.md).
-- **This browser** keeps the pairing key, the active project's id, the last view and rendering quality in its storage for the receiver's origin; nothing else (no names, paths or tokens).
+- **Artist Studio compositions** are data, never evaluated: every save, import and recipe that carries one is validated
+  against the composition model's allowlists (six layer types, the listed signals and targets, at most 8 layers within
+  a rendering budget of 100) and normalised (values clamped, unknown keys dropped, names kept as text). An exported
+  creation is a declarative pack: it can hold no code file, installs without approval, and is refused at import if it
+  names an unknown layer type or signal or exceeds the budget. It is drawn by the built-in layer runtime, never in the
+  pack frame, and gains no executable privilege.
+- **This browser** keeps, in its storage for the receiver's origin: the pairing key, the active project's id, the last
+  view, rendering quality, a few interface choices (such as the OBS URL options), the composition last opened in the
+  Artist Studio, and the author name and licence you last used for an export. No project names, paths or tokens.
 - **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded.
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data
 
-Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key; paired browsers then need the new link). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Nothing is copied anywhere else.
+Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key; paired browsers then need the new link). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Artist Studio compositions belong to no project: deleting a project's folder leaves them in `~/.code-resonance/compositions.json` (delete them in the Artist Studio, or that file for all of them). A browser's own storage for the receiver's address is cleared with its site data. Nothing is copied anywhere else.
 
 Report vulnerabilities privately to the repository owner; do not attach recordings that may contain secrets.
