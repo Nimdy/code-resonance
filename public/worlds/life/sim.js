@@ -268,6 +268,8 @@ export function createEcosystem(spec){
   const ax=new Float32Array(cap),ay=new Float32Array(cap),az=new Float32Array(cap),nbN=new Uint16Array(cap),living=new Int32Array(NS);
   const PN=13,NB_MAX=24,perc=new Float32Array(cap*PN);   // perceived neighbourhood (count, mean position, mean velocity, separation, other species)
   const counters={neighbourPairs:0,steps:0,candidates:0};
+  // Optional per-phase CPU profile (spec.profile: benchmarks only; never on in the player).
+  const prof=spec.profile?{grid:0,agents:0,integrate:0,fields:0,steps:0}:null,clock=()=>prof?performance.now():0;
   const scratchF=[0,0,0];
   function step(){
     // Conditions relax toward the climate's targets (about six seconds): no abrupt jump on a section change.
@@ -276,7 +278,7 @@ export function createEcosystem(spec){
     // A strained site (failing validation) stays unwelcome while the strain lasts: it keeps emitting disturbance
     // (bounded by saturation) until a recovery clears it or the strain fades.
     for(let k=0;k<nSites;k++){const st=site(k);if(st.stress>.05)disc(CH.disturb,sx[k],sz[k],sr[k]*2.2,.06*st.stress*P.environment);}
-    buildGrid();derive();
+    let c0=clock();buildGrid();derive();
     density.fill(0);for(let i=0;i<cap;i++)if(alive[i]){const gx=Math.floor((px[i]-FX0)/cw),gz=Math.floor((pz[i]-FZ0)/ch);if(gx>=0&&gz>=0&&gx<NX&&gz<NZ)density[gz*NX+gx]+=1;}
     visitsNow.fill(0);
     const activity=cond.activity*P.vitality,turb=cond.turb;
@@ -348,6 +350,7 @@ export function createEcosystem(spec){
       ax[i]=fx/s.mass;ay[i]=fy/s.mass;az[i]=fz/s.mass;
       decide(i,n,distLocal);
     }
+    let c1=clock();if(prof){prof.grid+=0;prof.agents+=c1-c0;}
     // Integrate, then deposit where each entity now is.
     for(let i=0;i<cap;i++){
       if(!alive[i])continue;const s=species[sp[i]];
@@ -370,9 +373,10 @@ export function createEcosystem(spec){
       if(age[i]>=life[i]){fade[i]-=DT/s.fade;if(fade[i]<=0){alive[i]=0;fade[i]=0;dead[i]=tick+Math.round((s.respawn[0]+(s.respawn[1]-s.respawn[0])*u01(seed,i,gen[i],13))*HZ);}}
       else if(fade[i]<1)fade[i]=Math.min(1,fade[i]+DT/s.fade);
     }
+    let c2=clock();if(prof)prof.integrate+=c2-c1;
     // Congestion: where a crowd exceeds what a place carries, it becomes unwelcome (a repulsive deposit).
     for(let k=0;k<NS;k++){const s=species[k];if(!s.congestion)continue;for(let q=0;q<NC;q++)if(density[q]>s.congestionAbove)field[CH.disturb*NC+q]+=(density[q]-s.congestionAbove)*s.congestion;}
-    evolve();
+    evolve();if(prof){prof.fields+=clock()-c2;prof.steps++;}
     for(let k=0;k<MAX_SITES;k++)visits[k]+=(visitsNow[k]-visits[k])*.05;
     if(tick%TRAIL_EVERY===0){const head=(tick/TRAIL_EVERY|0)%K;for(let i=0;i<cap;i++){if(!alive[i])continue;const o=i*K+head;tx[o]=px[i];ty[o]=py[i];tz[o]=pz[i];}}
     // Free slots respawn while their species is below its active quota (bounded, deterministic order).
@@ -393,7 +397,8 @@ export function createEcosystem(spec){
     let tr=0,dist=0,eng=0,flow=0;for(let q=0;q<NC;q++){tr+=field[CH.trail*NC+q];eng+=field[CH.energy*NC+q];dist+=field[CH.disturb*NC+q];flow+=len2(field[CH.flowX*NC+q],field[CH.flowZ*NC+q]);}
     return {tick,alive:live,capacity:cap,species:Object.fromEntries(species.map((s,k)=>[s.name,bySpecies[k]])),modes:Object.fromEntries(MODE_NAMES.map((n,k)=>[n,modes[k]])),
       meanSpeed:live?speed/live:0,meanEnergy:live?energy/live:0,field:{trail:tr,energy:eng,disturb:dist,flow},sites:nSites,field_dims:[NX,NZ],
-      cond:Object.fromEntries(Object.entries(cond).map(([k,v])=>[k,+v.toFixed(3)])),neighbourPairs:counters.neighbourPairs,candidates:counters.candidates,steps:counters.steps};}
+      cond:Object.fromEntries(Object.entries(cond).map(([k,v])=>[k,+v.toFixed(3)])),neighbourPairs:counters.neighbourPairs,candidates:counters.candidates,steps:counters.steps,
+      profile:prof&&prof.steps?{gridNeighboursSteeringMs:+(prof.agents/prof.steps).toFixed(4),integrateDepositMs:+(prof.integrate/prof.steps).toFixed(4),fieldsMs:+(prof.fields/prof.steps).toFixed(4)}:null};}
   const api={
     seed,capacity:cap,species,NS,K,TRAIL_EVERY,NX,NZ,field:{data:field,density,min:[FX0,FZ0],max:[FX1,FZ1],cw,ch,nx:NX,nz:NZ},
     px,py,pz,vx,vy,vz,qx,qy,qz,en,age,life,fade,sp,mode,alive,modeT,gen,carry,tgt,fa,ia,tx,ty,tz,nb:nbN,

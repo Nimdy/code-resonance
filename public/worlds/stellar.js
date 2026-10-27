@@ -44,6 +44,9 @@
 // effect() and drawn when the model's subsystem (the star) appears, which can trail the intent by a few seconds; it is
 // timed from the star's recorded birth, so replays and seeks reproduce it.
 import {THREE,ORBIT,BACKGROUND_VS,clamp,lerp,smooth,hash,rand,rng,instancedBuffers,pointBuffers,orbitPos} from './core.js';
+import {layoutConfig,createLayout} from './stellar-layout.js';
+import {createStellarGrammar,RN as LIFE_RN,NUCLEUS_KIND} from './life/stellar.js';
+import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility} from './life/present.js';
 const MAX_SYS=48,MAPR=1.35;
 // Stellar temperatures by role (blackbody-like tints).
 const ROLE_COLOR={interface:'#8fb8ff',services:'#ffc65a',model:'#ff9050',logic:'#ffe09a',tests:'#c09cff',core:'#ffdcae'};
@@ -86,6 +89,9 @@ vec4 galMap(vec2 lxz){return texture2D(uMap,lxz/(uGal.x*${(2*MAPR).toFixed(2)})+
 `;
 export function createFamily(ctx){
   const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P=G.palette||{};
+  // Digital life (life/stellar.js): only when the recipe has it on. Off, nothing below differs from the world without it
+  // (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
   const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
   const geo=G.geometry||{},sec=G.secondary||{},spc=G.space||{},atm=G.atmosphere||{},mtl=G.material||{},mot=G.motion||{},cam=G.camera||{},LT=G.light||{},MU=G.music||{};
   const col=(c,d)=>new THREE.Color(typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)?c:d);
@@ -94,13 +100,12 @@ export function createFamily(ctx){
   // Background colours keep their hue but stay dark (a pack may set any colour; space must stay deep).
   const capL=(c,max)=>{const h={};c.getHSL(h);if(h.l>max)c.setHSL(h.h,h.s,max);return c;};capL(pal.deep,.07);capL(pal.haze,.2);
   const seed=(recipe.projectSeed>>>0)||1;
-  const ARR=['spiral','cluster','ring','binary-core'].includes(geo.arrangement)?geo.arrangement:'spiral',ARR_I={spiral:0,cluster:1,ring:2,'binary-core':3}[ARR];
-  // Pitch 23-35 degrees across the generated twist range: open enough to read as a spiral from a low camera.
-  const ARMS=Math.max(1,Math.round(num(geo.spiralArms,2))),PITCH=clamp(.48/Math.sqrt(clamp(num(geo.spiralTwist,1),.3,2)),.34,.62),TANP=Math.tan(PITCH),ARM0=rand(seed+31)*TAU,R0=6;
-  const STAR_SCALE=clamp(num(geo.starScale,1),.5,1.8),SPACING=clamp(num(geo.orbitSpacing,1),.6,1.6),TILT=clamp(num(geo.orbitTilt,.15),0,.6),SPREAD=clamp(num(spc.spread,1),.6,1.6);
+  // The layout (arrangement, arms, spacing) is a pure module of the model and a time (stellar-layout.js): the world draws
+  // it from its own model, the digital life's habitat from the timeline's shadow model.
+  const layout=createLayout(layoutConfig(recipe));
+  const {ARR,ARMS,TANP,ARM0,R0,STAR_SCALE,ORBIT0,STEP}=layout.cfg,ARR_I={spiral:0,cluster:1,ring:2,'binary-core':3}[ARR];
+  const TILT=clamp(num(geo.orbitTilt,.15),0,.6);
   const VERTICAL=clamp(num(spc.vertical,.2),0,.8),PROTOSTAR=spc.coreBody==='protostar';
-  const ORBIT0=2.1*STAR_SCALE+.4,STEP=.78*SPACING;
-  const armAngle=(arm,r)=>ARM0+arm/ARMS*TAU+Math.log(Math.max(.5,r)/R0)/TANP;
   const mix3=(a,b,k)=>a.clone().lerp(b,k);
   const sat=(c,k)=>{const h={};c.getHSL(h);return c.setHSL(h.h,Math.min(1,h.s*k),h.l);};
   // Galaxy colours: old population warm, young arms blue-white (leaning to the palette), HII regions rose.
@@ -200,10 +205,17 @@ export function createFamily(ctx){
   const sysU={uSysM:{value:Array.from({length:MAX_SYS},()=>new THREE.Vector4())},uSysN:{value:0},uRoleC:{value:ROLES.map(r=>new THREE.Color(ROLE_COLOR[r]).lerp(pal.primary,.08))},
     uRmA:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmB:{value:Array.from({length:RM},()=>new THREE.Vector4())},uRmN:{value:0},
     uRmC1:{value:new THREE.Color()},uRmC2:{value:new THREE.Color()},uRmC3:{value:new THREE.Color()}};
-  const mapMat=keep(new THREE.ShaderMaterial({uniforms:{...galU,...brU,...mevU,...sysU,uMap:{value:null},uFlowT:{value:0},uFlowK:{value:.2},uKnotT:{value:0},uMV:{value:0},uCk:{value:new THREE.Vector4(-9,0,.06,0)}},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
+  // Life on: the ecosystem's fields (trail, energy, disturbance, density) feed the gas map, so gathered matter thickens
+  // the dust lanes, its streams glow faintly in the gas, nourished regions warm and disturbed ones dim (never recoloured).
+  const lifeMapU=LIFE?{uLifeF:{value:null},uLifeX:{value:new THREE.Vector4(0,0,1,0)}}:null;
+  const LIFE_GAS=LIFE?`if(uLifeX.w>0.){vec2 le=rot2(n,-uLifeX.x)*${LIFE_RN.toFixed(1)};vec2 fu=(le-vec2(uLifeX.y))/uLifeX.z;
+          if(fu.x>0.&&fu.y>0.&&fu.x<1.&&fu.y<1.){vec4 L=texture2D(uLifeF,fu)*uLifeX.w;float rim=1.-smoothstep(.95,1.15,q);float g0=gl3(e);
+            dust+=(L.a*.3+L.r*.16)*rim;e+=(uCYoung*L.r*.03+mix(uCYoung,uCHII,.35)*L.g*.045)*rim*(.35+g0);e*=1.-.28*min(L.b,1.);}}
+        `:'';
+  const mapMat=keep(new THREE.ShaderMaterial({uniforms:{...galU,...brU,...mevU,...sysU,uMap:{value:null},uFlowT:{value:0},uFlowK:{value:.2},uKnotT:{value:0},uMV:{value:0},uCk:{value:new THREE.Vector4(-9,0,.06,0)},...(LIFE?lifeMapU:{})},vertexShader:BACKGROUND_VS,depthWrite:false,depthTest:false,
     fragmentShader:`${GN}${GALAXY}varying vec2 vUv;uniform float uFlowT,uFlowK,uKnotT,uMV;uniform vec4 uCk;
       uniform vec2 uBrP[${NB*BK}];uniform vec4 uBrI[${NB}],uBrX[${NB}],uBrB[${NB}];uniform vec3 uBrC0[${NB}],uBrC1[${NB}];
-      uniform vec4 uMx[${MEV}],uMy[${MEV}];uniform vec3 uMc[${MEV}];
+      uniform vec4 uMx[${MEV}],uMy[${MEV}];uniform vec3 uMc[${MEV}];${LIFE?'uniform sampler2D uLifeF;uniform vec4 uLifeX;':''}
       uniform vec4 uSysM[${MAX_SYS}];uniform int uSysN;uniform vec3 uRoleC[${ROLES.length}];
       uniform vec4 uRmA[${RM}],uRmB[${RM}];uniform int uRmN;uniform vec3 uRmC1,uRmC2,uRmC3;
       vec2 rot2(vec2 v,float a){float c=cos(a),s=sin(a);return vec2(c*v.x-s*v.y,s*v.x+c*v.y);}
@@ -264,7 +276,7 @@ export function createFamily(ctx){
           vec3 col=mix(uBrC0[b],uBrC1[b],tm);
           e+=col*pr*fl*grow*ends*I.y*(1.+pulse*5.)+col*exp(-dm*dm/(w*w*4.))*grow*ends*I.y*.03*(1.+pulse*3.);
           dust+=exp(-sq((dm-w*1.1)/(w*.4)))*.5*I.y*grow*ends*fl;}
-        dust*=.3+.7*smoothstep(-.35,.3,nz);e*=uGal3.x;
+        ${LIFE_GAS}dust*=.3+.7*smoothstep(-.35,.3,nz);e*=uGal3.x;
         // the project's systems: an emission knot in the subsystem's colour, a bubble cleared in the dust, a dusty orbit ring
         for(int k=0;k<${MAX_SYS};k++){if(k>=uSysN)break;vec4 S=uSysM[k];if(S.z<=0.)continue;vec2 rel=(n-S.xy)/S.z;float d2=dot(rel,rel);if(d2>4.)continue;
           float sk=fract(S.w)*1.6;vec3 rc=uRoleC[int(S.w)];float d=sqrt(d2);float fk=float(k)*1.37;
@@ -541,6 +553,10 @@ export function createFamily(ctx){
           c+=vec3(1.,.98,.95)*vNova*(exp(-dot(q,q)/18.)*40.+exp(-length(q)/9.)*3.+sp*4.);}
         gl_FragColor=vec4(c,1.);}`}));
   for(const k of ['iStar','iStarColor','iStarFx','iStarB'])coronaGeo.setAttribute(k,stars.geometry.attributes[k]);
+  // Life on: a beacon holding captured matter in its circulating zone shines a little brighter (iStarB.z).
+  if(LIFE){for(const k of ['vertexShader','fragmentShader'])coronaMat[k]=coronaMat[k].replace('varying float vFlash,','varying float vCap,vFlash,');
+    coronaMat.vertexShader=coronaMat.vertexShader.replace('vSize=iStarB.x;','vSize=iStarB.x;vCap=iStarB.z;');
+    coronaMat.fragmentShader=coronaMat.fragmentShader.replace('float live=1.+.45*vAct;','float live=1.+.45*vAct+.4*vCap;');}
   add(new THREE.Mesh(coronaGeo,coronaMat),3);
   // ---- Planets ---------------------------------------------------------------------------------------------------
   const PLANET_VS=`${ORBIT}${SCREEN}attribute vec4 iOrbit,iLife,iLook;attribute vec3 iTilt,iColor;attribute vec2 iGlow;uniform vec4 uSys[${MAX_SYS}];uniform float uT,uV,uSpeed;
@@ -786,59 +802,10 @@ export function createFamily(ctx){
   // ---- Layout: pure functions of the model at a time ---------------------------------------------------------------
   const sys=new Map();      // district id -> {index, pos, radius, sysR, tilt, color, role, born, d}
   const bodies=new Map();   // module id -> orbit and look
-  const layoutCache=new Map();let galR=14,outerR=8,rotNow=0;
+  let galR=14,outerR=8,rotNow=0;
   const tmp=new THREE.Vector3(),tmp2=new THREE.Vector3(),tmp3=new THREE.Vector3();
-  const aliveAt=(x,t)=>model.bornAt(x)<=t&&(x.removed===null||x.removed>t);
-  function districtsAt(t){return [...model.districts.values()].filter(d=>model.districtBorn(d)<=t).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:1));}
-  function sysRadius(d,t){let k=0;for(const id of d.members){const m=model.modules.get(id);if(m&&aliveAt(m,t))k=Math.max(k,hexDistance(m.q,m.r,d.q,d.r));}return ORBIT0+k*STEP+1.1;}
-  function pack(list,S,coreSize){
-    const out=new Map(),placed=[];const gap=(a,b)=>(a+b)*1.08*SPREAD;
-    const free=(x,y,z,s)=>{for(const p of placed)if(Math.hypot(p.x-x,p.y-y,p.z-z)<gap(p.s,s))return false;return true;};
-    if(ARR==='spiral'){const last=new Array(ARMS).fill(null),lastS=new Array(ARMS).fill(0),big=Math.max(1,...list.map(d=>S.get(d.id)));
-      list.forEach((d,k)=>{const s=S.get(d.id),arm=k%ARMS;let r=last[arm]!==null?last[arm]+gap(lastS[arm],s)*Math.sin(PITCH)*1.02:Math.max(coreSize*SPREAD+s+1,big*1.15/Math.sin(Math.PI/Math.max(2,ARMS)));
-        const h=rand(hash(d.id)),y=(h-.5)*.12;
-        for(let i=0;i<500;i++){const a=armAngle(arm,r);if(free(Math.cos(a)*r,y,Math.sin(a)*r,s)&&r>=coreSize+s+.6)break;r+=.25;}
-        const a=armAngle(arm,r);const p={x:Math.cos(a)*r,y,z:Math.sin(a)*r,s,arm,r};placed.push(p);out.set(d.id,p);last[arm]=r;lastS[arm]=s;});
-      return out;}
-    if(ARR==='cluster'){const N=Math.max(12,list.length+4);list.forEach((d,k)=>{const s=S.get(d.id);let R=coreSize+s+1;
-        const y=1-(k+.5)/N*2,rr=Math.sqrt(1-y*y),phi=k*2.39996+ARM0;
-        for(let i=0;i<500;i++){if(free(Math.cos(phi)*rr*R,y*R*.55,Math.sin(phi)*rr*R,s))break;R+=.3;}
-        const p={x:Math.cos(phi)*rr*R,y:y*R*.55,z:Math.sin(phi)*rr*R,s};placed.push(p);out.set(d.id,p);});return out;}
-    let inner=list;if(ARR==='binary-core'){inner=list.slice(2);list.slice(0,2).forEach((d,k)=>{const s=S.get(d.id),a=ARM0+(k?Math.PI:0),r=Math.max(coreSize+s+.6,s*1.1);const p={x:Math.cos(a)*r,y:0,z:Math.sin(a)*r,s};placed.push(p);out.set(d.id,p);});}
-    const angles=inner.map(d=>d.angle).sort((a,b)=>a-b);let minSep=TAU;for(let i=0;i<angles.length;i++){const a=angles[i],b=i+1<angles.length?angles[i+1]:angles[0]+TAU;if(angles.length>1)minSep=Math.min(minSep,b-a);}
-    const big=Math.max(1,...inner.map(d=>S.get(d.id)));
-    const R=Math.max(coreSize+big+1,(ARR==='binary-core'?Math.max(0,...placed.map(p=>Math.hypot(p.x,p.z)+p.s))+big+1:0),inner.length>1?gap(big,big)/(2*Math.sin(Math.min(Math.PI/2,Math.max(.05,minSep)/2))):0);
-    for(const d of inner){const s=S.get(d.id),h=rand(hash(d.id));const p={x:Math.cos(d.angle)*R,y:(h-.5)*.12,z:Math.sin(d.angle)*R,s};placed.push(p);out.set(d.id,p);}
-    return out;
-  }
-  function layoutState(t){
-    const list=districtsAt(t);const S=new Map();let sig='';
-    for(const d of list){const R=sysRadius(d,t);S.set(d.id,R);sig+=`${d.id}:${R.toFixed(2)}|`;}
-    let L=layoutCache.get(sig);
-    if(!L){const core=list.find(d=>d.core),others=list.filter(d=>!d.core);const coreSize=core?S.get(core.id):1.5;
-      const pos=pack(others,S,coreSize);if(core)pos.set(core.id,{x:0,y:0,z:0,s:coreSize});
-      let outer=Math.max(4,coreSize);for(const p of pos.values())outer=Math.max(outer,Math.hypot(p.x,p.z)+p.s);
-      let gR=Math.max(13,outer*(ARR==='cluster'?1.25:ARR==='spiral'?1.25:1.42));
-      // Spiral: the systems spread along the arms out to ~0.8 of the galaxy (a monotone radial stretch keeps them apart).
-      if(ARR==='spiral'){const arm=[...pos.values()].filter(p=>p.arm!==undefined);if(arm.length){const rin=Math.min(...arm.map(p=>p.r)),rmax=Math.max(...arm.map(p=>p.r));
-        const f=rmax>rin+.01?Math.max(1,(gR*.78-rin)/(rmax-rin)):1;
-        for(const p of arm){const r=rin+(p.r-rin)*f,a=armAngle(p.arm,r);p.x=Math.cos(a)*r;p.z=Math.sin(a)*r;}
-        outer=Math.max(4,coreSize);for(const p of pos.values())outer=Math.max(outer,Math.hypot(p.x,p.z)+p.s);gR=Math.max(gR,outer*1.08);}}
-      L={pos,S,outer,galR:gR};layoutCache.set(sig,L);if(layoutCache.size>32)layoutCache.delete(layoutCache.keys().next().value);}
-    return {list,L};}
-  // The latest structural change at or before t (module born or removed): the layout eases from its state just before.
-  const BLEND=3200;
-  function lastChange(t){let tc=-Infinity;for(const m of model.modules.values()){const b=model.bornAt(m);if(b<=t&&b>tc)tc=b;if(m.removed!==null&&m.removed<=t&&m.removed>tc)tc=m.removed;}return tc;}
-  function blended(t,depth){const s=layoutState(t);const out={list:s.list,pos:new Map(),S:s.L.S,outer:s.L.outer,galR:s.L.galR};for(const [id,p] of s.L.pos)out.pos.set(id,{x:p.x,y:p.y,z:p.z});
-    const tc=lastChange(t);if(depth<4&&Number.isFinite(tc)&&t-tc<BLEND){const prev=blended(tc-1,depth+1),k=smooth((t-tc)/BLEND);
-      for(const [id,p] of out.pos){const q=prev.pos.get(id);if(q){p.x=lerp(q.x,p.x,k);p.y=lerp(q.y,p.y,k);p.z=lerp(q.z,p.z,k);}}
-      out.galR=lerp(prev.galR,out.galR,k);out.outer=lerp(prev.outer,out.outer,k);}
-    return out;}
-  function starRadius(d,t){let n=0;for(const id of d.members){const m=model.modules.get(id);if(!m||!aliveAt(m,t))continue;let k=0;
-      for(const sid of m.symbols){const s=model.symbols.get(sid);if(s&&aliveAt(s,t))k+=smooth((t-model.bornAt(s))/1500);}n+=Math.max(1,k)*smooth((t-model.bornAt(m))/2000);}
-    return Math.min(1.1,(d.core?.6:.36)+.17*Math.log2(1+n)/2.2)*STAR_SCALE;}
-  // Richness: how mature the galaxy looks (stars, gas) follows the accumulated structure, eased.
-  function richness(t){let w=0;for(const m of model.modules.values())if(aliveAt(m,t))w+=(1+Math.min(40,m.symbols.size)/6)*smooth((t-model.bornAt(m))/3000);return clamp(.3+.7*Math.log2(1+w)/Math.log2(1+900),.3,1);}
+  const aliveAt=(x,t)=>layout.aliveAt(model,x,t);
+  const blended=(t,depth)=>layout.blended(model,t,depth),starRadius=(d,t)=>layout.starRadius(model,d,t),richness=t=>layout.richness(model,t);
   function updateLayout(i){
     const t=i.t,lay=blended(t,0);galR=lay.galR;outerR=lay.outer;
     rotNow=-i.tview*TAU/2400*clamp(i.overrides.motion??1,0,1);
@@ -1096,6 +1063,86 @@ export function createFamily(ctx){
     echo(st,{speed:galR*.12,width:galR*.007,strength:.9*(.6+.4*s),color:st.color.clone().lerp(new THREE.Color(1,1,1),.4),duration:7,delay:IGN});
     wave(st.pos,.25*s,2.4,IGN);flash(.03*s,IGN);
   }
+  // ---- Digital life: living celestial matter (life/stellar.js; only when the recipe has life on) --------------------
+  // The ecosystem lives in the galaxy's own frame (that of its stars and arms), scaled to LIFE_RN: drawn here turned by
+  // the arm turn ln(galR / R0) / tan(pitch) (as the galaxy's stars are) and by the galaxy's rotation, scaled by galR /
+  // LIFE_RN, so it keeps its place in the arms as the galaxy grows and turns. Presentation only reads the ecosystem.
+  // Population hierarchy: every authoritative entity is drawn (a point and its trail: dust streamlines, orbit arcs of
+  // fragments); quality adds visual followers on the leader's own path (quality 0 most, 3 none). Two draw calls.
+  let lifeDriver=null,updateMatter=()=>{},lifeStatsNow={drawn:0,followers:0,trailSegments:0,drawCalls:0};const lifeCap=new Map();
+  const lifeCapOf=id=>lifeCap.get(id)||0;
+  function onLifeParams(){}
+  function lifeStats(){return {...lifeStatsNow};}
+  if(LIFE){
+    const grammar=createStellarGrammar({layout});lifeDriver=LIFE.create(grammar);
+    const CAP=grammar.capacity,KT=grammar.trail,MAXF=3;
+    // per quality: followers and trail points per species (dust, fragments, motes, wind)
+    const FOLLOW=[[4,1,2,1],[3,1,1,0],[2,0,1,0],[0,0,0,0]],TRAILN=[[6,9,0,4],[5,7,0,3],[4,5,0,0],[0,4,0,0]];
+    const SPC=[mix3(cOld,pal.highlight,.25),mix3(pal.highlight,pal.accent,.3),mix3(cYoung,pal.accent,.45),mix3(new THREE.Color('#ffe9d2'),cYoung,.35)];
+    const HEAD=[.8,.4,1,.15],BR=[.42,.55,.42,.22],LIT=[1.2,1.2,1,0],SZ=[1.7,2.1,1.8,1.4],TR=[.13,.4,.3,.35],SPREAD=[.45,.3,.22,.3],LAG=[1,.85,.85,.8],SITEMIX=[.35,.6,.25,.5];
+    const siteCol=[...ROLES.map(r=>new THREE.Color(ROLE_COLOR[r]).lerp(pal.primary,.08)),cCore];
+    const scorch=stormC.clone().multiplyScalar(.45);
+    const NP=CAP*(1+MAXF),NL=CAP*(KT-1)*2;
+    const pPos=new Float32Array(NP*3),pCol=new Float32Array(NP*4),lPos=new Float32Array(NL*3),lCol=new Float32Array(NL*3);
+    const attr=(a,n)=>{const x=new THREE.BufferAttribute(a,n);x.setUsage(THREE.DynamicDrawUsage);return x;};
+    const pGeo=keep(new THREE.BufferGeometry()),lGeo=keep(new THREE.BufferGeometry());
+    pGeo.setAttribute('position',attr(pPos,3));pGeo.setAttribute('aC',attr(pCol,4));pGeo.setDrawRange(0,0);
+    lGeo.setAttribute('position',attr(lPos,3));lGeo.setAttribute('aL',attr(lCol,3));lGeo.setDrawRange(0,0);
+    const lifeU={uLifeT:{value:new THREE.Vector2(0,1)}};
+    const LIFE_VS=`${GN}${GALAXY}uniform vec2 uLifeT;uniform float uPx;
+      vec3 lifeLocal(vec3 e){float c=cos(uLifeT.x),s=sin(uLifeT.x);return vec3(c*e.x-s*e.z,e.y,s*e.x+c*e.z)*uLifeT.y;}
+      // in the disc: hidden by the dust lanes it lies in, lit by the gas around it
+      float lifeLight(vec3 lp){vec4 gm=galMap(lp.xz);return exp(-gm.a*uGal3.y*1.8)*(1.+dot(gm.rgb,vec3(.3,.5,.2))*.5);}`;
+    const pMat=keep(new THREE.ShaderMaterial({uniforms:{...common,...galU,...lifeU},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+      vertexShader:`${LIFE_VS}attribute vec4 aC;varying vec3 vC;
+        void main(){vec3 lp=lifeLocal(position);float R=uGal.x;vec4 mv=viewMatrix*vec4(rotY(lp,uGal.y),1.);gl_Position=projectionMatrix*mv;float dist=max(.5,-mv.z);
+          float sz=aC.w*uPx*clamp(R*1.1/dist,.7,2.4);gl_PointSize=max(sz,1.);
+          vC=aC.rgb*lifeLight(lp)*min(1.,sz*sz)*smoothstep(.5,3.,dist);}`,
+      fragmentShader:`varying vec3 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*3.5),1.);}`}));
+    const lMat=keep(new THREE.ShaderMaterial({uniforms:{...common,...galU,...lifeU},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+      vertexShader:`${LIFE_VS}attribute vec3 aL;varying vec3 vC;
+        void main(){vec3 lp=lifeLocal(position);vec4 mv=viewMatrix*vec4(rotY(lp,uGal.y),1.);gl_Position=projectionMatrix*mv;vC=aL*lifeLight(lp)*smoothstep(.5,3.,-mv.z);}`,
+      fragmentShader:`varying vec3 vC;void main(){gl_FragColor=vec4(vC,1.);}`}));
+    add(new THREE.LineSegments(lGeo,lMat),1);add(new THREE.Points(pGeo,pMat),1);
+    let fieldTex=null,fieldEco=null,fieldTick=-1;disposables.push({dispose(){fieldTex?.dispose();}});
+    const P3=[0,0,0],P4=[0,0,0],capCount=new Float32Array(64);
+    const upload=(geo,name,n)=>{const a=geo.attributes[name];a.clearUpdateRanges();a.addUpdateRange(0,n*a.itemSize);a.needsUpdate=true;};
+    const hide=()=>{pGeo.setDrawRange(0,0);lGeo.setDrawRange(0,0);lifeCap.clear();lifeMapU.uLifeX.value.w=0;lifeStatsNow={drawn:0,followers:0,trailSegments:0,drawCalls:2};};
+    updateMatter=i=>{
+      const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
+      if(fieldEco!==eco){fieldTex?.dispose();fieldTex=lifeFieldTexture(THREE,eco,{scale:[3,2.5,2,7]});fieldEco=eco;fieldTick=-1;lifeMapU.uLifeF.value=fieldTex.texture;}
+      if(fieldTick!==eco.tick){fieldTex.update();fieldTick=eco.tick;}
+      const turn=layout.armTurn(galR),F0=eco.field.min[0];lifeU.uLifeT.value.set(turn,galR/LIFE_RN);
+      lifeMapU.uLifeX.value.set(turn,F0,eco.field.max[0]-F0,v.fadeIn);
+      const q=Math.min(3,Math.max(0,i.quality|0)),FQ=FOLLOW[q],TQ=TRAILN[q],alpha=v.alpha,tv=i.tview,S=eco.sites,nS=S.count,K=eco.K,head=eco.trailHead;
+      capCount.fill(0);let np=0,nl=0,nf=0,nd=0;
+      for(let e=0;e<eco.capacity;e++){
+        const vis=lifeVisibility(eco,e,v);if(vis<=.003)continue;
+        const s=eco.sp[e];lifePosition(eco,e,alpha,P3);
+        const k=eco.ia[e*2],cap=Math.max(0,eco.ia[e*2+1])/1000;if(k>=0&&k<nS&&cap>.35&&s!==3)capCount[k]++;
+        const dist=Math.min(1,eco.sample(2,P3[0],P3[2])/1.2),en=Math.min(1,eco.sample(1,P3[0],P3[2])/2);
+        const c=SPC[s];let r=c.r,g=c.g,b=c.b;
+        if(k>=0&&k<nS){const sc=siteCol[Math.min(6,S.kind[k])],m=SITEMIX[s]*(s===3?1:cap);r+=(sc.r-r)*m;g+=(sc.g-g)*m;b+=(sc.b-b)*m;}
+        const dm=dist*.8;r+=(scorch.r-r)*dm;g+=(scorch.g-g)*dm;b+=(scorch.b-b)*dm;
+        const br=BR[s]*(1+LIT[s]*cap)*(1+.6*en)*(1-.45*dist)*vis,n=s===1&&cap<.4?0:TQ[s];
+        // a body with a filament has no bright head (never a comet: comets are the observed agents)
+        const hb=br*(n>1?HEAD[s]:1);
+        let o=np*3,oc=np*4;pPos[o]=P3[0];pPos[o+1]=P3[1];pPos[o+2]=P3[2];pCol[oc]=r*hb;pCol[oc+1]=g*hb;pCol[oc+2]=b*hb;pCol[oc+3]=SZ[s]*(1+.3*cap);np++;nd++;
+        // followers: the same ecology, more bodies (on the leader's own path)
+        const F=FQ[s];for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:SPREAD[s],lag:LAG[s]}))break;
+          o=np*3;oc=np*4;pPos[o]=P4[0];pPos[o+1]=P3[1]+(P4[1]-P3[1])*.35;pPos[o+2]=P4[2];const fb=br*.55;pCol[oc]=r*fb;pCol[oc+1]=g*fb;pCol[oc+2]=b*fb;pCol[oc+3]=SZ[s]*.8;np++;nf++;}
+        // the trail: a fading filament through the ring's points, newest first
+        if(n>1){let x0=P3[0],y0=P3[1],z0=P3[2];const tb=br*TR[s],prof=u=>Math.min(1,u*4)*Math.pow(1-u,1.2);
+          for(let kk=1;kk<n;kk++){const qq=e*K+((head-kk+1+K*4)%K),x1=eco.tx[qq],y1=eco.ty[qq],z1=eco.tz[qq];const w=prof((kk-1)/(n-1))*tb;
+            const a=nl*3;lPos[a]=x0;lPos[a+1]=y0;lPos[a+2]=z0;lPos[a+3]=x1;lPos[a+4]=y1;lPos[a+5]=z1;
+            lCol[a]=r*w;lCol[a+1]=g*w;lCol[a+2]=b*w;const w2=prof(kk/(n-1))*tb;lCol[a+3]=r*w2;lCol[a+4]=g*w2;lCol[a+5]=b*w2;nl+=2;x0=x1;y0=y1;z0=z1;}}
+      }
+      pGeo.setDrawRange(0,np);lGeo.setDrawRange(0,nl);upload(pGeo,'position',np);upload(pGeo,'aC',np);upload(lGeo,'position',nl);upload(lGeo,'aL',nl);
+      lifeCap.clear();for(let k=0;k<nS;k++)if(capCount[k]>0)lifeCap.set(S.ids[k],clamp(capCount[k]/35)*v.fadeIn);
+      let rMax=0;for(let k=0;k<nS;k++)rMax=Math.max(rMax,S.r[k]);
+      lifeStatsNow={drawn:nd,followers:nf,trailSegments:nl/2,drawCalls:2,sites:nS,siteRMax:+rMax.toFixed(2),galR:+galR.toFixed(2)};
+    };
+  }
   // ---- Frame ------------------------------------------------------------------------------------------------------
   let stressNow=0,remCount=0;const stormOf=new Map(),stressOf=new Map(),sizeOf=new Map(),actOf=new Map();
   const stormK=mix3(new THREE.Color('#e01838'),pal.warning,.25);
@@ -1150,6 +1197,7 @@ export function createFamily(ctx){
     const px=ctx.pipeline.size[1]/1080;common.uPx.value=Math.max(.5,px);common.uRes.value.set(ctx.pipeline.size[0],ctx.pipeline.size[1]);
     updateLayout(i);ensureBodies();
     if(pendingIgn.length&&flushIgnitions()){updateLayout(i);ensureBodies();}
+    if(LIFE)updateMatter(i);
     const q=i.quality||0;discMat.uniforms.uQ.value=q;beltMat.uniforms.uQ.value=q;
     gal.geometry.setDrawRange(0,q>=2?GSTARS>>1:GSTARS);bgU.uQ.value=q;
     galMat.uniforms.uRich.value=richness(i.t);galU.uGal3.value.x=.55+.45*galMat.uniforms.uRich.value;
@@ -1185,7 +1233,7 @@ export function createFamily(ctx){
       const n=sizeOf.get(s.d.id)||0,sizeK=clamp(.18+.82*Math.log2(1+n)/Math.log2(1+nMax)),act=actOf.get(s.d.id)||0;s.sizeK=sizeK;
       stars.write('iStar',k,s.index,Number.isFinite(s.born)?secs(s.born,epoch):-1e5,fl,lvl);
       stars.write('iStarColor',k,s.color.r,s.color.g,s.color.b);stars.write('iStarFx',k,novaAt.has(s.index)?novaAt.get(s.index):-1e5,focus&&focus.index===s.index?focus.k:0,s.seed,s.d.core?1:0);
-      stars.write('iStarB',k,sizeK,act,0,0);
+      stars.write('iStarB',k,sizeK,act,LIFE?lifeCapOf(s.d.id):0,0);
       // its knot in the gas: lit once the star has ignited, dimmed while the system is under strain
       const age=Number.isFinite(s.born)?(i.t-s.born)/1000/sp:1e5,lit=smooth((age-IGN)/2.5);
       if(s.local&&sn<MAX_SYS&&lit>0){const ri=ROLES.indexOf(s.role);const str=Math.min(.999,(.3+.7*sizeK)*(1+.3*act)*(1-.55*lvl)*(s.d.core?.4:1)*.62*lit);
@@ -1316,5 +1364,5 @@ export function createFamily(ctx){
   function onPrime(){remSig='';starFlares.clear();novaAt.clear();bridgePulse.clear();ckWave=null;pendingIgn.length=0;nurseries.length=0;waves.length=0;flashes.length=0;calms.length=0;novas.length=0;storms.length=0;echoes.length=0;agentState.clear();
     burstNext=0;for(const v of burstU.uBA.value)v.w=-1e5;
     galMat.uniforms.uWave.value.set(-100,0,0,0);galMat.uniforms.uExpand.value.set(-100,0,0,0);}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,...(LIFE?{lifeStats,onLifeParams}:{})};
 }
