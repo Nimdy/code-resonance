@@ -46,7 +46,6 @@ p{margin:0}
 .scroll::-webkit-scrollbar{width:10px;height:10px}.scroll::-webkit-scrollbar-thumb{background:var(--bg-5);border-radius:10px;border:3px solid var(--bg-1)}
 /* ---- Type ---- */
 .eyebrow{font:600 12px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
-.title-xl{font-size:34px;line-height:1.12;font-weight:650;letter-spacing:-.025em}
 .title-l{font-size:24px;line-height:1.2;font-weight:620;letter-spacing:-.018em}
 .title-m{font-size:16px;line-height:1.3;font-weight:600}
 .muted{color:var(--text-2)}.faint{color:var(--text-3)}.small{font-size:13px}.tiny{font-size:12px}
@@ -133,7 +132,6 @@ p{margin:0}
 .card.interactive{transition:border-color var(--t-1),background var(--t-1),transform var(--t-2) var(--ease);cursor:pointer}
 .card.interactive:hover{border-color:var(--line-3);background:var(--bg-3)}
 .card.selected{border-color:var(--accent-line);box-shadow:0 0 0 1px var(--accent-line) inset}
-.divider{height:1px;background:var(--line);margin:14px 0}
 .section{display:grid;gap:12px}
 .section+.section{margin-top:22px}
 .section-head{display:flex;align-items:center;gap:10px}
@@ -257,8 +255,6 @@ body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .page-head{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .page-head .grow{flex:1;min-width:240px;display:grid;gap:6px}
 .page-head .actions{display:flex;gap:8px;flex-wrap:wrap}
-.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .split{display:grid;grid-template-columns:minmax(0,1fr) var(--inspector);min-height:0;flex:1}
 .split>.main{min-width:0;min-height:0;display:flex;flex-direction:column}
 .inspector{background:var(--bg-1);border-left:1px solid var(--line);min-height:0;display:flex;flex-direction:column}
@@ -268,11 +264,7 @@ body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 
 /* ---- Desktop layout primitives (shared by the workspaces) ----
    The Control Center is designed for 1920x1080 and uses the screen up to --page-max; prose keeps a readable measure.
-   .panel       a titled region (head: title, note, actions; body)
-   .master-detail  a browsing list and the selected item's detail, side by side, each scrolling on its own
-   .cols-auto   as many columns as fit (--col-min each)
-   .split.insp-collapsed  the inspector folded to a narrow strip (toggled by .insp-toggle; the main area keeps its DOM, so a
-                stage slot in it is only resized, never rebuilt) */
+   .panel       a titled region (head: title, note, actions; body) */
 .measure{max-width:var(--measure)}
 .panel{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);display:flex;flex-direction:column;min-width:0;min-height:0}
 .panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);min-height:52px}
@@ -281,18 +273,10 @@ body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .panel-head .note{font-size:13px;color:var(--text-3)}
 .panel-body{padding:16px 18px;display:grid;gap:14px;align-content:start;min-width:0}
 .panel-body.flush{padding:0}
-.master-detail{display:grid;grid-template-columns:minmax(380px,var(--master,0.95fr)) minmax(0,var(--detail,1.45fr));gap:20px;min-height:0;flex:1}
-.master-detail>*{min-width:0;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
-.cols-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--col-min,320px)),1fr));gap:16px}
 .split{transition:grid-template-columns var(--t-3) var(--ease)}
-.split.insp-collapsed{grid-template-columns:minmax(0,1fr) 44px}
-.split.insp-collapsed>.inspector>:not(.insp-toggle){display:none}
-.insp-toggle{align-self:flex-start;margin:10px 0 0 6px}
 /* A slot the stage layer is placed over */
 .stage-slot{position:relative;background:#000;border-radius:var(--r-3);overflow:hidden;min-height:120px;box-shadow:0 0 0 1px var(--line) inset}
 .stage-slot.flush{border-radius:0;box-shadow:none}
-.slot-overlay{position:absolute;inset:0;z-index:12;pointer-events:none}
-.slot-overlay>*{pointer-events:auto}
 .slot-badge{position:absolute;left:12px;top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 /* ---- The stage layer ---- */
 .stage-host{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:6;background:#000;overflow:hidden;contain:strict;transition:opacity var(--t-2)}
@@ -319,9 +303,8 @@ body.overlay .stage-empty span{display:none}
 body.overlay.living-world .caption{display:none}
 /* ---- Responsive ---- */
 @media (max-width:1280px){:root{--inspector:340px}.page{padding:24px 24px 40px}}
-@media (max-width:1100px){.master-detail{grid-template-columns:1fr}.master-detail>*{overflow:visible}}
-@media (max-width:1080px){:root{--rail:64px;--inspector:300px}.rail a{font-size:0;gap:0;padding:10px 2px}.rail a .badge{right:8px}.grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:900px){.split{grid-template-columns:1fr;grid-template-rows:auto auto;overflow:auto}.split>.main,.split>.inspector{min-height:auto}.inspector{border-left:0;border-top:1px solid var(--line)}.inspector-body{overflow:visible}.grid-2,.grid-3{grid-template-columns:1fr}
+@media (max-width:1080px){:root{--rail:64px;--inspector:300px}.rail a{font-size:0;gap:0;padding:10px 2px}.rail a .badge{right:8px}}
+@media (max-width:900px){.split{grid-template-columns:1fr;grid-template-rows:auto auto;overflow:auto}.split>.main,.split>.inspector{min-height:auto}.inspector{border-left:0;border-top:1px solid var(--line)}.inspector-body{overflow:visible}
   .topbar .status .label{display:none}.project-switch{max-width:200px}}
 @media (max-width:640px){:root{--rail:0px}.app{grid-template-columns:1fr;grid-template-rows:var(--topbar) 1fr 58px}.rail{grid-row:3;grid-column:1;flex-direction:row;padding:4px 6px;border-right:0;border-top:1px solid var(--line);overflow-x:auto}
   .rail-brand,.rail .spacer{display:none}.rail a{min-width:52px}.rail a[aria-current="page"]::before{left:10px;right:10px;top:-4px;bottom:auto;width:auto;height:3px}.topbar,.workspace{grid-column:1}.page{padding:18px 16px 32px}}

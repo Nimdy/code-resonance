@@ -146,7 +146,6 @@
 .ws-packs .pk-doc.lead{align-items:flex-start;padding:12px 14px;border-color:var(--accent-line);background:var(--accent-soft);color:var(--text-1)}
 .ws-packs .pk-doc.lead svg{color:var(--accent);margin-top:2px}
 .ws-packs .pk-doc.lead>span{display:grid;gap:3px;font-weight:400}.ws-packs .pk-doc.lead strong{font-size:14.5px;font-weight:620}
-.ws-packs .pk-link-host{font-size:.92em}
 /* Until the shared .copy rules take these: commands wrap between words, and the Copy button's ring is not clipped. */
 .ws-packs .copy code{overflow-wrap:break-word}.ws-packs .copy .btn:focus-visible{outline-offset:-2px}
 .ws-packs .pk-templates{display:grid;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1);overflow:hidden}
