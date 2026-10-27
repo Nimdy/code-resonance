@@ -88,3 +88,8 @@ test('Space changes the room and the echo; an upgrade to v3 swaps the bus on the
  v.ctx=ctx;v.graph=v.buildGraph(ctx,ctx.destination);v.output=v.graph.output;v.beginBar();assert.equal(v.graph.version,undefined);
  v.setOptions({scoreVersion:3});v.beginBar();assert.equal(v.graph.version,3);assert.equal(v.bar.scoreVersion,3);assert.equal(v.ctx,ctx);
 });
+test('The engine starts with the receiver\'s default music and keeps the manual tempo in its range',()=>{
+ const m=music(),store=require('../receiver/store'),d=store.SETTINGS_DEFAULTS.music;
+ for(const k of ['style','volume','texture','tempoMode','tempo'])assert.equal(m.options[k],d[k],k);
+ m.setOptions({tempo:1});assert.equal(m.options.tempo,store.TEMPO_MIN);m.setOptions({tempo:1e4});assert.equal(m.options.tempo,store.TEMPO_MAX);
+});

@@ -10,8 +10,7 @@
 import {h,text,button,segmented,slider,section,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {projectName,STYLE_NAMES} from '../format.js';
-import {PROFILE_KEYS,GROUPS,MUSIC_KEYS,DEFAULT_MUSIC,DEFAULT_MIX,STARTERS,mixOf,sameMix,scoreOf,soundingGroups,presetPayload,presetValues} from '../music-profile.js';
-const STYLES=['ambient','pulse','cinematic','chip'];
+import {STYLES,TEMPO_MIN,TEMPO_MAX,PROFILE_KEYS,GROUPS,MUSIC_KEYS,DEFAULT_MUSIC,DEFAULT_MIX,STARTERS,mixOf,sameMix,scoreOf,soundingGroups,presetPayload,presetValues} from '../music-profile.js';
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 // What each palette really plays and its room, in seconds. The engine does not export these, so they are mirrored
 // here: keep them in step with public/music.js and public/score.js. The classic score (v2): `voices` (music.js PATCH,
@@ -226,10 +225,10 @@ export default {mount(view,{store:S,player:P,chrome}){
   const mixNote=h('p',{class:'small faint ms-mix-note'}),mixSource=h('div',{class:'ms-source'});
   const mixLock=lockNote();
   // ---- Tempo and texture -------------------------------------------------------------------------------------------
-  const startTempo=()=>{const st=shown('style');return saved('tempoMode')==='manual'?saved('tempo'):Math.min(160,Math.max(58,projectBpm(st)||saved('tempo')));};
+  const startTempo=()=>{const st=shown('style');return saved('tempoMode')==='manual'?saved('tempo'):Math.min(TEMPO_MAX,Math.max(TEMPO_MIN,projectBpm(st)||saved('tempo')));};
   const tempoSeg=segmented({label:'Tempo source',id:'musicTempoMode',options:[{value:'project',label:'From the project'},{value:'manual',label:'Manual'}],value:shown('tempoMode'),
     onChange:v=>v==='manual'?edit({tempoMode:'manual',tempo:startTempo()}):edit({tempoMode:'project'})});
-  const tempoSlider=slider({min:58,max:160,integer:true,value:shown('tempo'),label:'Manual tempo in BPM',id:'musicTempo',format:v=>String(v),onInput:v=>edit({tempoMode:'manual',tempo:v})});
+  const tempoSlider=slider({min:TEMPO_MIN,max:TEMPO_MAX,integer:true,value:shown('tempo'),label:'Manual tempo in BPM',id:'musicTempo',format:v=>String(v),onInput:v=>edit({tempoMode:'manual',tempo:v})});
   const tempoRead=h('span',{class:'field-value num'});
   const tempoHint=h('div',{class:'field-doc'});
   const timing=h('dl',{class:'ms-timing'});

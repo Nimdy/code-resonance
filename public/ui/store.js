@@ -4,11 +4,11 @@
 //   URL pins (OBS bookmarks: ?world= ?style= ?labels=) > project preference > global setting > built-in default.
 // Session state (sound, recording, playhead) lives in the engine; device state (quality) in localStorage; previews in
 // memory only. Nothing here is a second copy that could drift: every write goes to the receiver and comes back.
-import {resolveMusic,engineOptions,pinOf} from './music-profile.js';
+import {STYLES,TEMPO_MIN,TEMPO_MAX,resolveMusic,engineOptions,pinOf} from './music-profile.js';
 const P=window.ResonancePlayer;
 const params=new URLSearchParams(location.search);
 // ?music= pins the composed score's performance profile ({"mood":.7,"mix":{"perc":0}}), as ?style= pins the style.
-const pins={world:P.WORLDS.includes(params.get('world'))?params.get('world'):null,style:['ambient','pulse','cinematic','chip'].includes(params.get('style'))?params.get('style'):null,
+const pins={world:P.WORLDS.includes(params.get('world'))?params.get('world'):null,style:STYLES.includes(params.get('style'))?params.get('style'):null,
   labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null,
   profile:pinOf(params.get('music'))};
 const DEVICE_KEY='code-resonance-device-v1',UI_KEY='code-resonance-ui-v1',LEGACY_KEY='code-resonance-player-v1';
@@ -175,10 +175,10 @@ export async function start({presentation=false}={}){
 async function migrateLegacy(){
   const old=readLocal(LEGACY_KEY);if(!Object.keys(old).length||!state.settings||state.settings.onboarding?.migrated)return;
   const music={};
-  if(['ambient','pulse','cinematic','chip'].includes(old.style))music.style=old.style;
+  if(STYLES.includes(old.style))music.style=old.style;
   for(const k of ['volume','texture'])if(Number.isFinite(old[k])&&old[k]>=0&&old[k]<=1)music[k]=old[k];
   if(['project','manual'].includes(old.tempoMode))music.tempoMode=old.tempoMode;
-  if(Number.isInteger(old.tempo)&&old.tempo>=58&&old.tempo<=160)music.tempo=old.tempo;
+  if(Number.isInteger(old.tempo)&&old.tempo>=TEMPO_MIN&&old.tempo<=TEMPO_MAX)music.tempo=old.tempo;
   const patch={music,onboarding:{migrated:true}};
   if(P.WORLDS.includes(old.world))patch.stage={world:old.world};
   if(['720p','1080p','stage'].includes(old.recordSize))patch.recording={profile:old.recordSize};
