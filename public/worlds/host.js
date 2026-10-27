@@ -33,7 +33,11 @@ export function generatedName(id){
 //   fps for `jumpAfter` s, at once to the level expected to reach `target` fps;
 // - where the browser measures the GPU time of a frame, slow frames lower the level only while the GPU accounts for
 //   at least `gpuShare` of the frame time: frames slowed by the processor or by another program are not made faster by
-//   fewer pixels (they count towards `degraded` instead when under `unusable` fps);
+//   fewer pixels (they count towards `degraded` instead when under `unusable` fps). But where neither the timed GPU work
+//   nor the main thread's own work (update and draw, when the host reports it) accounts for `accounted` of a slow
+//   frame, the rest is GPU or presentation work the timer does not see (the D3D12 translation layer at 1920x1080:
+//   Stellar Forge timed at 21 ms of 52 ms frames, 60 fps at 75 % resolution): fewer pixels do help, the level steps
+//   down, and from then on the GPU time is not trusted to predict the level above (the frame rates seen are);
 // - up one level only after `upAfter` s in which the level above is expected to reach `target` fps: from the GPU
 //   time when the browser measures it (and frames not slow now), otherwise from the frame rate (at the display's
 //   refresh rate, `capped`, no headroom is visible in it) and from what was seen at the levels left for slowness in
@@ -49,13 +53,13 @@ export function generatedName(id){
 //   viewer): no level makes this machine's WebGL usable. It clears after `recoverAfter` s at `slow` fps or better.
 // Pure (time passed in, seconds) so the logic is unit-tested (tests/adaptive-quality.test.js).
 export const AUTO_QUALITY=Object.freeze({window:.5,slow:24,hold:27,downAfter:2,verySlow:12,jumpAfter:1,target:30,capped:55,upAfter:20,upMax:600,probation:10,
-  memory:120,stale:1.2,recheck:20,gpuShare:.5,start:1.5,settle:.75,pause:1,unusable:8,unusableAfter:5,recoverAfter:10,cost:Object.freeze([1.35,1,.5625,.3025])});
+  memory:120,stale:1.2,recheck:20,gpuShare:.5,accounted:.6,start:1.5,settle:.75,pause:1,unusable:8,unusableAfter:5,recoverAfter:10,cost:Object.freeze([1.35,1,.5625,.3025])});
 export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=true,config={}}={}){
   const C={...AUTO_QUALITY,...config},top=levels-1,clampLevel=x=>Math.max(0,Math.min(top,Math.round(Number(x)||0)));
   floor=clampLevel(floor);level=adaptive?Math.max(floor,clampLevel(level)):floor;
   let last=null,longGap=false,frames=0,span=0,settle=C.start,slowFor=0,verySlowFor=0,upFor=0,unusableFor=0,recoverFor=0;
-  let holds,seen,sinceUp=Infinity,proving=false,fps=null,degraded=false,changes=0;
-  const forget=()=>{holds=Array(levels).fill(C.upAfter);seen=Array(levels).fill(null);sinceUp=Infinity;proving=false;};forget();
+  let holds,seen,sinceUp=Infinity,proving=false,fps=null,degraded=false,changes=0,blind=false;
+  const forget=()=>{holds=Array(levels).fill(C.upAfter);seen=Array(levels).fill(null);sinceUp=Infinity;proving=false;blind=false;};forget();
   const restart=()=>{frames=0;span=0;slowFor=0;verySlowFor=0;upFor=0;unusableFor=0;recoverFor=0;};
   function to(next,reason,now,f){
     const from=level;
@@ -68,13 +72,14 @@ export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=tru
   }
   return {
     get level(){return level;},get fps(){return fps;},get degraded(){return degraded;},get changes(){return changes;},get adaptive(){return adaptive;},
+    get gpuTimerBlind(){return blind;},
     hold(l){return holds[clampLevel(l)];},
     // The viewer's choice changed: a fixed level (or Auto's floor) and whether to adapt. Everything is measured anew.
     configure({floor:f,adaptive:a}={}){if(f!==null&&f!==undefined&&Number.isFinite(Number(f))){floor=clampLevel(f);level=floor;}if(typeof a==='boolean')adaptive=a;
       last=null;longGap=false;restart();settle=C.settle;degraded=false;fps=null;forget();},
-    // One presented frame at `now` (seconds), with the GPU time per frame (ms) when known. Returns {from, to, reason}
-    // when the level changes, otherwise null.
-    frame(now,gpuMs=null){
+    // One presented frame at `now` (seconds), with the GPU time per frame (ms) when known and the main thread's own
+    // work per frame (ms) when known. Returns {from, to, reason} when the level changes, otherwise null.
+    frame(now,gpuMs=null,cpuMs=null){
       if(last===null){last=now;return null;}
       const dt=now-last;last=now;if(!(dt>0))return null;
       if(dt>C.pause&&!longGap){longGap=true;frames=0;span=0;return null;}
@@ -83,7 +88,10 @@ export function createQualityGovernor({levels=4,floor=0,level=floor,adaptive=tru
       if(settle>0){settle-=dt;return null;}
       frames++;span+=dt;if(span<C.window)return null;
       const f=frames/span,w=span;frames=0;span=0;fps=fps===null?f:fps+(f-fps)*.5;
-      const gpu=gpuMs>0,gpuBound=!gpu||gpuMs>=C.gpuShare*1000/f;
+      const timed=gpuMs>0,share=timed&&gpuMs>=C.gpuShare*1000/f;
+      const unseen=timed&&!share&&Number.isFinite(cpuMs)&&cpuMs>=0&&gpuMs+cpuMs<C.accounted*1000/f;
+      if(unseen&&f<C.slow)blind=true;
+      const gpu=timed&&!blind,gpuBound=!timed||share||unseen;
       slowFor=f<C.slow&&gpuBound?slowFor+w:0;verySlowFor=f<C.verySlow&&gpuBound?verySlowFor+w:0;
       unusableFor=(!adaptive||level>=top||!gpuBound)&&f<C.unusable?unusableFor+w:0;
       if(unusableFor>=C.unusableAfter)degraded=true;
@@ -132,7 +140,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // reallocated when neither the level nor the size changed.
   function applyLevel(){const k=LEVELS[level].scale,key=`${level}|${size[0]}x${size[1]}|${pixelRatio}`;if(key===applied)return;applied=key;
     pipeline.setSamples(LEVELS[level].samples);renderer.setPixelRatio(pixelRatio*k);renderer.setSize(size[0],size[1],false);pipeline.setSize(Math.round(size[0]*pixelRatio*k),Math.round(size[1]*pixelRatio*k));}
-  function adapt(){if(film)return;const change=governor.frame(performance.now()/1000,gpuMs);if(change){level=governor.level;applyLevel();}}
+  function adapt(){if(film)return;const change=governor.frame(performance.now()/1000,gpuMs,timing.update+timing.draw);if(change){level=governor.level;applyLevel();}}
   const camera=new THREE.PerspectiveCamera(36,16/9,.1,4000);
   const rig=createCameraRig(camera);
   const model=createModel({speed});
@@ -292,7 +300,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       if(overlayCanvas){overlayCanvas.width=Math.round(w*dpr);overlayCanvas.height=Math.round(h*dpr);}},
     stats(){const s=world.stats?.()||{};return {family:current.family,variant:current.variant,...s,intents:history.count,history:history.stats(),
       unlocked:info?director.unlockedAt(info.t).filter(u=>u.level>0).length:0,lasting:director.lasting().reduce((n,l)=>n+l.count,0),agentNumbers:info?info.agents.map(a=>a.number):[],agents:info?.agents.length||0,phase:info?.phase,activity:info?+info.activity.toFixed(3):0,
-      quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
+      quality:level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,qualityChanges:governor.changes,gpuTimerBlind:governor.gpuTimerBlind,drawCalls:calls.scene,passes:calls.total,triangles:calls.triangles,points:calls.points,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,
       programs:renderer.info.programs?.length??null,effects:{...expressed},updateMs:+timing.update.toFixed(2),drawMs:+timing.draw.toFixed(2),gpuMs:gpuMs===null?null:+gpuMs.toFixed(2),
       life:lifeDriver?{...lifeDriver.stats(),digest:lifeDriver.digest(),presented:world.lifeStats?.()||null}:null};},
     // The context itself is released now (otherwise its GPU memory and buffers wait for the garbage collector).
