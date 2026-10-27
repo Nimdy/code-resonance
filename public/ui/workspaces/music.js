@@ -496,7 +496,9 @@ export default {mount(view,{store:S,player:P,chrome}){
   }
   function renderPreview(){
     const d=draft(),pending=Object.keys(d).length>0;
-    previewBar.hidden=!pending;badge.firstChild.hidden=!pending;text(previewText,pending?describe(d):'');
+    // A preset or starting point being tried is named, so the bar says what is heard before its details.
+    const named=pending?STARTERS.find(x=>isPreviewing(x.payload))||musicPresets().find(x=>isPreviewing(x.payload)):null;
+    previewBar.hidden=!pending;badge.firstChild.hidden=!pending;text(previewText,pending?`${named?`“${named.name}” · `:''}${describe(d)}`:'');
     text(previewWhere,P.state.sound.enabled?'Heard in this window only.':'This window only · sound is off.');
     applyBtn.disabled=scope==='project'&&(!S.state.selected||!prefs());
     wasPending=pending;

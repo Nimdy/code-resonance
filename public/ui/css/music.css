@@ -84,7 +84,7 @@
 .ws-music .ms-ctl-head{display:flex;align-items:baseline;gap:8px;min-width:0}
 .ws-music .ms-ctl-label{font-size:14.5px;font-weight:600;color:var(--text-1);white-space:nowrap}
 /* This project's own value: a ring after the name (a filled dot is a pending change, as on the other fields) */
-.ws-music .ms-ctl.own .ms-ctl-label::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--accent);margin-left:7px;vertical-align:2px}
+.ws-music .ms-ctl.own .ms-ctl-label::after,.ws-music .ms-ctl.pending .ms-ctl-label::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--accent);margin-left:7px;vertical-align:2px}
 .ws-music .ms-ctl.pending .ms-ctl-label::after{background:var(--accent);border-color:var(--accent)}
 .ws-music .ms-ctl-value{margin-left:auto;display:flex;align-items:baseline;gap:8px;white-space:nowrap;min-width:0}
 .ws-music .ms-ctl-value b{font-size:13.5px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis}
