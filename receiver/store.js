@@ -10,6 +10,10 @@ const WORLDS=['living','construct','nexus','city','nebula'],LABELS=['cinematic',
 const PROFILES=['720p','1080p','stage'],MOTION=['system','reduce','full'];
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u,PRESET_ID=/^p-[0-9a-f]{12}$/,PACK_REF=/^[a-z0-9.-]{1,64}$/,TUNING_PATH=/^[A-Za-z0-9_.]{1,64}$/;
 const MAX_PRESETS=200,MAX_TUNING=128;
+// The composed score's performance profile (public/score.js v3 PROFILE, GROUPS): eight creative controls, 0..1 with .5 as
+// composed, and the level of each voice group, 0 (muted) .. 1 (as composed) .. 1.5. A test keeps the lists equal.
+const PROFILE_KEYS=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space'],MIX_GROUPS=['pad','bass','melody','counter','arp','perc','atmos'];
+const PROFILE_DEFAULTS=Object.fromEntries(PROFILE_KEYS.map(k=>[k,.5])),MIX_DEFAULTS=Object.fromEntries(MIX_GROUPS.map(g=>[g,1]));
 const isPlain=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const clone=v=>JSON.parse(JSON.stringify(v));
 function coded(code,status,message,extra={}){return Object.assign(new Error(message),{code,status,...extra});}
@@ -61,6 +65,10 @@ const integer=(key,v,min,max)=>{if(!Number.isInteger(v)||v<min||v>max)throw inva
 const bool=(key,v)=>{if(typeof v!=='boolean')throw invalid(key);return v;};
 const section=(key,v)=>{if(!isPlain(v))throw invalid(key);return v;};
 const orNull=(fn,key,v,...a)=>v===null?null:fn(key,v,...a);
+// A mix is one value, validated as a whole: known groups only, each 0..1.5; a group it leaves out plays as composed.
+function mix(key,v){section(key,v);onlyKeys(key+'.',v,MIX_GROUPS);
+  return Object.fromEntries(MIX_GROUPS.map(g=>{const x=v[g]===undefined?1:v[g];if(typeof x!=='number'||!Number.isFinite(x)||x<0||x>1.5)throw invalid(`${key}.${g}`);return [g,x];}));}
+const profile=(key,m,fn)=>Object.fromEntries(PROFILE_KEYS.map(k=>[k,fn(`${key}.${k}`,m[k])]));
 // createDocument(file,{schema, defaults, validate, apply?, nullResets?}): validate(data) returns the normalized data or
 // throws a coded error naming the key; apply(data, patch) computes the next data (default: deep merge of known keys).
 function createDocument(file,{schema,defaults,validate,apply,nullResets=false}){
@@ -100,23 +108,24 @@ function createDocument(file,{schema,defaults,validate,apply,nullResets=false}){
   };
 }
 // ---- Global settings: <data>/settings.json
-const SETTINGS_DEFAULTS={music:{style:'ambient',volume:.55,texture:.58,tempoMode:'project',tempo:92},stage:{world:'living',labels:'cinematic',captions:true},
+const SETTINGS_DEFAULTS={music:{style:'ambient',volume:.55,texture:.58,tempoMode:'project',tempo:92,...PROFILE_DEFAULTS,mix:{...MIX_DEFAULTS}},stage:{world:'living',labels:'cinematic',captions:true},
   recording:{profile:'720p'},interface:{motion:'system'},onboarding:{dismissed:false,migrated:false}};
 function validateSettings(d){
   const m=section('music',d.music),s=section('stage',d.stage),r=section('recording',d.recording),i=section('interface',d.interface),o=section('onboarding',d.onboarding);
   return {music:{style:oneOf('music.style',m.style,STYLES),volume:unit('music.volume',m.volume),texture:unit('music.texture',m.texture),
-      tempoMode:oneOf('music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:integer('music.tempo',m.tempo,58,160)},
+      tempoMode:oneOf('music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:integer('music.tempo',m.tempo,58,160),...profile('music',m,unit),mix:mix('music.mix',m.mix)},
     stage:{world:oneOf('stage.world',s.world,WORLDS),labels:oneOf('stage.labels',s.labels,LABELS),captions:bool('stage.captions',s.captions)},
     recording:{profile:oneOf('recording.profile',r.profile,PROFILES)},interface:{motion:oneOf('interface.motion',i.motion,MOTION)},
     onboarding:{dismissed:bool('onboarding.dismissed',o.dismissed),migrated:bool('onboarding.migrated',o.migrated)}};
 }
 function settings(dataDir){return createDocument(path.join(dataDir,'settings.json'),{schema:'code-resonance.settings.v1',defaults:SETTINGS_DEFAULTS,validate:validateSettings});}
 // ---- Per-project preferences: <project dir>/preferences.json; null = inherit the global setting.
-const PREFERENCES_DEFAULTS={world:null,music:{style:null,texture:null,tempoMode:null,tempo:null}};
+const PREFERENCES_DEFAULTS={world:null,music:{style:null,texture:null,tempoMode:null,tempo:null,...Object.fromEntries(PROFILE_KEYS.map(k=>[k,null])),mix:null}};
 function validatePreferences(d){
   const m=section('music',d.music);
   return {world:orNull(oneOf,'world',d.world,WORLDS),music:{style:orNull(oneOf,'music.style',m.style,STYLES),texture:orNull(unit,'music.texture',m.texture),
-    tempoMode:orNull(oneOf,'music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:orNull(integer,'music.tempo',m.tempo,58,160)}};
+    tempoMode:orNull(oneOf,'music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:orNull(integer,'music.tempo',m.tempo,58,160),
+    ...profile('music',m,(k,v)=>orNull(unit,k,v)),mix:orNull(mix,'music.mix',m.mix)}};
 }
 function preferences(projectDir){return createDocument(path.join(projectDir,'preferences.json'),{schema:'code-resonance.preferences.v1',defaults:PREFERENCES_DEFAULTS,validate:validatePreferences,nullResets:true});}
 // ---- Presets: <data>/presets.json. Family/pack existence is checked when a preset is applied, not when it is stored.
@@ -141,9 +150,14 @@ function visualPayload(p,key='payload'){
   if(overrides.labels!==undefined)o.labels=overrides.labels===null?null:oneOf(key+'.overrides.labels',overrides.labels,LABELS);
   return {family:packRef(key+'.family',p.family),look:packRef(key+'.look',p.look),tuning:t,overrides:o};
 }
+// A music preset is a performance: style, tempo source, texture and, since the composed score, its profile and mix
+// (optional, so presets saved before keep exactly their shape). Never the key, mode or motif: those are the project's.
 function musicPayload(p,key='payload'){
-  section(key,p);onlyKeys(key+'.',p,['style','texture','tempoMode','tempo']);
-  return {style:oneOf(key+'.style',p.style,STYLES),texture:unit(key+'.texture',p.texture),tempoMode:oneOf(key+'.tempoMode',p.tempoMode,TEMPO_MODES),tempo:integer(key+'.tempo',p.tempo,58,160)};
+  section(key,p);onlyKeys(key+'.',p,['style','texture','tempoMode','tempo','profile','mix']);
+  const out={style:oneOf(key+'.style',p.style,STYLES),texture:unit(key+'.texture',p.texture),tempoMode:oneOf(key+'.tempoMode',p.tempoMode,TEMPO_MODES),tempo:integer(key+'.tempo',p.tempo,58,160)};
+  if(p.profile!==undefined){const f=section(key+'.profile',p.profile);onlyKeys(key+'.profile.',f,PROFILE_KEYS);out.profile=profile(key+'.profile',f,(k,v)=>v===undefined?.5:unit(k,v));}
+  if(p.mix!==undefined)out.mix=mix(key+'.mix',p.mix);
+  return out;
 }
 const payloadOf=(kind,p,key)=>kind==='visual'?visualPayload(p,key):musicPayload(p,key);
 function presetName(v,key='name'){if(typeof v!=='string')throw invalid(key);const s=v.trim();if(!PRESET_NAME.test(s))throw invalid(key);return s;}
@@ -184,4 +198,4 @@ function presets(dataDir,{now=Date.now,newId=()=>`p-${crypto.randomBytes(6).toSt
   return createDocument(path.join(dataDir,'presets.json'),{schema:'code-resonance.presets.v1',defaults:{presets:[]},validate:validatePresets,apply});
 }
 module.exports={createDocument,settings,preferences,presets,writeAtomic,withLock,mergePatch,
-  SETTINGS_DEFAULTS,PREFERENCES_DEFAULTS,STYLES,TEMPO_MODES,WORLDS,LABELS,PROFILES,MOTION};
+  SETTINGS_DEFAULTS,PREFERENCES_DEFAULTS,STYLES,TEMPO_MODES,WORLDS,LABELS,PROFILES,MOTION,PROFILE_KEYS,MIX_GROUPS};
