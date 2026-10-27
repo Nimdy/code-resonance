@@ -934,7 +934,7 @@
     get state(){const h=history();return {
       receiver:receiverOk,delayMs,project:selected,model,frame,mode,playing:playback,speed:speedChoice,
       position:{start:h.start||0,end:mode==='live'?Date.now()-delayMs:h.end||0,now:perfNow(),loaded:mode==='live'||!!replay,windows:replay?.entries.length||0,events:h.cues.length},
-      bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.stats?.()?.quality??null,rendering:{...rendering,adaptive:qualityAdaptive()},
+      bar:barNumber,key:musicKey,section,world:selectedWorld,labels:labelMode,captions,quality:qualityChoice,qualityLevel:living?.performance?.().level??living?.stats?.()?.quality??null,rendering:{...rendering,adaptive:qualityAdaptive()},
       // The bar being played: its score version, the voice groups in the arrangement now and, for the composed score, its
       // place in the form (the Music Studio's monitor).
       sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0,
