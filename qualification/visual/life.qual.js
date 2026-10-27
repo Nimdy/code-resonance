@@ -12,7 +12,7 @@
 //  6. switching    - switching worlds disposes the previous ecosystem (the running one is the shown world's) and GPU
 //                    resources return to their level;
 //  7. far seek     - in the live player, a far seek reports "restoring" until the state for the new moment is exact,
-//                    and how long that took.
+//                    and how long that took (bounded by generations: at most one generation and its warm start).
 // node visual/life.qual.js [--gpu amd] [--only determinism,framerate,quality,idle,off,switching,seek] [--families a,b]
 // Works on temporary copies of the datasets (their recipes are never changed).
 const path=require('node:path');
@@ -132,10 +132,13 @@ function copy(name){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-life-'));
         const {page,errors}=await playerPage(browser,svc,p2,{speed:1});
         await page.waitForFunction(()=>window.__worldStats?.()?.life?.tick>0,null,{timeout:60000});
         const results=[];
+        // Up to 180 s a seek (a far seek simulates at most one generation and its warm start, docs/LIFE.md#generations);
+        // restoreWallMs: from the seek until the ecosystem is current again (null: it was not within the limit).
         for(const f of [.85,.15,.6]){
-          await page.evaluate(f=>window.ResonancePlayer.seekFraction(f),f);const t0=Date.now();let saw=false,last=null;
-          for(let k=0;k<1200;k++){const s=await page.evaluate(()=>window.__worldStats?.()?.life);if(s?.restoring)saw=true;last=s;if(saw&&s&&!s.restoring)break;if(!saw&&k>40)break;await new Promise(r=>setTimeout(r,100));}
-          results.push({fraction:f,restoringShown:saw,wallMs:Date.now()-t0,lastRestoreMs:last?.lastRestoreMs,ticks:last?.lastRestoreTicks,fromCheckpoint:last?.fromCheckpoint});}
+          await page.evaluate(f=>window.ResonancePlayer.seekFraction(f),f);const t0=Date.now();let saw=false,last=null,restoreWallMs=null;
+          for(let k=0;Date.now()-t0<180000;k++){const s=await page.evaluate(()=>window.__worldStats?.()?.life);if(s?.restoring)saw=true;last=s;if(saw&&s&&!s.restoring){restoreWallMs=Date.now()-t0;break;}if(!saw&&k>40)break;await new Promise(r=>setTimeout(r,100));}
+          results.push({fraction:f,restoringShown:saw,restored:!saw||restoreWallMs!==null,restoreWallMs,wallMs:Date.now()-t0,lastRestoreMs:last?.lastRestoreMs,ticks:last?.lastRestoreTicks,
+            generation:last?.generation,historyMs:last?.historyMs,fromCheckpoint:last?.fromCheckpoint});}
         // Replay -> live: a new performance (its origin now): no restoring of the hours since the recording began, none of
         // the replay's inputs.
         const replayInputs=(await page.evaluate(()=>window.__worldStats?.()?.life?.inputs))?.items??0;
@@ -144,7 +147,7 @@ function copy(name){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-life-'));
         measurements.replayToLive={wallMs:Date.now()-tl,tick:lv?.tick,restoring:lv?.restoring,inputs:lv?.inputs?.items,replayInputs,resets:lv?.resets};
         check('replay -> live: the live ecosystem starts at the switch (no restoring, a new origin, not the replay\'s inputs)',!!lv&&!lv.restoring&&lv.tick<20*60&&(lv.inputs?.items??0)<replayInputs,JSON.stringify(measurements.replayToLive));
         await page.close();measurements.farSeek=results;
-        check('far seek: restoring is reported, then the ecosystem is current again',results.every(r=>!r.restoringShown||r.lastRestoreMs!==null),JSON.stringify(results));
+        check('far seek: restoring is reported, then the ecosystem is current again (within 180 s a seek)',results.every(r=>r.restored),JSON.stringify(results));
         check('far seek: no page errors',!errors.length,errors.slice(0,2).join(' | '));
       });}
   }finally{await browser.close();for(const d of temps)fs.rmSync(d,{recursive:true,force:true});}

@@ -45,5 +45,7 @@ export function fieldTexture(THREE,eco,{scale=[3,3,3,6]}={}){
     update(){for(let q=0;q<NC;q++){buf[q*4]=b(data[q]/scale[0]);buf[q*4+1]=b(data[NC+q]/scale[1]);buf[q*4+2]=b(data[2*NC+q]/scale[2]);buf[q*4+3]=b(density[q]/scale[3]);}tex.needsUpdate=true;},
     dispose(){tex.dispose();}};
 }
-// How visible an entity is: born fading in, departing fading out; the whole population fades in after a restore.
+// How visible an entity is: born fading in, departing fading out; the whole population fades in after a restore and,
+// in a replay or a film, crossfades at a generation's anchor (view.fadeIn). A world scales whatever else it draws from
+// the ecosystem (field-driven light: crowns, gas and matter maps, lit copings and cables) by view.fadeIn too.
 export const visibility=(eco,i,view)=>eco.alive[i]?Math.max(0,Math.min(1,eco.fade[i]))*view.fadeIn*(view.restoring?0:1):0;

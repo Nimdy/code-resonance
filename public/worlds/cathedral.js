@@ -1093,7 +1093,7 @@ export function createFamily(ctx){
     // Brightness by job (life/cathedral.js JOB): travelling and climbing bright, waiting and lingering dim.
     const J=LIFE_JOB,JOB_K=new Float32Array(16).fill(.8);JOB_K[J.travel]=1;JOB_K[J.dwell]=.42;JOB_K[J.wait]=.5;JOB_K[J.go]=.9;JOB_K[J.up]=1;JOB_K[J.circle]=.85;JOB_K[J.down]=.95;
     JOB_K[J.edge]=.85;JOB_K[J.patrol]=.55;JOB_K[J.migrate]=1;JOB_K[J.linger]=.32;
-    const p3=[0,0,0],f3=[0,0,0],texBuf=lifeTex.image.data,cc=new THREE.Color();let shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0},texTick=-1;
+    const p3=[0,0,0],f3=[0,0,0],texBuf=lifeTex.image.data,cc=new THREE.Color();let shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0},texTick=-1,texK=-1;
     const b8=v=>v<=0?0:v>=1?255:(v*255+.5)|0;
     // Cable traffic: which drawn cable (bridge instance) each network edge belongs to, and which way along it.
     let cableKey='',edgeCable=null,edgeDir=null;const cableN=new Float32Array(32),cableD=new Float32Array(32);
@@ -1105,13 +1105,14 @@ export function createFamily(ctx){
     function cables(eco,net,v){cableMap(net);const n=Math.min(32,bridges.length);cableN.fill(0);cableD.fill(0);
       for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==net.tag)continue;const d=eco.ia[e*2];if(d<0)continue;const j=edgeCable[d];if(j<0||j>=n)continue;const w=lifeVisibility(eco,e,v);cableN[j]+=w;cableD[j]+=w*edgeDir[d];}
       for(let j=0;j<n;j++)glowB.write('kL',channels.length+j,Math.min(1,cableN[j]/4),cableN[j]>0?cableD[j]/cableN[j]:0);glowB.flush();}
-    function hide(){pts.commit(0);segs.commit(0);shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0};for(let j=0;j<bridges.length;j++)glowB.write('kL',channels.length+j,0,0);glowB.flush();}
+    function hide(){pts.commit(0);segs.commit(0);shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0};for(let j=0;j<bridges.length;j++)glowB.write('kL',channels.length+j,0,0);glowB.flush();
+      if(texK!==0){for(let q=0;q<texBuf.length;q+=4){texBuf[q]=0;texBuf[q+1]=0;}lifeTex.needsUpdate=true;texK=0;texTick=-1;}}
     function update(i){
       const v=i.life;if(!v||!v.eco||v.restoring){hide();return;}
       const eco=v.eco,net=grammar.networkOf(eco);if(!net){hide();return;}
-      // The traffic field (once per tick).
-      if(texTick!==eco.tick){texTick=eco.tick;const F=eco.field,NC=F.nx*F.nz,d=F.data;
-        for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3);texBuf[q*4+1]=b8(d[2*NC+q]/2.5);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
+      // The traffic field (once per tick), its light (trail) and its dimming (disturbance) faded with the population.
+      if(texTick!==eco.tick||texK!==v.fadeIn){texTick=eco.tick;texK=v.fadeIn;const F=eco.field,NC=F.nx*F.nz,d=F.data;
+        for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3*texK);texBuf[q*4+1]=b8(d[2*NC+q]/2.5*texK);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
       cables(eco,net,v);
       const q=quality,alpha=v.alpha,tv=i.tview,tag=net.tag,K=eco.K,head=eco.trailHead,PMAX=pts.capacity??PN;let n=0,nf=0,ns=0,nc=0;
       for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==tag)continue;const vis=lifeVisibility(eco,e,v);if(vis<=.01)continue;

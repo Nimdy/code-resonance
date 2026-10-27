@@ -88,11 +88,12 @@ when the habitat changes, as the ecosystem's own targets do.
 ### Contract
 
 For the same **simulation version, grammar version, recipe life values, project seed, playback speed, tempo and
-performance origin**, the ecosystem's state at a view time is a pure function of the inputs before it: **bit-identical**
-(the `digest` of every array) after continuous play at any frame rate, seeks back and forth, a restored checkpoint, a
-fresh session or a browser restart, **within the same JavaScript engine** (the state is double-precision arithmetic
-stored in typed arrays; `Math.sin`, `Math.exp`… are the engine's). Qualified in Node and Chromium
-(`tests/life-driver.test.js`, `qualification/visual/life.qual.js`).
+performance origin**, the ecosystem's state at a view time is a pure function of the inputs before it (in a replay or
+a film: of the inputs since its generation's warm start and the lasting history before it, see
+[Generations](#generations)): **bit-identical** (the `digest` of every array) after continuous play at any frame rate,
+seeks back and forth, a restored checkpoint, a fresh session or a browser restart, **within the same JavaScript
+engine** (the state is double-precision arithmetic stored in typed arrays; `Math.sin`, `Math.exp`… are the engine's).
+Qualified in Node and Chromium (`tests/life-driver.test.js`, `qualification/visual/life.qual.js`).
 
 Rendering quality never changes the state: quality decides how many followers are drawn, not what the ecosystem is.
 Images are byte-identical on the same GPU and driver (as the worlds already are); across GPU vendors only the state is
@@ -101,21 +102,90 @@ claimed identical, not the pixels.
 ### Checkpoints and invalidation
 
 A recent ring (every 2 s, six kept) and an even spread over the performance (every 20 s, at most 24 kept) carry the
-ecosystem, the climate and the input position. A checkpoint is used only when:
+ecosystem, the climate, the input position and the **generation**. A checkpoint is used only for a moment of its own
+generation, and only when:
 
 - its configuration key (grammar, simulation version, seed, speed, tempo, origin, live base structure) and its
   parameter key (the recipe's life values) match, and
 - the fingerprint of the inputs before it is unchanged and no input was added at or before its time.
 
-Otherwise it is dropped and the state is rebuilt from an earlier valid one or from the initial population.
+Otherwise it is dropped and the state is rebuilt from an earlier valid one or from its generation's start.
+
+### Generations
+
+A replay or a film lives in **generations** of 10 minutes of view time (`GENERATION`, 600 s = 12 000 ticks). The
+ecosystem shown at view time `v` is the one of generation `g = floor(v / 600)`; its **anchor** is `g × 600 s`.
+
+- **Generation 0** starts at the performance's origin exactly as before generations: same seed, same inputs, same
+  code path. Its states are bit-identical to the driver before generations (digests recorded with that driver and
+  pinned in `tests/life-driver.test.js`, replay and live; the three flagship grammars on the recorded *lumen*
+  performance checked the same way).
+- **Generation g ≥ 1** starts at its **warm start**, `WARM` = 60 s before its anchor (tick `g × 12 000 − 1 200`), with a
+  fresh population (seed `mix(seed, g)`) and a **history pass**: every input at or before the warm start's time is
+  consumed as history. The habitat is the one after the last recorded window at or before that time (on the
+  structure as it was then); verified milestones and verified refactors before it set their lasting conditions,
+  mapped on that structure (as a live session joined late carries them); the climate fold restarts 64 bars before it,
+  each bar taking the last frame at or before the bar's start. Nothing transient carries over: no disturbance,
+  nourishment, trail, flow or position. From its warm start the generation consumes the inputs like any ecosystem and
+  has lived a minute on them when it is first shown at its anchor.
+
+**The contract.** The state at a view time is a pure function of the inputs since its generation's warm start plus
+the lasting history before it (and of the configuration listed above, and of the constants `GENERATION` and `WARM`):
+bit-identical after continuous play across any number of anchors, seeks in either direction, checkpoints, a fresh
+session, and whether or not the next generation was prepared in the background (all tested in Node).
+
+**Across an anchor.** From 90 s before an anchor the next generation is prepared in the background: a runner of its
+own (population, input position, climate and its own shadow model; the habitat cache is shared, a pure function of the
+structure), brought to its warm start a few windows at a time, given its history pass in a frame of its own, then
+stepped toward the anchor within about 2 ms a frame (a tick only when the cost of the last ones says it fits; the first
+of a frame always, so a machine whose tick exceeds the budget still progresses). The exception is once per page: the
+first ticks of the first second ecosystem cost several times more (the JavaScript engine reoptimises the simulation
+for two ecosystems; later anchors do not pay it), so about 90 s before a page's first anchor one or two frames take
+8–11 ms. Films are paced without a limit, so a film frame never waits for it. At the anchor it is handed over; if it is late,
+the ordinary catch-up continues it and "restoring" is reported only when it is more than 3 s behind. The view
+**crossfades**: the population fades out over the 2 s (`CROSS`) before the anchor and the next generation fades in over
+the 2 s after it. The fade is the view's `fadeIn`, a pure function of view time that never touches the state; the
+worlds scale everything they draw from the ecosystem by it, inhabitants and field-driven light alike (the Biosphere's
+crown and floor light, the Forge's gas and matter maps and captured light, the Cathedral's lit copings, channels and
+cables).
+
+**The seek bound.** A far seek from a fresh session simulates at most one generation and its warm start, 13 200 ticks,
+plus the history pass, however long the performance (before generations, a seek to the end of the 13-day *lumen-long*
+replay meant about 19.5 million ticks). Measured in Node on *lumen-long* as the receiver serves it (12 796 windows,
+75 138 inputs, 1 148 150 s of view time), replay configuration:
+
+| | Fractal Biosphere | Stellar Forge | Machine Cathedral |
+|---|---|---|---|
+| Far seek to the end (generation 1913, 8 200 ticks), one update without a budget | 6.6 s | 10.8 s | 9.4 s |
+| Worst far seek (the last tick of a generation: 13 199 ticks) | 9.6 s | 14.6 s | 13.3 s |
+| Simulated tick | 0.73–0.81 ms | 1.11–1.31 ms | 1.01–1.14 ms |
+| History pass, fresh session (the shadow replays all 12 796 windows) | 75–81 ms | 43–65 ms | 60–77 ms |
+| History pass, later seeks (the shadow forward or rebuilt) | 6–42 ms | 6–45 ms | 11–42 ms |
+| The qualification's seeks (85 %, 15 %, 60 %) at the player's budget, frames back to back | 9.8 / 2.0 / 3.6 s | 11.2 / 2.2 / 4.1 s | 9.5 / 1.9 / 3.4 s |
+| Background preparation per frame (60 fps, the 100 s before the anchor): p95 / p99 | 1.9 / 2.0 ms | 1.9 / 2.1 ms | 1.9 / 2.0 ms |
+| Its history-pass frame: a page's first anchor / a later one | 3.6 / 0.9 ms | 5.6 / 1.2 ms | 6.0 / 2.1 ms |
+| Its worst frame at a page's first anchor (its first ticks, once per page) | 8.1 ms | 11.2 ms | 10.7 ms |
+
+Node 22.22, Ryzen 9 9950X3D, measured while films rendered on the same machine (load average 4–12; the background
+rows in a fresh process at the last anchor, 1 147 800 s, then at a second anchor in the same process). Across the
+anchor the next generation was handed over on time (not restoring) and its state matched a fresh far seek to the
+same moment in all three worlds. In a browser the restores take longer (each frame also renders); the qualification
+allows 180 s a seek.
+
+**Live sessions have no generations**: one population from the join (its memory bounded by folding, below), no
+crossfade. A live session's past is not replayed, so it needs none.
 
 ### Seeking
 
-A seek restores the latest valid state before the target and simulates forward. Catching up is bounded per frame
-(a few milliseconds; films excepted: a film frame waits for the exact state). While the target is more than three
+A seek restores the latest valid state of the target's generation at or before the target (the shown ecosystem, the
+next generation prepared in the background, a checkpoint of that generation, or the generation's start) and simulates
+forward; a seek forward within a generation restores a later checkpoint when one lies between rather than simulate the
+way there. Catching up is bounded per frame (a few milliseconds, at least 20 ms while restoring, when the inhabitants
+are hidden anyway; films excepted: a film frame waits for the exact state). While the target is more than three
 seconds ahead the view reports **restoring** with its progress: the inhabitants are hidden and the stage says
 "Restoring the ecosystem for this moment · n %" rather than showing a stale population as if it were the moment's.
-Measured costs are in [QUALIFICATION.md](QUALIFICATION.md#digital-life).
+Measured costs are in [QUALIFICATION.md](QUALIFICATION.md#digital-life) and, for far seeks, under
+[Generations](#generations).
 
 ### Live sessions
 
