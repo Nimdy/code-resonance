@@ -12,6 +12,7 @@ name: extended-qualification
 #   windows-vscode   native Windows: the extension in a real VS Code
 #   obs              OBS Studio itself, in the disposable runner (installed from the official PPA, Xvfb, software GL)
 #   ui-full          the whole interface qualification: every workspace suite and the multi-window acceptance scenarios
+# Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   pull_request:
     types: [labeled, synchronize, opened, reopened]
@@ -26,7 +27,7 @@ concurrency:
 jobs:
   packs-full:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:packs-full')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Phase 5: the declarative pack 43–53 min, the shader pack 27–34 min. The shader pack's quick suite has taken about
     # 25 min since Phase 7 (3.5–7 min before), so its full suite may need about 2 h.
     timeout-minutes: 150
@@ -52,7 +53,7 @@ jobs:
           path: qualification/results/visual/pack-*.json
   runtime-full:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:runtime-full')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     defaults:
       run:
@@ -77,7 +78,7 @@ jobs:
             qualification/results/recording/*.jpg
   history:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:history')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     defaults:
       run:
@@ -98,7 +99,7 @@ jobs:
           path: qualification/results/visual/history-qualification.json
   ui-full:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:ui-full')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     defaults:
       run:
@@ -120,7 +121,7 @@ jobs:
           path: qualification/results/ui
   soak:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:soak')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 100
     defaults:
       run:

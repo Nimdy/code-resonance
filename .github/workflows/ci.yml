@@ -3,12 +3,13 @@ name: validation
 # Native Windows runs on pull requests and on main only (Windows runner minutes count double): the same suite plus the
 # platform smoke test (the receiver as a real process, paths with spaces, the token, a restart, the pack CLI and
 # integrity). No test is retried: a failure fails the run.
+# Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   push:
   pull_request:
 jobs:
   node:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
