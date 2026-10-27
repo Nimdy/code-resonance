@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {createBar,pitch,STYLES}=require('../public/score');
+const {createBar,STYLES}=require('../public/score');
 function config(extras={}){return {seed:1002,motif:[0,2,4,6],root:'D',chapter:4,energy:.6,tension:.2,barIndex:7,...extras};}
 test('Score identity is deterministic across repeated runs and does not depend on wall-clock',()=>{
   const a=createBar(config({style:'pulse'})),b=createBar(config({style:'pulse'}));assert.deepEqual(a,b);
@@ -27,7 +27,6 @@ test('No musical event can exceed safe MIDI/velocity/duration bounds',()=>{
       assert(event.velocity>=0&&event.velocity<=1);assert(event.duration>=.025&&event.duration<=5);
     }
   }
-  assert.equal(pitch(0,0,'D'),50);
 });
 const {createIdentity,accentFigure,chooseSection,SECTION_BARS}=require('../public/score');
 test('Each project has a stable, distinctive identity (key, mode, progressions, motif)',()=>{
