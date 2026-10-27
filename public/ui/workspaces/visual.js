@@ -70,6 +70,8 @@ const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.
 const LIFE_OFF={'life.enabled':false,'life.density':1,'life.vitality':1,'life.collective':1,'life.environment':1,'life.trails':1,'life.persistence':1,'life.music':1,
   'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1};
 const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF}};
+// Parameters whose last path segment alone would not say what they are (the Essentials list them out of their group).
+const LABEL_OF={'life.enabled':'Digital life'};
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
 const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
@@ -651,7 +653,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     return !rest?null:/\s/.test(rest)?cap(rest):cap(d);
   }
   function paramField(path,spec,s){
-    const label=humanize(path.split('.').at(-1));
+    const label=LABEL_OF[path]||humanize(path.split('.').at(-1));
     const ctrl=parameterControl(spec,valueOf(s,path,spec),{label,onInput:v=>setTune(path,v,false),onChange:v=>setTune(path,v,true)});
     // The toolkit builds on/off switches without a visible label (the field shows it), so the input gets its name here.
     if(ctrl.input&&!ctrl.input.hasAttribute('aria-label'))ctrl.input.setAttribute('aria-label',label);

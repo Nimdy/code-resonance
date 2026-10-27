@@ -364,7 +364,10 @@ test('Status, documentation and the Control Center files; no public response car
   assert.match(ui.headers.get('content-security-policy'),/script-src 'self'; object-src 'none'/);
   for(const p of ['/ui/missing.js','/ui/Main.js','/ui/..%2Fapp.js','/ui/workspaces%2Fstage.js','/ui/a/b/c.js','/ui/main.json',
     // Windows device names (a device, not a file, on Windows 10, whatever the extension).
-    '/ui/con.js','/ui/aux.css','/ui/com1.js','/ui/lpt9/x.js','/ui/nul/con.svg','/worlds/con.js','/worlds/prn.js'])assert.equal((await fetch(base+p)).status,404,p);
+    '/ui/con.js','/ui/aux.css','/ui/com1.js','/ui/lpt9/x.js','/ui/nul/con.svg','/worlds/con.js','/worlds/prn.js',
+    // The world modules: /worlds/<name>.js and one known subfolder, /worlds/life/<name>.js; nothing deeper or elsewhere.
+    '/worlds/life/con.js','/worlds/life/missing.js','/worlds/life/a/sim.js','/worlds/other/sim.js','/worlds/life%2Fsim.js','/worlds/life/..%2Fhost.js','/worlds/Life/sim.js'])assert.equal((await fetch(base+p)).status,404,p);
+  const life=await fetch(`${base}/worlds/life/sim.js`);assert.equal(life.status,200);assert.match(life.headers.get('content-type'),/^text\/javascript/);
   // Public read routes: none carries the token, a file path sent in events, the data directory or the private name.
   const routes=['/api/status','/api/catalog','/api/packs','/api/packs/templates',`/api/evidence?id=${projectId}`,'/api/settings',`/api/preferences?id=${projectId}`,
     '/api/presets',`/api/recipe?id=${projectId}`,`/api/recipe/tunable?id=${projectId}`,'/health'];

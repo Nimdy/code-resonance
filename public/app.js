@@ -1001,6 +1001,8 @@
       // A World DNA action as the panel sends it (switching between built-in families and packs rebuilds the world).
       async recipeAction(action){await recipeAction(action);return {family:recipe?.family,remote:!!living?.remote,frames:document.querySelectorAll('iframe.pack-frame').length};},
       setLabels(m){living?.setLabels(m);},
+      // The rendering quality level (qualification: the ecosystem's state must not depend on it).
+      quality(q){living?.setQuality?.(q,false);return living?.performance?.().level??null;},
       memory(){const s=living?.stats();return {geometries:s?.geometries,textures:s?.textures,heap:performance.memory?performance.memory.usedJSHeapSize:null};}
     };
   }else{

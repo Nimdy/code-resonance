@@ -7,6 +7,8 @@
 //        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
 //        [--note "text shown on every frame"] [--pack <dir> (install and approve a visual pack in --data first)]
 //        [--look <pack id> (apply a declarative or shader pack)] [--gpu amd (render on the AMD integrated GPU, never NVIDIA)]
+//        [--tune '{"life.enabled":false}' (tuned genome values, as the Visual Studio applies them)]
+//        [--copy (render from a temporary copy of --data: the data directory's recipes are never changed)]
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
 // The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly.
 const path=require('node:path');
@@ -23,7 +25,8 @@ const world=arg('world','living'),labels=arg('labels','cinematic'),tail=Number(a
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 (async()=>{
   fs.mkdirSync(path.dirname(OUT),{recursive:true});
-  const dataDir=path.resolve(arg('data'));
+  let dataDir=path.resolve(arg('data'));
+  if(process.argv.includes('--copy')){const tmp=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cr-film-'));fs.cpSync(dataDir,tmp,{recursive:true});dataDir=tmp;process.on('exit',()=>fs.rmSync(tmp,{recursive:true,force:true}));}
   // A pinned recipe is installed before the receiver starts, so the player loads exactly that identity.
   if(arg('recipe')){const dir=path.join(dataDir,'projects',sha(arg('project')));fs.copyFileSync(path.resolve(arg('recipe')),path.join(dir,'recipe.json'));}
   // A visual pack for this film: installed into the film's data directory and approved there (local qualification).
@@ -33,6 +36,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   await svc.flush();
   if(arg('look')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'pack',pack:arg('look')}});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
   if(arg('family')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'family',family:arg('family')}});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
+  if(arg('tune')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'tune',values:JSON.parse(arg('tune'))}});if(!r.ok)throw new Error(`tune: ${await r.text()}`);}
   const browser=await launch(arg('gpu',null));
   const renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
   if(arg('gpu')==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}
