@@ -51,6 +51,9 @@ test('Declarative packs are checked against their base family: parameters, range
   assert.deepEqual(errorsOf(t,declarative({effects:{'milestone.achieved':'aurora'}})),[]);
   assert(errorsOf(t,declarative({unlocks:['fireflies']})).some(e=>/not an ambient layer/.test(e)));
   assert(errorsOf(t,{...declarative(),declarative:{base:'nobody.unknown'}}).some(e=>/unknown family/.test(e)));
+  // A base is a family's own name: an inherited one is unknown, with or without overrides and ambient layers.
+  for(const d of [{},{overrides:{'palette.hue':1}},{unlocks:['halo']}])
+    assert(errorsOf(t,{...declarative(),declarative:{base:'constructor',...d}}).some(e=>/unknown family "constructor"/.test(e)),JSON.stringify(d));
 });
 test('Code packs: one self-contained module with the right export; data packs contain no code',t=>{
   assert.deepEqual(errorsOf(t,world(),{'world.js':WORLD_JS}),[]);
