@@ -3,7 +3,7 @@
 // plus intents, priming after a seek, recipes, label modes and picking. One host per canvas; switching worlds disposes
 // every GPU resource. Visual packs run in this same host inside the isolated pack frame (frame.js): `families` brings a
 // pack's world module (World API, see sdk.js), `extension` a shader pack's background, post passes and effects.
-import {THREE,BACKGROUND_VS,createPipeline,createCameraRig,createOverlay,clamp,hash,rng} from './core.js';
+import {THREE,BACKGROUND_VS,createPipeline,createCameraRig,createOverlay,hash,rng} from './core.js';
 import {createModel} from './model.js';
 import {createDirector} from './director.js';
 import {createAgents} from './agents.js';
@@ -170,7 +170,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   renderer.autoClear=false;renderer.setClearColor(0x000000,1);renderer.info.autoReset=false;
   const pipeline=createPipeline(renderer,{samples:4});
   const overlay=createOverlay();
-  let speedK=speed,mode=labels,mood={section:'home',energy:0,tempo:92},beatPhase=0,size=[16,9],pixelRatio=1;
+  let speedK=speed,mode=labels,mood={section:'home',energy:0,tempo:92},size=[16,9],pixelRatio=1;
   // Live playback adapts when frames are slow: first no MSAA, then 75 %, then 55 % resolution. Films keep the fixed
   // quality they were given (never adaptive). `startLevel`: where Auto starts (the level the previous world in this
   // window settled at), never above the chosen floor.
