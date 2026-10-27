@@ -1,5 +1,25 @@
 # Qualification — what was verified, where, and what was not
 
+> **Historical engineering evidence**, recorded milestone by milestone and kept as measured then: later milestones
+> add to it, they never rewrite it. Running the checks: [ARCHITECTURE.md](../ARCHITECTURE.md#qualification). What is
+> verified and what is not today: [OPERATIONS.md](OPERATIONS.md). Each pull request's evidence, docs and changelog
+> entry: [the documentation index](README.md#history).
+
+| Section | Pull request |
+|---|---|
+| [VS Code extension host](#vs-code-extension-host-real), [Receiver and interpretation](#receiver-and-interpretation-real-code), [Browser](#browser-chromium-headless-software-rendering), [Audio](#audio), [30-minute real-code session](#30-minute-real-code-session), [Soak](#soak) | #1 baseline audit and qualification |
+| [The Construct](#the-construct-candidate-visual-world) | #2 the Construct |
+| [Living worlds](#living-worlds-phase-3-artistic-candidates) | #3 living worlds |
+| [Privacy repair](#privacy-repair-phase-4), [Long histories](#long-histories-phase-4), [Visual packs](#visual-packs-phase-4-artistic-candidates) | #4 Visual Pack SDK |
+| [Product hardening](#product-hardening-recording-bounded-pack-runtime-platforms) | #5 product hardening |
+| [Alpha candidate](#alpha-candidate-memory-synchronisation-recording-sizes) | #6 alpha candidate |
+| [Creative Control Center](#creative-control-center-phase-6) | #7 Creative Control Center |
+| none: the flagship worlds were reviewed through their films, referred to under Digital life | #8 flagship worlds |
+| [Auto quality](#auto-quality-desktop-milestone) (its rule revised in #10) | #9 desktop experience |
+| [Digital life](#digital-life-phase-10) | #10 digital life |
+| [Creative mastering and the Artist Studio](#creative-mastering-and-the-artist-studio-phase-11) | #11 Artist Studio |
+| [Not verified](#not-verified) (cumulative, from #1 on) | all |
+
 All results below come from runs in this repository's `qualification/` harnesses (raw JSON in
 `qualification/results/`). Environment: Ubuntu 24.04 on WSL2 (Linux 6.6), Node 22.22, 24 cores, Xvfb; VS Code 1.143.1
 (downloaded test instance with isolated profile); Chromium from Playwright 1.62 (headless, software rendering).
@@ -10,38 +30,8 @@ restart resume. The browser job passed every Stage check and the 60-second audio
 
 ## How to run
 
-```bash
-cd qualification && npm ci
-npx playwright-core install chromium                  # once, if not cached
-xvfb-run -a node vscode/run.js                        # real VS Code extension host (+ CR_QUAL_AGENT=claude for a real agent)
-CR_QUAL_EXTENSION_REF=<git ref> xvfb-run -a node vscode/run.js   # qualify the extension as of any commit
-node browser/stage.qual.js [path-to-a-real-repo]      # Stage in Chromium
-node browser/audio.qual.js                            # offline renders, loudness metrics, WAV excerpts
-node browser/soak.qual.js                             # long live playback (CR_SOAK_MINUTES)
-node session/history-session.js <repo> /tmp/cr-session 120 30   # build a 30-minute real-code session
-node session/session.qual.js /tmp/cr-session <projectId>          # render and analyse it
-node visual/datasets.js results/datasets --excalidraw <repo> --self <repo> --long 300   # datasets for the visual checks
-node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance]
-node visual/history.qual.js                           # long histories, synthetic, up to 1,000,000 intents
-node visual/long.qual.js                              # long-history replay in the player (lumen-long fixture)
-node visual/unchanged.qual.js [--baseline <ref>]      # built-in worlds render the same frames as a baseline commit
-node visual/pack.qual.js <pack dir> [--gpu amd]       # visual pack compatibility (= node scripts/pack.js test)
-node visual/catalogue.qual.js                         # every family at the extremes of its parameter catalogue
-node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
-node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
-node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart
-node visual/sync.qual.js [--gpu amd]                  # recording synchronisation per condition (worlds, sizes, load, switching, live)
-node visual/memory.qual.js [--gpu amd] [--gc-each] [--experiments ...]   # renderer memory forensics (lean driver: no DevTools Network)
-node visual/memory-detached.qual.js [--gpu amd]       # control: the same session with and without a DevTools Network client
-node visual/memory-recorder.qual.js / memory-lifecycle.qual.js   # browser behaviour isolated on a blank page (recorder; workers, WebGL)
-xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
-node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
-node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
-node ui/serve.js [--port 4180] [--empty]              # an isolated installation to review the Control Center (prints a pairing link)
-node ui/run-all.js [--jobs 3] [--only home,visual] [--quick]   # the interface: every workspace's suite + the acceptance suite
-node ui/acceptance.qual.js [--quick]                  # cross-view acceptance (first run, pairing, projects, OBS, recording, layouts)
-node ui/screenshots.js [--gpu amd]                    # review screenshots into docs/control-center/
-```
+The commands for every harness, and what CI runs today, are in [ARCHITECTURE.md](../ARCHITECTURE.md#qualification) (moved
+there at the final consolidation, with the harnesses added since). As run during these milestones:
 
 **Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):
 modules and the receiver's HTTP API in-process. *Platform smoke* (`platform/smoke.js`, every push, both platforms): the
@@ -986,6 +976,10 @@ and the Artist Studio on Windows, macOS or OBS; live sessions longer than a few 
 rates on other GPUs; the generation handover with ecology 2 (expected continuous, not measured).
 
 ## Not verified
+
+> Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI
+> ([Product hardening › Platforms](#platforms)), and the owner approved the PR #8 films of the flagship worlds
+> ([Digital life › Nothing else changed](#nothing-else-changed)). The current list: [OPERATIONS.md](OPERATIONS.md#current-limitations).
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A
   Windows browser or OBS on Windows reaching a receiver in WSL2.

@@ -66,7 +66,7 @@ function scaffold(dir,kind,id,name){
       const r=packs.install(target,DATA);
       console.log(`Installed ${r.id} ${r.version} (${r.kind}) into ${path.join(packs.packsDir(DATA),r.id)}`);
       for(const w of r.warnings)console.log(`  warning: ${w}`);
-      if(r.executable&&!r.trusted)console.log(`This pack contains code. It will not run until you approve it: node scripts/pack.js approve ${r.id} (or in the player's World DNA panel).`);
+      if(r.executable&&!r.trusted)console.log(`This pack contains code. It will not run until you approve it: node scripts/pack.js approve ${r.id} (or Review in the Control Center's Visual Packs).`);
       return;}
     case 'list':{
       const list=packs.createRegistry(DATA).list();

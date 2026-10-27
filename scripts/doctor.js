@@ -40,7 +40,7 @@ function wsl(){try{return /microsoft/i.test(fs.readFileSync('/proc/version','utf
     try{const list=(await (await fetch(`http://127.0.0.1:${port}/api/packs`)).json()).packs||[];
       for(const k of list){const state=!k.ok?'problem':k.executable&&!k.trusted?'note':'ok';
         report(state,'Visual pack',`${k.id} ${k.version} (${k.kind}): ${!k.ok?`problem: ${(k.problems||[]).join('; ')}`:k.executable?(k.trusted?'approved':'installed, not approved'):'ready'}`,
-          !k.ok?`Reinstall it: node scripts/pack.js install <its folder>`:k.executable&&!k.trusted?`Review and approve it: node scripts/pack.js approve ${k.id}, or REVIEW in the player's World DNA panel.`:'');}}catch{}
+          !k.ok?`Reinstall it: node scripts/pack.js install <its folder>`:k.executable&&!k.trusted?`Review and approve it: node scripts/pack.js approve ${k.id}, or Review in the Control Center's Visual Packs.`:'');}}catch{}
   }
   if(wsl()){
     let mode='NAT (default)';try{const ip=require('node:child_process').execFileSync('ip',['-4','-o','addr','show','eth0'],{encoding:'utf8'});if(!/inet 172\.(1[6-9]|2\d|3[01])\./.test(ip))mode='probably mirrored';}catch{}

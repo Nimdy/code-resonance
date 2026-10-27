@@ -5,7 +5,7 @@ import {h,modal,button} from './dom.js';
 import {getText} from './store.js';
 export const DOCS={'packs/README.md':'Visual Pack SDK','packs/manifest.md':'Pack manifest','packs/world-api.md':'World API','packs/determinism.md':'Determinism',
   'packs/performance.md':'Performance budgets','packs/security.md':'Pack security','packs/migration.md':'SDK migration','packs/catalogue.md':'Parameter catalogue',
-  'FIRST-RUN.md':'First run','OBS.md':'OBS','RECORDING.md':'Recording','WSL.md':'WSL','ALPHA.md':'Alpha notes','SECURITY.md':'Security and privacy','ARTIST-STUDIO.md':'Artist Studio','MUSIC.md':'Music'};
+  'FIRST-RUN.md':'Getting started','OBS.md':'OBS','RECORDING.md':'Recording','WSL.md':'WSL','OPERATIONS.md':'Operations','SECURITY.md':'Security and privacy','ARTIST-STUDIO.md':'Artist Studio','MUSIC.md':'Music'};
 function inline(textValue,onDoc){
   const out=[];const re=/(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*|_[^_\s][^_]*_)|(\[([^\]]+)\]\(([^)\s]+)\))/g;let last=0,m;
   while((m=re.exec(textValue))){

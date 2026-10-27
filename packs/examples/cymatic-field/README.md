@@ -28,4 +28,4 @@ Install and approve (it contains code, so it runs in Code Resonance's isolated p
     node scripts/pack.js install packs/examples/cymatic-field
     node scripts/pack.js approve halcyon.cymatic-field
 
-Then choose **CYMATIC FIELD · PACK** in the player's World DNA panel. MIT licensed.
+Then choose **Cymatic Field** among the living worlds in the Visual Studio. MIT licensed.

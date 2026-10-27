@@ -2,10 +2,12 @@
 
 ## Using it
 
-**● RECORD** in the player records what the stage shows (the world and its labels, for every world and every kind of
-visual pack) together with the music, to a WebM file (VP9 video, Opus sound) that downloads when you stop.
+**Record** (in the top bar, on the Stage, or in **Record & Broadcast**) records what the stage shows (the world and its
+labels, for every world and every kind of visual pack) together with the music, to a WebM file (VP9 video, Opus sound)
+that downloads when you stop. One window records at a time.
 
-**Recording size** (next to the button): *720p* (1280×720, the default), *1080p* (1920×1080) or *Stage size*. At 720p
+**Recording profile** (Record & Broadcast; the global default in Settings): *720p* (1280×720, the default), *1080p*
+(1920×1080) or *Stage size*. At 720p
 or 1080p the world renders at exactly that size with a 16:9 camera (the living worlds, visual packs and the
 Construct), and the stage shows the same picture letterboxed while you record: what you see is what is recorded,
 nothing is stretched, cut or bordered in the file. The 2D worlds (Nexus, Monolith, Nebula) keep the stage's shape and
@@ -14,9 +16,10 @@ are fitted into the frame with black bars. Labels scale with the output, so 720p
 1080p, in proportion for the stage size. Adaptive quality may lower the world's internal resolution while frames are
 slow; the file keeps the chosen dimensions.
 
-720p is the default because it holds 30 frames per second on modest GPUs: on the AMD integrated GPU used for testing,
-every world records at 30 fps at 720p, while at 1080p the built-in worlds (rendered on the player's main thread) draw
-about 31 frames a second and the file keeps 26-28 (visual packs, rendered in their worker, still record at 30). If a
+720p is the default because it holds 30 frames per second on modest GPUs: on the AMD integrated GPU used for testing
+(measured with the worlds of PR #6, before the flagship worlds), every world recorded at 30 fps at 720p, while at
+1080p the built-in worlds (rendered on the player's main thread) drew about 31 frames a second and the file kept 26-28
+(visual packs, rendered in their worker, still recorded at 30). If a
 recording cannot keep up (fewer than 28 frames drawn per second for ten seconds), the player says so once and suggests
 720p or a lower Quality. The browser keeps the recording in memory until you stop (see *Limits*); for sessions longer
 than about half an hour, record with OBS.

@@ -1,5 +1,10 @@
 # Security review: visual pack runtime and recording (product hardening)
 
+> **Historical:** the security review of PR #5 (product hardening), as written then. Since 0.5.0 (PR #7) every
+> administrative request also needs a control capability from a paired browser, not only the page's origin (the
+> "Receiver API from the frame" row). The current model: [SECURITY.md](../../SECURITY.md) and
+> [packs/security.md](../packs/security.md).
+
 Scope: what this milestone changed or depends on: the pack frame and worker, the content policy, the messages between
 player, frame and worker, digests and approvals, revocation and modification, shaders, navigation, and live recordings.
 Method: reading the code paths below, then attacking them with hostile fixtures in a real browser
