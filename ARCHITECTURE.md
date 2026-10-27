@@ -20,11 +20,15 @@ VS Code extension (workspace host)        Agent hooks (Claude Code) / event CLI
                   │
             GET /api/project · /api/timeline   (cached in memory, ETag)
                   │
-               player ── one performance clock (live = now − ~10.5 s, replay = playhead)
+               engine (public/app.js) ── one performance clock (live = now − ~10.5 s, replay = playhead)
                  ├── score.js   composition (pure, deterministic)
                  ├── music.js   Web Audio performer, offline renderer
                  └── app.js     worlds, scheduling, replay, recording, export
 ```
+
+The engine renders no controls: the Control Center and the Performance Stage (`public/ui/`) drive it through
+`window.ResonancePlayer`, and configuration lives in the receiver (settings, project preferences, presets, recipes),
+announced to every open view by `GET /api/changes`. See [docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md).
 
 ## Data authority
 

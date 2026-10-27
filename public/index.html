@@ -4,129 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Code Resonance — Software in motion</title>
+  <title>Code Resonance</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/score.js" defer></script>
   <script src="/music.js" defer></script>
   <script src="/recording.js" defer></script>
   <script src="/app.js" defer></script>
+  <script type="module" src="/ui/main.js"></script>
 </head>
 <body>
-  <div class="shell">
-    <header class="toolbar">
-      <div class="brand"><div class="glyph"><span></span><span></span><span></span></div>
-        <div><div class="brand-title">CODE<span class="slash">/</span>RESONANCE</div><div class="brand-sub">SOFTWARE IN MOTION <span class="dot">·</span> GENERATIVE PERFORMANCE</div></div>
-      </div>
-      <div class="toolbar-center"><span class="status-dot" id="statusDot"></span><span id="connection">AWAITING SESSION</span><span class="mini-divider"></span><span id="renderDelay">10s SEMANTIC WINDOW</span></div>
-      <div class="toolbar-actions">
-        <label for="projectSelect" class="visually-hidden">Select project</label><select id="projectSelect"><option value="">No project</option></select>
-        <button class="action" id="overlayBtn" title="Open the clean OBS browser-source view">OBS VIEW ↗</button>
-        <button class="action" id="exportBtn" title="Export derived event history">DATA ↗</button>
-        <button class="action" id="audioBtn" title="Render up to 10 minutes of the recorded performance to a WAV file">AUDIO ↓</button>
-        <label for="recordSize" class="visually-hidden">Recording size</label><select id="recordSize" title="Recording size: the encoded video's dimensions"><option value="720p">720p · 1280×720</option><option value="1080p">1080p · 1920×1080</option><option value="stage">Stage size</option></select>
-        <button class="action record" id="recordBtn" title="Record the stage and the music to WebM">● RECORD</button>
-        <button class="action primary" id="soundBtn" aria-pressed="false">◌ ENABLE SOUND</button>
-      </div>
-    </header>
-    <main class="layout">
-      <aside class="panel left">
-        <div class="section-label"><span class="eyebrow">01 / COMPOSITION</span><span class="rule"></span></div>
-        <div class="side-title">A project<br>becomes a <em>piece.</em></div>
-        <div class="identity">
-          <span class="eyebrow">PROJECT IDENTITY</span>
-          <strong id="projectName">NO PROJECT</strong>
-          <span id="seedLabel">Waiting for source</span>
-        </div>
-        <div class="chapter-card"><span class="eyebrow">CURRENT MOVEMENT</span><div class="chapter"><span id="chapter">01</span><span class="chapter-name" id="chapterName">ORIGIN</span></div><div class="chapter-rule"><div id="chapterFill"></div></div></div>
-        <div class="section-label studio-label"><span class="eyebrow">WORLD / VISUAL LANGUAGE</span><span class="rule"></span></div>
-        <div class="worlds" role="group" aria-label="Visual world">
-          <button class="world active" data-world="living" aria-pressed="true"><span>✺</span>LIVING</button>
-          <button class="world" data-world="construct" aria-pressed="false"><span>⬢</span>CONSTRUCT</button>
-          <button class="world" data-world="nexus" aria-pressed="false"><span>◉</span>NEXUS</button>
-          <button class="world" data-world="city" aria-pressed="false"><span>▥</span>MONOLITH</button>
-          <button class="world" data-world="nebula" aria-pressed="false"><span>✧</span>NEBULA</button>
-        </div>
-        <div class="section-label studio-label"><span class="eyebrow">WORLD DNA / IDENTITY</span><span class="rule"></span></div>
-        <div class="dna">
-          <div class="dna-family"><strong id="dnaFamily">—</strong><span id="dnaSource"></span></div>
-          <label class="visually-hidden" for="dnaFamilySelect">World family</label>
-          <select id="dnaFamilySelect" class="sound-select"><option value="">AUTOMATIC · FROM THE CODE</option><option value="stellar-forge">STELLAR FORGE</option><option value="fractal-biosphere">FRACTAL BIOSPHERE</option><option value="machine-cathedral">MACHINE CATHEDRAL</option></select>
-          <label class="visually-hidden" for="dnaPackSelect">Look</label>
-          <select id="dnaPackSelect" class="sound-select" title="Visual packs installed with scripts/pack.js"><option value="">NO LOOK PACK</option></select>
-          <div id="dnaNotice" class="dna-notice hidden" role="status"></div>
-          <div id="dnaPacks" class="dna-packs"></div>
-          <div class="dna-actions"><button class="action" id="dnaRegenerate" title="A new seeded draw of the identity">REGENERATE</button><button class="action" id="dnaLock" aria-pressed="false" title="Keep this identity permanently">LOCK</button></div>
-          <label class="control-line" for="intensitySlider">SPECTACLE <span id="intensityReadout">100%</span></label>
-          <input type="range" id="intensitySlider" min="0" max="200" value="100" aria-label="Effect intensity">
-          <label class="control-line" for="labelsSelect">INFORMATION</label>
-          <select id="labelsSelect" class="sound-select"><option value="cinematic">CINEMATIC</option><option value="explorer">EXPLORER · CLICK TO INSPECT</option><option value="stream">STREAM · LOWER THIRD</option><option value="off">OFF</option></select>
-          <label class="control-line" for="qualitySelect">QUALITY</label>
-          <select id="qualitySelect" class="sound-select" title="Lower it if frames are slow; AUTO lowers it only while needed"><option value="auto">AUTO · ADAPTS WHEN SLOW</option><option value="0">HIGH</option><option value="1">MEDIUM · NO MSAA</option><option value="2">LOW · 75 % RESOLUTION</option><option value="3">LOWEST · 55 % RESOLUTION</option></select>
-          <label class="control-line" for="dnaTitle">PUBLIC TITLE</label>
-          <input id="dnaTitle" class="dna-title" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Generic (the folder name is never shown)" title="Shown on the Stage, OBS and films only when you set it here">
-        </div>
-        <div class="section-label studio-label"><span class="eyebrow">SCORE / SYNTHESIS</span><span class="rule"></span></div>
-        <div class="sound-controls">
-          <label class="control-line" for="musicStyle">SOUND PALETTE <span id="styleReadout">AMBIENT</span></label>
-          <select id="musicStyle" class="sound-select"><option value="ambient">AMBIENT / DRIFT</option><option value="pulse">PULSE / SYNTH</option><option value="cinematic">CINEMATIC / SCORE</option><option value="chip">CHIP / DIGITAL</option></select>
-          <label class="control-line" for="volumeSlider">VOLUME <span id="volumeReadout">55%</span></label>
-          <input type="range" id="volumeSlider" min="0" max="100" value="55" aria-label="Master volume">
-          <label class="control-line" for="tempoSlider">TEMPO <span id="tempoReadout">92 BPM</span></label>
-          <input type="range" id="tempoSlider" min="58" max="160" value="92" aria-label="Base beats per minute">
-          <label class="control-line" for="textureSlider">TEXTURE <span id="textureReadout">58%</span></label>
-          <input type="range" id="textureSlider" min="0" max="100" value="58" aria-label="Arrangement texture">
-        </div>
-        <div class="metrics">
-          <div class="metric"><div class="metric-meta"><span>ACTIVITY</span><b id="energyNumber">00</b></div><div class="meter"><div id="energyBar"></div></div></div>
-          <div class="metric"><div class="metric-meta"><span>TENSION</span><b id="tensionNumber">00</b></div><div class="meter"><div id="tensionBar"></div></div></div>
-          <div class="metric"><div class="metric-meta"><span>COMPLEXITY</span><b id="complexityNumber">00</b></div><div class="meter"><div id="complexityBar"></div></div></div>
-        </div>
-        <div class="stats">
-          <div><b id="files">—</b><span>MODULES</span></div><div><b id="symbols">—</b><span>SYMBOLS</span></div><div><b id="events">—</b><span>EVENTS</span></div><div><b id="tests">—</b><span>TESTS PASS</span></div>
-        </div>
-        <p class="fineprint">Only hashed graph identities are displayed. Source code, prompts, and command text never enter this Stage.</p>
-      </aside>
-      <section class="stage-section">
-        <div class="stage-top"><span class="eyebrow">02 / THE LIVING STRUCTURE</span><div><span id="stageMode">NEXUS / GENERATIVE STAGE</span><span class="live-indicator" id="liveIndicator">LIVE</span></div></div>
-        <div class="canvas-wrap"><canvas id="stage" aria-label="Animated representation of software architecture and musical energy"></canvas>
-          <canvas id="construct" class="hidden" aria-label="The Construct: the software as an illuminated architectural model being built"></canvas>
-          <canvas id="world" class="hidden" aria-label="The project's living world, generated from its code and its development"></canvas>
-          <canvas id="worldOverlay" class="hidden" aria-hidden="true"></canvas>
-          <div class="caption" id="caption" aria-live="polite"></div>
-          <div class="stage-overlay stage-empty" id="stageEmpty"><div class="empty-orbit"></div><span class="eyebrow">NO PROJECT ACTIVITY YET</span><h1>Give your code<br>a <i>pulse.</i></h1><p>Start the receiver, then run <strong>Code Resonance: Start Code Performance</strong> in VS Code. You can also run the included demo.</p></div>
-          <div class="stage-lower-left"><span class="stage-subtle">ENGINE</span><strong>SOURCE → STRUCTURE → SOUND</strong></div>
-          <div class="stage-watermark">CODE / RESONANCE <span id="barCounter">BAR 000</span></div>
-          <div class="stage-lower-right"><span class="stage-subtle">INTERPRETATION</span><strong id="confidence">OBSERVED + INFERRED</strong></div>
-        </div>
-        <div class="transport">
-          <div class="transport-toggle"><button id="liveBtn" class="selected" aria-pressed="true">● LIVE</button><button id="replayBtn" aria-pressed="false">↺ REPLAY</button></div>
-          <button id="playBtn" class="transport-play" disabled title="Play selected timeline">▶</button>
-          <div class="scrub-area"><div class="scrub-label"><span id="scrubStart">SESSION BEGINNING</span><span id="scrubEnd">NOW</span></div><input type="range" id="scrub" min="0" max="1000" value="1000" disabled aria-label="Replay time"></div>
-          <label class="visually-hidden" for="speedSelect">Replay speed</label><select id="speedSelect" title="Replay speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="16">16×</option></select>
-        </div>
-      </section>
-      <aside class="panel right"><div class="section-label"><span class="eyebrow">03 / SCORE EVENTS</span><span class="rule"></span></div>
-        <div class="feed-heading"><h2>What shaped<br>the sound</h2><span id="eventCount">0</span></div>
-        <div id="feed" class="feed"><div class="feed-empty">Meaningful events will appear here as they are classified.</div></div>
-        <div class="legend"><span><i class="legend-dot blue"></i> STRUCTURE</span><span><i class="legend-dot purple"></i> AI AGENTS</span><span><i class="legend-dot orange"></i> VALIDATION</span><span><i class="legend-dot green"></i> SYSTEM</span></div>
-        <div class="right-footer"><span>INTERPRETATION IS NOT PROOF OF CORRECTNESS.</span><span>LOCAL RECEIVER · NO CLOUD</span></div>
-      </aside>
-    </main>
-  </div>
-  <div id="packReview" class="pack-review hidden" role="dialog" aria-modal="true" aria-labelledby="packReviewTitle">
-    <div class="pack-review-card">
-      <span class="eyebrow">VISUAL PACK WITH CODE</span>
-      <h2 id="packReviewTitle"></h2>
-      <p id="packReviewMeta" class="pack-review-meta"></p>
-      <p id="packReviewDescription"></p>
-      <ul id="packReviewFiles" class="pack-review-files"></ul>
-      <p class="pack-warning">This pack runs in a worker inside an isolated frame: no network, no access to the receiver, your files, your recordings
-        or this player. It receives only the privacy-safe performance view (salted ids, counts, timings). Browsers cannot fully sandbox GPU shaders: a
-        hostile or buggy shader can freeze or crash this tab or the graphics driver, and GPU timing can leak coarse information. A pack that hangs is
-        stopped after 6 s but can keep a processor core busy a few seconds longer. Browser bugs remain possible. Allow only packs from authors you
-        trust; any change to any of its files needs a new approval.</p>
-      <div class="pack-review-actions"><button class="action" id="packReviewCancel">CANCEL</button><button class="action primary" id="packReviewAllow">ALLOW THIS CODE</button></div>
+  <!-- The interface (public/ui/main.js) builds the Control Center and the Stage around the stage layer below. -->
+  <div id="app" class="app" hidden></div>
+  <!-- The stage: one engine's canvases, positioned over whichever view shows it (Stage, Visual Studio, Home …). -->
+  <div id="stageHost" class="stage-host" aria-label="Performance stage">
+    <div class="canvas-wrap">
+      <canvas id="stage" aria-label="Animated representation of software architecture and musical energy"></canvas>
+      <canvas id="construct" class="hidden" aria-label="The Construct: the software as an illuminated architectural model being built"></canvas>
+      <canvas id="world" class="hidden" aria-label="The project's living world, generated from its code and its development"></canvas>
+      <canvas id="worldOverlay" class="hidden" aria-hidden="true"></canvas>
+      <div class="caption" id="caption" aria-live="polite"></div>
+      <div class="stage-empty" id="stageEmpty"><div class="empty-orbit"></div><span>Waiting for a project</span></div>
     </div>
   </div>
+  <!-- Controls drawn over the stage by the view that shows it (transport, preview badge …); never part of recordings. -->
+  <div id="stageChrome" class="stage-chrome parked"></div>
+  <noscript>Code Resonance needs JavaScript.</noscript>
 </body>
 </html>

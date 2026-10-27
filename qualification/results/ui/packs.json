@@ -1,0 +1,283 @@
+{
+ "suite": "ui/workspaces/packs",
+ "at": "2026-10-25T16:15:15.336Z",
+ "passed": 52,
+ "failed": 0,
+ "checks": [
+  {
+   "name": "empty installation: the library says so and offers Import and the SDK guide",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "creator corner lists the three starter templates with their commands (from GET /api/packs/templates)",
+   "pass": true,
+   "detail": "npm run pack -- new <dir> --kind declarative --id <author.name> | npm run pack -- new <dir> --kind shader --id <author.name> | npm run pack -- new <dir> --kind world --id <author.name>"
+  },
+  {
+   "name": "creator corner shows the validate and test commands",
+   "pass": true,
+   "detail": "npm run pack -- validate <dir> | npm run pack -- test <dir> --quick"
+  },
+  {
+   "name": "an SDK guide opens in the documentation viewer",
+   "pass": true,
+   "detail": "World API: World API (SDK 1.1)\n\nA world pack's entry module (world.entry in the manifest) i"
+  },
+  {
+   "name": "SDK guides: the overview leads, the six references fill whole rows (no orphan)",
+   "pass": true,
+   "detail": "{\"lead\":\"Visual Pack SDK\",\"rows\":[3,3]}"
+  },
+  {
+   "name": "reduced motion (app setting): the import status does not pulse",
+   "pass": true,
+   "detail": "{\"full\":\"pulse-dot\",\"reduce\":\"none\"}"
+  },
+  {
+   "name": "keyboard: Enter on Import opens the dialog with focus inside, Escape closes it and focus returns",
+   "pass": true,
+   "detail": "focus in dialog: true; focus after: pkImportBtn"
+  },
+  {
+   "name": "zip import: the report shows the manifest, kind, files and digest before anything is installed",
+   "pass": true,
+   "detail": "Ember Observatory northlight.ember-observatory · v1.0.0 Declarative · data only No errors Author Northlight Works (fictional) Kind Declarative · data only SDK ^1.0 License CC0-1.0 A Stellar Forge seen"
+  },
+  {
+   "name": "zip import: nothing is installed while the report is shown",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Install: the pack is installed (GET /api/packs) as data only, usable at once",
+   "pass": true,
+   "detail": "{\"ok\":true,\"executable\":false,\"trusted\":true}"
+  },
+  {
+   "name": "library: listed as \"Declarative · data only\" and \"Data only — no approval needed\"",
+   "pass": true,
+   "detail": "Ember Observatory v1.0.0 DECLARATIVE · DATA ONLY by Northlight Works (fictional) A Stellar Forge seen through an old observatory lens: a binary core, embers instead of plasma, slow orbits, warm film grade. Data only. Data only — no approval needed Not used yet"
+  },
+  {
+   "name": "second window: the installed pack appears without a reload (change feed)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "re-import: \"Replaces the installed version 1.0.0\", identical files",
+   "pass": true,
+   "detail": "Replaces the installed version 1.0.0\nThe files are identical to the installed ones."
+  },
+  {
+   "name": "Discard: the waiting import is removed on the receiver and the dialog returns to the choice",
+   "pass": true,
+   "detail": "1 waiting before"
+  },
+  {
+   "name": "inspector: a README web link shows the address it leads to",
+   "pass": true,
+   "detail": "{\"text\":\"the observatory notes\",\"title\":\"https://northlight.example/notes\",\"host\":\" (northlight.example)\"}"
+  },
+  {
+   "name": "inspector: README rendered as text, files table and the full digest",
+   "pass": true,
+   "detail": "{\"readme\":\"Ember Observatory\\n\\nA declarative visual pack (Visual Pack SD\",\"files\":2,\"digest\":\"3fb7f4cc9a80bd4cd85b698a550a10f3b58808a6ff064f50b605b55703fc3122\",\"hash\":\"#/packs/northlight.ember-observatory\",\"scripts\":0}"
+  },
+  {
+   "name": "after a reload: still installed, and the address keeps the chosen pack selected",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Use it (look): opens Visual Studio on this look",
+   "pass": true,
+   "detail": "#/visual/look/northlight.ember-observatory"
+  },
+  {
+   "name": "Use it (look): Visual Studio starts a preview of the look",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "folder import: the report says it contains code, what it can reach and what the browser cannot sandbox",
+   "pass": true,
+   "detail": "files=18"
+  },
+  {
+   "name": "folder import: the report says installing does not approve it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Install (code): installed but NOT approved, and the dialog says so with a Review button",
+   "pass": true,
+   "detail": "{\"ok\":true,\"trusted\":false}"
+  },
+  {
+   "name": "library: the code pack is listed \"World · runs code\" and \"Needs approval\"",
+   "pass": true,
+   "detail": "Cymatic Field v1.0.0 WORLD · RUNS CODE by Halcyon Visuals (fictional) Every subsystem is a resonant plate. Sand gathers on its nodal lines as the code grows, failures make it dissonant, verified milestones leave golden halos, agents excite ripples, the beat drives the vibration. Needs approval Not used yet"
+  },
+  {
+   "name": "rail badge: one pack awaits approval",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "review: identity, author, the exact files with sizes and hashes, and the digest",
+   "pass": true,
+   "detail": "files=18/18"
+  },
+  {
+   "name": "review: access, the GPU sandbox warning, and that any change needs a new approval",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "review: the safe answer (Cancel) has the focus, not Allow",
+   "pass": true,
+   "detail": "Cancel"
+  },
+  {
+   "name": "Allow this code: approved for this digest (GET /api/packs trusted)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "library: listed \"Approved\"; the rail badge is gone",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "the approved world pack runs as the project's family (isolated pack frame)",
+   "pass": true,
+   "detail": "project=36bf9b09 frames=1"
+  },
+  {
+   "name": "usage: GET /api/packs usedBy counts the project, and the library shows it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "inspector: \"On the stage now\" while it runs",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "keyboard: ArrowDown moves to the next pack in the library and shows it",
+   "pass": true,
+   "detail": "{\"focus\":\"northlight.ember-observatory\",\"hash\":\"#/packs/northlight.ember-observatory\"}"
+  },
+  {
+   "name": "900 px wide: no horizontal overflow, the inspector stacks below",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Revoke: the confirmation explains it stops at once and the identity continues without it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Revoke: approval withdrawn, the pack frame is gone, the stage keeps running (built-in world)",
+   "pass": true,
+   "detail": "{\"stats\":true,\"running\":true,\"remote\":false,\"stopped\":{\"id\":\"halcyon.cymatic-field\",\"name\":\"Cymatic Field\",\"reason\":\"its approval was revoked\"}}"
+  },
+  {
+   "name": "stopped pack: a callout with the reason and Retry (nothing restarts by itself)",
+   "pass": true,
+   "detail": "Cymatic Field stopped Its approval was revoked. The stage shows the identity without it; nothing restarts on its own. Retry"
+  },
+  {
+   "name": "Retry: the stop is cleared; an unapproved pack still does not run",
+   "pass": true,
+   "detail": "{\"stopped\":null,\"frames\":0,\"notice\":\"Cymatic Field contains code and is not approved: showing the identity without it.\"}"
+  },
+  {
+   "name": "approved again: it runs again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "modified file: listed with problems (GET /api/packs ok:false, trusted:false)",
+   "pass": true,
+   "detail": "253 ms; installed files differ from the installation record (modified after install)"
+  },
+  {
+   "name": "modified file: a running pack stops (no pack frame)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "modified file: it cannot be approved or used here, and the inspector says why",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "modified file: even a direct approval request leaves it unapproved and not running",
+   "pass": true,
+   "detail": "trust request refused: Pack halcyon.cymatic-field has problems and cannot be approved"
+  },
+  {
+   "name": "path traversal zip: refused with the reason, nothing shown for install",
+   "pass": true,
+   "detail": "The pack was refused because an entry is unsafe: \"../evil.js\": \".\" and \"..\" are not allowed in paths Nothing was installed."
+  },
+  {
+   "name": "a 13 MB archive is refused in the page before any upload",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "no quarantined import is left behind",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Remove: the confirmation says how many projects use it and that they keep their identity",
+   "pass": true,
+   "detail": "Remove Cymatic Field? 1 project uses it. It keeps its identity and shows it without the pack (the recipe still names it, so importing it again brings it back). Cancel Remove"
+  },
+  {
+   "name": "Remove: gone from GET /api/packs and from the library",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "second window: the removal reaches it through the change feed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "after removal the stage keeps running without the pack",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "no console or page errors in the Visual Packs workspace (window 1)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "no console or page errors (window 2)",
+   "pass": true,
+   "detail": ""
+  }
+ ],
+ "measurements": {
+  "modifiedNoticedMs": 253,
+  "expectedImportRefusalsLogged": 2,
+  "otherWorkspaceErrors": []
+ },
+ "screenshots": [
+  "qualification/results/ui/packs-empty-1440x900.png",
+  "qualification/results/ui/packs-import-report-1440x900.png",
+  "qualification/results/ui/packs-import-report-code-1440x900.png",
+  "qualification/results/ui/packs-review-1440x900.png",
+  "qualification/results/ui/packs-library-1440x900.png",
+  "qualification/results/ui/packs-library-1280x720.png",
+  "qualification/results/ui/packs-library-900x800.png",
+  "qualification/results/ui/packs-stopped-1440x900.png"
+ ]
+}

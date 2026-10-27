@@ -52,7 +52,7 @@ interface; read them for complete examples of instancing, shaders, labels and la
 - `activity` 0–1, `phase` `'idle' | 'active' | 'milestone'`.
 - `unlocks`: `[{name, level}]`, your ambient layers in manifest order, fading in after each verified milestone.
 - `agents`: presences `{id, number, voice, state, display, label, activity, fileId, home, since, arrived, alpha, busy}`.
-- `overrides`: the viewer's settings `{intensity, motion, atmosphere, labels}`; `quality`: adaptive level 0–3 (at 2
+- `overrides`: the viewer's settings `{intensity, motion, atmosphere}` (and `labels` only when the project chose its own information mode; the mode on screen is applied by the host, a pack does not need it); `quality`: adaptive level 0–3 (at 2
   and above, halve your particle counts).
 
 ## The `sdk` object

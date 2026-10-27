@@ -27,6 +27,8 @@ function wsl(){try{return /microsoft/i.test(fs.readFileSync('/proc/version','utf
     let mode='';if(process.platform!=='win32'){const m=fs.statSync(authFile).mode&0o777;mode=` (mode ${m.toString(8)})`;
       if(m&0o077)report('problem','Receiver token',`${authFile} is readable by other users${mode}`,`chmod 600 "${authFile}"`);}
     report('ok','Receiver token',`present${mode}; never share it, never put it in a URL`);
+    // The doctor's report may be pasted into an issue: it names the pairing command, never the key.
+    report(auth.pairing?'ok':'note','Browser pairing',auth.pairing?'available: npm run pair prints the private link that lets a browser change settings (once per browser)':'no pairing key yet (receivers before 0.5)',auth.pairing?'':'Restart the receiver (npm start): it creates the pairing key.');
   }
   let health=null;
   try{const r=await fetch(`http://127.0.0.1:${port}/health`,{signal:AbortSignal.timeout(2000)});health=r.ok?await r.json():null;}catch{}

@@ -4,7 +4,7 @@
 
 Code Resonance is a completely independent, local-first audiovisual instrument for software creation. An opt-in VS Code extension (and, optionally, an AI agent's hooks) reports observable activity. A loopback receiver records it and interprets it in the background. A performance player turns the project's real structure into an evolving visual world and composes a project-specific score that develops as the software does. No Signal/3 dependency, cloud service, model API, GPU, or Docker is required.
 
-> **Maturity: 0.4.0 alpha 1, a controlled-alpha candidate (not released): for real developers on real projects, with the limitations in [docs/ALPHA.md](docs/ALPHA.md); not stable, not production-ready.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, multi-hour soaks and real sessions with the final code, and human listening and viewing evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
+> **Maturity: 0.5.0 (the Creative Control Center), built on the 0.4.0 alpha 1 controlled-alpha candidate; not released: for real developers on real projects, with the limitations in [docs/ALPHA.md](docs/ALPHA.md); not stable, not production-ready.** Qualified in a real VS Code 1.143 extension host (Linux/WSL2 under Xvfb, and native Windows on GitHub's runners), in headless Chromium (Linux and Windows, software rendering, and an AMD integrated GPU through WSL2), in OBS Studio 32 on Linux (a disposable CI machine), and with a real Claude Code session; see [docs/QUALIFICATION.md](docs/QUALIFICATION.md) for exactly what was run and what was not. **Not yet verified:** macOS, Windows or macOS desktops with a GPU, OBS on Windows or macOS, multi-hour soaks and real sessions with the final code, and human listening and viewing evaluation. The audio is generative synthesis, not a produced master. A replay reconstructs only activity captured after recording began.
 
 ## What it does
 
@@ -24,13 +24,36 @@ Requires Node.js 20+ and VS Code 1.99+.
 npm start
 ```
 
-Open **http://127.0.0.1:4174/** and click **ENABLE SOUND** (browsers require a gesture before audio). To preview without VS Code, run `npm run demo` in a second terminal; it posts 20 fictional events. `npm run doctor` checks the setup (receiver, token, projects, packs, WSL) and says what to fix. Step by step, with troubleshooting: [docs/FIRST-RUN.md](docs/FIRST-RUN.md).
+The receiver prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, valid 15 minutes). Open it in the
+browser you use for Code Resonance: it opens the **Creative Control Center** and pairs that browser for good, so it may change settings, identities,
+packs and integrations (`npm run pair` prints a new link; VS Code's *Open Code Stage* opens it directly). Without
+pairing the application still shows everything, plays and records, but changes nothing. Then click **Enable sound**
+(browsers need a gesture before audio). With no project yet, Home shows a short setup guide; `npm run demo` posts a
+clearly labelled fictional session. `npm run doctor` checks the setup and says what to fix. Step by step:
+[docs/FIRST-RUN.md](docs/FIRST-RUN.md).
+
+### The application
+
+| Workspace | What you do there |
+|---|---|
+| **Home** | See at a glance whether the receiver runs, which project is active, whether capture is really active, what needs attention |
+| **Projects** | Browse projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
+| **Visual Studio** | Choose a world, preview it, customise its parameters (generated from the parameter catalogue and pack manifests), apply; presets |
+| **Music Studio** | Style, tempo, texture and volume per project or globally, previewed live; the project's musical identity; presets |
+| **Visual Packs** | Import a pack (zip or folder), review and approve code packs, revoke, remove, read their documentation |
+| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code hooks, other agents |
+| **Record & Broadcast** | Recording profiles and state, the OBS browser source, audio and data exports |
+| **Settings** | Global preferences, this device, storage and privacy, diagnostics |
+| **Performance Stage** | The world fills the screen; controls appear on movement and fade (press **F** from anywhere) |
+
+How state is shared between the Control Center, the Stage, other windows and the OBS view, and where each setting
+lives: [docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md).
 
 ### Install the VS Code extension
 
 ```bash
 npm run package:vsix                       # Node only; works on Windows, Linux and macOS
-code --install-extension code-resonance-0.4.0.vsix
+code --install-extension code-resonance-0.5.0.vsix
 ```
 
 Open a trusted workspace, click the **CR** status-bar item (or run **Code Resonance: Start Code Performance**) and accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes automatically when VS Code restarts until you stop it.
@@ -49,19 +72,28 @@ Other tools can report through `node scripts/event.js --root <project> --provide
 
 ### OBS browser source
 
-Use **OBS VIEW ↗** in the player, or point a Browser Source (1920×1080) at:
+**Record & Broadcast** builds the URL for the active project and explains the Browser Source settings. Existing
+bookmarks keep working:
 
 ```
-http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient
+http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>[&labels=stream][&world=living][&style=ambient]
 ```
 
-The overlay hides every control and shows only the stage. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio via OBS**). The Stage never shows source, file names, prompts or command text. OBS Studio 32 itself was qualified on Linux in a disposable CI machine (the overlay renders and moves, the music reaches OBS's mixer, OBS records both); on Windows or macOS, follow the acceptance procedure in [docs/OBS.md](docs/OBS.md).
+The overlay shows only the stage; without `world=`/`style=` it follows the project's saved choices and updates when
+they change. OBS's browser allows audio without a click, so `sound=1` starts the music there (enable **Control audio
+via OBS**). The OBS view never shows source, file names, prompts, command text or the project's folder name, and never
+asks for a control capability. OBS Studio 32 itself was qualified on Linux in a disposable CI machine; on Windows or
+macOS, follow the acceptance procedure in [docs/OBS.md](docs/OBS.md).
 
 ### Record and export
 
-- **● RECORD** records what the stage shows (the world and its labels, for every world including visual packs, which composite their frames in their isolated worker) with the music, to WebM in real time (Chromium-based browsers; elsewhere the player says recording is unavailable). Choose the size next to the button: **720p** (1280×720, the default) or **1080p** (1920×1080, for a GPU that keeps up), rendered at exactly that size and never stretched, or the stage's own size. The browser holds the recording in memory until you stop; for long sessions use OBS. The file contains the stage only: no source, paths, prompts, commands or credentials. Details: [docs/RECORDING.md](docs/RECORDING.md).
-- **AUDIO ↓** renders up to 10 minutes of the recorded performance offline to WAV, from the replay position (or the latest 10 minutes). The render is deterministic: the same performance and palette give the same audio.
-- **DATA ↗** exports the derived performance timeline as JSON (no source, paths or prompts).
+- **Record** (top bar, Stage, or Record & Broadcast; one recorder, one recording at a time across windows) records what
+  the stage shows (the world and its labels, for every world including visual packs) with the music, to WebM in real
+  time (Chromium-based browsers; elsewhere the application says recording is unavailable). Profiles: **720p** (the
+  default), **1080p** (for a GPU that keeps up) or the stage's own size. The browser saves the file to its downloads
+  folder; Code Resonance keeps no copy or library. Details: [docs/RECORDING.md](docs/RECORDING.md).
+- **Audio** renders up to 10 minutes of the recorded performance offline to WAV with the current sound settings.
+- **Performance data** exports the derived timeline as JSON (no source, paths or prompts).
 
 ### Make your own visuals (Visual Pack SDK)
 
@@ -74,8 +106,10 @@ Start with [docs/packs/README.md](docs/packs/README.md) (SDK 1.1; [what changed 
 ```bash
 node scripts/pack.js new my-world --kind world --id yourname.my-world
 node scripts/pack.js test my-world        # real browser, real recording
-node scripts/pack.js install my-world && node scripts/pack.js approve yourname.my-world
 ```
+
+Then import the folder in **Visual Packs** (or `node scripts/pack.js install my-world` and `approve`): code packs are
+installed unapproved and run only after you review their files and digest and allow them.
 
 `packs/examples/` holds the reference packs: Cymatic Field (a fourth world family), Blueprint Cathedral (shader) and
 Ember Observatory (declarative).
@@ -94,7 +128,7 @@ Agent hooks / CLI ──┘   journal    windows,    └── replay, WebM, WAV
 extension/   capture, durable outbox, shared path and command rules
 receiver/    loopback HTTP API, journal + content blobs, cached views
 engine/      AST analysis, interpretation (reducer), windowing worker
-public/      player: score (composition), music (synthesis), app (worlds, clock)
+public/      engine: score (composition), music (synthesis), app (worlds, clock); ui/ the Control Center and Stage
 sdk/         performance-frame contract, project identity shared with hooks
 scripts/     VSIX packager, demo, generic event CLI, Claude Code hooks, visual pack CLI (pack.js)
 packs/       visual pack schema, reference packs, starter templates
@@ -113,13 +147,17 @@ Data lives under `~/.code-resonance/` on the machine running the receiver (`RESO
 | `GET /api/export?id=` | Streamed derived export |
 | `POST /v1/events` | Authenticated ingestion (valid events kept, rejections listed) |
 | `POST /v1/flush?id=` / `POST /v1/rebuild?id=` | Authenticated: close the open window / re-interpret from the journal |
-| `GET /api/recipe?id=[&fallback=1]` / `POST /api/recipe?id=` | The project's Visual Recipe; same-origin edits (family, look pack, regenerate, lock, public title, aliases); `fallback=1` is the identity without packs |
-| `GET /api/packs` | Installed visual packs: kind, version, digest, files, approval, problems |
+| `GET /api/recipe?id=[&fallback=1]` | The project's Visual Recipe (with its `revision`); `fallback=1` is the identity without packs |
+| `GET /api/packs`, `/api/packs/readme?id=`, `/api/packs/templates` | Installed visual packs (kind, version, digest, files, approval, problems, parameters, usage), READMEs as inert text, starter templates |
 | `GET /api/packs/file?id=&path=` | A pack file as inert text (code packs only once approved) |
-| `POST /api/packs/trust` | Same-origin: approve or revoke a code pack's exact files (by digest) |
+| `GET /api/settings`, `/api/preferences?id=`, `/api/presets`, `/api/catalog`, `/api/recipe/tunable?id=` | Global settings, a project's preferences, presets, parameter catalogues |
+| `GET /api/status`, `/api/evidence?id=`, `/api/integrations` | Receiver health, what was observed per project (capture, reported settings, agents), integrations |
+| `GET /api/changes` | Server-sent events: what changed, so every open view converges |
 | `GET /pack-frame.html` | The isolated frame code packs run in (no connections allowed) |
+| `POST /api/session` | A control capability, for a paired browser only (the pairing key in `receiver-auth.json`) |
+| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}` | Administrative: need the control capability (`X-Resonance-Capability`) |
 
-`POST` requires the token in `~/.code-resonance/receiver-auth.json`. Never expose it in a stream or commit it.
+`POST /v1/*` requires the token in `~/.code-resonance/receiver-auth.json`; the same file holds the pairing key. Never expose either in a stream, an issue or a commit.
 
 ## Checks
 

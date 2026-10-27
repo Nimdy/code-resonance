@@ -42,8 +42,8 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const page=await browser.newPage({viewport:{width:1920,height:1080}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));
     await page.addInitScript(TAP);
-    await page.goto(`${url}/?project=${projectId}`);
-    await page.waitForTimeout(8000);await page.click('#soundBtn');
+    await page.goto(`${url}/?project=${projectId}#/stage`);
+    await page.waitForTimeout(8000);await page.click('#stageSoundBtn');
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
     const worlds=['nexus','city','nebula'],started=Date.now();
     for(let i=0;Date.now()-started<MINUTES*60000;i++){

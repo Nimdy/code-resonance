@@ -37,6 +37,10 @@ node visual/memory-recorder.qual.js / memory-lifecycle.qual.js   # browser behav
 xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
 node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
 node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
+node ui/serve.js [--port 4180] [--empty]              # an isolated installation to review the Control Center (prints a pairing link)
+node ui/run-all.js [--jobs 3] [--only home,visual] [--quick]   # the interface: every workspace's suite + the acceptance suite
+node ui/acceptance.qual.js [--quick]                  # cross-view acceptance (first run, pairing, projects, OBS, recording, layouts)
+node ui/screenshots.js [--gpu amd]                    # review screenshots into docs/control-center/
 ```
 
 **Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):
@@ -699,6 +703,54 @@ pairing and the functional check now use the interval in which the flash occurre
 recording on the software renderer and the watchdog stopped it, as designed; events, memory, sound and page errors
 passed; the CI soak now records the stage).
 
+## Creative Control Center (Phase 6)
+
+The interface is qualified in a real browser (headless Chromium, software rendering) against isolated receivers on
+temporary data directories (`qualification/ui/environment.js`: a copy of the real recorded lumen-recipes session, a
+test project built through the ingestion API in the shape the 0.5 extension sends, and the fictional demo). Browsers are
+paired with each receiver the way a user pairs theirs once; one acceptance check stays unpaired on purpose.
+
+| Suite | What it drives through the real interface | Result (this machine) |
+|---|---|---|
+| home | first run (setup guide follows real state; hide persists), populated status lines against evidence, attention items, recent projects | 45/45 |
+| projects | list and filter, detail statistics equal `/api/project`, timeline markers, *Replay from here* lands on the Stage at that time, independence of projects, a second window converging | 48/48 |
+| visual | choose → preview → cancel (saved recipe unchanged) → apply → reload, three built-in families, title, aliases, reset, presets, stale-revision dialog, a second window converging | 60/60 |
+| music | live preview audible (analyser on the output), cancel, apply per project and globally, tempo and texture, a Stage window following without restarting the music, presets | 68/68 |
+| packs | zip import (declarative) and folder import (world pack) without the command line, review dialog with files and digest, approval, running in the isolated frame, revocation stops it, a file changed on disk cannot be approved or run, a path-traversal zip refused, removal | 52/52 |
+| connections | receiver values equal `/api/status`, no token-like string on the page, capture states from evidence (real session, 0.5 test session, agent-only project), Claude hooks plan/apply/remove on a temporary project folder | 48/48 |
+| output | 720p and 1080p recordings through the interface (WebM with video and audio), one recorder across views, *Recording in another window*, OBS URLs load the clean view without private names | 41/41 |
+| settings | every global setting persists across reload, motion applies, device quality, diagnostics without tokens or names, information mode inheritance | 41/41 |
+| acceptance | first run, pairing (refusal, dialog, single-use link in a fresh and in an open tab), two projects and a receiver restart, previews local to their window, saved changes reaching the Stage window and the OBS view, the OBS view never asking for a capability, recording across windows, every workspace at 1920×1080, 1440×900, 1280×720 and 900×800 without overflow, visible keyboard focus | 73/73 |
+
+All nine suites: 476/476 checks on the final code (`node ui/run-all.js --jobs 3`, about 15 minutes). Measured in the
+acceptance suite (software rendering): a project captured through the ingestion API appeared in an open
+Control Center in about 0.4 s (change feed); a saved recipe reached the Stage window and the OBS view through the change
+feed in about a second, and their new world was running after about 18 s, almost all of it building the world on the
+software renderer. The music kept playing through the change.
+
+The existing harnesses drive the new Stage (`#/stage`) and pair with the receiver they start. Locally, on the final
+code: `npm test` 174/174; platform smoke 14/14; Stage 14/14; audio passed; reference packs quick 16/16, 20/20, 21/21;
+robustness quick 15/15; recording quick 45/45. `npm test` 30/30 runs under `unit-stress.js --load 12 --io 2` after
+one timing-dependent test was made deterministic (24/30 before; the receiver's behaviour was correct, the test assumed
+which of two orders happened).
+
+**In CI.** GitHub's runners for this private repository have two cores and no GPU. There, the studios that render WebGL
+continuously (Visual, Music, Record & Broadcast) and the acceptance scenarios with three windows rendering at once starve
+the browser (measured on PR #7: clicks timing out after 30 s, screenshots refused, a saved change taking 105 s to appear
+in the other windows). The required `ui` job therefore runs Connections, Home, Packs, Projects, Settings and the
+single-window acceptance scenarios at the Lowest quality; the whole interface qualification is the extended job
+`ui-full` (label `extended:ui-full`) and the local gate above. Reproduced locally on two pinned cores (`taskset -c 0,1`)
+before changing the jobs.
+
+Reviews before the pull request: backend security and correctness (fixed: a symbolic link that let the Claude route
+return any JSON file the receiver can read, including its token; a pack id that destroyed the approval store; an empty
+digest skipping the approval check; edits of a recipe whose pack is missing overwriting it), interface honesty
+(fixed: a dead global information-mode setting, a project world that could never follow the global default again, a
+demonstration not labelled on the Stage), privacy (fixed: an open project menu and a toast that could carry private
+names onto the Stage, a typed project path kept in browser storage), design and accessibility, and a final review of
+pairing and late state changes (fixed: pairing links that carried the durable key, a recipe answer applied to the
+wrong project, Visual Studio dropping "follow the global default", previews of classic stages being recordable).
+
 ## Not verified
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A
@@ -724,3 +776,10 @@ passed; the CI soak now records the stage).
 - Recording quality on machines slower than the AMD integrated GPU used here: on software rendering, built-in worlds
   record at a few frames a second (see above).
 - Artistic acceptance of Cymatic Field, Blueprint Cathedral and Ember Observatory.
+- The Control Center on a GPU, on Windows or macOS, and in Firefox or Safari (the interface suites ran in headless
+  Chromium with software rendering on Linux); Visual Studio thumbnails and live previews on a GPU.
+- The VS Code extension 0.5 in the owner's VS Code; the `vscode://zerobandwidth.code-resonance/settings` link opened from
+  a real browser (CI runs the extension in a real VS Code, which does not open links).
+- Pairing on Windows file permissions (`receiver-auth.json` relies on the user profile's permissions there), and whether
+  a browser's history keeps a used pairing link (the code is single use and expires in 15 minutes).
+- Human review of the interface's design and wording.

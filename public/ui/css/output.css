@@ -1,0 +1,80 @@
+/* Record & Broadcast: a monitor (the stage as recorded, the transport under it) beside the recording profile, then
+   the OBS view and the ways out. One record control; everything else reads like an instrument's displays. */
+.ws-output .out-monitor{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.ws-output .out-main{display:grid;gap:12px;min-width:0}
+.ws-output .out-slot{aspect-ratio:16/9;width:100%}
+.out-chrome .slot-badge .pill.plain{background:rgba(8,10,16,.66);border-color:rgba(255,255,255,.08);color:rgba(222,230,242,.7);backdrop-filter:blur(6px)}
+/* The transport under the frame */
+.ws-output .out-deck{display:flex;align-items:center;gap:18px;padding:12px 14px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);min-width:0;flex-wrap:wrap;transition:border-color var(--t-2),background var(--t-2)}
+.ws-output .out-deck.active{border-color:rgba(255,77,97,.28);background:linear-gradient(0deg,rgba(255,77,97,.05),transparent) var(--bg-1)}
+.ws-output .out-deck .btn.record{min-width:148px}
+.ws-output .out-deck .btn.record .dot{width:10px;height:10px;border-radius:50%;background:var(--record);box-shadow:0 0 0 3px var(--record-soft)}
+.ws-output .out-deck .btn.record[aria-pressed="true"] .dot{border-radius:2px;animation:pulse-dot 1.2s var(--ease) infinite}
+/* Reduced motion: the square says "recording" without pulsing. */
+html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
+@media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) .ws-output .out-deck .btn.record .dot{animation:none}}
+.ws-output .out-time{display:grid;line-height:1.15;min-width:150px}
+.ws-output .out-clock{font-size:26px;font-weight:500;letter-spacing:.02em;color:var(--text-2)}
+.ws-output .out-clock.live{color:#ffd0d6}
+.ws-output .out-state{color:var(--text-3)}
+.ws-output .out-readouts{display:grid;grid-template-columns:repeat(4,minmax(64px,auto));gap:4px 22px;margin-left:auto}
+.ws-output .out-readout{display:grid;gap:3px}
+.ws-output .out-readout b{font-size:13px;font-weight:550;color:var(--text-1)}
+.ws-output .out-readout b.ok{color:var(--ok)}.ws-output .out-readout b.warn{color:var(--warn)}
+.ws-output .out-notice:empty{display:none}
+.ws-output .out-notice{display:grid;gap:8px}
+.ws-output .out-last{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-2)}
+.ws-output .out-last-head,.ws-output .out-last-empty{display:flex;align-items:baseline;gap:12px}
+.ws-output .out-last-head .faint{margin-left:auto}
+/* The profile column */
+.ws-output .out-side{display:grid;gap:12px;padding:16px}
+.ws-output .out-side-head{display:grid;gap:2px}
+.ws-output .out-profiles{display:grid;gap:6px}
+.ws-output .out-profile{display:grid;gap:3px;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
+.ws-output .out-profile:hover:not(:disabled){border-color:var(--line-3);background:var(--bg-3)}
+.ws-output .out-profile[aria-checked="true"]{border-color:var(--accent-line);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent-line) inset}
+.ws-output .out-profile:disabled{opacity:.5;cursor:not-allowed}
+.ws-output .out-profile[aria-checked="true"]:disabled{opacity:.8}
+.ws-output .out-profile-head{display:flex;align-items:center;gap:8px}
+.ws-output .out-profile-head strong{font-size:13px;font-weight:600}
+.ws-output .out-tag{margin-left:auto;font-size:10.5px;letter-spacing:.08em;color:var(--text-3);padding:1px 6px;border:1px solid var(--line-2);border-radius:4px}
+.ws-output .out-profile[aria-checked="true"] .out-tag{color:var(--accent);border-color:var(--accent-line)}
+.ws-output .out-profile-meta{display:flex;gap:10px;font-size:11.5px}
+.ws-output .out-dims{color:var(--text-2)}
+.ws-output .out-profile-note{font-size:11.5px;color:var(--text-3);line-height:1.4}
+.ws-output .out-profile.obs{border-style:dashed;background:transparent}
+.ws-output .out-profile.obs:hover{background:var(--bg-3)}
+.ws-output .out-facts{padding-top:10px;border-top:1px solid var(--line)}
+.ws-output .out-facts .kv{grid-template-columns:62px 1fr;font-size:12px}
+.ws-output .out-side-foot{display:flex;justify-content:flex-start;margin:-6px 0 -6px -8px}
+.ws-output .out-side details.disclosure>.disclosure-body{gap:8px;padding-top:4px}
+/* OBS */
+.ws-output .out-obs{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.ws-output .out-obs-builder{display:grid;gap:18px;padding:16px}
+.ws-output .out-field{display:grid;gap:8px;min-width:0}
+.ws-output .out-field>.segmented{justify-self:start}
+.ws-output .out-pins{display:grid;gap:8px}
+.ws-output .out-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ws-output #obsUrl code{font-size:12px}
+.ws-output .out-obs-empty:empty{display:none}
+.ws-output .out-obs-info{display:grid;gap:14px}
+.ws-output .out-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--text-2);font-size:12.5px;line-height:1.5}
+.ws-output .out-steps strong{color:var(--text-1);font-weight:600}
+.ws-output .out-obs-info .callout p+p{margin-top:6px}
+/* The ways out */
+.ws-output .out-kinds{display:grid}
+.ws-output .out-kind{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ws-output .out-kind:last-child{border-bottom:0}
+.ws-output .out-kind-icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2)}
+.ws-output .out-kind-icon svg{width:17px;height:17px}
+.ws-output .out-kind-body{display:grid;gap:6px;min-width:0}
+.ws-output .out-kind-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ws-output .out-kind-head strong{font-size:13px;font-weight:600}
+.ws-output .out-kind-action{align-self:center}
+.ws-output .out-cmds{display:grid;gap:6px;max-width:760px}
+.ws-output a.btn{color:var(--text-1);text-decoration:none}
+.ws-output a.btn[aria-disabled="true"]{opacity:.42;pointer-events:none}
+@media (max-width:1180px){.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(64px,auto));gap:4px 16px}}
+@media (max-width:1080px){.ws-output .out-monitor{grid-template-columns:1fr}.ws-output .out-profiles{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-output .out-obs{grid-template-columns:1fr}}
+@media (max-width:900px){.ws-output .out-readouts{margin-left:0;grid-template-columns:repeat(4,minmax(56px,auto))}.ws-output .out-kind{grid-template-columns:34px minmax(0,1fr)}.ws-output .out-kind-action{grid-column:2}}
+@media (max-width:700px){.ws-output .out-profiles{grid-template-columns:1fr}.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(56px,auto))}}

@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T17:45:47.280Z",
+  "at": "2026-10-25T15:50:57.305Z",
   "platform": "linux",
   "release": "6.6.87.2-microsoft-standard-WSL2",
   "node": "v22.22.2",
@@ -7,17 +7,17 @@
     {
       "name": "platform",
       "pass": true,
-      "detail": "linux 6.6.87.2-microsoft-standard-WSL2 · Node v22.22.2 · data directory “/tmp/cr smoke xrXA3c/receiver data”"
+      "detail": "linux 6.6.87.2-microsoft-standard-WSL2 · Node v22.22.2 · data directory “/tmp/cr smoke sgwPrr/receiver data”"
     },
     {
       "name": "receiver: starts as a process on loopback and announces its address",
       "pass": true,
-      "detail": "http://127.0.0.1:44627 in 29 ms"
+      "detail": "http://127.0.0.1:45927 in 31 ms"
     },
     {
       "name": "receiver: health endpoint answers",
       "pass": true,
-      "detail": "version 0.3.0"
+      "detail": "version 0.5.0"
     },
     {
       "name": "receiver: token written to the data directory",
@@ -27,7 +27,7 @@
     {
       "name": "project identity: the VS Code file URI of a workspace with spaces and non-ASCII characters",
       "pass": true,
-      "detail": "file:///tmp/cr%20smoke%20xrXA3c/My%20Project%20%28%C3%9Cn%C3%AFcode%29 → 223329bf9b462d0c"
+      "detail": "file:///tmp/cr%20smoke%20sgwPrr/My%20Project%20%28%C3%9Cn%C3%AFcode%29 → 05cbddb7933d8a42"
     },
     {
       "name": "ingestion: events without the token are refused",
@@ -72,7 +72,7 @@
     {
       "name": "receiver: refuses a non-loopback bind unless explicitly allowed",
       "pass": true,
-      "detail": "  if(!['127.0.0.1','::1','localhost'].includes(host)&&process.env.RESONANCE_ALLOW_REMOTE!=='1')throw new Error('Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly');"
+      "detail": "Error: Refusing non-loopback bind: set RESONANCE_ALLOW_REMOTE=1 explicitly"
     }
   ]
 }

@@ -4,7 +4,7 @@ const path = require('node:path');
 const filters = require('../extension/filters');
 // Kinds are only ever added, never repurposed, so historical journals stay interpretable.
 const VALID_KINDS = new Set([
-  'workspace.started','workspace.stopped','project.baseline','document.snapshot','document.change','document.edits',
+  'workspace.started','workspace.stopped','workspace.settings','project.baseline','document.snapshot','document.change','document.edits',
   'document.opened','document.saved','file.created','file.deleted','file.renamed',
   'terminal.command.started','terminal.command.finished','task.started','task.finished',
   'diagnostics.updated','repository.commit.observed','repository.head.changed',
@@ -17,6 +17,11 @@ const EXTENSIONS = new Set(['.js','.jsx','.mjs','.cjs','.ts','.tsx','.mts','.cts
 // Shared with the extension so it can never send a path the receiver would reject.
 const EXCLUDE_PARTS = new Set(filters.EXCLUDED_DIRS);
 const SECRET_FILE = filters.SECRET_FILE;
+// Capture settings reported by the extension (0.5+) on workspace.started/workspace.settings. Each key has exactly one
+// type and is kept only on those kinds, so a setting can never be smuggled into, or confused with, another event's meta.
+const REPORTED_KINDS = new Set(['workspace.started','workspace.settings']);
+const REPORTED_META = {extensionVersion:'string',remote:'string',includeHidden:'boolean',captureDocumentContents:'boolean',
+  captureTerminalCommands:'boolean',capturePromptText:'boolean',shareProjectName:'boolean',baselineFileLimit:'number',receiverPort:'number'};
 function sha(s) { return crypto.createHash('sha256').update(String(s)).digest('hex'); }
 function safeRelative(input) {
   if (typeof input !== 'string' || !input || input.length > filters.MAX_PATH || /\0/.test(input)) return null;
@@ -70,8 +75,13 @@ function validateEvent(value) {
       if (typeof val === 'number' && Number.isFinite(val)) result.meta[key]=val;
       if (typeof val === 'boolean') result.meta[key]=val;
     }
+    if (REPORTED_KINDS.has(value.kind)) for (const [key,type] of Object.entries(REPORTED_META)) if (Object.hasOwn(value.meta,key)) {
+      const val=value.meta[key];
+      if (typeof val !== type || (type === 'number' && !Number.isFinite(val))) continue;
+      result.meta[key]=type === 'string' ? cleanString(val,64) : val;
+    }
   }
   if (value.text !== undefined) result.text=cleanString(value.text,12000);
   return result;
 }
-module.exports={VALID_KINDS,EXTENSIONS,SECRET_FILE,EXCLUDE_PARTS,sha,safeRelative,validateEvent};
+module.exports={VALID_KINDS,REPORTED_META,EXTENSIONS,SECRET_FILE,EXCLUDE_PARTS,sha,safeRelative,validateEvent};

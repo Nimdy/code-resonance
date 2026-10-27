@@ -1,0 +1,385 @@
+{
+  "at": "2026-10-25T16:19:04.776Z",
+  "browser": "chromium (playwright-core, headless)",
+  "checks": [
+    {
+      "name": "Music Studio loads for the project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no audio starts on page load",
+      "pass": true,
+      "detail": "{\"enabled\":false,\"taps\":0}"
+    },
+    {
+      "name": "\"Enable sound to hear changes\" is offered",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "scope defaults to this project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "identity: key and mode from ResonanceScore.createIdentity(seed)",
+      "pass": true,
+      "detail": "D Aeolian"
+    },
+    {
+      "name": "identity: project tempo per style",
+      "pass": true,
+      "detail": "{\"ambient\":76,\"pulse\":101,\"cinematic\":92,\"chip\":120}"
+    },
+    {
+      "name": "identity: motif drawn from its rhythm and contour (call and answer)",
+      "pass": true,
+      "detail": "8 blocks for 4 notes"
+    },
+    {
+      "name": "identity: swing shown",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sound starts after the click",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "music is audible",
+      "pass": true,
+      "detail": "{\"rms\":0.04368,\"peak\":0.1469}"
+    },
+    {
+      "name": "live read-outs follow the engine",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preview: style changes in the engine at once",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preview: \"Previewing · not saved\" bar and stage badge",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preview: nothing saved",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preview: heard from the next bar (project tempo for Pulse)",
+      "pass": true,
+      "detail": "expected 101 BPM"
+    },
+    {
+      "name": "preview is audible",
+      "pass": true,
+      "detail": "{\"rms\":0.04985,\"peak\":0.2231}"
+    },
+    {
+      "name": "cancel restores the saved style",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "cancel saved nothing",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "style cards work with the keyboard",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "second window plays the saved style (not the preview)",
+      "pass": true,
+      "detail": "{\"bar\":2,\"style\":\"ambient\",\"taps\":1}"
+    },
+    {
+      "name": "apply saves to the project (GET /api/preferences)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "apply leaves the global default alone (GET /api/settings)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "second window converges through the change feed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "second window: the music did not restart (same audio context, bar keeps counting)",
+      "pass": true,
+      "detail": "{\"bar\":4,\"enabled\":true,\"sameContext\":true,\"taps\":1,\"tempo\":101}"
+    },
+    {
+      "name": "after reload: Pulse is selected and marked as this project's",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "after reload: sound stays off until a click",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo: manual mode previews",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo and texture: each value is shown once",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo: 120 BPM is heard from the next bar",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo: saved to the project",
+      "pass": true,
+      "detail": "{\"style\":\"pulse\",\"texture\":null,\"tempoMode\":\"manual\",\"tempo\":120}"
+    },
+    {
+      "name": "tempo: shown after reload",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo: \"Use global\" clears the project value",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tempo: the field now says it inherits",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "texture: previews 15%",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "texture: explains the real effect (arpeggios rest below 20%)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "texture: saved to the project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "texture: shown after reload",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "texture: \"Use global\" clears it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "global scope: says the project keeps its own style",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "global scope: Apply names the scope",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "global scope: saved (GET /api/settings)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "global scope: the notice names no private project",
+      "pass": true,
+      "detail": "Texture now follows the global default for this project. / Saved to the global defaults. This project keeps its own style, so you hear that here."
+    },
+    {
+      "name": "global scope: the project override is kept and heard",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a project without its own style uses the global default",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "volume: saved globally",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "volume: no unsaved preview left behind",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "volume: second window follows",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "reactivity: saved in the project's recipe (GET /api/recipe)",
+      "pass": true,
+      "detail": "revision 2"
+    },
+    {
+      "name": "reactivity: second window follows",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "reactivity: \"Use generated\" restores the generated value",
+      "pass": true,
+      "detail": "0.537 vs 0.537"
+    },
+    {
+      "name": "preset: an invalid name is refused with a reason",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: saves what is heard (GET /api/presets)",
+      "pass": true,
+      "detail": "{\"style\":\"chip\",\"texture\":0.58,\"tempoMode\":\"project\",\"tempo\":92}"
+    },
+    {
+      "name": "preset: preview is heard and labelled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: cancel restores",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: applied to the project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: the identity is untouched",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: renamed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "preset: deleted after confirmation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "900 px wide: no horizontal overflow",
+      "pass": true,
+      "detail": "0px"
+    },
+    {
+      "name": "900 px wide: the stage is placed above the controls, in view",
+      "pass": true,
+      "detail": "{\"slotTop\":68,\"stylesTop\":813,\"placed\":true,\"inView\":true}"
+    },
+    {
+      "name": "900 px wide: the performance monitor is still a landmark",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "every control is reachable with Tab",
+      "pass": true,
+      "detail": "all reached"
+    },
+    {
+      "name": "leaving cancels the preview (with a notice)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "export: shows that it is rendering",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "export: a WAV of the recorded performance",
+      "pass": true,
+      "detail": "code-resonance-c6c876a59a-chip.wav 42336044 bytes"
+    },
+    {
+      "name": "export: names no private folder",
+      "pass": true,
+      "detail": "code-resonance-c6c876a59a-chip.wav"
+    },
+    {
+      "name": "no innerHTML/insertAdjacentHTML/outerHTML in the workspace",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "identity": {
+      "key": "D Aeolian",
+      "tempo": {
+        "ambient": 76,
+        "pulse": 101,
+        "cinematic": 92,
+        "chip": 120
+      },
+      "swing": 0.08
+    },
+    "ambient": {
+      "rms": 0.04368,
+      "peak": 0.1469
+    },
+    "pulsePreview": {
+      "rms": 0.04985,
+      "peak": 0.2231
+    },
+    "secondWindow": {
+      "before": {
+        "bar": 2,
+        "style": "ambient",
+        "taps": 1
+      },
+      "after": {
+        "bar": 4,
+        "enabled": true,
+        "sameContext": true,
+        "taps": 1,
+        "tempo": 101
+      }
+    },
+    "export": {
+      "file": "code-resonance-c6c876a59a-chip.wav",
+      "bytes": 42336044,
+      "renderMs": 222628
+    }
+  }
+}

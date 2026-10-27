@@ -42,8 +42,12 @@ function catalogueOf(base,registry){
   for(const [k,p] of Object.entries(world.parameters||{}))parameters[`params.${k}`]=p.type==='enum'?{type:'enum',values:p.values}:p.type==='boolean'?{type:'boolean'}:{type:p.type,min:p.min,max:p.max};
   return {parameters,effects:[...new Set(Object.values(world.effects||{}))],unlocks:world.ambient?.unlocks||[],builtin:false,world};
 }
+// Ids that would name something else in the packs directory: the approval store, or (the part before the first dot) a
+// Windows device name, whatever follows it.
+const RESERVED_ID=/^(?:trust\.json(?:\.|$)|(?:con|prn|aux|nul|com[0-9]|lpt[0-9])\.)/;
 function semantic(m,registry){
   const errors=[];const err=(at,message)=>errors.push({at,message});
+  if(RESERVED_ID.test(m.id))err('/id',`"${m.id}" is reserved (it names a receiver file or a Windows device): choose another id`);
   const overrides=(at,o,cat)=>{for(const [k,v] of Object.entries(o||{})){const spec=cat.parameters[k];
     if(!spec)err(`${at}/${k}`,'is not a parameter of the base family');else if(!catalog.accepts(spec,v))err(`${at}/${k}`,`must be ${describe(spec)}`);}};
   if(m.kind==='declarative'){
@@ -148,6 +152,8 @@ function remove(id,dataDir){
 function setTrust(id,dataDir,{digest=null,trusted=true,now=Date.now()}={}){
   const entry=createRegistry(dataDir).get(id);if(!entry)throw new Error(`Pack ${id} is not installed`);
   if(!entry.executable)throw new Error(`Pack ${id} contains no code and needs no approval`);
+  // A pack whose files differ from their installation record (or that fails validation) can be revoked, never approved.
+  if(trusted&&!entry.ok)throw new Error(`Pack ${id} has problems and cannot be approved`);
   if(digest&&digest!==entry.digest)throw new Error('The pack changed since it was shown; review it again');
   const trust=readTrust(dataDir);
   if(trusted)trust.approvals[id]={digest:entry.digest,version:entry.version,approvedAt:now};else delete trust.approvals[id];
@@ -188,10 +194,10 @@ function createRegistry(dataDir){
     cache={packs,families,byId:Object.fromEntries(packs.map(p=>[p.id,p]))};stamp=key;return cache;
   }
   return {
-    snapshot:scan,list:()=>scan().packs,get:id=>scan().byId[id]||null,
+    snapshot:scan,list:()=>scan().packs,get:id=>Object.hasOwn(scan().byId,id)?scan().byId[id]:null,
     // A file of an installed pack: only files recorded at installation, read fresh and checked against the hash
     // recorded then (a file changed afterwards is never served).
-    read(id,file){const p=scan().byId[id];const expected=p?.recorded.get(file);if(!expected)return null;
+    read(id,file){const p=Object.hasOwn(scan().byId,id)?scan().byId[id]:null;const expected=p?.recorded.get(file);if(!expected)return null;
       const buf=fs.readFileSync(path.join(p.dir,file));return sha256(buf)===expected?buf:null;}
   };
 }

@@ -1,76 +1,76 @@
 {
-  "at": "2026-10-24T15:51:37.170Z",
-  "seconds": 180,
+  "at": "2026-10-25T15:51:49.947Z",
+  "seconds": 60,
   "styles": {
     "ambient": {
-      "peak": 0.308,
+      "peak": 0.29,
       "clips": 0,
-      "rmsDb": -23.466,
+      "rmsDb": -23.979,
       "shortTermDb": {
-        "p10": -28.1,
-        "median": -23.4,
+        "p10": -28.9,
+        "median": -24.4,
         "p95": -21.4
       },
-      "loudnessRangeDb": 6.69,
+      "loudnessRangeDb": 7.577,
       "silentWindows": 1,
       "silentAt": [
         0
       ],
-      "windows": 60,
-      "beforeTensionDb": -24.641,
-      "tensionDb": -23.597,
-      "renderSeconds": 57.2
+      "windows": 20,
+      "beforeTensionDb": -22.146,
+      "tensionDb": -120,
+      "renderSeconds": 5.5
     },
     "pulse": {
-      "peak": 0.331,
+      "peak": 0.329,
       "clips": 0,
-      "rmsDb": -23.756,
+      "rmsDb": -24.189,
       "shortTermDb": {
-        "p10": -25.1,
-        "median": -23.5,
-        "p95": -22.6
+        "p10": -25.4,
+        "median": -23.9,
+        "p95": -23.1
       },
-      "loudnessRangeDb": 2.431,
+      "loudnessRangeDb": 2.35,
       "silentWindows": 0,
       "silentAt": [],
-      "windows": 60,
-      "beforeTensionDb": -24.547,
-      "tensionDb": -23.306,
-      "renderSeconds": 76.5
+      "windows": 20,
+      "beforeTensionDb": -23.607,
+      "tensionDb": -120,
+      "renderSeconds": 5.5
     },
     "cinematic": {
-      "peak": 0.307,
+      "peak": 0.296,
       "clips": 0,
-      "rmsDb": -23.541,
+      "rmsDb": -23.898,
       "shortTermDb": {
-        "p10": -26.8,
-        "median": -23.5,
+        "p10": -28.3,
+        "median": -24.3,
         "p95": -21.5
       },
-      "loudnessRangeDb": 5.276,
+      "loudnessRangeDb": 6.786,
       "silentWindows": 0,
       "silentAt": [],
-      "windows": 60,
-      "beforeTensionDb": -24.526,
-      "tensionDb": -23.388,
-      "renderSeconds": 64
+      "windows": 20,
+      "beforeTensionDb": -21.97,
+      "tensionDb": -120,
+      "renderSeconds": 6.2
     },
     "chip": {
-      "peak": 0.274,
+      "peak": 0.257,
       "clips": 0,
-      "rmsDb": -24.041,
+      "rmsDb": -24.938,
       "shortTermDb": {
-        "p10": -29,
-        "median": -23.4,
+        "p10": -29.4,
+        "median": -25.1,
         "p95": -22.8
       },
-      "loudnessRangeDb": 6.205,
+      "loudnessRangeDb": 6.64,
       "silentWindows": 0,
       "silentAt": [],
-      "windows": 60,
-      "beforeTensionDb": -24.807,
-      "tensionDb": -23.179,
-      "renderSeconds": 133
+      "windows": 20,
+      "beforeTensionDb": -23.399,
+      "tensionDb": -120,
+      "renderSeconds": 8
     }
   },
   "checks": [

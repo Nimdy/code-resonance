@@ -1,0 +1,93 @@
+/* Music Studio: a performance desk. Choices on the left, the stage, the live read-outs and the score's fixed identity on
+   the right. One accent for what is selected or previewed; warm colour only for what is resting or overridden. */
+.ws-music .page-inner{max-width:1080px;gap:20px}
+.ws-music .page-head p{max-width:620px}
+/* Scope: where a change is saved, always in view at the top */
+.ws-music .ms-scope{padding:12px 14px;display:grid;gap:8px}
+.ws-music .ms-scope-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ws-music .ms-scope .segmented button{max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-scope-note{line-height:1.45}
+/* style.css .segmented scrolls (overflow:auto), which clips an outside focus ring to its right edge: draw it inside */
+.ws-music .segmented button:focus-visible{outline-offset:-2px}
+/* The unsaved preview: sticks to the top of the page while it lasts */
+.ws-music .ms-preview{position:sticky;top:-28px;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 14px;border-radius:var(--r-3);
+  background:linear-gradient(90deg,rgba(117,237,255,.13),rgba(117,237,255,.05)) ,var(--bg-2);border:1px solid var(--accent-line);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.ws-music .ms-preview[hidden]{display:none}
+.ws-music .ms-preview-text{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ws-music .ms-preview-what{color:var(--text-1)}
+.ws-music .ms-preview-actions{display:flex;gap:8px;margin-left:auto}
+.ws-music .ms-sound:empty{display:none}
+/* style.css colours every svg inside a callout, including the icon of a button in it */
+.ws-music .callout .btn svg{color:currentColor;margin-top:0}
+/* Style cards: a radio group; the selected palette is lit */
+.ws-music .ms-styles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ws-music .ms-style{display:grid;grid-template-rows:auto 1fr auto;gap:8px;text-align:left;padding:13px 14px 12px;border-radius:var(--r-3);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);
+  min-height:138px;position:relative;transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-2) var(--ease)}
+.ws-music .ms-style:hover{border-color:var(--line-3);background:var(--bg-3)}
+.ws-music .ms-style[aria-checked="true"]{border-color:var(--accent-line);background:linear-gradient(180deg,rgba(117,237,255,.09),rgba(117,237,255,.02) 60%),var(--bg-2);box-shadow:0 0 0 1px var(--accent-line) inset}
+.ws-music .ms-style[aria-checked="true"]::after{content:'';position:absolute;right:12px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.ws-music .ms-style.pending[aria-checked="true"]{border-style:dashed}
+.ws-music .ms-style-head{display:flex;align-items:baseline;gap:8px;padding-right:16px}
+.ws-music .ms-style-head strong{font-size:14px;font-weight:620;color:var(--text-1)}
+.ws-music .ms-style-tag{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.ws-music .ms-style[aria-checked="true"] .ms-style-tag{color:var(--accent)}
+.ws-music .ms-style-voices{font-size:12px;line-height:1.45}
+.ws-music .ms-style-meta{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;font:11px var(--mono);color:var(--text-3);border-top:1px solid var(--line);padding-top:8px}
+.ws-music .ms-room{line-height:1.5}
+/* Value source: project value, inherited, or overridden */
+.ws-music .ms-source{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;min-height:22px}
+.ws-music .ms-source .link-btn{font-size:12px}
+.ws-music .ms-source .warn{font-size:12px}
+.ws-music .ms-pair{align-items:start}
+.ws-music .ms-field{padding:14px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);gap:10px}
+.ws-music .ms-field .segmented{justify-self:start}
+.ws-music .ms-tempo-manual[hidden]{display:none}
+.ws-music .ms-effects{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:12px}
+.ws-music .ms-effects dt{color:var(--text-3)}.ws-music .ms-effects dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--text-2)}
+.ws-music .ms-effects dd.warn{color:var(--warn)}
+/* Presets */
+.ws-music .ms-preset-new{display:flex;gap:8px;max-width:520px}
+.ws-music .ms-preset-new .input{flex:1}
+.ws-music .ms-error{color:var(--danger);min-height:0}
+.ws-music .ms-error:empty,.ws-music .ms-field>.accent:empty{display:none}
+.ws-music .ms-presets[hidden]{display:none}
+.ws-music .ms-preset .grow{display:grid;gap:1px}
+.ws-music .ms-preset .btn.ghost[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+/* Inspector: the stage and live read-outs stay put; the identity scrolls */
+.ws-music .ms-monitor{padding:14px 16px 12px;display:grid;gap:12px;border-bottom:1px solid var(--line)}
+.ws-music .ms-slot{aspect-ratio:16/9;width:100%;min-height:0}
+.ws-music .ms-live{display:grid;gap:8px}
+.ws-music .ms-live-grid{display:grid;grid-template-columns:.8fr 1fr 1.25fr 1fr;gap:8px}
+.ws-music .ms-live-grid div{display:grid;gap:2px;min-width:0}
+.ws-music .ms-live-grid b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-meter-row{display:grid;grid-template-columns:auto 1fr 44px;align-items:center;gap:10px}
+.ws-music .ms-meter{height:6px;border-radius:6px;background:var(--bg-4);overflow:hidden;position:relative}
+.ws-music .ms-meter::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),var(--bg-1) calc(10% - 1px) 10%)}
+.ws-music .ms-meter-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok) 0,var(--accent) 75%,var(--warn) 95%);transition:width var(--t-2) linear}
+.ws-music .ms-meter-db{text-align:right}
+.ws-music .ms-identity{display:grid;gap:14px}
+.ws-music .ms-id-head{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.ws-music .ms-id-tempi,.ws-music .ms-id-motif{display:grid;gap:8px}
+.ws-music .ms-tempi{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ws-music .ms-tempo-cell{display:grid;gap:2px;padding:7px 8px;border-radius:var(--r-2);background:var(--bg-2);border:1px solid var(--line);font-size:11px;color:var(--text-3)}
+.ws-music .ms-tempo-cell b{font-size:14px;color:var(--text-1);font-weight:600}
+.ws-music .ms-tempo-cell.current{border-color:var(--accent-line);color:var(--accent)}
+.ws-music .ms-motif{width:100%;height:auto;display:block;background:var(--bg-0);border:1px solid var(--line);border-radius:var(--r-2);padding:6px 4px 0}
+.ws-music .ms-motif line{stroke:var(--line);stroke-width:1}
+.ws-music .ms-motif line.bar{stroke:var(--line-3)}
+.ws-music .ms-motif rect.call{fill:var(--accent)}
+.ws-music .ms-motif rect.answer{fill:rgba(117,237,255,.18);stroke:var(--accent-2);stroke-width:1}
+.ws-music .ms-motif polyline{fill:none;stroke:var(--accent);stroke-opacity:.35;stroke-width:1}
+.ws-music .ms-motif text.label{fill:var(--text-3);font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.ms-chrome .slot-badge[hidden]{display:none}
+/* Laptop and narrow windows */
+@media (max-width:1280px){.ws-music .ms-preview{top:-24px}.ws-music .ms-styles{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-music .ms-style{min-height:0}}
+@media (max-width:900px){
+  /* One scroll for the whole studio. The monitor (stage and read-outs) comes first, so a change is seen reacting while
+     the controls are in view; the read-only identity goes last. The inspector's box dissolves so its parts can be placed. */
+  .ws-music.split{display:flex;flex-direction:column;overflow:auto}.ws-music.split>*,.ws-music .ms-monitor,.ws-music .inspector-body{flex:none}
+  .ws-music .page{overflow:visible}.ws-music .ms-preview{top:0}
+  .ws-music .ms-inspector{display:contents}.ws-music .ms-monitor{order:-1;background:var(--bg-1)}.ws-music .inspector-body{order:1;background:var(--bg-1);border-top:1px solid var(--line)}
+  .ws-music .ms-monitor{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:center}
+  .ws-music .ms-live-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.ws-music .ms-styles{grid-template-columns:1fr}.ws-music .ms-monitor{grid-template-columns:1fr}.ws-music .ms-preset{flex-wrap:wrap}}

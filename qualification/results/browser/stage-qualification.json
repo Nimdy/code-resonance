@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T15:51:26.867Z",
+  "at": "2026-10-25T15:51:39.744Z",
   "sample": "sample-app",
   "browser": "chromium (playwright-core 1.62.0, headless)",
   "checks": [
@@ -16,17 +16,17 @@
     {
       "name": "audio context runs and produces signal",
       "pass": true,
-      "detail": "{\"state\":\"running\",\"peak\":0.1387,\"meanRms\":0.0276,\"silentSamples\":0}"
+      "detail": "{\"state\":\"running\",\"peak\":0.1258,\"meanRms\":0.0256,\"silentSamples\":0}"
     },
     {
       "name": "audio output does not clip",
       "pass": true,
-      "detail": "peak=0.139"
+      "detail": "peak=0.126"
     },
     {
       "name": "all worlds render at >= 30 fps (headless software raster, 1920x1080)",
       "pass": true,
-      "detail": "{\"nexus\":60.2,\"city\":60.2,\"nebula\":60.2}"
+      "detail": "{\"nexus\":60.3,\"city\":60.3,\"nebula\":60.3}"
     },
     {
       "name": "replay loads the full recorded timeline",
@@ -36,7 +36,7 @@
     {
       "name": "scrubbing replay changes the rendered architecture",
       "pass": true,
-      "detail": "lit samples start=2041 end=2912"
+      "detail": "lit samples start=2803 end=3582"
     },
     {
       "name": "replay playback advances",
@@ -46,7 +46,7 @@
     {
       "name": "recording produces a WebM file",
       "pass": true,
-      "detail": "1470800 bytes"
+      "detail": "511709 bytes"
     },
     {
       "name": "audio export renders the recorded performance to WAV",
@@ -61,7 +61,7 @@
     {
       "name": "OBS overlay canvas fills the frame",
       "pass": true,
-      "detail": "1920 1080 world"
+      "detail": "1920 1080 stage"
     },
     {
       "name": "no file paths reach the page",
@@ -83,16 +83,16 @@
     },
     "audio": {
       "state": "running",
-      "peak": 0.1387,
-      "meanRms": 0.0276,
+      "peak": 0.1258,
+      "meanRms": 0.0256,
       "silentSamples": 0
     },
     "fps": {
-      "nexus": 60.2,
-      "city": 60.2,
-      "nebula": 60.2
+      "nexus": 60.3,
+      "city": 60.3,
+      "nebula": 60.3
     },
-    "recordingBytes": 1470800,
+    "recordingBytes": 511709,
     "exportWavBytes": 882044
   }
 }

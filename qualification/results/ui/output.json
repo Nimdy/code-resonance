@@ -1,0 +1,270 @@
+{
+  "at": "2026-10-25T16:15:18.852Z",
+  "browser": "chromium (playwright-core, headless, --enable-unsafe-swiftshader --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required)",
+  "ffmpeg": true,
+  "checks": [
+    {
+      "name": "recording is supported in this browser",
+      "pass": true,
+      "detail": "{\"ok\":true,\"mimeType\":\"video/webm;codecs=vp9,opus\"}"
+    },
+    {
+      "name": "choosing 1080p saves it (GET /api/settings) and applies it to the engine",
+      "pass": true,
+      "detail": "settings=1080p engine=1080p"
+    },
+    {
+      "name": "1080p shows its real output dimensions",
+      "pass": true,
+      "detail": "1920 × 1080"
+    },
+    {
+      "name": "the arrow keys choose 720p (saved and applied)",
+      "pass": true,
+      "detail": "settings=720p checked=true"
+    },
+    {
+      "name": "720p shows 1280 × 720",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Stage size shows the live stage’s pixel size",
+      "pass": true,
+      "detail": "890 × 500"
+    },
+    {
+      "name": "Stage size is the frame on this page, also after arriving from another workspace",
+      "pass": true,
+      "detail": "card=890 × 500 slot=890 × 500"
+    },
+    {
+      "name": "Record starts the recording",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the top bar shows the same recording",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the profile cannot change while recording",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a second window shows “Recording in another window” and cannot start a second recording",
+      "pass": true,
+      "detail": "Recording in another window"
+    },
+    {
+      "name": "the Stage page shows the same recording",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "this page shows the live recording state (elapsed, size, frames, data, sound)",
+      "pass": true,
+      "detail": "{\"pressed\":\"true\",\"label\":\"Stop and save\",\"elapsed\":\"00:03\",\"size\":\"1280×720\",\"frames\":\"21\",\"bytes\":\"159.7 KB\",\"sound\":\"Music\"}"
+    },
+    {
+      "name": "the 720p recording is a WebM file with video and sound",
+      "pass": true,
+      "detail": "{\"ebml\":true,\"size\":551167,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1280,\"height\":720},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16,\"name\":\"code-resonance-36bf9b09d6-1792944884014.webm\"}"
+    },
+    {
+      "name": "the 720p file is 1280 × 720, VP9 + Opus",
+      "pass": true,
+      "detail": "{\"codec\":\"vp9\",\"width\":1280,\"height\":720}"
+    },
+    {
+      "name": "the recorded sound carries the music (not silent)",
+      "pass": true,
+      "detail": "max_volume -16 dB"
+    },
+    {
+      "name": "the file name carries no private name",
+      "pass": true,
+      "detail": "code-resonance-36bf9b09d6-1792944884014.webm"
+    },
+    {
+      "name": "the last recording is described (file, length, size, sound) with the downloads note",
+      "pass": true,
+      "detail": "Last recording12:14:44 PMFilecode-resonance-36bf9b09d6-1792944884014.webmLength9 sSize1280 × 720Data538.2 KBSoundThe music is includedRecordings are saved by the browser to its downloads folder. Code "
+    },
+    {
+      "name": "the second window can record again once the first stopped",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "1080p is still chosen and applied after a reload",
+      "pass": true,
+      "detail": "engine=1080p"
+    },
+    {
+      "name": "a recording started from the top bar shows on this page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the 1080p recording is 1920 × 1080 with video and sound",
+      "pass": true,
+      "detail": "{\"ebml\":true,\"size\":244571,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1920,\"height\":1080},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16.7}"
+    },
+    {
+      "name": "back to 720p (saved)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "when the sound is lost the file is saved early and the page shows the engine’s message",
+      "pass": true,
+      "detail": "Last recording12:15:01 PMFinished earlyRecording finished early (the sound stopped: an audio device was lost or stalled); 3 s saved.Filecode-resonance-36bf9b09d"
+    },
+    {
+      "name": "the OBS URL carries exactly the chosen options",
+      "pass": true,
+      "detail": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf | /?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=cinematic&world=living | /?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=off&world=living&style=ambient"
+    },
+    {
+      "name": "OBS view /?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf loads (200) as the stage alone, with the chosen options and no private name",
+      "pass": true,
+      "detail": "status=200 app=false chrome=false buttons=0 labels=stream world=living leaked=[]"
+    },
+    {
+      "name": "OBS view /?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=cinematic&world=living loads (200) as the stage alone, with the chosen options and no private name",
+      "pass": true,
+      "detail": "status=200 app=false chrome=false buttons=0 labels=cinematic world=living leaked=[]"
+    },
+    {
+      "name": "OBS view /?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=off&world=living&style=ambient loads (200) as the stage alone, with the chosen options and no private name",
+      "pass": true,
+      "detail": "status=200 app=false chrome=false buttons=0 labels=off world=living leaked=[]"
+    },
+    {
+      "name": "Copy URL puts the built URL on the clipboard",
+      "pass": true,
+      "detail": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=off&world=living&style=ambient"
+    },
+    {
+      "name": "“Open the OBS view” opens the built URL",
+      "pass": true,
+      "detail": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=off&world=living&style=ambient"
+    },
+    {
+      "name": "the OBS presentation profile sets up the recommended URL (stream, following the project) and records nothing",
+      "pass": true,
+      "detail": "http://127.0.0.1:45097/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf"
+    },
+    {
+      "name": "the OBS information control is as wide as its buttons (not stretched)",
+      "pass": true,
+      "detail": "212 of 621 px"
+    },
+    {
+      "name": "a demonstration project is labelled fictional beside the OBS builder and over the frame",
+      "pass": true,
+      "detail": "{\"obs\":true,\"badge\":true}"
+    },
+    {
+      "name": "a real project carries no demonstration label",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Export audio renders the recorded performance to a WAV file (the button shows it is working)",
+      "pass": true,
+      "detail": "882044 bytes code-resonance-36bf9b09d6-ambient.wav"
+    },
+    {
+      "name": "Download JSON gives the derived history of the selected project, without its private name",
+      "pass": true,
+      "detail": "30002 bytes, 7 windows"
+    },
+    {
+      "name": "the film command is the real one (film.js after npm ci in qualification, with this data folder and project)",
+      "pass": true,
+      "detail": "cd qualification && npm ciCopynode visual/film.js --data \"/tmp/cr-ui-gqOPSn\" --project 36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf --out results/visual/film.webmCopy"
+    },
+    {
+      "name": "the record control and the profile are reachable with Tab",
+      "pass": true,
+      "detail": "outRecordBtn → 720p → outObsProfile → Performance and limits → How recording works → Stream → obsPinWorld → obsPinStyle"
+    },
+    {
+      "name": "at 1280 × 720 the Record control is visible without scrolling",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "at 900 px wide nothing overflows sideways",
+      "pass": true,
+      "detail": "overflow 0px"
+    },
+    {
+      "name": "no console or page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "rec720": {
+      "ebml": true,
+      "size": 551167,
+      "tool": "ffmpeg",
+      "video": {
+        "codec": "vp9",
+        "width": 1280,
+        "height": 720
+      },
+      "audio": {
+        "codec": "opus"
+      },
+      "maxVolumeDb": -16,
+      "name": "code-resonance-36bf9b09d6-1792944884014.webm"
+    },
+    "rec1080": {
+      "ebml": true,
+      "size": 244571,
+      "tool": "ffmpeg",
+      "video": {
+        "codec": "vp9",
+        "width": 1920,
+        "height": 1080
+      },
+      "audio": {
+        "codec": "opus"
+      },
+      "maxVolumeDb": -16.7
+    },
+    "obs": [
+      {
+        "url": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf",
+        "status": 200,
+        "labels": "stream",
+        "world": "living",
+        "visibleButtons": 0
+      },
+      {
+        "url": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=cinematic&world=living",
+        "status": 200,
+        "labels": "cinematic",
+        "world": "living",
+        "visibleButtons": 0
+      },
+      {
+        "url": "/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf&labels=off&world=living&style=ambient",
+        "status": 200,
+        "labels": "off",
+        "world": "living",
+        "visibleButtons": 0
+      }
+    ],
+    "wav": {
+      "size": 882044,
+      "name": "code-resonance-36bf9b09d6-ambient.wav"
+    }
+  }
+}

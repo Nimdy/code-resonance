@@ -8,7 +8,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
 const cp=require('node:child_process');
-const {REPO,projectOf,launch,rendererOf,sha,checker}=require('./harness');
+const {REPO,projectOf,launch,rendererOf,sha,checker,adminPost}=require('./harness');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const BASELINE=arg('baseline','a7c8cfe');
 const DATA=path.resolve(arg('datasets',path.join(__dirname,'..','results','datasets')));
@@ -22,7 +22,7 @@ async function render(root,browser,set){
   const svc=await createService({port:0,dataDir:dir}).start();
   try{
     await svc.flush();const project=projectOf(dir);
-    const r=await fetch(`http://127.0.0.1:${svc.port}/api/recipe?id=${project}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`http://127.0.0.1:${svc.port}`},body:JSON.stringify({action:{type:'family',family:set.family}})});
+    const r=await adminPost(svc,`/api/recipe?id=${project}`,{action:{type:'family',family:set.family}});
     if(!r.ok)throw new Error(await r.text());
     const page=await browser.newPage({viewport:{width:960,height:540}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&labels=off&project=${project}`);await page.waitForFunction(()=>!!window.__film);

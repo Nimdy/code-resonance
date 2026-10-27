@@ -50,11 +50,14 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     const page=await browser.newPage({viewport:{width:1920,height:1080}});
     const errors=[];page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('pageerror',e=>errors.push(String(e)));
     await page.addInitScript(TAP);
-    await page.goto(url+'/');
-    await page.waitForFunction(()=>document.getElementById('connection').textContent==='SESSION CONNECTED',null,{timeout:15000});
-    check('live view connects and selects the project',await page.$eval('#projectSelect',e=>e.value)===projectId);
-    check('stage shows derived stats',Number(await page.textContent('#symbols'))>0,`symbols=${await page.textContent('#symbols')}`);
-    await page.click('#soundBtn');await page.waitForTimeout(3000);
+    // The Performance Stage of the Control Center (#/stage): the same engine the other workspaces show.
+    // A paired browser (the private link npm start prints), as a user's: its world choices are saved for the project.
+    await page.goto(url+`/#/stage&pair=${svc.pairing}`);
+    await page.waitForFunction(()=>document.body.dataset.receiver==='connected'&&!!window.ResonancePlayer?.state.model,null,{timeout:15000});
+    check('live view connects and selects the project',await page.evaluate(()=>window.ResonancePlayer.state.project)===projectId);
+    const symbols=await page.evaluate(()=>window.ResonancePlayer.state.model.stats.symbols);
+    check('stage shows derived stats',symbols>0,`symbols=${symbols}`);
+    await page.click('#stageSoundBtn');await page.waitForTimeout(3000);
     const levels=[];for(let i=0;i<20;i++){levels.push(await page.evaluate(()=>window.__level()));await page.waitForTimeout(250);}
     const peak=Math.max(...levels.map(l=>l.peak)),rms=levels.reduce((a,l)=>a+l.rms,0)/levels.length;
     measurements.audio={state:levels.at(-1).state,peak:+peak.toFixed(4),meanRms:+rms.toFixed(4),silentSamples:levels.filter(l=>l.rms<1e-4).length};
@@ -69,8 +72,8 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     check('all worlds render at >= 30 fps (headless software raster, 1920x1080)',Object.values(measurements.fps).every(x=>x>=30),JSON.stringify(measurements.fps));
     await page.click('[data-world="nexus"]');
     await page.click('#replayBtn');
-    await page.waitForFunction(()=>Number(document.getElementById('eventCount').textContent)>0,null,{timeout:15000});
-    const replayCues=Number(await page.textContent('#eventCount'));
+    await page.waitForFunction(()=>window.ResonancePlayer.state.position.loaded&&window.ResonancePlayer.state.position.events>0,null,{timeout:15000});
+    const replayCues=await page.evaluate(()=>window.ResonancePlayer.state.position.events);
     const liveCues=project.timeline.filter(c=>c.type!=='document.baseline.indexed').length;
     check('replay loads the full recorded timeline',replayCues>=liveCues,`replay cues=${replayCues}, live projection (excluding baseline indexing)=${liveCues}`);
     await page.$eval('#scrub',e=>{e.value='0';e.dispatchEvent(new Event('input'));});await page.waitForTimeout(1500);
@@ -83,20 +86,20 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     await page.click('#liveBtn');
     // Recording: real MediaRecorder output with video and audio tracks.
     const download=page.waitForEvent('download',{timeout:20000}).catch(()=>null);
-    await page.click('#recordBtn');await page.waitForTimeout(4000);await page.click('#recordBtn');
+    await page.click('#stageRecordBtn');await page.waitForTimeout(4000);await page.click('#stageRecordBtn');
     const file=await download;
     if(file){const saved=path.join(OUT,'recording.webm');await file.saveAs(saved);const size=fs.statSync(saved).size;measurements.recordingBytes=size;check('recording produces a WebM file',size>20000,`${size} bytes`);}
     else check('recording produces a WebM file',false,'no download');
-    // Offline export of the recorded performance to WAV.
+    // Offline export of the recorded performance to WAV (the Record & Broadcast workspace's export runs the same call).
     const wavDownload=page.waitForEvent('download',{timeout:120000}).catch(()=>null);
-    await page.click('#audioBtn');
+    await page.evaluate(()=>window.ResonancePlayer.exportAudio());
     const wavFile=await wavDownload;
     if(wavFile){const saved=path.join(OUT,'export.wav');await wavFile.saveAs(saved);const head=fs.readFileSync(saved).subarray(0,12).toString('latin1');const size=fs.statSync(saved).size;
       measurements.exportWavBytes=size;check('audio export renders the recorded performance to WAV',head.startsWith('RIFF')&&head.endsWith('WAVE')&&size>100000,`${size} bytes`);}
     else check('audio export renders the recorded performance to WAV',false,'no download');
     const overlay=await browser.newPage({viewport:{width:1920,height:1080}});
     await overlay.goto(url+'/?overlay=1');await overlay.waitForTimeout(4000);
-    check('OBS overlay hides all controls',!(await overlay.isVisible('.toolbar'))&&!(await overlay.isVisible('.panel.left'))&&!(await overlay.isVisible('.transport')));
+    check('OBS overlay hides all controls',!(await overlay.isVisible('.app'))&&!(await overlay.isVisible('.stage-chrome'))&&!(await overlay.isVisible('.topbar'))&&(await overlay.$$('button')).length===0);
     // The visible world canvas: the living world (WebGL) by default, the Construct, or the 2D stage for the other worlds or without WebGL.
     const canvasBox=await overlay.evaluate(()=>{const e=[...document.querySelectorAll('#world,#construct,#stage')].find(c=>!c.classList.contains('hidden'));const r=e.getBoundingClientRect();return [r.width,r.height,e.id];});
     check('OBS overlay canvas fills the frame',canvasBox[0]===1920&&canvasBox[1]===1080,canvasBox.join(' '));

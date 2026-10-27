@@ -13,3 +13,8 @@ results/visual/*.png
 results/datasets/
 results/visual/dev/
 results/visual/*.recipe.json
+results/ui/*.png
+results/ui/*.webm
+results/ui/*.wav
+results/ui/*.log
+results/ui/*.zip

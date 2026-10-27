@@ -1,0 +1,334 @@
+{
+  "at": "2026-10-25T16:19:18.829Z",
+  "passed": 60,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "example pack ember-observatory installs through the import route",
+      "pass": true,
+      "detail": "northlight.ember-observatory"
+    },
+    {
+      "name": "example pack cymatic-field installs through the import route",
+      "pass": true,
+      "detail": "halcyon.cymatic-field"
+    },
+    {
+      "name": "built-in families show thumbnails rendered from this project",
+      "pass": true,
+      "detail": "Rendered from this project | Rendered from this project | Rendered from this project"
+    },
+    {
+      "name": "the page shows the saved identity at first",
+      "pass": true,
+      "detail": "Stellar Forge, revision 1"
+    },
+    {
+      "name": "choosing Stellar Forge shows a preview badge over the stage",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the preview saves nothing (revision and family unchanged)",
+      "pass": true,
+      "detail": "revision 1, stellar-forge"
+    },
+    {
+      "name": "a parameter change previews (candidate value 1.55) without saving",
+      "pass": true,
+      "detail": "saved revision 1; generated twist 1.239"
+    },
+    {
+      "name": "the changed parameter is marked as customised in the preview",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no stray \"null\"/\"undefined\" text on the page during a preview",
+      "pass": true,
+      "detail": "2 changes"
+    },
+    {
+      "name": "every inspector input and select has an accessible name",
+      "pass": true,
+      "detail": "137 controls, 1 on/off switches"
+    },
+    {
+      "name": "Cancel restores the saved identity and saves nothing",
+      "pass": true,
+      "detail": "revision 1"
+    },
+    {
+      "name": "Apply saves the family and the tuned value",
+      "pass": true,
+      "detail": "revision 2, tuning {\"geometry.spiralTwist\":1.55}"
+    },
+    {
+      "name": "customising locks the identity",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "after a reload the control shows the saved value, marked customised",
+      "pass": true,
+      "detail": "{\"v\":\"1.550\",\"mod\":true,\"read\":\"generated 1.24\"}"
+    },
+    {
+      "name": "previewing fractal-biosphere runs it on the stage (__worldStats().family)",
+      "pass": true,
+      "detail": "fractal-biosphere"
+    },
+    {
+      "name": "Apply saves fractal-biosphere",
+      "pass": true,
+      "detail": "revision 3, tuning dropped: true"
+    },
+    {
+      "name": "previewing machine-cathedral runs it on the stage (__worldStats().family)",
+      "pass": true,
+      "detail": "machine-cathedral"
+    },
+    {
+      "name": "Apply saves machine-cathedral",
+      "pass": true,
+      "detail": "revision 4, tuning dropped: true"
+    },
+    {
+      "name": "an invalid title is refused before saving",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the public title is saved",
+      "pass": true,
+      "detail": "Night Shift & Co."
+    },
+    {
+      "name": "after a reload the title field shows it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "an empty title removes it (Enter saves)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a subsystem name is saved",
+      "pass": true,
+      "detail": "Aeethar → Core Engine"
+    },
+    {
+      "name": "after a reload the name is shown",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Clear returns to the generated name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Spectacle shows its value once, with its unit, in the exact-value box",
+      "pass": true,
+      "detail": "Spectacle | 150 %"
+    },
+    {
+      "name": "the information mode is tried on the stage during the preview",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Apply saves tuning, spectacle and information together",
+      "pass": true,
+      "detail": "{\"tuning\":{\"secondary.windows\":1.5},\"overrides\":{\"intensity\":1.5,\"motion\":1,\"atmosphere\":1,\"labels\":\"explorer\"}}"
+    },
+    {
+      "name": "an invalid preset name is refused",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Save as preset stores the saved identity as a visual preset",
+      "pass": true,
+      "detail": "{\"family\":\"machine-cathedral\",\"look\":null,\"tuning\":{\"secondary.windows\":1.5},\"overrides\":{\"intensity\":1.5,\"motion\":1,\"labels\":\"explorer\"}}"
+    },
+    {
+      "name": "Reset customisations restores the generated values",
+      "pass": true,
+      "detail": "windows 1.119 (generated 1.119)"
+    },
+    {
+      "name": "previewing a preset shows its family, values and presentation",
+      "pass": true,
+      "detail": "{\"family\":\"machine-cathedral\",\"windows\":1.5,\"intensity\":1.5}"
+    },
+    {
+      "name": "the preset preview saves nothing",
+      "pass": true,
+      "detail": "stellar-forge"
+    },
+    {
+      "name": "applying the preset saves it as the identity",
+      "pass": true,
+      "detail": "revision 12"
+    },
+    {
+      "name": "Rename renames the preset",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete (after confirmation) removes the preset",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a preset whose family is not installed says what it needs",
+      "pass": true,
+      "detail": "Unavailable: needs someone.missing-world"
+    },
+    {
+      "name": "a world pack card shows author, version, code and approval",
+      "pass": true,
+      "detail": "Not run until approvedNeeds approvalCymatic FieldPack · Halcyon Visuals (fictional) · v1.0.0 · code"
+    },
+    {
+      "name": "previewing an unapproved pack never runs it (the saved identity is shown, with a notice)",
+      "pass": true,
+      "detail": "Cymatic Field contains code and is not approved: the preview shows the saved identity instead."
+    },
+    {
+      "name": "a look pack over the family is previewed from the Look select",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Apply after another window saved shows the stale-revision dialog",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "\"Apply to the new version\" keeps the other window's change and adds this one",
+      "pass": true,
+      "detail": "fractal-biosphere, title From Window Two"
+    },
+    {
+      "name": "\"Reload\" discards the preview and shows the other window's version",
+      "pass": true,
+      "detail": "fractal-biosphere"
+    },
+    {
+      "name": "a preview in one window does not reach the other",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the second window converges on the applied identity (change feed)",
+      "pass": true,
+      "detail": "revision 16"
+    },
+    {
+      "name": "a classic stage previews in this window only",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Cancel returns to the saved stage",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Apply saves the classic stage for the project",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a family preview switches this window to the living world and says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "applying a family on a classic stage asks, then saves the living world too",
+      "pass": true,
+      "detail": "world living, machine-cathedral"
+    },
+    {
+      "name": "\"Use the global default\" clears the project's own stage, and the keyboard stays in the browser",
+      "pass": true,
+      "detail": "Use the global default (Living world) → preferences.world null"
+    },
+    {
+      "name": "a world card works from the keyboard (Enter) and keeps the focus",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Tab moves on to the next card",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "quality is set for this device only",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the device quality survives a reload",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "#/visual/family/<id> starts a preview of that family",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "#/visual/look/<packId> starts a preview of that look",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "900 px wide: no horizontal page overflow, Apply on screen",
+      "pass": true,
+      "detail": "{\"x\":789.984375,\"y\":756,\"width\":92.015625,\"height\":32}"
+    },
+    {
+      "name": "leaving with a pending preview discards it, says so and saves nothing",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no console errors or page errors (besides the provoked 400 and 409 responses)",
+      "pass": true,
+      "detail": "{\"400\":1,\"409\":2}"
+    }
+  ],
+  "measurements": {
+    "initial": {
+      "family": "stellar-forge",
+      "revision": 1,
+      "source": "generated"
+    },
+    "provokedHttpErrors": {
+      "400": 1,
+      "409": 2
+    }
+  },
+  "screenshots": [
+    "qualification/results/ui/visual-saved-1440.png",
+    "qualification/results/ui/visual-preview-1440.png",
+    "qualification/results/ui/visual-preview-1280.png",
+    "qualification/results/ui/visual-fractal-biosphere-1440.png",
+    "qualification/results/ui/visual-machine-cathedral-1440.png",
+    "qualification/results/ui/visual-presets-1440.png",
+    "qualification/results/ui/visual-unapproved-pack-1440.png",
+    "qualification/results/ui/visual-stale-1440.png",
+    "qualification/results/ui/visual-preview-900.png"
+  ],
+  "errors": [
+    "page A: Failed to load resource: the server responded with a status of 400 (Bad Request)",
+    "page A: Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "page A: Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ]
+}

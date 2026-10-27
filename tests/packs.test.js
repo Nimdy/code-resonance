@@ -131,3 +131,26 @@ test('Catalogues cover every value the built-in generator produces, and the effe
   const {EFFECT_TYPES}=await import('../public/worlds/director.js');
   assert.deepEqual(EFFECT_TYPES,catalog.EFFECT_TYPES);
 });
+test('The registry answers only for installed pack ids, never for object built-ins',()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'resonance-registry-'));
+  try{const r=packs.createRegistry(dir);for(const id of ['constructor','toString','__proto__','hasOwnProperty']){assert.equal(r.get(id),null,id);assert.equal(r.read(id,'pack.json'),null,id);}}
+  finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('A code pack whose files changed after installation can be revoked but never approved',()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'resonance-trust-'));
+  try{
+    const r=packs.install(path.join(__dirname,'../packs/examples/cymatic-field'),dir);
+    fs.appendFileSync(path.join(packs.packsDir(dir),r.id,'world.js'),'\n// changed\n');
+    assert.throws(()=>packs.setTrust(r.id,dir,{trusted:true}),/has problems/);
+    assert.equal(packs.createRegistry(dir).get(r.id).trusted,false);
+    assert.equal(packs.setTrust(r.id,dir,{trusted:false}).trusted,false);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+test('A generated recipe follows the global information mode until one is chosen',()=>{
+  const g=recipe.generate({projectId:'labels-default',graph:{nodes:[],edges:[]}},{seed:7});
+  assert.equal(g.overrides.labels,null);
+  const chosen=recipe.update(g,{type:'overrides',labels:'stream'},{projectId:'labels-default',graph:{nodes:[],edges:[]}});
+  assert.equal(chosen.overrides.labels,'stream');
+  assert.equal(recipe.update(chosen,{type:'overrides',labels:null},{projectId:'labels-default',graph:{nodes:[],edges:[]}}).overrides.labels,null);
+  assert.throws(()=>recipe.update(g,{type:'overrides',labels:'loud'},{projectId:'labels-default',graph:{nodes:[],edges:[]}}),/Invalid labels/);
+});

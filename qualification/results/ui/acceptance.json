@@ -1,0 +1,377 @@
+{
+  "at": "2026-10-25T16:20:07.801Z",
+  "browser": "chromium (playwright-core, headless, SwiftShader)",
+  "quick": false,
+  "checks": [
+    {
+      "name": "A: a clean installation starts with no project and says so",
+      "pass": true,
+      "detail": "{\"projects\":\"No project yet\",\"project\":\"\"}"
+    },
+    {
+      "name": "A: no demonstration or fabricated activity on a clean installation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "A: the project appears without a reload (change feed)",
+      "pass": true,
+      "detail": "after 426 ms"
+    },
+    {
+      "name": "A: the Stage opens on the project with the living world running",
+      "pass": true,
+      "detail": "{\"world\":\"living\",\"running\":true,\"title\":\"Untitled performance\"}"
+    },
+    {
+      "name": "A: the Stage does not show the private folder name",
+      "pass": true,
+      "detail": "Untitled performance"
+    },
+    {
+      "name": "A: no page errors",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "A: an unpaired browser is told so and its changes are refused",
+      "pass": true,
+      "detail": "{\"shown\":true,\"refused\":\"pairing-required\",\"dialog\":\"Pair this browser\"}"
+    },
+    {
+      "name": "A: pasting the private link pairs the browser, and changes are accepted",
+      "pass": true,
+      "detail": "{\"state\":\"paired\",\"button\":true,\"saved\":false}"
+    },
+    {
+      "name": "A: opening a pairing link (single-use code) pairs a fresh browser, removes the code from the address, and the code cannot be used twice",
+      "pass": true,
+      "detail": "{\"hash\":\"#/home\",\"stored\":true,\"saved\":\"saved\",\"state\":\"paired\"}"
+    },
+    {
+      "name": "A: a pairing link opened in an already open tab pairs it and leaves no code in the address or stored routes",
+      "pass": true,
+      "detail": "{\"state\":\"paired\",\"hash\":\"\",\"ui\":\"{\\\"lastRoute\\\":\\\"\\\",\\\"project\\\":\\\"bce82a73ed44cd109328c28935fc7543f0998b752cc18f88f2a963a1f398b39e\\\"}\"}"
+    },
+    {
+      "name": "B: project one plays its own identity and music",
+      "pass": true,
+      "detail": "{\"family\":\"machine-cathedral\",\"style\":\"cinematic\",\"title\":\"Lumen Nights\"}"
+    },
+    {
+      "name": "B: switching projects switches identity and music, independently",
+      "pass": true,
+      "detail": "{\"project\":\"36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf\",\"family\":\"stellar-forge\",\"style\":\"chip\",\"texture\":0.3,\"intensity\":0.6}"
+    },
+    {
+      "name": "B: a project's own information mode applies in a non-living world after switching projects",
+      "pass": true,
+      "detail": "{\"world\":\"construct\",\"labels\":\"explorer\"}"
+    },
+    {
+      "name": "B: the other project was not touched",
+      "pass": true,
+      "detail": "{\"family\":\"machine-cathedral\",\"intensity\":1,\"tuning\":{\"light.bloom\":1.5}}"
+    },
+    {
+      "name": "B: after a receiver restart both projects keep their configuration",
+      "pass": true,
+      "detail": "{\"r1\":\"machine-cathedral\",\"r2\":\"stellar-forge\",\"p1\":\"cinematic\",\"p2\":\"chip\"}"
+    },
+    {
+      "name": "B: a reloaded Stage plays the persisted configuration",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "I: a preview shows only in its own window (OBS view and Stage keep the saved identity, nothing stored)",
+      "pass": true,
+      "detail": "[\"fractal-biosphere\",\"stellar-forge\",\"stellar-forge\"]"
+    },
+    {
+      "name": "H: a saved visual change reaches the OBS view and the Stage window",
+      "pass": true,
+      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 23555 ms, new world running in 31288 ms"
+    },
+    {
+      "name": "I: the Stage window kept playing through the change (music not restarted)",
+      "pass": true,
+      "detail": "bar 2 → 32"
+    },
+    {
+      "name": "I: a global setting changed in one window reaches the other",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H: the OBS view shows only the presentation (no interface)",
+      "pass": true,
+      "detail": "[]"
+    },
+    {
+      "name": "H: the OBS view never shows the private project name",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H: the OBS view never requests a control capability",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "G: one recorder: the Stage and the top bar agree, and another window cannot start a second recording",
+      "pass": true,
+      "detail": "[{\"active\":true,\"topbar\":\"true\"},{\"disabled\":true,\"label\":\"Recording elsewhere\"}]"
+    },
+    {
+      "name": "G: the recording finishes as a WebM file with sound",
+      "pass": true,
+      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":12725,\"frames\":20,\"bytes\":370319,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1792945132768.webm\",\"at\":1792945132768}"
+    },
+    {
+      "name": "G: the other window can record again once it stopped",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors (Control Center)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors (Stage)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no page errors (OBS view)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "J: home at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: projects at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: visual at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: music at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: packs at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: connections at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: output at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: settings at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: stage at 1920×1080 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: keyboard focus is visible at 1920×1080",
+      "pass": true,
+      "detail": "{\"tag\":\"BUTTON\",\"outline\":true}"
+    },
+    {
+      "name": "J: no page errors at 1920×1080",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "J: home at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: projects at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: visual at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: music at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: packs at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: connections at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: output at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: settings at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: stage at 1440×900 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: keyboard focus is visible at 1440×900",
+      "pass": true,
+      "detail": "{\"tag\":\"BUTTON\",\"outline\":true}"
+    },
+    {
+      "name": "J: no page errors at 1440×900",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "J: home at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: projects at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: visual at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: music at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: packs at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: connections at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: output at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: settings at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: stage at 1280×720 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: keyboard focus is visible at 1280×720",
+      "pass": true,
+      "detail": "{\"tag\":\"BUTTON\",\"outline\":true}"
+    },
+    {
+      "name": "J: no page errors at 1280×720",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "J: home at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: projects at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: visual at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: music at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: packs at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: connections at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: output at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: settings at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: stage at 900×800 loads, fits and keeps navigation reachable",
+      "pass": true,
+      "detail": "{\"loaded\":true,\"overflowX\":false,\"clipped\":false,\"nav\":true}"
+    },
+    {
+      "name": "J: keyboard focus is visible at 900×800",
+      "pass": true,
+      "detail": "{\"tag\":\"BUTTON\",\"outline\":true}"
+    },
+    {
+      "name": "J: no page errors at 900×800",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "firstProjectMs": 426,
+    "savedChangeReceivedMs": 23555,
+    "savedChangeToViewsMs": 31288
+  }
+}

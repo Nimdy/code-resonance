@@ -121,7 +121,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
         await frame.evaluate(o=>{location.href=o;},`http://127.0.0.1:${sinkPort}/navigate`).catch(()=>{});
         await probe.page.waitForTimeout(1500);
         const stopped=await probe.page.evaluate(()=>document.querySelectorAll('iframe.pack-frame').length===0||!!window.__film.stats()?.remote===false);
-        const notice=await probe.page.evaluate(()=>document.getElementById('dnaNotice')?.textContent||'');
+        const notice=await probe.page.evaluate(()=>window.ResonancePlayer?.state.worldStatus.notice||'');
         measurements.isolation.selfNavigation={reachedListener:hits.some(h=>h.includes('/navigate')),noticed:notice};
         check('isolation: a pack frame that navigates away is stopped by the player (pack code cannot navigate: it runs in a worker)',/navigated/.test(notice)||stopped,
           `navigation request ${measurements.isolation.selfNavigation.reachedListener?'reached':'did not reach'} the listener; player: ${notice||'(no notice)'}`);
@@ -198,7 +198,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
         const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(QUICK?4000:8000);let b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));
         // A machine far too slow for this world (a software renderer at 1080p) makes the watchdog stop the pack (under
         // 1 fps for 20 s): the last statistics are used and the stop is reported.
-        const stopped=await page.evaluate(()=>document.getElementById('dnaNotice')?.textContent||'');
+        const stopped=await page.evaluate(()=>window.ResonancePlayer?.state.worldStatus.notice||'');
         const lost=!b.s||(a.s?.rendered!==undefined&&b.s.rendered===undefined);if(lost)b={s:a.s,t:a.t};
         // Frame rate where the world renders: the pack frame counts its frames; the in-page host is measured by rAF.
         const fps=lost?0:b.s.rendered!==undefined?(b.s.rendered-a.s.rendered)/((b.s.now-a.s.now)/1000):await page.evaluate(()=>new Promise(r=>{let n=0;const s=performance.now();const f=()=>{n++;performance.now()-s<6000?requestAnimationFrame(f):r(n/6);};requestAnimationFrame(f);}));

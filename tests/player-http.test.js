@@ -15,9 +15,11 @@ test('Standalone assets, OBS mode, derived performance API and privacy boundary'
  assert.match(csp(requests[5]),/style-src 'self' 'unsafe-inline';/);assert.match(csp(requests[0]),/style-src 'self';/);
  for(const r of requests)assert.match(csp(r),/script-src 'self';/);
  const document=await requests[0].text(),js=await requests[1].text();
- assert.match(document,/CODE.*RESONANCE/);
- assert.match(document,/data-world="city"/);assert.match(document,/id="musicStyle"/);
- assert.match(js,/drawNebula/);assert.match(js,/ResonanceRecording/);
+ // The Control Center: the engine's stage layer and the interface modules (served under /ui/ with the same policy).
+ assert.match(document,/<title>Code Resonance<\/title>/);assert.match(document,/id="stageHost"/);assert.match(document,/src="\/ui\/main\.js"/);
+ assert.match(js,/drawNebula/);assert.match(js,/ResonanceRecording/);assert.match(js,/window\.ResonancePlayer=/);
+ for(const p of ['/ui/main.js','/ui/store.js','/ui/workspaces/stage.js','/ui/css/stage.css']){const r=await fetch(url+p);assert.equal(r.status,200,p);assert.match(csp(r),/script-src 'self';/);}
+ assert.equal((await fetch(url+'/ui/workspaces/nope.js')).status,404);
  assert.match(await requests[6].text(),/MediaRecorder[\s\S]*captureStream/);
  const secret='DO_NOT_EXPOSE_ME_IN_THE_PUBLIC_GRAPH_OR_EXPORT';
  const evt={id:'viewer-security-01',projectId,sessionId:'case',kind:'document.snapshot',origin:'test',ts:1750000000000,

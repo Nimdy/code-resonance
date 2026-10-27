@@ -27,5 +27,5 @@ test('End-to-end receiver -> durable journal -> AST sorter -> versioned performa
   r=await fetch(`http://127.0.0.1:${service.port}/api/project?id=${id}`);assert.equal(r.status,200);
   assert.equal((await r.json()).stats.raw,oldCount);
   r=await fetch(`http://127.0.0.1:${service.port}/`);assert.equal(r.status,200);
-  assert((await r.text()).includes('CODE'));
+  assert((await r.text()).includes('<title>Code Resonance</title>'));
 });

@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T18:37:07.810Z",
+  "at": "2026-10-25T15:55:27.901Z",
   "sdk": "1.1.0",
   "gpu": "swiftshader",
   "checks": [
@@ -36,7 +36,7 @@
     {
       "name": "isolation: a pack frame that navigates away is stopped by the player (pack code cannot navigate: it runs in a worker)",
       "pass": true,
-      "detail": "navigation request did not reach the listener; player: Cymatic Field stopped: the pack frame navigated away RETRY"
+      "detail": "navigation request did not reach the listener; player: Cymatic Field stopped: the pack frame navigated away"
     },
     {
       "name": "events: the world received and expressed the recording's semantic events",
@@ -56,7 +56,7 @@
     {
       "name": "idle: the image keeps moving for 45 s without events",
       "pass": true,
-      "detail": "mean |Δluma| 3.26, 4.47"
+      "detail": "mean |Δluma| 3.54, 4.74"
     },
     {
       "name": "idle: nothing new happens (history unchanged, director idle)",
@@ -66,7 +66,7 @@
     {
       "name": "music: the image follows the beat (same moment on and off the beat differs)",
       "pass": true,
-      "detail": "mean |Δluma| 2.95"
+      "detail": "mean |Δluma| 3.46"
     },
     {
       "name": "no page errors during the session",
@@ -86,7 +86,7 @@
     {
       "name": "resources: the player's heap does not grow with switches (within 25 MB)",
       "pass": true,
-      "detail": "11 -> 11 MB"
+      "detail": "14 -> 14 MB"
     },
     {
       "name": "recipe: another project (self) gets its own parameters from the same pack",
@@ -101,7 +101,7 @@
     {
       "name": "performance: frame rate, GPU time and adaptive quality measured",
       "pass": true,
-      "detail": "7.1 fps full quality (GPU time not exposed by this driver) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      "detail": "7 fps full quality (GPU time not exposed by this driver) on ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
     },
     {
       "name": "no page errors in the live player",
@@ -169,7 +169,7 @@
       "outsideRequests": [],
       "selfNavigation": {
         "reachedListener": false,
-        "noticed": "Cymatic Field stopped: the pack frame navigated away RETRY"
+        "noticed": "Cymatic Field stopped: the pack frame navigated away"
       }
     },
     "session": {
@@ -211,13 +211,13 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "updateMs": 0.35,
-        "drawMs": 0.33,
+        "updateMs": 0.34,
+        "drawMs": 0.35,
         "rendered": 481,
         "skipped": 0,
         "semantic": 707,
-        "renderMs": 41.7,
-        "now": 27445.399999976158,
+        "renderMs": 36.7,
+        "now": 24229,
         "remote": true,
         "pack": "halcyon.cymatic-field"
       }
@@ -262,8 +262,8 @@
     ],
     "idle": {
       "motion": [
-        3.26,
-        4.47
+        3.54,
+        4.74
       ],
       "phases": [
         "active",
@@ -272,7 +272,7 @@
       ]
     },
     "music": {
-      "difference": 2.95
+      "difference": 3.46
     },
     "resources": [
       {
@@ -281,7 +281,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 11
+        "heapMB": 14
       },
       {
         "awayFrames": 0,
@@ -289,7 +289,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 11
+        "heapMB": 14
       }
     ],
     "otherProject": {
@@ -311,14 +311,15 @@
     "performance": {
       "dataset": "excalidraw",
       "full": {
-        "fps": 7.1,
+        "stoppedByWatchdog": null,
+        "fps": 7,
         "quality": 0,
         "drawCalls": 7,
         "passes": 21,
         "triangles": 15364,
         "points": 71897,
         "updateMs": 0.19,
-        "drawMs": 0.55,
+        "drawMs": 0.49,
         "gpuMs": null,
         "geometries": 13,
         "textures": 13,
