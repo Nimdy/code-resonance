@@ -128,8 +128,8 @@ On the first start the receiver adapts what it finds, and nothing you made is re
   journal (the journal itself is never rewritten). It has been 7 since the living worlds.
 - **Identities keep their look and sound.** A project's saved identity keeps the classic score (v2), the Classic finish
   and ecology 1 (or no digital life) until you change them: *Use the composed score* in the Music Studio, *Use the
-  Phase 11 finish and ecology* and the *Digital life* switch in the Visual Studio. Each is an ordinary tuning you can
-  reset.
+  Phase 11 finish* (and ecology) and the *Digital life* switch in the Visual Studio. Each is an ordinary tuning you
+  can reset.
 
 ## Rollback
 
