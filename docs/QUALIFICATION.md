@@ -2,7 +2,8 @@
 
 > **Historical engineering evidence**, recorded milestone by milestone and kept as measured then: later milestones
 > add to it, they never rewrite it. Running the checks: [ARCHITECTURE.md](../ARCHITECTURE.md#qualification). What is
-> verified and what is not today: [OPERATIONS.md](OPERATIONS.md).
+> verified and what is not today: [OPERATIONS.md](OPERATIONS.md). Each pull request's evidence, docs and changelog
+> entry: [the documentation index](README.md#history).
 
 | Section | Pull request |
 |---|---|
