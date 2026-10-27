@@ -56,6 +56,7 @@ test('Export → import → install: another installation gets the identical com
   assert.equal(r.body.pack,null);assert.deepEqual(r.body.composition,{...C.exportable(stored.composition),id:null});
   assert.equal(r.body.family,'fractal-biosphere');assert.equal(r.body.genome.life?.enabled,true);assert.equal(r.body.projectSeed,before.projectSeed,'the project keeps its own seed');
   r=await b.send(`/api/recipe?id=${b.projectId}`,{action:{type:'composition',composition:listed.composition}});assert.equal(r.status,200);
+  assert.equal((await b.get('/api/packs')).body.packs.find(p=>p.id===manifest.id).usedBy,1,'the creation counts the project that carries its composition');
   // The same composition on two projects: the same layers, each on its own world.
   const ra=(await a.get(`/api/recipe?id=${a.projectId}`)).body,rb=r.body;
   assert.deepEqual({...ra.composition,id:null},rb.composition);assert.notEqual(ra.projectSeed,rb.projectSeed);

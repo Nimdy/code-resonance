@@ -17,6 +17,7 @@ const {createEvidence}=require('./evidence');
 const {createChanges}=require('./changes');
 const {createImports}=require('./pack-import');
 const compositionStore=require('./compositions');
+const Composition=require('../public/composition.js');
 const recipes=require('../engine/recipe');
 const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
@@ -370,8 +371,12 @@ function createService(options={}) {
   async function packUsage(){
     if(usage)return usage;
     const epoch=usageEpoch,counts=new Map();
+    // A creation (a data pack with a composition) is used by the projects that carry its composition: it is applied as
+    // the project's own composition, never as a pack, so it is recognised by what it holds.
+    const creations=registry.snapshot().packs.filter(p=>p.overlay?.composition).map(p=>[p.id,JSON.stringify(p.overlay.composition)]);
     for(const p of await listProjects()){const {stored:r}=await storedRecipe(p.id);if(!r)continue;
-      for(const id of new Set([r.familyKind==='pack'?r.family:null,r.pack?.id].filter(x=>typeof x==='string')))counts.set(id,(counts.get(id)||0)+1);}
+      const c=creations.length&&r.composition?JSON.stringify(Composition.exportable(r.composition)):null;
+      for(const id of new Set([r.familyKind==='pack'?r.family:null,r.pack?.id,...creations.filter(([,s])=>s===c).map(([id])=>id)].filter(x=>typeof x==='string')))counts.set(id,(counts.get(id)||0)+1);}
     if(epoch===usageEpoch)usage=counts;return counts;
   }
   const publicEvidence=doc=>{const {sessionIds,...editor}=doc.editor;return {...doc,editor};};
