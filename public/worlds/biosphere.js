@@ -25,7 +25,7 @@ import {growForest,growBloom,buildCrown,crownDecay,SPECIES,SEG,LEAF,GLOW,TPL,CRO
 import {COMMON,MAXO,SEG_VS,SEG_FS,CROWN_VS,LEAF_VS,LEAF_FS,GLOW_VS,GLOW_FS,SHAFT_VS,SHAFT_FS,PILLAR_VS,PILLAR_FS,GROUND_VS,GROUND_FS,SKY_FS,withLife,LIFE_PT_VS,LIFE_PT_FS,LIFE_RIB_VS,LIFE_RIB_FS} from './biosphere-glsl.js';
 import {biosphereGrammar,POLLINATOR,SPORE,PLANKTON,DRIFTER} from './life/biosphere.js';
 import {MODE} from './life/sim.js';
-import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility} from './life/present.js';
+import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
 const num=(x,d)=>Number.isFinite(x)?x:d;
@@ -515,9 +515,10 @@ export function createFamily(ctx){
       for(let j=1;j<=L;j++){const r=o+((h-j+1+K*4)%K),x1=eco0.tx[r],y1=eco0.ty[r],z1=eco0.tz[r],f=1-j/L,a1=tb*f*f;seg(x0,y0,z0,a0,x1,y1,z1,a1,c,w);x0=x1;y0=y1;z0=z1;a0=a1;}}
     // An orbiter's arc: the stretch of its circle around the crown it has just flown (behind it, in its own direction),
     // fading; fifteen of them on one crown draw a ring.
-    function arc(e,S,b,w){const k=eco0.tgt[e];if(k<0)return;const cx=S.x[k],cz=S.z[k],ex=P3[0]-cx,ez=P3[2]-cz,d=Math.hypot(ex,ez);if(d<.05)return;
-      const dir=(ex*eco0.vz[e]-ez*eco0.vx[e])>=0?1:-1,th=Math.atan2(ez,ex),step=Math.min(.2,.55/(ARC*d))*dir;
-      let x0=P3[0],z0=P3[2],a0=b;for(let j=1;j<=ARC;j++){const t=th-step*j,x1=cx+Math.cos(t)*d,z1=cz+Math.sin(t)*d,f=1-j/ARC,a1=b*f*f;seg(x0,P3[1],z0,a0,x1,P3[1],z1,a1,ARC_C,w);x0=x1;z0=z1;a0=a1;}}
+    // (ecology 2: `tr`, the music's trail factor, lengthens or shortens the arc)
+    function arc(e,S,b,w,tr=1){const k=eco0.tgt[e];if(k<0)return;const cx=S.x[k],cz=S.z[k],ex=P3[0]-cx,ez=P3[2]-cz,d=Math.hypot(ex,ez);if(d<.05)return;
+      const n=tr===1?ARC:Math.max(2,Math.round(ARC*tr)),dir=(ex*eco0.vz[e]-ez*eco0.vx[e])>=0?1:-1,th=Math.atan2(ez,ex),step=Math.min(.2*tr,.55*tr/(n*d))*dir;
+      let x0=P3[0],z0=P3[2],a0=b;for(let j=1;j<=n;j++){const t=th-step*j,x1=cx+Math.cos(t)*d,z1=cz+Math.sin(t)*d,f=1-j/n,a1=b*f*f;seg(x0,P3[1],z0,a0,x1,P3[1],z1,a1,ARC_C,w);x0=x1;z0=z1;a0=a1;}}
     // Observed agents' swarm centres this frame (their presences; read for presentation only, never by the ecosystem).
     const AG=new Float32Array(30);let nAg=0;
     const agentFade=(x,y,z)=>{let f=1;for(let a=0;a<nAg;a++){const dx=x-AG[a*3],dy=y-AG[a*3+1],dz=z-AG[a*3+2],d2=dx*dx+dy*dy+dz*dz;if(d2<6.25){const u=Math.sqrt(d2)/2.5;f=Math.min(f,.15+.85*u*u);}}return f;};
@@ -533,7 +534,9 @@ export function createFamily(ctx){
       ptMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LIFE_PT_VS,fragmentShader:LIFE_PT_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
       ptsObj=new THREE.Points(pts.geometry,ptMat);ptsObj.frustumCulled=false;ptsObj.renderOrder=6;scene.add(ptsObj);
       const quad=new THREE.BufferGeometry();quad.setAttribute('position',new THREE.Float32BufferAttribute([-1,0,0,1,0,0,-1,1,0,1,1,0],3));quad.setIndex([0,2,1,1,2,3]);
-      rib=instancedBuffers(quad,{rA:4,rB:4,rC:4},quota[POLLINATOR]*Math.max(ARC,Math.min(PL,K-1))+quota[DRIFTER]*WAKE+quota[SPORE]);
+      // (ecology 2: room for the longest traces the music asks for, musicLook's trail at most 2.4)
+      const T2=eco.ecology===2?2.4:1;
+      rib=instancedBuffers(quad,{rA:4,rB:4,rC:4},quota[POLLINATOR]*Math.max(Math.round(ARC*T2),Math.min(Math.ceil(PL*T2),K-1))+quota[DRIFTER]*Math.min(Math.round(WAKE*T2),Math.max(WAKE,K-1))+quota[SPORE]*Math.ceil(T2));
       ribMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LIFE_RIB_VS,fragmentShader:LIFE_RIB_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
       ribObj=new THREE.Mesh(rib.geometry,ribMat);ribObj.frustumCulled=false;ribObj.renderOrder=6;scene.add(ribObj);
     }
@@ -541,14 +544,20 @@ export function createFamily(ctx){
     function update(i){
       const v=i.life;if(!v||!v.eco){hide();return;}
       const eco=v.eco;eco0=eco;if(!pts)alloc(eco);
+      // Ecology 2: the music as the water shows it (musicLook: all 1 without music). Its light is the water's own (the
+      // haze toward the light, the caustics, the light through the organisms and the rays): a passage's weather, over
+      // seconds. A quiet passage dims it all; a full one brightens the haze only a little (the deep water keeps its
+      // blacks) and gives the rest to the shafts. (The world sets these afresh every frame before this.)
+      const M=musicLook(eco,v);if(forest&&M.light!==1){const up=M.light>1;U.uFogLit.value.multiplyScalar(up?Math.sqrt(M.light):M.light);if(up)shaftMat.uniforms.uShaftK.value*=M.light;}
       const show=v.restoring?0:v.fadeIn;if(show<=0){hide();return;}
       // Fields -> the organisms' light.
       if(eco!==texEco){ftex?.dispose();ftex=lifeFieldTexture(THREE,eco,{scale:[1.2,2,2.5,6]});texEco=eco;U.uLifeF.value=ftex.texture;
         const f=eco.field;U.uLifeB.value.set(f.min[0],f.min[1],f.max[0]-f.min[0],f.max[1]-f.min[1]);}
-      // Ecology 2: the light the life gives the organisms follows the music's illumination (glow, a relaxed
-      // condition of the ecosystem: brighter as a passage opens up, dimmer as it settles).
-      const E2=v.ecology===2,gk=E2?Math.pow(Math.max(.5,Math.min(1.7,eco.cond.glow??1)),.8):1;
-      ftex.update();U.uLifeK.value=show*gk;
+      // Ecology 2: the light the life gives the organisms and the floor follows the music (brighter as a passage opens
+      // up and its groups gather, dimmer as it settles; a little under the full factor, so a full passage never washes
+      // the floor: the inhabitants themselves carry the rest).
+      const E2=v.ecology===2;
+      ftex.update();U.uLifeK.value=show*(M.life===1?1:Math.pow(M.life,.8));
       const S=eco.sites;if(S.ids!==idsRef){idsRef=S.ids;siteOfOrg.clear();S.ids.forEach((id,k)=>siteOfOrg.set(id,k));}
       for(const L of [U.uLifeO,U.uLifeC,U.uLifeD])for(const v4 of L.value)v4.set(0,0,0,0);
       // The water's flinch after a failure anywhere (kept alike by every crown): every crown's glow drops by up to
@@ -579,8 +588,8 @@ export function createFamily(ctx){
           else if(m===MODE.rest){b=.03;size=.05;}
           else if(m===MODE.disperse){b=.45;size=.08;L=2;ta=.08;}
           else{b=carry?.55:.3;size=.075;L=carry?1:0;ta=.08;}
-          b*=fl*(nAg?agentFade(P3[0],P3[1],P3[2]):1);
-          if(m===MODE.orbit)arc(e,S,vis*b*.16,.016);else if(L)tail(e,L,vis*b*ta,c,w);
+          b*=fl*(nAg?agentFade(P3[0],P3[1],P3[2]):1)*M.bright;if(L&&M.trail!==1)L=Math.min(K-1,Math.round(L*M.trail));
+          if(m===MODE.orbit)arc(e,S,vis*b*.16,.016,M.trail);else if(L)tail(e,L,vis*b*ta,c,w);
         }else if(k===SPORE){
           // Spores collecting in calm water brighten slowly (gathered light) and spread a little in height (a cloud with
           // depth, not a sheet), brightest at the cloud's centre (the structure they collect at); drifting ones are
@@ -591,16 +600,18 @@ export function createFamily(ctx){
               else if(P3[1]<1.8){dn=Math.hypot(P3[0]-S.x[q],P3[2]-S.z[q])/1.3;if(dn<best){best=dn;rc=.7;}}}
             P3[1]=Math.max(.2,P3[1]+(((e*.7548777+eco.gen[e]*.5698403)%1)-.5)*.8*rc*held);
             b=(.45+.75*held*(.8+.2*Math.sin(tv*.9+ph*30)))*Math.max(.2,Math.min(1,1.25-best*.75));size=.065;}
-          else{b=m===MODE.disperse?.5:.4;size=.05;const r=e*K+((h-1+K*4)%K);seg(P3[0],P3[1],P3[2],vis*b*.38,eco.tx[r],eco.ty[r],eco.tz[r],0,c,.01);}
+          else{b=m===MODE.disperse?.5:.4;size=.05;if(M.trail===1){const r=e*K+((h-1+K*4)%K);seg(P3[0],P3[1],P3[2],vis*b*.38,eco.tx[r],eco.ty[r],eco.tz[r],0,c,.01);}
+            else tail(e,Math.min(K-1,Math.max(1,Math.round(M.trail))),vis*b*.38*M.bright,c,.01);}
+          if(M.bright!==1)b*=Math.pow(M.bright,.6);
         }else if(k===PLANKTON){
           // Colonies breathe together (a slow pulse shared by neighbours); a startled colony dims as it scatters.
           const br=.7+.3*Math.sin(tv*.75+P3[0]*.31+P3[2]*.27);
-          b=m===MODE.rest?.13:.5*br*(.8+.2*Math.sin(tv*(1.3+ph*2)+ph*40));if(m===MODE.disperse)b*=1-.6*Math.exp(-eco.modeT[e]/40);size=.045;
+          b=m===MODE.rest?.13:.5*br*(.8+.2*Math.sin(tv*(1.3+ph*2)+ph*40));if(m===MODE.disperse)b*=1-.6*Math.exp(-eco.modeT[e]/40);size=.045;if(M.bright!==1)b*=Math.pow(M.bright,.8);
         }else{
-          const ar=Math.max(0,Math.min(1,eco.fa[e*2+1]));b=.3+.9*ar;size=.3;
-          tail(e,WAKE,vis*b*.08,c,.06);
+          const ar=Math.max(0,Math.min(1,eco.fa[e*2+1]));b=.3+.9*ar;size=.3;if(M.bright!==1)b*=Math.sqrt(M.bright);
+          tail(e,M.trail===1?WAKE:Math.min(K-1,Math.max(2,Math.round(WAKE*M.trail))),vis*b*.08,c,.06);
         }
-        put(P3[0],P3[1],P3[2],c,b*vis,size,k);
+        if(M.size!==1)size*=M.size;put(P3[0],P3[1],P3[2],c,b*vis,size,k);
         const F=FOLLOW[k]?.[q]||0;
         for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,a,tv,F3,k===PLANKTON?FOPT_PL:FOPT_SP))break;put(F3[0],F3[1],F3[2],c,b*vis*.7,size*.8,k);nf++;}
       }
