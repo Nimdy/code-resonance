@@ -876,13 +876,26 @@ hardly at all. The climate comes from the recorded frames, so it is the same wit
 | A-biosphere-lumen | Biosphere on lumen 60–210 s: gatherings, failure 74 s, recovery 94 s | 1920×1080, 150 s | `922dd5555f1a209a` |
 | B-stellar-lumen-disturbance | Forge on lumen 40–190 s: the verified failure at 74 s, recovery, milestone | 1920×1080, 150 s | `9f3c68eef3a8f81a` |
 | C-cathedral-self-8x | Cathedral on the 20-minute self session at 8× | 1920×1080, 150.6 s | `d89e0a57fdb314c5` |
-| D-biosphere-quiet-5min | Biosphere from 235 s through 330 s of silence after the last event | 1920×1080, 335 s | `be2e6089de71a2a0` |
+| D-biosphere-quiet-5min | Biosphere, view time 235–570 s (starts 5 s before the recording's last window ends, at 240 s; superseded by D2) | 1920×1080, 335 s | `be2e6089de71a2a0` |
+| D2-biosphere-idle-uninterrupted | Biosphere, view time 245–595 s: no input of any kind (the last window ends at 240 s, the last cue at 239.3 s), no generation handover (the first is at 600 s), no cut | 1920×1080, 350 s | `3e9a88c9363b926a` |
 | E-cathedral-lumen-events | Cathedral, the whole lumen performance: subsystems, failure, recovery, verified milestones | 1920×1080, 240 s | `9ad92778a78fdcac` |
 | F-music-side-by-side | Biosphere 60–150 s, music influence 0 and 2 | 2×1280×720, 90 s | `eaee457addc8bbdd` |
 | ba-{biosphere,stellar,cathedral}-side-by-side | Before (life off) / after, lumen 60–120 s, same data and framing | 2×1280×720, 60 s each | `4c4e5f6be8b56724`, `0bbe9a0a3ad593d5`, `0639c475a6b27e3f` |
 | G-biosphere-generation-handover | Lumen 570–640 s view time: the replay generation handed over at 600 s | 1920×1080, 70 s | `597a16087fef20b4` |
 
-Each film's recipe is next to it (`<film>.recipe.json`), so it renders again exactly.
+Each film's recipe is next to it (`<film>.recipe.json`), so it renders again exactly. `index.html` in the same directory plays them all with
+what to look for. Over D2's window, measured in Node on the same inputs: 0 inputs consumed, one generation throughout,
+865 inhabitants with 180–215 births every 35 s (lifecycles), settled spores between 42 and 104, the trail field's total
+181–230, the climate cycling home / away / breath from the score's bar grid; its frame-to-frame change stays at
+0.007–0.011 (ffmpeg scene score per 35 s), with no spike.
+
+### CI (PR #10, head `f9318ce`)
+
+All jobs pass (node ×2, windows, browser, ui, vscode, runtime, the three packs). The first push timed out three life
+test files at CI's 120 s per file (no assertion failed); they were split (`f9318ce`). On that head `runtime` failed once
+in the recording qualification (`recording.qual.js:83`, Playwright: "Resulting promise was garbage collected", the
+evaluate that starts a recording); a targeted rerun passed (45/45), as did the same suite locally. It did not recur, so
+no diagnostics could be captured and its cause is not established: one intermittent occurrence, recorded here.
 
 ### Not verified, and known weaknesses
 
