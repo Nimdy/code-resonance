@@ -1,0 +1,327 @@
+{
+ "size": "1920x1080",
+ "seconds": 60,
+ "runs": [
+  {
+   "family": "fractal-biosphere",
+   "life": null,
+   "fps": {
+    "mean": 42.375,
+    "p05": 37.9,
+    "p50": 42
+   },
+   "quality": {
+    "levels": [
+     0
+    ],
+    "changes": 0,
+    "final": 0,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 22.488,
+    "p95": 24.5
+   },
+   "drawCalls": {
+    "scene": 20,
+    "passes": 34
+   },
+   "cpu": {
+    "updateMs": 0.141,
+    "drawMs": 0.63
+   },
+   "memory": {
+    "heapMB": {
+     "first": 11.9,
+     "last": 11.9
+    },
+    "geometries": [
+     29,
+     32
+    ],
+    "textures": [
+     14
+    ]
+   },
+   "errors": []
+  },
+  {
+   "family": "fractal-biosphere",
+   "life": {
+    "tickMs": 0.865,
+    "tickMsP95": 0.95,
+    "catchUpMs": 0.486,
+    "catchUpMsP95": 1.2,
+    "alive": 865,
+    "capacity": 1000,
+    "field": [
+     64,
+     64
+    ],
+    "sites": 12,
+    "neighbourPairsPerTick": 4610,
+    "restoring": 0,
+    "presented": {
+     "drawn": 865,
+     "followers": 1824,
+     "trailSegments": 899,
+     "drawCalls": 2
+    }
+   },
+   "fps": {
+    "mean": 41.301,
+    "p05": 36.8,
+    "p50": 40.4
+   },
+   "quality": {
+    "levels": [
+     0
+    ],
+    "changes": 0,
+    "final": 0,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 23.153,
+    "p95": 25.34
+   },
+   "drawCalls": {
+    "scene": 22,
+    "passes": 36
+   },
+   "cpu": {
+    "updateMs": 0.886,
+    "drawMs": 0.719
+   },
+   "memory": {
+    "heapMB": {
+     "first": 16.1,
+     "last": 16.1
+    },
+    "geometries": [
+     31,
+     34
+    ],
+    "textures": [
+     15
+    ]
+   },
+   "errors": []
+  },
+  {
+   "family": "stellar-forge",
+   "life": null,
+   "fps": {
+    "mean": 57.399,
+    "p05": 21.2,
+    "p50": 60
+   },
+   "quality": {
+    "levels": [
+     1,
+     2
+    ],
+    "changes": 2,
+    "final": 2,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 9.592,
+    "p95": 9.71
+   },
+   "drawCalls": {
+    "scene": 20,
+    "passes": 36
+   },
+   "cpu": {
+    "updateMs": 0.183,
+    "drawMs": 0.498
+   },
+   "memory": {
+    "heapMB": {
+     "first": 15.2,
+     "last": 15.2
+    },
+    "geometries": [
+     26
+    ],
+    "textures": [
+     17
+    ]
+   },
+   "errors": []
+  },
+  {
+   "family": "stellar-forge",
+   "life": {
+    "tickMs": 0.941,
+    "tickMsP95": 1.05,
+    "catchUpMs": 0.309,
+    "catchUpMsP95": 1.1,
+    "alive": 1063,
+    "capacity": 1100,
+    "field": [
+     64,
+     64
+    ],
+    "sites": 4,
+    "neighbourPairsPerTick": 7967,
+    "restoring": 0,
+    "presented": {
+     "drawn": 1007,
+     "followers": 1494,
+     "trailSegments": 839,
+     "drawCalls": 2,
+     "sites": 4,
+     "siteRMax": 2.9,
+     "galR": 21.96
+    }
+   },
+   "fps": {
+    "mean": 57.315,
+    "p05": 29.8,
+    "p50": 60
+   },
+   "quality": {
+    "levels": [
+     2,
+     1
+    ],
+    "changes": 3,
+    "final": 2,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 9.522,
+    "p95": 9.69
+   },
+   "drawCalls": {
+    "scene": 22,
+    "passes": 38
+   },
+   "cpu": {
+    "updateMs": 1.343,
+    "drawMs": 0.417
+   },
+   "memory": {
+    "heapMB": {
+     "first": 20.5,
+     "last": 20.5
+    },
+    "geometries": [
+     28
+    ],
+    "textures": [
+     19
+    ]
+   },
+   "errors": []
+  },
+  {
+   "family": "machine-cathedral",
+   "life": null,
+   "fps": {
+    "mean": 49.696,
+    "p05": 44.5,
+    "p50": 50.2
+   },
+   "quality": {
+    "levels": [
+     0
+    ],
+    "changes": 0,
+    "final": 0,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 18.825,
+    "p95": 20.91
+   },
+   "drawCalls": {
+    "scene": 12,
+    "passes": 34
+   },
+   "cpu": {
+    "updateMs": 0.132,
+    "drawMs": 0.428
+   },
+   "memory": {
+    "heapMB": {
+     "first": 11.9,
+     "last": 11.9
+    },
+    "geometries": [
+     19
+    ],
+    "textures": [
+     15
+    ]
+   },
+   "errors": []
+  },
+  {
+   "family": "machine-cathedral",
+   "life": {
+    "tickMs": 0.672,
+    "tickMsP95": 0.74,
+    "catchUpMs": 0.269,
+    "catchUpMsP95": 0.9,
+    "alive": 921,
+    "capacity": 960,
+    "field": [
+     96,
+     96
+    ],
+    "sites": 4,
+    "neighbourPairsPerTick": 0,
+    "restoring": 0,
+    "presented": {
+     "drawn": 428,
+     "followers": 537,
+     "trailSegments": 373,
+     "trailPoints": 2158,
+     "drawCalls": 4
+    }
+   },
+   "fps": {
+    "mean": 49.204,
+    "p05": 43.9,
+    "p50": 49.8
+   },
+   "quality": {
+    "levels": [
+     0
+    ],
+    "changes": 0,
+    "final": 0,
+    "degraded": false
+   },
+   "gpuMs": {
+    "mean": 19.01,
+    "p95": 21.17
+   },
+   "drawCalls": {
+    "scene": 14,
+    "passes": 38
+   },
+   "cpu": {
+    "updateMs": 0.698,
+    "drawMs": 0.464
+   },
+   "memory": {
+    "heapMB": {
+     "first": 15.2,
+     "last": 15.2
+    },
+    "geometries": [
+     21
+    ],
+    "textures": [
+     16
+    ]
+   },
+   "errors": []
+  }
+ ],
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+}

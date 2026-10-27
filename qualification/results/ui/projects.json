@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T16:16:40.137Z",
+  "at": "2026-10-27T09:31:18.474Z",
   "passed": 48,
   "failed": 0,
   "checks": [
@@ -226,7 +226,7 @@
     {
       "name": "demo: its agents are labelled fictional, not \"observed through hooks\"",
       "pass": true,
-      "detail": "ConfigurationWorldLiving worldGlobal defaultChangeVisual identityNot generated yetGenerated when first shownChangeInformationCinematicGlobal defaultChangeMusic "
+      "detail": "AgentsFictional, written by the demoFictional agent events written by the demo (npm run demo); no agent did this work.Demo (fictional)16 events · first 05:30:29"
     },
     {
       "name": "900 px: the detail has no horizontal overflow",

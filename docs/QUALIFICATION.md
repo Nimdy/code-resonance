@@ -766,6 +766,13 @@ interface gets one warning notice per quality choice offering Monolith (the Canv
 changed without the viewer. Films and fixed qualities never adapt; the four levels themselves are unchanged. A level
 change only switches MSAA and resizes the render targets: no shader is compiled and the texture count does not change.
 
+Since Phase 10 the host also passes the main thread's own time per frame (update and draw). Where neither the timed GPU
+work nor the main thread accounts for 60 % of a slow frame, the rest is GPU or presentation work the timer does not
+see: the level steps down and the GPU time is no longer used to predict the level above. Measured on the AMD
+integrated GPU at 1920×1080, Stellar Forge: before, High at 19 fps (timer 21 ms of 52 ms frames) and never a step
+down; after, Low (75 %) at 57 fps within about two seconds. Frames slowed by the main thread keep their level as
+before.
+
 Unit: `tests/adaptive-quality.test.js` (16 simulated machines: step-down time, level skipping, no oscillation around a
 threshold, climbing back after a busy period, back-off after failed attempts, cost-bound and GPU-timed machines,
 processor-bound slowness, degraded and its recovery, pauses, fixed levels).
@@ -786,6 +793,111 @@ No run oscillated: one change at most in 60 s on SwiftShader and on the AMD GPU 
 2560×1440. The same page with `?quality=0&adapt=0` on the AMD GPU at 1920×1080: 35–39 fps, GPU 25–27 ms. Before this
 change (from the code, not measured again): Auto stepped down one level after 3 s of a smoothed frame time over 1/28 s
 and up after 20 s under 1/55 s, without GPU time, memory or back-off.
+
+## Digital life (Phase 10)
+
+The design and its contract are in [LIFE.md](LIFE.md). Everything below was measured on the owner's workstation
+(Ryzen 9 9950X3D, AMD integrated GPU through D3D12 in WSL2; the NVIDIA GPU was never used), one niced browser job at a
+time. Results: `qualification/results/visual/life*.json`; films in the ignored `qualification/results/films/life/`.
+
+### Unit (Node): 258 tests
+
+`tests/life-sim.test.js` (the loop, cause by cause: attraction, repulsion, separation, alignment, cohesion, trail and
+momentum deposits, saturation, stability at extreme values, bounded lifecycles, site indices across habitat changes),
+`life-driver.test.js` (bit-identity across paths and frame rates, checkpoints, far seeks, generations and their pinned
+generation-0 digests, live tempo changes and folding, late joins, habitat data after restores), one file per world
+(gathering, failure and recovery responses, routes never through stone, habitat = rendered layout) and
+`adaptive-quality.test.js`.
+
+### Browser (`visual/life.qual.js --gpu amd`): 47/47
+
+| Property | Result |
+|---|---|
+| Same ecosystem and image after continuous play, a seek back, a fresh session, a browser restart (lumen, 144 s) | Biosphere `fa7646e8`, Forge `ea9058fe`, Cathedral `d6111441` on every path; images identical |
+| 15, 30, 60 and 120 fps reach the same state | same digests |
+| Quality changes while living change what is drawn (followers 0–3 559), never the ecosystem | same digests |
+| Ten idle minutes after the last event | 865 / 1 060–1 070 / 921 alive and moving; images keep changing; no intent created; heap 25 / 29 / 26 MB flat; geometries, textures and checkpoints constant |
+| Life off | no ecosystem, labels identical with life on and off (inhabitants are never labelled) |
+| World switching | the running ecosystem is always the shown world's; GPU resources back to their level |
+| Replay → live | a new origin: no restoring, none of the replay's 75 138 inputs |
+| Far seeks on lumen-long (13 days of view time) at 85 %, 15 %, 60 % | restored in 6.5 / 1.4 / 2.5 s (7 750 / 1 650 / 3 000 ticks; history pass 38 / 4 / 14 ms) |
+
+Before replay generations the far seek could not finish (about 19.5 million ticks); the first run of this suite failed
+it and the idle check (which wrongly expected the director to be idle 30 s after the last event; its phase decays from
+recorded activity, with life on or off).
+
+### Cost
+
+Simulation in Node on the recorded performances (`visual/life-cpu.js`), per tick at 20 Hz:
+
+| | Biosphere | Forge | Cathedral |
+|---|---|---|---|
+| Inhabitants (capacity) / field | 980–987 (1 000) / 64×64 | 1 064–1 069 (1 100) / 64×64 | 945–948 (960) / 96×96 |
+| Tick mean / p95 (lumen; self) | 0.82 / 1.12 ms; 0.73 / 0.89 ms | 1.17 / 1.30 ms; 1.13 / 1.22 ms | 1.07 / 1.32 ms; 1.13 / 1.22 ms |
+| Grid, neighbours and steering / integration and deposits / fields | 0.59–0.66 / 0.04 / 0.07 ms | 0.85–0.87 / 0.09–0.11 / 0.15 ms | 0.58–0.61 / 0.07 / 0.36–0.37 ms |
+| Neighbour pairs evaluated per tick | 4 500–5 500 | 6 400–7 100 | 0 (routes; no neighbour perception) |
+| Habitat evaluation | 0.6–0.7 ms per window | 0.1 ms | 1.1–5.2 ms (the network) |
+
+Live player, 1920×1080, Auto quality, 60 s each on the lumen replay (`visual/life-perf.js --gpu amd`):
+
+| | fps off → on | Level | GPU ms off → on | Main thread update ms off → on | Scene draw calls | Heap MB off → on |
+|---|---|---|---|---|---|---|
+| Fractal Biosphere | 42.4 → 41.3 | High | 22.5 → 23.2 | 0.14 → 0.89 | 20 → 22 | 11.9 → 16.1 |
+| Stellar Forge | 57.4 → 57.3 | Low (75 %; one failed climb with life on, back within its probation) | 9.6 → 9.5 | 0.18 → 1.34 | 20 → 22 | 15.2 → 20.5 |
+| Machine Cathedral | 49.7 → 49.2 | High | 18.8 → 19.0 | 0.13 → 0.70 | 12 → 14 | 11.9 → 15.2 |
+
+Per-frame uploads: positions, colours and trails of what is drawn (Biosphere 865 inhabitants + 1 824 followers + 898
+trail segments; Forge 1 007 + 3 418 + 1 264; Cathedral 428 + 537 + 575 segments and 3 496 comet points) and one field
+texture per tick (64² or 96² RGBA8). Stellar Forge ran at 19 fps at High **with life off** (the PR #9 baseline): the
+GPU timer reported 21 ms of 52 ms frames, so Auto took it for processor-bound and never stepped down although 75 %
+resolution runs at 60 fps. Auto now also weighs the main thread's own time (see "Auto quality" above;
+`tests/adaptive-quality.test.js`).
+
+### What the music changes (`visual/life-music.js`, lumen)
+
+Music influence 0 keeps every condition at 1.00. At 2, per section: tension turbulence 1.85–2.06, cohesion 0.43–0.51;
+breath turbulence 0.50, cohesion 1.29; lift attraction 1.44. What the inhabitants do follows modestly: mean speed
+changes 5–12 % between sections (Biosphere home 0.59 → 0.52, Forge breath 0.75 → 0.69), the share gathered at sites
+hardly at all. The climate comes from the recorded frames, so it is the same with sound off.
+
+### Nothing else changed
+
+- Life off is byte-identical to PR #9: `visual/unchanged.qual.js --baseline 1bac980` (life turned off on the new
+  identities) 11 frames over four world/dataset pairs, all the same; each world's own stills compared with `cmp`.
+- The approved PR #8 films render as before: 12 stills from their pinned recipes (four films, three moments each)
+  are byte-identical between the PR #9 tree and this one.
+- Regression suites in this run: `worlds.qual.js` 6/6, `long.qual.js` 9/9, `catalogue.qual.js` 6/6, `pack.qual.js` on
+  the two example packs 22/22 and 21/21, `recording.qual.js --quick` 45/45, the interface (`ui/run-all.js`) 514/514.
+
+### Films (`qualification/results/films/life/`, VP9 + Opus 48 kHz, 30 fps, AMD GPU)
+
+| Film | What | Size, length | SHA-256 (16) |
+|---|---|---|---|
+| A-biosphere-lumen | Biosphere on lumen 60–210 s: gatherings, failure 74 s, recovery 94 s | 1920×1080, 150 s | `922dd5555f1a209a` |
+| B-stellar-lumen-disturbance | Forge on lumen 40–190 s: the verified failure at 74 s, recovery, milestone | 1920×1080, 150 s | `9f3c68eef3a8f81a` |
+| C-cathedral-self-8x | Cathedral on the 20-minute self session at 8× | 1920×1080, 150.6 s | `d89e0a57fdb314c5` |
+| D-biosphere-quiet-5min | Biosphere from 235 s through 330 s of silence after the last event | 1920×1080, 335 s | `be2e6089de71a2a0` |
+| E-cathedral-lumen-events | Cathedral, the whole lumen performance: subsystems, failure, recovery, verified milestones | 1920×1080, 240 s | `9ad92778a78fdcac` |
+| F-music-side-by-side | Biosphere 60–150 s, music influence 0 and 2 | 2×1280×720, 90 s | `eaee457addc8bbdd` |
+| ba-{biosphere,stellar,cathedral}-side-by-side | Before (life off) / after, lumen 60–120 s, same data and framing | 2×1280×720, 60 s each | `4c4e5f6be8b56724`, `0bbe9a0a3ad593d5`, `0639c475a6b27e3f` |
+| G-biosphere-generation-handover | Lumen 570–640 s view time: the replay generation handed over at 600 s | 1920×1080, 70 s | `597a16087fef20b4` |
+
+Each film's recipe is next to it (`<film>.recipe.json`), so it renders again exactly.
+
+### Not verified, and known weaknesses
+
+- Other GPUs and drivers: images are claimed identical only on the same GPU and driver; across them only the state.
+  Other JavaScript engines (Firefox, Safari): the state is double-precision arithmetic with the engine's `Math`
+  functions; bit-identity is qualified in Node and Chromium only.
+- Windows and OBS with digital life on; a live session long enough to fold its inputs in a browser (folding is
+  tested in Node, bit-identical to a session that never folds).
+- Once per page, about 90 s before a replay's first generation anchor, one or two frames take 8–11 ms (the JavaScript
+  engine reoptimising the simulation for a second ecosystem). The handover itself is visible as a 4-second breath once
+  every 10 minutes of a replay (film G).
+- Artistic, from independent critiques of real renders: the Biosphere's hotspot moves between the heads of its main
+  flowering organism more than across the scene; the Forge's arm-scale motion is subtle; the Cathedral's inhabitants
+  are small in distant framings (film C) and its recovery wave is faint under PR #8's own beam. The music's effect on
+  behaviour is modest by design.
 
 ## Not verified
 

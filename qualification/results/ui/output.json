@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T16:15:18.852Z",
+  "at": "2026-10-27T09:29:44.228Z",
   "browser": "chromium (playwright-core, headless, --enable-unsafe-swiftshader --ignore-gpu-blocklist --autoplay-policy=no-user-gesture-required)",
   "ffmpeg": true,
   "checks": [
@@ -31,12 +31,12 @@
     {
       "name": "Stage size shows the live stage’s pixel size",
       "pass": true,
-      "detail": "890 × 500"
+      "detail": "870 × 490"
     },
     {
       "name": "Stage size is the frame on this page, also after arriving from another workspace",
       "pass": true,
-      "detail": "card=890 × 500 slot=890 × 500"
+      "detail": "card=870 × 490 slot=870 × 490"
     },
     {
       "name": "Record starts the recording",
@@ -66,12 +66,12 @@
     {
       "name": "this page shows the live recording state (elapsed, size, frames, data, sound)",
       "pass": true,
-      "detail": "{\"pressed\":\"true\",\"label\":\"Stop and save\",\"elapsed\":\"00:03\",\"size\":\"1280×720\",\"frames\":\"21\",\"bytes\":\"159.7 KB\",\"sound\":\"Music\"}"
+      "detail": "{\"pressed\":\"true\",\"label\":\"Stop and save\",\"elapsed\":\"00:03\",\"size\":\"1280×720\",\"frames\":\"34\",\"bytes\":\"373.1 KB\",\"sound\":\"Music\"}"
     },
     {
       "name": "the 720p recording is a WebM file with video and sound",
       "pass": true,
-      "detail": "{\"ebml\":true,\"size\":551167,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1280,\"height\":720},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16,\"name\":\"code-resonance-36bf9b09d6-1792944884014.webm\"}"
+      "detail": "{\"ebml\":true,\"size\":946014,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1280,\"height\":720},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16,\"name\":\"code-resonance-36bf9b09d6-1793093245127.webm\"}"
     },
     {
       "name": "the 720p file is 1280 × 720, VP9 + Opus",
@@ -86,12 +86,12 @@
     {
       "name": "the file name carries no private name",
       "pass": true,
-      "detail": "code-resonance-36bf9b09d6-1792944884014.webm"
+      "detail": "code-resonance-36bf9b09d6-1793093245127.webm"
     },
     {
       "name": "the last recording is described (file, length, size, sound) with the downloads note",
       "pass": true,
-      "detail": "Last recording12:14:44 PMFilecode-resonance-36bf9b09d6-1792944884014.webmLength9 sSize1280 × 720Data538.2 KBSoundThe music is includedRecordings are saved by the browser to its downloads folder. Code "
+      "detail": "Savedcode-resonance-36bf9b09d6-1793093245127.webm1280 × 720 · 6 s · 923.8 KB · 05:27:25 AMin your downloads | Last recordingSoundThe music is includedRecordings are saved by the browser to its downloa"
     },
     {
       "name": "the second window can record again once the first stopped",
@@ -111,7 +111,7 @@
     {
       "name": "the 1080p recording is 1920 × 1080 with video and sound",
       "pass": true,
-      "detail": "{\"ebml\":true,\"size\":244571,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1920,\"height\":1080},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16.7}"
+      "detail": "{\"ebml\":true,\"size\":860908,\"tool\":\"ffmpeg\",\"video\":{\"codec\":\"vp9\",\"width\":1920,\"height\":1080},\"audio\":{\"codec\":\"opus\"},\"maxVolumeDb\":-16.5}"
     },
     {
       "name": "back to 720p (saved)",
@@ -121,7 +121,7 @@
     {
       "name": "when the sound is lost the file is saved early and the page shows the engine’s message",
       "pass": true,
-      "detail": "Last recording12:15:01 PMFinished earlyRecording finished early (the sound stopped: an audio device was lost or stalled); 3 s saved.Filecode-resonance-36bf9b09d"
+      "detail": "Last recordingFinished earlyRecording finished early (the sound stopped: an audio device was lost or stalled); 3 s saved.SoundLost during the recording (1 s aff"
     },
     {
       "name": "the OBS URL carries exactly the chosen options",
@@ -156,12 +156,12 @@
     {
       "name": "the OBS presentation profile sets up the recommended URL (stream, following the project) and records nothing",
       "pass": true,
-      "detail": "http://127.0.0.1:45097/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf"
+      "detail": "http://127.0.0.1:44905/?overlay=1&sound=1&project=36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf"
     },
     {
       "name": "the OBS information control is as wide as its buttons (not stretched)",
       "pass": true,
-      "detail": "212 of 621 px"
+      "detail": "229 of 432 px"
     },
     {
       "name": "a demonstration project is labelled fictional beside the OBS builder and over the frame",
@@ -186,12 +186,47 @@
     {
       "name": "the film command is the real one (film.js after npm ci in qualification, with this data folder and project)",
       "pass": true,
-      "detail": "cd qualification && npm ciCopynode visual/film.js --data \"/tmp/cr-ui-gqOPSn\" --project 36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf --out results/visual/film.webmCopy"
+      "detail": "cd qualification && npm ciCopynode visual/film.js --data \"/tmp/cr-ui-g6mbWH\" --project 36bf9b09d6c33cf9b0513648d241de3cf8e322c26d433bedd1d0ac50facaeccf --out results/visual/film.webmCopy"
+    },
+    {
+      "name": "the recorder lock is the browser’s Web Locks (not announcements alone)",
+      "pass": true,
+      "detail": "web-locks,web-locks"
+    },
+    {
+      "name": "20 rounds of Record pressed in two windows at the same instant (both buttons enabled): exactly one recording each time",
+      "pass": true,
+      "detail": "wins 11/9, press spread ≤ 112 ms, max active 1"
+    },
+    {
+      "name": "the window that lost the race says another window is recording, and did not start its sound",
+      "pass": true,
+      "detail": "every round"
+    },
+    {
+      "name": "while one window records, the other cannot (its lock is held there)",
+      "pass": true,
+      "detail": "{\"recA\":true,\"heldBefore\":true,\"refused\":\"elsewhere\"}"
+    },
+    {
+      "name": "a window that crashes while recording releases the lock at once: the other window records",
+      "pass": true,
+      "detail": "{\"didCrash\":true,\"freedAfterCrash\":true,\"took\":{\"ok\":true,\"audio\":true,\"width\":1280,\"height\":720}}"
+    },
+    {
+      "name": "the window that took over after the crash stops its recording normally",
+      "pass": true,
+      "detail": "{\"settled\":true,\"result\":true}"
+    },
+    {
+      "name": "after the crash the remaining windows’ Record controls recover (no stale “recording in another window”)",
+      "pass": true,
+      "detail": "Record"
     },
     {
       "name": "the record control and the profile are reachable with Tab",
       "pass": true,
-      "detail": "outRecordBtn → 720p → outObsProfile → Performance and limits → How recording works → Stream → obsPinWorld → obsPinStyle"
+      "detail": "outRecordBtn → Guide → 720p → Performance and limits → outObsProfile → exportAudioBtn → exportDataLink → Commands"
     },
     {
       "name": "at 1280 × 720 the Record control is visible without scrolling",
@@ -212,7 +247,7 @@
   "measurements": {
     "rec720": {
       "ebml": true,
-      "size": 551167,
+      "size": 946014,
       "tool": "ffmpeg",
       "video": {
         "codec": "vp9",
@@ -223,11 +258,11 @@
         "codec": "opus"
       },
       "maxVolumeDb": -16,
-      "name": "code-resonance-36bf9b09d6-1792944884014.webm"
+      "name": "code-resonance-36bf9b09d6-1793093245127.webm"
     },
     "rec1080": {
       "ebml": true,
-      "size": 244571,
+      "size": 860908,
       "tool": "ffmpeg",
       "video": {
         "codec": "vp9",
@@ -237,7 +272,7 @@
       "audio": {
         "codec": "opus"
       },
-      "maxVolumeDb": -16.7
+      "maxVolumeDb": -16.5
     },
     "obs": [
       {
@@ -265,6 +300,287 @@
     "wav": {
       "size": 882044,
       "name": "code-resonance-36bf9b09d6-ambient.wav"
+    },
+    "recordRace": {
+      "rounds": 20,
+      "wins": [
+        11,
+        9
+      ],
+      "maxSpreadMs": 112,
+      "detail": [
+        {
+          "i": 0,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 39,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": false,
+          "loserSoundBefore": false
+        },
+        {
+          "i": 1,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 37,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 2,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 35,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 3,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 107,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 4,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 33,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 5,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 36,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 6,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 37,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 7,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 36,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 8,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 37,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 9,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 107,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 10,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 37,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 11,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 34,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 12,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 109,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 13,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 34,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 14,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 36,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 15,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 41,
+          "maxActive": 1,
+          "winner": 1,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 16,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 36,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 17,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 40,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 18,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 112,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        },
+        {
+          "i": 19,
+          "enabled": [
+            true,
+            true
+          ],
+          "spreadMs": 102,
+          "maxActive": 1,
+          "winner": 0,
+          "told": true,
+          "loserSound": true,
+          "loserSoundBefore": true
+        }
+      ],
+      "withoutLock": {
+        "enabled": [
+          true,
+          true
+        ],
+        "maxActive": 2
+      }
+    },
+    "recordCrash": {
+      "buttonAfterCrash": "Recording in another window",
+      "disabledAfterCrash": true
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T16:19:04.776Z",
+  "at": "2026-10-27T09:27:01.400Z",
   "browser": "chromium (playwright-core, headless)",
   "checks": [
     {
@@ -50,7 +50,7 @@
     {
       "name": "music is audible",
       "pass": true,
-      "detail": "{\"rms\":0.04368,\"peak\":0.1469}"
+      "detail": "{\"rms\":0.03943,\"peak\":0.1362}"
     },
     {
       "name": "live read-outs follow the engine",
@@ -80,7 +80,7 @@
     {
       "name": "preview is audible",
       "pass": true,
-      "detail": "{\"rms\":0.04985,\"peak\":0.2231}"
+      "detail": "{\"rms\":0.04642,\"peak\":0.2198}"
     },
     {
       "name": "cancel restores the saved style",
@@ -120,7 +120,7 @@
     {
       "name": "second window: the music did not restart (same audio context, bar keeps counting)",
       "pass": true,
-      "detail": "{\"bar\":4,\"enabled\":true,\"sameContext\":true,\"taps\":1,\"tempo\":101}"
+      "detail": "{\"bar\":3,\"enabled\":true,\"sameContext\":true,\"taps\":1,\"tempo\":101}"
     },
     {
       "name": "after reload: Pulse is selected and marked as this project's",
@@ -300,7 +300,7 @@
     {
       "name": "900 px wide: the stage is placed above the controls, in view",
       "pass": true,
-      "detail": "{\"slotTop\":68,\"stylesTop\":813,\"placed\":true,\"inView\":true}"
+      "detail": "{\"slotTop\":72,\"stylesTop\":614,\"placed\":true,\"inView\":true}"
     },
     {
       "name": "900 px wide: the performance monitor is still a landmark",
@@ -325,7 +325,7 @@
     {
       "name": "export: a WAV of the recorded performance",
       "pass": true,
-      "detail": "code-resonance-c6c876a59a-chip.wav 42336044 bytes"
+      "detail": "code-resonance-c6c876a59a-chip.wav 5292044 bytes in 2177 ms"
     },
     {
       "name": "export: names no private folder",
@@ -355,12 +355,12 @@
       "swing": 0.08
     },
     "ambient": {
-      "rms": 0.04368,
-      "peak": 0.1469
+      "rms": 0.03943,
+      "peak": 0.1362
     },
     "pulsePreview": {
-      "rms": 0.04985,
-      "peak": 0.2231
+      "rms": 0.04642,
+      "peak": 0.2198
     },
     "secondWindow": {
       "before": {
@@ -369,7 +369,7 @@
         "taps": 1
       },
       "after": {
-        "bar": 4,
+        "bar": 3,
         "enabled": true,
         "sameContext": true,
         "taps": 1,
@@ -378,8 +378,8 @@
     },
     "export": {
       "file": "code-resonance-c6c876a59a-chip.wav",
-      "bytes": 42336044,
-      "renderMs": 222628
+      "bytes": 5292044,
+      "renderMs": 2177
     }
   }
 }

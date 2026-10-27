@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T16:14:36.997Z",
+  "at": "2026-10-27T09:25:09.257Z",
   "passed": 45,
   "failed": 0,
   "checks": [
@@ -16,7 +16,7 @@
     {
       "name": "the receiver step names the real version and port",
       "pass": true,
-      "detail": "0.5.0:45667"
+      "detail": "0.5.0:44745"
     },
     {
       "name": "the VS Code step gives the exact commands for this version",
@@ -81,7 +81,7 @@
     {
       "name": "lumen: \"Capture stopped at …\" from its evidence (state stopped)",
       "pass": true,
-      "detail": "Receiver availableChanges arrive as they happenCapture stopped at Oct 23, 2026, 04:00 PMVS Code capture observed · this extension version do"
+      "detail": "Capture stopped at Oct 23, 2026, 04:00 PMVS Code capture observed · this extension version does not report its settingsProject idle · last e"
     },
     {
       "name": "lumen: old events are shown as idle, never as running",
@@ -101,7 +101,7 @@
     {
       "name": "sample: capture state matches the evidence (running only with activity in the last 2 min)",
       "pass": true,
-      "detail": "fresh=true; Receiver availableChanges arrive as they happenVS Code capture running · editor activity just nowVS Code capture observed · extension 0.5.0 reported its setting"
+      "detail": "fresh=true; VS Code capture running · editor activity just nowVS Code capture observed · extension 0.5.0 reported its settings just nowEvents received just now05:24:52 AMAg"
     },
     {
       "name": "sample: extension 0.5.0 reported its settings",
@@ -216,7 +216,7 @@
     {
       "name": "\"Open in new window\" opens the Stage of the active project",
       "pass": true,
-      "detail": "http://127.0.0.1:45513/?project=c6c876a59a661b8d8772059a2f3bd44255110676c4ad7f9d11e60328395f117b#/stage"
+      "detail": "http://127.0.0.1:45653/?project=c6c876a59a661b8d8772059a2f3bd44255110676c4ad7f9d11e60328395f117b#/stage"
     },
     {
       "name": "\"Open Stage\" (keyboard) opens the Performance Stage",
@@ -226,7 +226,7 @@
     {
       "name": "no console errors, page errors or failed requests",
       "pass": true,
-      "detail": "(6 expected 404 \"not yet sorted\" polls by the engine for the brand-new project)"
+      "detail": "(2 expected 404 \"not yet sorted\" polls by the engine for the brand-new project)"
     }
   ]
 }
