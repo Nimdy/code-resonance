@@ -13,18 +13,19 @@ import {projectName,STYLE_NAMES} from '../format.js';
 import {PROFILE_KEYS,GROUPS,MUSIC_KEYS,DEFAULT_MUSIC,DEFAULT_MIX,STARTERS,mixOf,sameMix,scoreOf,soundingGroups,presetPayload,presetValues} from '../music-profile.js';
 const STYLES=['ambient','pulse','cinematic','chip'];
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
-// What each palette really plays (public/music.js PATCH, score.js INSTRUMENT) and its room (music.js REVERB, seconds).
-// The engine does not export these, so they are mirrored here: keep them in step with music.js. `composed` is what the
-// composed score's roles play in each style (score.js createBarV3).
+// What each palette really plays and its room, in seconds. The engine does not export these, so they are mirrored
+// here: keep them in step with public/music.js and public/score.js. The classic score (v2): `voices` (music.js PATCH,
+// score.js INSTRUMENT) and `room` (music.js REVERB). The composed score (v3): `composed`, what createBarV3 writes for
+// each style through music.js PATCH3, and `room3` (music.js REVERB3), which Space scales (roomOf).
 const STYLE_INFO={
-  ambient:{tag:'Drift',voices:'Sine bass, slow-swelling saw pads, soft triangle arpeggios, shaker. No drums.',room:3.2,
-    composed:'Warm pads over a held bass, soft arpeggios, glints of glass, harp or breath. A shaker only when Rhythm asks.'},
-  pulse:{tag:'Synth',voices:'Saw pads and bass, saw arpeggios, kick on every beat, snare and hats.',room:1.6,
-    composed:'Bass grooves, running arpeggios, kick, snare and hats whose patterns change with each section.'},
-  cinematic:{tag:'Score',voices:'Warm three-voice pads with vibrato, triangle bass, taiko, shaker.',room:3.6,
-    composed:'Voice-led pads, an ostinato, a string counter-melody, taiko at the turns of the form.'},
-  chip:{tag:'Digital',voices:'Square-wave voices, triangle bass, kick on every beat, snare and hats.',room:.9,
-    composed:'Square-wave lines with an echo, an octave-leaping bass, fast arpeggios, kick, snare and hats.'}
+  ambient:{tag:'Drift',voices:'Sine bass, slow-swelling saw pads, soft triangle arpeggios, shaker. No drums.',room:3.2,room3:3.6,
+    composed:'No drums: a high, breathy flute melody over warm pads, harp and glass details, tonic pedals in interludes.'},
+  pulse:{tag:'Synth',voices:'Saw pads and bass, saw arpeggios, kick on every beat, snare and hats.',room:1.6,room3:1.7,
+    composed:'Drums that change with each section and drop out in releases, syncopated developments, fills into returns.'},
+  cinematic:{tag:'Score',voices:'Warm three-voice pads with vibrato, triangle bass, taiko, shaker.',room:3.6,room3:3.9,
+    composed:'A string ostinato in developments, taiko only at section starts and in fills, swells and washes at the turns.'},
+  chip:{tag:'Digital',voices:'Square-wave voices, triangle bass, kick on every beat, snare and hats.',room:.9,room3:1.1,
+    composed:'Band-limited pulse waves, fast arpeggios, melodies answered in echo canons, four-on-the-floor developments.'}
 };
 const MODE_HINT={ionian:'major',aeolian:'natural minor',dorian:'minor with a bright sixth',lydian:'major with a raised fourth',mixolydian:'major with a flat seventh'};
 // Section names of the classic score (v2) and the roles of the composed score's form (v3).
@@ -95,6 +96,8 @@ export default {mount(view,{store:S,player:P,chrome}){
   // loads). With no project, the controls edit the global defaults, which the composed score of any project will use.
   const composed=()=>!S.state.selected||chosenScore!==2;
   const projectBpm=style=>identity?identity.tempo[style]:null;
+  // The room a style plays in: the classic score's is fixed; the composed score's opens and closes with Space (music.js space()).
+  const roomOf=style=>{const i=STYLE_INFO[style];return composed()?Math.round(i.room3*(.6+.85*shown('space'))*4)/4:i.room;};
   const tempoText=(mode,bpm,style)=>mode==='manual'?`Manual · ${bpm} BPM`:`From the project${projectBpm(style)?` · ${projectBpm(style)} BPM`:''}`;
   // ---- Preview: one source of truth (store.state.musicPreview); this view only edits it ------------------------------
   function setPreview(next){const p={...next},v=S.state.musicPreview?.volume;if(v!==undefined)p.volume=v;S.previewMusic(null);if(Object.keys(p).length)S.previewMusic(p);}
@@ -152,7 +155,7 @@ export default {mount(view,{store:S,player:P,chrome}){
     const b=h('button',{type:'button',role:'radio',class:'ms-style',dataset:{style:s},'aria-checked':'false'},
       h('span',{class:'ms-style-head'},h('strong',{text:STYLE_NAMES[s]}),h('span',{class:'ms-style-tag',text:i.tag})),
       h('span',{class:'ms-style-voices'}),
-      h('span',{class:'ms-style-meta'},h('span',{text:`Room ${i.room} s`,title:`${i.room>=3?'A long':'A short'} room: ${i.room} s of reverb`}),h('span',{class:'num ms-style-bpm'})));
+      h('span',{class:'ms-style-meta'},h('span',{class:'ms-style-room'}),h('span',{class:'num ms-style-bpm'})));
     b.addEventListener('click',()=>edit({style:s}));
     b.addEventListener('keydown',e=>{const k=e.key==='ArrowRight'||e.key==='ArrowDown'?1:e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:0;if(!k)return;e.preventDefault();
       const next=styleCards[(styleCards.indexOf(b)+k+styleCards.length)%styleCards.length];next.focus();next.click();});
@@ -421,12 +424,13 @@ export default {mount(view,{store:S,player:P,chrome}){
     // What each palette plays depends on the score: the classic one's instruments, or the composed one's roles.
     for(const b of styleCards){const on=b.dataset.style===style;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;b.classList.toggle('pending',on&&'style' in d);
       text(b.querySelector('.ms-style-voices'),STYLE_INFO[b.dataset.style][composed()?'composed':'voices']);
+      const room=roomOf(b.dataset.style),roomEl=b.querySelector('.ms-style-room');text(roomEl,`Room ${room} s`);roomEl.title=`${room>=3?'A long':'A short'} room: ${room} s of reverb${composed()?' at this Space':''}`;
       text(b.querySelector('.ms-style-bpm'),projectBpm(b.dataset.style)?`${projectBpm(b.dataset.style)} BPM`:'');}
     for(const c of identityBox.querySelectorAll('.ms-tempo-cell'))c.classList.toggle('current',c.dataset.style===style);
     sourceLine(styleSource,['style'],'Style',m=>STYLE_NAMES[m.style]);
     if(S.pinned('style'))styleSource.append(h('span',{class:'warn',text:`This window's address pins the style (?style=); saved choices apply elsewhere.`}));
     const bpm=projectBpm(style),beat=mode==='manual'?tempo:bpm;
-    text(roomNote,`${STYLE_NAMES[style]}'s room (${STYLE_INFO[style].room} s) comes with the style${composed()?', Space opens or closes it':''}; its echo follows the tempo.`);
+    text(roomNote,`${STYLE_NAMES[style]}'s room (${roomOf(style)} s) comes with the style${composed()?', Space opens or closes it':''}; its echo follows the tempo.`);
     // What the tempo means in time: the beat, the 16-step bar and the echo (a dotted eighth, music.js).
     timing.replaceChildren(...[['Beat',beat?`${Math.round(60000/beat)} ms`:'—'],['Bar',beat?`${(240/beat).toFixed(2)} s · 16 steps`:'—'],
       ['Echo',beat?`${Math.round(45000/beat)} ms · dotted eighth`:'—']].flatMap(([k,v])=>[h('dt',{text:k}),h('dd',{text:v})]));
