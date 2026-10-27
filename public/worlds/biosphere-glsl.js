@@ -389,22 +389,48 @@ void main(){vec4 q=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(q.xyz/q.w-uCam);f
   if(uUnlock.z>0.){float veil=uUnlock.z*smoothstep(.1,.6,fbm3(vec3(d.x*4.,d.y*7.-uV*.03,d.z*4.)))*smoothstep(.12,.55,h);c+=satc(uPal[3])*veil*.05;}
   gl_FragColor=vec4(c,1.);}`;
 // ---- Digital life (only when the recipe has it on: these strings are never part of a world without life) -----------
-// The organisms answer the ecology living among them: the trail and energy its inhabitants leave (a field texture over
-// the ground plane) light the photophores where they pass, an organism visited by many (or a lasting attractor) glows a
-// little more, with a slow shimmer; its halo in the water swells with its visitors. Never structure, never a flash.
-const LIFE_DECL=`uniform sampler2D uLifeF;uniform vec4 uLifeO[MAXO],uLifeB;uniform float uLifeK;
-vec4 lifeField(vec3 w){vec2 u=(w.xz-uLifeB.xy)/uLifeB.zw;return texture2D(uLifeF,clamp(u,0.,1.));}`;
+// The organisms answer the ecology living among them, never with new structure and never with a flash:
+//  - a head visited by a gathering of pollinators glows: its photophores, buds and leaves near the head (not the
+//    trunk, not the organism's other head) brighten with its visitors, with a slow attack and release (the site's glow, about 4 s), with a soft
+//    shimmer; a lasting attractor keeps a steady part of that glow; its halo in the water swells with it;
+//  - where pollinators pass, their trail lights the photophores at the tips a little (local illumination);
+//  - on the floor the trail field lights the hyphae and the bioluminescent specks faintly where it forms a ridge: the
+//    paths the pollinators lay between crowns (which others follow) show as a soft glowing thread that fades as the
+//    trail decays.
+const LIFE_DECL=`uniform sampler2D uLifeF;uniform vec4 uLifeO[MAXO],uLifeC[MAXO],uLifeD[MAXO],uLifeB;uniform float uLifeK;
+vec4 lifeField(vec3 w){vec2 u=(w.xz-uLifeB.xy)/uLifeB.zw;return texture2D(uLifeF,clamp(u,0.,1.));}
+// A soft falloff from a head's centre (xyz, reach w; none when w is 0).
+float lifeFall(vec4 c,vec3 p){vec3 d=p-c.xyz;return c.w>0.?exp(-dot(d,d)/(c.w*c.w*2.4+.3)):0.;}
+// How much of an organism's glow reaches this point: each of its (one or two) heads lights its own surroundings with
+// its own visitors (uLifeO: glow of the first head, lasting, glow of the second, strain).
+float lifeLight(float org,vec3 p){int i=int(org);vec4 o=uLifeO[i];return (o.x+o.y*.35)*lifeFall(uLifeC[i],p)+(o.z+o.y*.35)*lifeFall(uLifeD[i],p);}
+float lifeGlow(float org){vec4 o=uLifeO[int(org)];return max(o.x,o.z)+o.y*.35;}`;
 const SEG_ANCHOR='  // Atmospheric perspective: organisms behind the anchor';
-const SEG_LIFE=`  {vec4 lf=lifeField(vW);vec4 lo=uLifeO[int(org)];float sh=.7+.3*sin(uV*1.1+dot(vW,vec3(2.1,1.7,2.3)));
-    float loc=(lf.r*.8+lf.g*.45)*(.3+.7*smoothstep(.2,1.,tip));float vis=lo.x*.55+lo.y*.3+lo.z*.15;
-    c+=hue*uLum*uLifeK*(spot*(loc*1.6+vis*.9)*sh+bud*(loc*.7+vis*.5)+(loc*.06+vis*.05)*sh*(.3+.7*tip))*(1.-lk.z*.85);}
+const SEG_LIFE=`  {float g=lifeLight(org,vW)*smoothstep(.35,.85,tip);float sh=.78+.22*sin(uV*1.3+dot(vW,vec3(2.1,1.7,2.3)));
+    float loc=lifeField(vW).r*smoothstep(.55,1.,tip);
+    c+=hue*uLum*uLifeK*(spot*(g*2.6*sh+loc*.5)+bud*g*1.5+g*.1*sh)*(1.-lk.z*.85);}
+`;
+const LEAF_ANCHOR='  float a=m.x*vA*';
+const LEAF_LIFE=`  {float g=lifeLight(vI.z,vW);c+=hue*uLum*uLifeK*g*(m.y*.8+vein*.45+tipG*.4)*(1.-lk.z);}
 `;
 const GLOW_ANCHOR='vA=(1.-gone)*on*(1.-bl*.75)';
+const GROUND_ANCHOR='  // Where the shafts reach the floor the caustic net plays over the sediment (only there).';
+// The floor shows the trail as threads, not pools: only where the trail stands above its surroundings (a ridge: a path
+// laid between crowns), not over the broad wash around a busy trunk.
+const GROUND_LIFE=`  {vec2 lu=(vW.xz-uLifeB.xy)/uLifeB.zw,le=vec2(1.5/64.);float t0=texture2D(uLifeF,clamp(lu,0.,1.)).r;
+    float ta=.25*(texture2D(uLifeF,clamp(lu+vec2(le.x,0.),0.,1.)).r+texture2D(uLifeF,clamp(lu-vec2(le.x,0.),0.,1.)).r+texture2D(uLifeF,clamp(lu+vec2(0.,le.y),0.,1.)).r+texture2D(uLifeF,clamp(lu-vec2(0.,le.y),0.,1.)).r);
+    float tr=smoothstep(.15,.8,t0)*smoothstep(.05,.45,(t0-ta)/(t0+.04));c+=hc*uLifeK*tr*(fil*.55+speck*.35+.012)*(.75+.25*sin(uV*.7+n1*6.));}
+`;
 export function withLife(src,kind){
   const head=src.replace(COMMON,COMMON+LIFE_DECL);
-  if(kind==='seg'){if(!head.includes(SEG_ANCHOR))throw new Error('life: segment anchor');return head.replace(SEG_ANCHOR,SEG_LIFE+SEG_ANCHOR);}
+  const put=(anchor,text)=>{if(!head.includes(anchor))throw new Error(`life: ${kind} anchor`);return head.replace(anchor,text+anchor);};
+  if(kind==='seg')return put(SEG_ANCHOR,SEG_LIFE);
+  if(kind==='leaf')return put(LEAF_ANCHOR,LEAF_LIFE);
+  if(kind==='ground')return put(GROUND_ANCHOR,GROUND_LIFE);
   if(kind==='glow'){if(!head.includes(GLOW_ANCHOR))throw new Error('life: glow anchor');
-    return head.replace(GLOW_ANCHOR,`vA=(1.+halo*uLifeK*(uLifeO[int(gM.y)].x*.8+uLifeO[int(gM.y)].y*.4))*(1.-gone)*on*(1.-bl*.75)`);}
+    // The halo swells with the crown's visitors; the crown's own glows (florets, tips) brighten a little.
+    // (The halo only a little: the life lights the crown, not a disc in the water.)
+    return head.replace(GLOW_ANCHOR,`vA=(1.+uLifeK*(halo*.8*lifeGlow(gM.y)+(1.-halo)*.9*lifeLight(gM.y,p)))*(1.-gone)*on*(1.-bl*.75)`);}
   return head;
 }
 // Inhabitants: soft points (authoritative entities and their followers) and screen-space ribbons along their trails,
@@ -414,8 +440,11 @@ attribute vec4 lC,lS;varying vec3 vC;varying float vK;
 void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;float z=max(.3,-mv.z);
   float s=lS.x*px/z;float ps=clamp(s,1.4*uPx,18.*uPx);
   vC=lC.rgb*lC.a*min(1.,s*s/(ps*ps)+.4)*(1.-fogAmount(position)*.85)*smoothstep(.4,1.8,z);gl_PointSize=ps;vK=lS.y;}`;
+// Pollinators (kind 0): a warm white core in a halo of their hue (the core is as bright as the halo's strongest
+// channel, so it stands above any crown whatever its colour).
 export const LIFE_PT_FS=`varying vec3 vC;varying float vK;
 void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q)*4.;if(r>1.)discard;
+  if(vK<.5){vec3 w=vec3(max(vC.r,max(vC.g,vC.b)))*vec3(1.,.95,.86);gl_FragColor=vec4(vC*exp(-r*4.5)*.4+mix(vC,w,.9)*(exp(-r*11.)*1.5+exp(-r*40.)*1.2),1.);return;}
   float g=vK>2.5?exp(-r*2.6)*.7+exp(-r*14.)*.5:exp(-r*7.)+exp(-r*26.)*1.3;gl_FragColor=vec4(vC*g,1.);}`;
 export const LIFE_RIB_VS=`${COMMON}
 attribute vec4 rA,rB,rC;varying vec3 vC;varying float vSide;
@@ -423,5 +452,6 @@ void main(){vec4 ca=projectionMatrix*viewMatrix*vec4(rA.xyz,1.),cb=projectionMat
   vec2 d=(cb.xy/max(cb.w,1e-3)-ca.xy/max(ca.w,1e-3))*uRes;vec2 n=normalize(vec2(-d.y,d.x)+1e-6);
   bool e=position.y>.5;vec4 cp=e?cb:ca;vec3 p=e?rB.xyz:rA.xyz;float z=max(.3,cp.w);float px=projectionMatrix[1][1]*uRes.y*.5;
   float w=clamp(rC.w*px/z,.7*uPx,4.*uPx);cp.xy+=n*position.x*w/uRes*2.*cp.w;gl_Position=cp;vSide=position.x;
-  vC=rC.rgb*(e?rB.w:rA.w)*(1.-fogAmount(p)*.85)*smoothstep(.4,1.8,z)*min(1.,rC.w*px/z/(.7*uPx));}`;
+  // A segment long on screen (an inhabitant passing close to the camera) fades, so no tail reads as a streak.
+  vC=rC.rgb*(e?rB.w:rA.w)*(1.-fogAmount(p)*.85)*smoothstep(.4,1.8,z)*min(1.,rC.w*px/z/(.7*uPx))*min(1.,70.*uPx/max(length(d),1.));}`;
 export const LIFE_RIB_FS=`varying vec3 vC;varying float vSide;void main(){float e=1.-vSide*vSide;gl_FragColor=vec4(vC*e*e,1.);}`;
