@@ -86,10 +86,12 @@ export function createPipeline(renderer,{samples=4}={}){
       vec2 off=pc/max(length(pc),1e-4)/aspect*optical*rad*rad*(3.-2.*rad);
       vec3 col=lens(uv,off);
       // The bloom through the same lens (its colours separate a little more, as a halo's do), halation (the tight part of
-      // the glow, warm, hugging the highlights) and mist (the wide glow laid softly over the image).
+      // the glow hugging the highlights, half its own colour and half film's warmth whatever the light's colour) and
+      // mist (the wide glow laid softly over the image).
       vec3 bl=texture2D(bloom,uv).rgb,wd=texture2D(wide,uv).rgb;if(fringe>0.)bl=vec3(texture2D(bloom,uv+off*fringe).r,bl.g,texture2D(bloom,uv-off*fringe).b);
       col+=bl*bloomStrength*.22*bloomTint;
-      col+=max(bl-wd,0.)*halation*halationTint*bloomStrength*.22+wd*mist*mistTint*.35;
+      vec3 tight=max(bl-wd,0.);tight=mix(tight,vec3(dot(tight,vec3(.2126,.7152,.0722))),.5);
+      col+=tight*halation*halationTint*bloomStrength*.22+wd*mist*mistTint*.35;
 #else
       vec2 c=uv-.5;float edge=dot(c,c);
       vec3 col=vec3(texture2D(src,uv+c*aberration*edge).r,texture2D(src,uv).g,texture2D(src,uv-c*aberration*edge).b);

@@ -76,7 +76,7 @@ test('The classic composite is the Phase 10 shader token for token; the finished
   const tokens=s=>s.replace(/\/\/.*$/gm,'').replace(/\s+/g,' ').trim();
   assert.equal(crypto.createHash('sha256').update(tokens(pre(COMPOSITE,[]))).digest('hex').slice(0,16),'77e67e327e7062c4');
   const finished=tokens(pre(COMPOSITE,['FINISH']));
-  for(const k of ['uniform float optical,fringe,halation,split,mist','vec3 col=lens(uv,off)','max(bl-wd,0.)','if(split>0.)'])assert(finished.includes(k),k);
+  for(const k of ['uniform float optical,fringe,halation,split,mist','vec3 col=lens(uv,off)','vec3 tight=max(bl-wd,0.)','if(split>0.)'])assert(finished.includes(k),k);
   assert(!/[^\x09\x0a\x0d\x20-\x7e]/.test(COMPOSITE.replace(/\\`/g,'')),'plain ASCII GLSL (comments included)');
   // The finish adds no render target: the pipeline still allocates exactly the Phase 10 set.
   assert.equal((src.match(/new THREE\.WebGLRenderTarget\(/g)||[]).length,5,'scene, background, the bloom chain and the packs\' post targets');
