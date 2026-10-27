@@ -1,87 +1,170 @@
-/* Music Studio: a performance desk. Choices on the left, the stage, the live read-outs and the score's fixed identity on
-   the right. One accent for what is selected or previewed; warm colour only for what is resting or overridden. */
-.ws-music .page-inner{max-width:1080px;gap:20px}
-.ws-music .page-head p{max-width:620px}
-/* Scope: where a change is saved, always in view at the top */
-.ws-music .ms-scope{padding:12px 14px;display:grid;gap:8px}
-.ws-music .ms-scope-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ws-music .ms-scope .segmented button{max-width:340px;overflow:hidden;text-overflow:ellipsis}
+/* Music Studio: a performance desk. The controls on the left in a grid that uses the width; the monitor (stage, live
+   read-outs) and the score's fixed identity in a wide column on the right, always in view while a change is heard.
+   One accent for what is selected, previewed or saved to this project; warm colour only for what is resting or
+   overridden. Layout inside the desk follows its own width (container queries), not the window's. */
+/* The monitor's column: a third of a desktop window. At 1080 px and below the shell's narrower panel (300 px) stands, so
+   the controls keep their width on a small window. */
+@media (min-width:1081px){.ws-music.split{--inspector:clamp(400px,34vw,880px)}}
+.ws-music .page-inner{gap:22px}
+/* The shared eyebrow is 11.5 px: 12 px here, the smallest text the studio uses */
+
+.ws-music .ms-empty:empty{display:none}
+.ws-music .ms-empty{display:grid;gap:12px}
+/* ---- Head: the title and, beside it, where changes are saved ---------------------------------------------------- */
+.ws-music .ms-head{align-items:stretch;justify-content:space-between;gap:16px 24px;flex-wrap:nowrap}
+.ws-music .ms-head .grow{align-content:center;flex:1 1 260px}
+.ws-music .ms-lede{max-width:60ch;line-height:1.5}
+/* A narrow window (about 1280 wide): the title column is ~240 px beside the scope panel, so the lede steps down to the small size (13 px). */
+@media (max-width:1366px){.ws-music .ms-lede{font-size:13px;line-height:1.45}}
+.ws-music .ms-scope{flex:0 1 500px;min-width:0;display:grid;gap:8px;align-content:center;padding:12px 16px 12px 18px;border-radius:var(--r-3);
+  border:1px solid var(--line-2);background:var(--bg-2);position:relative;overflow:hidden;transition:border-color var(--t-2),background var(--t-2)}
+.ws-music .ms-scope::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--text-3);transition:background var(--t-2)}
+.ws-music[data-scope="project"] .ms-scope{border-color:var(--accent-line);background:linear-gradient(90deg,rgba(117,237,255,.07),transparent 70%),var(--bg-2)}
+.ws-music[data-scope="project"] .ms-scope::before{background:var(--accent)}
+.ws-music .ms-scope-row{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.ws-music .ms-scope .segmented button{min-width:0;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 .ws-music .ms-scope-note{line-height:1.45}
 /* style.css .segmented scrolls (overflow:auto), which clips an outside focus ring to its right edge: draw it inside */
 .ws-music .segmented button:focus-visible{outline-offset:-2px}
-/* The unsaved preview: sticks to the top of the page while it lasts */
-.ws-music .ms-preview{position:sticky;top:-28px;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 14px;border-radius:var(--r-3);
-  background:linear-gradient(90deg,rgba(117,237,255,.13),rgba(117,237,255,.05)) ,var(--bg-2);border:1px solid var(--accent-line);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+/* ---- The unsaved preview: sticks to the top of the page while it lasts ------------------------------------------- */
+.ws-music .ms-preview{position:sticky;top:-28px;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 16px;border-radius:var(--r-3);
+  background:linear-gradient(90deg,rgba(117,237,255,.13),rgba(117,237,255,.05)),var(--bg-2);border:1px solid var(--accent-line);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .ws-music .ms-preview[hidden]{display:none}
 .ws-music .ms-preview-text{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ws-music .ms-preview-what{color:var(--text-1)}
 .ws-music .ms-preview-actions{display:flex;gap:8px;margin-left:auto}
-.ws-music .ms-sound:empty{display:none}
 /* style.css colours every svg inside a callout, including the icon of a button in it */
 .ws-music .callout .btn svg{color:currentColor;margin-top:0}
+/* ---- The desk ------------------------------------------------------------------------------------------------- */
+.ws-music .ms-desk{container:desk/inline-size;display:grid;gap:28px;min-width:0}
+.ws-music .ms-desk>.section+.section{margin-top:0}
 /* Style cards: a radio group; the selected palette is lit */
-.ws-music .ms-styles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.ws-music .ms-style{display:grid;grid-template-rows:auto 1fr auto;gap:8px;text-align:left;padding:13px 14px 12px;border-radius:var(--r-3);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);
-  min-height:138px;position:relative;transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-2) var(--ease)}
+.ws-music .ms-styles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ws-music .ms-style{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;gap:10px;text-align:left;padding:15px 16px 13px;border-radius:var(--r-3);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);
+  position:relative;transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-2) var(--ease)}
 .ws-music .ms-style:hover{border-color:var(--line-3);background:var(--bg-3)}
 .ws-music .ms-style[aria-checked="true"]{border-color:var(--accent-line);background:linear-gradient(180deg,rgba(117,237,255,.09),rgba(117,237,255,.02) 60%),var(--bg-2);box-shadow:0 0 0 1px var(--accent-line) inset}
-.ws-music .ms-style[aria-checked="true"]::after{content:'';position:absolute;right:12px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.ws-music .ms-style[aria-checked="true"]::after{content:'';position:absolute;right:14px;top:19px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .ws-music .ms-style.pending[aria-checked="true"]{border-style:dashed}
-.ws-music .ms-style-head{display:flex;align-items:baseline;gap:8px;padding-right:16px}
-.ws-music .ms-style-head strong{font-size:14px;font-weight:620;color:var(--text-1)}
-.ws-music .ms-style-tag{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.ws-music .ms-style-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 9px;padding-right:18px}
+.ws-music .ms-style-head strong{font-size:16px;font-weight:620;color:var(--text-1)}
+.ws-music .ms-style-tag{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
 .ws-music .ms-style[aria-checked="true"] .ms-style-tag{color:var(--accent)}
-.ws-music .ms-style-voices{font-size:12px;line-height:1.45}
-.ws-music .ms-style-meta{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;font:11px var(--mono);color:var(--text-3);border-top:1px solid var(--line);padding-top:8px}
-.ws-music .ms-room{line-height:1.5}
+.ws-music .ms-style-voices{font-size:13.5px;line-height:1.5}
+.ws-music .ms-style-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 8px;white-space:nowrap;font:12.5px var(--mono);color:var(--text-3);border-top:1px solid var(--line);padding-top:9px}
+.ws-music .ms-style[aria-checked="true"] .ms-style-bpm{color:var(--text-1)}
+.ws-music .ms-style-foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px 24px}
+.ws-music .ms-room{line-height:1.5;margin:0}
 /* Value source: project value, inherited, or overridden */
-.ws-music .ms-source{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;min-height:22px}
-.ws-music .ms-source .link-btn{font-size:12px}
-.ws-music .ms-source .warn{font-size:12px}
-.ws-music .ms-pair{align-items:start}
-.ws-music .ms-field{padding:14px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);gap:10px}
-.ws-music .ms-field .segmented{justify-self:start}
+.ws-music .ms-source{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;min-height:24px}
+.ws-music .ms-source .link-btn{font-size:13px}
+.ws-music .ms-source .warn{font-size:13px}
+/* Performance cards: tempo, texture, output. Equal height in a row; the value's source sits at the foot of each. */
+.ws-music .ms-perf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.ws-music .ms-field,.ws-music .ms-card{padding:16px 18px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);min-width:0}
+.ws-music .ms-field{display:flex;flex-direction:column;gap:11px}
+.ws-music .ms-field .field-label,.ws-music .ms-out .field-label{font-size:14.5px;font-weight:600}
+.ws-music .ms-field .field-value{font-size:14px;color:var(--text-1)}
+.ws-music .ms-field .segmented{align-self:flex-start}
+.ws-music .ms-foot{margin-top:auto;padding-top:11px;border-top:1px solid var(--line)}
 .ws-music .ms-tempo-manual[hidden]{display:none}
-.ws-music .ms-effects{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:12px}
-.ws-music .ms-effects dt{color:var(--text-3)}.ws-music .ms-effects dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--text-2)}
+/* What a value does: texture's effect on the arrangement (.ms-effects), the tempo in time (.ms-timing) */
+.ws-music .ms-effects,.ws-music .ms-timing{display:grid;grid-template-columns:max-content 1fr;gap:5px 16px;margin:0;font-size:13px}
+.ws-music .ms-effects dt,.ws-music .ms-timing dt{color:var(--text-3)}
+.ws-music .ms-effects dd,.ws-music .ms-timing dd{margin:0;font-family:var(--mono);font-size:13px;color:var(--text-2)}
 .ws-music .ms-effects dd.warn{color:var(--warn)}
-/* Presets */
-.ws-music .ms-preset-new{display:flex;gap:8px;max-width:520px}
-.ws-music .ms-preset-new .input{flex:1}
+.ws-music .ms-output{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 28px;align-content:start}
+.ws-music .ms-out{gap:9px}
 .ws-music .ms-error{color:var(--danger);min-height:0}
-.ws-music .ms-error:empty,.ws-music .ms-field>.accent:empty{display:none}
+.ws-music .ms-error:empty,.ws-music .ms-out>.accent:empty{display:none}
+/* Presets and the visual response */
+.ws-music .ms-lower{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+.ws-music .ms-card{display:grid;gap:12px;align-content:start}
+.ws-music .ms-card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ws-music .ms-preset-new{display:flex;gap:8px;max-width:560px}
+.ws-music .ms-preset-new .input{flex:1}
+.ws-music .ms-presets{background:var(--bg-1)}
 .ws-music .ms-presets[hidden]{display:none}
 .ws-music .ms-preset .grow{display:grid;gap:1px}
 .ws-music .ms-preset .btn.ghost[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
-/* Inspector: the stage and live read-outs stay put; the identity scrolls */
-.ws-music .ms-monitor{padding:14px 16px 12px;display:grid;gap:12px;border-bottom:1px solid var(--line)}
+.ws-music .ms-advanced-card{container:adv/inline-size}
+.ws-music .ms-advanced{border-top:0;padding-top:0}
+.ws-music .ms-advanced>summary{font-size:15px;color:var(--text-1)}
+.ws-music .ms-advanced-hint{padding-left:15px;line-height:1.5}
+.ws-music .ms-response{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.ws-music .ms-response .ms-field{background:var(--bg-1)}
+.ws-music .ms-response .field-head{flex-wrap:wrap;row-gap:4px}.ws-music .ms-response .field-head .num{white-space:nowrap}.ws-music .ms-response .field-head .btn{margin-left:auto}
+@container adv (min-width:620px){.ws-music .ms-response{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* The desk at full width (a 1920 screen and up, or a 1440 one without the monitor's width) */
+@container desk (min-width:680px){
+  .ws-music .ms-styles{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .ws-music .ms-style{padding:13px 14px 12px;gap:8px}
+  .ws-music .ms-style-voices{font-size:13px;line-height:1.45}
+}
+@container desk (min-width:900px){
+  .ws-music .ms-styles{gap:12px}
+  .ws-music .ms-style{min-height:150px;padding:15px 16px 13px;gap:10px}
+  .ws-music .ms-style-voices{font-size:13.5px;line-height:1.5}
+}
+@container desk (min-width:1020px){
+  .ws-music .ms-perf{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.05fr)}
+  .ws-music .ms-output{grid-column:auto;grid-template-columns:minmax(0,1fr);gap:0}
+  .ws-music .ms-output .ms-out+.ms-out{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .ws-music .ms-lower{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
+/* ---- The monitor: the stage and the live read-outs stay put; the identity scrolls under them ------------------ */
+.ws-music .ms-monitor{padding:16px 18px 16px;display:grid;gap:14px;border-bottom:1px solid var(--line)}
 .ws-music .ms-slot{aspect-ratio:16/9;width:100%;min-height:0}
-.ws-music .ms-live{display:grid;gap:8px}
-.ws-music .ms-live-grid{display:grid;grid-template-columns:.8fr 1fr 1.25fr 1fr;gap:8px}
-.ws-music .ms-live-grid div{display:grid;gap:2px;min-width:0}
-.ws-music .ms-live-grid b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-music .ms-meter-row{display:grid;grid-template-columns:auto 1fr 44px;align-items:center;gap:10px}
-.ws-music .ms-meter{height:6px;border-radius:6px;background:var(--bg-4);overflow:hidden;position:relative}
-.ws-music .ms-meter::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),var(--bg-1) calc(10% - 1px) 10%)}
+.ws-music .ms-live{display:grid;gap:12px}
+.ws-music .ms-live-grid{display:grid;grid-template-columns:.8fr 1fr 1.25fr 1fr;border:1px solid var(--line);border-radius:var(--r-2);background:var(--bg-2)}
+.ws-music .ms-readout{display:grid;gap:4px;min-width:0;padding:9px 12px 10px}
+.ws-music .ms-readout+.ms-readout{border-left:1px solid var(--line)}
+.ws-music .ms-readout b{font:600 17px/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-music .ms-readout:nth-child(2) b,.ws-music .ms-readout:nth-child(3) b{font-family:var(--font);font-size:16px}
+.ws-music .ms-meter-row{display:grid;grid-template-columns:auto 1fr 52px;align-items:center;gap:12px}
+.ws-music .ms-meter{height:8px;border-radius:8px;background:var(--bg-4);overflow:hidden;position:relative}
+.ws-music .ms-meter::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(5% - 1px),var(--bg-1) calc(5% - 1px) 5%)}
 .ws-music .ms-meter-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok) 0,var(--accent) 75%,var(--warn) 95%);transition:width var(--t-2) linear}
-.ws-music .ms-meter-db{text-align:right}
-.ws-music .ms-identity{display:grid;gap:14px}
+.ws-music .ms-meter-db{text-align:right;font-size:12.5px}
+.ws-music .ms-sound:empty{display:none}
+.ws-music .ms-sound-off{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:var(--r-2);background:var(--accent-soft);border:1px solid var(--accent-line)}
+.ws-music .ms-sound-off .grow{flex:1;min-width:0;display:grid;gap:2px}
+.ws-music .ms-sound-off strong{font-size:14px;color:var(--text-1)}
+.ws-music .ms-live-state[hidden]{display:none}
+.ws-music .ms-live.is-off>.ms-meter-row{display:none}
+.ws-music .ms-live.is-off .ms-readout b{color:var(--text-4)}
+/* The musical identity: read-only, derived from the project's seed */
+.ws-music .ms-identity{display:grid;gap:16px}
 .ws-music .ms-id-head{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.ws-music .ms-id-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.ws-music .ms-fact{display:grid;gap:5px;padding:11px 14px 12px;border-radius:var(--r-2);background:var(--bg-2);border:1px solid var(--line);min-width:0}
+.ws-music .ms-fact dd{margin:0;display:grid;gap:1px}
+.ws-music .ms-fact strong{font-size:17px;font-weight:620;color:var(--text-1)}
 .ws-music .ms-id-tempi,.ws-music .ms-id-motif{display:grid;gap:8px}
-.ws-music .ms-tempi{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.ws-music .ms-tempo-cell{display:grid;gap:2px;padding:7px 8px;border-radius:var(--r-2);background:var(--bg-2);border:1px solid var(--line);font-size:11px;color:var(--text-3)}
-.ws-music .ms-tempo-cell b{font-size:14px;color:var(--text-1);font-weight:600}
-.ws-music .ms-tempo-cell.current{border-color:var(--accent-line);color:var(--accent)}
-.ws-music .ms-motif{width:100%;height:auto;display:block;background:var(--bg-0);border:1px solid var(--line);border-radius:var(--r-2);padding:6px 4px 0}
+.ws-music .ms-tempi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ws-music .ms-tempo-cell{display:grid;gap:2px;padding:8px 10px;border-radius:var(--r-2);background:var(--bg-2);border:1px solid var(--line);font-size:12.5px;color:var(--text-3)}
+.ws-music .ms-tempo-cell b{font-size:17px;color:var(--text-1);font-weight:600}
+.ws-music .ms-tempo-cell.current{border-color:var(--accent-line);color:var(--accent);background:linear-gradient(180deg,rgba(117,237,255,.08),transparent),var(--bg-2)}
+.ws-music .ms-motif-box{background:var(--bg-0);border:1px solid var(--line);border-radius:var(--r-2);padding:10px 10px 6px;display:grid;gap:4px}
+.ws-music .ms-motif{width:100%;height:auto;display:block;overflow:visible}
+.ws-music .ms-motif-legend{display:grid;grid-template-columns:1fr 1fr;font:600 12px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ws-music .ms-motif-legend span{padding-left:3px}
 .ws-music .ms-motif line{stroke:var(--line);stroke-width:1}
 .ws-music .ms-motif line.bar{stroke:var(--line-3)}
 .ws-music .ms-motif rect.call{fill:var(--accent)}
 .ws-music .ms-motif rect.answer{fill:rgba(117,237,255,.18);stroke:var(--accent-2);stroke-width:1}
 .ws-music .ms-motif polyline{fill:none;stroke:var(--accent);stroke-opacity:.35;stroke-width:1}
-.ws-music .ms-motif text.label{fill:var(--text-3);font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase}
 .ms-chrome .slot-badge[hidden]{display:none}
-/* Laptop and narrow windows */
-@media (max-width:1280px){.ws-music .ms-preview{top:-24px}.ws-music .ms-styles{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-music .ms-style{min-height:0}}
+/* ---- A large screen (2560x1440): more air and larger cards, the same content -------------------------------------- */
+@media (min-width:2200px) and (min-height:1300px){
+  .ws-music .page-inner{gap:28px}.ws-music .ms-desk{gap:36px}
+  .ws-music .ms-style{min-height:176px;padding:18px 20px 16px}.ws-music .ms-style-head strong{font-size:17px}.ws-music .ms-style-voices{font-size:14px}
+  .ws-music .ms-field,.ws-music .ms-card{padding:20px 22px}.ws-music .ms-perf,.ws-music .ms-lower{gap:18px}
+  .ws-music .ms-monitor{padding:20px 22px;gap:16px}.ws-music .ms-readout{padding:11px 14px 12px}.ws-music .ms-readout b{font-size:19px}
+  .ws-music .inspector-body{padding:20px 22px 28px}.ws-music .ms-identity{gap:20px}
+}
+/* ---- Laptop and narrow windows ------------------------------------------------------------------------------------ */
+@media (max-width:1280px){.ws-music .ms-preview{top:-24px}
+  .ws-music .ms-monitor{padding:14px 16px}.ws-music .ms-readout{padding:8px 10px}.ws-music .ms-readout b{font-size:15px}.ws-music .ms-readout:nth-child(n) b{font-size:15px}}
 @media (max-width:900px){
   /* One scroll for the whole studio. The monitor (stage and read-outs) comes first, so a change is seen reacting while
      the controls are in view; the read-only identity goes last. The inspector's box dissolves so its parts can be placed. */
@@ -89,5 +172,6 @@
   .ws-music .page{overflow:visible}.ws-music .ms-preview{top:0}
   .ws-music .ms-inspector{display:contents}.ws-music .ms-monitor{order:-1;background:var(--bg-1)}.ws-music .inspector-body{order:1;background:var(--bg-1);border-top:1px solid var(--line)}
   .ws-music .ms-monitor{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:center}
-  .ws-music .ms-live-grid{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:640px){.ws-music .ms-styles{grid-template-columns:1fr}.ws-music .ms-monitor{grid-template-columns:1fr}.ws-music .ms-preset{flex-wrap:wrap}}
+  .ws-music .ms-live-grid{grid-template-columns:repeat(2,1fr)}.ws-music .ms-readout:nth-child(3){border-left:0}.ws-music .ms-readout:nth-child(n+3){border-top:1px solid var(--line)}
+  .ws-music .ms-sound-off{flex-wrap:wrap}.ws-music .ms-perf{grid-template-columns:minmax(0,1fr)}.ws-music .ms-output{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.ws-music .ms-head{flex-wrap:wrap}.ws-music .ms-styles{grid-template-columns:1fr}.ws-music .ms-monitor{grid-template-columns:1fr}.ws-music .ms-preset{flex-wrap:wrap}.ws-music .ms-scope{min-width:0}}

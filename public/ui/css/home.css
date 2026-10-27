@@ -1,75 +1,184 @@
-/* Home: the active project beside its live stage, what needs attention, recent projects, and the first-run guide. */
-.ws-home .home-head{align-items:center}
-.ws-home .home-sys{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.ws-home .sys-item{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:26px;border:1px solid var(--line);background:var(--bg-1);font-size:11.5px;color:var(--text-2);white-space:nowrap}
+/* Home: a workspace grid. The wide column carries the live world (the stage slot) and the recent projects; the side
+   column carries the active project (identity, actions, evidence-based capture status) and what needs attention. On a
+   first run the setup guide takes the wide column. The stage slot is sized by CSS alone, so a layout change only
+   resizes it. */
+.ws-home{--home-side:clamp(384px,24vw,560px);--home-gap:clamp(18px,1.3vw,28px);
+  /* The widest stage the window's height allows: the window less the top bar, the page's top padding, the one-line head
+     and its gap, and a margin that keeps the recent projects' heading in view. */
+  --hero-max:calc((100dvh - var(--topbar) - 182px) * 16 / 9)}
+.ws-home.page{padding-top:20px}
+.ws-home .page-inner{gap:18px}
+/* One line: the title and the product name on one baseline, so the stage starts higher. */
+.ws-home .home-head{align-items:baseline}
+.ws-home .home-head .grow{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
 .ws-home .dot.agent{background:var(--agent)}
-/* The primary area: a 16:9 stage and the project it plays. */
-.ws-home .home-hero{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-4);overflow:hidden}
-.ws-home .home-slot-wrap{padding:10px;min-width:0;align-self:center}
-.ws-home .home-slot{width:100%;aspect-ratio:16/9}
+.ws-home .home-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--home-side);gap:var(--home-gap);align-items:start}
+/* The wide column grows only as far as the stage can (its height limit); on short, wide windows (an ultrawide at 1080
+   px) the width beyond it goes to the side column instead of an empty band beside the stage. Where the stage is limited
+   by width (1920x1080, 2560x1440, 1440x900, 1280x720) this resolves exactly as minmax(0,1fr) var(--home-side). */
+.ws-home .home-grid:not(.first-run){grid-template-columns:minmax(0,var(--hero-max)) minmax(var(--home-side),1fr)}
+.ws-home .home-main,.ws-home .home-side{display:grid;gap:var(--home-gap);align-content:start;min-width:0}
+/* The side column ends level with the wide one: attention takes the height left under the active project, so no dead
+   band opens under it where the stage and recent projects are the taller column (1920x1080). Where the side is the
+   taller column (1440x900, 1280x720) this changes nothing. */
+.ws-home .home-grid:not(.first-run):not(.guide-top)>.home-side{align-self:stretch;grid-template-rows:auto 1fr}
+/* A first run with nothing needing attention: no side column (it would hold one lone card), so the guide or the empty
+   state has the full width. With an attention item (receiver offline, no WebGL) the side column stays. */
+.ws-home .home-grid.first-run.att-calm{grid-template-columns:minmax(0,1fr)}
+.ws-home .home-grid.first-run.att-calm>.home-side,.ws-home .home-grid.first-run.att-calm .home-att{display:none}
+.ws-home .nowrap{white-space:nowrap}
+/* Regions that only sometimes hold something (guide, first-run empty state) must not cost a grid gap when empty. */
+.ws-home .page-inner>div:empty,.ws-home .home-main>div:empty,.ws-home .home-grid>div:empty{display:none}
+/* The guide after a first project: below both columns, at the full width (its demo column widens with it). */
+.ws-home .home-grid>.home-guide-bottom{grid-column:1 / -1}
+/* ---- The live world: 16:9, as wide as the column, never taller than the window leaves room for ---- */
+.ws-home .home-hero{width:min(100%,var(--hero-max));min-width:min(100%,520px)}
+.ws-home .home-slot{width:100%;aspect-ratio:16/9;border-radius:var(--r-4);box-shadow:0 0 0 1px var(--line-2) inset,0 18px 48px rgba(0,0,0,.45)}
 .stage-chrome .home-chrome{position:absolute;inset:0}
-.ws-home .home-project{display:grid;gap:12px;align-content:start;padding:20px 22px 20px 12px;min-width:0}
-.ws-home .home-project-top{display:flex;align-items:center;gap:10px;min-height:22px}
-.ws-home .home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:-4px}
-.ws-home .home-private{display:flex;align-items:center;gap:6px;margin-top:-8px}
+/* A first run with the guide hidden: the way to connect, on the same surface as the guide it replaces. */
+.ws-home .home-first{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3)}
+.ws-home .home-first .empty{padding:64px 24px}
+/* With the full width, it takes the page's height and stands centred in it, rather than a short card in a corner. */
+.ws-home .home-grid.first-run .home-first:not(:empty){display:grid;place-items:center;min-height:clamp(380px,calc(100dvh - var(--topbar) - 118px),860px);
+  background:radial-gradient(ellipse 60% 55% at 50% 45%,var(--accent-soft),transparent 70%),var(--bg-2)}
+.ws-home .home-grid.first-run .home-first .empty{gap:14px;padding:48px 32px}
+.ws-home .home-grid.first-run .home-first .empty-icon{width:60px;height:60px;border-radius:16px}
+.ws-home .home-grid.first-run .home-first .empty-icon svg{width:26px;height:26px}
+.ws-home .home-grid.first-run .home-first .empty h3{font-size:22px;font-weight:650}
+.ws-home .home-grid.first-run .home-first .empty p{max-width:520px;font-size:15px}
+.ws-home .home-grid.first-run .home-first .empty-actions{margin-top:8px}
+/* ---- The active project ---- */
+.ws-home .home-project{overflow:hidden}
+.ws-home .home-id{display:grid;gap:10px;padding:18px 20px 16px;min-width:0}
+.ws-home .home-project-top{display:flex;align-items:center;gap:10px;min-height:28px;margin:-4px -8px 0 0}
+.ws-home .home-project-top .grow{flex:1}
+.ws-home .home-project-top .btn{flex-direction:row-reverse;gap:4px;padding:0 6px 0 10px}
+.ws-home .home-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:26px;margin-top:-2px}
+.ws-home .home-private{display:flex;align-items:center;gap:6px;margin-top:-6px}
 .ws-home .home-private svg{width:13px;height:13px;flex:none}
-.ws-home .home-kv{grid-template-columns:minmax(92px,max-content) 1fr;gap:5px 14px}
-.ws-home .home-project .callout{padding:9px 12px}
-.ws-home .home-status{list-style:none;margin:0;padding:12px 0 2px;display:grid;gap:9px;border-top:1px solid var(--line)}
-.ws-home .home-status li{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.45;min-width:0}
-.ws-home .home-status li .dot{margin-top:5px}
+.ws-home .home-kv{grid-template-columns:minmax(96px,max-content) 1fr;gap:6px 16px;margin-top:4px}
+/* The family and its state: one line where it fits, else the state moves to the next line whole. */
+.ws-home .home-id-visual{display:flex;flex-wrap:wrap;column-gap:10px;row-gap:2px}
+.ws-home .home-id-state{color:var(--text-3)}
+.ws-home .home-id .callout{padding:9px 12px}
+.ws-home .home-actions{display:grid;gap:10px;padding:0 20px 18px}
+.ws-home .home-actions-main{display:flex;flex-wrap:wrap;gap:8px}
+.ws-home .home-actions-main .btn{flex:1 1 auto}
+.ws-home .home-actions-main .btn.primary{flex:1 1 150px}
+.ws-home .home-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ws-home .home-links .btn{min-width:0;color:var(--text-2)}
+.ws-home .home-links .btn:hover{color:var(--text-1)}
+.ws-home .home-cap{display:grid;gap:12px;padding:16px 20px 18px;border-top:1px solid var(--line);background:var(--bg-1)}
+.ws-home .home-status{list-style:none;margin:0;padding:0;display:grid;gap:11px}
+.ws-home .home-status li{display:flex;gap:11px;align-items:flex-start;font-size:14px;line-height:1.45;min-width:0}
+.ws-home .home-status li .dot{margin-top:6px}
 .ws-home .home-status li>div{display:grid;gap:1px;min-width:0;overflow-wrap:anywhere}
-.ws-home .home-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-.ws-home .home-links{display:flex;gap:2px;flex-wrap:wrap;margin:-4px 0 0 -9px}
-.ws-home .home-project-empty{display:grid;gap:8px}
-/* Below: attention and recent projects */
-.ws-home .home-lower{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
-.ws-home .home-lower .section+.section{margin-top:0}
-.ws-home .home-attention{display:grid;gap:8px}
-.ws-home .home-calm{display:flex;align-items:center;gap:9px;padding:11px 14px;border:1px dashed var(--line-2);border-radius:var(--r-2);color:var(--text-3);font-size:12.5px}
+.ws-home .home-project-empty p{max-width:var(--measure)}
+/* ---- Needs attention ---- */
+.ws-home .home-att .panel-head{min-height:48px;padding:12px 20px}
+.ws-home .home-att .panel-head .note{font:600 12.5px var(--mono);color:var(--warn)}
+.ws-home .home-att .panel-body{padding:14px 20px 18px;flex:1}
+.ws-home .home-att.calm .panel-head{border-bottom:0}
+.ws-home .home-att.calm .panel-body{padding-top:0}
+.ws-home .home-attention{display:grid;gap:10px}
+.ws-home .home-calm{display:flex;align-items:center;gap:9px;color:var(--text-3);font-size:14px}
 .ws-home .home-calm svg{width:15px;height:15px;color:var(--ok)}
-.ws-home .home-recent{display:grid;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1);overflow:hidden}
-.ws-home .home-recent-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text-1);text-align:left;position:relative;transition:background var(--t-1)}
-.ws-home .home-recent-row:last-child{border-bottom:0}
+/* Calm and stretched to the column's end (wide windows, where the stage and recent projects are the taller column): the
+   all-clear stands centred in the panel rather than at its top edge. Smaller windows keep the compact one-line form. */
+@media (min-width:1600px){
+  .ws-home .home-att.calm .panel-body{align-content:center;justify-items:center;padding:12px 20px 28px}
+  .ws-home .home-att.calm .home-calm{flex-direction:column;gap:10px;text-align:center}
+  .ws-home .home-att.calm .home-calm svg{width:22px;height:22px;padding:9px;box-sizing:content-box;border-radius:50%;background:var(--ok-soft)}
+}
+/* ---- Recent projects: one list panel; choosing a row makes that project the active one ----
+   The list is its own size container: wide (under the stage at 1920 px and up) each row is one line of columns; narrow
+   (a smaller window, or beside the stage on a large screen) the identity and the capture line go to a second line. */
+.ws-home .home-recent-sec .section-head{min-height:30px}
+.ws-home .home-recent{container:recent / inline-size;display:grid;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden}
+.ws-home .home-recent>p{padding:14px 18px}
+/* Every row has the same tracks (the last one fixed), so the columns line up from row to row. */
+.ws-home .home-recent-row{display:grid;grid-template-columns:8px minmax(0,1.5fr) minmax(0,.85fr) minmax(0,1.2fr) 168px;align-items:center;gap:6px 16px;width:100%;min-width:0;min-height:50px;
+  padding:9px 18px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--text-1);text-align:left;font-size:14px;position:relative;transition:background var(--t-1)}
+.ws-home .home-recent-row:first-child{border-top:0}
 .ws-home .home-recent-row:hover{background:var(--bg-3)}
-.ws-home .home-recent-row:focus-visible{outline:none;background:var(--bg-3);box-shadow:inset 0 0 0 2px var(--accent-line)}
-.ws-home .home-recent-row.active::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px;background:var(--accent)}
-.ws-home .home-recent-row .grow{flex:1;display:grid;gap:1px;min-width:0}
-.ws-home .name-line{display:flex;align-items:center;gap:8px;min-width:0}
-.ws-home .name-line strong{font-weight:600;min-width:0}
-.ws-home .name-line .pill{height:18px;font-size:10.5px;padding:0 7px;flex:none}
-/* First-run guide: numbered steps on a thin rail; done steps fold to one line. */
+.ws-home .home-recent-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-3)}
+/* The active project: an accent edge and tint, and the word Active beside its time. */
+.ws-home .home-recent-row.active{background:linear-gradient(90deg,var(--accent-soft),transparent 60%)}
+.ws-home .home-recent-row.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.ws-home .home-recent-row>.dot{margin:0}
+.ws-home .rr-name{display:flex;align-items:center;gap:10px;min-width:0}
+.ws-home .rr-name strong{font-weight:600;font-size:14.5px;min-width:0}
+.ws-home .rr-name .pill{height:20px;font-size:12px;padding:0 7px;flex:none}
+.ws-home .rr-sub{display:contents}
+.ws-home .rr-id{color:var(--text-2);font-size:13.5px;min-width:0}
+.ws-home .rr-id.faint{color:var(--text-3)}
+.ws-home .rr-meta{color:var(--text-3);font-size:13px;min-width:0}
+.ws-home .rr-end{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0}
+.ws-home .home-ago{font-size:12.5px;color:var(--text-2);white-space:nowrap}
+.ws-home .home-active-tag{flex:none;font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+@container recent (max-width:900px){
+  .ws-home .home-recent-row{grid-template-columns:8px minmax(0,1fr) auto;gap:3px 12px;padding:10px 16px}
+  .ws-home .rr-sub{display:flex;grid-column:2 / -1;grid-row:2;gap:6px;min-width:0;font-size:13px}
+  .ws-home .rr-end{grid-column:3;grid-row:1}
+  .ws-home .rr-id{flex:0 1 auto;font-size:13px}
+  .ws-home .rr-meta{flex:1 1 0}
+  .ws-home .rr-meta:not(:empty)::before{content:'·';margin-right:6px;color:var(--text-4)}
+}
+/* ---- First-run guide: numbered steps on a thin rail; done steps fold to one line ---- */
 .ws-home .home-guide{overflow:hidden}
-.ws-home .home-guide-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+.ws-home .home-guide-head{display:flex;align-items:flex-start;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--line)}
 .ws-home .home-guide-head .grow{flex:1;display:grid;gap:3px}
-.ws-home .home-guide-body{display:grid;grid-template-columns:minmax(0,1fr) 280px}
-.ws-home .home-steps{list-style:none;margin:0;padding:20px 22px 6px;display:grid}
+.ws-home .home-guide-body{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,22vw,380px)}
+.ws-home .home-steps{list-style:none;margin:0;padding:22px 24px 8px;display:grid}
 .ws-home .home-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
 .ws-home .home-step:not(:last-child)::before{content:'';position:absolute;left:13.5px;top:32px;bottom:4px;width:1px;background:var(--line-2)}
-.ws-home .home-step-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-3);background:var(--bg-1);color:var(--text-3);font:600 12px var(--mono)}
+.ws-home .home-step-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-3);background:var(--bg-1);color:var(--text-3);font:600 13px var(--mono)}
 .ws-home .home-step-mark svg{width:14px;height:14px}
 .ws-home .home-step.done .home-step-mark{background:var(--ok-soft);border-color:rgba(138,248,201,.35);color:var(--ok)}
 .ws-home .home-step.current .home-step-mark{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
 .ws-home .home-step-text{display:grid;gap:3px;padding-top:4px;min-width:0}
-.ws-home .home-step-text strong{font-size:13.5px;font-weight:600}
+.ws-home .home-step-text strong{font-size:15px;font-weight:600}
 .ws-home .home-step.done .home-step-text strong{color:var(--text-2);font-weight:550}
 .ws-home .home-step:not(.done):not(.current) .home-step-text strong{color:var(--text-2)}
-.ws-home .home-step-body{display:grid;gap:9px;margin-top:4px;justify-items:start;font-size:12.5px;color:var(--text-2)}
-.ws-home .home-step-body .copy{width:100%;max-width:560px}
+.ws-home .home-step-body{display:grid;gap:9px;margin-top:4px;justify-items:start;font-size:14px;color:var(--text-2);max-width:var(--measure)}
+.ws-home .home-step-body .copy{width:100%;max-width:620px}
 .ws-home .home-cmds{margin:0;padding-left:18px;display:grid;gap:10px;width:100%}
 .ws-home .home-cmds li{display:grid;gap:6px}
-.ws-home .home-cmds li::marker{color:var(--text-3);font-family:var(--mono);font-size:11px}
+.ws-home .home-cmds li::marker{color:var(--text-3);font-family:var(--mono);font-size:12px}
 .ws-home .home-listen{display:flex;align-items:center;gap:9px}
 .ws-home .home-listen .dot.ok{animation:pulse-dot 1.6s infinite}
 /* Reduced motion (the app's setting, else the system's): the listening dot and the Live badge hold still. */
 html[data-motion="reduce"] .ws-home .home-listen .dot.ok,html[data-motion="reduce"] .home-chrome .pill.live::before{animation:none}
 @media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) .ws-home .home-listen .dot.ok,html:not([data-motion="full"]) .home-chrome .pill.live::before{animation:none}}
-.ws-home .home-demo{display:grid;gap:8px;align-content:start;padding:20px;border-left:1px solid var(--line);background:var(--bg-1)}
+.ws-home .home-demo{display:grid;gap:8px;align-content:start;padding:22px;border-left:1px solid var(--line);background:var(--bg-1)}
+.ws-home .home-demo p{font-size:13.5px}
 .ws-home .home-demo .copy{width:100%}
-@media (max-width:1180px){.ws-home .home-hero{grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr)}}
-@media (max-width:1080px){.ws-home .home-lower{grid-template-columns:1fr}.ws-home .home-guide-body{grid-template-columns:1fr}.ws-home .home-demo{border-left:0;border-top:1px solid var(--line)}}
-@media (max-width:900px){.ws-home .home-hero{grid-template-columns:1fr}.ws-home .home-project{order:-1;padding:18px 18px 6px}.ws-home .home-sys{width:100%}}
-.ws-home .home-lower .section-head{min-height:28px}
 .ws-home .home-demo .btn{justify-self:start}
-/* Regions that only sometimes hold something (guide, first-run empty state) must not cost a grid gap when empty. */
-.ws-home .page-inner>div:empty{display:none}
+/* The guide with the full width (a calm first run, or below both columns): the demo column widens with it. */
+@media (min-width:1181px){.ws-home :is(.home-grid.first-run.att-calm,.home-guide-bottom) .home-guide-body{grid-template-columns:minmax(0,1fr) clamp(320px,30%,480px)}}
+/* ---- Large, tall screens (2560x1440 and up) ----
+   The stage is then much taller than the active project and attention, which would leave an empty block beside it. The
+   two columns are flattened into one grid: the stage spans the side's rows, the recent projects move into the side
+   under attention (the list's narrow, two-line rows; at most four, All projects lists the rest), and a last flexible row takes whatever height the stage has beyond the
+   side's content. The guide (when shown) spans both columns below. DOM order and the stage slot are unchanged; only
+   placement differs. */
+@media (min-width:2200px) and (min-height:1160px){
+  .ws-home .home-grid:not(.first-run){grid-template-rows:auto auto auto 1fr}
+  .ws-home .home-grid:not(.first-run)>.home-main,.ws-home .home-grid:not(.first-run)>.home-side{display:contents}
+  .ws-home .home-grid:not(.first-run) .home-hero{grid-column:1;grid-row:1 / span 4}
+  .ws-home .home-grid:not(.first-run) .home-project{grid-column:2;grid-row:1}
+  .ws-home .home-grid:not(.first-run) .home-att{grid-column:2;grid-row:2}
+  .ws-home .home-grid:not(.first-run) .home-recent-sec{grid-column:2;grid-row:3}
+  .ws-home .home-grid:not(.first-run) :is(.home-first,.home-guide-top,.home-guide-bottom){grid-column:1 / -1}
+  .ws-home .home-grid:not(.first-run) .home-recent-row:nth-child(n+5){display:none}
+}
+/* ---- Narrower windows ---- */
+@media (max-width:1180px){.ws-home{--home-side:340px}.ws-home .home-guide-body{grid-template-columns:1fr}.ws-home .home-demo{border-left:0;border-top:1px solid var(--line)}}
+/* One column: the stage, then the active project and its actions, attention, recent projects, the guide. */
+@media (max-width:1000px){
+  .ws-home .home-grid{display:flex;flex-direction:column;align-items:stretch;gap:var(--home-gap)}
+  .ws-home .home-main,.ws-home .home-side{display:contents}
+  .ws-home .home-hero{order:1;width:100%;min-width:0}.ws-home .home-first,.ws-home .home-guide-top{order:2}.ws-home .home-project{order:3}.ws-home .home-att{order:4}
+  .ws-home .home-recent-sec{order:5}.ws-home .home-guide-bottom{order:6}
+  .ws-home .home-name{font-size:22px}
+}

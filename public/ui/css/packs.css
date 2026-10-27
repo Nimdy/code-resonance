@@ -1,91 +1,174 @@
-/* Visual Packs: a library list, an inspector, and the import / review dialogs (on body, marked .ws-packs-dialog).
+/* Visual Packs: a library (a row per pack, a column per fact a person compares), a wide inspector, the way into making
+   a pack, and the import / review dialogs (on body, marked .ws-packs-dialog).
    Packs that run code carry a lilac marker everywhere they appear (row edge, glyph, kind label): a pack's kind is a
-   security fact, so it is never only in the text. */
+   security fact, so it is never only in the text. The library and the creator panel adapt to their own width
+   (container queries), so the inspector's width and the window's both count. */
 .ws-packs,.ws-packs-dialog{--pk-code:#b9a4ff;--pk-code-soft:rgba(185,164,255,.1);--pk-code-line:rgba(185,164,255,.32)}
-.ws-packs{--inspector:400px}
-.ws-packs .page-inner{max-width:980px}
+/* The inspector is where a pack is reviewed: wider than the shared default, up to 640 px on a large monitor. */
+.ws-packs{--inspector:clamp(380px,28vw,640px)}
+.ws-packs .page-inner{gap:20px}
 .ws-packs .page-head .eyebrow{margin-bottom:2px}
 .ws-packs .pk-banner{display:grid;gap:10px}.ws-packs .pk-banner:empty{display:none}
-/* ---- Library rows ---- */
-.ws-packs .pk-list{list-style:none;margin:0;padding:0;display:grid;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1);overflow:hidden}
+/* ---- Library ---- */
+.ws-packs .pk-library{container:pklib/inline-size;overflow:hidden}
+.ws-packs .pk-library .panel-head{flex-wrap:wrap;row-gap:10px}
+.ws-packs .pk-filter:empty{display:none}
+.ws-packs .pk-filter .segmented{background:var(--bg-1)}
+/* Row geometry, shared by the column labels and every row. Narrow: identity left, status right, description below. */
+.ws-packs .pk-cols,.ws-packs .pk-row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;column-gap:14px;
+  grid-template-areas:"glyph title state" "glyph by use" "glyph kind kind" "glyph desc desc"}
+.ws-packs .pk-cols{display:none;padding:9px 18px 9px 20px;border-bottom:1px solid var(--line);background:var(--bg-1);font:600 11.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ws-packs .pk-cols>:nth-child(1){grid-area:glyph}.ws-packs .pk-cols>:nth-child(2){grid-area:title}.ws-packs .pk-cols>:nth-child(3){grid-area:kind}
+.ws-packs .pk-cols>:nth-child(4){grid-area:state}.ws-packs .pk-cols>:nth-child(5){grid-area:use;display:none}.ws-packs .pk-cols>:nth-child(6){grid-area:date;display:none}
+.ws-packs .pk-list{list-style:none;margin:0;padding:0;display:grid}
 .ws-packs .pk-list>li+li{border-top:1px solid var(--line)}
-.ws-packs .pk-row{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:14px 16px 14px 18px;border:0;background:transparent;text-align:left;color:inherit;transition:background var(--t-1)}
-.ws-packs .pk-row:hover{background:var(--bg-2)}
+.ws-packs .pk-row{position:relative;row-gap:4px;align-items:center;width:100%;padding:14px 18px 14px 20px;border:0;background:transparent;text-align:left;color:inherit;transition:background var(--t-1)}
+.ws-packs .pk-row>.pk-glyph{grid-area:glyph;align-self:start}
+.ws-packs .pk-row:hover{background:var(--bg-3)}
 .ws-packs .pk-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .ws-packs .pk-row::before{content:'';position:absolute;left:0;top:12px;bottom:12px;width:2px;border-radius:0 2px 2px 0;background:transparent;transition:background var(--t-1)}
 .ws-packs .pk-row.code::before{background:var(--pk-code-line)}
-.ws-packs .pk-row[aria-current="true"]{background:var(--bg-3)}
+.ws-packs .pk-row[aria-current="true"]{background:var(--bg-4)}
 .ws-packs .pk-row[aria-current="true"]::before{background:var(--accent);top:8px;bottom:8px;width:3px}
 .ws-packs .pk-row[aria-current="true"].code::before{background:var(--pk-code)}
-.ws-packs .pk-row-main{display:grid;gap:3px;min-width:0}
-.ws-packs .pk-row-title{display:flex;align-items:baseline;gap:8px;min-width:0}
-.ws-packs .pk-row-title strong{font-size:14px;font-weight:600;letter-spacing:-.005em}
-.ws-packs .pk-row-title .num{font-size:11px}
-.ws-packs .pk-row-sub{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:12px}
-.ws-packs .pk-row-desc{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;color:var(--text-2);margin-top:2px}
-.ws-packs .pk-row-side{display:grid;justify-items:end;gap:6px;align-content:center}
-.ws-packs .pk-loading{padding:28px 18px;font-size:12.5px}
-.pk-kind{font:600 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.ws-packs .pk-row-title{grid-area:title;font-size:15.5px;font-weight:620;letter-spacing:-.005em;min-width:0}
+.ws-packs .pk-row-by{grid-area:by;font-size:13px;min-width:0;margin-top:-2px}
+.ws-packs .pk-row-by .num{font-size:12px}
+.ws-packs .pk-row-desc{grid-area:desc;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13.5px;line-height:1.5;color:var(--text-2);max-width:96ch}
+.ws-packs .pk-row-kind{grid-area:kind;display:flex;align-items:baseline;gap:10px;min-width:0}
+.ws-packs .pk-row-state{grid-area:state;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.ws-packs .pk-row-use{grid-area:use;color:var(--text-3);text-align:right;white-space:nowrap}
+.ws-packs .pk-row-date{grid-area:date;display:none;white-space:nowrap}
+.ws-packs .pk-loading{padding:28px 18px;font-size:13.5px}
+.ws-packs .pk-nomatch{display:flex;align-items:center;gap:12px;padding:18px 20px;font-size:13.5px}
+.ws-packs .pk-hidden-note{display:flex;align-items:center;gap:10px;padding:9px 18px 9px 20px;border-bottom:1px solid var(--line);background:var(--bg-1);font-size:13.5px}
+.ws-packs .pk-hidden-note>svg{width:15px;height:15px;flex:none;color:var(--text-3)}
+.ws-packs .pk-hidden-note>span{flex:1;min-width:0}
+/* Medium: a column for the kind and one for the approval, the use under it. */
+@container pklib (min-width:860px){
+  .ws-packs .pk-cols,.ws-packs .pk-row{grid-template-columns:44px minmax(0,1fr) 196px 256px;column-gap:20px;grid-template-areas:"glyph title kind state" "glyph by kind use" "glyph desc kind ."}
+  .ws-packs .pk-cols{display:grid;grid-template-areas:"glyph title kind state"}
+  .ws-packs .pk-row{padding:16px 18px 16px 20px}
+  .ws-packs .pk-row-kind{flex-direction:column;align-items:flex-start;gap:4px;align-self:center}
+  .ws-packs .pk-row-kind .small{max-width:100%}
+  .ws-packs .pk-row-state{justify-content:flex-start;align-self:end}
+  .ws-packs .pk-row-use{text-align:left;align-self:start}
+}
+/* Wide: the use gets its own column; on a very wide library, the installation date too. */
+@container pklib (min-width:1120px){
+  .ws-packs .pk-cols,.ws-packs .pk-row{grid-template-columns:48px minmax(0,1fr) 210px 260px 140px;column-gap:24px;grid-template-areas:"glyph title kind state use" "glyph by kind state use" "glyph desc kind state use"}
+  .ws-packs .pk-cols{grid-template-areas:"glyph title kind state use"}.ws-packs .pk-cols>:nth-child(5){display:block}
+  .ws-packs .pk-row-state{flex-direction:column;align-items:flex-start;align-self:center}
+  .ws-packs .pk-row-use{align-self:center}
+  .ws-packs .pk-row>.pk-glyph{width:48px;height:48px;align-self:center}
+}
+@container pklib (min-width:1480px){
+  .ws-packs .pk-cols,.ws-packs .pk-row{grid-template-columns:48px minmax(0,1fr) 230px 270px 160px 130px;grid-template-areas:"glyph title kind state use date" "glyph by kind state use date" "glyph desc kind state use date"}
+  .ws-packs .pk-cols{grid-template-areas:"glyph title kind state use date"}.ws-packs .pk-cols>:nth-child(6),.ws-packs .pk-row-date{display:block}
+  .ws-packs .pk-row-date{align-self:center}
+}
+.pk-kind{font:600 11.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
 .pk-kind.code{color:var(--pk-code)}
 /* The glyph: a data pack shows its own palette when it sets one; a code pack the code mark. */
 .pk-glyph{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-3);overflow:hidden;flex:none}
 .pk-glyph svg{width:18px;height:18px}
 .pk-glyph.code{background:var(--pk-code-soft);border-color:var(--pk-code-line);color:var(--pk-code)}
 .pk-glyph.data{color:var(--accent)}
+.pk-glyph.lg{width:60px;height:60px;border-radius:14px}.pk-glyph.lg svg{width:26px;height:26px}
 .pk-swatches{display:flex;width:100%;height:100%}.pk-swatches i{flex:1}
-/* ---- Inspector ---- */
-.ws-packs .pk-inspector .inspector-head{gap:6px}
+/* ---- Inspector: identity, standing and actions in the head; contents in the body ---- */
+.ws-packs .pk-inspector{container:pkinsp/inline-size}
+.ws-packs .pk-head{padding:20px 22px 16px;gap:14px;background:linear-gradient(180deg,var(--bg-2),var(--bg-1))}
+.ws-packs .pk-ident{display:grid;grid-template-columns:60px minmax(0,1fr);gap:16px;align-items:start}
+.ws-packs .pk-ident-text{display:grid;gap:4px;min-width:0}
 .ws-packs .pk-name{overflow-wrap:anywhere}
-.ws-packs-dialog .pk-pills,.ws-packs .pk-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.ws-packs .pk-desc{color:var(--text-2);font-size:12.5px;line-height:1.55}
-.ws-packs .pk-problems{margin:0;padding-left:18px;display:grid;gap:3px;font-family:var(--mono);font-size:11.5px;overflow-wrap:anywhere}
+/* The id on one line: the version always shows, a long id is shortened (whole in the tooltip and to a screen reader). */
+.ws-packs .pk-id{display:flex;min-width:0;white-space:nowrap}
+.ws-packs .pk-id-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ws-packs .pk-id-ver{flex:none}
+.ws-packs-dialog .pk-pills,.ws-packs .pk-pills{display:flex;gap:6px;flex-wrap:wrap}
+.ws-packs .pk-ident-text .pk-pills{margin-top:6px}
+.ws-packs .pk-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ws-packs .pk-actions .grow{flex:1}
+.ws-packs .pk-inspector .inspector-body{padding:18px 22px 28px;gap:20px}
+@container pkinsp (max-width:460px){
+  .ws-packs .pk-head{padding:16px 18px 14px;gap:12px}
+  .ws-packs .pk-ident{grid-template-columns:48px minmax(0,1fr);gap:14px}
+  .ws-packs .pk-glyph.lg{width:48px;height:48px;border-radius:12px}.ws-packs .pk-glyph.lg svg{width:22px;height:22px}
+  .ws-packs .pk-inspector .inspector-body{padding:16px 18px 24px;gap:18px}
+}
+.ws-packs .pk-desc{color:var(--text-2);font-size:14.5px;line-height:1.6;max-width:var(--measure)}
+.ws-packs .pk-approved{display:flex;gap:12px;padding:12px 14px;border-radius:var(--r-2);background:var(--ok-soft);border:1px solid rgba(138,248,201,.2);font-size:13.5px;line-height:1.5}
+.ws-packs .pk-approved>svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--ok)}
+.ws-packs .pk-approved>div{display:grid;gap:3px;min-width:0}
+.ws-packs .pk-approved code{font-size:12px}
+.ws-packs .pk-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px 20px;margin:0;padding:16px 0 0;border-top:1px solid var(--line)}
+.ws-packs .pk-fact{display:grid;gap:3px;min-width:0;align-content:start}
+.ws-packs .pk-fact.wide{grid-column:1/-1}
+.ws-packs .pk-fact dt{font-size:12px;color:var(--text-3)}
+.ws-packs .pk-fact dd{margin:0;font-size:13.5px;color:var(--text-1);overflow-wrap:anywhere}
+.ws-packs .pk-problems{margin:0;padding-left:18px;display:grid;gap:3px;font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
 .ws-packs .pk-none{display:grid;justify-items:center;gap:10px;text-align:center;padding:48px 12px;color:var(--text-3)}
 .ws-packs .pk-none svg{width:22px;height:22px}
 .ws-packs .pk-digest{display:grid;gap:6px}
-.ws-packs .pk-digest code{font-size:11px}
-.ws-packs .pk-params{display:grid;gap:10px}
-.ws-packs .pk-param{display:grid;gap:2px;padding-bottom:9px;border-bottom:1px solid var(--line)}
-.ws-packs .pk-param:last-child{border-bottom:0;padding-bottom:0}
+.ws-packs .pk-digest code{font-size:12px}
+.ws-packs .pk-params{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.ws-packs .pk-param{display:grid;gap:3px;align-content:start;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-2);background:var(--bg-2)}
 .ws-packs .pk-param-head{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
-.ws-packs .pk-param-head strong{font-size:12.5px;font-weight:560}
-.ws-packs .pk-param-head .num{font-size:11px;text-align:right}
+.ws-packs .pk-param-head strong{font-size:13.5px;font-weight:580}
+.ws-packs .pk-param-head .num{font-size:12px;text-align:right}
 .ws-packs .pk-readme{max-height:none}
-.ws-packs .pk-readme .markdown{font-size:12.5px}
-.ws-packs .inspector-foot{flex-wrap:wrap}.ws-packs .inspector-foot .grow{flex:1}
+.ws-packs .pk-readme .markdown{font-size:14px}
 /* Tables (files, overrides): monospace, dense, scroll sideways inside their own box only */
 .pk-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-2);max-height:320px;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
-.pk-table{border-collapse:collapse;width:100%;font-size:11.5px}
-.pk-table th{position:sticky;top:0;background:var(--bg-3);color:var(--text-3);font:600 10px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:7px 10px}
+.pk-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.pk-table th{position:sticky;top:0;background:var(--bg-3);color:var(--text-3);font:600 11.5px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:7px 10px}
 .pk-table td{padding:5px 10px;border-top:1px solid var(--line);vertical-align:baseline;overflow-wrap:anywhere}
-.pk-table td.mono{font-size:11px}
+.pk-table td.mono{font-size:12px}
 .pk-table .r{text-align:right;white-space:nowrap}
 .pk-color{display:inline-flex;align-items:center;gap:7px}
 .pk-swatch{display:inline-block;width:11px;height:11px;border-radius:3px;box-shadow:0 0 0 1px var(--line-3) inset}
-/* ---- Creator corner ---- */
-.ws-packs .pk-docs{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:8px}
-.ws-packs .pk-docs-ref{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.ws-packs .pk-doc{display:flex;align-items:center;gap:7px;min-height:30px;text-align:left;padding:0 11px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-2);color:var(--text-2);font-size:12px;font-weight:550;transition:color var(--t-1),border-color var(--t-1),background var(--t-1)}
+/* ---- Creator panel: what to read beside what to run ---- */
+.ws-packs .pk-creator{container:pkmake/inline-size}
+.ws-packs .pk-creator-body{grid-template-columns:minmax(0,1fr);grid-template-areas:"read" "make" "check";gap:22px}
+.ws-packs .pk-creator-col{display:grid;gap:10px;align-content:start;min-width:0;container:pkcol/inline-size}
+.ws-packs .pk-creator-read{grid-area:read}.ws-packs .pk-creator-make{grid-area:make}.ws-packs .pk-creator-check{grid-area:check}
+.ws-packs .pk-creator-check:has(.pk-checks:empty){display:none}
+@container pkmake (min-width:1100px){.ws-packs .pk-creator-body{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);grid-template-areas:"read make" "check make";grid-template-rows:auto 1fr;column-gap:32px;row-gap:24px}}
+.ws-packs .pk-docs{display:grid;gap:8px}
+.ws-packs .pk-docs-ref{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@container pkcol (max-width:600px){.ws-packs .pk-docs-ref{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container pkcol (max-width:440px){.ws-packs .pk-docs-ref{grid-template-columns:1fr}}
+.ws-packs .pk-doc{display:flex;align-items:center;gap:8px;min-height:36px;text-align:left;padding:0 12px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-2);font-size:13.5px;font-weight:550;transition:color var(--t-1),border-color var(--t-1),background var(--t-1)}
 .ws-packs .pk-doc:hover{color:var(--text-1);border-color:var(--line-3);background:var(--bg-3)}
-.ws-packs .pk-doc svg{width:14px;height:14px;color:var(--text-3);flex:none}
+.ws-packs .pk-doc svg{width:15px;height:15px;color:var(--text-3);flex:none}
 .ws-packs .pk-doc>span{min-width:0}
-.ws-packs .pk-doc.lead{align-items:flex-start;padding:10px 12px;border-color:var(--accent-line);color:var(--text-1)}
+.ws-packs .pk-doc.lead{align-items:flex-start;padding:12px 14px;border-color:var(--accent-line);background:var(--accent-soft);color:var(--text-1)}
 .ws-packs .pk-doc.lead svg{color:var(--accent);margin-top:2px}
-.ws-packs .pk-doc.lead>span{display:grid;gap:2px;font-weight:400}.ws-packs .pk-doc.lead strong{font-size:13px;font-weight:600}
+.ws-packs .pk-doc.lead>span{display:grid;gap:3px;font-weight:400}.ws-packs .pk-doc.lead strong{font-size:14.5px;font-weight:620}
 .ws-packs .pk-link-host{font-size:.92em}
 /* Until the shared .copy rules take these: commands wrap between words, and the Copy button's ring is not clipped. */
 .ws-packs .copy code{overflow-wrap:break-word}.ws-packs .copy .btn:focus-visible{outline-offset:-2px}
 .ws-packs .pk-templates{display:grid;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1);overflow:hidden}
-.ws-packs .pk-template{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:18px;align-items:start;padding:14px 16px;position:relative}
+.ws-packs .pk-template{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:start;padding:14px 16px 14px 18px;position:relative}
 .ws-packs .pk-template+.pk-template{border-top:1px solid var(--line)}
 .ws-packs .pk-template::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:2px;border-radius:0 2px 2px 0;background:var(--accent-line)}
 .ws-packs .pk-template.code::before{background:var(--pk-code-line)}
 .ws-packs .pk-template-about,.ws-packs .pk-template-cmd{display:grid;gap:6px;min-width:0}
-.ws-packs .pk-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ws-packs .pk-checks{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .ws-packs .pk-checks>p{grid-column:1/-1}
-.ws-packs .pk-check{display:grid;gap:6px}
+.ws-packs .pk-check{display:grid;gap:6px;min-width:0}
+/* A template's about beside its command once the command (about 590 px with Copy) still fits on one line. */
+@container pkcol (min-width:860px){.ws-packs .pk-template{grid-template-columns:minmax(0,250px) minmax(0,1fr);gap:20px}}
+@container pkcol (min-width:760px){.ws-packs .pk-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* ---- Dialogs (import, review; confirmations are plain dialogs, so their body carries its own class) ---- */
 .modal .pk-confirm{display:grid;gap:8px}
+.modal.wide.ws-packs-dialog{width:min(1160px,100%)}
+.ws-packs-dialog .modal-body{container:pkdlg/inline-size}
 .ws-packs-dialog .modal-foot{align-items:center}
+.ws-packs-dialog .pk-two{display:grid;grid-template-columns:minmax(0,1fr);gap:16px 28px;align-items:start}
+.ws-packs-dialog .pk-two-a,.ws-packs-dialog .pk-two-b{display:grid;gap:14px;align-content:start;min-width:0}
+@container pkdlg (min-width:900px){.ws-packs-dialog .pk-two{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}.ws-packs-dialog .pk-two .pk-table-wrap{max-height:min(46vh,460px)}}
 .ws-packs-dialog .pk-foot-extra{margin-right:auto;display:flex;gap:8px}.ws-packs-dialog .pk-foot-extra:empty{display:none}
 .ws-packs-dialog .pk-import{display:grid;gap:14px}
 .ws-packs-dialog .pk-import-intro{display:grid;gap:12px}
@@ -95,25 +178,23 @@
 .ws-packs-dialog .pk-source:disabled{opacity:.5;cursor:progress}
 .ws-packs-dialog .pk-source svg{width:20px;height:20px;color:var(--accent);flex:none;margin-top:1px}
 .ws-packs-dialog .pk-source>span{display:grid;gap:3px}
-.ws-packs-dialog .pk-source strong{font-size:13.5px}
-.ws-packs-dialog .pk-import-status{font-size:12.5px;color:var(--text-2)}.ws-packs-dialog .pk-import-status:empty{display:none}
+.ws-packs-dialog .pk-source strong{font-size:14.5px}
+.ws-packs-dialog .pk-import-status{font-size:13.5px;color:var(--text-2)}.ws-packs-dialog .pk-import-status:empty{display:none}
 .ws-packs-dialog .pk-import-status::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;animation:pulse-dot 1.2s var(--ease) infinite}
 /* The pulse says "working"; with motion reduced (the app's setting, else the system's) a steady dot says it too. */
 html[data-motion="reduce"] .ws-packs-dialog .pk-import-status::before{animation:none}
 @media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) .ws-packs-dialog .pk-import-status::before{animation:none}}
-.ws-packs-dialog .pk-report,.ws-packs-dialog .pk-review{display:grid;gap:14px}
+.ws-packs-dialog .pk-report{display:grid;gap:14px}
 .ws-packs-dialog .pk-report-head,.ws-packs-dialog .pk-review-id{display:flex;align-items:center;gap:12px}
 .ws-packs-dialog .pk-report-head .grow{flex:1;min-width:0}
-.ws-packs-dialog .pk-report-name,.ws-packs-dialog .pk-review-id strong{font-size:15px;font-weight:600}
+.ws-packs-dialog .pk-report-name,.ws-packs-dialog .pk-review-id strong{font-size:16px;font-weight:600}
 .ws-packs-dialog .pk-report-head .pk-pills{margin-top:0}
 .ws-packs-dialog .pill.code{color:var(--pk-code);background:var(--pk-code-soft);border-color:var(--pk-code-line)}
 .ws-packs-dialog .pk-review-block{display:grid;gap:7px}
-.ws-packs-dialog .pk-digest-full{display:block;padding:8px 10px;font-size:11.5px;overflow-wrap:anywhere;background:var(--bg-0);border-color:var(--line-2)}
-.ws-packs-dialog .pk-access,.ws-packs-dialog .pk-warnings,.ws-packs-dialog .pk-errors{margin:0;padding-left:18px;display:grid;gap:4px;font-size:12px;color:var(--text-2)}
-.ws-packs-dialog .pk-errors{color:var(--text-1)}.ws-packs-dialog .pk-errors code{font-size:11px}
-/* Below 1440 the overview stacks above the references, so each reference keeps its name on one line. */
-@media (max-width:1280px){.ws-packs{--inspector:360px}.ws-packs .pk-docs{grid-template-columns:1fr}}
-@media (max-width:1080px){.ws-packs{--inspector:320px}.ws-packs .pk-template{grid-template-columns:1fr;gap:10px}.ws-packs .pk-checks{grid-template-columns:1fr}}
-@media (max-width:900px){.ws-packs .page{overflow:visible;flex:none}.ws-packs>.main,.ws-packs>.inspector{min-height:auto}.ws-packs .pk-row{grid-template-columns:36px minmax(0,1fr)}.ws-packs .pk-row-side{grid-column:2;justify-items:start;grid-auto-flow:column;justify-content:start;align-items:center}
-  .ws-packs .pk-glyph{width:36px;height:36px}.ws-packs-dialog .pk-sources{grid-template-columns:1fr}}
-@media (max-width:640px){.ws-packs .pk-docs-ref{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ws-packs-dialog .pk-digest-full{display:block;padding:8px 10px;font-size:12.5px;overflow-wrap:anywhere;background:var(--bg-0);border-color:var(--line-2)}
+.ws-packs-dialog .pk-access,.ws-packs-dialog .pk-warnings,.ws-packs-dialog .pk-errors{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--text-2)}
+.ws-packs-dialog .pk-errors{color:var(--text-1)}.ws-packs-dialog .pk-errors code{font-size:12px}
+/* Small windows: a narrower inspector; below 900 px it stacks under the library (the shared .split rule). */
+@media (max-width:1080px){.ws-packs{--inspector:340px}}
+@media (max-width:900px){.ws-packs .page{overflow:visible;flex:none}.ws-packs>.main,.ws-packs>.inspector{min-height:auto}
+  .ws-packs .pk-head{background:var(--bg-1)}.ws-packs-dialog .pk-sources{grid-template-columns:1fr}}

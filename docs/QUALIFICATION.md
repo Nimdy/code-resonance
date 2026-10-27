@@ -751,6 +751,42 @@ names onto the Stage, a typed project path kept in browser storage), design and 
 pairing and late state changes (fixed: pairing links that carried the durable key, a recipe answer applied to the
 wrong project, Visual Studio dropping "follow the global default", previews of classic stages being recordable).
 
+## Auto quality (desktop milestone)
+
+Live playback at the Auto quality (Settings › This device) is governed by `createQualityGovernor` in
+`public/worlds/host.js`; the rules and every threshold are in the comment above `AUTO_QUALITY`. In short: half-second
+windows of the presented frame rate; down after 2 s under 24 fps (straight to a lower resolution when MSAA alone cannot
+reach 27 fps), at once to the level expected to reach 30 fps after 1 s under 12 fps; up one level only after 20 s in
+which the level above is predicted to hold 30 fps (from the GPU time where the browser measures it, otherwise from the
+frame rate and what was seen at the levels left for slowness); a step up that turns slow within 10 s goes back and that
+level waits three times longer (at most 10 minutes). Where the GPU time is known, slow frames lower the level only while
+the GPU accounts for at least half of the frame time. **Degraded**: under 8 fps for 5 s at the lowest level (or where
+no level helps, or at a fixed quality): the player (`state.rendering`, `__worldStats().degraded`) says so and the
+interface gets one warning notice per quality choice offering Monolith (the Canvas 2D world); the selected world is never
+changed without the viewer. Films and fixed qualities never adapt; the four levels themselves are unchanged. A level
+change only switches MSAA and resizes the render targets: no shader is compiled and the texture count does not change.
+
+Unit: `tests/adaptive-quality.test.js` (16 simulated machines: step-down time, level skipping, no oscillation around a
+threshold, climbing back after a busy period, back-off after failed attempts, cost-bound and GPU-timed machines,
+processor-bound slowness, degraded and its recovery, pauses, fixed levels).
+
+Real page (`/?world=living&project=<Lumen>#/stage`, Auto, 70 s, headless Chromium; the machine was shared with other
+qualification runs, load average 22–35 on 24 threads, so these are pessimistic). Times are from the world's first
+reported statistics, which includes its first frames (shader compilation, several seconds on SwiftShader):
+
+| Renderer, viewport, world | Level changes | Stable from | Then | Programs / textures |
+|---|---|---|---|---|
+| AMD integrated GPU (D3D12), 1920×1080, Fractal Biosphere | none | start | High, 37–39 fps, GPU 24–26 ms | 18 / 14 throughout |
+| AMD integrated GPU, 2560×1440, Fractal Biosphere | High → Medium at 4.7 s (22 fps, GPU 43 ms); Medium → Low at 46 s (a dip under 24 fps for 2 s, GPU 33 → 39 ms) | 46 s | Low, 42–49 fps, GPU 18–20 ms; no climb (Medium predicted at 35 ms) | 18 / 14 before and after each change |
+| SwiftShader pinned to 2 cores, 1280×720, Stellar Forge | High → Lowest at 7.0 s (very slow, 0.3 fps) | 7 s | Lowest, 2.8–3.3 fps; degraded at 12.9 s, notice shown | 29 / 17 before and after |
+| SwiftShader pinned to 2 cores, 1280×720, Machine Cathedral | High → Lowest at 3.6 s | 3.6 s | Lowest, 1.9–2.3 fps; degraded at 10.0 s, notice shown | 18 / 15 before and after |
+| SwiftShader pinned to 2 cores, 640×360, default world | High → Lowest at 4.6 s | 4.6 s | Lowest, 5.4–6.2 fps; degraded at 10.0 s | 29 / 17 before and after |
+
+No run oscillated: one change at most in 60 s on SwiftShader and on the AMD GPU at 1920×1080, two (both downward) at
+2560×1440. The same page with `?quality=0&adapt=0` on the AMD GPU at 1920×1080: 35–39 fps, GPU 25–27 ms. Before this
+change (from the code, not measured again): Auto stepped down one level after 3 s of a smoothed frame time over 1/28 s
+and up after 20 s under 1/55 s, without GPU time, memory or back-off.
+
 ## Not verified
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A

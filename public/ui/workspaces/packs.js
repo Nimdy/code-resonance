@@ -5,7 +5,7 @@
 // Approval is the one decision here that lets someone else's code run, so it is never a toggle: it shows who made the
 // pack, the exact files, the digest the approval is bound to and what isolation cannot guarantee, and needs a click on
 // "Allow this code".
-import {h,text,button,section,disclosure,pill,callout,emptyState,kv,copyable,modal,confirmDialog,toast,styles,humanize} from '../dom.js';
+import {h,text,button,segmented,disclosure,pill,callout,emptyState,kv,copyable,modal,confirmDialog,toast,styles,humanize} from '../dom.js';
 import {icon} from '../icons.js';
 import {dateTime,bytes,count} from '../format.js';
 import {renderMarkdown,openDoc,DOCS} from '../markdown.js';
@@ -42,25 +42,39 @@ function approval(p){
 const reduced=()=>{const m=document.documentElement.dataset.motion;return m==='reduce'||(m!=='full'&&matchMedia('(prefers-reduced-motion: reduce)').matches);};
 const usable=p=>p.ok&&p.compatible&&(!p.executable||p.trusted);
 const reviewable=p=>p.executable&&p.ok&&p.compatible&&!p.trusted;
+// The library filters: every one is a question a person asks of a growing library (what is waiting for me, what runs code).
+const FILTERS=[{value:'all',label:'All',test:()=>true},{value:'review',label:'Needs approval',test:p=>reviewable(p)},
+  {value:'code',label:'Runs code',test:p=>!!p.executable},{value:'data',label:'Data only',test:p=>!p.executable},{value:'problems',label:'Has problems',test:p=>!p.ok,optional:true}];
 export default {mount(view,{store,player:P,navigate,params}){
   styles('packs');
-  const offs=[];let selected=params[0]||'',loaded=false,listKey='',inspectKey='';const readmes=new Map();
+  const offs=[];let selected=params[0]||'',loaded=false,listKey='',inspectKey='',filter='all',filterKey='',hiddenKey='';const readmes=new Map();
   // ---- Layout ------------------------------------------------------------------------------------------------
+  // The page: the library (a column per fact a person compares) above the way into making a pack; the inspector beside
+  // it holds one pack's identity, approval, actions and contents.
   const summary=h('p',{class:'muted',id:'pkSummary'});
   const importBtn=button({label:'Import a pack',icon:'upload',kind:'primary',id:'pkImportBtn',onClick:()=>openImport()});
   const creatorBtn=button({label:'Make your own',icon:'code',kind:'ghost',onClick:()=>{creator.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});creator.querySelector('button')?.focus({preventScroll:true});}});
   const banner=h('div',{class:'pk-banner'});
+  const filterHolder=h('div',{class:'pk-filter'});
   const list=h('ul',{class:'pk-list',id:'pkList','aria-label':'Installed visual packs'});
-  const library=section({title:'Library',subtitle:'Installed on this computer'},banner,list);
+  // Column labels for sighted readers; each row's own text already names every value for a screen reader.
+  const cols=h('div',{class:'pk-cols','aria-hidden':'true'},h('span',{}),h('span',{text:'Pack'}),h('span',{text:'Kind'}),h('span',{text:'Approval'}),h('span',{text:'Use'}),h('span',{class:'pk-col-date',text:'Installed'}));
+  // A live region that is always there (an un-hidden one is often not announced); only its content changes.
+  const hiddenNote=h('div',{class:'pk-hidden-live',role:'status'});
+  const library=h('section',{class:'panel pk-library','aria-labelledby':'pkLibraryTitle'},
+    h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'pkLibraryTitle',text:'Library'}),h('span',{class:'note',text:'Installed on this computer'})),filterHolder),
+    hiddenNote,cols,list);
   const creator=buildCreator();
   const page=h('div',{class:'page'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Visual Pack SDK'}),h('h1',{class:'title-l',text:'Visual Packs'}),summary),h('div',{class:'actions'},creatorBtn,importBtn)),
-    library,creator));
+    banner,library,creator));
   const inspector=h('aside',{class:'inspector pk-inspector','aria-label':'Pack details'});
   view.append(h('div',{class:'split ws-packs'},h('div',{class:'main'},page),inspector));
   // ---- Library ------------------------------------------------------------------------------------------------
   const packs=()=>[...(P.state.packs||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id)));
   const current=()=>packs().find(p=>p.id===selected)||null;
+  // The pack the inspector shows: the one named, or with none named the first (as renderInspector chooses).
+  const inspected=()=>current()||(params[0]?null:packs()[0]||null);
   // A signature of what the views show: the engine re-reads the list every 15 s, and an unchanged list must not
   // rebuild the inspector under the reader (or close the README they opened).
   const sig=p=>p?[p.id,p.name,p.version,p.digest,p.trusted,p.ok,p.compatible,p.usedBy,p.problems?.join('|'),p.installedAt].join('\u0001'):'';
@@ -83,40 +97,88 @@ export default {mount(view,{store,player:P,navigate,params}){
     return callout({kind:'warn',icon:'warn',title:`${st.name} stopped`,body:`${cap(st.reason)}. The stage shows the identity without it; nothing restarts on its own.`,
       actions:[button({label:'Retry',icon:'refresh',size:'sm',id:elId,onClick:()=>{if(!P.retryPack())toast('There is nothing to retry: the pack is no longer stopped.','info');}})]});
   }
+  // The filter shows its counts; it is rebuilt only when they change, never when a person picks a filter (so focus on
+  // it survives a refresh of the list, and arrowing through the filters keeps the focus on them).
+  function renderFilter(all){
+    const shown=FILTERS.filter(f=>!f.optional||all.some(f.test));
+    // No control is drawn for fewer than two packs, so no filter may stay in force unseen.
+    if(all.length<2||!shown.some(f=>f.value===filter))filter='all';
+    const empty=shown.filter(f=>!all.some(f.test)).map(f=>f.value);
+    // An empty group stays choosable only while it is the one shown; that is part of what is drawn.
+    const key=all.length<2?'':shown.map(f=>`${f.value}:${all.filter(f.test).length}`).join(',')+`|${empty.includes(filter)?filter:''}`;
+    if(key===filterKey){filterHolder.querySelector('.segmented')?.set(filter);return;}
+    filterKey=key;
+    // The counts changed under someone using the filter: the rebuilt one takes their focus back.
+    const focused=filterHolder.contains(document.activeElement);
+    if(!key){filterHolder.replaceChildren();return;}
+    filterHolder.replaceChildren(segmented({label:'Show packs',value:filter,id:'pkFilter',
+      options:shown.map(f=>{const n=all.filter(f.test).length;return {value:f.value,label:`${f.label} · ${n}`,disabled:!n&&f.value!==filter,title:n?null:'No installed pack is in this group'};}),onChange:v=>{filter=v;renderFilter(packs());renderList(true);}}));
+    if(focused)filterHolder.querySelector('[aria-checked="true"]')?.focus();
+  }
+  // The pack in the inspector may be one the filter hides: said above the rows, with the way back to it.
+  function renderHidden(){
+    const p=inspected(),test=(FILTERS.find(f=>f.value===filter)||FILTERS[0]).test;
+    // Not when nothing matches at all (the list says that itself), and redrawn only when it changes (a live region).
+    const key=!p||filter==='all'||test(p)||!packs().some(test)?'':`${p.id}\u0001${p.name}`;
+    if(key===hiddenKey)return;hiddenKey=key;
+    if(!key){hiddenNote.replaceChildren();return;}
+    hiddenNote.replaceChildren(h('div',{class:'pk-hidden-note'},icon('info'),h('span',{},h('strong',{text:p.name}),h('span',{class:'faint',text:', shown in the details, is not in this filter.'})),
+      button({label:'Show all',size:'sm',kind:'ghost',onClick:()=>{filter='all';renderFilter(packs());renderList(true);
+        // The note is gone: the focus goes to the pack it named (or the first row).
+        focusRow();}})));
+  }
   function renderList(force=false){
-    const all=packs(),c=context(),key=all.map(sig).join('\n')+`|${loaded}|${c.running}|${[...c.here]}|${c.sdk}`;
+    const all=packs(),c=context();
+    renderFilter(all);renderHidden();
+    // After renderFilter, which may have reset the filter.
+    const key=all.map(sig).join('\n')+`|${loaded}|${c.running}|${[...c.here]}|${c.sdk}|${filter}|${store.state.catalog?1:0}`;
     if(!force&&key===listKey)return;listKey=key;
-    list.replaceChildren();
+    list.replaceChildren();cols.hidden=!all.length;
     if(!all.length){list.append(h('li',{},loaded?emptyState({icon:'packs',title:'No visual packs installed',
       body:'A pack gives a project a new world, a shader look or a tuned look of a built-in world. Import one you made or one from someone you trust (a .zip or a folder); nothing is downloaded from the internet.',
       actions:[button({label:'Import a pack',icon:'upload',kind:'primary',onClick:()=>openImport()}),button({label:'Read the SDK guide',icon:'doc',onClick:()=>openDoc('packs/README.md')})]}):h('div',{class:'pk-loading faint',text:'Reading the installed packs…'})));return;}
-    for(const p of all){
-      const k=kindOf(p),a=approval(p),swatches=paletteOf(p);
-      const glyph=h('span',{class:['pk-glyph',k.code?'code':'data'],'aria-hidden':'true'},swatches.length?h('span',{class:'pk-swatches'},...swatches.map(c=>{const s=h('i');s.style.background=c;return s;})):icon(k.code?'code':'layers'));
-      const row=h('button',{type:'button',class:['pk-row',k.code?'code':'data'],dataset:{id:p.id},'aria-current':p.id===selected?'true':null},
-        glyph,
-        h('span',{class:'pk-row-main'},
-          h('span',{class:'pk-row-title'},h('strong',{class:'ellipsis',text:p.name}),h('span',{class:'num faint',text:`v${p.version}`})),
-          h('span',{class:'pk-row-sub'},h('span',{class:['pk-kind',k.code?'code':''],text:k.label}),h('span',{class:'faint ellipsis',text:`by ${author(p)}`})),
-          p.description?h('span',{class:'pk-row-desc',text:p.description}):null),
-        h('span',{class:'pk-row-side'},pill(a.label,a.kind,{plain:a.kind==='plain'}),
-          c.running===p.id?pill('On the stage','accent',{title:'Running on the stage now'}):null,
-          h('span',{class:'tiny faint',text:p.usedBy?`Used by ${count(p.usedBy,'project')}`:'Not used yet'})));
+    const test=(FILTERS.find(f=>f.value===filter)||FILTERS[0]).test,shown=all.filter(test);
+    if(!shown.length)list.append(h('li',{class:'pk-nomatch'},h('span',{class:'faint',text:'No installed pack matches this filter.'}),
+      button({label:'Show all',size:'sm',kind:'ghost',onClick:()=>{filter='all';renderFilter(packs());renderList(true);
+        // The button is gone with the message: the focus goes to the filter it changed (or, with none drawn, a row).
+        const f=filterHolder.querySelector('[aria-checked="true"]');if(f)f.focus();else focusRow();}})));
+    const marked=inspected()?.id;
+    for(const p of shown){
+      const k=kindOf(p),a=approval(p);
+      const row=h('button',{type:'button',class:['pk-row',k.code?'code':'data'],dataset:{id:p.id},'aria-current':p.id===marked?'true':null},
+        glyphOf(p),
+        h('strong',{class:'pk-row-title ellipsis',text:p.name}),
+        h('span',{class:'pk-row-by faint ellipsis'},h('span',{class:'num',text:`v${p.version}`}),` · by ${author(p)}`),
+        p.description?h('span',{class:'pk-row-desc',text:p.description}):null,
+        h('span',{class:'pk-row-kind'},h('span',{class:['pk-kind',k.code?'code':''],text:k.label}),h('span',{class:'faint small ellipsis',text:baseLine(p)})),
+        h('span',{class:'pk-row-state'},pill(a.label,a.kind,{plain:a.kind==='plain'}),c.running===p.id?pill('On the stage','accent',{title:'Running on the stage now'}):null),
+        h('span',{class:'pk-row-use small',text:p.usedBy?`Used by ${count(p.usedBy,'project')}`:'Not used yet'}),
+        h('span',{class:'pk-row-date small faint num',text:p.installedAt?new Date(p.installedAt).toLocaleDateString([],{year:'numeric',month:'short',day:'numeric'}):'—'}));
       row.addEventListener('click',()=>select(p.id,true));
-      row.addEventListener('keydown',e=>{if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();
-        const rows=[...list.querySelectorAll('.pk-row')],i=rows.indexOf(row),next=rows[Math.max(0,Math.min(rows.length-1,i+(e.key==='ArrowDown'?1:-1)))];next?.focus();next?.click();});
+      row.addEventListener('keydown',e=>{const step={ArrowDown:1,ArrowUp:-1,Home:-Infinity,End:Infinity}[e.key];if(!step)return;e.preventDefault();
+        const rows=[...list.querySelectorAll('.pk-row')],i=rows.indexOf(row),next=rows[Math.max(0,Math.min(rows.length-1,i+step))];next?.focus();next?.click();});
       list.append(h('li',{},row));
     }
   }
+  function focusRow(){(list.querySelector('.pk-row[aria-current="true"]')||list.querySelector('.pk-row'))?.focus();}
+  // The glyph: a data pack shows its own palette when it sets one; a code pack the code mark.
+  function glyphOf(p,large=false){
+    const k=kindOf(p),swatches=paletteOf(p);
+    return h('span',{class:['pk-glyph',k.code?'code':'data',large?'lg':''],'aria-hidden':'true'},swatches.length?h('span',{class:'pk-swatches'},...swatches.map(c=>{const s=h('i');s.style.background=c;return s;})):icon(k.code?'code':'layers'));
+  }
+  // What a pack changes: the built-in world it is drawn on, or a world of its own.
+  function baseLine(p){if(p.kind==='world')return 'A world family of its own';return p.base?`On ${baseName(p.base)}`:'';}
   function select(id,fromUser=false){
     selected=id||'';for(const r of list.querySelectorAll('.pk-row'))r.setAttribute('aria-current',String(r.dataset.id===selected));
-    renderInspector(true);
+    renderInspector(true);renderHidden();
     // Narrow windows stack the inspector under the library: bring it into view, or a choice would seem to do nothing.
     if(fromUser&&matchMedia('(max-width: 900px)').matches)inspector.scrollIntoView({block:'start',behavior:reduced()?'auto':'smooth'});
     // The address names the pack (a bookmark, Back/Forward); the route handler then finds it already shown.
     if(fromUser&&location.hash!==`#/packs/${encodeURIComponent(selected)}`)navigate('packs',selected);
   }
   // ---- Inspector --------------------------------------------------------------------------------------------------
+  // The head ties together who the pack is, where it stands (approval, the stage, this project) and what can be done
+  // with it; the body holds what it is made of: approval detail, facts, parameters, files and digest, README.
   function renderInspector(force=false){
     let p=current();
     // Nothing chosen (or the chosen pack was removed): the first pack, without changing the address.
@@ -127,38 +189,48 @@ export default {mount(view,{store,player:P,navigate,params}){
     if(!p){inspector.append(h('div',{class:'inspector-body'},h('div',{class:'pk-none'},icon('packs'),h('p',{class:'muted',text:!packs().length?(loaded?'Nothing is installed yet. An imported pack shows its files, approval and parameters here.':'Reading the installed packs…'):selected?'This pack is no longer installed.':'Choose a pack to see its files, approval and parameters.'}))));return;}
     for(const r of list.querySelectorAll('.pk-row'))r.setAttribute('aria-current',String(r.dataset.id===p.id));
     const k=kindOf(p),a=approval(p);
-    const head=h('div',{class:'inspector-head'},
-      h('span',{class:['eyebrow','pk-kind',k.code?'code':''],text:k.label}),
-      h('h2',{class:'title-l pk-name',text:p.name}),
-      h('div',{class:'faint small mono ellipsis',title:p.id,text:`${p.id} · v${p.version}`}),
-      h('div',{class:'pk-pills'},pill(a.label,a.kind,{plain:a.kind==='plain'}),c.running===p.id?pill('On the stage now','accent'):null,c.here.has(p.id)?pill('Used by this project','',{plain:true}):null));
+    const actions=h('div',{class:'pk-actions'});
+    if(reviewable(p))actions.append(button({label:'Review & approve',icon:'shield-check',kind:'primary',id:'pkReviewBtn',onClick:()=>openReview(p)}));
+    else actions.append(button({label:'Use it',icon:'visual',kind:usable(p)?'primary':'',id:'pkUseBtn',disabled:!usable(p),
+      title:usable(p)?(p.kind==='world'?'Open Visual Studio with this world for the selected project (a preview until you save)':'Open Visual Studio with this look for the selected project (a preview until you save)'):'It has problems and cannot be used',onClick:()=>use(p)}));
+    actions.append(h('span',{class:'grow'}));
+    if(p.executable&&p.trusted)actions.append(button({label:'Revoke',icon:'shield',kind:'ghost',size:'sm',id:'pkRevokeBtn',title:'Withdraw the approval: it stops at once',onClick:()=>revoke(p)}));
+    actions.append(button({label:'Remove',icon:'trash',kind:'danger',size:'sm',id:'pkRemoveBtn',onClick:()=>remove(p)}));
+    // The standing sits beside the glyph, under the name, and the id keeps to one line (the version always shows; a long
+    // id is shortened, whole in its tooltip): on a laptop the head leaves most of the height to the body.
+    const idLine=`${p.id} · v${p.version}`;
+    const head=h('div',{class:'inspector-head pk-head'},
+      h('div',{class:'pk-ident'},glyphOf(p,true),h('div',{class:'pk-ident-text'},
+        h('span',{class:['eyebrow','pk-kind',k.code?'code':''],text:k.label}),
+        h('h2',{class:'title-l pk-name',text:p.name}),
+        h('div',{class:'faint small mono pk-id',title:idLine},h('span',{class:'pk-id-name',text:p.id}),h('span',{class:'pk-id-ver',text:`\u00a0· v${p.version}`})),
+        h('div',{class:'pk-pills'},pill(a.label,a.kind,{plain:a.kind==='plain'}),c.running===p.id?pill('On the stage now','accent'):null,mine?pill('Stopped','warn',{title:`${cap(c.stopped.reason)}. Retry from the notice above the library.`}):null,c.here.has(p.id)?pill('Used by this project','',{plain:true}):null))),
+      actions);
     const body=h('div',{class:'inspector-body'});
-    if(mine)body.append(stoppedCallout(c.stopped));
     if(!p.ok)body.append(callout({kind:'danger',icon:'warn',title:'It cannot run or be approved',body:h('div',{},
       h('ul',{class:'pk-problems'},...(p.problems||[]).map(x=>h('li',{text:x}))),
       h('p',{text:'Import the pack again to restore its files, or remove it. Projects that use it show their identity without it meanwhile.'}))}));
-    // A pack stopped by the revocation already says why it is not running; one message is enough.
-    else if(reviewable(p)&&!mine)body.append(callout({kind:'warn',icon:'shield',title:'Not approved: it will not run',body:'It contains code. Review who made it and its exact files, then allow it (Review & approve, below). Until then a project that uses it shows its identity without it.'}));
+    else if(reviewable(p))body.append(callout({kind:'warn',icon:'shield',title:'Not approved: it will not run',body:'It contains code. Review who made it and its exact files, then allow it with Review & approve. Until then a project that uses it shows its identity without it.'}));
+    // What an approval is bound to, said where the approval is shown.
+    else if(p.executable&&p.trusted)body.append(h('div',{class:'pk-approved'},icon('shield-check'),h('div',{},h('strong',{text:'Approved for these exact files'}),
+      h('p',{class:'faint small'},'Bound to digest ',h('code',{title:p.digest||'',text:short(p.digest)}),': a change to any file withdraws it.'))));
     if(p.description)body.append(h('p',{class:'pk-desc',text:p.description}));
     const base=p.base?baseName(p.base):null,b=p.budget;
-    body.append(kv([['Author',author(p)],['Kind',k.label],base?[p.kind==='world'?'Family':'Built on',base]:undefined,
-      ['SDK',sdkLine(p,c.sdk)],['Approval',a.label],['Used by',p.usedBy?count(p.usedBy,'project'):'No project yet'],
+    body.append(facts([['Author',author(p)],base?[p.kind==='world'?'Family':'Built on',base]:p.kind==='world'?['Family','Its own world']:null,
+      ['SDK',sdkLine(p,c.sdk)],['Used by',p.usedBy?count(p.usedBy,'project'):'No project yet'],
       ['Installed',dateTime(p.installedAt)],['License',p.license||'Not stated'],
-      b?['Budget',[b.drawCalls&&`${b.drawCalls} draw calls`,b.triangles&&`${Math.round(b.triangles/1000)}k triangles`,b.points&&`${Math.round(b.points/1000)}k points`,b.updateMs&&`${b.updateMs} ms update`].filter(Boolean).join(' · ')]:undefined].filter(Boolean)));
-    body.append(parametersBlock(p));
+      b?['Budget',[b.drawCalls&&`${b.drawCalls} draw calls`,b.triangles&&`${Math.round(b.triangles/1000)}k triangles`,b.points&&`${Math.round(b.points/1000)}k points`,b.updateMs&&`${b.updateMs} ms update`].filter(Boolean).join(' · '),'wide']:null].filter(Boolean)));
+    body.append(parametersBlock(p)||'');
     const total=(p.files||[]).reduce((n,f)=>n+f.size,0);
     body.append(disclosure({summary:`Files · ${(p.files||[]).length} · ${bytes(total)}`,open:(p.files||[]).length<=6},filesTable(p.files||[]),
       h('div',{class:'pk-digest'},h('span',{class:'eyebrow',text:'Digest (SHA-256 of every file)'}),copyable(p.digest||'—',{label:'Copy'}))));
     if(p.readme){const holder=h('div',{class:'pk-readme'},h('p',{class:'faint small',text:'Loading…'}));
       body.append(disclosure({summary:'README',open:true},h('div',{class:'tiny faint',text:'Written by the pack\'s author; shown as text.'}),holder));void loadReadme(p,holder);}
-    const foot=h('div',{class:'inspector-foot'});
-    if(reviewable(p))foot.append(button({label:'Review & approve',icon:'shield-check',kind:'primary',id:'pkReviewBtn',onClick:()=>openReview(p)}));
-    else foot.append(button({label:'Use it',icon:'visual',kind:usable(p)?'primary':'',id:'pkUseBtn',disabled:!usable(p),
-      title:usable(p)?(p.kind==='world'?'Open Visual Studio with this world for the selected project (a preview until you save)':'Open Visual Studio with this look for the selected project (a preview until you save)'):'It has problems and cannot be used',onClick:()=>use(p)}));
-    foot.append(h('div',{class:'grow'}));
-    if(p.executable&&p.trusted)foot.append(button({label:'Revoke',kind:'ghost',size:'sm',id:'pkRevokeBtn',title:'Withdraw the approval: it stops at once',onClick:()=>revoke(p)}));
-    foot.append(button({label:'Remove',icon:'trash',kind:'danger',size:'sm',id:'pkRemoveBtn',onClick:()=>remove(p)}));
-    inspector.append(head,body,foot);
+    inspector.append(head,body);
+  }
+  // Facts as a grid of labelled values (as many columns as the inspector's width holds; long ones take the whole row).
+  function facts(rows){
+    return h('dl',{class:'pk-facts'},...rows.map(([label,value,wide])=>h('div',{class:['pk-fact',wide?'wide':'']},h('dt',{text:label}),h('dd',{},value instanceof Node?value:String(value??'—')))));
   }
   const baseName=id=>store.state.catalog?.families?.[id]?.name||store.state.catalog?.packFamilies?.[id]?.name||packs().find(p=>p.id===id)?.name||humanize(id);
   function sdkLine(p,sdk){const need=p.sdk||'not stated';
@@ -178,7 +250,7 @@ export default {mount(view,{store,player:P,navigate,params}){
   function parametersBlock(p){
     const prm=p.parameters||{};
     if(p.kind==='declarative'){const o=Object.entries(prm.overrides||{});if(!o.length)return null;
-      return disclosure({summary:`Sets ${count(o.length,'value')} on ${baseName(p.base)}`,open:false},h('div',{class:'pk-table-wrap'},h('table',{class:'pk-table'},
+      return disclosure({summary:`Sets ${count(o.length,'value')} on ${baseName(p.base)}`,open:true},h('div',{class:'pk-table-wrap'},h('table',{class:'pk-table'},
         h('thead',{},h('tr',{},h('th',{text:'Parameter'}),h('th',{text:'Value'}))),
         h('tbody',{},...o.map(([k,v])=>h('tr',{},h('td',{class:'mono',text:k}),h('td',{},valueOf(v))))))));}
     const specs=Object.entries(prm).filter(([k])=>/^(?:params|uniforms)\./.test(k));
@@ -206,16 +278,17 @@ export default {mount(view,{store,player:P,navigate,params}){
     const fresh=(P.state.packs||[]).find(x=>x.id===p.id)||p;
     if(!reviewable(fresh)){toast(fresh.trusted?`${fresh.name} is already approved.`:`${fresh.name} cannot be approved: ${fresh.problems?.[0]||'it is not usable'}.`,'info');return;}
     const k=kindOf(fresh),total=(fresh.files||[]).reduce((n,f)=>n+f.size,0);
-    const body=h('div',{class:'pk-review'},
+    const body=h('div',{class:'pk-review pk-two'},h('div',{class:'pk-two-a'},
       h('div',{class:'pk-review-id'},h('span',{class:['pk-glyph','code'],'aria-hidden':'true'},icon('code')),
         h('div',{},h('strong',{text:fresh.name}),h('div',{class:'faint small mono',text:`${fresh.id} · v${fresh.version}`}))),
       kv([['Author',author(fresh)],['Kind',k.label],['License',fresh.license||'Not stated'],['SDK',`${fresh.sdk||'not stated'} · compatible`]]),
       fresh.description?h('p',{class:'muted small',text:fresh.description}):null,
+      h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'What it can reach'}),h('ul',{class:'pk-access'},...ACCESS.map(x=>h('li',{text:x})))),
+      callout({kind:'warn',icon:'warn',title:'What isolation cannot guarantee',body:LIMITS_TEXT})),
+      h('div',{class:'pk-two-b'},
       h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:`The exact files · ${(fresh.files||[]).length} · ${bytes(total)}`}),filesTable(fresh.files||[])),
       h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'Digest'}),h('code',{class:'pk-digest-full',id:'pkReviewDigest',text:fresh.digest}),
-        h('p',{class:'faint small',text:'The approval is bound to this digest: any change to any of these files needs a new approval.'})),
-      h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'What it can reach'}),h('ul',{class:'pk-access'},...ACCESS.map(x=>h('li',{text:x})))),
-      callout({kind:'warn',icon:'warn',title:'What isolation cannot guarantee',body:LIMITS_TEXT}));
+        h('p',{class:'faint small',text:'The approval is bound to this digest: any change to any of these files needs a new approval.'}))));
     const allow=button({label:'Allow this code',icon:'shield-check',kind:'primary',id:'pkAllowBtn',onClick:async()=>{
       try{await P.setTrust(fresh,true);dlg.close();toast(`${fresh.name} is approved for these exact files.`,'ok');}
       catch(e){toast(`Not approved: ${e.message}`,'error');}}});
@@ -305,6 +378,7 @@ export default {mount(view,{store,player:P,navigate,params}){
         h('div',{class:'pk-report-head'},h('span',{class:['pk-glyph',code?'code':'data'],'aria-hidden':'true'},icon(code?'code':'layers')),
           h('div',{class:'grow'},h('strong',{class:'pk-report-name',text:m.name||'Unnamed pack'}),h('div',{class:'faint small mono',text:[m.id||'no id',m.version?`v${m.version}`:null].filter(Boolean).join(' · ')})),
           h('div',{class:'pk-pills'},m.kind?pill(k?k.label:humanize(m.kind),code?'code':'',{plain:!code}):null,errors.length?pill(count(errors.length,'error'),'danger'):pill('No errors','ok'))),
+        h('div',{class:'pk-two'},h('div',{class:'pk-two-a'},
         kv([['Author',m.author?.name||'Not stated'],['Kind',k?k.label:m.kind?humanize(m.kind):'Unknown (pack.json could not be read)'],['SDK',m.sdk||'Not stated'],['License',m.license||'Not stated']]),
         m.description?h('p',{class:'muted small',text:m.description}):null,
         errors.length?callout({kind:'danger',icon:'warn',title:'It cannot be installed',body:h('ul',{class:'pk-errors',id:'pkReportErrors'},...errors.map(e=>h('li',{},h('code',{text:e.at}),' ',h('span',{text:e.message}))))}):null,
@@ -312,9 +386,10 @@ export default {mount(view,{store,player:P,navigate,params}){
         r.access?h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:code?'Contains code':'Data only'}),h('p',{class:'small',text:r.access.summary}),
           r.access.notes?.length?h('ul',{class:'pk-access'},...r.access.notes.map(x=>h('li',{text:x}))):null):null,
         warnings.length?h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'Warnings'}),h('ul',{class:'pk-warnings'},...warnings.map(x=>h('li',{class:'small',text:x})))):null,
+        code&&!errors.length?h('p',{class:'faint small',text:'Installing does not approve it: it will not run until you review and allow its files.'}):null),
+        h('div',{class:'pk-two-b'},
         h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:`Files · ${(r.files||[]).length} · ${bytes(total)}`}),filesTable(r.files||[])),
-        h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'Digest'}),h('code',{class:'pk-digest-full',text:r.digest||'—'})),
-        code&&!errors.length?h('p',{class:'faint small',text:'Installing does not approve it: it will not run until you review and allow its files.'}):null));
+        h('div',{class:'pk-review-block'},h('span',{class:'eyebrow',text:'Digest'}),h('code',{class:'pk-digest-full',text:r.digest||'—'}))))));
       installBtn.disabled=!!errors.length;
       out.querySelector('.pk-report')?.scrollIntoView({block:'start'});
     }
@@ -340,11 +415,17 @@ export default {mount(view,{store,player:P,navigate,params}){
   function buildCreator(){
     const templates=h('div',{class:'pk-templates'},h('p',{class:'faint small',text:'Loading the starter templates…'}));
     const checks=h('div',{class:'pk-checks'});
-    const el=section({title:'Make your own pack',subtitle:'SDK guides, starter templates and the checks a pack must pass',id:'pkCreator'},
-      // The overview leads; the six references sit in an even grid (3 × 2, 2 × 3), so none is left alone on a line.
-      h('div',{class:'pk-docs'},docButton(SDK_DOCS[0],'Start here: the three kinds of pack, the quick start, what a world receives'),
-        h('div',{class:'pk-docs-ref'},...SDK_DOCS.slice(1).map(d=>docButton(d)))),
-      templates,checks);
+    // Three parts: what to read (the overview leads, the six references in an even grid, so none is left alone on a line),
+    // a template per kind, and the checks a pack must pass. Stacked in that order; on a very wide page the reading and the
+    // checks share a column beside the templates, which keep the width their commands need to stay on one line.
+    const el=h('section',{class:'panel pk-creator',id:'pkCreator','aria-labelledby':'pkCreatorTitle'},
+      h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'pkCreatorTitle',text:'Make your own pack'}),h('span',{class:'note',text:'SDK guides, starter templates and the checks a pack must pass'}))),
+      h('div',{class:'panel-body pk-creator-body'},
+        h('div',{class:'pk-creator-col pk-creator-read'},h('span',{class:'eyebrow',text:'Read'}),
+          h('div',{class:'pk-docs'},docButton(SDK_DOCS[0],'Start here: the three kinds of pack, the quick start, what a world receives'),
+            h('div',{class:'pk-docs-ref'},...SDK_DOCS.slice(1).map(d=>docButton(d))))),
+        h('div',{class:'pk-creator-col pk-creator-make'},h('span',{class:'eyebrow',text:'Start from a template'}),templates),
+        h('div',{class:'pk-creator-col pk-creator-check'},checks)));
     store.get('/api/packs/templates').then(t=>{
       const about={declarative:'Tune a built-in world with data only: parameters, palette, light, effect mapping. No approval needed.',
         shader:'GLSL background and post passes on a built-in family. Runs code: approved before it runs.',world:'A complete world family in JavaScript and GLSL, through the World API. Runs code: approved before it runs.'};

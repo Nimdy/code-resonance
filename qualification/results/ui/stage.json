@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-26T20:37:10.358Z",
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "M turns the sound on or off",
+      "pass": true,
+      "detail": "before false, after true"
+    },
+    {
+      "name": "the Sound button follows the M key",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "M again returns the sound to how it was",
+      "pass": true,
+      "detail": "now false"
+    },
+    {
+      "name": "I shows or hides the performance information",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "I again restores it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "M and I are ignored while the quality select has focus",
+      "pass": true,
+      "detail": "sound false, info false, quality 3"
+    },
+    {
+      "name": "? opens the list of keys",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Esc closes the list of keys and stays on the Stage",
+      "pass": true,
+      "detail": "#/stage"
+    },
+    {
+      "name": "one Esc stays on the Stage and says to press it again",
+      "pass": true,
+      "detail": "#/stage: \"Press Esc again to return to the Control Center.\""
+    },
+    {
+      "name": "an Esc long after the first does not leave",
+      "pass": true,
+      "detail": "#/stage"
+    },
+    {
+      "name": "Esc twice returns to the Control Center (the page it came from)",
+      "pass": true,
+      "detail": "#/home"
+    },
+    {
+      "name": "the Esc that ends full screen never leaves the Stage, even pressed twice at once",
+      "pass": true,
+      "detail": "#/stage"
+    },
+    {
+      "name": "the second-monitor window keeps the Stage on Esc (twice) and names the way out",
+      "pass": true,
+      "detail": "#/stage: \"This window presents the Stage: use Control Center at the top left to leave it.\""
+    },
+    {
+      "name": "in browser full screen (F11) Esc twice keeps the Stage and says how to leave",
+      "pass": true,
+      "detail": "#/stage: \"The Stage fills the screen: leave full screen first (F11), or use Control Center at the top left.\""
+    },
+    {
+      "name": "no console or page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

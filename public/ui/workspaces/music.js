@@ -73,9 +73,11 @@ export default {mount(view,{store:S,player:P,chrome}){
   // ---- Head and scope --------------------------------------------------------------------------------------------
   const scopeSeg=segmented({label:'Where changes are saved',id:'musicScope',options:[{value:'project',label:'This project'},{value:'global',label:'Global defaults'}],value:scope,onChange:v=>{scope=v;scopeChosen=true;renderAll();}});
   const scopeNote=h('p',{class:'small muted ms-scope-note'});
-  const head=h('div',{class:'page-head'},h('div',{class:'grow'},h('h1',{class:'title-l',text:'Music Studio'}),
-    h('p',{class:'muted',text:'The score is generated from the project and follows its development live. Choose how it is performed; changes are heard on the next bar.'})));
-  const scopeBar=h('div',{class:'ms-scope panel'},h('div',{class:'ms-scope-row'},h('span',{class:'eyebrow',text:'Editing'}),scopeSeg),scopeNote);
+  // Where a change is saved: beside the title, tinted by scope (this project: the accent; global: neutral), so it is
+  // never ambiguous which one an Apply writes to.
+  const scopeBar=h('div',{class:'ms-scope'},h('div',{class:'ms-scope-row'},h('span',{class:'eyebrow',text:'Editing'}),scopeSeg),scopeNote);
+  const head=h('div',{class:'page-head ms-head'},h('div',{class:'grow'},h('h1',{class:'title-l',text:'Music Studio'}),
+    h('p',{class:'muted ms-lede',text:'The score is generated from the project. Choose how it is performed; changes are heard on the next bar.'})),scopeBar);
   // ---- Preview bar and sound -------------------------------------------------------------------------------------
   const applyBtn=button({label:'Apply',icon:'check',kind:'primary',id:'musicApply',onClick:()=>apply()});
   const previewText=h('span',{class:'small ms-preview-what'}),previewWhere=h('span',{class:'small muted'});
@@ -88,7 +90,7 @@ export default {mount(view,{store:S,player:P,chrome}){
     const b=h('button',{type:'button',role:'radio',class:'ms-style',dataset:{style:s},'aria-checked':'false'},
       h('span',{class:'ms-style-head'},h('strong',{text:STYLE_NAMES[s]}),h('span',{class:'ms-style-tag',text:i.tag})),
       h('span',{class:'ms-style-voices',text:i.voices}),
-      h('span',{class:'ms-style-meta'},h('span',{text:`${i.room>=3?'Long':'Short'} room ${i.room} s`}),h('span',{class:'num ms-style-bpm'})));
+      h('span',{class:'ms-style-meta'},h('span',{text:`Room ${i.room} s`,title:`${i.room>=3?'A long':'A short'} room: ${i.room} s of reverb`}),h('span',{class:'num ms-style-bpm'})));
     b.addEventListener('click',()=>edit({style:s}));
     b.addEventListener('keydown',e=>{const k=e.key==='ArrowRight'||e.key==='ArrowDown'?1:e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:0;if(!k)return;e.preventDefault();
       const next=styleCards[(styleCards.indexOf(b)+k+styleCards.length)%styleCards.length];next.focus();next.click();});
@@ -103,17 +105,18 @@ export default {mount(view,{store:S,player:P,chrome}){
   const tempoSlider=slider({min:58,max:160,integer:true,value:shown('tempo'),label:'Manual tempo in BPM',id:'musicTempo',format:v=>String(v),onInput:v=>edit({tempoMode:'manual',tempo:v})});
   const tempoRead=h('span',{class:'field-value num'});
   const tempoHint=h('div',{class:'field-doc'});
+  const timing=h('dl',{class:'ms-timing'});
   const tempoSource=h('div',{class:'ms-source'});
-  const tempoField=h('div',{class:'field ms-field'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Tempo'}),tempoRead),tempoSeg,h('div',{class:'ms-tempo-manual'},tempoSlider),tempoHint,tempoSource);
+  const tempoField=h('div',{class:'field ms-field'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Tempo'}),tempoRead),tempoSeg,h('div',{class:'ms-tempo-manual'},tempoSlider),tempoHint,timing,h('div',{class:'ms-foot'},tempoSource));
   const textureSlider=slider({min:0,max:100,integer:true,value:Math.round(shown('texture')*100),label:'Texture in percent',id:'musicTexture',format:v=>`${v}%`,onInput:v=>edit({texture:v/100})});
   const effects=h('dl',{class:'ms-effects'});
   const textureSource=h('div',{class:'ms-source'});
   const textureField=h('div',{class:'field ms-field'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Texture'})),textureSlider,
-    h('div',{class:'field-doc',text:'How full and bright the arrangement is. It scales every voice and filter, and thins the arrangement at the low end:'}),effects,textureSource);
+    h('div',{class:'field-doc',text:'How full and bright the arrangement is. It scales every voice and filter, and thins the arrangement at the low end:'}),effects,h('div',{class:'ms-foot'},textureSource));
   // ---- Output: volume and audio export -----------------------------------------------------------------------------
   const volumeSlider=slider({min:0,max:100,integer:true,value:Math.round(globalMusic().volume*100),label:'Master volume in percent',id:'musicVolume',format:v=>`${v}%`,
     onInput:v=>S.previewMusic({volume:v/100}),onChange:v=>commitVolume(v/100)});
-  const volumeField=h('div',{class:'field ms-field'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Master volume'}),pill('All projects · this receiver','',{plain:true})),volumeSlider,
+  const volumeField=h('div',{class:'field ms-out'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Master volume'}),pill('All projects · this receiver','',{plain:true})),volumeSlider,
     h('div',{class:'field-doc',text:'A listening level, saved when you release the slider. Every window and the OBS view use it.'}));
   async function commitVolume(v){
     try{await S.saveSettings({music:{volume:v}});}catch(e){toast(`Volume not saved: ${e.message}`,'error');}
@@ -121,7 +124,9 @@ export default {mount(view,{store:S,player:P,chrome}){
   }
   const exportBtn=button({label:'Render audio (WAV)',icon:'download',id:'musicExport',onClick:()=>exportAudio()});
   const exportNote=h('div',{class:'field-doc'}),exportBusy=h('div',{class:'small accent',role:'status'});
-  const exportField=h('div',{class:'field ms-field'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Audio file'})),h('div',{},exportBtn),exportBusy,exportNote);
+  const exportField=h('div',{class:'field ms-out'},h('div',{class:'field-head'},h('span',{class:'field-label',text:'Audio file'})),h('div',{},exportBtn),exportBusy,exportNote);
+  // Output is not a creative choice: never previewed, never scoped (the volume is one level for the receiver).
+  const outputCard=h('div',{class:'ms-card ms-output'},volumeField,exportField);
   async function exportAudio(){
     try{const r=await P.exportAudio();
       if(!r)toast(P.state.exporting?'A render is already running.':'Nothing to render yet: this project has no recorded performance.','warning');
@@ -177,8 +182,17 @@ export default {mount(view,{store:S,player:P,chrome}){
   const responseNote=h('div',{class:'small faint'});
   const advanced=disclosure({summary:'Visual response to the music'},
     h('p',{class:'small muted',text:'Part of the project\'s visual identity (its Visual Recipe), not of the sound: saved immediately for this project, and every window and the OBS view follow. Tuning a value locks the identity so it is no longer regenerated.'}),
-    h('div',{class:'grid-2'},...responseRows.map(r=>r.el)),responseNote);
-  advanced.id='musicAdvanced';
+    h('div',{class:'ms-response'},...responseRows.map(r=>r.el)),responseNote);
+  advanced.id='musicAdvanced';advanced.classList.add('ms-advanced');
+  const advancedHint=h('p',{class:'small faint ms-advanced-hint',text:'How strongly the world follows the music and pulses on each beat. Saved in this project\'s Visual Recipe.'});
+  // A large screen has the room to show the two response sliders from the start; elsewhere they stay one click away.
+  // The window may cross that size while the studio is open: it follows, until the person opens or closes the section
+  // themselves (their choice then stands for this visit).
+  let advancedChosen=false,advancedAuto=false;
+  advanced.addEventListener('toggle',()=>{advancedHint.hidden=advanced.open;if(advancedAuto)advancedAuto=false;else advancedChosen=true;});
+  const roomy=window.matchMedia?.('(min-width:2200px) and (min-height:1300px)');
+  const fitAdvanced=()=>{if(advancedChosen||!roomy||advanced.open===roomy.matches)return;advancedAuto=true;advanced.open=roomy.matches;};
+  if(roomy){fitAdvanced();roomy.addEventListener('change',fitAdvanced);offs.push(()=>roomy.removeEventListener('change',fitAdvanced));}
   // Edits are queued: one request at a time, always against the revision last seen, latest value wins.
   const tuneQueue=new Map();let tuning=null;
   function tune(path,v){tuneQueue.set(path,v);if(!tuning)tuning=flushTune().finally(()=>{tuning=null;renderTuning();});}
@@ -208,25 +222,33 @@ export default {mount(view,{store:S,player:P,chrome}){
   const live={bar:h('b',{class:'num'}),section:h('b',{}),key:h('b',{}),bpm:h('b',{class:'num'})};
   const meterFill=h('span',{class:'ms-meter-fill'}),meterText=h('span',{class:'num tiny faint ms-meter-db'});
   const meter=h('div',{class:'ms-meter',role:'meter','aria-label':'Output level','aria-valuemin':'-60','aria-valuemax':'0','aria-valuenow':'-60'},meterFill);
-  const liveState=h('span',{class:'tiny faint'});
+  const liveState=h('span',{class:'small faint ms-live-state'});
+  // The readouts sit under the picture, as on a hardware monitor; with the sound off they show nothing (—) and the one
+  // action that brings them to life (Enable sound) takes the level meter's place.
   const liveBox=h('div',{class:'ms-live',id:'musicLive'},
-    h('div',{class:'ms-live-grid'},...[['Bar',live.bar],['Section',live.section],['Key',live.key],['Tempo',live.bpm]].map(([k,v])=>h('div',{},h('span',{class:'eyebrow',text:k}),v))),
-    h('div',{class:'ms-meter-row'},h('span',{class:'eyebrow',text:'Level'}),meter,meterText),liveState);
+    h('div',{class:'ms-live-grid'},...[['Bar',live.bar],['Section',live.section],['Key',live.key],['Tempo',live.bpm]].map(([k,v])=>h('div',{class:'ms-readout'},h('span',{class:'eyebrow',text:k}),v))),
+    h('div',{class:'ms-meter-row'},h('span',{class:'eyebrow',text:'Level'}),meter,meterText),soundNote,liveState);
   const identityBox=h('div',{class:'ms-identity',id:'musicIdentity'});
   // ---- Layout ------------------------------------------------------------------------------------------------------
-  const emptyBox=h('div',{});
-  view.append(h('div',{class:'split ws-music'},
-    h('div',{class:'main'},h('div',{class:'page'},h('div',{class:'page-inner'},head,scopeBar,previewBar,soundNote,emptyBox,
-      section({title:'Style',subtitle:'The instruments and the room'},styleGroup,styleSource,roomNote),
-      section({title:'Tempo and texture'},h('div',{class:'grid-2 ms-pair'},tempoField,textureField)),
-      section({title:'Output'},h('div',{class:'grid-2 ms-pair'},volumeField,exportField)),
-      section({title:'Music presets',subtitle:'Global, reusable in every project'},
-        h('p',{class:'small muted',text:'A preset keeps a style, a tempo source and a texture. It never changes a project\'s key, mode or motif: those come from the project itself.'}),
-        h('div',{class:'ms-preset-new'},nameInput,savePresetBtn),nameError,presetList),
-      advanced))),
+  // A performance desk: the controls on the left in a grid that uses the width (style palettes across, the three
+  // performance cards side by side, presets beside the visual response); the monitor and the score's fixed identity on
+  // the right, always in view while a change is heard.
+  const emptyBox=h('div',{class:'ms-empty'});
+  const presetsCard=h('section',{class:'ms-card ms-presets-card','aria-labelledby':'msPresetsTitle'},
+    h('div',{class:'ms-card-head'},h('h2',{class:'title-m',id:'msPresetsTitle',text:'Music presets'}),h('span',{class:'faint small',text:'Global, reusable in every project'})),
+    h('p',{class:'small muted',text:'A preset keeps a style, a tempo source and a texture. It never changes a project\'s key, mode or motif: those come from the project itself.'}),
+    h('div',{class:'ms-preset-new'},nameInput,savePresetBtn),nameError,presetList);
+  const root=h('div',{class:'split ws-music'},
+    h('div',{class:'main'},h('div',{class:'page'},h('div',{class:'page-inner'},head,previewBar,emptyBox,
+      h('div',{class:'ms-desk'},
+        section({title:'Style',subtitle:'The instruments and the room'},styleGroup,h('div',{class:'ms-style-foot'},styleSource,roomNote)),
+        section({title:'Performance',subtitle:'Tempo and texture follow the scope you edit; the output is global'},
+          h('div',{class:'ms-perf'},tempoField,textureField,outputCard)),
+        h('div',{class:'ms-lower'},presetsCard,h('div',{class:'ms-card ms-advanced-card'},advanced,advancedHint)))))),
     h('aside',{class:'inspector ms-inspector','aria-label':'Performance monitor'},
       h('div',{class:'ms-monitor'},slot,liveBox),
-      h('div',{class:'inspector-body'},identityBox))));
+      h('div',{class:'inspector-body'},identityBox)));
+  view.append(root);
   // ---- Rendering ---------------------------------------------------------------------------------------------------------
   function sourceLine(el,keys,label,value){
     el.replaceChildren();
@@ -248,6 +270,7 @@ export default {mount(view,{store:S,player:P,chrome}){
     scopeSeg.set(scope);const p=S.project();
     const projectBtn=scopeSeg.querySelector('[data-value="project"]');projectBtn.disabled=!p;
     text(projectBtn,p?`This project · ${projectName(p)}`:'This project');projectBtn.title=p?`${projectName(p)} (private name, shown only here)`:'No project selected';
+    root.dataset.scope=scope;
     text(scopeNote,scope==='project'?'Saved for this project only. A value it does not set inherits the global default.':'Saved as the default for every project that has no value of its own.');
     if(p?.evidence?.demonstration&&scope==='project')scopeNote.append(' ',h('span',{class:'warn',text:'Demonstration (fictional).'}));
     text(applyBtn.querySelector('span'),scope==='project'?'Apply to this project':'Apply as global default');
@@ -259,13 +282,16 @@ export default {mount(view,{store:S,player:P,chrome}){
     for(const c of identityBox.querySelectorAll('.ms-tempo-cell'))c.classList.toggle('current',c.dataset.style===style);
     sourceLine(styleSource,['style'],'Style',m=>STYLE_NAMES[m.style]);
     if(S.pinned('style'))styleSource.append(h('span',{class:'warn',text:`This window's address pins the style (?style=); saved choices apply elsewhere.`}));
-    const bpm=projectBpm(style),echo=60/((mode==='manual'?tempo:bpm||92)*4)*3;
-    text(roomNote,`Room and echo follow the style and cannot be adjusted: ${STYLE_NAMES[style]} plays in a ${STYLE_INFO[style].room} s room, with a ping-pong echo every dotted eighth (${Math.round(echo*1000)} ms at ${mode==='manual'?tempo:bpm||'—'} BPM).`);
+    const bpm=projectBpm(style),beat=mode==='manual'?tempo:bpm;
+    text(roomNote,`${STYLE_NAMES[style]}'s room (${STYLE_INFO[style].room} s) comes with the style; its echo follows the tempo.`);
+    // What the tempo means in time: the beat, the 16-step bar and the echo (a dotted eighth, music.js).
+    timing.replaceChildren(...[['Beat',beat?`${Math.round(60000/beat)} ms`:'—'],['Bar',beat?`${(240/beat).toFixed(2)} s · 16 steps`:'—'],
+      ['Echo',beat?`${Math.round(45000/beat)} ms · dotted eighth`:'—']].flatMap(([k,v])=>[h('dt',{text:k}),h('dd',{text:v})]));
     tempoSeg.set(mode);tempoSlider.set(tempo);tempoField.querySelector('.ms-tempo-manual').hidden=mode!=='manual';
     tempoField.classList.toggle('modified','tempo' in d||'tempoMode' in d);
     // In manual mode the slider's own entry box shows the value; the read-out is for the project tempo only.
     tempoRead.hidden=mode==='manual';text(tempoRead,bpm?`${bpm} BPM`:'—');
-    text(tempoHint,mode==='manual'?'A fixed tempo for every style. The echo follows it.':bpm?`The project's own tempo for ${STYLE_NAMES[style]}: ${bpm} BPM. Each style has its own, derived from the project.`:'The project\'s own tempo for each style, derived from the project.');
+    text(tempoHint,mode==='manual'?'A fixed tempo for every style.':`The project's own tempo${bpm?` for ${STYLE_NAMES[style]}`:''}: each style has its own, derived from the project.`);
     sourceLine(tempoSource,['tempoMode','tempo'],'Tempo',m=>m.tempoMode==='manual'?`Manual ${m.tempo} BPM`:'From the project');
     textureSlider.set(Math.round(texture*100));textureField.classList.toggle('modified','texture' in d);
     effects.replaceChildren(...[['Voices',`×${(.6+.8*texture).toFixed(2)} loudness`],['Filters',`×${(.55+.9*texture).toFixed(2)} brightness`],
@@ -285,8 +311,10 @@ export default {mount(view,{store:S,player:P,chrome}){
   function renderSound(){
     const s=P.state.sound;soundNote.replaceChildren();
     if(s.error)soundNote.append(callout({kind:'danger',icon:'warn',title:'Sound could not start',body:s.error,actions:[button({label:'Try again',size:'sm',onClick:()=>P.toggleSound().catch(e=>toast(e.message,'error'))})]}));
-    else if(!s.enabled)soundNote.append(callout({kind:'accent',icon:'sound-off',title:'Enable sound to hear changes',body:'Sound is off in this window. Your browser starts audio only after a click.',
-      actions:[button({label:'Enable sound',icon:'sound-on',kind:'primary',size:'sm',id:'musicEnableSound',onClick:()=>P.toggleSound().catch(e=>toast(`Sound could not start: ${e.message}`,'error'))})]}));
+    else if(!s.enabled)soundNote.append(h('div',{class:'ms-sound-off'},h('div',{class:'grow'},h('strong',{text:'Sound is off in this window'}),
+        h('span',{class:'small muted',text:'Browsers start audio only after a click.'})),
+      // Secondary here: the top bar's Enable sound is the primary route (and comes first in the Tab order).
+      button({label:'Enable sound',icon:'sound-on',size:'sm',id:'musicEnableSound',onClick:()=>P.toggleSound().catch(e=>toast(`Sound could not start: ${e.message}`,'error'))})));
     renderLive();
   }
   function renderLive(){
@@ -295,7 +323,9 @@ export default {mount(view,{store:S,player:P,chrome}){
     text(live.key,on&&s.key?cap(s.key.split(' ')[0])+' '+cap(s.key.split(' ')[1]||''):'—');text(live.bpm,on?`${s.sound.tempo} BPM`:'—');
     const db=on&&s.sound.level>0?Math.max(-60,20*Math.log10(s.sound.level)):-60;
     meterFill.style.width=`${((db+60)/60)*100}%`;meter.setAttribute('aria-valuenow',String(Math.round(db)));text(meterText,on&&s.sound.level>0?`${db.toFixed(0)} dB`:'—');
-    text(liveState,on?'Live from this window\'s music engine.':'Sound is off: nothing is playing in this window.');
+    text(liveState,on?'Live from this window\'s music engine.':'');liveState.hidden=!on;
+    // Sound off: the level meter has nothing to show, so the sound panel stands in its place (renderSound).
+    liveBox.classList.toggle('is-off',!on);
   }
   function renderIdentity(force=false){
     const s=P.state,id=s.project||S.state.selected,seed=id?(s.frame?.projectSeed||window.ResonanceScore.hash(id)):null;
@@ -305,8 +335,10 @@ export default {mount(view,{store:S,player:P,chrome}){
     const cur=shown('style');
     identityBox.append(h('div',{class:'ms-id-head'},h('h2',{class:'title-m',text:'Musical identity'}),pill('Read-only','',{plain:true})),
       h('p',{class:'small faint',text:'Derived from the project\'s seed; it never changes. Style, tempo and texture change how it is performed, not what it is.'}),
-      h('dl',{class:'kv'},h('dt',{text:'Key'}),h('dd',{},h('strong',{text:`${identity.key} ${cap(identity.mode)}`}),h('span',{class:'faint',text:` · ${MODE_HINT[identity.mode]||''}`})),
-        h('dt',{text:'Swing'}),h('dd',{text:identity.swing>0?`Yes · off-beat sixteenths ${Math.round(identity.swing*100)}% late`:'No · straight sixteenths'})),
+      h('dl',{class:'ms-id-facts'},
+        h('div',{class:'ms-fact'},h('dt',{class:'eyebrow',text:'Key'}),h('dd',{},h('strong',{text:`${identity.key} ${cap(identity.mode)}`}),h('span',{class:'small faint',text:MODE_HINT[identity.mode]||''}))),
+        h('div',{class:'ms-fact'},h('dt',{class:'eyebrow',text:'Swing'}),h('dd',{},h('strong',{text:identity.swing>0?'Yes':'No'}),
+          h('span',{class:'small faint',text:identity.swing>0?`off-beat sixteenths ${Math.round(identity.swing*100)}% late`:'straight sixteenths'})))),
       h('div',{class:'ms-id-tempi'},h('span',{class:'eyebrow',text:'Project tempo per style'}),
         h('div',{class:'ms-tempi'},...STYLES.map(st=>h('div',{class:['ms-tempo-cell',st===cur?'current':''],dataset:{style:st}},h('span',{text:STYLE_NAMES[st]}),h('b',{class:'num',text:String(identity.tempo[st])}))))),
       h('div',{class:'ms-id-motif'},h('span',{class:'eyebrow',text:'Motif · call and answer'}),motifGraphic(identity),
@@ -314,15 +346,15 @@ export default {mount(view,{store:S,player:P,chrome}){
     renderValues();
   }
   function motifGraphic(idn){
-    const {rhythm,contour,answer}=idn.motif,all=[...contour,...answer],lo=Math.min(...all)-1,hi=Math.max(...all)+1,W=12,R=9,H=(hi-lo+1)*R+16;
+    const {rhythm,contour,answer}=idn.motif,all=[...contour,...answer],lo=Math.min(...all)-1,hi=Math.max(...all)+1,W=18,R=9,H=(hi-lo+1)*R+2;
     const svg=h('svg',{viewBox:`0 0 ${32*W} ${H}`,className:'ms-motif',role:'img','aria-label':`Motif of ${rhythm.length} notes; call degrees ${contour.join(', ')}; answer degrees ${answer.join(', ')}`});
     const el=(tag,a)=>h(tag,{ns:'svg',...Object.fromEntries(Object.entries(a).map(([k,v])=>[k,String(v)]))});
-    for(let s=0;s<=32;s+=4)svg.append(el('line',{x1:s*W,x2:s*W,y1:0,y2:H-14,className:s%16===0?'bar':'beat'}));
+    for(let s=0;s<=32;s+=4)svg.append(el('line',{x1:s*W,x2:s*W,y1:0,y2:H,className:s%16===0?'bar':'beat'}));
     [[contour,0,'call'],[answer,16,'answer']].forEach(([deg,off,cls])=>{
       const pts=[];rhythm.forEach(([step,len],i)=>{const x=(off+step)*W,y=(hi-deg[i])*R;pts.push(`${x+1},${y+R/2}`);svg.append(el('rect',{x:x+1,y:y+1,width:Math.max(3,len*W-3),height:R-2,rx:1.5,className:cls}));});
-      svg.append(el('polyline',{points:pts.join(' '),className:`${cls} trace`}));
-      const t=el('text',{x:off*W+3,y:H-3,className:'label'});t.textContent=cls;svg.append(t);});
-    return svg;
+      svg.append(el('polyline',{points:pts.join(' '),className:`${cls} trace`}));});
+    // The halves are named in the page's text (a label drawn in the graphic would scale with the column's width).
+    return h('div',{class:'ms-motif-box'},svg,h('div',{class:'ms-motif-legend','aria-hidden':'true'},h('span',{text:'Call'}),h('span',{text:'Answer'})));
   }
   function renderTuning(){
     const r=P.state.recipe,g=r?.genome?.music,t=tunable&&tunableFor===S.state.selected?tunable:null;
@@ -337,8 +369,9 @@ export default {mount(view,{store:S,player:P,chrome}){
       :!responseRows.every(x=>t.tunable?.[x.path])?'This world does not declare a music response.':r.locked?'Identity locked: it is kept as it is.':'');
   }
   function renderPresets(){
-    const list=musicPresets();presetList.replaceChildren();presetList.hidden=!list.length&&!!S.state.presets;
-    if(!S.state.presets){presetList.append(h('div',{class:'list-row faint small',text:'Loading presets…'}));presetList.hidden=false;return;}
+    const list=musicPresets();presetList.replaceChildren();
+    if(!S.state.presets){presetList.append(h('div',{class:'list-row faint small',text:'Loading presets…'}));return;}
+    if(!list.length)presetList.append(h('div',{class:'list-row faint small ms-presets-none',text:'No music presets yet. Name the sound you hear to keep it for any project.'}));
     for(const p of list){const previewing=isPreviewing(p.payload);
       presetList.append(h('div',{class:'list-row ms-preset',dataset:{preset:p.id}},
         h('div',{class:'grow'},h('strong',{class:'ellipsis',text:p.name}),h('div',{class:'faint small',text:summary(p.payload)})),

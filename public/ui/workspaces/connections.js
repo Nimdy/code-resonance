@@ -34,6 +34,18 @@ const formatValue=v=>v===null||v===undefined?'Not reported':typeof v==='boolean'
 const older=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++)if((x[i]||0)!==(y[i]||0))return (x[i]||0)<(y[i]||0);return false;};
 // The app's own motion setting (html[data-motion]) wins over the system preference, as in style.css.
 const reducedMotion=()=>{const m=document.documentElement.dataset.motion;return m==='reduce'||(m!=='full'&&matchMedia('(prefers-reduced-motion: reduce)').matches);};
+// A date and time without the year when it is this year (a fact cell stays on one line).
+const shortDateTime=ts=>{if(!Number.isFinite(ts)||ts<=0)return '—';const d=new Date(ts),o={month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'};
+  if(d.getFullYear()!==new Date().getFullYear())o.year='numeric';return d.toLocaleString([],o);};
+// A command line to copy, displayed so it wraps only at spaces: each word is kept whole (a line break after "--" would be
+// typed wrong). A word longer than the line still wraps inside itself. The copied text is the exact value either way.
+// With paths, a word may also break after a "/" (a folder name is never cut in two).
+const words=(v,paths=false)=>String(v).split(/( +)/).filter(Boolean).flatMap(p=>!p.trim()?[document.createTextNode(p)]
+  :(paths?p.split(/(?<=\/)/):[p]).map(t=>h('span',{class:'conn-tok',text:t})));
+function command(value){
+  const el=copyable(value),code=el.querySelector('code'),set=el.set,paint=v=>code.replaceChildren(...words(v));
+  paint(value);el.set=v=>{set(v);paint(v);};el.classList.add('conn-cmd');return el;
+}
 const quote=p=>/[\s"'$`&|;<>()]/.test(p)?JSON.stringify(p):p;
 // ---- What the evidence says about one project's editor -----------------------------------------------------------
 // ev: undefined (not loaded yet), null (nothing received for the project), {building:true} or the evidence document.
@@ -91,32 +103,58 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const offs=[],timers=new Set();
   let status=null,statusAt=0,statusError=null,integ=null,integError=null,focus=params?.[0]||'';
   // ---- Page frame -------------------------------------------------------------------------------------------------
+  // Each source is a section of two columns: on the left what the receiver observed (evidence only), on the right how to
+  // set it up or change it (guidance; actions that belong to VS Code are described there, never offered as buttons).
   const strip=h('nav',{class:'conn-strip','aria-label':'Connection overview'});
   const receiverBody=h('div',{class:'conn-receiver'});
-  const editorList=h('div',{class:'conn-projects',role:'list','aria-label':'Projects'});
+  const editorList=h('div',{class:'conn-projects'});
   const editorDetail=h('div',{class:'conn-detail'});
   const editorSettings=h('div',{class:'conn-settings'});
-  const installBox=h('div',{class:'conn-install'});
+  const vsGuide=h('div',{class:'conn-guide-stack'});
+  // How to change a setting sits beside the settings table it explains (filled with vsGuide, once).
+  const vsChange=h('div',{class:'conn-guide-stack'});
   const claudeObserved=h('div',{class:'conn-observed'});
-  const claudeInfo=h('div',{class:'conn-claude-info'});
+  // What the hooks send is fixed by the adapter (policy, not observation): under the observed activity, as fixed facts.
+  // What gets installed (the events and the command) belongs with the form that installs it.
+  const claudeInfo=h('div',{class:'conn-fixed conn-claude-info'});
+  const claudeSetup=h('div',{class:'conn-guide conn-claude-setup'});
   const agentsObserved=h('div',{class:'conn-observed'});
+  const agentsFacts=h('div',{class:'conn-fixed conn-agents-facts'});
   const agentsInfo=h('div',{class:'conn-agents-info'});
   const refreshBtn=button({label:'Refresh',icon:'refresh',kind:'ghost',id:'connRefresh',title:'Ask the receiver again',onClick:()=>refreshAll()});
   const heads={};
   const sec=(id,title,subtitle,...children)=>{const s=section({title,subtitle,id:`conn-${id}`},...children);heads[id]=s.querySelector('h2');heads[id].tabIndex=-1;return s;};
+  // The columns of a section: observed state (evidence, an accent dot), fixed facts (policy, a lock) and guidance (a
+  // document icon), each under a small heading so the difference is always visible.
+  const COLS={status:['conn-col-status',()=>h('span',{class:'dot'})],fixed:['conn-col-fixed',()=>icon('lock')],guide:['conn-col-guide',()=>icon('doc')]};
+  const col=(kind,label,...content)=>h('div',{class:['conn-col',COLS[kind][0]]},h('div',{class:'conn-col-label'},COLS[kind][1](),h('span',{class:'eyebrow',text:label})),...content);
+  const area=(el,cls)=>{el.classList.add(cls);return el;};
+  const pair=(observed,guide,{observedLabel='Observed by the receiver',guideLabel='Set up and change',wide=false,evidence=true,cls=''}={})=>h('div',{class:['conn-pair',wide?'guide-wide':'',cls]},
+    col(evidence?'status':'fixed',observedLabel,observed),col('guide',guideLabel,guide));
+  // A guidance panel: a title, then steps or commands to copy.
+  const guidePanel=(ic,title,...body)=>h('div',{class:'conn-guide'},h('div',{class:'conn-guide-head'},icon(ic),h('strong',{text:title})),...body);
   const claude=claudeFlow();
   view.append(h('div',{class:'page ws-connections'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Capture and sources'}),h('h1',{class:'title-l',text:'Connections'}),
-      h('p',{class:'muted',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and Claude Code hooks change only after you review and write them.'})),
+      h('p',{class:'muted measure',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and Claude Code hooks change only after you review and write them.'})),
       h('div',{class:'actions'},refreshBtn)),
     strip,
-    sec('receiver','Local receiver','The program on this computer that receives, analyses and stores captures',receiverBody),
+    sec('receiver','Local receiver','The program on this computer that receives, analyses and stores captures',pair(receiverBody,troubleshooting())),
+    // Two rows: the projects and the selected one's capture beside how to start, stop and install; then the settings that
+    // capture reported beside how to change them. The settings use the full width of the observed column.
     sec('vscode','VS Code','What the Code Resonance extension reported, per project',
-      h('div',{class:'conn-editor'},editorList,h('div',{class:'conn-editor-main'},editorDetail,editorSettings)),installBox),
+      h('div',{class:'conn-vs'},
+        area(col('status','Reported by the extension',h('div',{class:'conn-editor'},editorList,h('div',{class:'conn-editor-main'},editorDetail))),'conn-vs-editor'),
+        area(col('guide','Start, stop and install',vsGuide),'conn-vs-guide'),
+        area(editorSettings,'conn-vs-settings'),
+        area(col('guide','Change a setting',vsChange),'conn-vs-change'))),
     sec('claude','Claude Code','Lifecycle hooks, installed per project with your review',
-      h('div',{class:'conn-claude'},h('div',{class:'conn-claude-side'},claudeObserved,claudeInfo),claude.el)),
-    sec('agents','Other agents','Any tool can send events through the generic endpoint',h('div',{class:'conn-agents'},agentsObserved,agentsInfo)),
-    sec('privacy','Privacy','What is captured, and what never reaches the Stage, the OBS view or exports',privacyView()))));
+      h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed activity, per project',claudeObserved),col('fixed','What the hooks send',claudeInfo)),
+        col('guide','Add or remove the hooks',h('div',{class:'conn-guide-stack'},claude.el,claudeSetup))),claude.result),
+    sec('agents','Other agents','Any tool can send events through the generic endpoint',
+      h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed providers',agentsObserved),col('fixed','What an agent’s events carry',agentsFacts)),
+        col('guide','Send events',agentsInfo))),
+    sec('privacy','Privacy','What is captured, and what never reaches the Stage, the OBS view or exports',pair(privacyView(),privacyGuide(),{observedLabel:'Capture policy: what is kept, and where it shows',guideLabel:'The security model',evidence:false})))));
   // ---- Receiver ---------------------------------------------------------------------------------------------------
   async function loadStatus(){
     // With the control capability the receiver also says where its data lives; a window without one still gets the rest.
@@ -127,39 +165,38 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const receiverUp=()=>!!status&&!statusError&&P.state.receiver!==false;
   function renderReceiver(){
     const s=status,up=receiverUp(),now=Date.now(),v=(k,value,cls='')=>h('span',{class:cls,dataset:{k},text:value});
-    const trouble=troubleshooting(!up);
     if(!up){
-      rebuild(receiverBody,h('div',{class:'conn-receiver-grid'},h('div',{class:'conn-panel'},
+      rebuild(receiverBody,h('div',{class:'conn-panel'},
         callout({kind:P.state.receiver===null&&!statusError?'':'danger',icon:'warn',title:P.state.receiver===null&&!statusError?'Asking the receiver…':'The receiver is not answering',
-          body:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back.`:'This page reconnects by itself when it starts.'})),trouble));
+          body:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back. See “Start and check the receiver”.`:'This page reconnects by itself when it starts. See “Start and check the receiver”.'})));
       return;
     }
     const w=s.worker||{},pk=s.packs||{},feed=S.state.changes;
     const rows=[
       ['State',h('span',{class:'conn-inline'},pill('Running','ok'),feed==='open'?null:pill(feed==='connecting'?'Live updates connecting':'Live updates reconnecting','warn'))],
       ['Version',v('version',s.version,'num')],
+      ['Running for',h('span',{class:'conn-stack'},v('uptime',duration((s.uptimeMs||0)+(now-statusAt))),h('span',{class:'faint small',text:`since ${shortDateTime(s.startedAt)}`}))],
       ['Address',v('address',location.origin,'num')],
       ['Reachable from',v('network',s.loopbackOnly?'This computer only (loopback)':'Other devices on the network too (RESONANCE_ALLOW_REMOTE=1)',s.loopbackOnly?'':'warn')],
-      ...(s.wsl&&s.loopbackOnly?[['From Windows',h('span',{},v('windows',`http://localhost:${s.port}/`,'num'),h('span',{class:'faint',text:' through WSL’s localhost forwarding'}))]]:[]),
-      ['Running for',v('uptime',`${duration((s.uptimeMs||0)+(now-statusAt))} (since ${dateTime(s.startedAt)})`)],
+      ...(s.wsl&&s.loopbackOnly?[['From Windows',h('span',{},v('windows',`http://localhost:${s.port}/`,'num'),h('span',{class:'faint small',text:' through WSL’s localhost forwarding'}))]]:[]),
       ['Analysis',v('worker',`${w.lastProjectionAt?`Last update ${ago(w.lastProjectionAt,now)}`:'No analysis yet'} · ${w.errors?`${count(w.errors,'error')} since it started (see the receiver’s terminal)`:'no errors'}`,w.errors?'warn':'')],
       ['Projects',v('projects',count(s.projects,'project'))],
       ['Visual packs',h('span',{class:'conn-inline'},v('packs',`${pk.installed} installed`),pk.needApproval?button({label:`${pk.needApproval} awaiting approval`,size:'sm',kind:'outline',onClick:()=>navigate('packs')}):null,pk.problems?pill(`${pk.problems} with problems`,'warn'):null)],
       ['Runs on',v('runtime',`${PLATFORMS[s.platform]||s.platform}${s.wsl?' (WSL)':''} · Node ${String(s.node).replace(/^v/,'')}`)]];
-    const dl=h('dl',{class:'kv'});for(const [k,val] of rows)dl.append(h('dt',{text:k}),h('dd',{},val));
+    const facts=h('dl',{class:'conn-facts'});for(const [k,val] of rows)facts.append(h('div',{class:'conn-fact'},h('dt',{text:k}),h('dd',{},val)));
     const data=s.dataDir?h('div',{class:'conn-data'},h('div',{class:'conn-data-head'},icon('folder'),h('strong',{text:'Data location'}),pill('On this computer','plain')),
-        copyable(s.dataDir,{label:'Copy'}),h('p',{class:'faint small',text:'Projects, settings and the receiver’s token live here. Delete a project’s folder (or all of it) to erase it; see Security and privacy.'}))
+        h('div',{class:'conn-data-body'},copyable(s.dataDir,{label:'Copy'}),h('p',{class:'faint small',text:'Projects, settings and the receiver’s token live here. Delete a project’s folder (or all of it) to erase it; see Security and privacy.'})))
       :h('div',{class:'conn-data'},h('div',{class:'conn-data-head'},icon('folder'),h('strong',{text:'Data location'})),h('p',{class:'faint small',text:'Not shown: this window has no control session with the receiver.'}));
-    rebuild(receiverBody,h('div',{class:'conn-receiver-grid'},h('div',{class:'conn-panel'},dl,data),trouble));
+    rebuild(receiverBody,h('div',{class:'conn-panel conn-receiver-panel'},facts,data));
   }
-  let troubleOpen=null;
-  function troubleshooting(open){
-    const d=disclosure({summary:'Troubleshooting',open:troubleOpen??open,onToggle:o=>{troubleOpen=o;}},
+  // Static guidance: how to start and check the receiver (always beside its state, open: there is room for it).
+  function troubleshooting(){
+    const g=guidePanel('terminal','Start and check the receiver',
       h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Start the receiver, in the Code Resonance folder'}),copyable('npm start')),
       h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Check the setup: receiver, port, token, WSL'}),copyable('npm run doctor')),
-      h('div',{class:'conn-step'},h('span',{class:'faint small',text:'VS Code, the receiver and agent hooks must run on the same side (all in WSL, or all on Windows).'}),
-        h('div',{},button({label:'WSL guide',icon:'doc',size:'sm',onClick:()=>openDoc('WSL.md')}))));
-    return h('div',{class:'conn-panel conn-trouble'},d);
+      h('div',{class:'conn-step conn-step-row'},h('span',{class:'faint small',text:'VS Code, the receiver and agent hooks must run on the same side (all in WSL, or all on Windows).'}),
+        button({label:'WSL guide',icon:'doc',size:'sm',onClick:()=>openDoc('WSL.md')})));
+    g.classList.add('conn-guide-steps');return h('div',{class:'conn-guide-stack'},g);
   }
   // ---- VS Code ----------------------------------------------------------------------------------------------------
   const evidenceOf=id=>S.state.evidence.has(id)?S.state.evidence.get(id):undefined;
@@ -170,16 +207,23 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     if(!S.state.projectsLoaded){rebuild(editorList,h('p',{class:'faint small conn-pad',text:'Loading projects…'}));rebuild(editorDetail);rebuild(editorSettings);return;}
     if(!list.length){
       rebuild(editorList,h('p',{class:'faint small conn-pad',text:'No projects yet.'}));
-      rebuild(editorDetail,callout({icon:'info',title:'No VS Code capture observed',body:`Install the extension (below), open a folder in VS Code and run “${START}”. The project appears here within seconds.`}));
+      rebuild(editorDetail,callout({icon:'info',title:'No VS Code capture observed',body:`Install the extension (beside), open a folder in VS Code and run “${START}”. The project appears here within seconds.`}));
       rebuild(editorSettings);return;
     }
-    rebuild(editorList,h('div',{class:'eyebrow conn-pad',text:'Projects · private names'}),...list.map(p=>{
+    rebuild(editorList,h('div',{class:'eyebrow conn-pad',text:'Projects · private names'}),h('div',{class:'conn-project-rows',role:'list','aria-label':'Projects'},...list.map(p=>{
       const ev=evidenceOf(p.id),st=editorState(ev,now),demo=ev?.demonstration||p.evidence?.demonstration;
       const b=h('button',{type:'button',role:'listitem',class:'conn-row',dataset:{key:`row:${p.id}`,project:p.id,state:st.key},'aria-current':p.id===id?'true':null,
           'aria-label':`${projectName(p)}: ${st.label}`,onClick:()=>{focus=p.id;navigate('connections',p.id);}},
         h('span',{class:['dot',st.key==='running'?'ok':st.kind==='warn'?'warn':'']}),
         h('span',{class:'grow'},h('strong',{class:'ellipsis',text:projectName(p)}),h('span',{class:'ellipsis',text:demo?`Demonstration · ${st.label}`:st.label})));
-      return b;}));
+      return b;})),
+      // Under the list: what its dots mean, and where the private names it shows may appear.
+      h('div',{class:'conn-legend'},
+        h('ul',{class:'conn-legend-dots','aria-label':'What the dots mean'},
+          h('li',{},h('span',{class:'dot ok'}),h('span',{text:'Capture running'})),
+          h('li',{},h('span',{class:'dot warn'}),h('span',{text:'Started but quiet, or unidentified'})),
+          h('li',{},h('span',{class:'dot'}),h('span',{text:'Stopped or not observed'}))),
+        h('p',{class:'faint small',text:'Folder names are private: shown in this Control Center only, never on the Stage, the OBS view or recordings.'})));
     renderDetail(id,now);
   }
   function renderDetail(id,now){
@@ -190,25 +234,25 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     if(ed?.capture.state){
       rows.push(['Capture started',dateTime(ed.capture.startedAt)]);
       if(ed.capture.state==='stopped')rows.push(['Stopped',dateTime(ed.capture.stoppedAt)]);
-      rows.push(['Last editor activity',ed.lastAt?`${ago(ed.lastAt,now)} (${dateTime(ed.lastAt)})`:'—'],['Editor sessions seen',String(ed.sessions)],['Extension',version]);
+      rows.push(['Last editor activity',ed.lastAt?`${ago(ed.lastAt,now)} (${shortDateTime(ed.lastAt)})`:'—'],['Editor sessions seen',String(ed.sessions)],['Extension',version]);
       if(r)rows.push(['Window',r.remote?`Remote: ${r.remote}`:r.remote===''?'Local':'Not reported']);
     }
     const latest=integ?.vscode?.latestVersion,stale=r?.extensionVersion&&latest&&older(r.extensionVersion,latest);
     const port=r?.settings?.receiverPort,portMismatch=status&&Number.isFinite(port)&&port!==status.port;
-    const dl=h('dl',{class:'kv'});for(const [k,v] of rows)dl.append(h('dt',{text:k}),h('dd',{text:v}));
+    const dl=h('dl',{class:'conn-facts compact'});for(const [k,v] of rows)dl.append(h('div',{class:'conn-fact'},h('dt',{text:k}),h('dd',{text:v})));
     rebuild(editorDetail,
       h('div',{class:'conn-detail-head'},h('h3',{class:'title-m ellipsis',text:projectName(p)}),demo?pill('Demonstration (fictional)','warn'):null,h('span',{class:'grow'}),
         h('span',{id:'connEditorState',dataset:{state:st.key}},pill(st.label,st.kind))),
       st.detail?h('p',{class:'muted small',id:'connEditorDetail',text:st.detail}):null,
       rows.length?dl:null,
-      stale?callout({icon:'info',body:`Extension ${latest} is available from this Code Resonance folder (see “Install or update the extension” below).`}):null,
+      stale?callout({icon:'info',body:`Extension ${latest} is available from this Code Resonance folder (see “Install or update the extension” beside).`}):null,
       portMismatch?callout({kind:'warn',icon:'warn',title:'Delivering to another port',body:`When it reported, this capture was sending to port ${port}, but this receiver listens on port ${status.port}. Its events go elsewhere or wait in the extension’s outbox until a receiver answers on that port.`}):null);
     renderSettings(id,ed,demo);
   }
   let settingsSig='';
   function renderSettings(id,ed,demo){
     const list=integ?.vscode?.settings;
-    const sig=JSON.stringify([id,ed?.reported||null,!!ed?.capture.state,list?.length||0,!!integ,demo]);if(sig===settingsSig)return;settingsSig=sig;
+    const sig=JSON.stringify([id,projectName(S.project(id)||{id}),ed?.reported||null,!!ed?.capture.state,list?.length||0,!!integ,demo]);if(sig===settingsSig)return;settingsSig=sig;
     if(!list){rebuild(editorSettings,integError?callout({kind:'warn',icon:'warn',body:`The extension’s settings list could not be loaded (${integError}).`}):null);return;}
     if(!ed?.capture.state){rebuild(editorSettings);return;}
     // The demonstration had no VS Code: a table of "not reported" values would suggest there is something to check.
@@ -226,44 +270,56 @@ export default {mount(view,{store:S,player:P,navigate,params}){
           h('div',{role:'cell',class:'conn-setting'},h('div',{class:'conn-setting-name'},why?icon('shield'):null,h('strong',{text:settingName(s.id)})),
             h('div',{class:'conn-setting-id'},h('code',{text:s.id}),copy),
             h('p',{class:'faint small',text:why||s.description})),
-          h('span',{role:'cell',class:['conn-value','num',known?'':'faint'],dataset:{reported:key},text:r?formatValue(value):'Not reported'},differs?h('span',{class:'tiny accent',text:' · not the default'}):null),
+          h('span',{role:'cell',class:['conn-value','num',known?'':'faint'],dataset:{reported:key},text:r?formatValue(value):'Not reported'},differs?h('span',{class:'conn-differs',text:'Not the default'}):null),
           h('span',{role:'cell',class:'conn-default num faint',text:formatValue(s.default)}));}));
-    const uri=integ.vscode.openSettingsUri;
-    const change=h('div',{class:'conn-change'},
-      h('div',{class:'conn-change-head'},icon('sliders'),h('strong',{text:'Change it in VS Code'})),
-      h('ol',{class:'conn-steps'},h('li',{text:'In VS Code, open Settings (Ctrl+, — on macOS ⌘,).'}),
-        h('li',{},'Search for the setting id (copy it from the list), for example ',h('code',{text:'resonance.captureTerminalCommands'}),'.'),
-        h('li',{text:'Change it there. Nothing changes here until VS Code reports it, at the next capture start or when it changes while capturing.'})),
-      h('div',{class:'conn-change-link'},h('a',{class:'btn outline sm',id:'connOpenVsSettings',href:uri},icon('external'),h('span',{text:'Open Code Resonance settings in VS Code'})),
-        h('span',{class:'faint small',text:'Works with extension 0.5 or later. Your system asks before opening VS Code; the link only opens the settings.'})));
-    rebuild(editorSettings,h('div',{class:'conn-settings-head'},h('span',{class:'eyebrow',text:'Capture settings'}),h('span',{class:'faint small',id:'connReportedAt',text:headLine})),
-      table,change);
+    rebuild(editorSettings,h('div',{class:'conn-settings-head'},
+        h('div',{class:'conn-col-label'},h('span',{class:'dot'}),h('span',{class:'eyebrow ellipsis',text:`Capture settings · ${projectName(S.project(id)||{id})}`})),
+        h('span',{class:'faint small',id:'connReportedAt',text:headLine})),table);
   }
-  function renderInstall(){
-    const v=integ?.vscode;if(!v){rebuild(installBox);return;}
-    if(installBox.firstChild)return; // static once loaded: keeps the disclosure open or closed as the person left it
-    installBox.append(disclosure({summary:`Install or update the extension (${v.latestVersion})`},
-      h('div',{class:'conn-step'},h('span',{class:'faint small',text:`1. Package it, in the Code Resonance folder (creates code-resonance-${v.latestVersion}.vsix there)`}),copyable(v.install.package)),
-      h('div',{class:'conn-step'},h('span',{class:'faint small',text:'2. Install it into VS Code (on the side where your workspace runs: inside WSL for a WSL folder)'}),copyable(v.install.install)),
-      h('div',{class:'conn-step'},h('span',{class:'faint small',text:'3. In VS Code, open the Command Palette (Ctrl+Shift+P) and run'}),h('div',{class:'conn-commands'},h('code',{text:START}),h('span',{class:'faint small',text:'to capture, accepting local capture; stop with'}),h('code',{text:STOP}),h('span',{class:'faint small',text:'or the CR item in the status bar.'})))));
+  // Guidance for VS Code: capture is started, stopped and configured in VS Code itself; this page only explains how.
+  function renderVsGuide(){
+    const v=integ?.vscode;
+    if(!v){rebuild(vsGuide,h('p',{class:'faint small',text:integError?`The extension’s details could not be loaded (${integError}).`:'Loading…'}));rebuild(vsChange);return;}
+    if(vsGuide.dataset.ready)return; // static once loaded: keeps the disclosure open or closed as the person left it
+    vsGuide.dataset.ready='1';
+    rebuild(vsGuide,
+      // A neutral icon: next to a heading about starting capture, a play triangle would read as a Start button.
+      guidePanel('terminal','Start or stop capture, in VS Code',
+        h('p',{class:'muted small',text:'In VS Code, open the Command Palette (Ctrl+Shift+P) and run a command. Copy its name here to paste it there.'}),
+        h('div',{class:'conn-guide-commands'},
+          h('div',{class:'conn-step conn-command'},h('span',{class:'faint small',text:'To start (accept local capture when asked)'}),copyable(START)),
+          h('div',{class:'conn-step conn-command'},h('span',{class:'faint small',text:'To stop (or click the CR item in the status bar)'}),copyable(STOP))),
+        h('p',{class:'faint small',text:'This page shows a capture as running only while editor events keep arriving; VS Code does not report closing.'})),
+      h('div',{class:'conn-guide conn-install'},disclosure({summary:`Install or update the extension (${v.latestVersion})`},
+        h('div',{class:'conn-step'},h('span',{class:'faint small',text:`1. Package it, in the Code Resonance folder (creates code-resonance-${v.latestVersion}.vsix there)`}),command(v.install.package)),
+        h('div',{class:'conn-step'},h('span',{class:'faint small',text:'2. Install it into VS Code (on the side where your workspace runs: inside WSL for a WSL folder)'}),command(v.install.install)),
+        h('div',{class:'conn-step'},h('span',{class:'faint small',text:'3. Then start capture in VS Code, as described above.'})))));
+    rebuild(vsChange,
+      guidePanel('sliders','Change a capture setting',
+        h('ol',{class:'conn-steps'},h('li',{text:'In VS Code, open Settings (Ctrl+, — on macOS ⌘,).'}),
+          h('li',{},'Search for the setting id (copy it from the list), for example ',h('code',{text:'resonance.captureTerminalCommands'}),'.'),
+          h('li',{text:'Change it there. Nothing changes here until VS Code reports it, at the next capture start or when it changes while capturing.'})),
+        h('div',{class:'conn-change-link'},h('a',{class:'btn outline sm',id:'connOpenVsSettings',href:v.openSettingsUri},icon('external'),h('span',{text:'Open Code Resonance settings in VS Code'})),
+          h('span',{class:'faint small',text:'Works with extension 0.5 or later. Your system asks before opening VS Code; the link only opens the settings.'}))));
   }
   // ---- Claude Code ------------------------------------------------------------------------------------------------
   function renderClaude(){
     const c=integ?.claude,now=Date.now();
-    if(!c){rebuild(claudeObserved,h('p',{class:'faint small',text:integError?`Not available (${integError}).`:'Loading…'}));rebuild(claudeInfo);return;}
-    rebuild(claudeObserved,h('div',{class:'eyebrow',text:'Observed activity'}),
+    if(!c){rebuild(claudeObserved,h('p',{class:'faint small',text:integError?`Not available (${integError}).`:'Loading…'}));rebuild(claudeInfo);rebuild(claudeSetup);return;}
+    rebuild(claudeObserved,
       c.projects.length?h('div',{class:'conn-list',id:'connClaudeProjects'},...c.projects.slice().sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(p=>h('div',{class:'conn-list-row',dataset:{project:p.projectId}},
           h('span',{class:['dot',p.lastAt&&now-p.lastAt<RUNNING_MS?'ok':'']}),h('span',{class:'grow ellipsis',text:projectName({id:p.projectId,name:p.name})}),
           h('span',{class:'faint small num',text:`${count(p.events,'event')} · ${ago(p.lastAt,now)}`}))))
         :h('p',{class:'muted small',id:'connClaudeProjects',text:'No Claude Code events observed.'}));
     if(claudeInfo.firstChild)return;
     claudeInfo.append(
-      h('div',{class:'eyebrow',text:'Hook events used'}),h('div',{class:'conn-chips'},...c.events.map(e=>h('code',{text:e}))),
-      h('div',{class:'grid-2 conn-capture'},
+      h('div',{class:'conn-capture'},
         h('div',{},h('div',{class:'conn-capture-head'},icon('check'),h('strong',{text:'Sent to this receiver'})),h('ul',{class:'conn-bullets'},...c.captured.map(x=>h('li',{text:x})))),
         h('div',{},h('div',{class:'conn-capture-head'},icon('lock'),h('strong',{text:'Never sent'})),h('ul',{class:'conn-bullets'},...c.excluded.map(x=>h('li',{text:x}))))),
-      h('p',{class:'faint small',text:'Hooks only receive the lifecycle events Claude Code documents; nothing here sees the model’s reasoning. The adapter never writes to Claude Code’s output and always exits successfully, so it cannot change what Claude does.'}),
-      ...(c.adapter?[h('p',{class:'faint small'},'Each hook runs ',h('code',{text:`node ${JSON.stringify(c.adapter)}`}),'.')]:[]));
+      h('p',{class:'faint small',text:'Hooks only receive the lifecycle events Claude Code documents; nothing here sees the model’s reasoning. The adapter never writes to Claude Code’s output and always exits successfully, so it cannot change what Claude does.'}));
+    claudeSetup.append(h('div',{class:'conn-guide-head'},icon('sliders'),h('strong',{text:'What gets installed'})),
+      h('div',{class:'conn-hook-events'},h('span',{class:'faint small',text:'Hook events used'}),h('div',{class:'conn-chips'},...c.events.map(e=>h('code',{text:e})))),
+      ...(c.adapter?[h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Each hook runs'}),h('code',{class:'conn-adapter conn-cmd'},...words(`node ${JSON.stringify(c.adapter)}`,true)))]:[]));
   }
   function claudeFlow(){
     let plan=null;
@@ -273,11 +329,11 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const err=h('div',{class:'conn-error',id:'connClaudePathError',role:'alert'});
     const action=segmented({label:'Change to make',id:'connClaudeAction',options:[{value:'install',label:'Add the hooks'},{value:'remove',label:'Remove the hooks'}],value:'install',onChange:()=>reset()});
     const show=button({label:'Show the change',kind:'primary',id:'connClaudeShow',type:'submit'});
-    const cli=copyable('');
+    const cli=command('');
     const result=h('div',{class:'conn-plan',id:'connClaudePlan','aria-live':'polite'});
     const form=h('form',{class:'conn-form',noValidate:true,onSubmit:e=>{e.preventDefault();void busyShow();}},
       h('label',{class:'field-label',for:'connClaudePath',text:'Project folder (absolute path)'}),
-      h('div',{class:'conn-form-row'},input,action,show),err,
+      input,err,h('div',{class:'conn-form-row'},action,show),
       h('p',{class:'faint small',id:'connClaudePathHelp',text:'Only <folder>/.claude/settings.local.json changes (personal, not committed), and in it only this adapter’s hook entries. Everything else in the file stays as it is.'}));
     input.addEventListener('input',()=>{err.replaceChildren();input.removeAttribute('aria-invalid');updateCli();if(plan)reset();});
     function updateCli(){const t=integ?.claude?.command||'npm run hooks:claude -- /path/to/project',p=input.value.trim();cli.set(p?t.replace('/path/to/project',quote(p)):t);}
@@ -322,10 +378,11 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       }
     }
     updateCli();
-    const el=h('div',{class:'conn-panel conn-flow'},h('div',{class:'conn-flow-head'},h('strong',{text:'Install or remove the hooks'}),h('span',{class:'faint small',text:'Shows the exact change first; writes nothing until you accept it.'})),
-      form,result,
+    // The change itself (a diff) is shown under both columns, where it has the width to be read.
+    const el=h('div',{class:'conn-guide conn-flow'},h('div',{class:'conn-flow-head'},h('div',{class:'conn-guide-head'},icon('terminal'),h('strong',{text:'Install or remove the hooks'})),h('span',{class:'faint small',text:'Shows the exact change first; writes nothing until you accept it.'})),
+      form,
       disclosure({summary:'Or use the command line'},h('p',{class:'faint small',text:'In the Code Resonance folder. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
-    return {el,updateCli};
+    return {el,result,updateCli};
   }
   const sentence=m=>{const s=String(m||'Unknown error');return s.charAt(0).toUpperCase()+s.slice(1)+(/[.!?]$/.test(s)?'':'.');};
   // ---- Other agents -----------------------------------------------------------------------------------------------
@@ -339,7 +396,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   }
   function renderAgents(){
     const list=providers(),now=Date.now();
-    rebuild(agentsObserved,h('div',{class:'eyebrow',text:'Observed providers'}),
+    rebuild(agentsObserved,
       list.length?h('div',{class:'conn-list',id:'connProviders'},...list.map(o=>h('div',{class:'conn-list-row',dataset:{provider:o.name}},
           h('span',{class:['dot',o.lastAt&&now-o.lastAt<RUNNING_MS&&!o.demo?'ok':'']}),
           h('span',{class:'grow stack'},h('strong',{class:'ellipsis',text:o.name}),h('span',{class:'faint tiny ellipsis',text:o.projects.join(', ')})),
@@ -347,21 +404,27 @@ export default {mount(view,{store:S,player:P,navigate,params}){
         :h('p',{class:'muted small',id:'connProviders',text:'No events observed from other agents.'}));
     if(agentsInfo.firstChild||!integ)return;
     const g=integ.generic;
-    agentsInfo.append(
-      h('p',{class:'muted small',text:'Any tool on this computer can report what an agent does. Events go to the endpoint below with the receiver’s token, which the CLI reads from receiver-auth.json in the data folder (it is never shown here). A provider appears here once its events arrive.'}),
-      h('dl',{class:'kv'},h('dt',{text:'Endpoint'}),h('dd',{},h('code',{text:`${g.endpoint} on ${location.origin}`})),h('dt',{text:'Command line'}),h('dd',{},copyable(g.cli))),
+    agentsFacts.append(h('ul',{class:'conn-bullets'},
+      h('li',{},h('code',{text:'--provider'}),' names the agent here; a provider appears in this list once its events arrive.'),
+      h('li',{},'With ',h('code',{text:'--text'}),' or ',h('code',{text:'--stdin'}),' only the length and a fingerprint are sent, unless ',h('code',{text:'--include-text'}),' is given.'),
+      h('li',{text:'Events are sent with the receiver’s token, which the CLI reads from receiver-auth.json in the data folder. The token is never shown here.'})));
+    agentsInfo.append(guidePanel('agent','Report what an agent does',
+      h('p',{class:'muted small',text:'Any tool on this computer can report what an agent does, through the endpoint below or the command line.'}),
+      h('dl',{class:'kv'},h('dt',{text:'Endpoint'}),h('dd',{},h('code',{text:`${g.endpoint} on ${location.origin}`})),h('dt',{text:'Command line'}),h('dd',{},command(g.cli))),
       h('div',{class:'conn-step'},h('span',{class:'faint small',text:'For example, from the Code Resonance folder:'}),
-        copyable('node scripts/event.js --kind agent.tool.started --root /path/to/project --provider my-agent --tool Edit')),
-      h('p',{class:'faint small',text:'--provider names the agent here. With --text or --stdin only the length and a fingerprint are sent, unless --include-text is given. --port and --data point it at another receiver.'}));
+        command('node scripts/event.js --kind agent.tool.started --root /path/to/project --provider my-agent --tool Edit')),
+      h('p',{class:'faint small'},h('code',{text:'--port'}),' and ',h('code',{text:'--data'}),' point it at another receiver.')));
   }
   // ---- Privacy ----------------------------------------------------------------------------------------------------
   function privacyView(){
-    return h('div',{class:'conn-privacy'},
-      h('div',{class:'conn-table privacy',role:'table','aria-label':'What is captured'},
-        h('div',{class:'conn-tr head',role:'row'},h('span',{role:'columnheader',text:'What'}),h('span',{role:'columnheader',text:'Recorded on this computer'}),h('span',{role:'columnheader',text:'On the Stage, OBS or in exports'})),
-        ...PRIVACY_TABLE.map(([what,rec,shown])=>h('div',{class:'conn-tr',role:'row'},h('strong',{role:'cell',text:what}),h('span',{role:'cell',class:'muted',text:rec}),h('span',{role:'cell',class:/^Never/.test(shown)?'ok':'',text:shown})))),
-      h('div',{class:'conn-privacy-foot'},h('p',{class:'faint small',text:'Everything stays on this computer: no accounts, telemetry or cloud services. Capture starts only when you start it in VS Code or install hooks.'}),
-        button({label:'Security and privacy',icon:'shield',size:'sm',onClick:()=>openDoc('SECURITY.md')})));
+    return h('div',{class:'conn-table privacy',role:'table','aria-label':'What is captured'},
+      h('div',{class:'conn-tr head',role:'row'},h('span',{role:'columnheader',text:'What'}),h('span',{role:'columnheader',text:'Recorded on this computer'}),h('span',{role:'columnheader',text:'On the Stage, OBS or in exports'})),
+      ...PRIVACY_TABLE.map(([what,rec,shown])=>h('div',{class:'conn-tr',role:'row'},h('strong',{role:'cell',text:what}),h('span',{role:'cell',class:'muted',text:rec}),h('span',{role:'cell',class:/^Never/.test(shown)?'ok':'',text:shown}))));
+  }
+  function privacyGuide(){
+    return guidePanel('shield','Everything stays on this computer',
+      h('p',{class:'muted small',text:'No accounts, telemetry or cloud services. Capture starts only when you start it in VS Code or install hooks.'}),
+      h('div',{},button({label:'Security and privacy',icon:'shield',size:'sm',onClick:()=>openDoc('SECURITY.md')})));
   }
   // ---- Overview strip ---------------------------------------------------------------------------------------------
   function renderStrip(){
@@ -386,7 +449,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     // With the capability the response also names the adapter's path (shown as the hook command).
     try{integ=await P.api.request('GET','/api/integrations');integError=null;}
     catch{try{integ=await S.get('/api/integrations');integError=null;}catch(e){integError=e.message;}}
-    claude.updateCli();renderInstall();renderClaude();renderAgents();renderEditors();renderStrip();
+    claude.updateCli();renderVsGuide();renderClaude();renderAgents();renderEditors();renderStrip();
   }
   const pending=new Map();
   function later(key,fn,ms){if(pending.has(key))return;const t=setTimeout(()=>{pending.delete(key);timers.delete(t);fn();},ms);pending.set(key,t);timers.add(t);}
@@ -410,7 +473,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const statusTimer=setInterval(()=>{if(!document.hidden)void loadStatus();},STATUS_MS);
   // Relative times ("2 min ago") and the running/quiet boundary move with the clock, not only with new data.
   const tick=setInterval(()=>{if(document.hidden)return;renderReceiver();renderEditors();renderClaude();renderAgents();renderStrip();},TICK_MS);
-  renderReceiver();renderEditors();renderClaude();renderAgents();renderStrip();
+  renderReceiver();renderEditors();renderVsGuide();renderClaude();renderAgents();renderStrip();
   void loadStatus();void loadIntegrations();syncEvidence();
   return {
     route(next){focus=next?.[0]||'';renderEditors();},

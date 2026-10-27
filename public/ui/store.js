@@ -138,6 +138,11 @@ if(channel){
     if(m.type==='bye'){others.delete(m.from);state.others.recording=others.size?[...others.keys()][0]:null;changed('others');}};
   channel.postMessage({type:'hello',from:windowId});
   addEventListener('pagehide',()=>channel.postMessage({type:'bye',from:windowId}));
+  // A window that crashed never says goodbye: while another window is said to record, the recorder lock (Web Locks,
+  // app.js record.heldElsewhere) is the evidence; once no window holds it, the announcement is stale and goes.
+  setInterval(async()=>{if(!others.size||document.hidden)return;
+    const held=await P.record.heldElsewhere?.().catch(()=>null);
+    if(held===false&&others.size){others.clear();state.others.recording=null;changed('others');}},2000);
 }
 let wasRecording=false;
 P.on(t=>{if(t.has('recording')&&P.record.active!==wasRecording){wasRecording=P.record.active;announce();if(!wasRecording)applyEffective();}if(t.has('recipe'))applyEffective();});

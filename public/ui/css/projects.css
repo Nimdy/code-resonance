@@ -1,98 +1,215 @@
-/* Projects: a dense browser of every project and one project in depth (timeline, statistics, configuration). */
-.ws-projects .proj-filter{align-items:center;color:var(--text-3)}
-.ws-projects .proj-filter .input{width:280px}
-.ws-projects .proj-filter svg{width:16px;height:16px}
-/* The browser: one grid shared by the header and each row, so columns line up without a table. */
-.ws-projects .proj-table{overflow:hidden}
-.ws-projects .proj-head,.ws-projects .proj-row{display:grid;grid-template-columns:minmax(0,2.3fr) minmax(0,1.5fr) minmax(0,.95fr) minmax(0,1.3fr) minmax(0,.95fr) minmax(64px,.6fr);gap:16px;align-items:center;padding:0 16px}
-.ws-projects .proj-head{height:34px;border-bottom:1px solid var(--line);background:var(--bg-1)}
-.ws-projects .proj-head span:last-child{text-align:right}
+/* Projects: a browser of every project and one project in depth (identity, timeline, history, activity, configuration).
+   Desktop (>=1400 px): the browser is a column of compact rows beside the project it shows. Narrower: the browser is a
+   full-width table and a project fills the page on its own. The project's panels flow in three, two or one columns by the
+   width of the project itself (container queries), whichever layout it is in. */
+.ws-projects{--proj-master:clamp(300px,19vw,380px);--proj-gap:clamp(16px,1.15vw,24px)}
+
+/* ---- The browser's rows: one grid shared by the header and each row, so columns line up without a table ---- */
 .ws-projects .proj-rows{display:grid}
-.ws-projects .proj-row{min-height:58px;padding-top:9px;padding-bottom:9px;border-bottom:1px solid var(--line);color:var(--text-1);text-decoration:none;position:relative;transition:background var(--t-1)}
+.ws-projects .proj-row{display:grid;align-items:center;color:var(--text-1);text-decoration:none;position:relative;border-bottom:1px solid var(--line);transition:background var(--t-1)}
 .ws-projects .proj-row:last-child{border-bottom:0}
 .ws-projects .proj-row:hover{background:var(--bg-3);text-decoration:none}
 .ws-projects .proj-row:focus-visible{outline:none;background:var(--bg-3);box-shadow:inset 0 0 0 2px var(--accent-line)}
-.ws-projects .proj-row.active::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:2px;background:var(--accent)}
-.ws-projects .cell{display:grid;gap:2px;min-width:0;font-size:12.5px}
-.ws-projects .cell .sub{font-size:11.5px;color:var(--text-3);min-width:0}
+.ws-projects .proj-row::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--accent);opacity:0}
+.ws-projects .cell{display:grid;gap:2px;min-width:0;font-size:14px}
+.ws-projects .cell .sub{font-size:12.5px;color:var(--text-3);min-width:0}
 .ws-projects .cell.num-cell{text-align:right}
+.ws-projects .cell .unit{display:none}
 .ws-projects .name-line{display:flex;align-items:center;gap:8px;min-width:0}
-.ws-projects .name-line strong{font-size:13px;font-weight:600;min-width:0}
-.ws-projects .name-line .pill{height:18px;font-size:10.5px;padding:0 7px}
-.ws-projects .cap{display:flex;align-items:center;gap:7px}
-.ws-projects .proj-empty{padding:28px 16px}
-/* One project */
-.ws-projects .proj-back{margin:-8px 0 -12px -6px}
-.ws-projects .proj-detail-head{align-items:flex-start}
-.ws-projects .proj-detail-head .grow{gap:5px}
-.ws-projects .proj-detail-head h1{max-width:100%}
-.ws-projects .proj-meta{display:grid;gap:1px;min-width:0}
-.ws-projects .proj-meta .num{overflow-wrap:anywhere;font-size:11px}
-.ws-projects .proj-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.ws-projects .proj-cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:28px;align-items:start}
-.ws-projects .proj-cols .section+.section{margin-top:26px}
-.ws-projects .proj-chapter{display:flex;gap:22px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-2)}
+.ws-projects .name-line strong{font-size:15px;font-weight:620;min-width:0}
+.ws-projects .name-line .pill{height:20px;font-size:12px;padding:0 8px;flex:none}
+.ws-projects .cap{display:flex;align-items:center;gap:8px;min-width:0}
+.ws-projects .proj-empty{padding:28px 18px}
+.ws-projects .proj-count{white-space:nowrap}
+
+/* ---- The table (narrower screens, and when there is no project to show beside it) ---- */
+.ws-projects .proj-filter{align-items:center}
+.ws-projects .proj-filter .input{width:320px}
+.ws-projects .proj-table{overflow:hidden;container:projtable/inline-size}
+.ws-projects .proj-head,.ws-projects .proj-table .proj-row{display:grid;gap:16px;align-items:center;padding:0 18px;
+  grid-template-columns:minmax(0,2fr) minmax(0,1.5fr) minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,1fr) minmax(0,.85fr) minmax(0,1.1fr) minmax(76px,.6fr)}
+.ws-projects .proj-head{height:38px;border-bottom:1px solid var(--line);background:var(--bg-1)}
+.ws-projects .proj-head .eyebrow{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-projects .proj-table .name-line{flex-wrap:wrap;row-gap:4px}
+.ws-projects .proj-table .name-line strong{flex:0 1 auto}
+.ws-projects .proj-table .c-last .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-projects .proj-head .c-events{text-align:right}
+.ws-projects .proj-table .proj-row{min-height:64px;padding-top:10px;padding-bottom:10px}
+.ws-projects .proj-table .proj-row.active::before{opacity:1}
+@container projtable (max-width:1180px){
+  .ws-projects .proj-head,.ws-projects .proj-table .proj-row{grid-template-columns:minmax(0,1.9fr) minmax(0,1.55fr) minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,1.05fr) minmax(76px,.6fr)}
+  .ws-projects .proj-table .c-music{display:none}}
+@container projtable (max-width:1020px){
+  .ws-projects .proj-head,.ws-projects .proj-table .proj-row{grid-template-columns:minmax(0,1.9fr) minmax(0,1.55fr) minmax(0,1.15fr) minmax(0,1.15fr) minmax(0,1fr) minmax(76px,.6fr)}
+  .ws-projects .proj-table .c-agents{display:none}}
+
+/* ---- Desktop: the browser beside the project ---- */
+.ws-projects .proj-md{display:grid;grid-template-columns:var(--proj-master) minmax(0,1fr);gap:var(--proj-gap);align-items:start}
+.ws-projects .proj-master{position:sticky;top:16px;max-height:calc(100vh - var(--topbar) - 48px);overflow:hidden}
+.ws-projects .proj-master-head{display:grid;gap:10px;padding:14px 16px 14px;border-bottom:1px solid var(--line)}
+.ws-projects .proj-master-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ws-projects .proj-master-title h2{font-size:15px;font-weight:620}
+.ws-projects .proj-master .input{width:100%}
+.ws-projects .proj-master-rows{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
+.ws-projects .proj-master .proj-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name name" "cap last" "ident events";gap:5px 12px;padding:12px 16px 13px 18px}
+.ws-projects .proj-master .c-name{grid-area:name;gap:1px;margin-bottom:3px}
+.ws-projects .proj-master .c-cap{grid-area:cap}.ws-projects .proj-master .c-last{grid-area:last}
+.ws-projects .proj-master .c-ident{grid-area:ident}.ws-projects .proj-master .c-events{grid-area:events}
+.ws-projects .proj-master .c-world,.ws-projects .proj-master .c-music,.ws-projects .proj-master .c-agents,
+.ws-projects .proj-master .c-cap .sub,.ws-projects .proj-master .c-last .sub,.ws-projects .proj-master .c-ident .sub,.ws-projects .proj-master .c-events .sub{display:none}
+.ws-projects .proj-master .c-cap,.ws-projects .proj-master .c-ident,.ws-projects .proj-master .c-last,.ws-projects .proj-master .c-events{font-size:13px;color:var(--text-2)}
+.ws-projects .proj-master .c-last,.ws-projects .proj-master .c-events{text-align:right;white-space:nowrap}
+.ws-projects .proj-master .cell .unit{display:inline;color:var(--text-3)}
+.ws-projects .proj-master .name-line{flex-wrap:wrap;row-gap:4px}
+.ws-projects .proj-master .proj-row.current{background:var(--bg-4)}
+.ws-projects .proj-master .proj-row.current::before{opacity:1;top:12px;bottom:12px}
+.ws-projects .proj-master .proj-row.current:focus-visible{box-shadow:inset 0 0 0 2px var(--accent-line)}
+.ws-projects .proj-master .empty{padding:28px 16px}
+.ws-projects .proj-master-foot{padding:10px 16px 12px;border-top:1px solid var(--line);line-height:1.45}
+
+/* ---- One project ---- */
+.ws-projects .proj-detail{display:grid;gap:var(--proj-gap);align-content:start;min-width:0;container:projdetail/inline-size}
+.ws-projects .proj-back{margin:-8px 0 -10px -6px}
+.ws-projects .proj-detail-head{display:flex;align-items:flex-end;gap:14px 24px;flex-wrap:wrap;padding:2px 0 2px}
+.ws-projects .proj-identity{flex:1;min-width:280px;display:grid;gap:6px}
+.ws-projects .proj-title-line{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;min-width:0}
+.ws-projects .proj-title{font-size:28px;line-height:1.15;max-width:100%}
+.ws-projects .proj-pills{display:flex;gap:6px;flex-wrap:wrap}
+.ws-projects .proj-meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;min-width:0}
+.ws-projects .proj-id{font-size:12px;overflow-wrap:anywhere;min-width:0}
+.ws-projects .proj-actions{display:flex;gap:8px;flex-wrap:wrap}
+/* Panels: lists inside run edge to edge, so a row's hover and focus span the panel */
+.ws-projects .proj-panel .panel-head{flex-wrap:wrap;row-gap:8px}
+.ws-projects .proj-panel .panel-head .grow{min-width:min(100%,260px)}
+.ws-projects .proj-panel .panel-body>.list,.ws-projects .proj-panel .panel-body>div>.list{margin:-6px -18px 0}
+.ws-projects .proj-panel .list-row{padding:9px 18px}
+.ws-projects .proj-panel .disclosure{margin:0 -18px;padding:8px 18px 0}
+.ws-projects .proj-panel .disclosure .list{margin:0 -18px}
+.ws-projects .proj-panel .panel-body>div{display:grid;gap:12px;min-width:0}
+/* The panels' columns: one; two (history on the left; exports and configuration, then overview and agents, on the right);
+   three side by side (history, overview and agents, exports and configuration), history widest so a session's day, start
+   and end, duration and events never truncate. */
+.ws-projects .proj-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--proj-gap);align-items:start}
+.ws-projects .proj-col{display:grid;gap:var(--proj-gap);align-content:start;min-width:0}
+.ws-projects .proj-history{container:projhist/inline-size}
+@container projdetail (min-width:820px){
+  .ws-projects .proj-grid{grid-template-columns:minmax(0,1.25fr) minmax(340px,1fr);grid-template-rows:auto 1fr}
+  .ws-projects .proj-history{grid-column:1;grid-row:1/3}
+  .ws-projects .proj-creative{grid-column:2;grid-row:1}
+  .ws-projects .proj-about{grid-column:2;grid-row:2}}
+@container projdetail (min-width:1240px){
+  .ws-projects .proj-grid{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto}
+  .ws-projects .proj-history,.ws-projects .proj-about,.ws-projects .proj-creative{grid-column:auto;grid-row:auto}}
+/* History rows: a button each (replay from that moment) */
+.ws-projects .hist-row{width:100%;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;color:var(--text-1);font-size:14px;cursor:pointer;transition:background var(--t-1)}
+.ws-projects .hist-row:last-child{border-bottom:0}
+.ws-projects .hist-row:hover{background:var(--bg-3)}
+.ws-projects .hist-row:focus-visible{outline:none;background:var(--bg-3);box-shadow:inset 0 0 0 2px var(--accent-line)}
+.ws-projects .hist-when{flex:1;min-width:0;white-space:nowrap;font-size:13.5px;overflow:hidden;text-overflow:ellipsis}
+.ws-projects .hist-day{color:var(--text-3);margin-right:10px}
+.ws-projects .hist-end{color:var(--text-2)}
+/* Session rows are a grid, so day/time, duration and events form aligned columns read together; a wide history column
+   keeps them grouped at the left (an empty track takes the rest) and the replay affordance at the row's end. */
+.ws-projects .proj-sessions .hist-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 84px auto;gap:12px}
+@container projhist (min-width:620px){
+  .ws-projects .proj-sessions .hist-row{grid-template-columns:minmax(0,20em) 76px 92px minmax(0,1fr) auto}
+  .ws-projects .proj-sessions .hist-go{grid-column:5}}
+.ws-projects .hist-dur{flex:none;text-align:right;white-space:nowrap}
+.ws-projects .hist-ev{flex:none;text-align:right;white-space:nowrap}
+.ws-projects .hist-time{flex:none;white-space:nowrap}
+.ws-projects .hist-go{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text-3);transition:color var(--t-1)}
+.ws-projects .hist-go svg{width:15px;height:15px}
+.ws-projects .hist-go span{opacity:0;transition:opacity var(--t-1)}
+.ws-projects .hist-row:hover .hist-go,.ws-projects .hist-row:focus-visible .hist-go{color:var(--accent)}
+.ws-projects .hist-row:hover .hist-go span,.ws-projects .hist-row:focus-visible .hist-go span{opacity:1}
+/* A narrower history column keeps the facts and drops the word "Replay" (the icon stays; the row's label says it); a
+   very narrow one also drops the session's end time (its duration still says how long it ran). */
+@container projhist (max-width:560px){
+  .ws-projects .hist-go span{display:none}
+  .ws-projects .proj-sessions .hist-row{grid-template-columns:minmax(0,1fr) 62px 78px auto;gap:10px}
+  .ws-projects .hist-day{margin-right:8px}}
+@container projhist (max-width:420px){.ws-projects .hist-end{display:none}}
+/* Overview */
+.ws-projects .proj-chapter{display:flex;gap:22px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-2);background:var(--bg-1)}
 .ws-projects .proj-chapter>div:first-child{display:grid;gap:2px}
-.ws-projects .proj-chapter b{font-size:26px;font-weight:600;line-height:1}
-.ws-projects .proj-chapter .grow{flex:1;display:grid;gap:6px;min-width:0}
+.ws-projects .proj-chapter b{font-size:28px;font-weight:600;line-height:1}
+.ws-projects .proj-chapter .grow{flex:1;display:grid;gap:7px;min-width:0}
 .ws-projects .proj-progress{height:4px;border-radius:4px;background:var(--bg-5);overflow:hidden}
 .ws-projects .proj-progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
-/* Statistics: a spec sheet (hairlines between values), not a wall of cards. */
-.ws-projects .proj-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;background:var(--line);gap:1px}
-.ws-projects .stat{display:grid;gap:3px;padding:11px 13px;background:var(--bg-1);align-content:start}
-.ws-projects .stat b{font-size:17px;font-weight:550;color:var(--text-1)}
+/* Statistics: a spec sheet (hairlines between values), not a wall of cards. Cells are wide enough for the longest label
+   ("Agent events", "Tests failed": about 95 px at 12 px mono, plus 24 px padding): three per row in the 1920 middle column,
+   four at 2560 and 1440. A value and its unit share a line. A label that still does not fit wraps, never truncates. */
+.ws-projects .proj-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden;background:var(--line);gap:1px}
+.ws-projects .stat{display:grid;gap:3px;padding:8px 12px 9px;background:var(--bg-1);align-content:start;min-width:0}
+.ws-projects .stat-val{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
+.ws-projects .stat .eyebrow{font-size:12px;letter-spacing:.06em;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
+.ws-projects .stat b{font-size:18px;font-weight:550;color:var(--text-1);line-height:1.2}
 .ws-projects .stat b.ok{color:var(--ok)}.ws-projects .stat b.danger{color:var(--danger)}
-.ws-projects .proj-main .kv{margin-top:2px}
-.ws-projects .proj-outcomes .list-row,.ws-projects .proj-agents .list-row,.ws-projects .proj-exports .list-row{padding:8px 2px}
+.ws-projects .proj-overview{display:grid;gap:14px}
+.ws-projects .proj-overview .kv{font-size:13.5px}
 .ws-projects .proj-agent-dot{background:var(--agent)}
 .ws-projects .proj-last-rec{margin-top:4px}
-/* Configuration */
-.ws-projects .cfg{display:grid;border-top:1px solid var(--line)}
-.ws-projects .cfg-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;min-height:44px}
+/* Configuration: grouped rows; a value this project sets itself is marked */
+.ws-projects .cfg{display:grid}
+.ws-projects .cfg-group{font-size:12px;padding:14px 0 4px;border-bottom:1px solid var(--line)}
+.ws-projects .cfg-group:first-child{padding-top:0}
+.ws-projects .cfg-row{display:grid;grid-template-columns:116px minmax(0,1fr) auto;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px;min-height:50px}
+.ws-projects .cfg-row:last-child{border-bottom:0}
 .ws-projects .cfg-value{display:grid;min-width:0}
-.ws-projects .cfg-value>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-projects .cfg-value>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
+.ws-projects .cfg-row.own .cfg-from{color:var(--accent)}
 .ws-projects .cfg-reset{justify-self:start;margin-top:3px;text-align:left}
 /* Timeline: lane labels, lanes, folded pauses and a cursor that the keyboard and the pointer move. */
-.ws-projects .tl{display:grid;grid-template-columns:78px minmax(0,1fr);gap:10px;padding:14px 16px 10px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-1)}
-.ws-projects .tl-labels{display:grid;grid-auto-rows:22px;gap:4px;font:600 10px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
-.ws-projects .tl-body{min-width:0;display:grid;gap:6px}
-.ws-projects .tl-track{position:relative;display:grid;grid-auto-rows:22px;gap:4px;cursor:crosshair;border-radius:4px}
+.ws-projects .tl{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;padding:4px 0 2px}
+.ws-projects .tl-labels{display:grid;grid-auto-rows:24px;gap:5px;font:600 12px/24px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.ws-projects .tl-body{min-width:0;display:grid;gap:7px}
+.ws-projects .tl-track{position:relative;display:grid;grid-auto-rows:24px;gap:5px;cursor:crosshair;border-radius:4px}
 .ws-projects .tl-track:focus-visible{outline:2px solid var(--accent-line);outline-offset:4px}
 .ws-projects .tl-lane{position:relative;border-radius:3px;background:rgba(170,190,230,.035)}
 .ws-projects .tl-band{position:absolute;top:4px;bottom:4px;border-radius:3px;background:rgba(117,237,255,.16);box-shadow:inset 0 0 0 1px rgba(117,237,255,.28)}
 .ws-projects .tl-bin{position:absolute;top:5px;bottom:5px;border-radius:1px;background:var(--accent-2)}
 .ws-projects .tl-lane[data-lane="agents"] .tl-bin{background:var(--agent)}
-.ws-projects .tl-mark{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--text-2);box-shadow:0 0 0 2px var(--bg-1)}
+.ws-projects .tl-mark{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--text-2);box-shadow:0 0 0 2px var(--bg-2)}
 .ws-projects .tl-mark.passed{background:var(--ok)}
-.ws-projects .tl-mark.recovered{background:var(--ok);box-shadow:0 0 0 2px var(--bg-1),0 0 8px rgba(138,248,201,.6)}
+/* Recovered (failed, then passed) is a green ring, so it never reads as a plain pass */
+.ws-projects .tl-mark.recovered{background:var(--bg-2);border:2.5px solid var(--ok);box-shadow:0 0 0 2px var(--bg-2),0 0 8px rgba(138,248,201,.5)}
 .ws-projects .tl-mark.failed{background:var(--danger)}
 .ws-projects .tl-mark.milestone{border-radius:1px;transform:rotate(45deg);background:var(--warn)}
-.ws-projects .tl-mark.checkpoint{border-radius:2px;background:var(--text-1);width:7px;height:7px;margin:-3.5px 0 0 -3.5px}
-.ws-projects .tl-mark.chapter{width:2px;height:18px;margin:-9px 0 0 -1px;border-radius:1px;background:var(--accent);box-shadow:none}
+.ws-projects .tl-mark.checkpoint{border-radius:2px;background:var(--text-1);width:8px;height:8px;margin:-4px 0 0 -4px}
+.ws-projects .tl-mark.chapter{width:2px;height:20px;margin:-10px 0 0 -1px;border-radius:1px;background:var(--accent);box-shadow:none}
 .ws-projects .tl-break{position:absolute;top:-2px;bottom:-2px;background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(170,190,230,.16) 3px 4px);border-left:1px solid var(--line-2);border-right:1px solid var(--line-2)}
 .ws-projects .tl-cursor{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--text-1);opacity:0;pointer-events:none;transition:opacity var(--t-1)}
 .ws-projects .tl-cursor.on{opacity:.85}
-.ws-projects .tl-tip{position:absolute;bottom:-26px;display:flex;gap:8px;align-items:baseline;padding:4px 9px;border-radius:6px;background:var(--bg-4);border:1px solid var(--line-2);font-size:11.5px;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--t-1);z-index:2;max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.ws-projects .tl-tip{position:absolute;bottom:-28px;display:flex;gap:8px;align-items:baseline;padding:4px 9px;border-radius:6px;background:var(--bg-4);border:1px solid var(--line-2);font-size:13px;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--t-1);z-index:2;max-width:60%;overflow:hidden;text-overflow:ellipsis}
 .ws-projects .tl-tip.on{opacity:1}
 .ws-projects .tl-tip span{color:var(--text-2);overflow:hidden;text-overflow:ellipsis}
-.ws-projects .tl-axis{position:relative;height:16px}
-.ws-projects .tl-tick{position:absolute;top:0;font-size:10.5px;color:var(--text-3);white-space:nowrap}
+.ws-projects .tl-axis{position:relative;height:18px}
+.ws-projects .tl-tick{position:absolute;top:0;font-size:12px;color:var(--text-3);white-space:nowrap}
 .ws-projects .tl-tick.end{right:0}
-.ws-projects .tl-legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 2px 0}
+.ws-projects .tl-tick.mid{transform:translateX(-50%)}
+.ws-projects .tl-body{container:tlbody/inline-size}
+@container tlbody (max-width:760px){.ws-projects .tl-tick.mid{display:none}}
+.ws-projects .tl-legend{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center}
 .ws-projects .tl-legend span{display:inline-flex;align-items:center;gap:7px}
-.ws-projects .tl-legend .tl-mark.static{position:relative;top:auto;margin:0;display:inline-block}
-.ws-projects .tl-legend .tl-mark.static.chapter{height:12px}
+/* Legend swatches: the markers' shapes and colours, drawn inline (.tl-key, so a selector for .tl-mark finds only moments) */
+.ws-projects .tl-key{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--text-2);box-sizing:border-box}
+.ws-projects .tl-key.passed{background:var(--ok)}
+.ws-projects .tl-key.recovered{background:transparent;border:2.5px solid var(--ok)}
+.ws-projects .tl-key.failed{background:var(--danger)}
+.ws-projects .tl-key.milestone{width:9px;height:9px;border-radius:1px;transform:rotate(45deg);background:var(--warn)}
+.ws-projects .tl-key.checkpoint{width:8px;height:8px;border-radius:2px;background:var(--text-1)}
+.ws-projects .tl-key.chapter{width:2px;height:12px;border-radius:1px;background:var(--accent)}
 .tl-menu .menu-label{display:grid;gap:2px;padding:6px 10px 8px}
-@media (max-width:1180px){.ws-projects .proj-head,.ws-projects .proj-row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.3fr) minmax(56px,.6fr)}
-  .ws-projects .proj-head span:nth-child(5),.ws-projects .proj-row .cell:nth-child(5){display:none}}
-@media (max-width:1080px){.ws-projects .proj-cols{grid-template-columns:1fr}}
+.tl-menu .menu-item svg{width:16px;height:16px;flex:none;color:var(--accent)}
+/* ---- Small windows ---- */
 @media (max-width:900px){
   .ws-projects .proj-filter{width:100%}.ws-projects .proj-filter .input{flex:1;width:auto}
   .ws-projects .proj-head{display:none}
-  .ws-projects .proj-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 14px}
-  .ws-projects .proj-row .cell:nth-child(2){grid-column:1}.ws-projects .proj-row .cell:nth-child(3){grid-column:2;grid-row:1;text-align:right}
-  .ws-projects .proj-row .cell:nth-child(4){grid-column:1}.ws-projects .proj-row .cell:nth-child(6){grid-column:2;grid-row:2}
-  .ws-projects .tl{grid-template-columns:58px minmax(0,1fr);gap:8px;padding:12px 12px 8px}.ws-projects .tl-labels{font-size:9px;letter-spacing:.06em}
+  .ws-projects .proj-table .proj-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 14px}
+  .ws-projects .proj-table .c-world,.ws-projects .proj-table .c-music,.ws-projects .proj-table .c-agents{display:none}
+  .ws-projects .proj-table .c-name{grid-column:1/-1}
+  .ws-projects .proj-table .c-cap{grid-column:1}.ws-projects .proj-table .c-last{grid-column:2;grid-row:2;text-align:right}
+  .ws-projects .proj-table .c-ident{grid-column:1}.ws-projects .proj-table .c-events{grid-column:2;grid-row:3}
+  .ws-projects .tl{grid-template-columns:62px minmax(0,1fr);gap:8px}.ws-projects .tl-labels{font-size:12px;letter-spacing:.02em}
+  .ws-projects .proj-title{font-size:24px}
 }
-.ws-projects .proj-overview{display:grid;gap:12px}
-.tl-menu .menu-item svg{width:16px;height:16px;flex:none;color:var(--accent)}

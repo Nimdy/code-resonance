@@ -1,80 +1,159 @@
-/* Record & Broadcast: a monitor (the stage as recorded, the transport under it) beside the recording profile, then
-   the OBS view and the ways out. One record control; everything else reads like an instrument's displays. */
-.ws-output .out-monitor{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
-.ws-output .out-main{display:grid;gap:12px;min-width:0}
+/* Record & Broadcast, a desktop workspace in two columns that fill independently:
+     monitor (the stage as recorded, the recorder, what it will record)  |  recording profile, the last recording
+     Broadcast with OBS                                                   |  Export and replay (its three kinds stacked)
+   The monitor column is as wide as the screen's height allows (the frame and the Record control fit in the first view),
+   the right column (.out-rail) takes the rest, never less than the inspector width. The rail spans both rows, so a
+   short inspector never leaves a hole beside OBS. One record control; everything else reads like an instrument's
+   displays. --out-reserve is the height above and below the frame (top bar, page head, recorder) plus a margin, so
+   Record stays in the first view; the facts, the last-file line and any warning sit under Record and never push it down. */
+.ws-output{--out-reserve:340px}
+.ws-output .out-grid{display:grid;gap:20px;align-items:start;
+  grid-template-columns:minmax(0,calc((100vh - var(--out-reserve)) * 16 / 9 + 26px)) minmax(var(--inspector),1fr);
+  grid-template-areas:"mon rail" "obs rail";grid-template-rows:auto 1fr}
+.ws-output .out-monitor{grid-area:mon}
+.ws-output .out-rail{grid-area:rail;display:grid;gap:20px;align-content:start;min-width:0}
+.ws-output .out-obs{grid-area:obs;container-type:inline-size;align-self:start}
+.ws-output .out-export{container-type:inline-size}
+/* A large screen (2560 x 1440): the frame is about 1050 px high and the rail (at the inspector width) no taller than at
+   1920, so beside the monitor and OBS the rail would end some 440 px above them. Where the frame can be that large (wide
+   and tall enough: 1920 x 1200 still keeps the 1920 frame) OBS spans both columns under the monitor and the rail, which
+   then end within about 100 px of each other. */
+@media (min-width:2260px) and (min-height:1210px){.ws-output .out-grid{grid-template-areas:"mon rail" "obs obs";grid-template-rows:auto auto}}
+.ws-output .panel-head h2{font-size:16px}
+.ws-output .out-head-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2);flex:none}
+.ws-output .out-head-icon svg{width:16px;height:16px}
+
+/* ---- The monitor: the frame, the transport under it, then any warning ---- */
+.ws-output .out-monitor{padding:12px;gap:0;background:var(--bg-1);border-color:var(--line-2)}
 .ws-output .out-slot{aspect-ratio:16/9;width:100%}
-.out-chrome .slot-badge .pill.plain{background:rgba(8,10,16,.66);border-color:rgba(255,255,255,.08);color:rgba(222,230,242,.7);backdrop-filter:blur(6px)}
-/* The transport under the frame */
-.ws-output .out-deck{display:flex;align-items:center;gap:18px;padding:12px 14px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);min-width:0;flex-wrap:wrap;transition:border-color var(--t-2),background var(--t-2)}
-.ws-output .out-deck.active{border-color:rgba(255,77,97,.28);background:linear-gradient(0deg,rgba(255,77,97,.05),transparent) var(--bg-1)}
-.ws-output .out-deck .btn.record{min-width:148px}
-.ws-output .out-deck .btn.record .dot{width:10px;height:10px;border-radius:50%;background:var(--record);box-shadow:0 0 0 3px var(--record-soft)}
+.out-chrome .slot-badge .pill.plain{background:rgba(8,10,16,.66);border-color:rgba(255,255,255,.08);color:rgba(222,230,242,.78);backdrop-filter:blur(6px)}
+.ws-output .out-deck{display:flex;align-items:center;gap:20px;padding:14px 6px 2px;min-width:0;flex-wrap:wrap}
+.ws-output .out-monitor:has(.out-deck.active){border-color:rgba(255,77,97,.34);box-shadow:0 0 0 1px rgba(255,77,97,.12),0 0 40px rgba(255,77,97,.06)}
+.ws-output .out-deck .btn.record{min-width:168px;height:46px;font-size:15.5px;border-color:rgba(255,77,97,.32)}
+.ws-output .out-deck .btn.record:hover:not(:disabled){border-color:rgba(255,77,97,.55);background:var(--bg-4)}
+.ws-output .out-deck .btn.record .dot{width:11px;height:11px;border-radius:50%;background:var(--record);box-shadow:0 0 0 3px var(--record-soft)}
+.ws-output .out-deck .btn.record[aria-pressed="true"]{background:var(--record-soft)}
 .ws-output .out-deck .btn.record[aria-pressed="true"] .dot{border-radius:2px;animation:pulse-dot 1.2s var(--ease) infinite}
 /* Reduced motion: the square says "recording" without pulsing. */
 html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 @media (prefers-reduced-motion:reduce){html:not([data-motion="full"]) .ws-output .out-deck .btn.record .dot{animation:none}}
-.ws-output .out-time{display:grid;line-height:1.15;min-width:150px}
-.ws-output .out-clock{font-size:26px;font-weight:500;letter-spacing:.02em;color:var(--text-2)}
+.ws-output .out-time{display:grid;line-height:1.15;min-width:170px;gap:2px}
+.ws-output .out-clock{font-size:30px;font-weight:500;letter-spacing:.02em;color:var(--text-2)}
 .ws-output .out-clock.live{color:#ffd0d6}
-.ws-output .out-state{color:var(--text-3)}
-.ws-output .out-readouts{display:grid;grid-template-columns:repeat(4,minmax(64px,auto));gap:4px 22px;margin-left:auto}
-.ws-output .out-readout{display:grid;gap:3px}
-.ws-output .out-readout b{font-size:13px;font-weight:550;color:var(--text-1)}
+.ws-output .out-state{font-size:13.5px;color:var(--text-3)}
+.ws-output .out-deck.active .out-state{color:#ffb3bd}
+.ws-output .out-readouts{display:grid;grid-template-columns:repeat(4,minmax(78px,auto));gap:4px 0;margin-left:auto}
+.ws-output .out-readout{display:grid;gap:4px;padding:2px 18px;border-left:1px solid var(--line-2)}
+.ws-output .out-readout b{font-size:15px;font-weight:550;color:var(--text-1)}
+.ws-output .out-deck:not(.active) .out-readout b{color:var(--text-4)}
 .ws-output .out-readout b.ok{color:var(--ok)}.ws-output .out-readout b.warn{color:var(--warn)}
 .ws-output .out-notice:empty{display:none}
-.ws-output .out-notice{display:grid;gap:8px}
-.ws-output .out-last{display:grid;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-3);background:var(--bg-2)}
-.ws-output .out-last-head,.ws-output .out-last-empty{display:flex;align-items:baseline;gap:12px}
-.ws-output .out-last-head .faint{margin-left:auto}
-/* The profile column */
-.ws-output .out-side{display:grid;gap:12px;padding:16px}
-.ws-output .out-side-head{display:grid;gap:2px}
+/* What this window will record: one line of facts under the recorder (wraps on a narrow frame) */
+.ws-output .out-facts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 28px;margin:12px 6px 0;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px;min-width:0}
+.ws-output .out-fact{display:flex;align-items:center;gap:10px;min-width:0}
+.ws-output .out-fact-k{font:600 12px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);flex:none}
+.ws-output .out-fact-v{display:flex;align-items:center;gap:8px;min-width:0;color:var(--text-1)}
+.ws-output .out-fact-v .ok{color:var(--ok)}
+.ws-output .out-mime{font-size:12.5px}
+/* The last file, one line under the recorder */
+.ws-output .out-lastline:empty{display:none}
+.ws-output .out-lastline{display:flex;align-items:center;gap:10px;min-width:0;margin:10px 6px 2px;padding-top:10px;border-top:1px solid var(--line);font-size:13.5px;color:var(--text-2);white-space:nowrap}
+.ws-output .out-lastline svg{width:15px;height:15px;flex:none;color:var(--ok)}
+.ws-output .out-lastline.warn svg{color:var(--warn)}
+.ws-output .out-lastline-label{font-weight:600;color:var(--text-1);flex:none}
+.ws-output .out-lastline-file{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px;color:var(--text-1)}
+.ws-output .out-lastline-meta{flex:none;color:var(--text-3)}
+.ws-output .out-lastline-where{flex:none;color:var(--text-3);margin-left:auto}
+.ws-output .out-notice{display:grid;gap:8px;margin-top:12px}
+
+/* ---- The right column: profile, readiness, last recording ---- */
+.ws-output .out-side-profiles{gap:10px}
+.ws-output .out-side-last{border-top:1px solid var(--line);gap:12px}
 .ws-output .out-profiles{display:grid;gap:6px}
-.ws-output .out-profile{display:grid;gap:3px;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
+.ws-output .out-profile{display:grid;gap:4px;width:100%;text-align:left;padding:11px 14px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
 .ws-output .out-profile:hover:not(:disabled){border-color:var(--line-3);background:var(--bg-3)}
 .ws-output .out-profile[aria-checked="true"]{border-color:var(--accent-line);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent-line) inset}
 .ws-output .out-profile:disabled{opacity:.5;cursor:not-allowed}
 .ws-output .out-profile[aria-checked="true"]:disabled{opacity:.8}
 .ws-output .out-profile-head{display:flex;align-items:center;gap:8px}
-.ws-output .out-profile-head strong{font-size:13px;font-weight:600}
-.ws-output .out-tag{margin-left:auto;font-size:10.5px;letter-spacing:.08em;color:var(--text-3);padding:1px 6px;border:1px solid var(--line-2);border-radius:4px}
+.ws-output .out-profile-head strong{font-size:14.5px;font-weight:600}
+.ws-output .out-tag{margin-left:auto;font-size:12px;letter-spacing:.06em;color:var(--text-3);padding:1px 7px;border:1px solid var(--line-2);border-radius:4px}
 .ws-output .out-profile[aria-checked="true"] .out-tag{color:var(--accent);border-color:var(--accent-line)}
-.ws-output .out-profile-meta{display:flex;gap:10px;font-size:11.5px}
-.ws-output .out-dims{color:var(--text-2)}
-.ws-output .out-profile-note{font-size:11.5px;color:var(--text-3);line-height:1.4}
-.ws-output .out-profile.obs{border-style:dashed;background:transparent}
-.ws-output .out-profile.obs:hover{background:var(--bg-3)}
-.ws-output .out-facts{padding-top:10px;border-top:1px solid var(--line)}
-.ws-output .out-facts .kv{grid-template-columns:62px 1fr;font-size:12px}
-.ws-output .out-side-foot{display:flex;justify-content:flex-start;margin:-6px 0 -6px -8px}
+.ws-output .out-profile-meta{display:flex;gap:12px;font-size:13px}
+.ws-output .out-dims{color:var(--text-1)}
+.ws-output .out-rate{color:var(--text-3)}
+.ws-output .out-profile-note{font-size:13px;color:var(--text-3);line-height:1.42}
+/* The OBS presentation: not a recording profile, the way to the OBS view below */
+.ws-output .out-obs-link{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-2);
+  border:1px dashed var(--line-3);background:transparent;color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
+.ws-output .out-obs-link:hover{background:var(--bg-3);border-color:var(--accent-line)}
+.ws-output .out-obs-link:hover .out-obs-link-go{background:var(--accent-soft);border-color:var(--accent-line)}
+.ws-output .out-obs-link-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--bg-3);color:var(--text-2)}
+.ws-output .out-obs-link-icon svg{width:16px;height:16px}
+.ws-output .out-obs-link-body{display:grid;gap:2px;min-width:0}
+.ws-output .out-obs-link-body strong{font-size:14px;font-weight:600}
+.ws-output .out-obs-link-body span{font-size:13px;color:var(--text-3);line-height:1.4}
+/* The row is one button; its end looks like one, so the whole row reads as clickable */
+.ws-output .out-obs-link-go{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px 0 11px;border-radius:var(--r-1,6px);border:1px solid var(--line-3);background:var(--bg-3);
+  font-size:13px;font-weight:600;color:var(--text-1);white-space:nowrap;transition:background var(--t-1),border-color var(--t-1)}
+.ws-output .out-obs-link-go svg{width:14px;height:14px;color:var(--accent)}
+.ws-output .out-side details.disclosure{border-top:0;padding-top:0}
 .ws-output .out-side details.disclosure>.disclosure-body{gap:8px;padding-top:4px}
-/* OBS */
-.ws-output .out-obs{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
-.ws-output .out-obs-builder{display:grid;gap:18px;padding:16px}
+.ws-output .out-last{display:grid;gap:10px}
+.ws-output .out-last-head,.ws-output .out-last-empty{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ws-output .out-last .kv{grid-template-columns:72px 1fr}
+
+/* ---- OBS: the builder beside the setup steps (one column in a narrow panel) ---- */
+.ws-output .out-obs-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:22px 32px;align-items:start}
+@container (min-width:860px){.ws-output .out-obs-cols{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+  .ws-output .out-obs-info{padding-left:32px;border-left:1px solid var(--line)}}
+.ws-output .out-obs-builder{display:grid;gap:20px;min-width:0}
 .ws-output .out-field{display:grid;gap:8px;min-width:0}
 .ws-output .out-field>.segmented{justify-self:start}
-.ws-output .out-pins{display:grid;gap:8px}
+.ws-output .out-field .field-doc{max-width:var(--measure)}
+.ws-output .out-pins{display:grid;gap:10px}
 .ws-output .out-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.ws-output #obsUrl code{font-size:12px}
+.ws-output #obsUrl code{font-size:13px}
 .ws-output .out-obs-empty:empty{display:none}
-.ws-output .out-obs-info{display:grid;gap:14px}
-.ws-output .out-steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--text-2);font-size:12.5px;line-height:1.5}
+.ws-output .out-obs-info{display:grid;gap:16px;min-width:0}
+/* OBS across the whole page (a large screen): the steps and the privacy note side by side, beside the builder */
+@container (min-width:1700px){.ws-output .out-obs-cols{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr)}
+  .ws-output .out-obs-info{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 28px;align-items:start}
+  .ws-output .out-obs-info>.callout{margin-top:26px}}
+.ws-output .out-steps{margin:0;padding-left:20px;display:grid;gap:7px;color:var(--text-2);font-size:13.5px;line-height:1.5;max-width:var(--measure)}
 .ws-output .out-steps strong{color:var(--text-1);font-weight:600}
+.ws-output .out-obs-info .callout{max-width:var(--measure)}
 .ws-output .out-obs-info .callout p+p{margin-top:6px}
-/* The ways out */
-.ws-output .out-kinds{display:grid}
-.ws-output .out-kind{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--line)}
-.ws-output .out-kind:last-child{border-bottom:0}
-.ws-output .out-kind-icon{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2)}
-.ws-output .out-kind-icon svg{width:17px;height:17px}
-.ws-output .out-kind-body{display:grid;gap:6px;min-width:0}
-.ws-output .out-kind-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.ws-output .out-kind-head strong{font-size:13px;font-weight:600}
-.ws-output .out-kind-action{align-self:center}
-.ws-output .out-cmds{display:grid;gap:6px;max-width:760px}
+
+/* ---- Export and replay: a shelf of three kinds of file, side by side (stacked in a narrow panel) ---- */
+.ws-output .out-kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.ws-output .out-kind{display:grid;grid-template-columns:32px minmax(0,1fr) auto;grid-template-areas:"icon title action" ". body body";gap:10px 12px;align-items:center;align-content:start;padding:16px 20px;border-left:1px solid var(--line);min-width:0}
+.ws-output .out-kind:first-child{border-left:0}
+@container (max-width:1039px){.ws-output .out-kinds{grid-template-columns:minmax(0,1fr)}.ws-output .out-kind{border-left:0;border-top:1px solid var(--line)}.ws-output .out-kind:first-child{border-top:0}}
+.ws-output .out-kind-icon{grid-area:icon;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2)}
+.ws-output .out-kind-icon svg{width:16px;height:16px}
+.ws-output .out-kind-title{grid-area:title;display:grid;gap:1px;min-width:0}
+.ws-output .out-kind-title strong{font-size:14.5px;font-weight:600}
+.ws-output .out-kind-what{font-size:13px;color:var(--text-3)}
+.ws-output .out-kind-action{grid-area:action;justify-self:end}
+.ws-output .out-kind-body{grid-area:body;display:grid;gap:8px;min-width:0}
+.ws-output .out-kind-body .field-doc{max-width:var(--measure)}
+.ws-output .out-kind details.disclosure{border-top:0;padding-top:0}
+.ws-output .out-kind details.disclosure>.disclosure-body{gap:10px;padding-top:6px}
+.ws-output .out-cmds{display:grid;gap:6px}
 .ws-output a.btn{color:var(--text-1);text-decoration:none}
 .ws-output a.btn[aria-disabled="true"]{opacity:.42;pointer-events:none}
-@media (max-width:1180px){.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(64px,auto));gap:4px 16px}}
-@media (max-width:1080px){.ws-output .out-monitor{grid-template-columns:1fr}.ws-output .out-profiles{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-output .out-obs{grid-template-columns:1fr}}
-@media (max-width:900px){.ws-output .out-readouts{margin-left:0;grid-template-columns:repeat(4,minmax(56px,auto))}.ws-output .out-kind{grid-template-columns:34px minmax(0,1fr)}.ws-output .out-kind-action{grid-column:2}}
+/* A narrow column (the rail at 1280-1440 px): the action goes under its description, so the title keeps one line. */
+@container (max-width:460px){.ws-output .out-kind{grid-template-columns:32px minmax(0,1fr);grid-template-areas:"icon title" ". body" ". action"}.ws-output .out-kind-action{justify-self:start}}
+
+/* ---- Narrower screens ---- */
+/* A short screen (1280 x 720, 1366 x 768): the page head drops its one-line description (the frame's "As recorded"
+   badge says the same), so the frame keeps its size and Record still sits well inside the first view. */
+@media (max-height:800px){.ws-output{--out-reserve:320px}.ws-output .out-lede{display:none}}
+@media (max-width:1280px){.ws-output .out-readout{padding:2px 12px}.ws-output .out-readouts{grid-template-columns:repeat(4,minmax(66px,auto))}}
+@media (max-width:1100px){.ws-output .out-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"mon" "side" "exp" "obs";grid-template-rows:none}
+  .ws-output .out-rail{display:contents}.ws-output .out-side{grid-area:side}.ws-output .out-export{grid-area:exp}
+  .ws-output .out-profiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:900px){.ws-output .out-readouts{margin-left:0;grid-template-columns:repeat(4,minmax(56px,auto))}.ws-output .out-readout:first-child{padding-left:0;border-left:0}}
+@media (max-width:900px){.ws-output .out-lastline-where{display:none}}
 @media (max-width:700px){.ws-output .out-profiles{grid-template-columns:1fr}.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(56px,auto))}}

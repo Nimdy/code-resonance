@@ -40,10 +40,26 @@ const CLASSIC=[
   {id:'nexus',icon:'globe',line:'Modules and links as a network (Canvas 2D)'},
   {id:'city',icon:'layers',line:'Modules as blocks of a city (Canvas 2D); the fallback without WebGL'},
   {id:'nebula',icon:'spark',line:'The same layout wound into a turning spiral (Canvas 2D)'}];
-// Parameter groups (the first genome path segment) in the order an artist reads a world: its own parameters first.
-const GROUPS=[['params','Pack parameters'],['uniforms','Look uniforms'],['geometry','Geometry'],['secondary','Secondary forms'],['space','Space'],['atmosphere','Atmosphere'],
-  ['material','Materials'],['motion','Motion'],['camera','Camera'],['agents','Agents'],['palette','Palette'],['light','Light'],['music','Music response'],['technique','Rendering technique'],['limits','Limits']];
+// Parameter groups (the first genome path segment), named for the sub-headings inside a creative purpose.
+const GROUPS=[['params','World controls'],['uniforms','Look controls'],['geometry','Geometry'],['secondary','Secondary forms'],['space','Space'],['material','Materials'],['atmosphere','Atmosphere'],
+  ['light','Light'],['motion','Motion'],['camera','Camera'],['palette','Palette'],['grade','Grade'],['music','Music response'],['agents','Agents'],['limits','Labels on screen'],['technique','Rendering technique']];
 const GROUP_OF={agentProminence:'agents'};
+// Every parameter sits under the creative purpose an artist looks for (not under its genome group): the world's own
+// controls first (a world pack's parameters, a shader look's uniforms), then form, atmosphere, motion, colour, music
+// and rendering. `limits` holds how many callouts the stage shows (not a performance budget), so it sits with the agents
+// and the music as what the stage presents. A path no purpose names stays reachable under "Other".
+const COLOUR_TECHNIQUE=new Set(['technique.tint','technique.lift','technique.saturation']);
+const PURPOSES=[
+  {id:'pack',name:'This world\'s own controls',groups:['params']},
+  {id:'look',name:'This look\'s own controls',groups:['uniforms']},
+  {id:'form',name:'Form and material',groups:['geometry','secondary','space','material']},
+  {id:'atmosphere',name:'Atmosphere and light',groups:['atmosphere','light']},
+  {id:'motion',name:'Motion and camera',groups:['motion','camera']},
+  {id:'colour',name:'Colour',groups:['palette','grade']},
+  {id:'music',name:'Music, agents and labels',groups:['music','agents','limits']},
+  {id:'rendering',name:'Rendering',groups:['technique'],note:'Multipliers over the world\'s own light (Atmosphere and light) and grade (Colour): 1 leaves it as it is.'}];
+const groupOf=(path,sp)=>COLOUR_TECHNIQUE.has(path)?'grade':GROUP_OF[sp.group]||sp.group;
+const purposeOf=g=>PURPOSES.find(x=>x.groups.includes(g))?.id||'other';
 // Technique values are multipliers the world host applies to the family's own grade (public/worlds/host.js
 // withTechnique): absent means identity, so that is what an untouched control shows.
 const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.contrast':1,'technique.saturation':1,'technique.vignette':1,'technique.grain':1,'technique.aberration':.004,'technique.tint':[1,1,1],'technique.lift':[0,0,0]};
@@ -108,27 +124,45 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     onChange:v=>{S.setUi({visualTab:v});renderBrowser();}});
   const browserActions=h('div',{class:'vs-browser-actions'});
   const browserNote=h('div',{class:'vs-browser-note faint small'});
-  const note=t=>{text(browserNote,t);browserNote.title=t;};
+  // The strip's note in full, and a shorter form a narrow column shows instead (the full one is its tooltip).
+  const note=(t,short=t)=>{clear(browserNote);browserNote.append(h('span',{class:'vs-note-long',text:t}),h('span',{class:'vs-note-short',text:short}));browserNote.title=t;};
   const cards=h('div',{class:'vs-cards scroll',role:'list'});
+  // A strip wider than the column fades at the edge it continues past, so a cut card reads as "scroll for more".
+  function fadeCards(){const over=cards.scrollWidth-cards.clientWidth;cards.classList.toggle('fade-r',over>2&&cards.scrollLeft<over-2);cards.classList.toggle('fade-l',over>2&&cards.scrollLeft>2);}
+  // Why to choose shows on a card only when it fits whole: never a cut sentence (it stays the card's tooltip). The world
+  // cards show it on all of them or none, so their names keep one baseline; a preset card (text from the top) on its own.
+  function fitWhy(){
+    const whys=[...cards.querySelectorAll('.vs-card-why')];
+    for(const w of whys)w.classList.remove('cut');
+    const isCut=w=>w.clientHeight>0&&w.scrollHeight>w.clientHeight+1;
+    const worlds=whys.filter(w=>!w.closest('.preset'));
+    if(worlds.some(isCut))for(const w of worlds)w.classList.add('cut');
+    for(const w of whys.filter(w=>w.closest('.preset')&&isCut(w)))w.classList.add('cut');
+  }
+  const layoutCards=()=>{fitWhy();fadeCards();};
+  cards.addEventListener('scroll',fadeCards,{passive:true});
+  const cardsObserver=new ResizeObserver(()=>layoutCards());cardsObserver.observe(cards);
   const browser=h('section',{class:'vs-browser','aria-label':'World browser'},h('div',{class:'vs-browser-head'},tabs,browserNote,browserActions),cards);
   const main=h('div',{class:'main vs-main'},head,stageBox,browser);
   // Inspector
   const statePill=h('span',{class:'pill plain'});
-  const inspTitle=h('h2',{class:'title-m vs-family'});
+  const inspTitle=h('h2',{class:'vs-family'});
   const inspSub=h('div',{class:'vs-sub small muted'});
   const inspHead=h('div',{class:'inspector-head'},h('div',{class:'vs-insp-top'},h('span',{class:'eyebrow',text:'World DNA'}),statePill),inspTitle,inspSub);
   const body=h('div',{class:'inspector-body'});
   const footStatus=h('div',{class:'vs-foot-status small',role:'status','aria-live':'polite'});
   const cancelBtn=button({label:'Cancel',kind:'ghost',id:'vsCancel',onClick:()=>discard()});
   const applyBtn=button({label:'Apply',kind:'primary',icon:'check',id:'vsApply',onClick:()=>apply()});
-  const foot=h('div',{class:'inspector-foot vs-foot'},footStatus,h('div',{class:'grow'}),cancelBtn,applyBtn);
+  const foot=h('div',{class:'inspector-foot vs-foot'},footStatus,cancelBtn,applyBtn);
   const inspector=h('aside',{class:'inspector vs-inspector','aria-label':'World DNA'},inspHead,body,foot);
   view.append(h('div',{class:'split ws-visual'},main,inspector));
   // Over the stage: what it shows (saved or preview) and why, when it shows something else than asked.
   const badge=h('div',{class:'vs-badge'}),stageNote=h('div',{class:'vs-stage-note',role:'status','aria-live':'polite'});
   const chromeLayer=h('div',{class:'vs-chrome chrome-pass'},badge,stageNote);
-  chrome.append(chromeLayer);offs.push(()=>chromeLayer.remove());
+  chrome.append(chromeLayer);offs.push(()=>chromeLayer.remove(),()=>cardsObserver.disconnect());
   // ---- Inspector sections (built once per project; their contents update in place) ---------------------------------
+  // Why this family: what the code becomes in it (contextual: the family shown, saved or previewed).
+  const whyBox=h('p',{class:'vs-why small muted'});
   const identityBox=h('div',{class:'vs-identity'});
   const actAuto=button({label:'Automatic',icon:'spark',size:'sm',kind:'outline',id:'vsAutomatic',title:'Let the code choose the family again (the generated identity)',onClick:()=>chooseAutomatic()});
   const actRegen=button({label:'Regenerate',icon:'dice',size:'sm',kind:'outline',id:'vsRegenerate',title:'A new seeded draw from the same traits',onClick:()=>regenerate()});
@@ -137,9 +171,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const identityActions=h('div',{class:'vs-actions'},actAuto,actRegen,actLock,actReset);
   const identityNote=h('div',{class:'vs-identity-note'});
   const lookSelect=select({id:'vsLook',label:'Look pack',options:[{value:'',label:'None'}],value:'',onChange:v=>chooseLook(v||null)});
-  const lookField=field({label:'Look pack',control:lookSelect,doc:'A visual pack drawn over the family: its palette, light and rendering. A look with code runs only once approved.',labelFor:'vsLook'});
+  const LOOK_DOC='A visual pack drawn over the family: its palette, light and rendering. A look with code runs only once approved.';
+  // On a short screen the description is the select's tooltip only (the field's purpose is in its label and options).
+  const lookField=field({label:'Look pack',control:lookSelect,doc:LOOK_DOC,labelFor:'vsLook'});lookField.classList.add('stack');lookSelect.title=LOOK_DOC;
   const lookNone=h('p',{class:'small faint'});
-  const lookBox=h('div',{class:'vs-look'},lookField,h('div',{class:'vs-look-empty'},lookNone,h('button',{type:'button',class:'link-btn small',onClick:()=>navigate('packs'),text:'Visual Packs'})));
+  const lookBox=h('div',{class:'vs-look vs-props'},lookField,h('div',{class:'vs-look-empty'},lookNone,h('button',{type:'button',class:'link-btn small',onClick:()=>navigate('packs'),text:'Visual Packs'})));
   // The exact-value box carries the unit (it reads back "150 %" as 150), so the field needs no second read-out.
   const intensity=slider({min:0,max:200,integer:true,value:100,format:v=>`${v} %`,label:'Spectacle (%)',id:'vsIntensity',onInput:v=>setOverride('intensity',v/100,false),onChange:v=>setOverride('intensity',v/100,true)});
   const motion=slider({min:0,max:200,integer:true,value:100,format:v=>`${v} %`,label:'Motion (%)',id:'vsMotion',onInput:v=>setOverride('motion',v/100,false),onChange:v=>setOverride('motion',v/100,true)});
@@ -149,8 +185,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const fIntensity=field({label:'Spectacle',doc:'How strongly events are staged: 100 % is the identity as generated.',control:intensity,onReset:()=>setOverride('intensity',1,true)});
   const fMotion=field({label:'Motion',doc:'Camera and ambient movement.',control:motion,onReset:()=>setOverride('motion',1,true)});
   const fLabels=field({label:'Information',doc:'',control:labels});
-  const paramsBox=h('div',{class:'vs-params'});
-  const paramsSummary=h('div',{class:'small muted'});
+  // Sliders and rows of choices take the full width under their label (a long track, the same order as every parameter).
+  for(const f of [fIntensity,fMotion,fLabels])f.classList.add('stack');
+  // The Essentials (first, open) and every other parameter under its creative purpose (folded).
+  const essBox=h('div',{class:'vs-params vs-props vs-ess'});
+  const paramsBox=h('div',{class:'vs-params vs-props vs-adv'});
+  const paramsSummary=h('span',{class:'tiny faint vs-params-count'});
+  const essSection=h('section',{class:'vs-sec vs-sec-ess','aria-label':'Essentials'},essBox);
   const titleInput=h('input',{class:'input',id:'vsTitleInput',type:'text',maxlength:40,autocomplete:'off',spellcheck:'false','aria-label':'Public title','aria-describedby':'vsTitleHelp'});
   const titleError=h('div',{class:'vs-error small',id:'vsTitleError',role:'alert'});
   const titleSave=button({label:'Save title',size:'sm',id:'vsTitleSave',onClick:()=>saveTitle()});
@@ -164,15 +205,18 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!S.state.selected){body.append(emptyState({icon:'visual',title:S.state.projectsLoaded?'No project yet':'Loading projects…',body:S.state.projectsLoaded?'A project appears when capture starts in VS Code. Its world identity is edited here.':null,
       actions:S.state.projectsLoaded?[button({label:'How to connect',onClick:()=>navigate('connections')})]:[]}));return;}
     if(!saved){body.append(loadError?callout({kind:'danger',icon:'warn',title:'The identity could not be loaded',body:loadError,actions:[button({label:'Retry',size:'sm',onClick:()=>loadSaved()})]}):h('div',{class:'faint small',text:'Loading the identity…'}));return;}
+    // In the order of creative weight: which world and its state, the few strongest controls, how it is staged, every
+    // parameter, then the names the stage shows and this device's rendering quality.
     body.append(
-      h('section',{class:'vs-sec'},identityBox,identityActions,identityNote),
-      h('section',{class:'vs-sec'},sectionHead('Look','a visual pack over the family'),lookBox),
-      h('section',{class:'vs-sec'},sectionHead('Presentation'),fIntensity,fMotion,fLabels),
-      h('section',{class:'vs-sec'},sectionHead('Parameters','generated from the family\'s catalogue'),paramsSummary,paramsBox),
-      h('section',{class:'vs-sec'},sectionHead('Public title'),
-        h('div',{class:'field-row vs-input-row'},titleInput,titleSave),titleError,titleShown),
-      h('section',{class:'vs-sec'},sectionHead('Subsystem names','shown in labels on the stage'),aliasBox),
-      h('section',{class:'vs-sec'},sectionHead('Quality','this device only'),quality,h('div',{class:'field-doc',text:'Auto lowers the resolution only while frames are slow. Kept in this browser; other machines keep their own choice.'})));
+      h('section',{class:'vs-sec vs-sec-identity','aria-label':'Identity'},whyBox,identityBox,lookBox,identityActions,identityNote),
+      essSection,
+      h('section',{class:'vs-sec','aria-label':'Presentation'},sectionHead('Presentation','how events are staged'),h('div',{class:'vs-props'},fIntensity,fMotion,fLabels)),
+      h('section',{class:'vs-sec','aria-label':'All parameters'},sectionHead('All parameters',null,paramsSummary),paramsBox),
+      h('section',{class:'vs-sec','aria-label':'Names on the stage'},sectionHead('Names on the stage'),
+        h('div',{class:'vs-sub-head'},h('label',{class:'field-label',for:'vsTitleInput',text:'Public title'})),
+        h('div',{class:'field-row vs-input-row'},titleInput,titleSave),titleError,titleShown,
+        h('div',{class:'vs-sub-head'},h('span',{class:'field-label',text:'Subsystem names'}),h('span',{class:'tiny faint',text:'shown in labels on the stage'})),aliasBox),
+      h('section',{class:'vs-sec','aria-label':'This device'},sectionHead('Quality','this device only'),quality,h('div',{class:'field-doc',text:'Auto lowers the resolution only while frames are slow. Kept in this browser; other machines keep their own choice.'})));
     paramSig='';aliasSig='';
   }
   titleInput.addEventListener('input',()=>{const v=titleInput.value.trim(),ok=!v||NAME.test(v);titleInput.setAttribute('aria-invalid',String(!ok));text(titleError,ok?'':NAME_RULE);titleInput.dataset.dirty='1';});
@@ -441,21 +485,26 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     statePill.className=`pill ${prev?'accent':'plain'}`;text(statePill,prev?'Preview · not saved':'Saved identity');
     if(!s){text(inspTitle,S.state.selected?'—':'No project');text(inspSub,'');return;}
     text(inspTitle,s.familyName||familyName(s.family));
-    const bits=[s.familyKind==='pack'?'Pack world':'Built-in family',s.source==='user'?'chosen by you':'generated from the code',`variant ${(s.variant||0)+1}`];
-    if(!candidate&&saved)bits.push(`revision ${saved.revision}`);
-    text(inspSub,bits.join(' · '));
+    const look=s.pack?(packOf(s.pack.id)?.name||s.pack.id):null;
+    // One line: the short form shows (the pill above already says preview or saved), the full form is its tooltip.
+    const kind=s.familyKind==='pack'?'Pack world':'Built-in',src=s.source==='user'?'chosen by you':'from the code',variant=`variant ${(s.variant||0)+1}`;
+    text(inspSub,[kind,src,variant,look?`look ${look}`:null,saved?`rev. ${saved.revision}`:null].filter(Boolean).join(' · '));
+    inspSub.title=[s.familyKind==='pack'?'Pack world':'Built-in family',s.source==='user'?'chosen by you':'generated from the code',variant,look?`look ${look}`:null,
+      saved?(candidate?`preview of revision ${saved.revision}`:`revision ${saved.revision}`):null].filter(Boolean).join(' · ');
     renderIdentity();renderBadge();renderFoot();
   }
   function renderIdentity(){
     const s=shown();if(!s)return;clear(identityBox);
     const state=s.locked?['Locked','ok','Kept as it is: never re-derived from the code']:s.founded?['Permanent','plain','Founded: the project is large enough that this identity is never re-derived']:['Provisional','warn','Re-derived from the code until the project has 6 modules'];
-    const look=s.pack?(packOf(s.pack.id)?.name||s.pack.id):null;
-    identityBox.append(h('dl',{class:'kv vs-kv'},
-      h('dt',{text:'Family'}),h('dd',{},h('strong',{text:s.familyName||familyName(s.family)}),s.source==='user'?' · chosen':' · generated'),
-      h('dt',{text:'Look'}),h('dd',{text:look||'None'}),
-      h('dt',{text:'State'}),h('dd',{},pill(state[0],state[1],{title:state[2]}),' ',h('span',{class:'small faint',text:state[2]})),
-      h('dt',{text:'Customised'}),h('dd',{text:s.tuning?.values&&Object.keys(s.tuning.values).length?count(Object.keys(s.tuning.values).length,'parameter'):'No'}),
-      h('dt',{text:'Saved'}),h('dd',{text:saved?`Revision ${saved.revision}${candidate?' (the preview is not saved)':''}`:'—'})));
+    const why=FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
+    text(whyBox,why);whyBox.title=why;whyBox.hidden=!why;
+    const tuned=s.tuning?.values?Object.keys(s.tuning.values).length:0;
+    // The family, its source and the revision are in the inspector's heading; this says what can still change it: the
+    // state and the customisations on one line, why under it (on a short screen, the pill's tooltip only).
+    const lockNote=s.locked?null:'Customising a parameter locks the identity: it is never re-derived from the code afterwards. Reset customisations returns every value to the generated one.';
+    identityBox.append(h('div',{class:'vs-status'},pill(state[0],state[1],{title:state[2]}),
+        h('span',{class:'vs-custom small',title:[tuned?null:'Every value is as generated.',lockNote].filter(Boolean).join(' ')||null,text:tuned?`${count(tuned,'parameter')} customised${candidate?' (in the preview)':''}`:'Not customised'})),
+      h('p',{class:'vs-state-why small faint',text:state[2]}));
     actLock.replaceChildren(icon(s.locked?'unlock':'lock'),h('span',{text:s.locked?'Unlock':'Lock'}));
     actLock.title=s.locked?'Allow the code to re-derive the identity while the project is small':'Keep this identity as it is';
     actRegen.title=s.source==='user'?`A new seeded draw of ${familyName(s.family)} from the same traits`:'A new seeded draw: the family may change';
@@ -469,7 +518,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       identityNote.append(callout({kind:'warn',icon:'shield',title:runtime.available?`${p?.name||runtime.pack} contains code and is not approved`:`${p?.name||runtime.pack} is not available`,
         body:'An unapproved pack never runs, not even in a preview: the stage keeps showing the saved identity. Applying saves the choice; it runs once approved.',actions:[button({label:'Review in Visual Packs',size:'sm',onClick:()=>navigate('packs')})]}));}
     if(savedWorld()!=='living')identityNote.append(h('p',{class:'small faint',text:`This project's stage is ${WORLD_NAMES[savedWorld()]}${S.effective().sources?.world==='global'?' (the global default)':''}. The World DNA is what the living world draws.`}));
-    identityNote.append(h('p',{class:'small faint',text:'Customising a parameter locks the identity: it is never re-derived from the code afterwards. Reset customisations returns every value to the generated one.'}));
+    // Said only while it is news: a locked identity already reads "never re-derived" in its state row.
+    if(lockNote)identityNote.append(h('p',{class:'small faint vs-lock-note',text:lockNote}));
   }
   function renderBadge(){
     clear(badge);clear(stageNote);
@@ -524,41 +574,88 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const s=shown(),spec=shownSpec();
     if(!s||!spec){if(saved)text(paramsSummary,'Loading parameters…');return;}
     const sig=`${s.family}|${s.pack?.id||''}|${Object.keys(spec).join(',')}`;
-    if(sig!==paramSig){paramSig=sig;paramFields=new Map();clear(paramsBox);
-      const groups=new Map(),essential=ESSENTIALS[s.family]?[...ESSENTIALS[s.family],...ESSENTIALS.common].filter(p=>spec[p]):[];
-      if(essential.length)groups.set('essentials',essential.map(p=>[p,spec[p]]));
-      for(const [path,sp] of Object.entries(spec)){if(essential.includes(path))continue;const g=GROUP_OF[sp.group]||sp.group;if(!groups.has(g))groups.set(g,[]);groups.get(g).push([path,sp]);}
-      const order=[...[['essentials'],...GROUPS].map(([g])=>g).filter(g=>groups.has(g)),...[...groups.keys()].filter(g=>g!=='essentials'&&!GROUPS.some(([x])=>x===g))];
-      if(!openGroups.size)(essential.length?['essentials']:order.slice(0,2)).forEach(g=>openGroups.add(g));
-      for(const g of order){
-        const fields=groups.get(g).map(([path,sp])=>paramField(path,sp,s));
-        if(g==='essentials'){paramsBox.append(disclosure({summary:`Essentials  ·  ${fields.length}`,open:openGroups.has(g),onToggle:o=>o?openGroups.add(g):openGroups.delete(g)},
-          h('p',{class:'faint small vs-essentials-note',text:'The few parameters that change this world the most. Everything else is in the groups below.'}),...fields));continue;}
-        paramsBox.append(disclosure({summary:`${GROUPS.find(([x])=>x===g)?.[1]||humanize(g)}  ·  ${groups.get(g).length}`,open:openGroups.has(g),onToggle:o=>o?openGroups.add(g):openGroups.delete(g)},...fields));
+    if(sig!==paramSig){paramSig=sig;paramFields=new Map();purposeParts=new Map();clear(essBox);clear(paramsBox);
+      const essential=ESSENTIALS[s.family]?[...ESSENTIALS[s.family],...ESSENTIALS.common].filter(p=>spec[p]):[];
+      // Purpose → genome group → parameters, each in catalogue order.
+      const purposes=new Map();
+      for(const [path,sp] of Object.entries(spec)){if(essential.includes(path))continue;const g=groupOf(path,sp),pid=purposeOf(g);
+        if(!purposes.has(pid))purposes.set(pid,new Map());const groups=purposes.get(pid);if(!groups.has(g))groups.set(g,[]);groups.get(g).push([path,sp]);}
+      const order=[...PURPOSES.map(x=>x.id),'other'].filter(id=>purposes.has(id));
+      if(!openGroups.size)(essential.length?['essentials']:order.slice(0,1)).forEach(g=>openGroups.add(g));
+      essSection.hidden=!essential.length;
+      if(essential.length){
+        const d=disclosure({summary:'Essentials',open:openGroups.has('essentials'),onToggle:o=>o?openGroups.add('essentials'):openGroups.delete('essentials')},
+          h('p',{class:'faint small vs-essentials-note',text:'The controls that change this world the most.'}),...essential.map(p=>paramField(p,spec[p],s)));
+        purposeSummary(d,'Essentials','essentials',essential);essBox.append(d);
+      }
+      for(const pid of order){
+        const groups=purposes.get(pid),paths=[...groups.values()].flat().map(([p])=>p),purpose=PURPOSES.find(x=>x.id===pid),name=purpose?.name||'Other';
+        // Inside a purpose, its genome groups are sub-headings (only when there is more than one).
+        const children=[purpose?.note?h('p',{class:'faint small vs-purpose-note',text:purpose.note}):null,...[...groups].sort(([a],[b])=>GROUPS.findIndex(([x])=>x===a)-GROUPS.findIndex(([x])=>x===b)).flatMap(([g,list])=>[
+          groups.size>1?h('h4',{class:'vs-group-head',text:GROUPS.find(([x])=>x===g)?.[1]||humanize(g)}):null,...list.map(([path,sp])=>paramField(path,sp,s))])];
+        const d=disclosure({summary:name,open:openGroups.has(pid),onToggle:o=>o?openGroups.add(pid):openGroups.delete(pid)},...children);
+        d.dataset.purpose=pid;purposeSummary(d,name,pid,paths);paramsBox.append(d);
       }
     }
     const tuned=s.tuning?.family===s.family?s.tuning:null;
+    // Each folded group says how many of its parameters are customised, so a change is never hidden by a fold.
+    for(const [d,{paths,countEl,modEl}] of purposeParts){
+      const n=tuned?paths.filter(p=>Object.hasOwn(tuned.values,p)).length:0,pend=paths.filter(p=>Object.hasOwn(draft.tune,p)).length;
+      text(countEl,String(paths.length));text(modEl,n?`${n} customised`:'');modEl.hidden=!n;d.classList.toggle('pending',pend>0);
+    }
     for(const [path,f] of paramFields){
       const v=valueOf(s,path,f.spec);
       if(!f.el.contains(document.activeElement))setControl(f.ctrl,f.spec,v);
       const mod=!!tuned&&Object.hasOwn(tuned.values,path);
       f.el.setModified(mod);f.el.classList.toggle('pending',Object.hasOwn(draft.tune,path));
-      f.el.setValue(mod?`generated ${tuned.base[path]===null||tuned.base[path]===undefined?'not set':formatParam(f.spec,tuned.base[path])}`:getPath(s.genome,path)===undefined?'not set':'');
+      // A value the genome does not carry is rendered from a known default (a technique multiplier's identity, a later
+      // generator's fallback): the control shows it, so no read-out contradicts it. "not set" only for a true absence.
+      const fb=fallbackOf(s,path),base=mod?tuned.base[path]??fb:undefined;
+      f.el.setValue(mod?`generated ${base===undefined?'not set':formatParam(f.spec,base)}`:getPath(s.genome,path)===undefined&&fb===undefined?'not set':'');
       text(f.err,previewError?.path===path?previewError.message:'');
     }
     const n=tuned?Object.keys(tuned.values).length:0;
     text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);
   }
-  function valueOf(s,path,spec){const v=getPath(s.genome,path);if(v!==undefined)return v;if(Object.hasOwn(TECHNIQUE_IDENTITY,path))return TECHNIQUE_IDENTITY[path];
-    if(Object.hasOwn(ADDED_DEFAULTS[s.family]||{},path))return ADDED_DEFAULTS[s.family][path];
+  // A group's summary: its name, how many parameters it holds, and how many of them are customised.
+  let purposeParts=new Map();
+  function purposeSummary(d,name,id,paths){
+    const countEl=h('span',{class:'vs-sum-count num'}),modEl=h('span',{class:'vs-sum-mod'});
+    d.querySelector('summary').replaceChildren(h('span',{class:'vs-sum-name',text:name}),countEl,modEl);
+    d.dataset.group=id;purposeParts.set(d,{paths,countEl,modEl});
+  }
+  function fallbackOf(s,path){if(Object.hasOwn(TECHNIQUE_IDENTITY,path))return TECHNIQUE_IDENTITY[path];
+    if(Object.hasOwn(ADDED_DEFAULTS[s.family]||{},path))return ADDED_DEFAULTS[s.family][path];return undefined;}
+  function valueOf(s,path,spec){const v=getPath(s.genome,path);if(v!==undefined)return v;const fb=fallbackOf(s,path);if(fb!==undefined)return fb;
     return spec.type==='boolean'?false:spec.type==='enum'?spec.values?.[0]:spec.type==='color'?'#000000':spec.type==='vec3'?[spec.min,spec.min,spec.min]:spec.min;}
+  // A catalogue description often starts with the parameter's own name used as a heading ("spire, openwork great
+  // spire…", "architecture: gothic…", "bioluminescence (inner light…)"): the label already says it, so the description
+  // keeps only what follows. The name is dropped only when a separator follows it, so a word that merely begins with it
+  // ("breathing period" under Breath) or a phrase it begins ("bloom strength", "sway in the current") is kept whole.
+  // A description that only repeats the label says nothing. Every description starts with a capital.
+  const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
+  function docOf(label,doc,path){
+    if(!doc||doc===path)return null;
+    const name=label.toLowerCase(),d=doc.trim();
+    if(d.toLowerCase()===name)return null;
+    const m=d.toLowerCase().startsWith(name)?/^\s*(?:[:,;–—]|-\s|\()/.exec(d.slice(name.length)):null;
+    if(!m)return cap(d);
+    let rest=d.slice(name.length).trim().replace(/^[:,;–—-]\s*/,'');
+    if(/^\([^()]*\)$/.test(rest))rest=rest.slice(1,-1);
+    rest=rest.trim();
+    // A lone word left over is a unit or a qualifier ("orbit tilt (radians)"): it reads only with the name.
+    return !rest?null:/\s/.test(rest)?cap(rest):cap(d);
+  }
   function paramField(path,spec,s){
     const label=humanize(path.split('.').at(-1));
     const ctrl=parameterControl(spec,valueOf(s,path,spec),{label,onInput:v=>setTune(path,v,false),onChange:v=>setTune(path,v,true)});
     // The toolkit builds on/off switches without a visible label (the field shows it), so the input gets its name here.
     if(ctrl.input&&!ctrl.input.hasAttribute('aria-label'))ctrl.input.setAttribute('aria-label',label);
     const err=h('div',{class:'vs-error small',role:'alert'});
-    const el=field({label,doc:spec.doc&&spec.doc!==path&&spec.doc.toLowerCase()!==label.toLowerCase()?spec.doc:null,control:h('div',{class:'vs-param-control'},ctrl,err),value:'',onReset:()=>setTune(path,null,true)});
+    const el=field({label,doc:docOf(label,spec.doc,path),control:h('div',{class:'vs-param-control'},ctrl,err),value:'',onReset:()=>setTune(path,null,true)});
+    // A slider, a row of choices or three channels takes the inspector's full width under its label (a track long
+    // enough for precise control); a switch, a colour or a select sits beside it.
+    if(ctrl.range||ctrl.classList.contains('segmented')||ctrl.classList.contains('vec3'))el.classList.add('stack');
     el.dataset.path=path;paramFields.set(path,{el,ctrl,spec,err});return el;
   }
   function setControl(ctrl,spec,v){if(typeof ctrl.set==='function')ctrl.set(v);else if(ctrl.tagName==='SELECT')ctrl.value=String(v);}
@@ -603,32 +700,38 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!S.state.selected)cards.append(h('p',{class:'faint small vs-cards-empty',text:'Select a project to choose its world.'}));
     else if(tab==='living')renderLiving();else if(tab==='classic')renderClassic();else renderPresets();
     if(label)[...browser.querySelectorAll('button')].find(b=>(b.getAttribute('aria-label')||b.textContent)===label)?.focus({preventScroll:true});
+    layoutCards();
   }
-  // A card: the picture (state chips over it) and the name; the whole card is one button.
-  function card({id,title,line,why=null,media,pills=[],onChoose,active=false,disabled=false,choose='Preview',match=false}){
-    const b=h('button',{type:'button',class:'vs-card-main',disabled,'aria-pressed':String(active),'aria-label':`${choose} ${title}`,onClick:onChoose},
+  // A card: the picture, its name and line over it (state chips at the top); the whole card is one button. Why to choose
+  // the world shows when the strip is tall enough and it fits whole (fitWhy), on the cards other than the one shown (the
+  // inspector tells that one); it is always the card's tooltip.
+  function card({id,title,line,why=null,media,pills=[],onChoose,active=false,shown=false,disabled=false,choose='Preview',match=false}){
+    const b=h('button',{type:'button',class:'vs-card-main',disabled,'aria-pressed':String(active),'aria-label':`${choose} ${title}`,title:why?`${title}: ${why}`:null,onClick:onChoose},
       h('span',{class:'vs-thumb'},media,pills.length?h('span',{class:'vs-chips'},...pills):null,
         match?h('span',{class:'vs-match',title:'The code\'s match: the family this project\'s code scores highest for (the automatic choice)'},icon('star'),h('span',{class:'visually-hidden',text:'The code\'s match'})):null),
       h('span',{class:'vs-card-text'},h('strong',{text:title}),h('span',{class:'vs-card-line',text:line}),why?h('span',{class:'vs-card-why',text:why}):null));
-    return h('div',{class:['vs-card',active?'active':''],role:'listitem',dataset:{card:id}},b);
+    return h('div',{class:['vs-card',active?'active':'',shown?'shown':''],role:'listitem',dataset:{card:id}},b);
   }
-  const tile=(ic,caption,kind='')=>h('span',{class:'vs-thumb-media'},h('span',{class:['vs-thumb-tile',kind]},icon(ic)),h('span',{class:'vs-thumb-cap',text:caption}));
+  // A tile (no picture): the icon and its caption together in the part of the card above the name.
+  const tile=(ic,caption,kind='')=>h('span',{class:'vs-thumb-media'},h('span',{class:['vs-thumb-tile',kind]},icon(ic),h('span',{class:'vs-thumb-cap',text:caption})));
   // While a newer revision renders, the previous picture of this project stays (it is real, and says it is updating).
   function thumbMedia(fid){
     const url=THUMBS.get(`${projectId}:${saved?.revision}:${fid}`),older=THUMBS.get(`${projectId}:latest:${fid}`);
+    // The strip's note says the pictures are rendered from this project; a card says so itself only while it updates.
     if(url||url!==''&&older)return h('span',{class:'vs-thumb-media',dataset:{thumb:fid}},h('img',{src:url||older,alt:`${familyName(fid)}, rendered from this project`}),
-      h('span',{class:'vs-thumb-cap',text:url?'Rendered from this project':'Rendered from this project · updating'}));
+      url?null:h('span',{class:'vs-thumb-cap',text:'Updating…',title:'A newer revision is rendering: this is the previous picture of this project'}));
     const el=tile('visual',url===''?'No thumbnail on this device':'Rendering from this project…');el.dataset.thumb=fid;return el;
   }
   function renderLiving(){
     const s=saved;if(!s){cards.append(h('p',{class:'faint small vs-cards-empty',text:'Loading the identity…'}));return;}
     const previewFam=hasIdentity(draft)?candidate?.family:null,eff=savedWorld();
     const top=s.familyScores?Object.entries(s.familyScores).sort((a,b)=>b[1]-a[1])[0]?.[0]:null;
-    note(eff==='living'?'':`This project's stage is ${WORLD_NAMES[eff]}: choosing a world shows the living world for the preview.`);
+    if(eff==='living')note('Rendered from this project; Apply saves the choice.','Rendered from this project.');
+    else note(`This project's stage is ${WORLD_NAMES[eff]}: choosing a world shows the living world for the preview.`,`This project's stage is ${WORLD_NAMES[eff]}.`);
     browserActions.append(button({label:'Visual Packs',icon:'packs',size:'sm',kind:'ghost',onClick:()=>navigate('packs')}));
     for(const f of FAMILIES){
       const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),
+      cards.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
         match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
     }
@@ -644,7 +747,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   }
   function renderClassic(){
     const eff=savedWorld(),src=S.effective().sources?.world;
-    note('Earlier stages, kept for comparison. They do not use the World DNA.');
+    note('Earlier stages, kept for comparison; no World DNA.','Earlier stages; no World DNA.');
     // A project's own stage choice is the only way out of the global default; this is the way back in.
     if(src==='project'){const g=S.state.settings?.stage?.world||'living';
       browserActions.append(button({label:`Use the global default (${WORLD_NAMES[g]})`,size:'sm',kind:'ghost',id:'vsWorldGlobal',disabled:pending(),
@@ -660,14 +763,14 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if((S.state.ui.visualTab||'living')!=='presets')return;
     clear(cards);clear(browserActions);
     const list=(S.state.presets?.presets||[]).filter(p=>p.kind==='visual');
-    note('Reusable on every project. Previewing one changes nothing until you apply it.');
+    note('For every project; a preview changes nothing until Apply.','For every project.');
     const saveBtn=button({label:'Save as preset',icon:'save',size:'sm',id:'vsSavePreset',disabled:!saved||pending(),title:pending()?'Apply or cancel the preview first: a preset records the saved identity':'Save this project\'s saved identity as a reusable preset',onClick:()=>savePresetDialog()});
     browserActions.append(saveBtn);
     const presetCard=(p,curated)=>{
       const x=p.payload||{},n=Object.keys(x.tuning||{}).length,err=presetErrors.get(p.id),prev=presetPreview===p.id;
       const summary=[x.family?familyName(x.family):'Automatic family',x.look?(packOf(x.look)?.name||x.look):null,n?count(n,'parameter'):null,x.overrides?.intensity!==undefined&&x.overrides.intensity!==1?`Spectacle ${pct(x.overrides.intensity)}`:null].filter(Boolean).join(' · ');
       cards.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
-        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line}):null)),
+        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary,title:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line}):null)),
         err?h('div',{class:'vs-error small',text:err}):null,
         h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):curated?pill('Curated','plain',{plain:true,title:'Built in and read-only: preview it, then apply or save your own'}):null,h('span',{class:'grow'}),
           button({label:'Preview',size:'sm',kind:'outline',icon:'eye',attrs:{'aria-label':`Preview the preset ${p.name}`},onClick:()=>previewPreset(p)}),
@@ -678,6 +781,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!S.state.presets){cards.append(h('p',{class:'faint small vs-cards-empty',text:S.state.errors?.presets?`Presets could not be loaded: ${S.state.errors.presets}`:'Loading presets…'}));return;}
     if(!list.length){cards.append(h('div',{class:'vs-cards-empty'},h('p',{class:'small muted',text:'No saved presets yet. Save the identity you like as a preset to reuse it on other projects.'})));return;}
     for(const p of list)presetCard(p,false);
+    fadeCards();
   }
   function renderAll(){
     if(!alive)return;

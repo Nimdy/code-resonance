@@ -135,7 +135,11 @@ function updateShell(topics){
 }
 function setBadge(ws,n){const a=nav.querySelector(`[data-ws="${ws}"]`);if(!a)return;let b=a.querySelector('.badge');if(!n){b?.remove();return;}if(!b){b=h('span',{class:'badge'});a.append(b);}text(b,n);b.title=`${n} awaiting approval`;}
 let seenNotice=0;
-function showNotices(){for(const n of P.state.notices){if(n.id<=seenNotice)continue;seenNotice=n.id;toast(n.text,n.kind==='error'?'error':n.kind==='warning'?'warning':'info');}}
+// A notice may offer an action (e.g. the degraded-rendering notice offers Monolith for this session); it stays a while
+// longer so the offer can be taken.
+function showNotices(){for(const n of P.state.notices){if(n.id<=seenNotice)continue;seenNotice=n.id;
+  const kind=n.kind==='error'?'error':n.kind==='warning'?'warning':'info';
+  toast(n.text,kind,n.action?.world?{timeout:15000,action:{label:n.action.label,onClick:()=>P.setWorld(n.action.world)}}:{});}}
 // ---- Rendering a route ---------------------------------------------------------------------------------------------
 let token=0;
 async function render(){
