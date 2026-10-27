@@ -4,6 +4,8 @@ data/
 *.vsix
 *.webm
 *.mp4
+# The README's demo reel (cut from the review films; the films themselves stay local and ignored)
+!docs/media/*.mp4
 *.zip
 *.log
 .DS_Store
