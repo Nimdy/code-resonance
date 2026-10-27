@@ -109,7 +109,7 @@ export function createFamily(ctx){
       for(const id of new Set(ids))recent.set(id,(recent.get(id)||0)+Math.exp(-age/2.5)*(.3+.2*c.tier));}
     const lasting=new Map();for(const l of ctx.director.lasting()){if(l.type!=='milestone.achieved')continue;const s=l.subject||{};
       for(const id of new Set([s.groupId,...(s.fileIds||[]).map(f=>subOfModule(f)?.id)].filter(Boolean)))lasting.set(id,(lasting.get(id)||0)+l.count);}
-    BASE.copy(FU.uLine.value).multiplyScalar(1.6);
+    BASE.copy(FU.uLine.value).multiplyScalar(2.2);
     for(let m=0;m<MARKS;m++){const s=subList[m],M=FU.uMarks.value[m],Cc=FU.uMarkC.value[m];if(!s){M.w=0;continue;}
       let st=0,ok=0;for(const x of s.members){const state=model.stateAt(x,i.t);if(state==='stressed')st++;else if(state==='validated')ok++;}
       const age=(i.t-s.born)/ctx.speed()/1000,grow=Number.isFinite(age)?smooth(age/2.5):1;
@@ -127,15 +127,17 @@ export function createFamily(ctx){
     agentMat.uniforms.uPx.value=2*Math.tan(camera.fov*Math.PI/360)/1080;}
   function background(){return sky;}
   // ---- Camera: a slow orbit about the canvas, a little above the floor; verified moments draw it closer ---------------
+  // The lens looks almost level, so the horizon sits near the middle of the frame: the sky (an aurora, a nebula) and
+  // the floor's marks share the image.
   const az0=rand(seed+3)*Math.PI*2;
   function cameraGoal(i){
     const motion=i.overrides?.motion??1,orbit=clamp(Number(cfg.orbit??DEFAULTS.orbit)),dist=clamp(Number(cfg.distance??DEFAULTS.distance),.5,2);
-    const target=new THREE.Vector3(0,extent*.2,0);let distance=Math.max(9,extent*2.5)*dist,az=az0+i.tview*orbit*Math.PI*2/120*motion,el=.26+.04*Math.sin(i.tview/53);
+    const target=new THREE.Vector3(0,extent*.24,0);let distance=Math.max(9,extent*2.4)*dist,az=az0+i.tview*orbit*Math.PI*2/120*motion,el=.1+.03*Math.sin(i.tview/53);
     distance*=1+.025*Math.sin(i.tview/41)*motion;
     const att=ctx.director.attentionAt(i.t,3),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;
     if(att&&since<12){const s=subjectOf(att);if(s){const k2=smooth(since/1.5)*(1-smooth((since-7)/5))*clamp((i.overrides?.intensity??1)+.3,.3,1);target.lerp(s.pos,.35*k2);distance=lerp(distance,distance*.82,k2);}}
     else{const busy=i.agents.find(a=>a.busy&&a.fileId&&subOfModule(a.fileId));if(busy)target.lerp(markPos(subOfModule(busy.fileId)),.12);}
-    return {target,distance,azimuth:az,elevation:el,fov:38,omega:.5};
+    return {target,distance,azimuth:az,elevation:el,fov:40,omega:.5};
   }
   function subjectOf(c){const s=c.subject||{};let list=[];
     if(s.groupId&&subs.has(s.groupId))list.push(subs.get(s.groupId));for(const id of [s.fileId,s.targetId,...(s.fileIds||[])])if(id){const x=subOfModule(id);if(x)list.push(x);}

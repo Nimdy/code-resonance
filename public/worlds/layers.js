@@ -66,7 +66,9 @@ export function createLayers({THREE,scene,camera,quality=()=>0,seed=0,film=false
       case 'largest':if(A.subs.length){const s=A.subs[l.anchor.index%A.subs.length];return [at(l.type==='fractal'&&s.b?s.b:s.p,s.r)];}break;
       case 'active':return [at(ground(active||c),E*.18)];
       case 'nodes':if(A.nodes.length){const n=A.nodes.length,m=Math.min(max,n);return Array.from({length:m},(_,k)=>at(A.nodes[Math.floor(k*n/m)],E*.07));}break;
-      case 'boundary':{const B=A.boundary;if(RING_TYPES.has(l.type))return [at({x:c.x,y:B.y,z:c.z},B.radius)];
+      // Around the boundary: one great site encircling the world at mid-height (rings, a volume, a current), or eight
+      // points on its edge at floor level.
+      case 'boundary':{const B=A.boundary;if(RING_TYPES.has(l.type))return [at({x:c.x,y:c.y,z:c.z},B.radius)];
         return Array.from({length:8},(_,k)=>{const a=k/8*Math.PI*2;return at({x:c.x+Math.cos(a)*B.radius,y:B.y,z:c.z+Math.sin(a)*B.radius},E*.12);});}
       case 'camera':{camera.getWorldDirection(fwd);const D=E*.35,h=D*Math.tan((camera.fov||36)*Math.PI/360);
         return [at({x:camera.position.x+fwd.x*D,y:camera.position.y+fwd.y*D,z:camera.position.z+fwd.z*D},h*.9)];}
