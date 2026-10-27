@@ -113,16 +113,19 @@
 .ws-artist .ar-comp-note{line-height:1.45;margin-top:2px}
 .ws-artist .ar-foot{flex:none;display:flex;align-items:center;gap:6px;height:var(--ar-foot);min-width:0}
 .ws-artist .ar-foot .grow{flex:1;min-width:8px}
-.ws-artist .ar-budget{display:grid;gap:4px;width:206px;flex:none}
+.ws-artist .ar-budget{display:grid;gap:4px;min-width:118px;flex:none}
 .ws-artist .ar-budget-bar{height:5px;border-radius:5px;background:var(--bg-4);overflow:hidden}
 .ws-artist .ar-budget-bar i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,var(--ok),var(--accent));transition:width var(--t-2) var(--ease)}
 .ws-artist .ar-budget.warn .ar-budget-bar i{background:linear-gradient(90deg,var(--accent),var(--warn))}
 .ws-artist .ar-budget-text{color:var(--text-3);white-space:nowrap}
-.ws-artist .ar-status{min-width:0;flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:10px;border-left:1px solid var(--line-2)}
+.ws-artist .ar-status{min-width:0;flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:10px;margin-left:4px;border-left:1px solid var(--line-2)}
 .ws-artist .ar-foot-more{display:flex;gap:2px;flex:none}
 .ws-artist .ar-foot #arSave.pending{border-color:var(--accent-line);color:var(--accent)}
 .ws-artist .ar-foot #arApply{height:34px}
-@container ar-main (max-width:1060px){.ws-artist .ar-foot-more .btn span{display:none}.ws-artist .ar-foot-more .btn{width:28px;padding:0}.ws-artist .ar-budget{width:150px}}
+/* The 1920×1080 desktop's centre column (about 1070 px) folds Versions and Duplicate to icons, so the budget, the
+   preview status and every action fit on one line, uncut; narrower, Export folds too. */
+@container ar-main (max-width:1280px){.ws-artist .ar-foot-more .btn:not(#arExport) span{display:none}.ws-artist .ar-foot-more .btn:not(#arExport){width:30px;padding:0}}
+@container ar-main (max-width:1000px){.ws-artist .ar-foot-more .btn span{display:none}.ws-artist .ar-foot-more .btn{width:30px;padding:0}}
 @container ar-main (max-width:860px){.ws-artist .ar-strip{grid-template-columns:1fr}.ws-artist .ar-status{display:none}}
 /* ---- Right: the selected layer ---- */
 .ws-artist .ar-insp{min-width:0}

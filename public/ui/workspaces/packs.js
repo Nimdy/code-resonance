@@ -311,7 +311,7 @@ export default {mount(view,{store,player:P,navigate,params}){
       body:h('div',{class:'pk-confirm'},h('p',{text:'Its layers, finish and music profile become part of this project\u2019s identity. The project keeps its own structure, events and digital life, so the same creation looks different on each project.'}),
         h('p',{class:'faint',text:'The Artist Studio can change it later; applying another composition replaces it.'}))}))return;
     try{await P.recipeAction([{type:'composition',composition:c}],{ifRevision:P.state.recipe?.revision});await applyMusicOf(store,c).catch(()=>{});
-      toast(`${label} is applied to ${projectName(pr)}.`,'ok');}
+      toast(`${label} is applied to ${projectName(pr)}.`,'ok');void P.reloadPacks();}
     catch(e){toast(e.code==='stale'?'The identity changed in another window: try again to apply it on the new version.':`Not applied: ${e.message}`,e.code==='stale'?'warning':'error');}
   }
   const useCreation=p=>applyComposition(p.composition,p.name);

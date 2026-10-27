@@ -315,9 +315,12 @@ const SKY_FS=ATMO_COMMON+`uniform float uVeil;varying vec3 vDir;varying vec2 vUv
 vec3 sky(vec3 d){float e=d.y,t=uClock*.05,n=vfbm(d*2.2*uScaleN+vec3(t,t*.4,-t),int(uOct));vec3 c;float I;
   float lobe=pow(max(0.,dot(d,uAnchor)),6.)*.35;
   if(uStyle<.5){float h0=(uHeight-.35)*.7;I=exp(-abs(e-h0)*(3.5-1.5*uNoise))*mix(1.,.45+.9*n,uNoise)+lobe;c=mix(uColor,uColorB,smoothstep(-.15,.55,e-h0+n*.25*uNoise));}
-  else if(uStyle<1.5){float ph=atan(d.z,d.x),e0=.04+uHeight*.32+.06*vfbm(vec3(ph*1.3,t*2.,1.),2);
+  else if(uStyle<1.5){
+    // Noise around the horizon is sampled on the circle of directions (a), never on the angle itself: the angle jumps
+    // from π to -π behind the canvas's orbiting camera, which drew a hard vertical seam through the curtain.
+    float ph=atan(d.z,d.x);vec2 a=normalize(d.xz+vec2(1e-5,0.));float e0=.04+uHeight*.32+.06*vfbm(vec3(a*1.3,t*2.+1.),2);
     float cur=smoothstep(e0-.02,e0+.012,e)*exp(-max(0.,e-e0)*(3.2+2.*(1.-uHeight)));
-    float fold=.45+.55*sin(ph*3.+vfbm(vec3(ph*2.,t*1.5,3.),2)*5.+t*4.),stri=mix(1.,.45+.8*vfbm(vec3(ph*22.,e*3.,t*3.),2),uNoise);
+    float fold=.45+.55*sin(ph*3.+vfbm(vec3(a*2.,t*1.5+3.),2)*5.+t*4.),stri=mix(1.,.45+.8*vfbm(vec3(a.x*22.+t*3.,a.y*22.,e*3.),2),uNoise);
     I=cur*max(0.,fold)*stri*1.6+lobe*.4;c=mix(uColor,uColorB,smoothstep(e0,e0+.3,e));}
   else if(uStyle<2.5){float m=smoothstep(-.25+uHeight*.3,.95,e);I=.55+lobe*1.4+(n-.5)*.3*uNoise;c=mix(uColor,uColorB,m);}
   else{vec3 q=d*2.6*uScaleN;float w=vfbm(q+vec3(t),2);float k=vfbm(q+w*1.6*uNoise+vec3(-t,t,0.),int(uOct)),dark=smoothstep(.45,.75,vfbm(q*2.1+7.,2));

@@ -101,8 +101,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const strip=h('div',{class:'ar-strip'},maps,comp);
   const meter=h('div',{class:'ar-budget',role:'meter','aria-label':'Rendering budget','aria-valuemin':'0','aria-valuemax':'100'},h('div',{class:'ar-budget-bar'},h('i')),h('span',{class:'ar-budget-text tiny num'}));
   const status=h('div',{class:'ar-status small',role:'status','aria-live':'polite'});
-  const revertBtn=button({label:'Versions',icon:'history',size:'sm',kind:'ghost',id:'arRevert',title:'Bring back one of the last five saved versions',onClick:()=>openVersions(revertBtn)});
-  const dupBtn=button({label:'Duplicate',icon:'copy',size:'sm',kind:'ghost',id:'arDuplicate',onClick:()=>duplicate()});
+  // Versions and Duplicate keep their names when the footer folds them to icons (a narrower centre column).
+  const revertBtn=button({label:'Versions',icon:'history',size:'sm',kind:'ghost',id:'arRevert',title:'Versions: bring back one of the last five saved versions',attrs:{'aria-label':'Versions'},onClick:()=>openVersions(revertBtn)});
+  const dupBtn=button({label:'Duplicate',icon:'copy',size:'sm',kind:'ghost',id:'arDuplicate',title:'Duplicate: a copy in My creations',attrs:{'aria-label':'Duplicate'},onClick:()=>duplicate()});
   const exportBtn=button({label:'Export',icon:'download',size:'sm',kind:'ghost',id:'arExport',title:'A data-only pack another Code Resonance can import',onClick:()=>openExport()});
   const saveAsBtn=button({label:'Save as…',size:'sm',kind:'outline',id:'arSaveAs',onClick:()=>saveAs()});
   const cancelBtn=button({label:'Cancel',size:'sm',kind:'ghost',id:'arCancel',title:'Discard the unsaved changes and show the project’s saved look',onClick:()=>cancel()});
@@ -580,6 +581,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   }
   // ---- Mappings: what the selected layer (or the whole composition) reacts to ----------------------------------------
   let sayEls=[];
+  // The mapping rows whose response settings are open (layer|index): a row rebuilt by its own change (a new curve, a new
+  // signal) keeps them open under the hand.
+  const advOpen=new Set();
   const scopeMappings=d=>session.selected==='@base'?d.mappings:layerOf(d,session.selected)?.mappings||null;
   const scopeTargets=()=>session.selected==='@base'?C.GLOBAL_TARGETS:C.targetsOf(selectedLayer()?.type)||[];
   function renderMappings(){
@@ -618,11 +622,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const smooth=slider({min:0,max:4,step:.1,value:m.smoothing,label:'Smoothing (seconds)',format:v=>`${Number(v).toFixed(1)} s`,onChange:v=>set({smoothing:v})});
     const lo=slider({min:0,max:1,step:.05,value:m.min,label:'Lowest',format:v=>`${Math.round(v*100)} %`,onChange:v=>set({min:Math.min(v,cur().max)})});
     const hi=slider({min:0,max:1,step:.05,value:m.max,label:'Highest',format:v=>`${Math.round(v*100)} %`,onChange:v=>set({max:Math.max(v,cur().min)})});
-    const adv=h('div',{class:'ar-map-adv',hidden:true},h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Curve'}),curve),
+    const key=`${session.selected}|${i}`,open=advOpen.has(key);
+    const adv=h('div',{class:'ar-map-adv',hidden:!open},h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Curve'}),curve),
       h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Smoothing'}),smooth),h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Range'}),lo,hi));
-    const more=button({icon:'sliders',kind:'ghost',size:'sm',pressed:false,title:'Response: curve, smoothing and range',attrs:{'aria-label':'Response settings','aria-expanded':'false'},
-      onClick:()=>{adv.hidden=!adv.hidden;more.setAttribute('aria-pressed',String(!adv.hidden));more.setAttribute('aria-expanded',String(!adv.hidden));}});
-    const del=button({icon:'close',kind:'ghost',size:'sm',title:'Remove the mapping',attrs:{'aria-label':'Remove the mapping'},onClick:()=>{edit(d=>{scopeMappings(d)?.splice(i,1);});mapSig='';renderMappings();renderStack();}});
+    const more=button({icon:'sliders',kind:'ghost',size:'sm',pressed:open,title:'Response: curve, smoothing and range',attrs:{'aria-label':'Response settings','aria-expanded':String(open)},
+      onClick:()=>{adv.hidden=!adv.hidden;if(adv.hidden)advOpen.delete(key);else advOpen.add(key);more.setAttribute('aria-pressed',String(!adv.hidden));more.setAttribute('aria-expanded',String(!adv.hidden));}});
+    const del=button({icon:'close',kind:'ghost',size:'sm',title:'Remove the mapping',attrs:{'aria-label':'Remove the mapping'},onClick:()=>{
+      for(const k of [...advOpen])if(k.startsWith(`${session.selected}|`))advOpen.delete(k);edit(d=>{scopeMappings(d)?.splice(i,1);});mapSig='';renderMappings();renderStack();}});
     const say=h('span',{text:W.mappingSentence(m)}),resp=h('span',{class:'tiny faint',text:W.responseLine(m)});
     sayEls[i]={say,resp};
     return h('div',{class:['ar-map',m.signal.split('.')[0]]},h('div',{class:'ar-map-row'},sig,h('span',{class:'ar-map-arrow','aria-hidden':'true',text:'→'}),tgt,h('div',{class:'ar-map-amount'},amount),more,del),
@@ -683,8 +689,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderFoot(){
     const w=session.work,b=w?C.budgetOf(w):null,used=b?.used||0,pct=Math.min(100,used/(C?.LIMITS.budget||100)*100);
     meter.setAttribute('aria-valuenow',String(Math.round(used)));meter.classList.toggle('warn',pct>80);meter.querySelector('i').style.width=`${pct}%`;
-    text(meter.querySelector('.ar-budget-text'),w?`Budget ${Math.round(used)} / ${C.LIMITS.budget} · ${b.layers} of ${b.maxLayers} layers`:'Budget');
-    meter.title='What the enabled layers cost to draw. The quality setting lowers counts on a slower machine; the budget keeps every composition within reach.';
+    // The layer count is in the Layers header: the footer keeps the budget short, so the preview status has room.
+    text(meter.querySelector('.ar-budget-text'),w?`Budget ${Math.round(used)} / ${C.LIMITS.budget}`:'Budget');meter.setAttribute('aria-valuetext',w?`${Math.round(used)} of ${C.LIMITS.budget}, ${b.layers} of ${b.maxLayers} layers`:'Nothing open');
+    meter.title=`${w?`${Math.round(used)} of ${C.LIMITS.budget} · ${b.layers} of ${b.maxLayers} layers. `:''}What the enabled layers cost to draw. The quality setting lowers counts on a slower machine; the budget keeps every composition within reach.`;
     clear(status);
     const id=S.state.selected;
     if(!w)status.append(h('span',{class:'faint',text:'Nothing open'}));
