@@ -1,12 +1,13 @@
-# Visual Pack SDK 1 (current: 1.1)
+# Visual Pack SDK 1 (current: 1.2)
 
 Make your own Code Resonance visuals without touching Code Resonance. A visual pack is a folder with a `pack.json`
-manifest; you install it locally with `scripts/pack.js` and choose it in the player's World DNA panel. Nothing is
-downloaded or published: there is no marketplace.
+manifest; you install it locally in **Visual Packs** (a `.zip` or a folder) or with `scripts/pack.js`, and choose it in
+the **Visual Studio**. Nothing is downloaded or published: there is no marketplace.
 
 | Kind | What you write | Runs | Needs approval |
 |---|---|---|---|
 | **declarative** | JSON only: parameters, palette, light, rendering technique and effect mapping for an existing family | in the player, inside the built-in world it tunes | no |
+| **creation** (declarative, SDK 1.2) | nothing by hand: the Artist Studio's *Export* writes it, an Artist Studio composition as data ([manifest](manifest.md)) | in the player, by the built-in layer runtime | no |
 | **shader** | GLSL for a background and up to four post passes, an optional procedural effects module, on a built-in family | in a worker inside the isolated pack frame | yes |
 | **world** | a complete world family: a JavaScript module implementing the [World API](world-api.md), plus GLSL and textures | in a worker inside the isolated pack frame | yes |
 
@@ -43,9 +44,10 @@ node scripts/pack.js install my-world
 node scripts/pack.js approve yourname.my-world   # code packs only: shows the files, digest and the isolation limits
 ```
 
-Then open the player, choose **MY WORLD · PACK** under the world family (world packs) or under the look selector
-(declarative and shader packs). `node scripts/pack.js list`, `revoke <id>` and `remove <id>` manage what is installed.
-`--data <dir>` selects another receiver data directory.
+Or import the folder (or a `.zip` of it) in **Visual Packs**, review it and, for a code pack, allow its exact files
+there. Then choose it in the **Visual Studio**: a world pack among the living worlds, a declarative or shader pack as
+the *Look pack* of the family it tunes. `node scripts/pack.js list`, `revoke <id>` and `remove <id>` (or Visual Packs)
+manage what is installed. `--data <dir>` selects another receiver data directory.
 
 ## What your world receives
 
@@ -73,7 +75,8 @@ timings. Never file names, paths, source, prompts, the project's folder name, cr
 - [Security](security.md): isolation, approvals, what the browser cannot sandbox.
 - [Performance](performance.md): budgets, adaptive quality, what the tests measure.
 - [Parameter catalogue](catalogue.md): what declarative packs may set on the built-in families.
-- [SDK 1.1](migration.md): what changed from 1.0 (code runs in a worker), and how to migrate.
+- [SDK 1.2 and 1.1](migration.md): what changed from 1.0 (code runs in a worker) and in 1.2 (creations, finishes), and
+  how to migrate.
 
 ## Compatibility tests
 
@@ -88,5 +91,5 @@ release when the world is switched away and back four times; and the performance
 report is written to `qualification/results/visual/pack-<id>.json`. `--quick` runs a shorter version (the session at
 2 fps and 640×360, 45 s of idle, two switches, no determinism pair, performance at 1280×720): what CI runs for the reference packs.
 
-Live recording (the player's RECORD button) works for every kind of pack with nothing to do on your side: the worker
+Live recording (**Record**) works for every kind of pack with nothing to do on your side: the worker
 composites your world and its labels into each acknowledged frame, and the player records those frames with the music.

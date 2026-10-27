@@ -2,10 +2,12 @@
 
 ## Using it
 
-**● RECORD** in the player records what the stage shows (the world and its labels, for every world and every kind of
-visual pack) together with the music, to a WebM file (VP9 video, Opus sound) that downloads when you stop.
+**Record** (in the top bar, on the Stage, or in **Record & Broadcast**) records what the stage shows (the world and its
+labels, for every world and every kind of visual pack) together with the music, to a WebM file (VP9 video, Opus sound)
+that downloads when you stop. One window records at a time.
 
-**Recording size** (next to the button): *720p* (1280×720, the default), *1080p* (1920×1080) or *Stage size*. At 720p
+**Recording profile** (Record & Broadcast; the global default in Settings): *720p* (1280×720, the default), *1080p*
+(1920×1080) or *Stage size*. At 720p
 or 1080p the world renders at exactly that size with a 16:9 camera (the living worlds, visual packs and the
 Construct), and the stage shows the same picture letterboxed while you record: what you see is what is recorded,
 nothing is stretched, cut or bordered in the file. The 2D worlds (Nexus, Monolith, Nebula) keep the stage's shape and

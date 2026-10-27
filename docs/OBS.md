@@ -2,8 +2,8 @@
 
 ## Set up
 
-1. Start the receiver and open the player; choose the project, world and look you want.
-2. **OBS VIEW ↗** opens the overlay URL, for example
+1. Start the receiver and open the Control Center; choose the project, and its world and look in the Visual Studio.
+2. **Record & Broadcast › OBS** builds the overlay URL with its options, for example
    `http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient`.
 3. In OBS: **Sources → + → Browser**. URL: the overlay URL. Width 1920, height 1080, FPS 30 or 60 (custom frame rate).
    Tick **Control audio via OBS** (the music then appears in OBS's mixer and in recordings and streams).
@@ -20,8 +20,8 @@ Run on the machine and OBS version you will stream with; record the answers.
 | 2 | Watch OBS's audio mixer | the source's meter moves with the music |
 | 3 | Make an edit and save in VS Code | about 10 s later the stage and the music react |
 | 4 | **Start Recording** in OBS for 60 s, stop, play the file | picture and music present, in step, no stutter |
-| 5 | Switch the world in the player's World DNA (normal browser tab), reload the source | the overlay shows the new world |
-| 6 | Choose an approved visual pack, reload the source | it renders in OBS (a pack with code needs its approval first, in the normal player) |
+| 5 | Switch the world in the Visual Studio (a normal browser tab), reload the source | the overlay shows the new world |
+| 6 | Choose an approved visual pack in the Visual Studio, reload the source | it renders in OBS (a pack with code needs its approval first, in Visual Packs) |
 | 7 | Look at every visible label for 2 minutes | no file names, paths, folder name, prompts or commands |
 | 8 | Leave it running 30 minutes | still moving and sounding; OBS's stats show no growing frame drops |
 
