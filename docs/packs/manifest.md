@@ -14,7 +14,7 @@ the base family's [catalogue](catalogue.md), effect polarity, referenced files, 
 | `version` | `major.minor.patch` |
 | `kind` | `declarative`, `shader` or `world`, with the matching section and no other |
 | `sdk` | `"^1.N"`: needs SDK 1.N or a later 1.x |
-| `author` | `{name, url?}` (https only); shown in the player's pack list and approval dialog |
+| `author` | `{name, url?}` (https only); shown in Visual Packs (the library, the inspector and the approval review) |
 | `description`, `license` | up to 280 characters; an SPDX-like identifier |
 
 ## `declarative`
