@@ -247,6 +247,7 @@
    * Everything stays a pure function of (seed, bar, style, profile, conducted state): live, replay, offline WAV and the
    * life driver agree. expression() exposes the same decisions to the visuals without generating notes. */
   const LATEST_VERSION=3,SCORE_VERSIONS=[2,3];
+  const HELD=new Set(['pad','air','bass','breath','swell','wash']),MAX_HELD=16;
   const PASSAGE_BARS=8,PHRASE_BARS=4,ARC_BARS=96;
   const PROFILE={mood:.5,evolution:.5,melody:.5,rhythm:.5,atmosphere:.5,harmony:.5,dynamics:.5,space:.5};
   const GROUPS=['pad','bass','melody','counter','arp','perc','atmos'];
@@ -430,7 +431,7 @@
     }
   }
   // Dynamics per section role in dB: [at its start, at its end]. The dynamics control scales the contrast.
-  const DYN={statement:[-2.5,-1],development:[-4.5,0],interlude:[-7,-6],return:[-.5,-1.5],release:[-3,-10],tension:[-3,-.5],resolve:[-1,-3]};
+  const DYN={statement:[-2.5,-1],development:[-4.5,0],interlude:[-5,-4],return:[-.5,-1.5],release:[-3,-10],tension:[-3,-.5],resolve:[-1,-3]};
   function levelAt(role,plan,step,pf){
     const [a,b]=DYN[role]||DYN.statement,t=(plan.barInSection+step/16)/plan.sectionBars,depth=.3+1.1*pf.dynamics;
     const arch=Math.sin(Math.PI*(plan.barInPhrase+step/16)/PHRASE_BARS)*1.4*pf.dynamics;
@@ -471,8 +472,10 @@
     const s=barState({...opts,style}),{pf,x,plan,role,orch,bars,chord,closing}=s,id=x.id,e=s.e;
     const steps=Array.from({length:16},()=>[]),r=rng(hash(`${seed}/v3/${barIndex}/${style}`));
     const stepSec=60/((Number(tempo)||id.tempo[style]||92)*4),human=()=>.92+r()*.16;
+    // Held voices (pads, the shimmer, a pedal bass, breath, swells, washes) may sustain a whole slow chord: an interlude
+    // holds a chord for four bars, and a note cut at 5 s left the music silent for seconds inside it.
     const add=(step,instrument,group,midi,velocity,duration,extra={})=>{step=Math.round(step);if(step<0||step>15||!(velocity>0))return;
-      steps[step].push({instrument,group,midi:fold(midi),velocity:clamp(velocity*levelAt(role,plan,step,pf),0,1),duration:clamp(duration,.025,5),...extra});};
+      steps[step].push({instrument,group,midi:fold(midi),velocity:clamp(velocity*levelAt(role,plan,step,pf),0,1),duration:clamp(duration,.025,HELD.has(instrument)?MAX_HELD:5),...extra});};
     const b=plan.barInPassage,nextChord=bars[b+1]??bars[0],chordStart=b===0||bars[b-1]!==chord,chordBars=bars.slice(b).findIndex(c=>c!==chord);
     const holdBars=chordBars<0?bars.length-b:chordBars,after=chordBars<0?(closing?0:null):bars[b+chordBars];
     const cadential=chord===4&&after===0;

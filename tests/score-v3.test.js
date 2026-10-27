@@ -20,7 +20,7 @@ test('Score v3 is deterministic, stays in the key outside tension and within saf
     for(const bar of bars({seed,style,profile:{harmony:1,evolution:1,melody:1,rhythm:1,atmosphere:1}},192)){
       assert.equal(bar.scoreVersion,3);assert.equal(bar.steps.length,16);
       for(const e of bar.steps.flat()){
-        assert(Number.isInteger(e.midi)&&e.midi>=25&&e.midi<=105);assert(e.velocity>=0&&e.velocity<=1);assert(e.duration>=.025&&e.duration<=5);
+        assert(Number.isInteger(e.midi)&&e.midi>=25&&e.midi<=105);assert(e.velocity>=0&&e.velocity<=1);assert(e.duration>=.025&&e.duration<=(['pad','air','bass','breath','swell','wash'].includes(e.instrument)?16:5),`${e.instrument} ${e.duration}`);
         assert(S.GROUPS.includes(e.group),e.instrument);
         if(!PERC.has(e.instrument))assert(pcs.has(e.midi%12),`${style} seed ${seed} bar ${bar.barIndex} ${e.instrument} ${e.midi}`);
       }
@@ -78,4 +78,12 @@ test('Expression is pure, matches the bar it describes, and the conductor reacts
   assert.equal(S.conductAt({seed:7,barIndex:104,frameAt:frames}).lift,false);
   assert.equal(S.milestoneOf({milestones:['validation.test.failed']}),false);
   assert.equal(S.milestoneOf({milestones:['validation.test.passed']}),true);
+});
+test('A held chord is held: the harmony sounds through every bar of a slow interlude (no seconds of silence inside a chord)',()=>{
+  for(const style of S.STYLES)for(let b=0;b<S.ARC_BARS*2;b++){const p=S.planAt(4242,b,.5);if(p.role!=='interlude'||p.barInPassage!==0)continue;
+    const tempo=S.createIdentity(4242).tempo[style],bar=60/(tempo*4)*16;let covered=0;
+    for(let k=0;k<8;k++){const x=S.createBar({scoreVersion:3,seed:4242,chapter:8,energy:.2,style,barIndex:b+k});
+      for(const [i,step] of x.steps.entries())for(const e of step)if(e.group==='pad')covered=Math.max(covered,k*bar+i*bar/16+e.duration);
+      assert(covered>=(k+1)*bar-.05,`${style} bar ${b+k}: the pads stop ${((k+1)*bar-covered).toFixed(1)} s before the bar ends`);}
+    return;}
 });
