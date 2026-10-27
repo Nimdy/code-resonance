@@ -233,7 +233,8 @@ export default {mount(view,{store,player:P,navigate,params}){
     else if(p.executable&&p.trusted)body.append(h('div',{class:'pk-approved'},icon('shield-check'),h('div',{},h('strong',{text:'Approved for these exact files'}),
       h('p',{class:'faint small'},'Bound to digest ',h('code',{title:p.digest||'',text:short(p.digest)}),': a change to any file withdraws it.'))));
     if(p.description)body.append(h('p',{class:'pk-desc',text:p.description}));
-    const base=p.base?baseName(p.base):null,b=p.budget;
+    // A creation on the artist canvas travels on a built-in family (the manifest's base) but is drawn on the canvas.
+    const base=p.composition?(p.composition.base==='canvas'?'The artist canvas':baseName(p.composition.base)):p.base?baseName(p.base):null,b=p.budget;
     body.append(facts([['Author',author(p)],base?[p.kind==='world'?'Family':'Built on',base]:p.kind==='world'?['Family','Its own world']:null,
       ['SDK',sdkLine(p,c.sdk)],['Used by',p.usedBy?count(p.usedBy,'project'):'No project yet'],
       ['Installed',dateTime(p.installedAt)],['License',p.license||'Not stated'],
