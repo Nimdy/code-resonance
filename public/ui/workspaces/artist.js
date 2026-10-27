@@ -101,8 +101,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const strip=h('div',{class:'ar-strip'},maps,comp);
   const meter=h('div',{class:'ar-budget',role:'meter','aria-label':'Rendering budget','aria-valuemin':'0','aria-valuemax':'100'},h('div',{class:'ar-budget-bar'},h('i')),h('span',{class:'ar-budget-text tiny num'}));
   const status=h('div',{class:'ar-status small',role:'status','aria-live':'polite'});
-  const revertBtn=button({label:'Versions',icon:'history',size:'sm',kind:'ghost',id:'arRevert',title:'Bring back one of the last five saved versions',onClick:()=>openVersions(revertBtn)});
-  const dupBtn=button({label:'Duplicate',icon:'copy',size:'sm',kind:'ghost',id:'arDuplicate',onClick:()=>duplicate()});
+  // Versions and Duplicate keep their names when the footer folds them to icons (a narrower centre column).
+  const revertBtn=button({label:'Versions',icon:'history',size:'sm',kind:'ghost',id:'arRevert',title:'Versions: bring back one of the last five saved versions',attrs:{'aria-label':'Versions'},onClick:()=>openVersions(revertBtn)});
+  const dupBtn=button({label:'Duplicate',icon:'copy',size:'sm',kind:'ghost',id:'arDuplicate',title:'Duplicate: a copy in My creations',attrs:{'aria-label':'Duplicate'},onClick:()=>duplicate()});
   const exportBtn=button({label:'Export',icon:'download',size:'sm',kind:'ghost',id:'arExport',title:'A data-only pack another Code Resonance can import',onClick:()=>openExport()});
   const saveAsBtn=button({label:'Save as…',size:'sm',kind:'outline',id:'arSaveAs',onClick:()=>saveAs()});
   const cancelBtn=button({label:'Cancel',size:'sm',kind:'ghost',id:'arCancel',title:'Discard the unsaved changes and show the project’s saved look',onClick:()=>cancel()});
@@ -683,8 +684,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderFoot(){
     const w=session.work,b=w?C.budgetOf(w):null,used=b?.used||0,pct=Math.min(100,used/(C?.LIMITS.budget||100)*100);
     meter.setAttribute('aria-valuenow',String(Math.round(used)));meter.classList.toggle('warn',pct>80);meter.querySelector('i').style.width=`${pct}%`;
-    text(meter.querySelector('.ar-budget-text'),w?`Budget ${Math.round(used)} / ${C.LIMITS.budget} · ${b.layers} of ${b.maxLayers} layers`:'Budget');
-    meter.title='What the enabled layers cost to draw. The quality setting lowers counts on a slower machine; the budget keeps every composition within reach.';
+    // The layer count is in the Layers header: the footer keeps the budget short, so the preview status has room.
+    text(meter.querySelector('.ar-budget-text'),w?`Budget ${Math.round(used)} / ${C.LIMITS.budget}`:'Budget');meter.setAttribute('aria-valuetext',w?`${Math.round(used)} of ${C.LIMITS.budget}, ${b.layers} of ${b.maxLayers} layers`:'Nothing open');
+    meter.title=`${w?`${Math.round(used)} of ${C.LIMITS.budget} · ${b.layers} of ${b.maxLayers} layers. `:''}What the enabled layers cost to draw. The quality setting lowers counts on a slower machine; the budget keeps every composition within reach.`;
     clear(status);
     const id=S.state.selected;
     if(!w)status.append(h('span',{class:'faint',text:'Nothing open'}));
