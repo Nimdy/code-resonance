@@ -105,9 +105,37 @@ places an inhabitant.
   hub weights follow the music's attraction and attractor, and couriers may change course toward the favoured hubs.
 
 **Presentation** (§18, ecology 2 only, never writing the state): Biosphere lifts the light of the smaller gatherings so
-looking around is rewarded; Stellar draws fine tracers where dust streams and lets the stream glow follow the music's
-light; the Cathedral's lanterns keep a depth-aware floor with a softer core and the travelling ones cut through the fog
-a little more (no oversized neon dots); the life light follows `glow` in all three.
+looking around is rewarded; Stellar draws fine tracers where dust streams; the Cathedral's lanterns keep a depth-aware
+floor with a softer core and the travelling ones cut through the fog a little more (no oversized neon dots).
+
+**How the music shows** (`present.js` `musicLook`). Behaviour alone is too subtle at film scale (the inhabitants are
+small, the camera moves), so the relaxed conditions also drive the drawing: factors that are exactly 1 at the neutral
+conditions (music 0 draws exactly what it drew; ecology 1 never asks) and log-linear in them, so music 2 reads about
+twice as strongly as 1. `glow` is light only (no behaviour reads it), so its soft limit is wide and it relaxes over
+3.5 s: a passage's weather, never the beat.
+
+| Factor | From | Biosphere | Stellar Forge | Machine Cathedral |
+|---|---|---|---|---|
+| `light` (modest) | glow | the water's light: haze, caustics, light through the organisms, rays; a quiet passage dims it, a full one brightens the shafts (the deep water keeps its blacks) | the arms' gas | the architecture's light, and widest the city's glow in the low haze and on the horizon |
+| `life` (strong) | glow, gather | the light the life gives crowns, halos and floor (tension, which scatters the groups, dissolves it into sparks) | the gas along the streams | the routes' light on copings, channels, cables, wet floor |
+| `bright`, `size` | glow, activity, gather | pollinators fully, plankton and spores less, drifters least | motes flare, rubble less, dust follows its stream | lanterns |
+| `trail` | persist, activity, turbulence | orbit arcs, seekers' threads, spores' streaks, drifters' wakes | mote ribbons, rubble arcs, dust tracers | the comets' length and how long they stay bright |
+
+Measured on the lumen performance (1280x720, same camera, AMD; `qualification/visual/film.js --copy --tune
+'{"life.music":N}'`). The systematic part (each second's mean luma minus music 0's, standard deviation over the clip)
+before and after, at music 1 / 2; the frame-to-frame change stays as it was (no flicker) and music 0 renders the same
+frames:
+
+| Clip | Sections | Before | After |
+|---|---|---|---|
+| Biosphere 60-150 s (Film 2) | statement, tension, resolve, interlude | 0.87 / 1.67 | 2.45 / 5.30 |
+| Biosphere 100-145 s | tension, resolve, interlude | 0.91 / 1.80 | 2.54 / 5.57 |
+| Stellar Forge 125-170 s | resolve, interlude, return | 0.13 / 0.15 | 4.67 / 9.73 |
+| Machine Cathedral 150-195 s | interlude, return | 0.05 / 0.08 | 2.02 / 4.55 |
+
+(Film 2's mean absolute frame difference against music 0 went from 3.53 / 3.91 to 4.26 / 6.01 of 255.) A statement
+is the ecology's home and stays close to music 0; tension reads in the motion and the scattered light rather than in
+the brightness.
 
 **Determinism.** The music's configuration is part of the parameter key (a checkpoint never crosses a change of score,
 style, profile or seed; a live session keeps its population through one), and a live rebase keeps the frames the musical

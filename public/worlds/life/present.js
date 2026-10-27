@@ -54,15 +54,16 @@ export const visibility=(eco,i,view)=>eco.alive[i]?Math.max(0,Math.min(1,eco.fad
 // influence 0; ecology 1 never asks) and bounded. Log-linear in the conditions, so expressive music (whose conditions
 // reach about twice as far) reads about twice as strongly as the default:
 //  light   the environment's own light (the water's, the gas's, the architecture's): modest, a passage's weather;
-//  life    the light the life gives its surroundings (crowns and floor, the streams' gas, the routes): strong, and more
-//          where the music gathers;
-//  bright  the inhabitants' own light; size their size (gathering music, larger lights); trail how long their traces
-//          last (sustained passages keep them, tension cuts them short, energy stretches them).
+//  life    the light the life gives its surroundings (crowns and floor, the streams' gas, the routes): strong, and
+//          gathered: where the music gathers it glows, where tension scatters the groups it dissolves;
+//  bright  the inhabitants' own light (the scattered ones sparkle with the music's activity); size their size
+//          (gathering music, larger lights); trail how long their traces last (sustained passages keep them, energy
+//          stretches them, the unrest of tension cuts them short).
 const LOOK1=Object.freeze({light:1,life:1,bright:1,size:1,trail:1});
 const lnOf=v=>Number.isFinite(v)&&v>0?Math.log(v):0,box=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function musicLook(eco,view=null){
   if(!eco||eco.ecology!==2||view?.restoring)return LOOK1;
-  const c=eco.cond,g=lnOf(c.glow),a=lnOf(c.activity),p=lnOf(c.persist),G=lnOf(c.gather);
-  return {light:box(Math.exp(.45*g),.55,1.8),life:box(Math.exp(1.05*g+.3*G),.3,3.2),bright:box(Math.exp(.75*g+.3*a),.4,2.4),
-    size:box(Math.exp(.22*g+.15*G),.7,1.5),trail:box(Math.exp(1.2*p+.5*a),.5,2.4)};
+  const c=eco.cond,g=lnOf(c.glow),a=lnOf(c.activity),p=lnOf(c.persist),G=lnOf(c.gather),u=lnOf(c.turb);
+  return {light:box(Math.exp(.45*g),.55,1.8),life:box(Math.exp(1.05*g+.5*G),.3,3.2),bright:box(Math.exp(.75*g+.55*a),.4,2.4),
+    size:box(Math.exp(.22*g+.15*G),.7,1.5),trail:box(Math.exp(1.2*p+.5*a-.4*u),.5,2.4)};
 }
