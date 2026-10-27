@@ -581,6 +581,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   }
   // ---- Mappings: what the selected layer (or the whole composition) reacts to ----------------------------------------
   let sayEls=[];
+  // The mapping rows whose response settings are open (layer|index): a row rebuilt by its own change (a new curve, a new
+  // signal) keeps them open under the hand.
+  const advOpen=new Set();
   const scopeMappings=d=>session.selected==='@base'?d.mappings:layerOf(d,session.selected)?.mappings||null;
   const scopeTargets=()=>session.selected==='@base'?C.GLOBAL_TARGETS:C.targetsOf(selectedLayer()?.type)||[];
   function renderMappings(){
@@ -619,11 +622,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const smooth=slider({min:0,max:4,step:.1,value:m.smoothing,label:'Smoothing (seconds)',format:v=>`${Number(v).toFixed(1)} s`,onChange:v=>set({smoothing:v})});
     const lo=slider({min:0,max:1,step:.05,value:m.min,label:'Lowest',format:v=>`${Math.round(v*100)} %`,onChange:v=>set({min:Math.min(v,cur().max)})});
     const hi=slider({min:0,max:1,step:.05,value:m.max,label:'Highest',format:v=>`${Math.round(v*100)} %`,onChange:v=>set({max:Math.max(v,cur().min)})});
-    const adv=h('div',{class:'ar-map-adv',hidden:true},h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Curve'}),curve),
+    const key=`${session.selected}|${i}`,open=advOpen.has(key);
+    const adv=h('div',{class:'ar-map-adv',hidden:!open},h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Curve'}),curve),
       h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Smoothing'}),smooth),h('div',{class:'ar-map-adv-row'},h('span',{class:'tiny faint',text:'Range'}),lo,hi));
-    const more=button({icon:'sliders',kind:'ghost',size:'sm',pressed:false,title:'Response: curve, smoothing and range',attrs:{'aria-label':'Response settings','aria-expanded':'false'},
-      onClick:()=>{adv.hidden=!adv.hidden;more.setAttribute('aria-pressed',String(!adv.hidden));more.setAttribute('aria-expanded',String(!adv.hidden));}});
-    const del=button({icon:'close',kind:'ghost',size:'sm',title:'Remove the mapping',attrs:{'aria-label':'Remove the mapping'},onClick:()=>{edit(d=>{scopeMappings(d)?.splice(i,1);});mapSig='';renderMappings();renderStack();}});
+    const more=button({icon:'sliders',kind:'ghost',size:'sm',pressed:open,title:'Response: curve, smoothing and range',attrs:{'aria-label':'Response settings','aria-expanded':String(open)},
+      onClick:()=>{adv.hidden=!adv.hidden;if(adv.hidden)advOpen.delete(key);else advOpen.add(key);more.setAttribute('aria-pressed',String(!adv.hidden));more.setAttribute('aria-expanded',String(!adv.hidden));}});
+    const del=button({icon:'close',kind:'ghost',size:'sm',title:'Remove the mapping',attrs:{'aria-label':'Remove the mapping'},onClick:()=>{
+      for(const k of [...advOpen])if(k.startsWith(`${session.selected}|`))advOpen.delete(k);edit(d=>{scopeMappings(d)?.splice(i,1);});mapSig='';renderMappings();renderStack();}});
     const say=h('span',{text:W.mappingSentence(m)}),resp=h('span',{class:'tiny faint',text:W.responseLine(m)});
     sayEls[i]={say,resp};
     return h('div',{class:['ar-map',m.signal.split('.')[0]]},h('div',{class:'ar-map-row'},sig,h('span',{class:'ar-map-arrow','aria-hidden':'true',text:'→'}),tgt,h('div',{class:'ar-map-amount'},amount),more,del),
