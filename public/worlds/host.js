@@ -12,6 +12,7 @@ import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
 import {createSdk,validateWorld} from './sdk.js';
 import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
+import {createMusical} from './musical.js';
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
 const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
 const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
@@ -157,6 +158,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // life on asks for a driver (ctx.life.create) with its own grammar. A replay feeds the timeline its recorded windows
   // (prime); a live session the structure it joined with (reset) and what arrives. Packs never get one.
   const lifeTimeline=createLifeTimeline();let lifeDriver=null,lifeReplay=false,lifeBase=null;
+  // What the music is doing at each moment (musical.js), from the same canonical frames: info.music for worlds and layers.
+  const musical=createMusical({timeline:lifeTimeline});
   const lifeOn=r=>r?.familyKind!=='pack'&&!families[r?.family]&&r?.genome?.life?.enabled===true;
   const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film});
   const lifeFor=next=>lifeOn(next)?{params:next.genome.life,create(grammar){
@@ -222,7 +225,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function frameInfo(t,dt,phase){
     const tsec=(t-model.epoch)/1000;
     return {t,tsec,tview:tsec/speedK,dt,beat:Math.exp(-((phase%1)*16)*.9),barPhase:phase,mood,energy:mood.energy||0,
-      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level};
+      activity:director.activityAt(t),phase:director.phaseAt(t),unlocks:director.unlockedAt(t),agents:agents.list(t),overrides:current.overrides||{},quality:level,music:musical.at(t)};
   }
   function render(t,dt,{phase=0}={}){
     const began=performance.now();renderer.info.reset();adapt(dt);
@@ -274,7 +277,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
       world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);stale=true;},
-    setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
+    setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}
+      if(m.music)musical.configure({...m.music,tempo:mood.tempo});},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
     // Replay -> live: a new performance (its origin is set by the next reset; the replay's inputs are not its own).
     newPerformance(){pinnedStart=null;model.clearEpoch();lifeTimeline.clear();lifeReplay=false;lifeBase=null;lifeDriver?.clearBase();stale=true;},

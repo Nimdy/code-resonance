@@ -71,7 +71,7 @@ test('Expression is pure, matches the bar it describes, and the conductor reacts
   const bar=S.createBar({scoreVersion:3,seed:5,chapter:6,energy:.4,style:'cinematic',barIndex:41});
   assert.deepEqual(bar.expression,S.expression({seed:5,chapter:6,energy:.4,style:'cinematic',barIndex:41,phase:0}));
   for(const k of ['energy','tension','density','melody','rhythm','dynamics','transition','onset','release'])assert(bar.expression[k]>=0&&bar.expression[k]<=1,k);
-  const frames=b=>({energy:.5,tension:b>=64&&b<72?.6:.05,milestone:b===90});
+  const frames=b=>({energy:.5,tension:b>=64&&b<70?.6:.05,milestone:b===90});
   assert.equal(S.conductAt({seed:7,barIndex:64,frameAt:frames}).role,'tension');
   assert.equal(S.conductAt({seed:7,barIndex:72,frameAt:frames}).role,'resolve');
   assert.equal(S.conductAt({seed:7,barIndex:96,frameAt:frames}).lift,true);

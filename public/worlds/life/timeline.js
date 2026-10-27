@@ -31,7 +31,10 @@ export function createLifeTimeline(){
     return true;
   }
   const structureItem=(delta,start,end,seq)=>({kind:KIND.structure,t:start,end,ord:Number.isFinite(seq)?seq:0,key:`s:${start}`,delta,h:idHash(`s:${start}:${delta.keyframe?'k':'d'}:${(delta.nodes||delta.add||[]).length}:${(delta.remove||[]).length}`)});
+  // A frame's verified successes ride along for the musical conductor (score v3); a recorded window never changes, so
+  // they need not enter the fingerprint.
   const frameItem=(f,start)=>({kind:KIND.frame,t:start,end:f.end??start,ord:0,key:`f:${start}`,energy:+(f.controls?.energy||0),tension:+(f.controls?.tension||0),chapter:f.chapter||1,
+    milestone:!!f.milestones?.some(t=>/^milestone\./.test(t)||/^validation\.[a-z.]*passed$/.test(t)),
     h:idHash(`f:${start}:${(+(f.controls?.energy||0)).toFixed(4)}:${(+(f.controls?.tension||0)).toFixed(4)}`)});
   const intentItem=i=>({kind:KIND.intent,t:i.ts,ord:i.ord??0,key:`i:${i.id}`,intent:i,h:idHash(i.id)});
   function structure(delta,start,end,seq){return delta&&Number.isFinite(start)?insert(structureItem(delta,start,end,seq)):false;}

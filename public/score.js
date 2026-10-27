@@ -304,9 +304,10 @@
   function conductAt({seed=0,barIndex=0,profile,frameAt=()=>null}={}){
     const b=Math.floor(Number(barIndex)||0),start=b-((b%PASSAGE_BARS)+PASSAGE_BARS)%PASSAGE_BARS;
     let energy=0;for(let i=b-8;i<=b;i++)energy=energy*.7+(Number(frameAt(i)?.energy)||0)*.3;
-    const at=frameAt(start),before=frameAt(start-PASSAGE_BARS);
+    // Trouble in the last two bars before a boundary counts too, so a short failure is never lost between passages.
+    const trouble=s=>Math.max(...[s-2,s-1,s].map(i=>Number(frameAt(i)?.tension)||0));
     let milestone=false;for(let i=start-PASSAGE_BARS;i<start&&!milestone;i++)milestone=!!frameAt(i)?.milestone;
-    const c=conduct({seed,barIndex:b,profile,tension:Number(at?.tension)||0,previous:(Number(before?.tension)||0)>=.35?'tension':null,milestone});
+    const c=conduct({seed,barIndex:b,profile,tension:trouble(start),previous:trouble(start-PASSAGE_BARS)>=.35?'tension':null,milestone});
     return {...c,energy,tension:Number(frameAt(b)?.tension)||0};
   }
   // Activity and the mood control together: calm keeps the arrangement sparse and soft-edged, intense adds motion.

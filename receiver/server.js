@@ -25,7 +25,7 @@ const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
 const PUBLIC=path.join(REPO,'public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
-  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
+  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/composition.js','composition.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 // The Control Center's modules: one optional folder level, lowercase names (the pattern alone keeps requests inside public/ui).
 const UI_FILE=/^\/ui\/(?:[a-z0-9-]+\/)?[a-z0-9-]+\.(?:js|css|svg)$/;
 // Windows opens a device for these names (with any extension, before Windows 11): never a file the receiver serves.

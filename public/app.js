@@ -658,7 +658,8 @@
       if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
       if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
-      living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
+      living.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo,
+        music:{version:music.options.scoreVersion||2,style:music.options.style,profile:music.options.profile||null,seed:frame?.projectSeed||hash(selected)}});
       // A pack frame in a film renders when the film captures the frame (__film.frame).
       if(!(FILM&&living.remote))living.render(now,dt,{phase:barPhase});
       if(living.remote)watchBudget();
