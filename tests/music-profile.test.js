@@ -55,6 +55,38 @@ test('The mixer offers only the voice groups the style can sound',async()=>{
   assert(M.soundingGroups(score,'pulse',{rhythm:.5,mix:{perc:0}}).includes('perc'));
   assert(M.soundingGroups(score,'ambient',{atmosphere:0}).includes('atmos'),'atmosphere transitions follow its level alone');
 });
+test('store.effective() resolves the profile with its precedence and pushes it to the engine with the score version',async()=>{
+  const M=await load(),pushed=[];let ps={project:'p1',recipe:{genome:{music:{score:3}}},preview:null};
+  // The interface store, on a stand-in engine (window.ResonancePlayer), with a window address that pins the style and space.
+  globalThis.window={ResonancePlayer:{WORLDS:['living','construct'],LABEL_MODES:['cinematic','explorer','stream','off'],QUALITY:['auto'],film:false,overlay:false,
+    record:{active:false,setSize(){}},get state(){return ps;},on(){},setMusic:o=>pushed.push(o),setWorld(){},setLabels(){},setCaptions(){},setQuality(){},selectProject(){},api:{post:async()=>({})}}};
+  globalThis.location={search:`?style=chip&music=${encodeURIComponent(JSON.stringify({space:.9}))}`};
+  globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.addEventListener=()=>{};
+  const S=await import('../public/ui/store.js');
+  S.state.selected='p1';S.state.settings={...store.SETTINGS_DEFAULTS,music:{...store.SETTINGS_DEFAULTS.music,mood:.7,harmony:.2,texture:.4}};
+  S.state.preferences.set('p1',{...store.PREFERENCES_DEFAULTS,music:{...store.PREFERENCES_DEFAULTS.music,mood:.25,mix:{...M.DEFAULT_MIX,perc:0}}});
+  let e=S.effective();
+  assert.equal(e.music.space,.9);assert.equal(e.sources.space,'url','the window\'s pin first');
+  assert.equal(e.music.mood,.25);assert.equal(e.sources.mood,'project','then the project\'s own value');
+  assert.equal(e.music.harmony,.2);assert.equal(e.sources.harmony,'global','then the global setting');
+  assert.equal(e.music.melody,.5,'then the default: as composed');
+  assert.equal(e.music.mix.perc,0);assert.equal(e.sources.mix,'project');
+  assert.equal(e.music.style,'chip');assert.equal(e.sources.style,'url');assert.equal(e.music.texture,.4);assert.equal(e.sources.texture,'global');
+  assert.equal(e.music.scoreVersion,3);assert.equal(e.sources.scoreVersion,'recipe');
+  S.applyEffective({force:true});
+  const o=pushed.at(-1);
+  assert.equal(o.scoreVersion,3);assert.equal(o.style,'chip');
+  assert.deepEqual(o.profile,{...score.PROFILE,mood:.25,harmony:.2,space:.9,mix:{...M.DEFAULT_MIX,perc:0}});
+  // A preview recipe shown in this window counts here; the recipe of a project not on this stage does not.
+  ps={...ps,preview:{recipe:{genome:{music:{}}}}};e=S.effective();assert.equal(e.music.scoreVersion,2);assert.equal(e.sources.scoreVersion,'preview');
+  ps={project:'p2',recipe:{genome:{music:{score:3}}},preview:null};assert.equal(S.effective().music.scoreVersion,2);
+  // The Music Studio's preview (flat keys, the mix whole) is heard at once; the saved values are untouched.
+  ps={project:'p1',recipe:{genome:{music:{score:3}}},preview:null};
+  S.previewMusic({rhythm:.8,mix:{...M.DEFAULT_MIX,arp:.3}});
+  assert.equal(pushed.at(-1).profile.rhythm,.8);assert.equal(pushed.at(-1).profile.mix.arp,.3);assert.equal(pushed.at(-1).profile.mix.perc,1,'the previewed mix replaces the saved one whole');
+  assert.equal(S.effective().music.rhythm,.5);
+  S.previewMusic(null);assert.equal(pushed.at(-1).profile.mix.perc,0);assert.equal(pushed.at(-1).profile.rhythm,.5);
+});
 test('Presets carry the whole performance; a preset from before sets only what it holds; the starters are valid and distinct',async t=>{
   const M=await load(),presets=store.presets(tempDir(t,'cr-music-profile-'));
   const heard={...M.DEFAULT_MUSIC,style:'pulse',tempoMode:'manual',tempo:104,mood:.66,space:.3,mix:{...M.DEFAULT_MIX,arp:.4},volume:.9,scoreVersion:3};
