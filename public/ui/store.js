@@ -60,7 +60,8 @@ export function setUi(patch){state.ui={...state.ui,...patch};writeLocal(UI_KEY,s
 export function select(id){
   if(id===state.selected)return;state.selected=id||'';setUi({project:state.selected});state.musicPreview=null;
   P.selectProject(state.selected);changed('selection');
-  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);}
+  // The recipe says which score the music plays: read it whatever the stage (only the living world loads one itself).
+  if(state.selected){void loadPreferences(state.selected);void loadEvidence(state.selected);void P.reloadRecipe?.()?.catch(()=>null);}
   applyEffective();
 }
 export const project=(id=state.selected)=>state.projects.find(p=>p.id===id)||null;
