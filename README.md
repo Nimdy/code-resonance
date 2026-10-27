@@ -36,11 +36,12 @@ clearly labelled fictional session. `npm run doctor` checks the setup and says w
 
 | Workspace | What you do there |
 |---|---|
-| **Home** | See at a glance whether the receiver runs, which project is active, whether capture is really active, what needs attention |
+| **Home** | See at a glance whether the receiver runs, which project is active, whether capture is really active, what needs attention; create or continue a composition |
 | **Projects** | Browse projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
-| **Visual Studio** | Choose a world, preview it, customise its parameters (generated from the parameter catalogue and pack manifests), apply; presets |
-| **Music Studio** | Style, tempo, texture and volume per project or globally, previewed live; the project's musical identity; presets |
-| **Visual Packs** | Import a pack (zip or folder), review and approve code packs, revoke, remove, read their documentation |
+| **Visual Studio** | Choose a world, preview it, customise its parameters (generated from the parameter catalogue and pack manifests), choose a finish (Clean, Cinematic, Dreamlike) and how much the music moves its life, apply; presets |
+| **Artist Studio** | Compose your own look from procedural layers (fractals, particle populations, flow fields, structures, atmospheres, lights) over a world or a blank canvas, decide what each responds to (the music, real engineering events, the ecosystem), save versions, apply to a project, export as a data-only pack ([docs/ARTIST-STUDIO.md](docs/ARTIST-STUDIO.md)) |
+| **Music Studio** | The composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and the balance of its voices, style, tempo, texture and volume per project or globally, previewed from the next bar; the project's musical identity; presets ([docs/MUSIC.md](docs/MUSIC.md)) |
+| **Visual Packs** | Your creations, imported creations and looks, shader packs and coded worlds: import (zip or folder), review and approve code packs, revoke, remove, read their documentation |
 | **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code hooks, other agents |
 | **Record & Broadcast** | Recording profiles and state, the OBS browser source, audio and data exports |
 | **Settings** | Global preferences, this device, storage and privacy, diagnostics |
