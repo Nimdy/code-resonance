@@ -30,7 +30,10 @@ and image until deliberately upgraded: new behaviour sits behind versions (recip
   - Stellar: density waves and streams, with no faster rotation.
   - Cathedral: convoys on the musical grid, routes and lit channels.
 
-  Music influence 0 is exactly neutral; 1 is musical; 2 is expressive.
+  The music also shows in each world's light, in its inhabitants' brightness, size and traces (presentation only,
+  from the relaxed conditions). Music influence 0 is exactly neutral and renders exactly as before; 1 is musical; 2 is
+  expressive. Against music 0 at the same moment, the picture's systematic swing went from 0.05–0.87 to 2.0–4.7 at
+  music 1 and 4.6–9.7 at music 2 (luma sd), with no flicker.
 - **Finishes** ([docs/WORLDS.md](docs/WORLDS.md)): Clean, Cinematic (the default for new identities) and Dreamlike, in
   the existing composite pass.
   - An optical chromatic aberration: radial, spectral, highlight-sensitive.
