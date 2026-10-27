@@ -567,7 +567,7 @@
         if(fill)for(const s of [8,10,12,13,14,15])add(s,'taiko','perc',38,(.1+.02*(s-8))*p,.25);
       }else{
         const half=role==='interlude'||role==='release'||pf.rhythm<.3;
-        const kicks=half?[0]:style==='chip'?[0,8]:role==='development'?[0,6,8,14]:[[0,8],[0,8,11],[0,10]][(x.groove+b)%3];
+        const kicks=half?[0]:style==='chip'?(role==='development'?[0,4,8,12]:role==='return'?[0,8,10]:[0,8]):role==='development'?[0,6,8,14]:[[0,8],[0,8,11],[0,10]][(x.groove+b)%3];
         for(const s of kicks)add(s,'kick','perc',36,(.24+e*.08)*p*(s===0?1:.85),.12);
         if(!half)for(const s of [4,12])add(s,'snare','perc',40,(.12+e*.05)*p*human(),.13);
         const hatEvery=pf.rhythm>.7&&!half?1:2;
