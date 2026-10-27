@@ -335,7 +335,8 @@
       if(g==='counter')v*=clamp(.35+pf.evolution*.6+pf.melody*.3,0,1.2);
       if(lift&&(g==='counter'||g==='arp'||g==='melody')&&depth>=UNLOCK[g])v=Math.max(v,.75);
       v*=pf.mix[g];
-      out[g]=v>=gate&&pf.mix[g]>0?clamp(v,0,1.3):0;
+      // Ambient details are quiet by nature: they need less of a reason to be there.
+      out[g]=v>=(g==='atmos'?gate*.6:gate)&&pf.mix[g]>0?clamp(v,0,1.3):0;
     }
     return out;
   }
@@ -431,7 +432,7 @@
   // Dynamics per section role in dB: [at its start, at its end]. The dynamics control scales the contrast.
   const DYN={statement:[-2.5,-1],development:[-4.5,0],interlude:[-7,-6],return:[-.5,-1.5],release:[-3,-10],tension:[-3,-.5],resolve:[-1,-3]};
   function levelAt(role,plan,step,pf){
-    const [a,b]=DYN[role]||DYN.statement,t=(plan.barInSection+step/16)/plan.sectionBars,depth=.35+1.3*pf.dynamics;
+    const [a,b]=DYN[role]||DYN.statement,t=(plan.barInSection+step/16)/plan.sectionBars,depth=.3+1.1*pf.dynamics;
     const arch=Math.sin(Math.PI*(plan.barInPhrase+step/16)/PHRASE_BARS)*1.4*pf.dynamics;
     return Math.pow(10,((a+(b-a)*t)*depth+arch-1)/20);
   }
@@ -490,10 +491,10 @@
     // Atmosphere: a high shimmer over chord changes, and sparse details from the arc's colour.
     if(orch.atmos){
       if(chordStart&&(role==='interlude'||role==='release'||role==='return'||pf.atmosphere>.6))
-        for(const [d,pan] of [[chord+4,-.5],[chord+8,.5]])add(0,'air','atmos',noteOf(id,d,1),.045*orch.atmos,16*stepSec*holdBars,{pan});
+        for(const [d,pan] of [[chord+4,-.55],[chord+8,.55]])add(0,'air','atmos',noteOf(id,d,1),.075*orch.atmos,16*stepSec*holdBars,{pan});
       const color=x.colors[plan.arc&1],count=role==='interlude'||role==='release'?1+Math.floor(r()*(1+pf.atmosphere*2.5)):r()<pf.atmosphere*.6?1:0;
       for(let i=0;i<count;i++){const step=[2,6,10,13,4,14][(hash(`${seed}/glint/${barIndex}/${i}`))%6],d=tones[(i+barIndex)%tones.length]+(r()<.5?7:0);
-        add(step,color,'atmos',noteOf(id,d,1),(.05+.04*r())*orch.atmos,stepSec*(color==='breath'?10:6),{pan:(r()*2-1)*.7});}
+        add(step,color,'atmos',noteOf(id,d,1)+(color==='breath'?0:12),(.1+.06*r())*orch.atmos,stepSec*(color==='breath'?10:6),{pan:(r()*2-1)*.75});}
     }
     // Foundation: root (or the nearer chord tone, for a walking line), held in ambient and cinematic, patterned in
     // pulse and chip; interludes and releases hold a tonic pedal; an approach note leads into a chord change.
@@ -527,7 +528,8 @@
       if(melodyKind==='close'&&chord!==0)melodyNotes=melodyNotes.map(n=>n.step>0?{...n,degree:nearestChordTone(n.degree,chord)}:n);
       const nextRest=(PHRASES[role]||PHRASES.statement)[plan.phrase][plan.barInPhrase+1]==='-';
       const instrument=role==='interlude'||role==='release'?'bell':'lead';
-      const octave=s.lift?2:1,v=(instrument==='bell'?.2:.27+e*.1)*orch.melody*(.75+.4*pf.melody);
+      // Ambient's melody floats an octave above the pads (a high, breathy register); the others sit just above them.
+      const octave=s.lift||style==='ambient'?2:1,v=(instrument==='bell'?.2:.27+e*.1)*orch.melody*(.75+.4*pf.melody);
       melodyNotes.forEach((n,i)=>{
         const nextStep=i+1<melodyNotes.length?melodyNotes[i+1].step:16+(nextRest?8:0);
         const len=legato?Math.max(n.len,(nextStep-n.step)-.4):Math.max(.8,n.len-.4);
@@ -553,7 +555,7 @@
       if(style==='ambient'){for(let s=0,i=0;s<16;s+=4,i++){if(random(hash(`${seed}/arp/${barIndex}/${s}`))<.45-.3*pf.rhythm)continue;add(s+(i%2?2:0),'arp','arp',src[cycle[i%4]%src.length]+12,v*human(),stepSec*6,{pan:i%2?.4:-.4});}}
       else if(style==='cinematic'){const ost=[noteOf(id,chord,0),noteOf(id,chord+4,0)];for(let s=0;s<16;s+=role==='development'||role==='tension'?1:2)add(s,'arp','arp',ost[(s>>1)%2]-12+(s%2?12:0),v*1.1*(s%4===0?1.2:.8),stepSec*.8,{pan:s%4<2?-.3:.3});}
       else if(style==='pulse'){const acc=[0,3,6,8,11,14];for(let s=0;s<16;s+=pf.rhythm>.4||role==='development'?1:2){if(random(hash(`${seed}/arp/${barIndex}/${s}`))<.1)continue;add(s,'arp','arp',src[cycle[s%4]%src.length],v*(acc.includes(s)?1.25:.75),stepSec*1.3,{pan:s%2?.4:-.4});}}
-      else{for(let s=0;s<16;s++)add(s,'arp','arp',src[s%3]+12,v*.9*(s%4===0?1.2:1),stepSec*.9,{pan:0});}
+      else{for(let s=0;s<16;s++)add(s,'arp','arp',src[s%3]+12,v*.9*(s%4===0?1.2:1),stepSec*.9,{pan:[-.35,0,.35][s%3]});}
     }
     // Percussion: patterns change with the section, drop out where the music breathes, and fill into a change.
     if(orch.perc){

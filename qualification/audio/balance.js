@@ -26,7 +26,8 @@ function measure(wav){
     rmsDb:full,below120HzDb:rms('lowpass=f=120:p=2,'),above200HzDb:rms('highpass=f=200:p=2,'),above2kHzDb:rms('highpass=f=2000:p=2,'),
     stereoPhaseCorrelation:values.length?+(values.reduce((a,b)=>a+b,0)/values.length).toFixed(3):null};
 }
-(async()=>{
+module.exports={measure};
+if(require.main===module)(async()=>{
   fs.mkdirSync(OUT,{recursive:true});
   const svc=await createService({port:0,dataDir:path.resolve(arg('data'))}).start();await svc.flush();
   const project=arg('project'),seconds=Number(arg('seconds',240)),style=arg('style','ambient'),base=arg('base','HEAD');

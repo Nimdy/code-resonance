@@ -59,3 +59,32 @@ test('Voice budget frees voices by scheduled end time, so long offline renders k
  // Each ambient pad voice uses two detuned oscillators.
  assert((count()-before)>=800,`only ${(count()-before)/2} of 400 soft pad notes were voiced`);
 });
+// Score v3's voices: every instrument the v3 score writes, in every style, on a context that also offers the nodes v3
+// uses (wave shapers, periodic waves). Space reshapes the room; an upgrade swaps the bus without a new context.
+function mockContext3(){
+ const {ctx,count}=mockContext();const base=ctx.createOscillator;let shapers=0,waves=0;
+ Object.assign(ctx,{createWaveShaper:()=>{shapers++;return {...ctx.createGain(),curve:null,oversample:'none'};},createPeriodicWave:()=>{waves++;return {};},
+   createOscillator:()=>({...base(),setPeriodicWave(){}})});
+ return {ctx,count,shapers:()=>shapers,waves:()=>waves};
+}
+test('Score v3 voices every instrument its score writes, in every style, and keeps the accents on their v2 voices',()=>{
+ for(const style of Score.STYLES){
+  const m=music();m.setOptions({style,scoreVersion:3});m.appliedOptions={...m.options};
+  const {ctx,count}=mockContext3();const g=m.buildGraph(ctx,ctx.destination);assert.equal(g.version,3);
+  const seen=new Set();
+  for(let b=0;b<192;b+=3){const bar=Score.createBar({scoreVersion:3,seed:4242,chapter:8,energy:.6,style,barIndex:b,profile:{rhythm:.9,atmosphere:.9}});
+   bar.steps.forEach((step,i)=>{for(const e of step){seen.add(e.instrument);m.voice(g,e,b*4+i*.1);}});}
+  for(const type of ['symbol.created','validation.test.passed','repository.commit.observed','agent.file.modified'])
+   for(const n of Score.accentFigure({id:type,type,weight:2,detail:{voice:1}},{seed:4242,chord:0,style}))m.voice(g,n,900);
+  assert(count()>0&&seen.has('pad')&&seen.has('lead'),`${style}: ${[...seen].join()}`);
+ }
+});
+test('Space changes the room and the echo; an upgrade to v3 swaps the bus on the same context',()=>{
+ const m=music();m.setOptions({scoreVersion:3,profile:{space:0}});m.appliedOptions={...m.options};
+ const {ctx}=mockContext3();const dry=m.buildGraph(ctx,ctx.destination);
+ m.setOptions({profile:{space:1}});m.appliedOptions={...m.options};const wide=m.buildGraph(ctx,ctx.destination);
+ assert(wide.roomLength>dry.roomLength&&wide.reverbIn.gain.value>dry.reverbIn.gain.value&&wide.feedback.gain.value>dry.feedback.gain.value);
+ const v=music();v.setProject('upgrade');v.setFrame({projectSeed:5,chapter:4,controls:{energy:.5,tension:0}});
+ v.ctx=ctx;v.graph=v.buildGraph(ctx,ctx.destination);v.output=v.graph.output;v.beginBar();assert.equal(v.graph.version,undefined);
+ v.setOptions({scoreVersion:3});v.beginBar();assert.equal(v.graph.version,3);assert.equal(v.bar.scoreVersion,3);assert.equal(v.ctx,ctx);
+});
