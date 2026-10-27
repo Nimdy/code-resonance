@@ -29,3 +29,8 @@ test('A v2 identity is described by the music it actually plays (its own section
   const e=m.at(T0+120000);assert.equal(e.version,2);assert(['statement','development','tension','resolve','return','release'].includes(e.role));
   m.configure({version:3});assert.equal(m.at(T0+120000).version,3);
 });
+test('Without a score (a code pack\'s isolated frame), the clock answers null instead of failing',async()=>{
+  const [{createMusical},{createLifeTimeline}]=await load();
+  const m=createMusical({timeline:timeline(createLifeTimeline),score:null});m.configure({version:3,style:'ambient',seed:1,tempo:90});
+  assert.equal(m.at(T0+5000),null);
+});

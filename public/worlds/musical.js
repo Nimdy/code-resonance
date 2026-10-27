@@ -42,7 +42,9 @@ export function createMusical({timeline,score=globalThis.ResonanceScore}={}){
       transition:sec===7?phase:0,onset:sec===0?1-phase:0,release:c.section==='resolve'||c.section==='breath'?.7:0};
   }
   // The expression at performance time T (ms). All values 0..1 except the counters; `bar` and `phase` locate it.
+  // Null where no score is loaded (a code pack's isolated frame has the world host but not the score).
   function at(T){
+    if(!score?.expression||!score.conductAt)return null;
     const B=barMs(),bar=Math.floor(T/B),phase=clamp((T-bar*B)/B,0,.999),c=conducted(bar),f=frameAt(T);
     const e=cfg.version===3?score.expression({seed:cfg.seed,style:cfg.style,profile:cfg.profile,barIndex:bar,phase,section:c.role,lift:c.lift,energy:c.energy,chapter:f?.chapter||1})
       :expressionV2(bar,phase,c,f);
@@ -50,7 +52,7 @@ export function createMusical({timeline,score=globalThis.ResonanceScore}={}){
   }
   return {at,frameAt,conducted,
     configure(next={}){
-      const n={version:score.versionOf?score.versionOf(next.version??cfg.version):2,style:next.style??cfg.style,profile:next.profile===undefined?cfg.profile:next.profile,
+      const n={version:score?.versionOf?score.versionOf(next.version??cfg.version):2,style:next.style??cfg.style,profile:next.profile===undefined?cfg.profile:next.profile,
         seed:Number.isFinite(next.seed)?next.seed>>>0:cfg.seed,tempo:next.tempo>0?next.tempo:cfg.tempo};
       const k=JSON.stringify(n);if(k!==key){cfg=n;key=k;cache.clear();}
     },
