@@ -42,7 +42,6 @@
     'camera.sway':'Camera sway','camera.zoom':'Camera distance','finish.bloom':'Bloom','finish.exposure':'Exposure'};
   const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
   const targetName=k=>TARGET_WORDS[k]||cap(String(k).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[._-]+/g,' '));
-  const signalName=id=>SIGNAL_WORDS[id]?.[0]||String(id);
   // "Glow rises with the music's dynamics": the target, how strongly, which way, and with what.
   function mappingSentence(m){
     if(!m)return '';
@@ -91,5 +90,5 @@
     if(packId)lines.push(`Pack id: \`${packId}\``,'');
     return lines.join('\n');
   }
-  return {LAYER_WORDS,DEPTH_WORDS,ANCHOR_WORDS,BLEND_WORDS,FINISH_WORDS,BASE_WORDS,SIGNAL_WORDS,TARGET_WORDS,targetName,signalName,mappingSentence,responseLine,layerLine,readme};
+  return {LAYER_WORDS,DEPTH_WORDS,ANCHOR_WORDS,BLEND_WORDS,FINISH_WORDS,BASE_WORDS,SIGNAL_WORDS,TARGET_WORDS,targetName,mappingSentence,responseLine,layerLine,readme};
 });
