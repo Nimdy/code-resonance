@@ -15,6 +15,7 @@ export const WORKSPACES=[
   {id:'home',title:'Home',icon:'home'},
   {id:'projects',title:'Projects',icon:'projects'},
   {id:'visual',title:'Visual Studio',short:'Visual',icon:'visual'},
+  {id:'artist',title:'Artist Studio',short:'Artist',icon:'brush'},
   {id:'music',title:'Music Studio',short:'Music',icon:'music'},
   {id:'packs',title:'Visual Packs',short:'Packs',icon:'packs'},
   {id:'connections',title:'Connections',short:'Connect',icon:'connections'},

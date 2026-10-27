@@ -91,3 +91,16 @@ test('Unsafe content is refused: code in a data pack, unknown layer types or sig
   assert(write('label',m(named,{name:'<b>Bold</b>'})).some(e=>e.startsWith('pack.json/name')),'a manifest name with markup is refused');
   assert.equal(registry.list().length,0,'nothing was installed by inspecting');
 });
+test('The Control Center’s ZIP writer makes archives the importer accepts, byte for byte the same each time',async t=>{
+  const {zipStored,crc32}=await import(require('node:url').pathToFileURL(path.join(__dirname,'../public/ui/zip.js')).href);
+  assert.equal(crc32(new TextEncoder().encode('123456789')),0xCBF43926,'the standard check value');
+  const a=await start(t,'zip');
+  const id=(await a.send('/api/compositions',{action:'create',starter:'starter-signal-architecture'})).body.created;
+  const pack=(await a.get(`/api/compositions/export?id=${id}`)).body;
+  const entries=pack.files.map(f=>({name:`${pack.folder}/${f.path}`,data:new Uint8Array(Buffer.from(f.data,'base64'))}));
+  const zip=zipStored(entries);assert.deepEqual(zipStored(entries),zip,'deterministic');
+  const {capability}=await (await fetch(`${a.base}/api/session`,{method:'POST',headers:{Origin:a.base,'Content-Type':'application/json'},body:JSON.stringify({pairing:a.svc.pairing})})).json();
+  const r=await fetch(`${a.base}/api/packs/import`,{method:'POST',headers:{'Content-Type':'application/zip',Origin:a.base,'X-Resonance-Capability':capability},body:zip});
+  assert.equal(r.status,200);const report=await r.json();
+  assert.deepEqual(report.errors,[]);assert.deepEqual(report.files.map(f=>f.path).sort(),['README.md','pack.json']);assert.equal(report.manifest.name,'Signal Architecture');
+});

@@ -35,7 +35,7 @@
     'eng.agents':['observed agent activity','level'],
     'env.density':['how gathered the inhabitants are','level'],'env.field':['the energy in the environment','level'],'env.current':['the strength of the currents','level'],
     'env.disturbance':['local disturbance','level'],'env.coherence':['how aligned the groups move','level'],'env.trails':['the concentration of trails','level']};
-  const TARGET_WORDS={opacity:'Visibility',brightness:'Brightness',scale:'Size',hue:'Colour',speed:'Motion',glow:'Glow',intensity:'Intensity',growth:'Growth',
+  const TARGET_WORDS={opacity:'Visibility',brightness:'Brightness',scale:'Size',hue:'Colour',speed:'Motion speed',glow:'Glow',intensity:'Intensity',growth:'Growth',
     sway:'Sway',spread:'Spread',width:'Width',size:'Point size',sparkle:'Sparkle',trail:'Trails',cohesion:'Cohesion',separation:'Separation',alignment:'Alignment',
     attraction:'Attraction',lifetime:'Lifetime',length:'Ribbon length',taper:'Taper',turbulence:'Turbulence',thickness:'Thickness',rotation:'Rotation',
     wobble:'Wobble',height:'Height',noise:'Texture',falloff:'Falloff',radius:'Radius',depth:'Recursion',branching:'Branching',instances:'Instances',count:'Count',detail:'Detail',

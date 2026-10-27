@@ -19,7 +19,7 @@ function changed(...topics){for(const t of topics)dirty.add(t);if(flushing)retur
 P.on(t=>{for(const x of t)dirty.add(x);changed();});
 export const state={
   projects:[],projectsLoaded:false,selected:'',settings:null,presets:null,catalog:null,status:null,integrations:null,
-  preferences:new Map(),evidence:new Map(),changes:'connecting',others:{recording:null},musicPreview:null,
+  preferences:new Map(),evidence:new Map(),changes:'connecting',others:{recording:null},musicPreview:null,compositions:null,
   device:{quality:'auto',...readLocal(DEVICE_KEY)},ui:readLocal(UI_KEY),errors:{}
 };
 export function on(f){listeners.add(f);return ()=>listeners.delete(f);}
@@ -47,6 +47,14 @@ export async function loadIntegrations(){try{state.integrations=await get('/api/
 export async function saveSettings(patch){const next=await post('/api/settings',{patch});state.settings=next;applyEffective();applyInterface();changed('settings');return next;}
 export async function savePreferences(patch,id=state.selected){if(!id)throw new Error('No project selected');const next=await post(`/api/preferences?id=${encodeURIComponent(id)}`,{patch});state.preferences.set(id,next);if(id===state.selected)applyEffective();changed('preferences');return next;}
 export async function presetAction(body){const next=await post('/api/presets',body);state.presets=next;changed('presets');return next;}
+// Artist compositions (receiver compositions.json): one action per write; the answer (with `created` for a new one)
+// becomes the state. A refused stale write brings the current library back with it.
+export async function loadCompositions(){try{state.compositions=await get('/api/compositions');delete state.errors.compositions;}catch(e){state.errors.compositions=e.message;}changed('compositions');return state.compositions;}
+export async function compositionAction(body){
+  try{const {created,...next}=await post('/api/compositions',body);state.compositions=next;changed('compositions');return {...next,created};}
+  catch(e){if(e.code==='stale'&&e.data?.current){state.compositions=e.data.current;changed('compositions');}throw e;}
+}
+export const composition=id=>state.compositions?.compositions?.find(c=>c.id===id)||null;
 export function setDevice(patch){state.device={...state.device,...patch};writeLocal(DEVICE_KEY,state.device);applyEffective();changed('device');}
 // This device's choices made in another window of this browser apply here too.
 addEventListener('storage',e=>{if(e.key!==DEVICE_KEY)return;state.device={quality:'auto',...readLocal(DEVICE_KEY)};applyEffective();changed('device');});
@@ -105,7 +113,7 @@ function connectChanges(){
   source=new EventSource('/api/changes');state.changes='connecting';changed('changes');
   source.addEventListener('hello',()=>{state.changes='open';changed('changes');clearInterval(fallback);fallback=null;
     // Anything may have changed while disconnected.
-    void loadProjects();void loadSettings();void loadPresets();void P.reloadPacks();if(state.selected){void loadPreferences();void P.reloadRecipe();}});
+    void loadProjects();void loadSettings();void loadPresets();void loadCompositions();void P.reloadPacks();if(state.selected){void loadPreferences();void P.reloadRecipe();}});
   source.onmessage=e=>{let m;try{m=JSON.parse(e.data);}catch{return;}handleChange(m);};
   source.onerror=()=>{state.changes='closed';changed('changes');try{source.close();}catch{}
     // Without the feed, poll (the receiver may be restarting) and reconnect with backoff.
@@ -120,6 +128,7 @@ function handleChange(m){
     case 'preferences':later(`prefs:${m.projectId}`,()=>loadPreferences(m.projectId),150);later('projects',loadProjects,800);break;
     case 'settings':later('settings',loadSettings,150);break;
     case 'presets':later('presets',loadPresets,150);break;
+    case 'compositions':later('compositions',loadCompositions,150);break;
     case 'packs':later('packs',()=>{void P.reloadPacks();void loadCatalog();void loadProjects();},250);break;
     case 'projects':later('projects',loadProjects,400);break;
     case 'activity':{const p=project(m.projectId);if(p){p.evidence={...(p.evidence||{}),lastReceivedAt:m.receivedAt};changed('projects');}break;}
@@ -152,7 +161,7 @@ export async function start({presentation=false}={}){
   connectChanges();
   if(presentation)return;
   await migrateLegacy();
-  void loadPresets();void loadCatalog();void loadStatus();
+  void loadPresets();void loadCatalog();void loadStatus();void loadCompositions();
   setInterval(()=>{if(!document.hidden)void loadStatus();},15000);
 }
 // The player before 0.5 kept its choices in this browser's storage; they move to the receiver once, so every window
