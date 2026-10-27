@@ -1239,6 +1239,18 @@ export function createFamily(ctx){
   function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of burstU.uBC.value)v.set(1,0,1,0);
     flashes.length=0;lockRings.length=0;beamFx.length=0;haloFx.length=0;moments.length=0;fxTower.clear();fxDistrict.clear();for(let k=0;k<bayCount;k++)bayB.arrays.aF[k*4]=-1e5;bayB.dirty('aF');bayB.flush();
     if(builtVersion>=0){for(const B of [stoneB,pinB]){for(let k=0;k<B.capacity;k++){B.arrays.iF[k*4]=-1e5;B.arrays.iF[k*4+1]=0;}B.dirty('iF');}for(let k=0;k<naves.length;k++)naveB.arrays.nD[k*4+1]=-1e5;naveB.dirty('nD');}lastingSig='';}
+  // ---- Composition anchors (layers.js): the precincts (above their towers, rooted on the floor), the work, the tower
+  // tops, the city's edge. Read-only.
+  const composeA={center:new THREE.Vector3(),extent:8,floor:0,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:10,y:0}};
+  function composeAnchors(i){
+    composeA.center.set(centre.x,Math.max(.5,tallest*.3),centre.z);composeA.extent=extent;composeA.boundary.radius=extent*1.15;
+    composeA.subsystems=[...districts.values()].map(d=>{let h=0;for(const m of d.members){const tw=towers.get(m.id);if(tw)h=Math.max(h,tw.roofTop||0);}
+      return {id:d.d.id,pos:d.centre.clone().setY(Math.max(.6,h*.6)),base:d.centre.clone(),size:Math.max(.8,d.radius)};});
+    const list=[...towers.values()],n=Math.min(64,list.length);composeA.nodes=[];for(let k=0;k<n;k++){const tw=list[Math.floor(k*list.length/n)];composeA.nodes.push({pos:tw.pos.clone().setY(tw.roofTop||tw.top||.5)});}
+    const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&towers.has(a.fileId));
+    const at=att&&(i.t-att.at)/ctx.speed()/1000<30?subjectOf(att)?.pos:busy?towers.get(busy.fileId).pos.clone().setY(towers.get(busy.fileId).top*.6):null;composeA.active.pos.copy(at||composeA.center);
+    return composeA;}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    compose:{camera,scene,anchors:composeAnchors},
     ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }

@@ -1456,5 +1456,17 @@ export function createFamily(ctx){
   function onPrime(){remSig='';starFlares.clear();novaAt.clear();bridgePulse.clear();ckWave=null;pendingIgn.length=0;nurseries.length=0;waves.length=0;flashes.length=0;calms.length=0;novas.length=0;storms.length=0;echoes.length=0;agentState.clear();
     burstNext=0;for(const v of burstU.uBA.value)v.w=-1e5;
     galMat.uniforms.uWave.value.set(-100,0,0,0);galMat.uniforms.uExpand.value.set(-100,0,0,0);}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,...(LIFE?{lifeStats,onLifeParams}:{})};
+  // ---- Composition anchors (layers.js): the star systems as they turn with the galaxy, the work, the worlds in orbit,
+  // the galaxy's rim. Read-only.
+  const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
+  function composeAnchors(i){
+    composeA.extent=Math.max(6,galR);composeA.boundary.radius=galR*1.1;
+    composeA.subsystems=[...sys.values()].filter(s=>s.alive&&s.pos).map(s=>({id:s.d.id,pos:s.pos.clone(),size:Math.max(1,s.sysR||s.radius*2)}));
+    const ids=planetIds.length?planetIds:moduleIds,n=Math.min(64,ids.length),tv=i?.tview??0;composeA.nodes=[];
+    for(let k=0;k<n;k++){const b=bodies.get(ids[Math.floor(k*ids.length/n)]);if(b)composeA.nodes.push({pos:bodyPos(new THREE.Vector3(),b,tv)});}
+    const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&bodies.has(a.fileId));
+    const at=att&&(i.t-att.at)/ctx.speed()/1000<30?attentionSubject(att,i)?.pos:busy?homeSys(bodies.get(busy.fileId))?.pos:null;composeA.active.pos.copy(at||composeA.center);
+    return composeA;}
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    compose:{camera,scene,anchors:composeAnchors},...(LIFE?{lifeStats,onLifeParams}:{})};
 }
