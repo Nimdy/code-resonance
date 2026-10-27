@@ -388,3 +388,40 @@ void main(){vec4 q=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(q.xyz/q.w-uCam);f
   c=mix(c,hazeAt(d),smoothstep(.0,-.02,h));
   if(uUnlock.z>0.){float veil=uUnlock.z*smoothstep(.1,.6,fbm3(vec3(d.x*4.,d.y*7.-uV*.03,d.z*4.)))*smoothstep(.12,.55,h);c+=satc(uPal[3])*veil*.05;}
   gl_FragColor=vec4(c,1.);}`;
+// ---- Digital life (only when the recipe has it on: these strings are never part of a world without life) -----------
+// The organisms answer the ecology living among them: the trail and energy its inhabitants leave (a field texture over
+// the ground plane) light the photophores where they pass, an organism visited by many (or a lasting attractor) glows a
+// little more, with a slow shimmer; its halo in the water swells with its visitors. Never structure, never a flash.
+const LIFE_DECL=`uniform sampler2D uLifeF;uniform vec4 uLifeO[MAXO],uLifeB;uniform float uLifeK;
+vec4 lifeField(vec3 w){vec2 u=(w.xz-uLifeB.xy)/uLifeB.zw;return texture2D(uLifeF,clamp(u,0.,1.));}`;
+const SEG_ANCHOR='  // Atmospheric perspective: organisms behind the anchor';
+const SEG_LIFE=`  {vec4 lf=lifeField(vW);vec4 lo=uLifeO[int(org)];float sh=.7+.3*sin(uV*1.1+dot(vW,vec3(2.1,1.7,2.3)));
+    float loc=(lf.r*.8+lf.g*.45)*(.3+.7*smoothstep(.2,1.,tip));float vis=lo.x*.55+lo.y*.3+lo.z*.15;
+    c+=hue*uLum*uLifeK*(spot*(loc*1.6+vis*.9)*sh+bud*(loc*.7+vis*.5)+(loc*.06+vis*.05)*sh*(.3+.7*tip))*(1.-lk.z*.85);}
+`;
+const GLOW_ANCHOR='vA=(1.-gone)*on*(1.-bl*.75)';
+export function withLife(src,kind){
+  const head=src.replace(COMMON,COMMON+LIFE_DECL);
+  if(kind==='seg'){if(!head.includes(SEG_ANCHOR))throw new Error('life: segment anchor');return head.replace(SEG_ANCHOR,SEG_LIFE+SEG_ANCHOR);}
+  if(kind==='glow'){if(!head.includes(GLOW_ANCHOR))throw new Error('life: glow anchor');
+    return head.replace(GLOW_ANCHOR,`vA=(1.+halo*uLifeK*(uLifeO[int(gM.y)].x*.8+uLifeO[int(gM.y)].y*.4))*(1.-gone)*on*(1.-bl*.75)`);}
+  return head;
+}
+// Inhabitants: soft points (authoritative entities and their followers) and screen-space ribbons along their trails,
+// additive, depth-tested against the organisms (a pollinator behind a trunk is hidden by it).
+export const LIFE_PT_VS=`${COMMON}
+attribute vec4 lC,lS;varying vec3 vC;varying float vK;
+void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;float px=projectionMatrix[1][1]*uRes.y*.5;float z=max(.3,-mv.z);
+  float s=lS.x*px/z;float ps=clamp(s,1.4*uPx,18.*uPx);
+  vC=lC.rgb*lC.a*min(1.,s*s/(ps*ps)+.4)*(1.-fogAmount(position)*.85)*smoothstep(.4,1.8,z);gl_PointSize=ps;vK=lS.y;}`;
+export const LIFE_PT_FS=`varying vec3 vC;varying float vK;
+void main(){vec2 q=gl_PointCoord-.5;float r=dot(q,q)*4.;if(r>1.)discard;
+  float g=vK>2.5?exp(-r*2.6)*.7+exp(-r*14.)*.5:exp(-r*7.)+exp(-r*26.)*1.3;gl_FragColor=vec4(vC*g,1.);}`;
+export const LIFE_RIB_VS=`${COMMON}
+attribute vec4 rA,rB,rC;varying vec3 vC;varying float vSide;
+void main(){vec4 ca=projectionMatrix*viewMatrix*vec4(rA.xyz,1.),cb=projectionMatrix*viewMatrix*vec4(rB.xyz,1.);
+  vec2 d=(cb.xy/max(cb.w,1e-3)-ca.xy/max(ca.w,1e-3))*uRes;vec2 n=normalize(vec2(-d.y,d.x)+1e-6);
+  bool e=position.y>.5;vec4 cp=e?cb:ca;vec3 p=e?rB.xyz:rA.xyz;float z=max(.3,cp.w);float px=projectionMatrix[1][1]*uRes.y*.5;
+  float w=clamp(rC.w*px/z,.7*uPx,4.*uPx);cp.xy+=n*position.x*w/uRes*2.*cp.w;gl_Position=cp;vSide=position.x;
+  vC=rC.rgb*(e?rB.w:rA.w)*(1.-fogAmount(p)*.85)*smoothstep(.4,1.8,z)*min(1.,rC.w*px/z/(.7*uPx));}`;
+export const LIFE_RIB_FS=`varying vec3 vC;varying float vSide;void main(){float e=1.-vSide*vSide;gl_FragColor=vec4(vC*e*e,1.);}`;
