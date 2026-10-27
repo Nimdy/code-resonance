@@ -24,7 +24,7 @@ test('Every value type of a built-in family can be tuned; the genome takes the e
   const t=tune(r,values);
   assert.equal(t.genome.light.bloom,1.7);assert.equal(t.genome.geometry.spiralArms,5);assert.equal(t.genome.geometry.arrangement,'cluster');
   assert.equal(t.genome.secondary.moonsAsRings,values['secondary.moonsAsRings']);assert.equal(t.genome.palette.primary,'#12ab9f','colours stored canonical');
-  assert.deepEqual(t.genome.technique,{tint:[1.2,.9,1.1]});
+  assert.deepEqual(t.genome.technique,{finish:'cinematic',tint:[1.2,.9,1.1]});
   assert.equal(t.tuning.family,'stellar-forge');
   assert.deepEqual(t.tuning.base,{'geometry.arrangement':r.genome.geometry.arrangement,'geometry.spiralArms':r.genome.geometry.spiralArms,'light.bloom':r.genome.light.bloom,
     'palette.primary':r.genome.palette.primary,'secondary.moonsAsRings':r.genome.secondary.moonsAsRings,'technique.tint':null});
@@ -55,7 +55,10 @@ test('null removes a tuned value and restores its base; tune-reset restores the 
   const r=stellar();
   const t=tune(r,{'light.bloom':1.7,'technique.tint':[1.2,.9,1.1],'geometry.arrangement':'cluster'});
   const less=tune(t,{'light.bloom':null,'technique.tint':null});
-  assert.equal(less.genome.light.bloom,r.genome.light.bloom);assert.equal(less.genome.technique,undefined,'a path the genome lacked is removed again');
+  assert.equal(less.genome.light.bloom,r.genome.light.bloom);assert.deepEqual(less.genome.technique,{finish:'cinematic'},'a path the genome lacked is removed again');
+  // ...and the object it leaves empty (an identity from before generator v4 has no technique at all).
+  const v3=recipe.generate(P,{family:'stellar-forge',now:0,version:3});
+  assert.equal(tune(tune(v3,{'technique.tint':[1.2,.9,1.1]}),{'technique.tint':null}).genome.technique,undefined);
   assert.deepEqual(Object.keys(less.tuning.values),['geometry.arrangement']);assert.deepEqual(Object.keys(less.tuning.base),['geometry.arrangement']);
   // Removing a value that is not tuned is a no-op; removing the last value leaves no tuning.
   assert.deepEqual(tune(less,{'camera.fov':null}).tuning,less.tuning);

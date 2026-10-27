@@ -28,11 +28,13 @@ const COMMON={
   'light.exposure':n(.5,2,'overall exposure'),'light.bloom':n(0,2.5,'bloom strength'),'light.bloomThreshold':n(.3,1.2,'brightness where bloom starts'),
   'light.contrast':n(.7,1.4,'contrast'),'light.grain':n(0,.1,'film grain'),'light.vignette':n(0,.8,'vignette'),
   'music.reactivity':n(0,1,'how strongly visuals follow the music'),'music.beatPulse':n(0,1,'pulse on the beat'),
+  'music.score':e([2,3],'generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded'),
   'agentProminence':n(0,1,'how prominent agent presences are'),'limits.maxLabels':i(0,8,'callouts on screen at once'),
   // Rendering technique, applied by the host to the world's grade (identity when absent).
+  'technique.finish':e(['classic','clean','cinematic','dreamlike'],'finish: a lens and colour profile over the world\'s own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe'),
   'technique.exposure':n(.5,2,'exposure multiplier'),'technique.bloom':n(0,3,'bloom multiplier'),'technique.contrast':n(.7,1.4,'contrast multiplier'),
   'technique.saturation':n(0,2,'saturation multiplier'),'technique.vignette':n(0,2,'vignette multiplier'),'technique.grain':n(0,3,'grain multiplier'),
-  'technique.aberration':n(0,.02,'chromatic aberration at the edges (default 0.004)'),
+  'technique.aberration':n(0,.02,'chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004)'),
   'technique.tint':{type:'vec3',min:.5,max:1.5,doc:'colour multiplier before tone mapping [r,g,b]'},
   'technique.lift':{type:'vec3',min:-.05,max:.05,doc:'shadow lift after tone mapping [r,g,b]'}
 };
@@ -92,7 +94,7 @@ const LIFE={
   'life.environment':n(0,2,'environmental influence: how strongly currents and engineering events move them'),
   'life.trails':n(0,2,'trails: how much they mark their way and follow each other\'s, and how visible the trails are'),
   'life.persistence':n(.25,2,'field memory: how long trails, energy and disturbances last'),
-  'life.music':n(0,2,'music influence: how much the musical sections change currents, turbulence and cohesion'),
+  'life.music':n(0,2,'music influence: 0 an independent ecology (exactly the same with or without music), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous)'),
   'life.attraction':n(0,2,'advanced: attraction to favourable places and to other species they chase'),
   'life.repulsion':n(0,2,'advanced: avoidance of disturbed places and of species they avoid'),
   'life.separation':n(0,2,'advanced: personal space between neighbours'),
@@ -100,7 +102,8 @@ const LIFE={
   'life.cohesion':n(0,2,'advanced: staying with the group'),
   'life.current':n(0,2,'advanced: strength of the world\'s large-scale current'),
   'life.diffusion':n(0,2,'advanced: how fast traces spread out'),
-  'life.radius':n(.5,1.5,'advanced: how far an inhabitant perceives its neighbours')
+  'life.radius':n(.5,1.5,'advanced: how far an inhabitant perceives its neighbours'),
+  'life.ecology':e([1,2],'ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded')
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
