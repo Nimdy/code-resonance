@@ -5,7 +5,7 @@
 // Approval is the one decision here that lets someone else's code run, so it is never a toggle: it shows who made the
 // pack, the exact files, the digest the approval is bound to and what isolation cannot guarantee, and needs a click on
 // "Allow this code".
-import {h,text,button,segmented,disclosure,pill,callout,emptyState,kv,copyable,modal,confirmDialog,toast,styles,humanize} from '../dom.js';
+import {h,text,button,segmented,disclosure,pill,callout,emptyState,kv,copyable,modal,confirmDialog,toast,styles,humanize,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
 import {dateTime,bytes,count,projectName} from '../format.js';
 import {renderMarkdown,openDoc,DOCS} from '../markdown.js';
@@ -46,8 +46,6 @@ function approval(p){
   if(!p.executable)return {label:'Data only — no approval needed',kind:'plain'};
   return p.trusted?{label:'Approved',kind:'ok'}:{label:'Needs approval',kind:'warn'};
 }
-// Smooth scrolling only when motion is welcome: the app's own Reduce/Full setting first, then the system's.
-const reduced=()=>{const m=document.documentElement.dataset.motion;return m==='reduce'||(m!=='full'&&matchMedia('(prefers-reduced-motion: reduce)').matches);};
 const usable=p=>p.ok&&p.compatible&&(!p.executable||p.trusted);
 const reviewable=p=>p.executable&&p.ok&&p.compatible&&!p.trusted;
 // The library filters: every one is a question a person asks of a growing library (what is waiting for me, what runs code).
@@ -61,7 +59,7 @@ export default {mount(view,{store,player:P,navigate,params}){
   // it holds one pack's identity, approval, actions and contents.
   const summary=h('p',{class:'muted',id:'pkSummary'});
   const importBtn=button({label:'Import a pack',icon:'upload',kind:'primary',id:'pkImportBtn',onClick:()=>openImport()});
-  const creatorBtn=button({label:'Make your own',icon:'code',kind:'ghost',onClick:()=>{creator.scrollIntoView({behavior:reduced()?'auto':'smooth',block:'start'});creator.querySelector('button')?.focus({preventScroll:true});}});
+  const creatorBtn=button({label:'Make your own',icon:'code',kind:'ghost',onClick:()=>{creator.scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});creator.querySelector('button')?.focus({preventScroll:true});}});
   const banner=h('div',{class:'pk-banner'});
   const filterHolder=h('div',{class:'pk-filter'});
   const list=h('ul',{class:'pk-list',id:'pkList','aria-label':'Installed visual packs'});
@@ -187,7 +185,7 @@ export default {mount(view,{store,player:P,navigate,params}){
     selected=id||'';for(const r of list.querySelectorAll('.pk-row'))r.setAttribute('aria-current',String(r.dataset.id===selected));
     renderInspector(true);renderHidden();
     // Narrow windows stack the inspector under the library: bring it into view, or a choice would seem to do nothing.
-    if(fromUser&&matchMedia('(max-width: 900px)').matches)inspector.scrollIntoView({block:'start',behavior:reduced()?'auto':'smooth'});
+    if(fromUser&&matchMedia('(max-width: 900px)').matches)inspector.scrollIntoView({block:'start',behavior:reducedMotion()?'auto':'smooth'});
     // The address names the pack (a bookmark, Back/Forward); the route handler then finds it already shown.
     if(fromUser&&location.hash!==`#/packs/${encodeURIComponent(selected)}`)navigate('packs',selected);
   }

@@ -4,7 +4,7 @@
 // to change them in VS Code, never a control that looks like it changes VS Code. Claude Code hooks are written only after
 // the exact change to the file was shown and accepted, and only if the file is still the one that was shown.
 // Project ids never appear as text (they look like secrets and mean nothing to people): names or short labels only.
-import {h,text,button,segmented,section,disclosure,pill,callout,copyable,toast,styles} from '../dom.js';
+import {h,text,button,segmented,section,disclosure,pill,callout,copyable,toast,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
 import {ago,dateTime,duration,count,projectName} from '../format.js';
 import {openDoc} from '../markdown.js';
@@ -32,8 +32,6 @@ const PLATFORMS={linux:'Linux',darwin:'macOS',win32:'Windows'};
 const settingName=id=>{const s=id.replace(/^resonance\./,'').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase();return s.charAt(0).toUpperCase()+s.slice(1);};
 const formatValue=v=>v===null||v===undefined?'Not reported':typeof v==='boolean'?(v?'On':'Off'):String(v);
 const older=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++)if((x[i]||0)!==(y[i]||0))return (x[i]||0)<(y[i]||0);return false;};
-// The app's own motion setting (html[data-motion]) wins over the system preference, as in style.css.
-const reducedMotion=()=>{const m=document.documentElement.dataset.motion;return m==='reduce'||(m!=='full'&&matchMedia('(prefers-reduced-motion: reduce)').matches);};
 // A date and time without the year when it is this year (a fact cell stays on one line).
 const shortDateTime=ts=>{if(!Number.isFinite(ts)||ts<=0)return '—';const d=new Date(ts),o={month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'};
   if(d.getFullYear()!==new Date().getFullYear())o.year='numeric';return d.toLocaleString([],o);};

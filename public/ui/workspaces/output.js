@@ -2,7 +2,7 @@
 // a live recording (the browser's MediaRecorder: the world, its labels and the music as they play, downloaded as WebM),
 // the OBS view (a URL an OBS Browser Source shows: the stage alone), and exports of the recorded performance (WAV, JSON,
 // deterministic films). The slot shows the stage exactly as it is recorded: controls live outside it, never in a file.
-import {h,text,button,segmented,toggle,callout,copyable,kv,disclosure,toast,pill,setLabel,styles} from '../dom.js';
+import {h,text,button,segmented,toggle,callout,copyable,kv,disclosure,toast,pill,setLabel,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
 import {timecode,duration,bytes,clockTime,publicName,WORLD_NAMES,STYLE_NAMES} from '../format.js';
 import {openDoc} from '../markdown.js';
@@ -13,8 +13,6 @@ const PROFILES=[
   {id:'stage',name:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
 const even=n=>Math.max(2,Math.round(n/2)*2);
 const mbit=n=>`${(n/1e6).toFixed(n%1e6?1:0)} Mbit/s`;
-// Scrolling follows the app's Motion setting first, then the system's (html[data-motion] is set only when not "system").
-const smooth=()=>{const m=document.documentElement.dataset.motion;return m==='full'||(m!=='reduce'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)?'smooth':'auto';};
 const OBS_LABELS=[{value:'stream',label:'Stream',title:'A lower third with the public title (the OBS default)'},{value:'cinematic',label:'Cinematic',title:'Titles and major moments only'},{value:'off',label:'Off',title:'The world alone'}];
 export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   styles('output');
@@ -225,7 +223,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   function presentObs(reset=true){
     // The OBS presentation: the recommended Browser Source (stream information, following the project).
     if(reset)setObs({labels:'stream',world:false,style:false});
-    document.getElementById('outObs').scrollIntoView({block:'start',behavior:smooth()});
+    document.getElementById('outObs').scrollIntoView({block:'start',behavior:reducedMotion()?'auto':'smooth'});
     (obsUrl.querySelector('button:not(:disabled)')||obsLabels.querySelector('[aria-checked="true"]'))?.focus({preventScroll:true});
     if(reset)toast('OBS view set up: copy the URL into a Browser Source of 1920 × 1080. Nothing is recorded here.','info');
   }
