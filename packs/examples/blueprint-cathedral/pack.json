@@ -3,7 +3,7 @@
   "schema": "code-resonance.pack.v1",
   "id": "northlight.blueprint-cathedral",
   "name": "Blueprint Cathedral",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "kind": "shader",
   "sdk": "^1.0",
   "author": {"name": "Northlight Works (fictional)"},
@@ -18,7 +18,7 @@
       "uInk": {"type": "number", "min": 0.65, "max": 1, "description": "how much of the image becomes ink lines"},
       "uGrid": {"type": "number", "min": 20, "max": 36, "from": {"trait": "modules", "scale": 0.01, "jitter": 0.2}, "description": "drafting grid density"}
     },
-    "overrides": {"atmosphere.weather": "night-fog", "atmosphere.fog": 0.5, "light.bloom": 0.9},
+    "overrides": {"atmosphere.weather": "night-fog", "atmosphere.fog": 0.85, "secondary.windows": 1.3, "light.bloom": 0.9},
     "technique": {"saturation": 0.75, "tint": [0.86, 1, 1.16], "grain": 0.5},
     "budget": {"drawCalls": 30, "passes": 40, "triangles": 600000, "points": 20000, "textures": 20, "updateMs": 4}
   }

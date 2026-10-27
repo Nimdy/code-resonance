@@ -9,3 +9,6 @@ mapped to a success effect). Ranges such as `"geometry.spiralArms": [2, 3]` are 
     node scripts/pack.js install packs/examples/ember-observatory
 
 Then choose **EMBER OBSERVATORY · STELLAR-FORGE** under the look selector in the World DNA panel. CC0.
+
+**1.1.0** — clearer: a lighter nebula veil, deeper blacks (less shadow lift, a little more contrast) and a warmer tint,
+so the binary core and its worlds read at once through the lens instead of behind a milky haze.

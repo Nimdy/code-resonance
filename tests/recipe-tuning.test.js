@@ -126,7 +126,7 @@ test('A shader look tunes uniforms.<name>; dropping the look drops those values 
   assert(spec['uniforms.uGrid']&&spec['geometry.architecture']);
   assert.equal(recipe.tunable({...look,pack:{...look.pack,id:'nobody.gone'}},reg)['uniforms.uInk'],undefined);
   const x=tune(look,{'uniforms.uInk':.7,'atmosphere.fog':1.2},reg);
-  assert.equal(x.genome.uniforms.uInk,.7);assert.equal(x.tuning.base['atmosphere.fog'],.5,'the base under a look is the look\'s value');
+  assert.equal(x.genome.uniforms.uInk,.7);assert.equal(x.tuning.base['atmosphere.fog'],.85,'the base under a look is the look\'s value');
   assert.throws(()=>tune(look,{'uniforms.uInk':1.5},reg),/"uniforms\.uInk"/);
   // Regenerating on the same family with the look keeps both; removing the look keeps the family's values only.
   const again=recipe.update(x,{type:'regenerate',keepFamily:true},P,0,reg);
