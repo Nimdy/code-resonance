@@ -18,6 +18,32 @@ No intended change of product behaviour. The pull-request stack is integrated in
   the HTTP API; SECURITY covers Artist Studio compositions; historical records are labelled; SDK 1.2 is named as current.
 - **A test** keeps the Control Center's documents, the receiver's allowlist and every Markdown link consistent
   (`tests/docs.test.js`).
+- **Code:**
+  - Removed dead code: Cathedral layout helpers unused since life grammar v3, the score's uncalled `pitch()`, unread
+    bindings, unused CSS, the Construct's leftover state, and two orphaned composition wording helpers. Score and
+    composition output is unchanged; the digests are pinned.
+  - One source per module system for the music vocabulary (styles, profile keys, mix groups, tempo limits), with
+    parity tests. The Music Studio reads room sizes from the engine.
+  - One reduced-motion rule and one copy of the information-mode descriptions.
+  - The pure quality governor now lives in `public/worlds/quality.js`; the composition export helpers in
+    `public/ui/creations.js`, which also styles the export dialog in Visual Packs; the Claude Code hook format sits
+    with its installer.
+- **Fixes:**
+  - A stopped receiver no longer holds Node open for 10 s.
+  - A preview that settles after the Artist Studio is left no longer re-sets the draft.
+  - The 2D stages' ripple backlog is bounded.
+  - The per-frame state no longer hashes the whole ecosystem to read the quality level.
+  - A test no longer leaks temporary folders.
+- **Validation hardening:**
+  - Composition layer types and pack base families are looked up as own keys only (`constructor` was accepted or
+    crashed).
+  - Values that cannot become a number or a string no longer crash validation.
+  - Validation reports at most 24 problems.
+- **Tooling:**
+  - `npm run check` finds its files itself (`scripts/check.js`, proven to cover the old list).
+  - CI jobs have timeouts with margin and run on pinned `ubuntu-24.04`.
+  - The parameter catalogue is regenerated for SDK 1.2 and guarded by a test.
+  - Personal machine paths are removed from tracked qualification reports.
 
 ### Creative mastering and the Artist Studio (PR #11)
 

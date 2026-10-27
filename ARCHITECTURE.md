@@ -95,6 +95,7 @@ consistent](docs/CONTROL-CENTER.md#how-views-stay-consistent)).
 - Windows derive from the receiver's `receivedAt`, never from when a scan happens to run. A forced flush is itself recorded in the journal (`control.window.close`), so forced cuts replay too.
 - Re-interpreting a journal reproduces `performance.jsonl` byte-for-byte (tested). Frames appended after the last checkpoint are truncated on restart and regenerated identically.
 - The score is a pure function of the project seed, frame state, bar index and palette; bars are anchored to the performance clock. `ResonanceMusic.renderOffline` renders a recorded performance without real-time playback (used for WAV export and audio qualification).
+- What is exact and what is not: the notes (every bar, every event's figure) are identical on every render. The score v2 output is pinned by digest in `tests/score-v3.test.js`. The rendered *samples* are not bit-identical from one offline render to the next, before or after Phase 11, on the same machine: up to about 10 LSB (−70 dBFS) on a few percent of samples, from Chrome's offline Web Audio. Compare renders by loudness, range, peak and band levels (`qualification/audio/score-versions.js`), which agree to 0.01 dB, not by bytes.
 
 ## Timing
 
