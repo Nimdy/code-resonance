@@ -92,7 +92,10 @@ function copy(name){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-life-'));
         m.idle=samples.map(({thumb,...s})=>s);m.idleMotion=motion;
         check(`${family}: idle ten minutes, the population lives and moves`,samples.every(s=>s.alive>0&&s.speed>.05),samples.map(s=>`${s.at}s ${s.alive} alive v ${s.speed}`).join(', '));
         check(`${family}: idle, the image keeps changing`,motion.every(x=>x>.3),`mean |Δluma| ${motion.join(', ')}`);
-        check(`${family}: idle, no intent is created and the director stays idle`,samples.every(s=>s.intents===samples[0].intents&&s.phase==='idle'),samples.map(s=>`${s.intents}/${s.phase}`).join(', '));
+        // (the director's phase decays from the recorded activity: shortly after the last event it may still be active,
+        // with life on or off; once idle, the ecosystem never makes it active again)
+        const firstIdle=samples.findIndex(s=>s.phase==='idle');
+        check(`${family}: idle, no intent is created and the director, once idle, stays idle`,samples.every(s=>s.intents===samples[0].intents)&&firstIdle>=0&&firstIdle<=1&&samples.slice(firstIdle).every(s=>s.phase==='idle'),samples.map(s=>`${s.at}s ${s.intents}/${s.phase}`).join(', '));
         const g=samples.map(s=>`${s.geometries}/${s.textures}`),heap=samples.map(s=>s.heap).filter(Boolean);
         check(`${family}: idle, GPU resources are constant and memory bounded`,new Set(g).size===1&&(!heap.length||Math.max(...heap)<heap[0]*1.5+16e6)&&samples.every(s=>s.checkpoints.recent<=6&&s.checkpoints.sparse<=24),
           `geometries/textures ${[...new Set(g)].join(' ')}; heap MB ${heap.map(h=>(h/1e6).toFixed(0)).join(' ')}; checkpoints ${JSON.stringify(samples.at(-1).checkpoints)}`);
