@@ -1,0 +1,446 @@
+{
+ "at": "2026-10-25T02:13:54.596Z",
+ "gpu": "amd",
+ "arms": {
+  "detached": {
+   "minutes": 10,
+   "start": 58,
+   "end": 69.1,
+   "trendMBPerMin": 1.23,
+   "secondHalfMBPerMin": 0.26,
+   "projectViewKB": 268.5,
+   "series": [
+    {
+     "t": 20,
+     "anon": 58,
+     "renderers": 1,
+     "events": 8,
+     "projectViewKB": 18.5
+    },
+    {
+     "t": 40,
+     "anon": 60.6,
+     "renderers": 1,
+     "events": 15,
+     "projectViewKB": 40.9
+    },
+    {
+     "t": 60,
+     "anon": 61.1,
+     "renderers": 1,
+     "events": 22,
+     "projectViewKB": 56.9
+    },
+    {
+     "t": 80,
+     "anon": 60.2,
+     "renderers": 1,
+     "events": 28,
+     "projectViewKB": 77.8
+    },
+    {
+     "t": 100,
+     "anon": 60.4,
+     "renderers": 1,
+     "events": 35,
+     "projectViewKB": 93.2
+    },
+    {
+     "t": 120,
+     "anon": 59.6,
+     "renderers": 1,
+     "events": 42,
+     "projectViewKB": 108.6
+    },
+    {
+     "t": 140,
+     "anon": 59.8,
+     "renderers": 1,
+     "events": 48,
+     "projectViewKB": 122.1
+    },
+    {
+     "t": 160,
+     "anon": 60.1,
+     "renderers": 1,
+     "events": 55,
+     "projectViewKB": 137.5
+    },
+    {
+     "t": 180,
+     "anon": 63.7,
+     "renderers": 1,
+     "events": 62,
+     "projectViewKB": 152.9
+    },
+    {
+     "t": 200,
+     "anon": 66.8,
+     "renderers": 1,
+     "events": 68,
+     "projectViewKB": 166.4
+    },
+    {
+     "t": 220,
+     "anon": 67.4,
+     "renderers": 1,
+     "events": 75,
+     "projectViewKB": 181.8
+    },
+    {
+     "t": 240,
+     "anon": 67.4,
+     "renderers": 1,
+     "events": 82,
+     "projectViewKB": 197.2
+    },
+    {
+     "t": 260,
+     "anon": 66.5,
+     "renderers": 1,
+     "events": 88,
+     "projectViewKB": 210.8
+    },
+    {
+     "t": 280,
+     "anon": 66.7,
+     "renderers": 1,
+     "events": 95,
+     "projectViewKB": 226.1
+    },
+    {
+     "t": 300,
+     "anon": 67.3,
+     "renderers": 1,
+     "events": 102,
+     "projectViewKB": 241.5
+    },
+    {
+     "t": 320,
+     "anon": 66.9,
+     "renderers": 1,
+     "events": 108,
+     "projectViewKB": 245.3
+    },
+    {
+     "t": 340,
+     "anon": 67.1,
+     "renderers": 1,
+     "events": 115,
+     "projectViewKB": 248
+    },
+    {
+     "t": 360,
+     "anon": 68.9,
+     "renderers": 1,
+     "events": 122,
+     "projectViewKB": 250.6
+    },
+    {
+     "t": 380,
+     "anon": 70,
+     "renderers": 1,
+     "events": 128,
+     "projectViewKB": 253.2
+    },
+    {
+     "t": 400,
+     "anon": 70.4,
+     "renderers": 1,
+     "events": 135,
+     "projectViewKB": 255.7
+    },
+    {
+     "t": 420,
+     "anon": 69.7,
+     "renderers": 1,
+     "events": 142,
+     "projectViewKB": 258.3
+    },
+    {
+     "t": 440,
+     "anon": 69.4,
+     "renderers": 1,
+     "events": 148,
+     "projectViewKB": 260.9
+    },
+    {
+     "t": 460,
+     "anon": 69.8,
+     "renderers": 1,
+     "events": 155,
+     "projectViewKB": 263.4
+    },
+    {
+     "t": 480,
+     "anon": 70.6,
+     "renderers": 1,
+     "events": 162,
+     "projectViewKB": 266
+    },
+    {
+     "t": 500,
+     "anon": 69.3,
+     "renderers": 1,
+     "events": 168,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 520,
+     "anon": 69.7,
+     "renderers": 1,
+     "events": 175,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 540,
+     "anon": 70.2,
+     "renderers": 1,
+     "events": 182,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 560,
+     "anon": 69.1,
+     "renderers": 1,
+     "events": 188,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 580,
+     "anon": 68.6,
+     "renderers": 1,
+     "events": 195,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 600,
+     "anon": 69.1,
+     "renderers": 1,
+     "events": 202,
+     "projectViewKB": 268.5
+    }
+   ]
+  },
+  "attached": {
+   "minutes": 10,
+   "start": 49,
+   "end": 89.5,
+   "trendMBPerMin": 4.37,
+   "secondHalfMBPerMin": 3.74,
+   "projectViewKB": 268.4,
+   "series": [
+    {
+     "t": 20,
+     "anon": 49,
+     "renderers": 1,
+     "events": 8,
+     "projectViewKB": 18.5
+    },
+    {
+     "t": 40,
+     "anon": 53.5,
+     "renderers": 1,
+     "events": 15,
+     "projectViewKB": 38
+    },
+    {
+     "t": 60,
+     "anon": 53.1,
+     "renderers": 1,
+     "events": 22,
+     "projectViewKB": 60.4
+    },
+    {
+     "t": 80,
+     "anon": 51.7,
+     "renderers": 1,
+     "events": 28,
+     "projectViewKB": 77.8
+    },
+    {
+     "t": 100,
+     "anon": 53.5,
+     "renderers": 1,
+     "events": 35,
+     "projectViewKB": 91.3
+    },
+    {
+     "t": 120,
+     "anon": 54.3,
+     "renderers": 1,
+     "events": 42,
+     "projectViewKB": 106.7
+    },
+    {
+     "t": 140,
+     "anon": 54.4,
+     "renderers": 1,
+     "events": 48,
+     "projectViewKB": 122.1
+    },
+    {
+     "t": 160,
+     "anon": 55.2,
+     "renderers": 1,
+     "events": 55,
+     "projectViewKB": 135.6
+    },
+    {
+     "t": 180,
+     "anon": 56.5,
+     "renderers": 1,
+     "events": 62,
+     "projectViewKB": 151
+    },
+    {
+     "t": 200,
+     "anon": 61.2,
+     "renderers": 1,
+     "events": 68,
+     "projectViewKB": 166.4
+    },
+    {
+     "t": 220,
+     "anon": 63.7,
+     "renderers": 1,
+     "events": 75,
+     "projectViewKB": 179.9
+    },
+    {
+     "t": 240,
+     "anon": 65.6,
+     "renderers": 1,
+     "events": 82,
+     "projectViewKB": 195.3
+    },
+    {
+     "t": 260,
+     "anon": 66,
+     "renderers": 1,
+     "events": 88,
+     "projectViewKB": 210.7
+    },
+    {
+     "t": 280,
+     "anon": 68.5,
+     "renderers": 1,
+     "events": 95,
+     "projectViewKB": 224.2
+    },
+    {
+     "t": 300,
+     "anon": 70.9,
+     "renderers": 1,
+     "events": 102,
+     "projectViewKB": 239.6
+    },
+    {
+     "t": 320,
+     "anon": 71.8,
+     "renderers": 1,
+     "events": 108,
+     "projectViewKB": 245.3
+    },
+    {
+     "t": 340,
+     "anon": 71.6,
+     "renderers": 1,
+     "events": 115,
+     "projectViewKB": 247.9
+    },
+    {
+     "t": 360,
+     "anon": 74.1,
+     "renderers": 1,
+     "events": 122,
+     "projectViewKB": 250.5
+    },
+    {
+     "t": 380,
+     "anon": 74.1,
+     "renderers": 1,
+     "events": 128,
+     "projectViewKB": 253.1
+    },
+    {
+     "t": 400,
+     "anon": 79.5,
+     "renderers": 1,
+     "events": 135,
+     "projectViewKB": 255.7
+    },
+    {
+     "t": 420,
+     "anon": 79.5,
+     "renderers": 1,
+     "events": 142,
+     "projectViewKB": 258.2
+    },
+    {
+     "t": 440,
+     "anon": 80.7,
+     "renderers": 1,
+     "events": 148,
+     "projectViewKB": 260.8
+    },
+    {
+     "t": 460,
+     "anon": 81.8,
+     "renderers": 1,
+     "events": 155,
+     "projectViewKB": 263.3
+    },
+    {
+     "t": 480,
+     "anon": 83,
+     "renderers": 1,
+     "events": 162,
+     "projectViewKB": 265.9
+    },
+    {
+     "t": 500,
+     "anon": 83.4,
+     "renderers": 1,
+     "events": 168,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 520,
+     "anon": 84.2,
+     "renderers": 1,
+     "events": 175,
+     "projectViewKB": 268.4
+    },
+    {
+     "t": 540,
+     "anon": 84.7,
+     "renderers": 1,
+     "events": 182,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 560,
+     "anon": 86.4,
+     "renderers": 1,
+     "events": 188,
+     "projectViewKB": 268.4
+    },
+    {
+     "t": 580,
+     "anon": 87.8,
+     "renderers": 1,
+     "events": 195,
+     "projectViewKB": 268.4
+    },
+    {
+     "t": 600,
+     "anon": 89.5,
+     "renderers": 1,
+     "events": 202,
+     "projectViewKB": 268.4
+    }
+   ]
+  }
+ }
+}

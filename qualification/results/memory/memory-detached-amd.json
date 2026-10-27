@@ -1,0 +1,600 @@
+{
+ "at": "2026-10-25T02:34:49.164Z",
+ "gpu": "amd",
+ "arms": {
+  "detached-network": {
+   "minutes": 10,
+   "start": 48.7,
+   "end": 87.5,
+   "trendMBPerMin": 4.2,
+   "secondHalfMBPerMin": 3.54,
+   "projectViewKB": 268.5,
+   "state": {
+    "world": {
+     "selectedWorld": "living",
+     "remote": false,
+     "pack": null,
+     "family": "stellar-forge",
+     "look": null,
+     "frames": 0,
+     "notice": "",
+     "lastStop": null
+    },
+    "stats": {
+     "family": "stellar-forge",
+     "variant": 0,
+     "systems": 1,
+     "planets": 21,
+     "moons": 101,
+     "links": 0,
+     "dust": 25055,
+     "galaxy": 24.09,
+     "arrangement": "ring",
+     "camera": [
+      3.9,
+      14.1,
+      -17.7
+     ],
+     "stars": [
+      [
+       0,
+       "logic",
+       -7.5,
+       0,
+       7.5,
+       6.2
+      ]
+     ],
+     "intents": 220,
+     "history": {
+      "folded": 220,
+      "raw": 220,
+      "checkpoints": 0,
+      "parked": 0,
+      "base": 0,
+      "late": 0,
+      "covered": 0,
+      "refolded": 0,
+      "jumps": 0
+     },
+     "unlocked": 0,
+     "lasting": 0,
+     "agentNumbers": [],
+     "agents": 0,
+     "phase": "active",
+     "activity": 0.261,
+     "quality": 0,
+     "drawCalls": 12,
+     "passes": 26,
+     "triangles": 11644,
+     "points": 31883,
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "effects": {
+      "planet-birth": 20,
+      "accretion-spark": 20,
+      "expansion": 3
+     },
+     "updateMs": 0.07,
+     "drawMs": 0.21,
+     "gpuMs": 14.91
+    },
+    "fps": 60.4,
+    "viewport": [
+     1920,
+     1080
+    ]
+   },
+   "series": [
+    {
+     "t": 20,
+     "anon": 48.7,
+     "renderers": 1,
+     "events": 8,
+     "projectViewKB": 15.7
+    },
+    {
+     "t": 40,
+     "anon": 52.5,
+     "renderers": 1,
+     "events": 15,
+     "projectViewKB": 41.5
+    },
+    {
+     "t": 60,
+     "anon": 52.5,
+     "renderers": 1,
+     "events": 22,
+     "projectViewKB": 63.9
+    },
+    {
+     "t": 80,
+     "anon": 52,
+     "renderers": 1,
+     "events": 28,
+     "projectViewKB": 76
+    },
+    {
+     "t": 100,
+     "anon": 53.5,
+     "renderers": 1,
+     "events": 35,
+     "projectViewKB": 93.8
+    },
+    {
+     "t": 120,
+     "anon": 53.6,
+     "renderers": 1,
+     "events": 42,
+     "projectViewKB": 109.2
+    },
+    {
+     "t": 140,
+     "anon": 54.8,
+     "renderers": 1,
+     "events": 48,
+     "projectViewKB": 120.3
+    },
+    {
+     "t": 160,
+     "anon": 55.8,
+     "renderers": 1,
+     "events": 55,
+     "projectViewKB": 138.2
+    },
+    {
+     "t": 180,
+     "anon": 56.1,
+     "renderers": 1,
+     "events": 62,
+     "projectViewKB": 149.2
+    },
+    {
+     "t": 200,
+     "anon": 64.3,
+     "renderers": 1,
+     "events": 68,
+     "projectViewKB": 164.6
+    },
+    {
+     "t": 220,
+     "anon": 65.1,
+     "renderers": 1,
+     "events": 75,
+     "projectViewKB": 182.5
+    },
+    {
+     "t": 240,
+     "anon": 65.6,
+     "renderers": 1,
+     "events": 82,
+     "projectViewKB": 193.6
+    },
+    {
+     "t": 260,
+     "anon": 66.5,
+     "renderers": 1,
+     "events": 88,
+     "projectViewKB": 208.9
+    },
+    {
+     "t": 280,
+     "anon": 67,
+     "renderers": 1,
+     "events": 95,
+     "projectViewKB": 226.8
+    },
+    {
+     "t": 300,
+     "anon": 68.9,
+     "renderers": 1,
+     "events": 102,
+     "projectViewKB": 237.9
+    },
+    {
+     "t": 320,
+     "anon": 71.3,
+     "renderers": 1,
+     "events": 108,
+     "projectViewKB": 245.3
+    },
+    {
+     "t": 340,
+     "anon": 71.3,
+     "renderers": 1,
+     "events": 115,
+     "projectViewKB": 248.6
+    },
+    {
+     "t": 360,
+     "anon": 73.5,
+     "renderers": 1,
+     "events": 122,
+     "projectViewKB": 250.6
+    },
+    {
+     "t": 380,
+     "anon": 77.3,
+     "renderers": 1,
+     "events": 128,
+     "projectViewKB": 253.2
+    },
+    {
+     "t": 400,
+     "anon": 76.8,
+     "renderers": 1,
+     "events": 135,
+     "projectViewKB": 256.4
+    },
+    {
+     "t": 420,
+     "anon": 77.8,
+     "renderers": 1,
+     "events": 142,
+     "projectViewKB": 258.3
+    },
+    {
+     "t": 440,
+     "anon": 78.9,
+     "renderers": 1,
+     "events": 148,
+     "projectViewKB": 260.9
+    },
+    {
+     "t": 460,
+     "anon": 78.1,
+     "renderers": 1,
+     "events": 155,
+     "projectViewKB": 264.1
+    },
+    {
+     "t": 480,
+     "anon": 81.2,
+     "renderers": 1,
+     "events": 162,
+     "projectViewKB": 266
+    },
+    {
+     "t": 500,
+     "anon": 82.6,
+     "renderers": 1,
+     "events": 168,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 520,
+     "anon": 83.1,
+     "renderers": 1,
+     "events": 175,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 540,
+     "anon": 84.4,
+     "renderers": 1,
+     "events": 182,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 560,
+     "anon": 87.3,
+     "renderers": 1,
+     "events": 188,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 580,
+     "anon": 86.1,
+     "renderers": 1,
+     "events": 195,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 600,
+     "anon": 87.5,
+     "renderers": 1,
+     "events": 202,
+     "projectViewKB": 268.5
+    }
+   ]
+  },
+  "detached": {
+   "minutes": 10,
+   "start": 52.8,
+   "end": 62.5,
+   "trendMBPerMin": 1.23,
+   "secondHalfMBPerMin": 0.16,
+   "projectViewKB": 268.5,
+   "state": {
+    "world": {
+     "selectedWorld": "living",
+     "remote": false,
+     "pack": null,
+     "family": "stellar-forge",
+     "look": null,
+     "frames": 0,
+     "notice": "",
+     "lastStop": null
+    },
+    "stats": {
+     "family": "stellar-forge",
+     "variant": 0,
+     "systems": 1,
+     "planets": 21,
+     "moons": 101,
+     "links": 0,
+     "dust": 24217,
+     "galaxy": 20.13,
+     "arrangement": "ring",
+     "camera": [
+      -24.9,
+      11.6,
+      -3.4
+     ],
+     "stars": [
+      [
+       0,
+       "logic",
+       -6.4,
+       -0.1,
+       6.4,
+       5.2
+      ]
+     ],
+     "intents": 220,
+     "history": {
+      "folded": 220,
+      "raw": 220,
+      "checkpoints": 0,
+      "parked": 0,
+      "base": 0,
+      "late": 0,
+      "covered": 0,
+      "refolded": 0,
+      "jumps": 0
+     },
+     "unlocked": 0,
+     "lasting": 0,
+     "agentNumbers": [],
+     "agents": 0,
+     "phase": "active",
+     "activity": 0.262,
+     "quality": 0,
+     "drawCalls": 12,
+     "passes": 26,
+     "triangles": 11644,
+     "points": 30665,
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "effects": {
+      "planet-birth": 20,
+      "accretion-spark": 20,
+      "expansion": 3
+     },
+     "updateMs": 0.06,
+     "drawMs": 0.26,
+     "gpuMs": 15.59
+    },
+    "fps": 60.4,
+    "viewport": [
+     1920,
+     1080
+    ]
+   },
+   "series": [
+    {
+     "t": 20,
+     "anon": 52.8,
+     "renderers": 1,
+     "events": 8,
+     "projectViewKB": 15.7
+    },
+    {
+     "t": 40,
+     "anon": 55.1,
+     "renderers": 1,
+     "events": 15,
+     "projectViewKB": 38
+    },
+    {
+     "t": 60,
+     "anon": 57,
+     "renderers": 1,
+     "events": 22,
+     "projectViewKB": 60.4
+    },
+    {
+     "t": 80,
+     "anon": 54.7,
+     "renderers": 1,
+     "events": 28,
+     "projectViewKB": 76
+    },
+    {
+     "t": 100,
+     "anon": 54.7,
+     "renderers": 1,
+     "events": 35,
+     "projectViewKB": 91.4
+    },
+    {
+     "t": 120,
+     "anon": 54.9,
+     "renderers": 1,
+     "events": 42,
+     "projectViewKB": 106.7
+    },
+    {
+     "t": 140,
+     "anon": 55.3,
+     "renderers": 1,
+     "events": 48,
+     "projectViewKB": 120.3
+    },
+    {
+     "t": 160,
+     "anon": 55.4,
+     "renderers": 1,
+     "events": 55,
+     "projectViewKB": 135.7
+    },
+    {
+     "t": 180,
+     "anon": 54,
+     "renderers": 1,
+     "events": 62,
+     "projectViewKB": 151.1
+    },
+    {
+     "t": 200,
+     "anon": 61.6,
+     "renderers": 1,
+     "events": 68,
+     "projectViewKB": 164.6
+    },
+    {
+     "t": 220,
+     "anon": 62.3,
+     "renderers": 1,
+     "events": 75,
+     "projectViewKB": 180
+    },
+    {
+     "t": 240,
+     "anon": 61.9,
+     "renderers": 1,
+     "events": 82,
+     "projectViewKB": 195.4
+    },
+    {
+     "t": 260,
+     "anon": 61.4,
+     "renderers": 1,
+     "events": 88,
+     "projectViewKB": 208.9
+    },
+    {
+     "t": 280,
+     "anon": 61.6,
+     "renderers": 1,
+     "events": 95,
+     "projectViewKB": 224.3
+    },
+    {
+     "t": 300,
+     "anon": 62.7,
+     "renderers": 1,
+     "events": 102,
+     "projectViewKB": 239.7
+    },
+    {
+     "t": 320,
+     "anon": 61.7,
+     "renderers": 1,
+     "events": 108,
+     "projectViewKB": 245.3
+    },
+    {
+     "t": 340,
+     "anon": 61.1,
+     "renderers": 1,
+     "events": 115,
+     "projectViewKB": 248
+    },
+    {
+     "t": 360,
+     "anon": 62.1,
+     "renderers": 1,
+     "events": 122,
+     "projectViewKB": 250.6
+    },
+    {
+     "t": 380,
+     "anon": 66.3,
+     "renderers": 1,
+     "events": 128,
+     "projectViewKB": 253.2
+    },
+    {
+     "t": 400,
+     "anon": 65.9,
+     "renderers": 1,
+     "events": 135,
+     "projectViewKB": 255.8
+    },
+    {
+     "t": 420,
+     "anon": 65.4,
+     "renderers": 1,
+     "events": 142,
+     "projectViewKB": 258.3
+    },
+    {
+     "t": 440,
+     "anon": 65,
+     "renderers": 1,
+     "events": 148,
+     "projectViewKB": 260.9
+    },
+    {
+     "t": 460,
+     "anon": 64.8,
+     "renderers": 1,
+     "events": 155,
+     "projectViewKB": 263.5
+    },
+    {
+     "t": 480,
+     "anon": 64.4,
+     "renderers": 1,
+     "events": 162,
+     "projectViewKB": 266
+    },
+    {
+     "t": 500,
+     "anon": 65.2,
+     "renderers": 1,
+     "events": 168,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 520,
+     "anon": 64,
+     "renderers": 1,
+     "events": 175,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 540,
+     "anon": 64.4,
+     "renderers": 1,
+     "events": 182,
+     "projectViewKB": 268.6
+    },
+    {
+     "t": 560,
+     "anon": 64.7,
+     "renderers": 1,
+     "events": 188,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 580,
+     "anon": 62.8,
+     "renderers": 1,
+     "events": 195,
+     "projectViewKB": 268.5
+    },
+    {
+     "t": 600,
+     "anon": 62.5,
+     "renderers": 1,
+     "events": 202,
+     "projectViewKB": 268.5
+    }
+   ]
+  }
+ }
+}

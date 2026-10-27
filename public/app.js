@@ -30,6 +30,10 @@
   let packs=[],packNotice='',reviewing=null,stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
   // Visual quality: AUTO adapts when frames are slow; a fixed level stays put (URL ?quality= / ?adapt=0 override).
   const QUALITY=['auto','0','1','2','3'];let qualityChoice='auto';
+  // Recording size: the encoded video's dimensions. At a fixed size the world renders at exactly that size (16:9), and
+  // the stage shows the same picture letterboxed; "stage" records the stage as it is on screen.
+  const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720]},RECORD_BITRATE={'1080p':8000000,'720p':5000000};
+  let recordSize='720p',recordFrame=null,recordPace={frames:0,at:0,slowSince:0,warned:false};
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):params.has('overlay')?'stream':'cinematic';
   let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12},filmNote='';
@@ -42,6 +46,7 @@
     if(prefs.tempoMode==='manual'||prefs.tempoMode==='project')music.setOptions({tempoMode:prefs.tempoMode});
     if(Number.isFinite(prefs.texture)&&prefs.texture>=0&&prefs.texture<=1)music.setOptions({texture:prefs.texture});
     if(QUALITY.includes(prefs.quality))qualityChoice=prefs.quality;
+    if(prefs.recordSize&&(prefs.recordSize==='stage'||RECORD_SIZES[prefs.recordSize]))recordSize=prefs.recordSize;
   }catch{}
   if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
   if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
@@ -81,7 +86,14 @@
   function kindClass(type){return type.startsWith('agent.')?'ai':type.startsWith('validation.')||type.startsWith('milestone.')||type==='source.parse.diagnostics'?'validation':type.startsWith('symbol.')||type.startsWith('dependency.')?'structure':'system';}
   function eventLabel(c){if(c.detail?.symbolType)return `${readable(c.type)} · ${c.detail.symbolType.toUpperCase()}`;return readable(c.type);}
   // ---- Performance clock and scheduling ------------------------------------------------------------------
-  function perfNow(){return FILM?filmTime:mode==='replay'?replayPos:Date.now()-delayMs;}
+  // Replay: the playhead advances once per animation frame; between frames it is extrapolated, so sound is scheduled
+  // from the current position (from the last frame's, a cue scheduled after a 150 ms main-thread stall sounded 150 ms
+  // late: qualification/results/sync/).
+  function perfNow(){
+    if(FILM)return filmTime;if(mode!=='replay')return Date.now()-delayMs;
+    if(!playback||!replay)return replayPos;
+    return Math.min(replay.end,replayPos+Math.min(300,Math.max(0,performance.now()-replayClock))*(Number($('speedSelect').value)||4));
+  }
   function at(time,fn){let i=queue.length;while(i>0&&queue[i-1].time>time)i--;queue.splice(i,0,{time,fn});}
   function runQueue(){const now=perfNow();while(queue.length&&queue[0].time<=now)queue.shift().fn();}
   const cueTime=(cue,entry)=>clamp(cue.ts,entry.start,Math.max(entry.start,entry.end-1));
@@ -590,7 +602,11 @@
     $('labelsSelect').value=labelMode;
     if(document.activeElement!==$('dnaTitle'))$('dnaTitle').value=recipe?.title||'';
   }
-  function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();living.pick(e.clientX-r.left,e.clientY-r.top);});}
+  // Explorer clicks, in the world's own coordinates (letterboxed while recording at a fixed size).
+  function bindWorldCanvas(el){el.addEventListener('click',e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();
+    if(!recordFrame){living.pick(e.clientX-r.left,e.clientY-r.top);return;}
+    const k=Math.min(r.width/recordFrame.w,r.height/recordFrame.h),ox=(r.width-recordFrame.w*k)/2,oy=(r.height-recordFrame.h*k)/2;
+    living.pick((e.clientX-r.left-ox)/k,(e.clientY-r.top-oy)/k);});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
   let captionTimer=null;
   function showCaption(text){
@@ -612,7 +628,7 @@
     showWorldCanvas();
     if(selectedWorld==='living'&&(!living||livingFor!==selected)&&model)void ensureLiving();
     if(selectedWorld==='living'&&living){
-      const r=(living.remote?living.frame:$('world')).getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
+      const r=recordFrame?{width:recordFrame.w,height:recordFrame.h}:(living.remote?living.frame:$('world')).getBoundingClientRect(),dpr=recordFrame?1:Math.min(devicePixelRatio||1,FILM?1:1.5),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==livingSize&&r.width>0){livingSize=size;living.resize(r.width,r.height,dpr);}
       if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
@@ -621,7 +637,7 @@
       if(!(FILM&&living.remote))living.render(now,dt,{phase:barPhase});
       if(living.remote)watchBudget();
     }else if(selectedWorld==='construct'&&construct){
-      const r=$('construct').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
+      const r=recordFrame?{width:recordFrame.w,height:recordFrame.h}:$('construct').getBoundingClientRect(),dpr=recordFrame?1:Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
       if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
       if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
@@ -637,15 +653,24 @@
     // While a world is being switched, the recording keeps the last frame it had.
     if(selectedWorld==='living'&&!living)return;
     if(selectedWorld==='living'){
-      if(living.remote){if(packFrame)g2.drawImage(packFrame,0,0,w,h);}
-      else{g2.drawImage($('world'),0,0,w,h);g2.drawImage($('worldOverlay'),0,0,w,h);}
-    }else if(selectedWorld==='construct'&&construct){g2.drawImage($('construct'),0,0,w,h);drawCaption(g2,w,h,now);}
-    else g2.drawImage(canvas,0,0,w,h);
-    // Qualification (?qual=1): a white flash at marked performance times, to measure picture/sound synchronisation.
+      if(living.remote){if(packFrame)drawFit(g2,packFrame,w,h);}
+      else{drawFit(g2,$('world'),w,h);drawFit(g2,$('worldOverlay'),w,h,false);}
+    }else if(selectedWorld==='construct'&&construct){drawFit(g2,$('construct'),w,h);drawCaption(g2,w,h,now);}
+    else drawFit(g2,canvas,w,h);
+    // Qualification (?qual=1): a pure green flash at marked performance times, to measure picture/sound synchronisation
+    // (found by its colour, so a world's own white flashes cannot be mistaken for it).
     // A flash lasts 120 ms and at least three presented frames however slowly frames come (a slow machine's capture may
     // keep only every other frame); synchronisation is measured from its first frame.
     for(let i=flashes.length-1;i>=0;i--){const f=flashes[i],age=(now-f.at)/replaySpeed();
-      if(age>=0&&(age<120||f.shown<3)){g2.fillStyle='#fff';g2.fillRect(0,0,w,h);f.shown++;}if(age>2000)flashes.splice(i,1);}
+      if(age>=0&&(age<120||f.shown<3)){g2.fillStyle='#00ff00';g2.fillRect(0,0,w,h);f.shown++;}if(age>2000)flashes.splice(i,1);}
+  }
+  // A source drawn into the recording at its own aspect ratio: exact when it matches, otherwise fitted with black bars
+  // (never stretched). `clear` paints the bars (false for a transparent layer over the picture).
+  function drawFit(g2,src,w,h,clear=true){
+    const sw=src.width,sh=src.height;if(!sw||!sh)return;
+    if(Math.abs(sw/sh-w/h)<.01){g2.drawImage(src,0,0,w,h);return;}
+    const k=Math.min(w/sw,h/sh),dw=sw*k,dh=sh*k;if(clear){g2.fillStyle='#000';g2.fillRect(0,0,w,h);}
+    g2.drawImage(src,(w-dw)/2,(h-dh)/2,dw,dh);
   }
   function drawCaption(g2,w,h,t){
     const age=(t-caption.at)/Math.max(1,filmSpeed);
@@ -685,7 +710,7 @@
     setText('soundBtn','◉ SOUND ON');dom.sound.classList.add('on');dom.sound.setAttribute('aria-pressed','true');
   }
   function storePrefs(){
-    try{localStorage.setItem('code-resonance-player-v1',JSON.stringify({world:selectedWorld,quality:qualityChoice,...music.options}));}catch{}
+    try{localStorage.setItem('code-resonance-player-v1',JSON.stringify({world:selectedWorld,quality:qualityChoice,recordSize,...music.options}));}catch{}
   }
   function syncPlayerControls(){
     for(const btn of document.querySelectorAll('[data-world]')){
@@ -711,31 +736,50 @@
     if(recording.active){await finishRecording('stopped');return;}
     const support=recording.supported();if(!support.ok){showNotice(support.reason);return;}
     if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
-    // The recording takes the stage's size (the canvas area, laid out whatever world is showing or loading).
-    const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
-    // A pack world: its worker starts compositing frames for the recording first, so the file starts on a real frame.
-    if(living?.remote){living.record(onPackFrame);const t0=performance.now();while(!packFrame&&living?.remote&&performance.now()-t0<2000)await new Promise(res=>setTimeout(res,16));}
-    const started=recording.start({audioStream:music.stream,fps:30,audioContext:music.ctx,musicLevel:()=>music.level(),
+    // A fixed size: the world renders at that size from now on (the stage shows it letterboxed). "stage": the stage's own
+    // size (the canvas area, laid out whatever world is showing or loading).
+    let bitrate=RECORD_BITRATE[recordSize];
+    if(RECORD_SIZES[recordSize]){const [W,H]=RECORD_SIZES[recordSize];recording.resize(W,H);recordFrame={w:W,h:H};document.body.classList.add('recording-fixed');livingSize='';constructSize='';
+      await new Promise(res=>requestAnimationFrame(()=>requestAnimationFrame(res)));}
+    else{const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
+      bitrate=Math.round(Math.min(8000000,Math.max(2500000,8000000*recording.canvas.width*recording.canvas.height/(1920*1080))));}
+    recordPace={frames:0,at:performance.now(),slowSince:0,warned:false};
+    // A pack world: its worker starts compositing frames for the recording first, so the file starts on a real frame of
+    // the recording's shape (the first may still have the stage's).
+    if(living?.remote){living.record(onPackFrame);const t0=performance.now(),aspect=recording.canvas.width/recording.canvas.height;
+      while(!(packFrame&&Math.abs(packFrame.width/packFrame.height-aspect)<.01)&&living?.remote&&performance.now()-t0<2000)await new Promise(res=>setTimeout(res,16));}
+    const started=recording.start({audioStream:music.stream,fps:30,bitsPerSecond:bitrate,audioContext:music.ctx,musicLevel:()=>music.level(),
       // The sound lost (an audio device lost or stalled): the browser's recorder would stall the file, so it is finished
       // and saved now, with the reason.
       audioLostListener:()=>{void finishRecording('the sound stopped: an audio device was lost or stalled');}});
-    if(!started.ok){if(living?.remote)living.record(null);showNotice(started.reason);return;}
+    if(!started.ok){if(living?.remote)living.record(null);endRecordFrame();showNotice(started.reason);return;}
     if(!started.audio)showNotice('Recording without sound: the music output could not be captured.');
-    $('recordBtn').classList.add('recording');updateRecordButton();
+    $('recordBtn').classList.add('recording');$('recordSize').disabled=true;updateRecordButton();
   }
+  function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed');livingSize='';constructSize='';}
   function updateRecordButton(){
-    if(!recording.active){$('recordBtn').classList.remove('recording');setText('recordBtn','● RECORD');return;}
+    if(!recording.active){$('recordBtn').classList.remove('recording');$('recordSize').disabled=false;setText('recordBtn','● RECORD');return;}
+    // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
+    // capture keeps fewer frames than are drawn when drawing is near 30 a second (31 drawn gave 26-28 in the file), so
+    // under 28 drawn the file is likely under 25.
+    const now=performance.now(),st=recording.stats();
+    if(now-recordPace.at>=5000){const fps=(st.frames-recordPace.frames)/((now-recordPace.at)/1000);recordPace.frames=st.frames;recordPace.at=now;recordPace.fps=fps;
+      if(fps<28){recordPace.slowSince||=now;if(!recordPace.warned&&now-recordPace.slowSince>=10000){recordPace.warned=true;
+        showNotice(`Recording ${recordSize==='stage'?'':`at ${recordSize} `}is not keeping up on this machine (${fps.toFixed(0)} frames per second): choose ${recordSize==='1080p'?'720p or ':''}a lower Quality.`);}}
+      else recordPace.slowSince=0;}
     const s=Math.floor(recording.stats().elapsedMs/1000);setText('recordBtn',`■ STOP ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}${recording.audio&&!recording.audioLost?'':' · NO SOUND'}`);
   }
   // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
   async function finishRecording(reason){
     if(living?.remote)living.record(null);
-    const result=await recording.stop(reason);packFrame?.close();packFrame=null;updateRecordButton();
+    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();updateRecordButton();
     if(!result)return null;
-    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason};
+    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
+      size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned};
     if(!result.blob.size){showNotice(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`);return lastRecording;}
     if(result.blob.size>0){const url=URL.createObjectURL(result.blob),link=document.createElement('a');
-      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
+      // The download holds its own reference once started: the URL (which kept the whole file in memory) goes at once.
+      link.href=url;link.download=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
     if(reason!=='stopped')showNotice(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`);
 
     return lastRecording;
@@ -844,6 +888,8 @@
   $('intensitySlider').addEventListener('change',()=>recipeAction({type:'overrides',intensity:Number($('intensitySlider').value)/100}).catch(console.error));
   $('intensitySlider').addEventListener('input',()=>setText('intensityReadout',`${$('intensitySlider').value}%`));
   $('labelsSelect').addEventListener('change',()=>{labelMode=$('labelsSelect').value;living?.setLabels(labelMode);});
+  $('recordSize').value=recordSize;
+  $('recordSize').addEventListener('change',()=>{const v=$('recordSize').value;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';storePrefs();});
   $('qualitySelect').addEventListener('change',()=>{qualityChoice=QUALITY.includes($('qualitySelect').value)?$('qualitySelect').value:'auto';living?.setQuality?.(qualityLevel(),qualityAdaptive());storePrefs();});
   // The public title is the only project name the Stage may show, and only once the user sets it here.
   $('dnaTitle').addEventListener('change',()=>recipeAction({type:'title',title:$('dnaTitle').value.trim()||null}).catch(console.error));
@@ -866,7 +912,7 @@
   if(params.has('qual'))window.__qual={
     record:()=>toggleRecord(),stop:()=>finishRecording('stopped'),breakRecordingAudio:()=>recording.breakAudio(),recording:()=>({...recording.stats(),last:lastRecording}),
     // A flash and a click at the same performance time, delayMs (real time) from now.
-    audioClock:()=>music.ctx?music.ctx.currentTime:null,
+    audioClock:()=>music.ctx?music.ctx.currentTime:null,structure:()=>model?{nodes:model.graph?.nodes?.length||0,edges:model.graph?.edges?.length||0}:null,setRecordSize:v=>{recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';$('recordSize').value=recordSize;return recordSize;},
     marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),

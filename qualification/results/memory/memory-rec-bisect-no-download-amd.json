@@ -1,0 +1,1304 @@
+{
+ "at": "2026-10-25T04:32:57.251Z",
+ "label": "rec-bisect-no-download",
+ "driver": "lean",
+ "wrap": "no-download",
+ "code": "this checkout",
+ "gpu": "amd",
+ "minutes": 5,
+ "sampleSeconds": 20,
+ "gcEach": true,
+ "recordSize": "stage",
+ "experiments": {
+  "recording": {
+   "minutes": 5,
+   "operations": 10,
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "errors": [],
+   "gcEach": {
+    "rendererMBperOp": 2.514,
+    "firstHalf": 3.93,
+    "secondHalf": 1.06,
+    "rendererAfterCollection": [
+     187.5,
+     202.5,
+     193.6,
+     198.8,
+     209,
+     201.5,
+     216.5,
+     218.8,
+     205.1,
+     212.5
+    ],
+    "gpuAfterCollection": [
+     282.6,
+     297.5,
+     291.8,
+     293.5,
+     303.3,
+     297.4,
+     306.9,
+     308.6,
+     300.4,
+     303
+    ]
+   },
+   "trend": {
+    "rendererMBperMin": 4.57,
+    "rendererSecondHalfMBperMin": 1.92,
+    "gpuMBperMin": 3.55,
+    "heapMBperMin": 0.21
+   },
+   "rendererMB": {
+    "start": 169,
+    "end": 212.5,
+    "afterCollection": 211.7,
+    "max": 218.8
+   },
+   "gpuMB": {
+    "start": 267,
+    "end": 303,
+    "afterCollection": 302.8
+   },
+   "rendererProcesses": {
+    "start": 1,
+    "max": 1,
+    "end": 1
+   },
+   "glContexts": {
+    "created": 1,
+    "aliveBefore": 1,
+    "aliveAfter": 1
+   },
+   "workers": {
+    "end": 0,
+    "afterCollection": 0
+   },
+   "series": [
+    {
+     "t": 0,
+     "note": "start",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 101.3,
+       "anon": 12.9,
+       "shmem": 0,
+       "pss": 45.3,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 267,
+       "anon": 122.7,
+       "shmem": 0,
+       "pss": 218.8,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 169,
+       "anon": 69.5,
+       "shmem": 0,
+       "pss": 122.5,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 127.6,
+       "anon": 17.9,
+       "shmem": 0,
+       "pss": 43.5,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 169,
+       "anon": 69.5,
+       "shmem": 0,
+       "pss": 122.5
+      }
+     ],
+     "heapMB": 4.5,
+     "heapTotalMB": 9.3,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 773,
+     "listeners": 49,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 0,
+     "intents": 0,
+     "structures": {
+      "nodes": 3,
+      "edges": 1
+     },
+     "backingStoreMB": 4.7,
+     "embedderHeapMB": 3.1
+    },
+    {
+     "t": 33,
+     "note": "ops 1, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 113.8,
+       "anon": 24.5,
+       "shmem": 0,
+       "pss": 57,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 282.6,
+       "anon": 130.1,
+       "shmem": 0,
+       "pss": 230.9,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 187.5,
+       "anon": 73.2,
+       "shmem": 0,
+       "pss": 134.9,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.2,
+       "anon": 17.9,
+       "shmem": 0,
+       "pss": 43.5,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 187.5,
+       "anon": 73.2,
+       "shmem": 0,
+       "pss": 134.9
+      }
+     ],
+     "heapMB": 5,
+     "heapTotalMB": 9,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 926,
+     "listeners": 53,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.4,
+     "intents": 13,
+     "structures": {
+      "nodes": 16,
+      "edges": 12
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 2.9
+    },
+    {
+     "t": 66.1,
+     "note": "ops 2, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 113.5,
+       "anon": 24,
+       "shmem": 0,
+       "pss": 56.2,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 297.5,
+       "anon": 133.3,
+       "shmem": 0,
+       "pss": 239.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 202.5,
+       "anon": 77,
+       "shmem": 0,
+       "pss": 144.5,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.7,
+       "anon": 17.9,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 202.5,
+       "anon": 77,
+       "shmem": 0,
+       "pss": 144.5
+      }
+     ],
+     "heapMB": 5.4,
+     "heapTotalMB": 7.8,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1070,
+     "listeners": 51,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.2,
+     "intents": 26,
+     "structures": {
+      "nodes": 29,
+      "edges": 24
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 2.7
+    },
+    {
+     "t": 99.1,
+     "note": "ops 3, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.6,
+       "anon": 24.9,
+       "shmem": 0,
+       "pss": 56.7,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 291.8,
+       "anon": 133.5,
+       "shmem": 0,
+       "pss": 236.8,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 193.6,
+       "anon": 73.9,
+       "shmem": 0,
+       "pss": 138.9,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.7,
+       "anon": 17.9,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 193.6,
+       "anon": 73.9,
+       "shmem": 0,
+       "pss": 138.9
+      }
+     ],
+     "heapMB": 5.8,
+     "heapTotalMB": 7.8,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1152,
+     "listeners": 59,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.7,
+     "intents": 40,
+     "structures": {
+      "nodes": 42,
+      "edges": 34
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 6.3
+    },
+    {
+     "t": 132.1,
+     "note": "ops 4, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114,
+       "anon": 24.2,
+       "shmem": 0,
+       "pss": 56.8,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 293.5,
+       "anon": 133.2,
+       "shmem": 0,
+       "pss": 237.7,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 198.8,
+       "anon": 77.2,
+       "shmem": 0,
+       "pss": 142.1,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.5,
+       "anon": 17.7,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 198.8,
+       "anon": 77.2,
+       "shmem": 0,
+       "pss": 142.1
+      }
+     ],
+     "heapMB": 5.4,
+     "heapTotalMB": 7.5,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1349,
+     "listeners": 52,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.8,
+     "intents": 53,
+     "structures": {
+      "nodes": 55,
+      "edges": 46
+     },
+     "backingStoreMB": 3.7,
+     "embedderHeapMB": 8.1
+    },
+    {
+     "t": 165.2,
+     "note": "ops 5, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.1,
+       "anon": 24.3,
+       "shmem": 0,
+       "pss": 56.8,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 303.3,
+       "anon": 133.6,
+       "shmem": 0,
+       "pss": 242.7,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 209,
+       "anon": 78.1,
+       "shmem": 0,
+       "pss": 147.7,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.5,
+       "anon": 17.7,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 209,
+       "anon": 78.1,
+       "shmem": 0,
+       "pss": 147.7
+      }
+     ],
+     "heapMB": 5.5,
+     "heapTotalMB": 8,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1338,
+     "listeners": 59,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.8,
+     "intents": 66,
+     "structures": {
+      "nodes": 67,
+      "edges": 57
+     },
+     "backingStoreMB": 3.7,
+     "embedderHeapMB": 8
+    },
+    {
+     "t": 198.2,
+     "note": "ops 6, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.6,
+       "anon": 24.6,
+       "shmem": 0,
+       "pss": 56.8,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 297.4,
+       "anon": 134.1,
+       "shmem": 0,
+       "pss": 239.8,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 201.5,
+       "anon": 76.5,
+       "shmem": 0,
+       "pss": 143.1,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.7,
+       "anon": 17.8,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 201.5,
+       "anon": 76.5,
+       "shmem": 0,
+       "pss": 143.1
+      }
+     ],
+     "heapMB": 5.9,
+     "heapTotalMB": 10,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1151,
+     "listeners": 66,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.8,
+     "intents": 80,
+     "structures": {
+      "nodes": 78,
+      "edges": 67
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 4
+    },
+    {
+     "t": 231.2,
+     "note": "ops 7, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.6,
+       "anon": 24.6,
+       "shmem": 0,
+       "pss": 56.6,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 306.9,
+       "anon": 133.9,
+       "shmem": 0,
+       "pss": 244.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 216.5,
+       "anon": 82,
+       "shmem": 0,
+       "pss": 153.9,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.7,
+       "anon": 17.8,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 216.5,
+       "anon": 82,
+       "shmem": 0,
+       "pss": 153.9
+      }
+     ],
+     "heapMB": 6.5,
+     "heapTotalMB": 9,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1119,
+     "listeners": 51,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.6,
+     "intents": 92,
+     "structures": {
+      "nodes": 91,
+      "edges": 78
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 3.8
+    },
+    {
+     "t": 264.2,
+     "note": "ops 8, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 113.9,
+       "anon": 24,
+       "shmem": 0,
+       "pss": 56.3,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.2,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 308.6,
+       "anon": 133.7,
+       "shmem": 0,
+       "pss": 245.7,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 218.8,
+       "anon": 82.5,
+       "shmem": 0,
+       "pss": 155.4,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.9,
+       "anon": 18,
+       "shmem": 0,
+       "pss": 43.2,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 218.8,
+       "anon": 82.5,
+       "shmem": 0,
+       "pss": 155.4
+      }
+     ],
+     "heapMB": 5.9,
+     "heapTotalMB": 9,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1119,
+     "listeners": 53,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.3,
+     "intents": 106,
+     "structures": {
+      "nodes": 100,
+      "edges": 86
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 4.2
+    },
+    {
+     "t": 297.3,
+     "note": "ops 9, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.7,
+       "anon": 24.7,
+       "shmem": 0,
+       "pss": 57,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 300.4,
+       "anon": 133.8,
+       "shmem": 0,
+       "pss": 241.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 205.1,
+       "anon": 77.1,
+       "shmem": 0,
+       "pss": 145.9,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.9,
+       "anon": 18,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 205.1,
+       "anon": 77.1,
+       "shmem": 0,
+       "pss": 145.9
+      }
+     ],
+     "heapMB": 5.8,
+     "heapTotalMB": 10,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1150,
+     "listeners": 65,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.9,
+     "intents": 119,
+     "structures": {
+      "nodes": 110,
+      "edges": 95
+     },
+     "backingStoreMB": 3.6,
+     "embedderHeapMB": 3.6
+    },
+    {
+     "t": 330.3,
+     "note": "ops 10, after collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.3,
+       "anon": 24.4,
+       "shmem": 0,
+       "pss": 56.6,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 303,
+       "anon": 134.2,
+       "shmem": 0,
+       "pss": 242.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 212.5,
+       "anon": 82.7,
+       "shmem": 0,
+       "pss": 152.5,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.9,
+       "anon": 18,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 212.5,
+       "anon": 82.7,
+       "shmem": 0,
+       "pss": 152.5
+      }
+     ],
+     "heapMB": 6.3,
+     "heapTotalMB": 9.8,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1337,
+     "listeners": 61,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.5,
+     "intents": 132,
+     "structures": {
+      "nodes": 123,
+      "edges": 107
+     },
+     "backingStoreMB": 3.7,
+     "embedderHeapMB": 7.7
+    },
+    {
+     "t": 330.3,
+     "note": "end, before forced collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.3,
+       "anon": 24.4,
+       "shmem": 0,
+       "pss": 56.6,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 303,
+       "anon": 134.2,
+       "shmem": 0,
+       "pss": 242.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 212.5,
+       "anon": 82.7,
+       "shmem": 0,
+       "pss": 152.6,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.9,
+       "anon": 18,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 212.5,
+       "anon": 82.7,
+       "shmem": 0,
+       "pss": 152.6
+      }
+     ],
+     "heapMB": 6.3,
+     "heapTotalMB": 9.8,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1337,
+     "listeners": 61,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.5,
+     "intents": 132,
+     "structures": {
+      "nodes": 123,
+      "edges": 107
+     },
+     "backingStoreMB": 3.7,
+     "embedderHeapMB": 7.8
+    },
+    {
+     "t": 333.4,
+     "note": "end, after forced collection",
+     "procs": {
+      "browser": {
+       "count": 1,
+       "rss": 114.3,
+       "anon": 24.4,
+       "shmem": 0,
+       "pss": 56.6,
+       "pids": [
+        3455325
+       ]
+      },
+      "zygote": {
+       "count": 2,
+       "rss": 82,
+       "anon": 15.8,
+       "shmem": 0,
+       "pss": 20.3,
+       "pids": [
+        3455327,
+        3455328
+       ]
+      },
+      "gpu-process": {
+       "count": 1,
+       "rss": 302.8,
+       "anon": 134,
+       "shmem": 0,
+       "pss": 242.6,
+       "pids": [
+        3455344
+       ]
+      },
+      "renderer": {
+       "count": 1,
+       "rss": 211.7,
+       "anon": 82,
+       "shmem": 0,
+       "pss": 151.6,
+       "pids": [
+        3455394
+       ]
+      },
+      "utility:mojom": {
+       "count": 2,
+       "rss": 128.9,
+       "anon": 18,
+       "shmem": 0,
+       "pss": 43.4,
+       "pids": [
+        3455346,
+        3455439
+       ]
+      }
+     },
+     "renderers": [
+      {
+       "pid": 3455394,
+       "rss": 211.7,
+       "anon": 82,
+       "shmem": 0,
+       "pss": 151.6
+      }
+     ],
+     "heapMB": 5.8,
+     "heapTotalMB": 8.3,
+     "documents": 1,
+     "frames": 1,
+     "nodes": 1350,
+     "listeners": 61,
+     "workers": 0,
+     "packFrames": 0,
+     "gl": {
+      "created": 1,
+      "alive": 1,
+      "lost": 0
+     },
+     "geometries": 20,
+     "textures": 13,
+     "programs": 20,
+     "family": "stellar-forge",
+     "remote": false,
+     "recordingChunks": 0,
+     "recordingMB": 11.5,
+     "intents": 133,
+     "structures": {
+      "nodes": 124,
+      "edges": 108
+     },
+     "backingStoreMB": 3.7,
+     "embedderHeapMB": 8.7
+    }
+   ]
+  }
+ }
+}

@@ -29,7 +29,7 @@ approval and, inside WSL2, how to reach the player from Windows.
 
 ```bash
 npm run package:vsix
-code --install-extension code-resonance-0.3.0.vsix
+code --install-extension code-resonance-0.4.0.vsix
 ```
 
 Open a trusted workspace, click **CR** in the status bar (or **Code Resonance: Start Code Performance**) and accept

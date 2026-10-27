@@ -30,6 +30,10 @@ node visual/catalogue.qual.js                         # every family at the extr
 node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
 node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
 node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart
+node visual/sync.qual.js [--gpu amd]                  # recording synchronisation per condition (worlds, sizes, load, switching, live)
+node visual/memory.qual.js [--gpu amd] [--gc-each] [--experiments ...]   # renderer memory forensics (lean driver: no DevTools Network)
+node visual/memory-detached.qual.js [--gpu amd]       # control: the same session with and without a DevTools Network client
+node visual/memory-recorder.qual.js / memory-lifecycle.qual.js   # browser behaviour isolated on a blank page (recorder; workers, WebGL)
 xvfb-run -a node obs/obs.qual.js                      # OBS Studio itself: only in a disposable machine (CI), never on a workstation
 node platform/smoke.js                                # the product as processes: receiver, token, restart, pack CLI, integrity
 node unit-stress.js --runs 30 [--load 48] [--io 4]    # npm test repeated, optionally under CPU and disk load, full TAP kept
@@ -461,6 +465,240 @@ minutes. **No local run reached its three hours** (`results/soak/soak-partial-am
   fell under 1 fps at 1080p there and was stopped by the watchdog, as designed. The CI soak now runs at 1280×720 with a
   fixed lower level.
 
+The renderer growth in these soaks is explained under *Renderer memory* below: most of it was the test's DevTools
+connection keeping every downloaded project view, and the rest a leak in the recording's sound watchdog (fixed).
+
+## Alpha candidate: memory, synchronisation, recording sizes
+
+Raw results: `qualification/results/memory/`, `results/sync/`, `results/recording/`. AMD integrated GPU (ANGLE → D3D12
+under WSL2) unless stated.
+
+### Renderer memory: the soak's growth explained, one leak fixed
+
+**Question.** The soak's renderer processes grew (184 → 577 MB in 110 minutes locally; 204 → 503 MB in CI's hour on
+88daa91). Memory the product keeps, or high-water marks? Which operation?
+
+**Measurement model.** Every Chromium process the harness starts, by type and pid, from `/proc`: resident memory split
+into anonymous (heaps, allocator arenas) and file-backed (Chromium's shared memory is memfd-backed and is counted in
+every process that maps it; PSS splits it), plus the page's V8 heap, ArrayBuffer backing stores and Blink's heap
+(`Runtime.getHeapUsage`), DOM counters, workers, pack frames and the WebGL contexts still alive in the page (weak
+references). A forced full collection (page and workers) after every operation (`--gc-each`) separates what the
+collector gives back from what stays: a post-collection baseline that levels off is a high-water mark, one that rises
+with every operation is retention. `visual/memory.qual.js`, the player at 1920×1080.
+
+**1. The event-driven growth was the test's DevTools connection.** With live events every 3 s the renderer grew about
+3 MB a minute while the V8 heap, ArrayBuffers and Blink's heap stayed flat; with music and no events it was flat. It
+grew the same without the label overlay (2.8 MB/min), in a 2D world with no WebGL (3.0 MB/min) and with a constant
+structure (`memory-bisect-*`, `memory-churn-*`). Playwright enables the DevTools Network domain on every page, and
+Chromium then keeps the body of every fetched response in the renderer for DevTools; the player downloads its project
+view (up to about 270 KB) each time it changes. Control, `visual/memory-detached.qual.js` (the same session for 10
+minutes; the page checked afterwards: Stellar Forge, 60 fps, 1920×1080):
+
+| Browser | Renderer anonymous memory | Trend (second half) |
+|---|---|---|
+| Started directly, no DevTools client | 52.8 → 62.5 MB | 1.23 MB/min (0.16) |
+| Started directly, one client that sends only `Network.enable` | 48.7 → 87.5 MB | 4.2 MB/min (3.54) |
+| Started by Playwright | 49 → 89.5 MB | 4.37 MB/min (3.74) |
+
+The client's +38.8 MB matches the project views downloaded in those 10 minutes (about 38.7 MB). Every earlier soak
+and memory figure taken under Playwright includes this, which is why they could not be read. Memory is now measured
+with a lean driver (`visual/lean.js`: the same headless shell and flags, the DevTools protocol spoken directly, the
+Network domain never enabled).
+
+**2. A real leak: the recording's sound watchdog.** Under the lean driver, every recording kept about 2.2-2.8 MB in
+the renderer and about 2 MB in the GPU process, in a straight line (18 recordings in 8 minutes, the code of PR #5 and
+of this branch alike). Bisected inside the real player by wrapping its recorder (`--wrap`, 11 recordings each):
+
+| Variant | Renderer per recording (after collection) | GPU process over the run |
+|---|---|---|
+| As is | 2.87 MB | 283 → 305 MB |
+| Nothing drawn into the recording canvas | 2.79 MB | 275 → 297 MB |
+| No download | 2.51 MB | 283 → 303 MB |
+| No sound | 0.50 MB | 280 → 285 MB (flat after the first) |
+| Sound, but no sound watchdog | −0.32 MB | 287 → 285 MB (flat) |
+
+The watchdog added in PR #5 (it finishes and saves a recording when the sound stops) created a
+`MediaStreamAudioSourceNode` and an analyser on the music's long-lived audio context for every recording; the browser
+never released them, although they were disconnected and their track stopped, and the memory was mostly shared memory
+mapped by both the renderer and the GPU process. Fixed: one listener on the music's output for the page's lifetime
+(each recording still watches its own track for ending or muting, the context's state and its clock).
+`visual/recording.qual.js` now checks that three recordings create one source node.
+
+**3. A finished recording was kept for a minute.** The object URL behind the download was revoked after 60 s. Isolated
+(`visual/memory-recorder.qual.js`, `memory-recorder-download-amd.json`): +0.72 MB per 5-second recording revoked after
+60 s, flat after 1 s; in the player, the browser process held 18-26 MB more while recordings were less than a minute
+old. Bounded, but at 1080p a 30-minute recording is about 1.8 GB held for an extra minute. Fixed: revoked 1.5 s after
+the download starts (the download holds its own reference).
+
+**4. The browser itself is bounded.** MediaRecorder and canvas capture: about 17 MB once, then flat over 20 recordings
+(a new capture each time, a new canvas, a reused track). Workers, a WebGL context in a worker, three.js in a worker,
+in a sandboxed iframe and on the page, each created and destroyed 40 times (`visual/memory-lifecycle.qual.js`): about
+10 MB of high-water in the first half, then flat or falling. Two releases are now explicit rather than left to the
+collector: a disposed world loses its WebGL context at once, and the pack worker reuses one compositing canvas.
+
+**Before and after** (lean driver, a collection after every operation, 8 minutes each; recordings at the stage's size,
+as PR #5 recorded):
+
+| Experiment | PR #5 (0a71c5a) | This branch | Reading |
+|---|---|---|---|
+| Recording, Stellar Forge (18 × 20 s) | 2.22 MB per recording; renderer 206 → 244, GPU 302 → 335, browser +18 MB | 0.25 MB (second half −0.01); renderer 188 → 196, GPU 277 → 290, browser flat | fixed |
+| Recording, Cymatic Field pack (18 × 20 s, worker bitmaps) | 2.22 MB (second half 3.78); renderer 215 → 259, GPU 276 → 310 | 0.42 MB; renderer 204 → 211, GPU 268 → 271 | fixed |
+| World switching (21: three families, two packs) | 0.39 MB per switch; GPU +13 MB | 0.43 MB; GPU +2.7 MB | small residue, unchanged |
+| Pack ↔ built-in (27) | 0.20 MB | 0.24 MB | small residue, unchanged |
+| Live session, music, events every 3 s | — | −0.02 MB/min | flat |
+| Events rewriting 20 fixed modules | 3.29 MB/min under Playwright | 0.07 MB/min | flat (the DevTools effect) |
+
+**Residual risk.** A world or pack switch leaves 0.2-0.4 MB after collection within 21-27 switches; in the short soak
+below each world's post-collection level stops rising after two or three visits. The browser holds a recording in memory
+until it stops (see `docs/RECORDING.md`). Not measured: sessions of many hours under the lean driver, and other
+browsers.
+
+### Recording synchronisation: method replaced, one clock defect fixed, the 172 ms outlier not reproduced
+
+**Clock path** (details in `docs/RECORDING.md`): the music converts a cue's performance time to the audio clock when it
+schedules it; the picture shows the performance time read at each animation frame; the recording captures the
+compositor canvas (timestamps at capture) and the music's own output stream; MediaRecorder muxes both by their
+timestamps. Live performance time is the wall clock minus 10.5 s; replay time is a playhead.
+
+**Markers v2.** The first method (a white flash and a 2 kHz click found by band energy) could take a world's own white
+flash or a musical note for a marker: on a synthetic scene with 5 markers, two white flashes of its own and a 2 kHz
+note, it counted 7 flashes and 7 clicks and reported a fake offset of −163 ms (`markers-selftest.json`). Now: a
+full-frame pure green flash (found by chroma) and a 40 ms 3-6 kHz chirp found by a
+matched filter, each offset reported as the interval between the captured frame before the flash and the flash frame.
+Self-test on a synthetic WebM with known offsets and distractors (`visual/markers.selftest.js`, `markers-selftest.json`):
+5/5 markers found, every true offset inside its interval, none of 2 white flashes, 1 cyan flash and 5 tones counted;
+the measured offsets read 7 ms early (Opus's 6.5 ms encoder delay as decoded), so real offsets are about 7 ms later
+than reported.
+
+**A clock defect, found by the matrix and fixed.** One marker at +162 ms while switching worlds: the flash came right
+after a 77 ms frame gap. In replay the playhead advanced once per animation frame and the music scheduled sound from
+it, so sound scheduled between frames was late by the time since the last frame, and after a main-thread stall by the
+stall. Reproduced on purpose (a 150 ms stall before each marker): +136 to +166 ms on 12 of 12 markers
+(`sync-stall-before-clockfix-amd.json`); fixed by extrapolating the playhead between frames: −38 to +1 ms, and −32 to
++25 ms in the final matrix. Live mode reads the wall clock and was not affected.
+
+**Matrix** (`visual/sync.qual.js`, `sync-matrix-amd.json`; final code; 3 recordings × 20 s × 4 markers per condition;
+the player at 1280×720 replaying the Lumen Recipes recording at 4×, or live with events every 3 s):
+
+| Condition | Markers | Offset median | Range | fps in the files |
+|---|---|---|---|---|
+| Stellar Forge 720p | 12/12 | −8 ms | −34…+24 | 30.0 |
+| Stellar Forge 1080p | 12/12 | −7 | −57…+18 | 23.8-29.2 |
+| Stellar Forge 1080p, fixed full quality | 12/12 | −6 | −39…+12 | 25.0-25.7 |
+| Cymatic Field (world pack) 720p | 12/12 | −3 | −38…+21 | 30.0 |
+| Cymatic Field 1080p | 12/12 | −4 | −13…+27 | 29.9-30.0 |
+| Cymatic Field 1080p, fixed full quality | 12/12 | +18 | −15…+25 | 30.0 |
+| Stellar Forge 1080p, two world switches while recording | 12/12 | −13 | −47…+6 | 24.8-28.4 |
+| Stellar Forge 1080p, a busy process on every core | 12/12 | −7 | −27…+15 | 25.3-27.2 |
+| Stellar Forge 1080p, live | 12/12 | −11 | −55…+23 | 22.9-26.4 |
+| Cymatic Field 1080p, live | 12/12 | −4 | −33…+18 | 30.0 |
+| Stellar Forge 720p, 150 ms stall before each marker | 12/12 | −8 | −32…+25 | 29.2-29.3 |
+
+132 of 132 markers paired; every offset within ITU-R BT.1359 acceptability (−90…+185 ms); all but two within
+detectability (−45…+125 ms): −57 and −55 ms, sound slightly ahead of the picture, both in Stellar Forge at 1080p where
+the frame rate dropped below 30. Before the fix (`sync-matrix-before-clockfix-amd.json`) the Stellar Forge replay
+medians were +4…+32 ms; now −13…−6 ms, as in live mode. Drift over three minutes: see *Recording sizes* below.
+
+**The 172 ms outlier** (soak, live Stellar Forge, stage size, first method) was not reproduced: 24 live Stellar Forge
+markers across the two matrix runs fell within −55…+23 ms, and the short soak below adds 177 live markers across all
+five worlds (−64…+18 ms). Its file was not kept.
+The first method's ambiguity is a plausible cause, not a proven one: its flash detector took any bright full frame
+(Stellar Forge flashes white), and in the self-test it produced a fake −163 ms offset from exactly such a flash. The
+replay clock defect cannot explain it (the soak was live). It stays an unresolved historical observation.
+
+### Short soak: 30 minutes of activity with the final code
+
+`visual/memory.qual.js --experiments activity --minutes 30` (lean driver, the player at 1920×1080 with music): a live
+session whose project grows with every event (from 3 to 528 structures), and every minute a world switch (Stellar
+Forge, Fractal Biosphere, Machine Cathedral, Cymatic Field, Blueprint Cathedral in turn) followed by a 20 s recording
+at 720p with three markers, measured from the file before it is deleted. Run twice:
+
+| Run | Recordings | Markers | Offsets | fps in the files | Renderer | GPU process |
+|---|---|---|---|---|---|---|
+| Natural garbage collection (`memory-activity-soak-amd.json`) | 30 | 90/90 | −55…+18 ms | 27.95-30 | 168 → 287 MB; 226 MB after a forced collection at the end | 266 → 278 MB |
+| A collection after every operation (`memory-activity-soak-gc-each-amd.json`) | 29 | 87/87 | −64…+13 ms | 28.9-30 | after collection: +1.49 MB per operation in the first half, +0.04 in the second | 265 → 275 MB |
+
+No recording failed, no page error, no WebGL context left alive, one renderer process throughout. With a collection
+after every operation the renderer's level depends on the world showing and, per world, stops rising after two or three
+visits (Stellar Forge 185 → 201 MB, Fractal Biosphere 183 → 203, Machine Cathedral 188 → 193, Cymatic Field 201 → 217,
+Blueprint Cathedral 200 → 226, while the project grew to 528 structures): high-water marks, not retention. With natural
+collection the renderer carried up to 61 MB of collectable memory before the final forced collection. Live-mode
+markers in the soak (Stellar Forge included, 177 in all) stayed within −64…+18 ms.
+
+**Is a longer soak still needed?** For the questions of this milestone, no: the growth seen in the earlier soaks is
+explained (the DevTools connection, the watchdog leak) and the remaining behaviour levels off within 30 minutes. A
+multi-hour run with the lean driver would still be the way to confirm hours-long sessions (allocator behaviour over
+hours, many hundreds of recordings); it is not part of this milestone and would need the owner's approval.
+
+### Recording sizes: 720p and 1080p as encoded dimensions
+
+`visual/recording.qual.js --gpu amd` (final run: 119/120 checks; `recording-qualification-amd.json`; the files, kept
+locally, `size-<world>-<size>-amd.webm`; frames `size-<world>-<size>.jpg`). The player at 1280×720 replaying at 4×; the
+main recordings at the player's default size, 720p, then each size for 15 s with three markers.
+
+| World, size | Encoded | fps in the file | File growth | Renderer CPU / GPU process CPU | GPU time per frame | Sync median (worst) |
+|---|---|---|---|---|---|---|
+| Stellar Forge, stage | 746×512 | 30.0 | 16.9 MB/min | 44 % / 23 % | 5.5 ms | −10 ms (21) |
+| Stellar Forge, 720p | 1280×720 | 30.0 | 34.5 MB/min | 68 % / 25 % | 11.9 ms | −16 ms (38) |
+| Stellar Forge, 1080p | 1920×1080 | 24.6 (27.8 in the previous run) | 49.7 MB/min | 98 % / 17 % | 24.9 ms | −1 ms (21) |
+| Cymatic Field (pack), stage | 746×512 | 30.0 | 17.0 MB/min | 50 % / 27 % | 2.3 ms | −23 ms (29) |
+| Cymatic Field (pack), 720p | 1280×720 | 30.0 | 35.6 MB/min | 75 % / 30 % | 3.4 ms | −22 ms (28) |
+| Cymatic Field (pack), 1080p | 1920×1080 | 30.0 | 59.5 MB/min | 130 % / 34 % | 6.9 ms | −3 ms (15) |
+
+Encoded dimensions are exactly the chosen size in every file. The composition is the same at 720p and 1080p (a 16:9
+camera, labels proportional to the output; checked in the frames): nothing stretched, cut or bordered. At 1080p Stellar
+Forge needs 25 ms of GPU time per frame on this GPU, so the player draws about 31 frames a second and the capture keeps
+24.6-27.8: **1080p is not qualified for the built-in worlds on this machine** (reported NOT QUALIFIED, and in the
+previous run one FAIL for Ember Observatory at 1080p, a 104 ms frame interval); visual packs, rendered in their worker,
+hold 30. Hence 720p is the default, the player warns under 28 frames drawn per second, and 1080p is offered for GPUs
+that keep up. In this run the 1080p and stage sizes were gated on a steady stream and their frame-rate assertions
+reported; the one FAIL above is Stellar Forge at 1080p under the previous gating (the harness now reports it).
+
+Main recordings at 720p: Stellar Forge, Ember Observatory, Blueprint Cathedral and Cymatic Field all at 30 fps, no
+interval over 43 ms after start-up, sound continuous (no pilot gap), sync medians −13…+2 ms. Lifecycle: restart, world
+switches while recording (one continuous file, one 308 ms frame gap while a world loads, no sound gap), sound lost
+(finished and saved 0.5 s later, with the reason), pack failure (finished and saved, the built-in identity takes over),
+one watchdog source node for three recordings. **Three minutes** at 720p (Cymatic Field): 30 fps, 12 markers −25…+19 ms,
+trend −5.7 ms/min (−17 ms over the recording), jitter 12.8 ms; a 110 MB file, browser and renderer +185 MB, page heap
+flat. The previous run's three minutes at 1080p: trend +0.9 ms/min, a 182 MB file, +268 MB. Drift measured so far:
+−5.7, +0.9, and in PR #5 −2.8, −5.2, +9.8 ms/min: no consistent direction, at most about 30 ms over three minutes.
+
+Memory per minute while recording (the browser holds the file plus working memory): about 60 MB at 720p and 90 MB at
+1080p, against about 70 MB for PR #5's stage-size default at 6.2 Mbit/s. Streaming to disk (the File System Access API)
+was evaluated and not implemented: it needs a file chosen by the user before every recording, cannot be exercised by the
+automated tests, and OBS already covers long sessions.
+
+
+### Regression: local and CI
+
+Local (this machine): `npm run check`; `npm test` 115/115; `npm run package:vsix` builds `code-resonance-0.4.0.vsix`;
+the built-in worlds render the same frames as PR #5's head, labels off (`visual/unchanged.qual.js --baseline 0a71c5a`,
+4/4 sets, 11 moments, byte-identical); recording 119/120 (above); sync matrix 11/11; marker self-test; memory matrices
+and the short soak (above).
+
+CI on GitHub's runners (software rendering), PR #6:
+
+| Job | Result |
+|---|---|
+| validation: Linux, native Windows (`npm test`, platform smoke) | 115/115 and 14/14 on each |
+| qualification: Stage (Chromium), reference packs quick, runtime quick, VS Code | Stage 14/14; Blueprint Cathedral 19/19, Ember Observatory 15/15, Cymatic Field 20/20; robustness 15/15, recording 45/45 (stage size, plus Cymatic Field at 720p); VS Code passed |
+| extended: full pack suites | 20/20, 16/16, 21/21 |
+| extended: runtime-full | robustness 31/31, recording 81/81 (mechanism thresholds) |
+| extended: history, Windows VS Code | passed |
+| extended: OBS Studio 32.2 | 6/6 |
+| extended: Windows browser | 45/45 on the rerun |
+| extended: one-hour soak (1280×720, quality 3, recordings at the stage's size) | 11/11: 2,102 of 2,102 events stored once across a receiver restart, no pack stopped, sound at 1.000× real time, no page errors |
+
+What CI found and what was corrected (no threshold was changed): the first run (8187762) failed the quick recording,
+because with 720p as the player's default the software renderer drew the built-in worlds at 2 fps (the software-rendered
+jobs now name the stage's size, as PR #5's CI tested, and quick mode adds a world pack at 720p), and OBS, because the
+marker change had made the frame parser require three plane means where an RGBA screenshot has one (fixed). The second
+(23f793e) failed the Windows browser job (a marker whose flash frame came more than 0.6 s after its chirp at 2.9 fps;
+pairing and the functional check now use the interval in which the flash occurred; the rerun ran on a faster runner,
+5.8 fps, and would have passed either way) and the one-hour soak (8/11: at 720p a shader pack fell under 1 fps while
+recording on the software renderer and the watchdog stopped it, as designed; events, memory, sound and page errors
+passed; the CI soak now records the stage).
+
 ## Not verified
 
 - macOS. Native Windows on a desktop with a GPU (CI's Windows runners render in software). VS Code Remote-SSH. A
@@ -471,8 +709,9 @@ minutes. **No local run reached its three hours** (`results/soak/soak-partial-am
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
-- A completed multi-hour soak (local runs reached 110 and 24 minutes; CI one hour), multi-hour real development sessions,
-  and whether the renderer processes' memory growth seen in the soak levels off.
+- A completed multi-hour soak with the final code and the lean driver (local runs reached 110 and 24 minutes, CI one
+  hour, all under Playwright, whose DevTools connection inflated the renderer; the growth they showed is explained
+  under *Renderer memory*), and multi-hour real development sessions.
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - AI agents other than Claude Code.
@@ -480,8 +719,8 @@ minutes. **No local run reached its three hours** (`results/soak/soak-partial-am
 - That a browser contains a hostile GPU shader: not promised (see `docs/packs/security.md`); the reference packs are not
   hostile, so the tests show isolation of network, storage and the player, not of the GPU.
 - A live session longer than 10,000 timeline windows (a 12,796-window replay and synthetic histories up to 1,000,000
-  intents were qualified). Recordings longer than three minutes (the browser holds a recording in memory, about 45 MB a
-  minute; OBS is the recommended recorder for long sessions).
+  intents were qualified). Recordings longer than three minutes (the browser holds a recording in memory, about 60 MB a
+  minute at 720p and 90 MB at 1080p; OBS is the recommended recorder for long sessions).
 - Recording quality on machines slower than the AMD integrated GPU used here: on software rendering, built-in worlds
   record at a few frames a second (see above).
 - Artistic acceptance of Cymatic Field, Blueprint Cathedral and Ember Observatory.

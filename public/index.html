@@ -23,7 +23,8 @@
         <button class="action" id="overlayBtn" title="Open the clean OBS browser-source view">OBS VIEW ↗</button>
         <button class="action" id="exportBtn" title="Export derived event history">DATA ↗</button>
         <button class="action" id="audioBtn" title="Render up to 10 minutes of the recorded performance to a WAV file">AUDIO ↓</button>
-        <button class="action record" id="recordBtn" title="Record the canvas and player audio to WebM">● RECORD</button>
+        <label for="recordSize" class="visually-hidden">Recording size</label><select id="recordSize" title="Recording size: the encoded video's dimensions"><option value="720p">720p · 1280×720</option><option value="1080p">1080p · 1920×1080</option><option value="stage">Stage size</option></select>
+        <button class="action record" id="recordBtn" title="Record the stage and the music to WebM">● RECORD</button>
         <button class="action primary" id="soundBtn" aria-pressed="false">◌ ENABLE SOUND</button>
       </div>
     </header>

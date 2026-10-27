@@ -1,0 +1,4869 @@
+{
+  "at": "2026-10-25T05:57:23.924Z",
+  "gpu": "amd",
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "seconds": 20,
+  "thresholds": "full",
+  "quality": "auto",
+  "viewport": "1280x720",
+  "checks": [
+    {
+      "name": "Stellar Forge (built-in world): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 17.87 MB"
+    },
+    {
+      "name": "Stellar Forge (built-in world): encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Stellar Forge (built-in world): duration matches the time recorded",
+      "pass": true,
+      "detail": "video 19.848 s, audio 19.98 s, recorded 20.0 s by the player (20.1 s including start-up)"
+    },
+    {
+      "name": "Stellar Forge (built-in world): frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "27.46 fps in the file (player drew 31.0), frame interval median 33 ms, p95 63 ms, max 88 ms (start-up 88 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world): the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 42.1, 99 % of frames change"
+    },
+    {
+      "name": "Stellar Forge (built-in world): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 19.98 s for 19.848 s of video; music mean -28 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world): finalised promptly and named without project details",
+      "pass": true,
+      "detail": "7 ms · code-resonance-c6c876a59a-1792907403775.webm"
+    },
+    {
+      "name": "Stellar Forge (built-in world): functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "4 markers, 4 flashes, 4 chirps; offsets 15…49, -14…19, -16…16, 2…36 ms (sound − picture)"
+    },
+    {
+      "name": "Stellar Forge (built-in world): quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median 2 ms, worst |16| ms, spread 31 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world): quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "27.46 fps, longest interval after start-up 71 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world): the player stayed on the world, with no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 19.37 MB"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): duration matches the time recorded",
+      "pass": true,
+      "detail": "video 19.859 s, audio 19.98 s, recorded 20.0 s by the player (20.0 s including start-up)"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "25.83 fps in the file (player drew 31.0), frame interval median 33 ms, p95 66 ms, max 104 ms (start-up 66 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 47.2, 98 % of frames change"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 19.98 s for 19.859 s of video; music mean -28 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): finalised promptly and named without project details",
+      "pass": true,
+      "detail": "7 ms · code-resonance-c6c876a59a-1792907429101.webm"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "4 markers, 4 flashes, 4 chirps; offsets -22…42, 10…41, -5…28, 1…32 ms (sound − picture)"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median 1 ms, worst |22| ms, spread 32 ms"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": false,
+      "detail": "25.83 fps, longest interval after start-up 104 ms"
+    },
+    {
+      "name": "Ember Observatory (declarative pack): the player stayed on the world, with no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 15.49 MB"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): duration matches the time recorded",
+      "pass": true,
+      "detail": "video 19.93 s, audio 19.98 s, recorded 20.0 s by the player (20.1 s including start-up)"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.85 fps in the file (player drew 47.1), frame interval median 39 ms, p95 51 ms, max 67 ms (start-up 64 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 62.4, 98 % of frames change"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 19.98 s for 19.93 s of video; music mean -27.9 dBFS (rests: 0 % below -60 dB, longest 50 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): finalised promptly and named without project details",
+      "pass": true,
+      "detail": "8 ms · code-resonance-c6c876a59a-1792907454467.webm"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "4 markers, 4 flashes, 4 chirps; offsets 15…62, -7…49, 6…29, -8…34 ms (sound − picture)"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median 6 ms, worst |15| ms, spread 23 ms"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.85 fps, longest interval after start-up 67 ms"
+    },
+    {
+      "name": "Blueprint Cathedral (shader pack): the player stayed on the world, with no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 19.09 MB"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): duration matches the time recorded",
+      "pass": true,
+      "detail": "video 19.972 s, audio 19.98 s, recorded 20.0 s by the player (20.1 s including start-up)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.99 fps in the file (player drew 60.0), frame interval median 33 ms, p95 38 ms, max 51 ms (start-up 50 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 32.4, 98 % of frames change"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 19.98 s for 19.972 s of video; music mean -27.9 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): finalised promptly and named without project details",
+      "pass": true,
+      "detail": "9 ms · code-resonance-c6c876a59a-1792907479566.webm"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "4 markers, 4 flashes, 4 chirps; offsets -36…14, -14…20, 10…44, -8…25 ms (sound − picture)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -8 ms, worst |36| ms, spread 46 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.99 fps, longest interval after start-up 51 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): the player stayed on the world, with no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 8.61 MB"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: encoded dimensions are the selected recording size (720p)",
+      "pass": true,
+      "detail": "1280×720"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 14.943 s, audio 14.94 s, recorded 15.0 s by the player (15.0 s including start-up)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.98 fps in the file (player drew 60.0), frame interval median 33 ms, p95 36 ms, max 47 ms (start-up 45 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 44.1, 98 % of frames change"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 14.94 s for 14.943 s of video; music mean -27.8 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "5 ms · code-resonance-c6c876a59a-1792907499340.webm"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -38…-4, 2…35, -16…17 ms (sound − picture)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -16 ms, worst |38| ms, spread 40 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 720p: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.98 fps, longest interval after start-up 47 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 13.55 MB"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 14.902 s, audio 15.06 s, recorded 15.1 s by the player (15.1 s including start-up)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "27.78 fps in the file (player drew 31.3), frame interval median 33 ms, p95 63 ms, max 73 ms (start-up 73 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 44.4, 99 % of frames change"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 15.06 s for 14.902 s of video; music mean -26.3 dBFS (rests: 0 % below -60 dB, longest 0 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "5 ms · code-resonance-c6c876a59a-1792907517939.webm"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -7…26, -14…20, 18…49 ms (sound − picture)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -7 ms, worst |18| ms, spread 32 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at 1080p: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "27.78 fps, longest interval after start-up 70 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 746×512 · opus 48000 Hz · 4.27 MB"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: encoded dimensions are the selected recording size (the stage)",
+      "pass": true,
+      "detail": "746×512"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 15.042 s, audio 15 s, recorded 15.1 s by the player (15.1 s including start-up)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.98 fps in the file (player drew 60.0), frame interval median 33 ms, p95 36 ms, max 43 ms (start-up 43 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 47.4, 98 % of frames change"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 15 s for 15.042 s of video; music mean -26.3 dBFS (rests: 0 % below -60 dB, longest 0 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "5 ms · code-resonance-c6c876a59a-1792907536934.webm"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -35…-2, -8…25, -13…20 ms (sound − picture)"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -13 ms, worst |35| ms, spread 27 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world) at stage: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.98 fps, longest interval after start-up 37 ms"
+    },
+    {
+      "name": "Stellar Forge (built-in world): recording sizes, no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 9.16 MB"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: encoded dimensions are the selected recording size (720p)",
+      "pass": true,
+      "detail": "1280×720"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 14.938 s, audio 14.94 s, recorded 15.0 s by the player (15.0 s including start-up)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.99 fps in the file (player drew 60.0), frame interval median 33 ms, p95 34 ms, max 40 ms (start-up 40 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 35.3, 98 % of frames change"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 14.94 s for 14.938 s of video; music mean -27.7 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "5 ms · code-resonance-c6c876a59a-1792907555530.webm"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -28…5, -22…12, 1…34 ms (sound − picture)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -22 ms, worst |28| ms, spread 29 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 720p: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.99 fps, longest interval after start-up 36 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 15.10 MB"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 14.95 s, audio 14.94 s, recorded 15.0 s by the player (15.0 s including start-up)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.97 fps in the file (player drew 60.0), frame interval median 33 ms, p95 50 ms, max 51 ms (start-up 51 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 33.2, 98 % of frames change"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 14.94 s for 14.95 s of video; music mean -26.3 dBFS (rests: 0 % below -60 dB, longest 0 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "6 ms · code-resonance-c6c876a59a-1792907574088.webm"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -37…13, 2…35, -9…25 ms (sound − picture)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -9 ms, worst |37| ms, spread 39 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at 1080p: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.97 fps, longest interval after start-up 51 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 746×512 · opus 48000 Hz · 4.45 MB"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: encoded dimensions are the selected recording size (the stage)",
+      "pass": true,
+      "detail": "746×512"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: duration matches the time recorded",
+      "pass": true,
+      "detail": "video 15.052 s, audio 15.06 s, recorded 15.1 s by the player (15.1 s including start-up)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "29.96 fps in the file (player drew 60.0), frame interval median 33 ms, p95 50 ms, max 53 ms (start-up 53 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 40.8, 98 % of frames change"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 15.06 s for 15.052 s of video; music mean -26.4 dBFS (rests: 0 % below -60 dB, longest 0 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: finalised promptly and named without project details",
+      "pass": true,
+      "detail": "4 ms · code-resonance-c6c876a59a-1792907593072.webm"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "3 markers, 3 flashes, 3 chirps; offsets -19…32, -3…47, 13…63 ms (sound − picture)"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median -3 ms, worst |19| ms, spread 32 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack) at stage: quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "29.96 fps, longest interval after start-up 51 ms"
+    },
+    {
+      "name": "Cymatic Field (executable world pack): recording sizes, no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "restart: stopping and recording again gives two complete files",
+      "pass": true,
+      "detail": "4.983 s 29.9 fps opus · 5.001 s 29.99 fps opus"
+    },
+    {
+      "name": "world switches while recording: one continuous file through Cymatic Field → Stellar Forge → Cymatic Field and a quality change",
+      "pass": true,
+      "detail": "24.015 s, 28.19 fps, longest frame gap 334 ms (2 > 250 ms while worlds load), sound pilot longest gap 0 ms; now halcyon.cymatic-field"
+    },
+    {
+      "name": "three recordings create one audio source node for the sound watchdog (one per page, not per recording)",
+      "pass": false,
+      "detail": "0 created"
+    },
+    {
+      "name": "sound lost while recording: the recording is finished and saved at once with the reason, and the player says so",
+      "pass": true,
+      "detail": "finished 516 ms after the sound was cut; notice “Recording finished early (the sound stopped: an audio device was lost or stalled); 4 s saved.”; file: video 3.481 s, sound 3 s"
+    },
+    {
+      "name": "lifecycle: no page errors",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "name": "pack failure while recording: the recording is finished early, saved, with video and sound",
+      "pass": true,
+      "detail": "9.848 s saved after 10.7 s; reason “Test fixture failing world stopped”"
+    },
+    {
+      "name": "pack failure while recording: the pack is stopped, the user told, and a built-in world takes over",
+      "pass": true,
+      "detail": "notice “Test fixture failing world stopped: deliberate failure (test fixture). Showing the identity without it.”; now stellar-forge (built-in), 0 pack frames"
+    },
+    {
+      "name": "unsupported browser (no MediaRecorder): recording does not start, the reason is shown, no errors",
+      "pass": true,
+      "detail": "“This browser has no MediaRecorder: recording is not available here (use Chrome, Edge or OBS).” · button ● RECORD"
+    },
+    {
+      "name": "unsupported browser (no canvas capture): recording does not start, the reason is shown, no errors",
+      "pass": true,
+      "detail": "“This browser cannot capture a canvas as video: recording is not available here.” · button ● RECORD"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
+      "pass": true,
+      "detail": "matroska,webm, · vp9 1920×1080 · opus 48000 Hz · 181.54 MB"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): encoded dimensions are the selected recording size (1080p)",
+      "pass": true,
+      "detail": "1920×1080"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): duration matches the time recorded",
+      "pass": true,
+      "detail": "video 179.942 s, audio 179.94 s, recorded 180.0 s by the player (180.0 s including start-up)"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): frame rate follows the player's presentation rate, without long gaps",
+      "pass": true,
+      "detail": "30 fps in the file (player drew 60.0), frame interval median 33 ms, p95 36 ms, max 51 ms (start-up 51 ms), 0 gaps > 250 ms"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): the picture is a living world (not black, not frozen)",
+      "pass": true,
+      "detail": "mean luma 28.7, 99 % of frames change"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
+      "pass": true,
+      "detail": "sound 179.94 s for 179.942 s of video; music mean -25.2 dBFS (rests: 0 % below -60 dB, longest 200 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): finalised promptly and named without project details",
+      "pass": true,
+      "detail": "9 ms · code-resonance-c6c876a59a-1792907829718.webm"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): functional sync: every marker found in picture and sound, paired within ±250 ms (± one frame interval)",
+      "pass": true,
+      "detail": "12 markers, 12 flashes, 12 chirps; offsets 12…45, 5…38, -11…22, -3…30, 5…38, -12…21, -24…9, -15…19, -1…33, 11…44, 14…48, 2…35 ms (sound − picture)"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): quality sync: every marker within ITU-R BT.1359 acceptability (−90…+185 ms), median within detectability (−45…+125 ms)",
+      "pass": true,
+      "detail": "median 2 ms, worst |24| ms, spread 38 ms"
+    },
+    {
+      "name": "long recording (3 min, Cymatic Field): quality frame rate: at least 25 fps, no interval over 100 ms after start-up",
+      "pass": true,
+      "detail": "30 fps, longest interval after start-up 51 ms"
+    },
+    {
+      "name": "long recording: no picture/sound drift (offset trend over the whole recording within 40 ms)",
+      "pass": true,
+      "detail": "12 markers, offsets -24 to 14 ms (mean -1); trend 0.9 ms/min = 3 ms over 179.942 s; jitter 11.4 ms"
+    },
+    {
+      "name": "long recording: memory stays bounded (page heap flat; browser and renderer grow by at most the recording's size; GPU process under 25 %)",
+      "pass": true,
+      "detail": "JS heap 3.4 → 3.6 MB; browser 105 → 291 MB, renderers 150 → 232 MB (growth 268 MB for a 182 MB recording), GPU process 275 → 288 MB; 181.5 MB recorded (8.46 Mbit/s)"
+    },
+    {
+      "name": "long recording: no page errors",
+      "pass": true,
+      "detail": "none"
+    }
+  ],
+  "measurements": {
+    "worlds": {
+      "stellar-forge": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 546,
+          "videoDuration": 19.848,
+          "fps": 27.46,
+          "frameInterval": {
+            "median": 33,
+            "p95": 63,
+            "max": 88
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 88,
+          "maxIntervalAfterStartupMs": 71,
+          "changingFrames": 0.985,
+          "meanLuma": 42.1,
+          "audioDuration": 19.98,
+          "audioMeanDb": -28,
+          "silentShare": 0.005,
+          "longestSilenceMs": 100,
+          "continuity": {
+            "pilotDb": -55.2,
+            "gaps": 0,
+            "longestGapMs": 0,
+            "windows": 1938
+          },
+          "sync": {
+            "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+            "flashes": 4,
+            "chirps": 4,
+            "pairs": [
+              {
+                "flash": 2.315,
+                "prevFrame": 2.281,
+                "chirp": 2.3303,
+                "r": 0.802,
+                "offsetMs": 15,
+                "offsetRangeMs": [
+                  15,
+                  49
+                ]
+              },
+              {
+                "flash": 7.36,
+                "prevFrame": 7.327,
+                "chirp": 7.3458,
+                "r": 0.803,
+                "offsetMs": -14,
+                "offsetRangeMs": [
+                  -14,
+                  19
+                ]
+              },
+              {
+                "flash": 12.284,
+                "prevFrame": 12.252,
+                "chirp": 12.2685,
+                "r": 0.75,
+                "offsetMs": -16,
+                "offsetRangeMs": [
+                  -16,
+                  16
+                ]
+              },
+              {
+                "flash": 17.305,
+                "prevFrame": 17.271,
+                "chirp": 17.3072,
+                "r": 0.79,
+                "offsetMs": 2,
+                "offsetRangeMs": [
+                  2,
+                  36
+                ]
+              }
+            ],
+            "meanOffsetMs": -3,
+            "maxAbsOffsetMs": 16,
+            "spreadMs": 31,
+            "unpaired": 0,
+            "extraChirps": 0
+          }
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 20005,
+          "frames": 621,
+          "bytes": 18737720,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "finalizeMs": 7,
+        "cpuPercent": {
+          "browser": 0.6,
+          "renderer": 102.2,
+          "GPU": 16.8,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 5.9,
+          "end": 6.9
+        },
+        "processMb": {
+          "start": {
+            "node": 208,
+            "browser": 101,
+            "gpu": 271,
+            "renderer": 144,
+            "other": 149
+          },
+          "end": {
+            "node": 174,
+            "browser": 122,
+            "gpu": 306,
+            "renderer": 228,
+            "other": 208
+          }
+        },
+        "samples": [
+          {
+            "t": 59,
+            "heapMb": 7.3,
+            "frames": 0,
+            "bytes": 0,
+            "active": true,
+            "gpuMs": 5.18,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 2071,
+            "heapMb": 6.2,
+            "frames": 66,
+            "bytes": 448806,
+            "active": true,
+            "gpuMs": 25.17,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 4081,
+            "heapMb": 7.3,
+            "frames": 126,
+            "bytes": 2037505,
+            "active": true,
+            "gpuMs": 27.76,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 6092,
+            "heapMb": 6.2,
+            "frames": 184,
+            "bytes": 3864177,
+            "active": true,
+            "gpuMs": 28.39,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 8102,
+            "heapMb": 6,
+            "frames": 244,
+            "bytes": 5609776,
+            "active": true,
+            "gpuMs": 26.6,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 10110,
+            "heapMb": 8.6,
+            "frames": 306,
+            "bytes": 8062903,
+            "active": true,
+            "gpuMs": 25.95,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 12121,
+            "heapMb": 8.2,
+            "frames": 368,
+            "bytes": 9941205,
+            "active": true,
+            "gpuMs": 25.51,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 14129,
+            "heapMb": 8,
+            "frames": 434,
+            "bytes": 12033777,
+            "active": true,
+            "gpuMs": 25.15,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 16138,
+            "heapMb": 7.6,
+            "frames": 498,
+            "bytes": 13992787,
+            "active": true,
+            "gpuMs": 25.74,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 18148,
+            "heapMb": 6.9,
+            "frames": 560,
+            "bytes": 15842823,
+            "active": true,
+            "gpuMs": 25.81,
+            "quality": 0,
+            "transport": null
+          }
+        ]
+      },
+      "ember-observatory": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 514,
+          "videoDuration": 19.859,
+          "fps": 25.83,
+          "frameInterval": {
+            "median": 33,
+            "p95": 66,
+            "max": 104
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 66,
+          "maxIntervalAfterStartupMs": 104,
+          "changingFrames": 0.979,
+          "meanLuma": 47.2,
+          "audioDuration": 19.98,
+          "audioMeanDb": -28,
+          "silentShare": 0.005,
+          "longestSilenceMs": 100,
+          "continuity": {
+            "pilotDb": -55.2,
+            "gaps": 0,
+            "longestGapMs": 0,
+            "windows": 1938
+          },
+          "sync": {
+            "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+            "flashes": 4,
+            "chirps": 4,
+            "pairs": [
+              {
+                "flash": 2.329,
+                "prevFrame": 2.265,
+                "chirp": 2.307,
+                "r": 0.837,
+                "offsetMs": -22,
+                "offsetRangeMs": [
+                  -22,
+                  42
+                ]
+              },
+              {
+                "flash": 7.336,
+                "prevFrame": 7.305,
+                "chirp": 7.3459,
+                "r": 0.803,
+                "offsetMs": 10,
+                "offsetRangeMs": [
+                  10,
+                  41
+                ]
+              },
+              {
+                "flash": 12.366,
+                "prevFrame": 12.333,
+                "chirp": 12.3614,
+                "r": 0.754,
+                "offsetMs": -5,
+                "offsetRangeMs": [
+                  -5,
+                  28
+                ]
+              },
+              {
+                "flash": 17.283,
+                "prevFrame": 17.252,
+                "chirp": 17.284,
+                "r": 0.761,
+                "offsetMs": 1,
+                "offsetRangeMs": [
+                  1,
+                  32
+                ]
+              }
+            ],
+            "meanOffsetMs": -4,
+            "maxAbsOffsetMs": 22,
+            "spreadMs": 32,
+            "unpaired": 0,
+            "extraChirps": 0
+          }
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 20002,
+          "frames": 620,
+          "bytes": 20305801,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "finalizeMs": 7,
+        "cpuPercent": {
+          "browser": 0.6,
+          "renderer": 107,
+          "GPU": 16.1,
+          "network.mojom.NetworkService": 0,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 6.3,
+          "end": 8.9
+        },
+        "processMb": {
+          "start": {
+            "node": 201,
+            "browser": 103,
+            "gpu": 287,
+            "renderer": 144,
+            "other": 209
+          },
+          "end": {
+            "node": 201,
+            "browser": 124,
+            "gpu": 310,
+            "renderer": 235,
+            "other": 209
+          }
+        },
+        "samples": [
+          {
+            "t": 34,
+            "heapMb": 5.4,
+            "frames": 0,
+            "bytes": 0,
+            "active": true,
+            "gpuMs": 5.29,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 2044,
+            "heapMb": 7,
+            "frames": 64,
+            "bytes": 498546,
+            "active": true,
+            "gpuMs": 25.91,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 4054,
+            "heapMb": 6.2,
+            "frames": 125,
+            "bytes": 2198596,
+            "active": true,
+            "gpuMs": 27.79,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 6062,
+            "heapMb": 7.5,
+            "frames": 185,
+            "bytes": 3923954,
+            "active": true,
+            "gpuMs": 27.79,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 8073,
+            "heapMb": 7.1,
+            "frames": 245,
+            "bytes": 5553493,
+            "active": true,
+            "gpuMs": 26.94,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 10082,
+            "heapMb": 6.4,
+            "frames": 305,
+            "bytes": 8129192,
+            "active": true,
+            "gpuMs": 26.65,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 12090,
+            "heapMb": 6.7,
+            "frames": 366,
+            "bytes": 10209807,
+            "active": true,
+            "gpuMs": 25.97,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 14100,
+            "heapMb": 7.3,
+            "frames": 431,
+            "bytes": 12834089,
+            "active": true,
+            "gpuMs": 25.61,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 16109,
+            "heapMb": 9.1,
+            "frames": 495,
+            "bytes": 14848842,
+            "active": true,
+            "gpuMs": 25.87,
+            "quality": 0,
+            "transport": null
+          },
+          {
+            "t": 18119,
+            "heapMb": 8.9,
+            "frames": 558,
+            "bytes": 17283690,
+            "active": true,
+            "gpuMs": 25.29,
+            "quality": 0,
+            "transport": null
+          }
+        ]
+      },
+      "blueprint-cathedral": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 596,
+          "videoDuration": 19.93,
+          "fps": 29.85,
+          "frameInterval": {
+            "median": 39,
+            "p95": 51,
+            "max": 67
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 64,
+          "maxIntervalAfterStartupMs": 67,
+          "changingFrames": 0.982,
+          "meanLuma": 62.4,
+          "audioDuration": 19.98,
+          "audioMeanDb": -27.9,
+          "silentShare": 0.003,
+          "longestSilenceMs": 50,
+          "continuity": {
+            "pilotDb": -55.2,
+            "gaps": 0,
+            "longestGapMs": 0,
+            "windows": 1938
+          },
+          "sync": {
+            "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+            "flashes": 4,
+            "chirps": 4,
+            "pairs": [
+              {
+                "flash": 2.319,
+                "prevFrame": 2.272,
+                "chirp": 2.3336,
+                "r": 0.834,
+                "offsetMs": 15,
+                "offsetRangeMs": [
+                  15,
+                  62
+                ]
+              },
+              {
+                "flash": 7.263,
+                "prevFrame": 7.207,
+                "chirp": 7.2562,
+                "r": 0.802,
+                "offsetMs": -7,
+                "offsetRangeMs": [
+                  -7,
+                  49
+                ]
+              },
+              {
+                "flash": 12.266,
+                "prevFrame": 12.243,
+                "chirp": 12.2717,
+                "r": 0.75,
+                "offsetMs": 6,
+                "offsetRangeMs": [
+                  6,
+                  29
+                ]
+              },
+              {
+                "flash": 17.295,
+                "prevFrame": 17.253,
+                "chirp": 17.2871,
+                "r": 0.777,
+                "offsetMs": -8,
+                "offsetRangeMs": [
+                  -8,
+                  34
+                ]
+              }
+            ],
+            "meanOffsetMs": 2,
+            "maxAbsOffsetMs": 15,
+            "spreadMs": 23,
+            "unpaired": 0,
+            "extraChirps": 0
+          }
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 20000,
+          "frames": 942,
+          "bytes": 16244717,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "finalizeMs": 8,
+        "cpuPercent": {
+          "browser": 0.8,
+          "renderer": 128.1,
+          "GPU": 28.7,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 4.4,
+          "end": 3.6
+        },
+        "processMb": {
+          "start": {
+            "node": 213,
+            "browser": 105,
+            "gpu": 274,
+            "renderer": 156,
+            "other": 209
+          },
+          "end": {
+            "node": 213,
+            "browser": 121,
+            "gpu": 293,
+            "renderer": 228,
+            "other": 209
+          }
+        },
+        "samples": [
+          {
+            "t": 65,
+            "heapMb": 2.8,
+            "frames": 0,
+            "bytes": 0,
+            "active": true,
+            "gpuMs": 3.64,
+            "quality": 0,
+            "transport": {
+              "semantic": 57,
+              "sent": 185,
+              "acknowledged": 185,
+              "skippedHere": 9,
+              "skippedInFrame": 0,
+              "latencyMs": 3.2,
+              "maxLatencyMs": 133.5,
+              "renderMs": 1.21,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 2076,
+            "heapMb": 3,
+            "frames": 99,
+            "bytes": 492410,
+            "active": true,
+            "gpuMs": 14.78,
+            "quality": 0,
+            "transport": {
+              "semantic": 101,
+              "sent": 284,
+              "acknowledged": 284,
+              "skippedHere": 9,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 133.5,
+              "renderMs": 1.03,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 4086,
+            "heapMb": 3.1,
+            "frames": 191,
+            "bytes": 1853303,
+            "active": true,
+            "gpuMs": 15.43,
+            "quality": 0,
+            "transport": {
+              "semantic": 204,
+              "sent": 376,
+              "acknowledged": 376,
+              "skippedHere": 9,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.94,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 6095,
+            "heapMb": 3.5,
+            "frames": 283,
+            "bytes": 3609995,
+            "active": true,
+            "gpuMs": 15.85,
+            "quality": 0,
+            "transport": {
+              "semantic": 239,
+              "sent": 468,
+              "acknowledged": 468,
+              "skippedHere": 9,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 133.5,
+              "renderMs": 1.04,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 8104,
+            "heapMb": 3.4,
+            "frames": 377,
+            "bytes": 5491118,
+            "active": true,
+            "gpuMs": 15.75,
+            "quality": 0,
+            "transport": {
+              "semantic": 276,
+              "sent": 561,
+              "acknowledged": 561,
+              "skippedHere": 10,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.95,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 10113,
+            "heapMb": 3.1,
+            "frames": 470,
+            "bytes": 6887764,
+            "active": true,
+            "gpuMs": 15.59,
+            "quality": 0,
+            "transport": {
+              "semantic": 295,
+              "sent": 654,
+              "acknowledged": 654,
+              "skippedHere": 10,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.97,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 12123,
+            "heapMb": 3.3,
+            "frames": 565,
+            "bytes": 8755410,
+            "active": true,
+            "gpuMs": 15.42,
+            "quality": 0,
+            "transport": {
+              "semantic": 322,
+              "sent": 749,
+              "acknowledged": 749,
+              "skippedHere": 10,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.78,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 14131,
+            "heapMb": 3.2,
+            "frames": 664,
+            "bytes": 10277796,
+            "active": true,
+            "gpuMs": 15.43,
+            "quality": 0,
+            "transport": {
+              "semantic": 322,
+              "sent": 848,
+              "acknowledged": 848,
+              "skippedHere": 10,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.74,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 16138,
+            "heapMb": 3.6,
+            "frames": 759,
+            "bytes": 12125125,
+            "active": true,
+            "gpuMs": 15.81,
+            "quality": 0,
+            "transport": {
+              "semantic": 343,
+              "sent": 943,
+              "acknowledged": 943,
+              "skippedHere": 10,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.9,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 18148,
+            "heapMb": 3.6,
+            "frames": 853,
+            "bytes": 14127385,
+            "active": true,
+            "gpuMs": 15.82,
+            "quality": 0,
+            "transport": {
+              "semantic": 352,
+              "sent": 1036,
+              "acknowledged": 1036,
+              "skippedHere": 11,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 133.5,
+              "renderMs": 0.98,
+              "maxRenderMs": 123.4,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          }
+        ]
+      },
+      "cymatic-field": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 600,
+          "videoDuration": 19.972,
+          "fps": 29.99,
+          "frameInterval": {
+            "median": 33,
+            "p95": 38,
+            "max": 51
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 50,
+          "maxIntervalAfterStartupMs": 51,
+          "changingFrames": 0.983,
+          "meanLuma": 32.4,
+          "audioDuration": 19.98,
+          "audioMeanDb": -27.9,
+          "silentShare": 0.005,
+          "longestSilenceMs": 100,
+          "continuity": {
+            "pilotDb": -55.2,
+            "gaps": 0,
+            "longestGapMs": 0,
+            "windows": 1938
+          },
+          "sync": {
+            "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+            "flashes": 4,
+            "chirps": 4,
+            "pairs": [
+              {
+                "flash": 2.356,
+                "prevFrame": 2.306,
+                "chirp": 2.3204,
+                "r": 0.818,
+                "offsetMs": -36,
+                "offsetRangeMs": [
+                  -36,
+                  14
+                ]
+              },
+              {
+                "flash": 7.373,
+                "prevFrame": 7.339,
+                "chirp": 7.3591,
+                "r": 0.761,
+                "offsetMs": -14,
+                "offsetRangeMs": [
+                  -14,
+                  20
+                ]
+              },
+              {
+                "flash": 12.272,
+                "prevFrame": 12.238,
+                "chirp": 12.2816,
+                "r": 0.751,
+                "offsetMs": 10,
+                "offsetRangeMs": [
+                  10,
+                  44
+                ]
+              },
+              {
+                "flash": 17.305,
+                "prevFrame": 17.272,
+                "chirp": 17.2971,
+                "r": 0.773,
+                "offsetMs": -8,
+                "offsetRangeMs": [
+                  -8,
+                  25
+                ]
+              }
+            ],
+            "meanOffsetMs": -12,
+            "maxAbsOffsetMs": 36,
+            "spreadMs": 46,
+            "unpaired": 0,
+            "extraChirps": 0
+          }
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 20010,
+          "frames": 1200,
+          "bytes": 20014412,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "finalizeMs": 9,
+        "cpuPercent": {
+          "browser": 0.8,
+          "renderer": 127.3,
+          "GPU": 34.6,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.5
+        },
+        "heapMb": {
+          "start": 4.5,
+          "end": 3.1
+        },
+        "processMb": {
+          "start": {
+            "node": 214,
+            "browser": 105,
+            "gpu": 272,
+            "renderer": 160,
+            "other": 210
+          },
+          "end": {
+            "node": 214,
+            "browser": 125,
+            "gpu": 283,
+            "renderer": 223,
+            "other": 210
+          }
+        },
+        "samples": [
+          {
+            "t": 54,
+            "heapMb": 2.8,
+            "frames": 0,
+            "bytes": 0,
+            "active": true,
+            "gpuMs": 2.28,
+            "quality": 0,
+            "transport": {
+              "semantic": 56,
+              "sent": 185,
+              "acknowledged": 185,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.69,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 2064,
+            "heapMb": 3.7,
+            "frames": 121,
+            "bytes": 664172,
+            "active": true,
+            "gpuMs": 6.94,
+            "quality": 0,
+            "transport": {
+              "semantic": 101,
+              "sent": 306,
+              "acknowledged": 306,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 111.6,
+              "renderMs": 1.05,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 4077,
+            "heapMb": 3.8,
+            "frames": 242,
+            "bytes": 2878791,
+            "active": true,
+            "gpuMs": 7.43,
+            "quality": 0,
+            "transport": {
+              "semantic": 204,
+              "sent": 427,
+              "acknowledged": 427,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.83,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 6087,
+            "heapMb": 3.8,
+            "frames": 362,
+            "bytes": 5092731,
+            "active": true,
+            "gpuMs": 7.28,
+            "quality": 0,
+            "transport": {
+              "semantic": 239,
+              "sent": 547,
+              "acknowledged": 547,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.83,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 8096,
+            "heapMb": 3.2,
+            "frames": 483,
+            "bytes": 7191040,
+            "active": true,
+            "gpuMs": 7.67,
+            "quality": 0,
+            "transport": {
+              "semantic": 276,
+              "sent": 668,
+              "acknowledged": 668,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.82,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 10105,
+            "heapMb": 3.1,
+            "frames": 604,
+            "bytes": 9107830,
+            "active": true,
+            "gpuMs": 7.85,
+            "quality": 0,
+            "transport": {
+              "semantic": 295,
+              "sent": 789,
+              "acknowledged": 788,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.93,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 12119,
+            "heapMb": 3.6,
+            "frames": 724,
+            "bytes": 11393001,
+            "active": true,
+            "gpuMs": 6.94,
+            "quality": 0,
+            "transport": {
+              "semantic": 322,
+              "sent": 909,
+              "acknowledged": 909,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.79,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 14127,
+            "heapMb": 3.2,
+            "frames": 845,
+            "bytes": 13312899,
+            "active": true,
+            "gpuMs": 6.78,
+            "quality": 0,
+            "transport": {
+              "semantic": 322,
+              "sent": 1030,
+              "acknowledged": 1030,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.75,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 16134,
+            "heapMb": 3.2,
+            "frames": 965,
+            "bytes": 15647902,
+            "active": true,
+            "gpuMs": 7.29,
+            "quality": 0,
+            "transport": {
+              "semantic": 343,
+              "sent": 1150,
+              "acknowledged": 1150,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 111.6,
+              "renderMs": 0.89,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 18147,
+            "heapMb": 3.1,
+            "frames": 1086,
+            "bytes": 17660909,
+            "active": true,
+            "gpuMs": 7.15,
+            "quality": 0,
+            "transport": {
+              "semantic": 352,
+              "sent": 1271,
+              "acknowledged": 1271,
+              "skippedHere": 6,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 111.6,
+              "renderMs": 1.07,
+              "maxRenderMs": 102.3,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          }
+        ]
+      }
+    },
+    "lifecycle": {
+      "restart": [
+        {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 150,
+          "videoDuration": 4.983,
+          "fps": 29.9,
+          "frameInterval": {
+            "median": 33,
+            "p95": 36,
+            "max": 50
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 50,
+          "maxIntervalAfterStartupMs": 48,
+          "changingFrames": 1,
+          "meanLuma": 30.4,
+          "audioDuration": 4.98,
+          "audioMeanDb": -32.7,
+          "silentShare": 0.02,
+          "longestSilenceMs": 100
+        },
+        {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 151,
+          "videoDuration": 5.001,
+          "fps": 29.99,
+          "frameInterval": {
+            "median": 33,
+            "p95": 50,
+            "max": 51
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 50,
+          "maxIntervalAfterStartupMs": 51,
+          "changingFrames": 1,
+          "meanLuma": 34.3,
+          "audioDuration": 5.04,
+          "audioMeanDb": -28.3,
+          "silentShare": 0,
+          "longestSilenceMs": 0
+        }
+      ],
+      "switching": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 678,
+          "videoDuration": 24.015,
+          "fps": 28.19,
+          "frameInterval": {
+            "median": 33,
+            "p95": 58,
+            "max": 334
+          },
+          "longGaps": 2,
+          "gapsAt": [
+            {
+              "t": 5.01,
+              "ms": 334
+            },
+            {
+              "t": 12.02,
+              "ms": 266
+            }
+          ],
+          "startupMaxMs": 49,
+          "maxIntervalAfterStartupMs": 334,
+          "changingFrames": 1,
+          "meanLuma": 30.8,
+          "audioDuration": 24,
+          "audioMeanDb": -24.7,
+          "silentShare": 0,
+          "longestSilenceMs": 0
+        },
+        "continuity": {
+          "pilotDb": -55.2,
+          "gaps": 0,
+          "longestGapMs": 0,
+          "windows": 2340
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 24035,
+          "frames": 1236,
+          "bytes": 22397855,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        }
+      },
+      "audioLost": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 105,
+          "videoDuration": 3.481,
+          "fps": 29.88,
+          "frameInterval": {
+            "median": 33,
+            "p95": 35,
+            "max": 49
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 49,
+          "maxIntervalAfterStartupMs": 36,
+          "changingFrames": 1,
+          "meanLuma": 29,
+          "audioDuration": 3,
+          "audioMeanDb": -30.4,
+          "silentShare": 0,
+          "longestSilenceMs": 0
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 3503,
+          "frames": 210,
+          "bytes": 3008984,
+          "audio": true,
+          "audioLost": true,
+          "audioLostMs": 500,
+          "reason": "the sound stopped: an audio device was lost or stalled",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "finishedMs": 516
+      },
+      "failure": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 296,
+          "videoDuration": 9.848,
+          "fps": 29.96,
+          "frameInterval": {
+            "median": 33,
+            "p95": 34,
+            "max": 49
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 49,
+          "maxIntervalAfterStartupMs": 47,
+          "changingFrames": 1,
+          "meanLuma": 36.7,
+          "audioDuration": 9.84,
+          "audioMeanDb": -43.9,
+          "silentShare": 0.102,
+          "longestSilenceMs": 1000
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 9871,
+          "frames": 592,
+          "bytes": 9592404,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "Test fixture failing world stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "notice": "Test fixture failing world stopped: deliberate failure (test fixture). Showing the identity without it.",
+        "fallback": {
+          "selectedWorld": "living",
+          "remote": false,
+          "pack": null,
+          "family": "stellar-forge",
+          "look": null,
+          "frames": 0,
+          "notice": "Test fixture failing world stopped: deliberate failure (test fixture). Showing the identity without it.",
+          "lastStop": {
+            "at": 10170.399999976158,
+            "pack": "testing.failing-world",
+            "reason": "deliberate failure (test fixture)",
+            "disposeMs": 3.3
+          }
+        }
+      },
+      "long": {
+        "analysis": {
+          "container": "matroska,webm,",
+          "video": {
+            "codec": "vp9",
+            "width": 1920,
+            "height": 1080
+          },
+          "audio": {
+            "codec": "opus",
+            "sampleRate": 48000,
+            "layout": "stereo"
+          },
+          "frames": 5399,
+          "videoDuration": 179.942,
+          "fps": 30,
+          "frameInterval": {
+            "median": 33,
+            "p95": 36,
+            "max": 51
+          },
+          "longGaps": 0,
+          "gapsAt": [],
+          "startupMaxMs": 51,
+          "maxIntervalAfterStartupMs": 51,
+          "changingFrames": 0.994,
+          "meanLuma": 28.7,
+          "audioDuration": 179.94,
+          "audioMeanDb": -25.2,
+          "silentShare": 0.001,
+          "longestSilenceMs": 200,
+          "continuity": {
+            "pilotDb": -55.2,
+            "gaps": 0,
+            "longestGapMs": 0,
+            "windows": 17934
+          },
+          "sync": {
+            "method": "v2: green flash + 3-6 kHz chirp, matched filter",
+            "flashes": 12,
+            "chirps": 12,
+            "pairs": [
+              {
+                "flash": 2.316,
+                "prevFrame": 2.283,
+                "chirp": 2.3276,
+                "r": 0.779,
+                "offsetMs": 12,
+                "offsetRangeMs": [
+                  12,
+                  45
+                ]
+              },
+              {
+                "flash": 17.282,
+                "prevFrame": 17.249,
+                "chirp": 17.2872,
+                "r": 0.811,
+                "offsetMs": 5,
+                "offsetRangeMs": [
+                  5,
+                  38
+                ]
+              },
+              {
+                "flash": 32.348,
+                "prevFrame": 32.315,
+                "chirp": 32.3366,
+                "r": 0.733,
+                "offsetMs": -11,
+                "offsetRangeMs": [
+                  -11,
+                  22
+                ]
+              },
+              {
+                "flash": 47.314,
+                "prevFrame": 47.281,
+                "chirp": 47.3105,
+                "r": 0.616,
+                "offsetMs": -3,
+                "offsetRangeMs": [
+                  -3,
+                  30
+                ]
+              },
+              {
+                "flash": 62.28,
+                "prevFrame": 62.247,
+                "chirp": 62.2846,
+                "r": 0.754,
+                "offsetMs": 5,
+                "offsetRangeMs": [
+                  5,
+                  38
+                ]
+              },
+              {
+                "flash": 77.346,
+                "prevFrame": 77.313,
+                "chirp": 77.3339,
+                "r": 0.787,
+                "offsetMs": -12,
+                "offsetRangeMs": [
+                  -12,
+                  21
+                ]
+              },
+              {
+                "flash": 92.312,
+                "prevFrame": 92.279,
+                "chirp": 92.2877,
+                "r": 0.764,
+                "offsetMs": -24,
+                "offsetRangeMs": [
+                  -24,
+                  9
+                ]
+              },
+              {
+                "flash": 107.279,
+                "prevFrame": 107.245,
+                "chirp": 107.2645,
+                "r": 0.667,
+                "offsetMs": -15,
+                "offsetRangeMs": [
+                  -15,
+                  19
+                ]
+              },
+              {
+                "flash": 122.312,
+                "prevFrame": 122.278,
+                "chirp": 122.3111,
+                "r": 0.757,
+                "offsetMs": -1,
+                "offsetRangeMs": [
+                  -1,
+                  33
+                ]
+              },
+              {
+                "flash": 137.277,
+                "prevFrame": 137.244,
+                "chirp": 137.2879,
+                "r": 0.785,
+                "offsetMs": 11,
+                "offsetRangeMs": [
+                  11,
+                  44
+                ]
+              },
+              {
+                "flash": 152.344,
+                "prevFrame": 152.31,
+                "chirp": 152.3577,
+                "r": 0.772,
+                "offsetMs": 14,
+                "offsetRangeMs": [
+                  14,
+                  48
+                ]
+              },
+              {
+                "flash": 167.309,
+                "prevFrame": 167.276,
+                "chirp": 167.3114,
+                "r": 0.644,
+                "offsetMs": 2,
+                "offsetRangeMs": [
+                  2,
+                  35
+                ]
+              }
+            ],
+            "meanOffsetMs": -1,
+            "maxAbsOffsetMs": 24,
+            "spreadMs": 38,
+            "unpaired": 0,
+            "extraChirps": 0
+          },
+          "drift": {
+            "msPerMinute": 0.9,
+            "overRecordingMs": 3,
+            "jitterMs": 11.4
+          }
+        },
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 179963,
+          "frames": 10798,
+          "bytes": 190358783,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        },
+        "cpuPercent": {
+          "browser": 0.5,
+          "renderer": 120.2,
+          "GPU": 29.1,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 4,
+          "end": 3.2
+        },
+        "processMb": {
+          "start": {
+            "node": 230,
+            "browser": 105,
+            "gpu": 275,
+            "renderer": 150,
+            "other": 210
+          },
+          "end": {
+            "node": 231,
+            "browser": 291,
+            "gpu": 288,
+            "renderer": 232,
+            "other": 210
+          }
+        },
+        "samples": [
+          {
+            "t": 59,
+            "heapMb": 2.8,
+            "frames": 1,
+            "bytes": 0,
+            "active": true,
+            "gpuMs": 2.48,
+            "quality": 0,
+            "transport": {
+              "semantic": 10,
+              "sent": 126,
+              "acknowledged": 125,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.61,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 2070,
+            "heapMb": 4.2,
+            "frames": 121,
+            "bytes": 617578,
+            "active": true,
+            "gpuMs": 6.56,
+            "quality": 0,
+            "transport": {
+              "semantic": 12,
+              "sent": 246,
+              "acknowledged": 246,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.79,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 4080,
+            "heapMb": 3.5,
+            "frames": 242,
+            "bytes": 2799799,
+            "active": true,
+            "gpuMs": 6.39,
+            "quality": 0,
+            "transport": {
+              "semantic": 12,
+              "sent": 367,
+              "acknowledged": 367,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.75,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 6088,
+            "heapMb": 4.3,
+            "frames": 362,
+            "bytes": 5001878,
+            "active": true,
+            "gpuMs": 6.4,
+            "quality": 0,
+            "transport": {
+              "semantic": 13,
+              "sent": 487,
+              "acknowledged": 487,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.69,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 8095,
+            "heapMb": 2.9,
+            "frames": 483,
+            "bytes": 7087211,
+            "active": true,
+            "gpuMs": 6.64,
+            "quality": 0,
+            "transport": {
+              "semantic": 30,
+              "sent": 608,
+              "acknowledged": 608,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 115,
+              "renderMs": 0.86,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 10105,
+            "heapMb": 3.1,
+            "frames": 603,
+            "bytes": 9280039,
+            "active": true,
+            "gpuMs": 6.65,
+            "quality": 0,
+            "transport": {
+              "semantic": 58,
+              "sent": 728,
+              "acknowledged": 728,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.79,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 12112,
+            "heapMb": 3.3,
+            "frames": 724,
+            "bytes": 11701160,
+            "active": true,
+            "gpuMs": 6.9,
+            "quality": 0,
+            "transport": {
+              "semantic": 58,
+              "sent": 849,
+              "acknowledged": 849,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.69,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 14120,
+            "heapMb": 3.4,
+            "frames": 844,
+            "bytes": 13852210,
+            "active": true,
+            "gpuMs": 7.14,
+            "quality": 0,
+            "transport": {
+              "semantic": 61,
+              "sent": 969,
+              "acknowledged": 969,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.67,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 16129,
+            "heapMb": 3.1,
+            "frames": 965,
+            "bytes": 16196647,
+            "active": true,
+            "gpuMs": 6.92,
+            "quality": 0,
+            "transport": {
+              "semantic": 69,
+              "sent": 1090,
+              "acknowledged": 1090,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.56,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 18138,
+            "heapMb": 3,
+            "frames": 1086,
+            "bytes": 18511703,
+            "active": true,
+            "gpuMs": 6.92,
+            "quality": 0,
+            "transport": {
+              "semantic": 102,
+              "sent": 1211,
+              "acknowledged": 1210,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.89,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 20146,
+            "heapMb": 3.1,
+            "frames": 1206,
+            "bytes": 20658212,
+            "active": true,
+            "gpuMs": 6.84,
+            "quality": 0,
+            "transport": {
+              "semantic": 126,
+              "sent": 1331,
+              "acknowledged": 1331,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.84,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 22154,
+            "heapMb": 3.2,
+            "frames": 1326,
+            "bytes": 23006898,
+            "active": true,
+            "gpuMs": 6.98,
+            "quality": 0,
+            "transport": {
+              "semantic": 154,
+              "sent": 1451,
+              "acknowledged": 1451,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.85,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 24162,
+            "heapMb": 3.7,
+            "frames": 1447,
+            "bytes": 25089049,
+            "active": true,
+            "gpuMs": 7.25,
+            "quality": 0,
+            "transport": {
+              "semantic": 205,
+              "sent": 1572,
+              "acknowledged": 1572,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.81,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 26170,
+            "heapMb": 3.8,
+            "frames": 1567,
+            "bytes": 27451179,
+            "active": true,
+            "gpuMs": 6.86,
+            "quality": 0,
+            "transport": {
+              "semantic": 205,
+              "sent": 1692,
+              "acknowledged": 1692,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.82,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 28178,
+            "heapMb": 3.4,
+            "frames": 1688,
+            "bytes": 29581435,
+            "active": true,
+            "gpuMs": 6.74,
+            "quality": 0,
+            "transport": {
+              "semantic": 218,
+              "sent": 1813,
+              "acknowledged": 1813,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.5,
+              "maxLatencyMs": 115,
+              "renderMs": 1,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 30185,
+            "heapMb": 3.4,
+            "frames": 1808,
+            "bytes": 31738711,
+            "active": true,
+            "gpuMs": 6.9,
+            "quality": 0,
+            "transport": {
+              "semantic": 230,
+              "sent": 1933,
+              "acknowledged": 1933,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 115,
+              "renderMs": 1.03,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 32195,
+            "heapMb": 3.8,
+            "frames": 1929,
+            "bytes": 34085063,
+            "active": true,
+            "gpuMs": 7.35,
+            "quality": 0,
+            "transport": {
+              "semantic": 241,
+              "sent": 2054,
+              "acknowledged": 2054,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.79,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 34204,
+            "heapMb": 3.5,
+            "frames": 2049,
+            "bytes": 36198926,
+            "active": true,
+            "gpuMs": 6.79,
+            "quality": 0,
+            "transport": {
+              "semantic": 241,
+              "sent": 2174,
+              "acknowledged": 2174,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.74,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 36210,
+            "heapMb": 3.9,
+            "frames": 2170,
+            "bytes": 38518991,
+            "active": true,
+            "gpuMs": 6.81,
+            "quality": 0,
+            "transport": {
+              "semantic": 241,
+              "sent": 2295,
+              "acknowledged": 2295,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.74,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 38218,
+            "heapMb": 3.5,
+            "frames": 2290,
+            "bytes": 40797944,
+            "active": true,
+            "gpuMs": 6.85,
+            "quality": 0,
+            "transport": {
+              "semantic": 254,
+              "sent": 2415,
+              "acknowledged": 2415,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 115,
+              "renderMs": 0.93,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 40227,
+            "heapMb": 3.2,
+            "frames": 2411,
+            "bytes": 42872366,
+            "active": true,
+            "gpuMs": 6.79,
+            "quality": 0,
+            "transport": {
+              "semantic": 278,
+              "sent": 2536,
+              "acknowledged": 2536,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.74,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 42236,
+            "heapMb": 3.4,
+            "frames": 2531,
+            "bytes": 45184588,
+            "active": true,
+            "gpuMs": 6.77,
+            "quality": 0,
+            "transport": {
+              "semantic": 278,
+              "sent": 2656,
+              "acknowledged": 2656,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.7,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 44244,
+            "heapMb": 3.6,
+            "frames": 2652,
+            "bytes": 47488011,
+            "active": true,
+            "gpuMs": 6.75,
+            "quality": 0,
+            "transport": {
+              "semantic": 286,
+              "sent": 2777,
+              "acknowledged": 2777,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.72,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 46252,
+            "heapMb": 3.5,
+            "frames": 2772,
+            "bytes": 49567001,
+            "active": true,
+            "gpuMs": 6.71,
+            "quality": 0,
+            "transport": {
+              "semantic": 286,
+              "sent": 2897,
+              "acknowledged": 2897,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.65,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 48263,
+            "heapMb": 3.7,
+            "frames": 2893,
+            "bytes": 51714646,
+            "active": true,
+            "gpuMs": 6.67,
+            "quality": 0,
+            "transport": {
+              "semantic": 289,
+              "sent": 3018,
+              "acknowledged": 3018,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.57,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 50271,
+            "heapMb": 3.5,
+            "frames": 3014,
+            "bytes": 53754566,
+            "active": true,
+            "gpuMs": 6.71,
+            "quality": 0,
+            "transport": {
+              "semantic": 297,
+              "sent": 3139,
+              "acknowledged": 3138,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.65,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 52279,
+            "heapMb": 3.3,
+            "frames": 3134,
+            "bytes": 56205486,
+            "active": true,
+            "gpuMs": 6.85,
+            "quality": 0,
+            "transport": {
+              "semantic": 305,
+              "sent": 3259,
+              "acknowledged": 3259,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.62,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 54287,
+            "heapMb": 3.3,
+            "frames": 3255,
+            "bytes": 58485795,
+            "active": true,
+            "gpuMs": 7.03,
+            "quality": 0,
+            "transport": {
+              "semantic": 316,
+              "sent": 3380,
+              "acknowledged": 3379,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.68,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 56297,
+            "heapMb": 3.3,
+            "frames": 3375,
+            "bytes": 60522034,
+            "active": true,
+            "gpuMs": 6.92,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 3500,
+              "acknowledged": 3500,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.67,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 58305,
+            "heapMb": 3.6,
+            "frames": 3496,
+            "bytes": 62806904,
+            "active": true,
+            "gpuMs": 6.95,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 3621,
+              "acknowledged": 3621,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.64,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 60317,
+            "heapMb": 3.6,
+            "frames": 3616,
+            "bytes": 64865954,
+            "active": true,
+            "gpuMs": 6.78,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 3741,
+              "acknowledged": 3741,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.7,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 62327,
+            "heapMb": 3.5,
+            "frames": 3737,
+            "bytes": 66113592,
+            "active": true,
+            "gpuMs": 6.67,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 3862,
+              "acknowledged": 3862,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.58,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 64334,
+            "heapMb": 3.4,
+            "frames": 3857,
+            "bytes": 68105096,
+            "active": true,
+            "gpuMs": 6.75,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 3982,
+              "acknowledged": 3982,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.57,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 66342,
+            "heapMb": 3.7,
+            "frames": 3978,
+            "bytes": 70366830,
+            "active": true,
+            "gpuMs": 6.74,
+            "quality": 0,
+            "transport": {
+              "semantic": 324,
+              "sent": 4103,
+              "acknowledged": 4103,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.57,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 68346,
+            "heapMb": 3.4,
+            "frames": 4098,
+            "bytes": 72603531,
+            "active": true,
+            "gpuMs": 7.17,
+            "quality": 0,
+            "transport": {
+              "semantic": 326,
+              "sent": 4223,
+              "acknowledged": 4223,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.63,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 70354,
+            "heapMb": 3.7,
+            "frames": 4219,
+            "bytes": 74950862,
+            "active": true,
+            "gpuMs": 6.79,
+            "quality": 0,
+            "transport": {
+              "semantic": 332,
+              "sent": 4344,
+              "acknowledged": 4343,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.83,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 72363,
+            "heapMb": 3.2,
+            "frames": 4339,
+            "bytes": 77288492,
+            "active": true,
+            "gpuMs": 6.92,
+            "quality": 0,
+            "transport": {
+              "semantic": 343,
+              "sent": 4464,
+              "acknowledged": 4464,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.79,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 74370,
+            "heapMb": 3.2,
+            "frames": 4460,
+            "bytes": 79081136,
+            "active": true,
+            "gpuMs": 6.95,
+            "quality": 0,
+            "transport": {
+              "semantic": 345,
+              "sent": 4585,
+              "acknowledged": 4584,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.84,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 76378,
+            "heapMb": 3.2,
+            "frames": 4580,
+            "bytes": 81061461,
+            "active": true,
+            "gpuMs": 6.82,
+            "quality": 0,
+            "transport": {
+              "semantic": 349,
+              "sent": 4705,
+              "acknowledged": 4705,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.4,
+              "maxLatencyMs": 115,
+              "renderMs": 1.06,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 78386,
+            "heapMb": 3.2,
+            "frames": 4701,
+            "bytes": 83004860,
+            "active": true,
+            "gpuMs": 6.71,
+            "quality": 0,
+            "transport": {
+              "semantic": 350,
+              "sent": 4826,
+              "acknowledged": 4825,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.68,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 80397,
+            "heapMb": 3.7,
+            "frames": 4821,
+            "bytes": 84804131,
+            "active": true,
+            "gpuMs": 6.73,
+            "quality": 0,
+            "transport": {
+              "semantic": 350,
+              "sent": 4946,
+              "acknowledged": 4946,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.55,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 82404,
+            "heapMb": 3.7,
+            "frames": 4942,
+            "bytes": 87121349,
+            "active": true,
+            "gpuMs": 6.82,
+            "quality": 0,
+            "transport": {
+              "semantic": 355,
+              "sent": 5067,
+              "acknowledged": 5066,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.67,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 84411,
+            "heapMb": 3.6,
+            "frames": 5062,
+            "bytes": 89430560,
+            "active": true,
+            "gpuMs": 6.69,
+            "quality": 0,
+            "transport": {
+              "semantic": 356,
+              "sent": 5187,
+              "acknowledged": 5187,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.62,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 86421,
+            "heapMb": 3.8,
+            "frames": 5183,
+            "bytes": 91741489,
+            "active": true,
+            "gpuMs": 6.86,
+            "quality": 0,
+            "transport": {
+              "semantic": 360,
+              "sent": 5308,
+              "acknowledged": 5307,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.62,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 88431,
+            "heapMb": 3.3,
+            "frames": 5303,
+            "bytes": 94045539,
+            "active": true,
+            "gpuMs": 7.02,
+            "quality": 0,
+            "transport": {
+              "semantic": 362,
+              "sent": 5428,
+              "acknowledged": 5428,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.58,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 90438,
+            "heapMb": 3.6,
+            "frames": 5424,
+            "bytes": 96120192,
+            "active": true,
+            "gpuMs": 6.8,
+            "quality": 0,
+            "transport": {
+              "semantic": 368,
+              "sent": 5549,
+              "acknowledged": 5549,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.9,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 92447,
+            "heapMb": 3.9,
+            "frames": 5544,
+            "bytes": 98449263,
+            "active": true,
+            "gpuMs": 6.84,
+            "quality": 0,
+            "transport": {
+              "semantic": 378,
+              "sent": 5669,
+              "acknowledged": 5669,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.84,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 94456,
+            "heapMb": 3.5,
+            "frames": 5665,
+            "bytes": 100472960,
+            "active": true,
+            "gpuMs": 7.28,
+            "quality": 0,
+            "transport": {
+              "semantic": 380,
+              "sent": 5790,
+              "acknowledged": 5790,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.83,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 96465,
+            "heapMb": 3.2,
+            "frames": 5785,
+            "bytes": 102851312,
+            "active": true,
+            "gpuMs": 7.44,
+            "quality": 0,
+            "transport": {
+              "semantic": 384,
+              "sent": 5910,
+              "acknowledged": 5910,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 115,
+              "renderMs": 0.87,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 98471,
+            "heapMb": 3.8,
+            "frames": 5906,
+            "bytes": 104955195,
+            "active": true,
+            "gpuMs": 7.35,
+            "quality": 0,
+            "transport": {
+              "semantic": 386,
+              "sent": 6031,
+              "acknowledged": 6031,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.75,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 100479,
+            "heapMb": 3.9,
+            "frames": 6026,
+            "bytes": 107064582,
+            "active": true,
+            "gpuMs": 6.9,
+            "quality": 0,
+            "transport": {
+              "semantic": 388,
+              "sent": 6151,
+              "acknowledged": 6151,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.8,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 102488,
+            "heapMb": 3.8,
+            "frames": 6147,
+            "bytes": 109376520,
+            "active": true,
+            "gpuMs": 7.06,
+            "quality": 0,
+            "transport": {
+              "semantic": 390,
+              "sent": 6272,
+              "acknowledged": 6272,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.68,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 104500,
+            "heapMb": 3.6,
+            "frames": 6267,
+            "bytes": 111424638,
+            "active": true,
+            "gpuMs": 7.01,
+            "quality": 0,
+            "transport": {
+              "semantic": 404,
+              "sent": 6392,
+              "acknowledged": 6392,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 106508,
+            "heapMb": 3.2,
+            "frames": 6388,
+            "bytes": 113698204,
+            "active": true,
+            "gpuMs": 6.95,
+            "quality": 0,
+            "transport": {
+              "semantic": 416,
+              "sent": 6513,
+              "acknowledged": 6513,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.69,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 108518,
+            "heapMb": 3.2,
+            "frames": 6508,
+            "bytes": 115826709,
+            "active": true,
+            "gpuMs": 6.75,
+            "quality": 0,
+            "transport": {
+              "semantic": 426,
+              "sent": 6633,
+              "acknowledged": 6633,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.88,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 110526,
+            "heapMb": 3.8,
+            "frames": 6629,
+            "bytes": 118125385,
+            "active": true,
+            "gpuMs": 6.93,
+            "quality": 0,
+            "transport": {
+              "semantic": 426,
+              "sent": 6754,
+              "acknowledged": 6754,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.6,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 112533,
+            "heapMb": 3.6,
+            "frames": 6749,
+            "bytes": 120448965,
+            "active": true,
+            "gpuMs": 6.74,
+            "quality": 0,
+            "transport": {
+              "semantic": 426,
+              "sent": 6874,
+              "acknowledged": 6874,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.64,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 114537,
+            "heapMb": 3.6,
+            "frames": 6870,
+            "bytes": 122483619,
+            "active": true,
+            "gpuMs": 6.93,
+            "quality": 0,
+            "transport": {
+              "semantic": 438,
+              "sent": 6995,
+              "acknowledged": 6995,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.74,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 116546,
+            "heapMb": 4,
+            "frames": 6990,
+            "bytes": 123622685,
+            "active": true,
+            "gpuMs": 6.9,
+            "quality": 0,
+            "transport": {
+              "semantic": 440,
+              "sent": 7115,
+              "acknowledged": 7115,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.86,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 118555,
+            "heapMb": 3.6,
+            "frames": 7111,
+            "bytes": 125605488,
+            "active": true,
+            "gpuMs": 7.51,
+            "quality": 0,
+            "transport": {
+              "semantic": 453,
+              "sent": 7236,
+              "acknowledged": 7236,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.76,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 120563,
+            "heapMb": 3.7,
+            "frames": 7231,
+            "bytes": 127700303,
+            "active": true,
+            "gpuMs": 7.39,
+            "quality": 0,
+            "transport": {
+              "semantic": 459,
+              "sent": 7356,
+              "acknowledged": 7356,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.84,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 122571,
+            "heapMb": 3.5,
+            "frames": 7352,
+            "bytes": 129778498,
+            "active": true,
+            "gpuMs": 7.35,
+            "quality": 0,
+            "transport": {
+              "semantic": 474,
+              "sent": 7477,
+              "acknowledged": 7477,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.95,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 124579,
+            "heapMb": 3.6,
+            "frames": 7472,
+            "bytes": 131961022,
+            "active": true,
+            "gpuMs": 7.19,
+            "quality": 0,
+            "transport": {
+              "semantic": 483,
+              "sent": 7597,
+              "acknowledged": 7597,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.63,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 126587,
+            "heapMb": 3.5,
+            "frames": 7593,
+            "bytes": 134240266,
+            "active": true,
+            "gpuMs": 7.16,
+            "quality": 0,
+            "transport": {
+              "semantic": 487,
+              "sent": 7718,
+              "acknowledged": 7718,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.68,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 128594,
+            "heapMb": 3.5,
+            "frames": 7713,
+            "bytes": 136353269,
+            "active": true,
+            "gpuMs": 7.23,
+            "quality": 0,
+            "transport": {
+              "semantic": 493,
+              "sent": 7838,
+              "acknowledged": 7838,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 130602,
+            "heapMb": 3.7,
+            "frames": 7834,
+            "bytes": 138621082,
+            "active": true,
+            "gpuMs": 7.07,
+            "quality": 0,
+            "transport": {
+              "semantic": 493,
+              "sent": 7959,
+              "acknowledged": 7959,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 132611,
+            "heapMb": 3.9,
+            "frames": 7954,
+            "bytes": 140630473,
+            "active": true,
+            "gpuMs": 7.06,
+            "quality": 0,
+            "transport": {
+              "semantic": 500,
+              "sent": 8079,
+              "acknowledged": 8079,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.7,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 134620,
+            "heapMb": 3.8,
+            "frames": 8075,
+            "bytes": 142655022,
+            "active": true,
+            "gpuMs": 6.83,
+            "quality": 0,
+            "transport": {
+              "semantic": 505,
+              "sent": 8200,
+              "acknowledged": 8200,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.76,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 136628,
+            "heapMb": 3.9,
+            "frames": 8195,
+            "bytes": 144972825,
+            "active": true,
+            "gpuMs": 6.87,
+            "quality": 0,
+            "transport": {
+              "semantic": 505,
+              "sent": 8320,
+              "acknowledged": 8320,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 138638,
+            "heapMb": 3.9,
+            "frames": 8316,
+            "bytes": 147110333,
+            "active": true,
+            "gpuMs": 7.33,
+            "quality": 0,
+            "transport": {
+              "semantic": 513,
+              "sent": 8441,
+              "acknowledged": 8441,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.64,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 140645,
+            "heapMb": 4,
+            "frames": 8436,
+            "bytes": 149481537,
+            "active": true,
+            "gpuMs": 7.06,
+            "quality": 0,
+            "transport": {
+              "semantic": 517,
+              "sent": 8561,
+              "acknowledged": 8561,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.7,
+              "maxLatencyMs": 115,
+              "renderMs": 0.6,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 142653,
+            "heapMb": 3.4,
+            "frames": 8557,
+            "bytes": 151881525,
+            "active": true,
+            "gpuMs": 6.91,
+            "quality": 0,
+            "transport": {
+              "semantic": 523,
+              "sent": 8682,
+              "acknowledged": 8682,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 144662,
+            "heapMb": 3.5,
+            "frames": 8677,
+            "bytes": 153999241,
+            "active": true,
+            "gpuMs": 7.23,
+            "quality": 0,
+            "transport": {
+              "semantic": 528,
+              "sent": 8802,
+              "acknowledged": 8802,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.8,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 146668,
+            "heapMb": 3.4,
+            "frames": 8798,
+            "bytes": 156242864,
+            "active": true,
+            "gpuMs": 7.3,
+            "quality": 0,
+            "transport": {
+              "semantic": 536,
+              "sent": 8923,
+              "acknowledged": 8922,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.86,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 148680,
+            "heapMb": 3.3,
+            "frames": 8918,
+            "bytes": 158685402,
+            "active": true,
+            "gpuMs": 7.64,
+            "quality": 0,
+            "transport": {
+              "semantic": 538,
+              "sent": 9043,
+              "acknowledged": 9043,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.69,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 150691,
+            "heapMb": 3.4,
+            "frames": 9039,
+            "bytes": 160773444,
+            "active": true,
+            "gpuMs": 7.2,
+            "quality": 0,
+            "transport": {
+              "semantic": 544,
+              "sent": 9164,
+              "acknowledged": 9164,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.74,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 152701,
+            "heapMb": 4,
+            "frames": 9160,
+            "bytes": 163135586,
+            "active": true,
+            "gpuMs": 7,
+            "quality": 0,
+            "transport": {
+              "semantic": 556,
+              "sent": 9285,
+              "acknowledged": 9284,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.82,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 154709,
+            "heapMb": 3.5,
+            "frames": 9280,
+            "bytes": 165209480,
+            "active": true,
+            "gpuMs": 7.02,
+            "quality": 0,
+            "transport": {
+              "semantic": 562,
+              "sent": 9405,
+              "acknowledged": 9405,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.8,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 156718,
+            "heapMb": 3.4,
+            "frames": 9401,
+            "bytes": 167474204,
+            "active": true,
+            "gpuMs": 7.21,
+            "quality": 0,
+            "transport": {
+              "semantic": 567,
+              "sent": 9526,
+              "acknowledged": 9525,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.1,
+              "maxLatencyMs": 115,
+              "renderMs": 0.8,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 158726,
+            "heapMb": 3.4,
+            "frames": 9521,
+            "bytes": 169495474,
+            "active": true,
+            "gpuMs": 7.24,
+            "quality": 0,
+            "transport": {
+              "semantic": 575,
+              "sent": 9646,
+              "acknowledged": 9646,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 115,
+              "renderMs": 0.99,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 160734,
+            "heapMb": 3.4,
+            "frames": 9642,
+            "bytes": 171231363,
+            "active": true,
+            "gpuMs": 6.94,
+            "quality": 0,
+            "transport": {
+              "semantic": 579,
+              "sent": 9767,
+              "acknowledged": 9766,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.3,
+              "maxLatencyMs": 115,
+              "renderMs": 0.97,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 162742,
+            "heapMb": 4,
+            "frames": 9762,
+            "bytes": 173242480,
+            "active": true,
+            "gpuMs": 6.96,
+            "quality": 0,
+            "transport": {
+              "semantic": 579,
+              "sent": 9887,
+              "acknowledged": 9887,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.62,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 164750,
+            "heapMb": 3.4,
+            "frames": 9883,
+            "bytes": 174945133,
+            "active": true,
+            "gpuMs": 6.87,
+            "quality": 0,
+            "transport": {
+              "semantic": 581,
+              "sent": 10008,
+              "acknowledged": 10007,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.59,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 1
+            }
+          },
+          {
+            "t": 166760,
+            "heapMb": 3.8,
+            "frames": 10003,
+            "bytes": 177056269,
+            "active": true,
+            "gpuMs": 6.92,
+            "quality": 0,
+            "transport": {
+              "semantic": 589,
+              "sent": 10128,
+              "acknowledged": 10128,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.67,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 168771,
+            "heapMb": 3.8,
+            "frames": 10124,
+            "bytes": 178896770,
+            "active": true,
+            "gpuMs": 7.68,
+            "quality": 0,
+            "transport": {
+              "semantic": 597,
+              "sent": 10249,
+              "acknowledged": 10249,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2.2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.67,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 170778,
+            "heapMb": 4,
+            "frames": 10244,
+            "bytes": 180784594,
+            "active": true,
+            "gpuMs": 7.12,
+            "quality": 0,
+            "transport": {
+              "semantic": 597,
+              "sent": 10369,
+              "acknowledged": 10369,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.73,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 172786,
+            "heapMb": 3.8,
+            "frames": 10365,
+            "bytes": 181701880,
+            "active": true,
+            "gpuMs": 6.95,
+            "quality": 0,
+            "transport": {
+              "semantic": 601,
+              "sent": 10490,
+              "acknowledged": 10490,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.66,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 174794,
+            "heapMb": 3.5,
+            "frames": 10485,
+            "bytes": 184086756,
+            "active": true,
+            "gpuMs": 7.09,
+            "quality": 0,
+            "transport": {
+              "semantic": 601,
+              "sent": 10610,
+              "acknowledged": 10610,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.9,
+              "maxLatencyMs": 115,
+              "renderMs": 0.62,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 176801,
+            "heapMb": 3.4,
+            "frames": 10606,
+            "bytes": 186286619,
+            "active": true,
+            "gpuMs": 7.02,
+            "quality": 0,
+            "transport": {
+              "semantic": 601,
+              "sent": 10731,
+              "acknowledged": 10731,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 115,
+              "renderMs": 0.57,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 178808,
+            "heapMb": 3.2,
+            "frames": 10726,
+            "bytes": 188176382,
+            "active": true,
+            "gpuMs": 7.3,
+            "quality": 0,
+            "transport": {
+              "semantic": 605,
+              "sent": 10851,
+              "acknowledged": 10851,
+              "skippedHere": 7,
+              "skippedInFrame": 0,
+              "latencyMs": 2,
+              "maxLatencyMs": 115,
+              "renderMs": 0.72,
+              "maxRenderMs": 101.1,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          }
+        ],
+        "finalizeMs": 9
+      }
+    },
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+    "sizes": {
+      "stellar-forge-720p": {
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "fps": 29.98,
+        "frameInterval": {
+          "median": 33,
+          "p95": 36,
+          "max": 47
+        },
+        "offsetsMs": [
+          -38,
+          2,
+          -16
+        ],
+        "maxAbsOffsetMs": 38,
+        "bytesPerMinuteMB": 34.5,
+        "cpuPercent": {
+          "browser": 0.7,
+          "renderer": 67,
+          "GPU": 24.5,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 6.2,
+          "end": 8.8
+        },
+        "processMb": {
+          "start": {
+            "node": 209,
+            "browser": 104,
+            "gpu": 289,
+            "renderer": 142,
+            "other": 210
+          },
+          "end": {
+            "node": 209,
+            "browser": 115,
+            "gpu": 299,
+            "renderer": 209,
+            "other": 210
+          }
+        },
+        "gpuMs": 11.89,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 14975,
+          "frames": 898,
+          "bytes": 9032720,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1280x720",
+          "slowWarning": false
+        }
+      },
+      "stellar-forge-1080p": {
+        "video": {
+          "codec": "vp9",
+          "width": 1920,
+          "height": 1080
+        },
+        "fps": 27.78,
+        "frameInterval": {
+          "median": 33,
+          "p95": 63,
+          "max": 73
+        },
+        "offsetsMs": [
+          -7,
+          -14,
+          18
+        ],
+        "maxAbsOffsetMs": 18,
+        "bytesPerMinuteMB": 53.9,
+        "cpuPercent": {
+          "browser": 0.6,
+          "renderer": 105.6,
+          "GPU": 16.6,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.5
+        },
+        "heapMb": {
+          "start": 8.4,
+          "end": 7.2
+        },
+        "processMb": {
+          "start": {
+            "node": 218,
+            "browser": 114,
+            "gpu": 298,
+            "renderer": 222,
+            "other": 210
+          },
+          "end": {
+            "node": 218,
+            "browser": 119,
+            "gpu": 315,
+            "renderer": 243,
+            "other": 210
+          }
+        },
+        "gpuMs": 24.95,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 15076,
+          "frames": 472,
+          "bytes": 14203864,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        }
+      },
+      "stellar-forge-stage": {
+        "video": {
+          "codec": "vp9",
+          "width": 746,
+          "height": 512
+        },
+        "fps": 29.98,
+        "frameInterval": {
+          "median": 33,
+          "p95": 36,
+          "max": 43
+        },
+        "offsetsMs": [
+          -35,
+          -8,
+          -13
+        ],
+        "maxAbsOffsetMs": 35,
+        "bytesPerMinuteMB": 17,
+        "cpuPercent": {
+          "browser": 0.7,
+          "renderer": 43.1,
+          "GPU": 22.4,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.3
+        },
+        "heapMb": {
+          "start": 6.7,
+          "end": 8.5
+        },
+        "processMb": {
+          "start": {
+            "node": 219,
+            "browser": 118,
+            "gpu": 309,
+            "renderer": 238,
+            "other": 210
+          },
+          "end": {
+            "node": 219,
+            "browser": 111,
+            "gpu": 304,
+            "renderer": 235,
+            "other": 210
+          }
+        },
+        "gpuMs": 5.64,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 15068,
+          "frames": 904,
+          "bytes": 4479985,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "746x512",
+          "slowWarning": false
+        }
+      },
+      "cymatic-field-720p": {
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "fps": 29.99,
+        "frameInterval": {
+          "median": 33,
+          "p95": 34,
+          "max": 40
+        },
+        "offsetsMs": [
+          -28,
+          -22,
+          1
+        ],
+        "maxAbsOffsetMs": 28,
+        "bytesPerMinuteMB": 36.7,
+        "cpuPercent": {
+          "browser": 0.7,
+          "renderer": 74.6,
+          "GPU": 29.7,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 4.1,
+          "end": 3.1
+        },
+        "processMb": {
+          "start": {
+            "node": 219,
+            "browser": 105,
+            "gpu": 273,
+            "renderer": 152,
+            "other": 210
+          },
+          "end": {
+            "node": 219,
+            "browser": 116,
+            "gpu": 277,
+            "renderer": 212,
+            "other": 210
+          }
+        },
+        "gpuMs": 3.57,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 14976,
+          "frames": 899,
+          "bytes": 9605269,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1280x720",
+          "slowWarning": false
+        }
+      },
+      "cymatic-field-1080p": {
+        "video": {
+          "codec": "vp9",
+          "width": 1920,
+          "height": 1080
+        },
+        "fps": 29.97,
+        "frameInterval": {
+          "median": 33,
+          "p95": 50,
+          "max": 51
+        },
+        "offsetsMs": [
+          -37,
+          2,
+          -9
+        ],
+        "maxAbsOffsetMs": 37,
+        "bytesPerMinuteMB": 60.5,
+        "cpuPercent": {
+          "browser": 0.8,
+          "renderer": 128,
+          "GPU": 33.5,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.5
+        },
+        "heapMb": {
+          "start": 3.3,
+          "end": 3.5
+        },
+        "processMb": {
+          "start": {
+            "node": 220,
+            "browser": 114,
+            "gpu": 277,
+            "renderer": 212,
+            "other": 210
+          },
+          "end": {
+            "node": 220,
+            "browser": 122,
+            "gpu": 284,
+            "renderer": 228,
+            "other": 210
+          }
+        },
+        "gpuMs": 6.72,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 14982,
+          "frames": 899,
+          "bytes": 15831847,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "1920x1080",
+          "slowWarning": false
+        }
+      },
+      "cymatic-field-stage": {
+        "video": {
+          "codec": "vp9",
+          "width": 746,
+          "height": 512
+        },
+        "fps": 29.96,
+        "frameInterval": {
+          "median": 33,
+          "p95": 50,
+          "max": 53
+        },
+        "offsetsMs": [
+          -19,
+          -3,
+          13
+        ],
+        "maxAbsOffsetMs": 19,
+        "bytesPerMinuteMB": 17.7,
+        "cpuPercent": {
+          "browser": 0.7,
+          "renderer": 51,
+          "GPU": 27.5,
+          "network.mojom.NetworkService": 0.1,
+          "audio.mojom.AudioService": 0.4
+        },
+        "heapMb": {
+          "start": 3.4,
+          "end": 3.5
+        },
+        "processMb": {
+          "start": {
+            "node": 219,
+            "browser": 121,
+            "gpu": 280,
+            "renderer": 226,
+            "other": 210
+          },
+          "end": {
+            "node": 219,
+            "browser": 111,
+            "gpu": 276,
+            "renderer": 227,
+            "other": 210
+          }
+        },
+        "gpuMs": 2.39,
+        "player": {
+          "mimeType": "video/webm;codecs=vp9,opus",
+          "durationMs": 15068,
+          "frames": 904,
+          "bytes": 4670538,
+          "audio": true,
+          "audioLost": false,
+          "audioLostMs": 0,
+          "reason": "stopped",
+          "size": "746x512",
+          "slowWarning": false
+        }
+      }
+    }
+  }
+}

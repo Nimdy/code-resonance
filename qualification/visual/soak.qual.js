@@ -8,7 +8,10 @@
 // timings, the pack transport, the sound level, the CPU of every browser process, the memory of the whole process
 // tree, and the events produced, accepted and stored (none may be lost).
 //
-// node visual/soak.qual.js [--hours 3] [--gpu amd] [--scale 1] [--viewport 1920x1080] [--quality 0-3] [--mechanism] [--out results/soak]
+// node visual/soak.qual.js [--hours 3] [--gpu amd] [--scale 1] [--viewport 1920x1080] [--quality 0-3] [--mechanism]
+//                          [--record-size 720p|1080p|stage] [--out results/soak]
+// --record-size: the player's recording size for the soak's recordings (default: the player's default, 720p); a
+// software-rendered CI machine records the stage (at 720p a shader pack falls under 1 fps there and is stopped).
 // --viewport/--quality/--mechanism: for a software-rendered CI machine (a fixed lower rendering level; recordings and
 // frame rates held to the mechanism thresholds of visual/recording.qual.js).
 // --scale 0.1 runs the programme ten times faster (an hour in 6 minutes; recordings stay one minute): a smoke test.
@@ -21,7 +24,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
 const packs=require(path.join(REPO,'engine/packs'));
 const media=require('./media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
-const HOURS=+arg('hours',3),GPU=arg('gpu',null),SCALE=+arg('scale',1),MECH=process.argv.includes('--mechanism');
+const HOURS=+arg('hours',3),GPU=arg('gpu',null),SCALE=+arg('scale',1),MECH=process.argv.includes('--mechanism'),RECORD_SIZE=arg('record-size',null);
 const [VW,VH]=arg('viewport','1920x1080').split('x').map(Number),QUALITY=arg('quality',null);
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','soak')));
 const {checks,check}=checker();
@@ -88,14 +91,14 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
       const idle=inHour>=IDLE[0]&&inHour<IDLE[1];if(idle!==paused){paused=idle;events.push({minute:+minute.toFixed(1),event:idle?'session paused (idle)':'session resumed'});}
       for(const at of RECORD_AT){const k=`rec:${hour}:${at}`;if(inHour>=at&&!done.has(k)){done.add(k);
         const file=path.join(recDir,`h${hour}-m${at}.webm`),began=Date.now();
-        const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(async()=>{await window.__qual.record();window.__qual.pilot(true);});
+        const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(async size=>{if(size)window.__qual.setRecordSize(size);await window.__qual.record();window.__qual.pilot(true);},RECORD_SIZE);
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         const player=await page.evaluate(()=>window.__qual.recording().last);
         if(download)await download.saveAs(file);
-        const a=download?media.analyse(file):null,s=download?media.sync(file):null,c=download?media.continuity(file):null;
+        const a=download?media.analyse(file):null,s=download?media.markers(file):null,c=download?media.continuity(file):null;
         recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,maxIntervalAfterStartupMs:a?.maxIntervalAfterStartupMs??null,frameIntervalMedianMs:a?.frameInterval?.median??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
-          sync:s?{markers:s.flashes,clicks:s.clicks,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs}:null,bytes:download?fs.statSync(file).size:0,audioLostReported:player?.audioLost??null});
+          sync:s?{markers:s.flashes,chirps:s.chirps,meanOffsetMs:s.meanOffsetMs,maxAbsOffsetMs:s.maxAbsOffsetMs,pairs:s.pairs}:null,bytes:download?fs.statSync(file).size:0,audioLostReported:player?.audioLost??null});
         console.log('recording',JSON.stringify(recordings.at(-1)));if(download)fs.rmSync(file);}}
       // Receiver restart, once.
       if(!restart&&minute>=RESTART_AT&&Date.now()<END){
