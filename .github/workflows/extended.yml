@@ -27,8 +27,9 @@ jobs:
   packs-full:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'extended-qualification') || contains(github.event.pull_request.labels.*.name, 'extended:packs-full')
     runs-on: ubuntu-latest
-    # A shader pack at 1920x1080 in software rendering takes most of an hour on these runners.
-    timeout-minutes: 100
+    # Phase 5: the declarative pack 43–53 min, the shader pack 27–34 min. The shader pack's quick suite has taken about
+    # 25 min since Phase 7 (3.5–7 min before), so its full suite may need about 2 h.
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
