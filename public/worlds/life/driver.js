@@ -29,6 +29,14 @@
 // however long the performance. Near an anchor the next generation is prepared in the background (its own runner); the
 // view crossfades over CROSS seconds on either side of the anchor. A live session has a single generation.
 //
+// Ecology 2 (params.ecology === 2): the climate is read from the music itself. The driver keeps its own musical clock
+// (musical.js, configured from config.music: the score version, style, profile and seed the player plays) over the
+// same frames, and at every tick turns the expression at that moment (the form's role, energy, harmonic tension,
+// dynamics, rhythm, transitions, onsets) into targets for more conditions (climateOf: also gather, explore, persist,
+// glow, pulse and a turning attractor), with a perceptual mapping of life.music: 0 is exactly neutral, 1 clearly
+// visible, 2 unmistakable but bounded. The beat grid of the performance clock goes with it. Still conditions, never
+// choreography: nothing places an entity, every condition relaxes at its own pace, each species feels them its own way.
+//
 // Restore: checkpoints (a recent ring every 2 s and an even spread over the whole performance) carry the ecosystem,
 // the climate, the input position and the generation; each names the fingerprint of the inputs before it and the
 // configuration (grammar, simulation version, seed, life parameters, speed, tempo, origin). A checkpoint is used only
@@ -36,8 +44,9 @@
 // generation's start. Catching up is bounded per frame (films excepted: a film frame waits for the exact state); while
 // far behind, the view reports `restoring` with its progress and the world hides the population rather than show a
 // stale one.
-import {createEcosystem,HZ,DT,SIM_VERSION,mix} from './sim.js';
+import {createEcosystem,HZ,DT,SIM_VERSION,mix,COND1,COND2} from './sim.js';
 import {createShadow,graphOf,KIND} from './timeline.js';
+import {createMusical} from '../musical.js';
 export {HZ,DT,SIM_VERSION};
 const RECENT_EVERY=2*HZ,RECENT_KEEP=6,SPARSE_EVERY=20*HZ,SPARSE_KEEP=24;
 const RESTORE_AHEAD=3*HZ;          // further behind than this: the view is "restoring"
@@ -58,6 +67,54 @@ export const SECTION_CLIMATE={
   lift:{current:1.2,turb:1,cohesion:1.15,activity:1.25,attract:1.3,swing:.3},
   breath:{current:.75,turb:.6,cohesion:1.25,activity:.75,attract:1,swing:0}};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+// ---- Ecology 2: the climate from the music ------------------------------------------------------------------------
+export const NEUTRAL2=Object.freeze({...COND1,...COND2});
+// What each role of the score's form asks of the ecology (ratios of the neutral conditions at music influence 1,
+// before the music's own measures): development explores, release settles, return regathers, an interlude disperses
+// gently, tension unsettles, resolve re-forms the groups; a statement is the ecology's own home. (A v2 score's
+// sections arrive as these roles: musical.js.)
+export const ROLE_CLIMATE={
+  statement:{},
+  development:{current:1.3,turb:1.25,cohesion:.85,activity:1.2,attract:.9,swing:.8,gather:.8,explore:1.9,persist:.85},
+  interlude:{current:.8,turb:.9,cohesion:.72,activity:.85,attract:.75,swing:-.3,gather:.62,explore:1.3,persist:1.25,glow:.85},
+  return:{current:1.08,turb:.9,cohesion:1.35,activity:1.08,attract:1.35,swing:.2,gather:1.45,explore:.75,persist:1.1,glow:1.12},
+  release:{current:.72,turb:.65,cohesion:1.12,activity:.72,attract:1.05,gather:.7,explore:.62,persist:1.4,glow:.82},
+  tension:{current:1.15,turb:1.85,cohesion:.6,activity:1.28,attract:.7,swing:.5,gather:.55,explore:1.45,persist:.7,glow:.9},
+  resolve:{current:.9,turb:.75,cohesion:1.45,activity:.95,attract:1.4,swing:-.4,gather:1.55,explore:.8,persist:1.2,glow:1.18}};
+// How far the turning attractor leans in each role (a statement and a return lean toward the music's home direction,
+// the others toward a new one each section), and each condition's soft limit (log units for the ratios, units for the
+// rest): however expressive the music, a condition saturates there.
+const ROLE_SHIFT={statement:.3,development:.55,interlude:.42,return:.22,release:.45,tension:.35,resolve:.28};
+const LIMIT={current:.55,turb:.8,cohesion:.6,activity:.42,attract:.6,gather:.7,explore:1,persist:.5,glow:.5,swing:1.2,shift:.85};
+const RATIO=['current','turb','cohesion','activity','attract','gather','explore','persist','glow'];
+const GOLDEN=2.399963;
+// Music influence (life.music, 0..2) -> how much of the music's ask reaches the ecology: none at 0, all of it at 1,
+// two and a half times at 2, where the soft limits take over (expressive: unmistakable, never chaotic).
+export const influence=m=>m*(.75+.25*m);
+// The conditions the music asks for at a moment: ex is the musical expression (musical.js at()), m the influence,
+// home the music's own home direction (radians). Ratios are mapped in log space through each condition's soft limit
+// (a perceptual mapping: a small ask is felt in proportion, a large one saturates), never by one global factor.
+export function climateOf(ex,m,home=0){
+  const a=influence(clamp(+m,0,2));if(!(a>0)||!ex)return {...NEUTRAL2};
+  const R=ROLE_CLIMATE[ex.role]||{},lg=k=>Math.log(R[k]??1),n=(v,d=0)=>Number.isFinite(+v)?clamp(+v):d;
+  const e=n(ex.energy)-.45,d=n(ex.dynamics,.7)-.6,t=n(ex.tension),tr=n(ex.transition),on=n(ex.onset),rh=n(ex.rhythm),lift=ex.lift?1:0;
+  // energy and dynamics: currents, activity, exploration and light; harmonic tension: turbulence against cohesion;
+  // a section's approach (transition) and arrival (onset): the groups loosen and set out; a sustained passage (little
+  // rhythm) keeps the traces longer; a verified milestone's lift: a little more light and gathering, with restraint
+  const L={current:lg('current')+.45*e+.25*d,turb:lg('turb')+.5*(t-.3)+.3*on,cohesion:lg('cohesion')-.3*(t-.3)-.35*on,activity:lg('activity')+.5*e+.15*d,
+    attract:lg('attract')+.15*lift,gather:lg('gather')+.4*e+.15*lift-.3*tr,explore:lg('explore')+.7*e+.6*tr+.25*on,persist:lg('persist')+.35*(.5-rh),glow:lg('glow')+.45*e+.55*d+.2*lift};
+  const out={};for(const k of RATIO){const S=LIMIT[k];out[k]=Math.exp(S*Math.tanh(a*L[k]/S));}
+  out.swing=LIMIT.swing*Math.tanh(a*(R.swing??0)/LIMIT.swing);
+  // Rhythmic drive (the Cathedral's convoys and pulses): the rhythm the arrangement plays, carried by energy; quiet
+  // in a release or an interlude.
+  out.pulse=Math.tanh(a*(.3+.7*rh)*(.55+.45*n(ex.energy))*(ex.role==='release'||ex.role==='interlude'?.6:1));
+  // The turning attractor: toward the home direction in a statement or a return, toward a new direction each other
+  // section (golden-angle steps: never the same region twice in a row), drifting over the section and leaning with
+  // the harmony (the chord's degree, by its tension).
+  const D=(ROLE_SHIFT[ex.role]??.3)+.25*t,th=(ex.role==='statement'||ex.role==='return'?home:home+GOLDEN*(+ex.section||0))+.9*n(ex.sectionProgress)+.6*t*Math.sin((ex.chord|0)*.8976);
+  const mag=LIMIT.shift*Math.tanh(a*D/LIMIT.shift);out.shiftX=mag*Math.cos(th);out.shiftZ=mag*Math.sin(th);
+  return out;
+}
 const fnv=s=>{let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36);};
 const samePrint=(p,q)=>!!p&&!!q&&p[0]===q[0]&&p[1]===q[1];
 // The crossfade at the anchors of a replay or a film: 1 -> 0 over the CROSS seconds before an anchor, 0 -> 1 over the
@@ -102,11 +159,12 @@ const LASTING=x=>x.kind===KIND.intent&&(x.intent.type==='milestone.achieved'||x.
 export function lifeScales(p={}){const n=(k,d=1)=>Number.isFinite(+p[k])?+p[k]:d;
   return {density:n('density'),vitality:n('vitality'),collective:n('collective'),environment:n('environment'),trails:n('trails'),music:n('music'),
     attraction:n('attraction'),repulsion:n('repulsion'),separation:n('separation'),alignment:n('alignment'),cohesion:n('cohesion'),current:n('current'),
-    persistence:n('persistence'),diffusion:n('diffusion'),radius:n('radius')};}
+    persistence:n('persistence'),diffusion:n('diffusion'),radius:n('radius'),ecology:n('ecology')};}
 // grammar: {id, version, ecosystem(params, seed) -> spec for createEcosystem (without seed/params),
 //           habitat(model, t) -> sites [{id, x, y, z, r, w, kind}], siteOf?(id, model) -> site id,
 //           climate?(section, energy, tension) -> condition targets}
-// config(): {speed, tempo, epoch (ms), params (the recipe's life values), film, live}
+// config(): {speed, tempo, epoch (ms), params (the recipe's life values), film, live, music (ecology 2: the musical
+//           clock's configuration {version, style, profile, seed}, as the player's)}
 // onRebase(base): a live session's new base ({graph, t, from}) after its consumed inputs were folded into it;
 // rebaseAfter: how many consumed inputs a live session keeps before it folds them;
 // background: prepare the next generation ahead of its anchor (tests turn it off: the states are the same without it).
@@ -119,7 +177,10 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     handovers:0,backgroundTicks:0,backgroundMs:0,bgTickMs:0,historyMs:null,restored:null};
   const frameKeyOf=(c,tempo=c.tempo)=>fnv(JSON.stringify([grammar.id,grammar.version,SIM_VERSION,seed,c.speed,tempo,c.epoch,base?`${base.t}|${base.graph?.nodes?.length||0}`:'']));
   const liveKeyOf=c=>frameKeyOf(c,null);   // a live session keeps its population through a tempo change
-  const paramKeyOf=c=>fnv(JSON.stringify(c.params||{}));
+  // Ecology 2: the music the climate is read from (its configuration is part of the parameter key: a checkpoint
+  // never crosses a change of score, style, profile or seed; a live session keeps its population through one).
+  const music=createMusical({timeline,score}),eco2=c=>+c.params?.ecology===2;
+  const paramKeyOf=c=>{if(!eco2(c))return fnv(JSON.stringify(c.params||{}));const m=music.config;return fnv(JSON.stringify([c.params,m.version,m.style,m.profile,m.seed]));};
   const genOf=(k,c)=>c.live?0:Math.floor(k/GEN_TICKS);
   const seedOf=g=>g?mix(seed,g):seed;   // generation 0 keeps the driver's own seed
   const make=(c,g=0)=>{const s=seedOf(g);return createEcosystem({...grammar.ecosystem(c.params||{},s),seed:s,params:lifeScales(c.params)});};
@@ -172,7 +233,15 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     if(((cl.bar%8)+8)%8===0||cl.sectionIndex<0){cl.sectionIndex=Math.floor(cl.bar/8);
       const choose=score?.chooseSection;cl.section=choose?choose({index:cl.sectionIndex,tension:cl.ft,energy:cl.energy,previous:cl.section,milestone:cl.milestone}):'home';
       cl.milestone=false;}}
+  // Ecology 2: at every tick, the conditions the music asks for at time T and the beat grid there (both pure
+  // functions of T and the frames at or before it: the musical clock never looks ahead).
+  function climate2(r,T,c){
+    const ex=music.at(T),B=barMs(c)/4,cl=r.climate;
+    r.eco.setClimate(climateOf(ex,c.params?.music??1,(music.config.seed%6283)/1000));r.eco.setGrid({beat:T/B,per:DT*1000*c.speed/B});
+    cl.section=ex.role;cl.energy=+ex.energy||0;cl.bar=ex.bar;
+  }
   function climateStep(r,T,c){
+    if(eco2(c))return climate2(r,T,c);
     const cl=r.climate,b=Math.floor(T/barMs(c));if(cl.bar>=b)return;
     if(cl.bar<b-64)cl.bar=b-64;   // a live session joined long after the origin: 64 bars settle the fold
     while(cl.bar<b)bar(cl,T);
@@ -181,6 +250,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   // A generation's climate at its warm start T: the fold restarted 64 bars before it, each bar taking the last frame at
   // or before the bar's own start; then the frame in force at T (binary searches over the frames: no pass over them).
   function climateFrom(r,T,c){
+    if(eco2(c))return climate2(r,T,c);   // (no fold: the musical clock reads its own window of frames)
     const cl=r.climate,B=barMs(c),b=Math.floor(T/B),fr=frames();
     const take=t=>{let lo=0,hi=fr.length;while(lo<hi){const m=(lo+hi)>>1;if(fr[m].t<=t)lo=m+1;else hi=m;}const x=fr[lo-1];cl.fe=x?x.energy:0;cl.ft=x?x.tension:0;cl.fend=x?x.end:-Infinity;};
     cl.bar=Math.max(cl.bar,b-64);
@@ -300,6 +370,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   function update(info,{budgetMs=6}={}){
     const c=config();current=c;
     if(!Number.isFinite(c.epoch)||c.epoch<=0||!Number.isFinite(info.tview))return lastView=null;
+    if(eco2(c))music.configure({...(c.music||{}),tempo:c.tempo});
     const fk=frameKeyOf(c),lk=liveKeyOf(c),pk=paramKeyOf(c);
     if(fk!==frameKey||pk!==paramKey){
       // A live session keeps its population through a change of life parameters or tempo (they apply from now: the
@@ -333,7 +404,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     // fades in after a restore and, in a replay or a film, crossfades at a generation's anchor.
     const alpha=R.eco.tick===target?clamp(info.tview*HZ-target):1;
     const fadeIn=(shownSince<0||info.tview<shownSince?1:clamp((info.tview-shownSince)/.6))*(c.live?1:crossfade(info.tview));
-    return lastView={eco:R.eco,alpha,restoring,progress,fadeIn,generation:R.gen,tick:R.eco.tick,target,climate:{section:R.climate.section,energy:+R.climate.energy.toFixed(3)}};
+    return lastView={eco:R.eco,alpha,restoring,progress,fadeIn,generation:R.gen,tick:R.eco.tick,target,climate:{section:R.climate.section,energy:+R.climate.energy.toFixed(3)},...(eco2(c)?{ecology:2}:{})};
   }
   // ---- A live session's bounded memory --------------------------------------------------------------------------------
   // The consumed inputs are folded away: the timeline keeps only what is not consumed yet (and the verified lasting
@@ -344,7 +415,10 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     if(!R||!c.live||restoring)return false;
     const r=R,h0=habitatAt(r,r.structPos);shadowTo(r,r.structPos);
     const list=structures(),T=tickTime(r.eco.tick,c),tEval=r.structPos>=0?(list[r.structPos].end??list[r.structPos].t):(base?.t??T);
-    const kept=timeline.compact(r.cursor,T,LASTING);
+    // (ecology 2 also keeps the frames the musical clock still reads: the last 72 bars and the one in force)
+    let keep=LASTING;if(eco2(c)){const from=T-72*barMs(c);let last=null;for(let i=0;i<r.cursor;i++)if(timeline.items[i].kind===KIND.frame)last=timeline.items[i];
+      keep=x=>LASTING(x)||x.kind===KIND.frame&&(x.t>=from||x===last);}
+    const kept=timeline.compact(r.cursor,T,keep);
     base={graph:graphOf(r.shadow.model,tEval),t:tEval,from:T};
     habitats.length=0;habitats[0]=h0;r.applied=0;r.cursor=keptN=kept;r.structPos=-1;r.print=timeline.print(r.cursor);
     frameKey=frameKeyOf(c);liveKey=liveKeyOf(c);recent=[snapshot(r)];sparse=[];
@@ -360,7 +434,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     get ecosystem(){return R?.eco??null;},get view(){return lastView;},
     // The site a canonical subject belongs to (labels and inspection).
     siteOf:id=>R?siteIn(R.shadow.model,id):null,
-    stats(){const e=R?.eco,s=e?e.stats():null,cl=R?.climate;return {grammar:grammar.id,version:grammar.version,sim:SIM_VERSION,hz:HZ,tick:e?.tick??0,generation:R?.gen??0,
+    stats(){const e=R?.eco,s=e?e.stats():null,cl=R?.climate;return {grammar:grammar.id,version:grammar.version,sim:SIM_VERSION,hz:HZ,tick:e?.tick??0,generation:R?.gen??0,...(e?.ecology===2?{ecology:2}:{}),
       next:N?{generation:N.gen,tick:N.eco?.tick??null}:null,restoring,progress:+progress.toFixed(3),
       checkpoints:{recent:recent.length,sparse:sparse.length},inputs:timeline.stats(),habitats:habitats.filter(Boolean).length,climate:cl?{section:cl.section,energy:+cl.energy.toFixed(3),bar:cl.bar}:null,
       tickMs:+counters.tickMs.toFixed(3),catchUpMs:+counters.catchUpMs.toFixed(2),restores:counters.restores,resets:counters.resets,fromCheckpoint:counters.fromCheckpoint,ticks:counters.ticks,

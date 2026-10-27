@@ -13,6 +13,13 @@
 //  E influences canonical events become bounded field deposits and site conditions; the musical climate sets slowly
 //               relaxing conditions (current, turbulence, cohesion, activity). Neither ever places an entity.
 //
+// Ecology 2 (params.ecology === 2; docs/LIFE.md "Ecology v2"): the climate has more conditions (gather: the group size a
+// place carries; explore: curiosity and migration; persist: how long trails and energy last; glow: the environment's
+// light, read by presentation; pulse: rhythmic drive; shiftX/shiftZ: a slowly turning attractor that changes which
+// sites appeal, by their direction from the habitat's centre), each relaxing at its own pace, and every species feels
+// them through its own response weights (spec.respond: an exponent per condition). The performance clock's beat grid
+// (setGrid) is an input like the climate. Ecology 1 is the code path as it was, bit for bit.
+//
 // Determinism: the state after tick k is a pure function of the configuration, the seed and the inputs applied before
 // each tick (events, sites, climate). Random choices come from a counter-based hash of (seed, slot, generation, tick),
 // never Math.random; state is stored in typed arrays, iterated in a fixed order; accelerations are computed from the
@@ -26,6 +33,15 @@ export const CH={trail:0,energy:1,disturb:2,flowX:3,flowZ:4};
 const CHANNELS=5;
 export const MAX_SITES=64;
 const TRAIL_EVERY=3;           // a trail point every 3 ticks (0.15 s)
+// The climate's conditions (neutral values): ecology 1's, and those ecology 2 adds.
+export const COND1=Object.freeze({current:1,turb:1,cohesion:1,activity:1,attract:1,swing:0});
+export const COND2=Object.freeze({gather:1,explore:1,persist:1,glow:1,pulse:0,shiftX:0,shiftZ:0});
+// Ecology 2: how fast each condition follows the climate (seconds): activity and light answer within a few seconds,
+// the attractor and the fields' memory turn over a passage. (Ecology 1: all of them six seconds.)
+const TAU2={current:5,turb:4,cohesion:6,activity:3.5,attract:8,swing:9,gather:7,explore:4,persist:10,glow:2.5,pulse:1.5,shiftX:9,shiftZ:9};
+const KC2=Object.fromEntries(Object.entries(TAU2).map(([k,t])=>[k,1-Math.exp(-DT/t)]));
+// The conditions a species feels through its response weights (ecology 2).
+const FELT=['current','turb','cohesion','activity','attract','gather','explore'];
 // ---- Deterministic randomness -----------------------------------------------------------------------------------------
 export function mix(a,b,c=0,d=0){
   let h=(a^Math.imul(b|0,0x9e3779b1)^Math.imul(c|0,0x85ebca77)^Math.imul(d|0,0xc2b2ae3d))>>>0;
@@ -90,16 +106,39 @@ export function createEcosystem(spec){
   let siteState=new Map();   // id -> {novelty, stress, lasting, nourish, visits, swirl}
   const visits=new Float32Array(MAX_SITES),visitsNow=new Uint16Array(MAX_SITES);
   // ---- Conditions (climate and engineering), relaxing toward their targets -----------------------------------------
-  let cond={current:1,turb:1,cohesion:1,activity:1,attract:1,swing:0};let target={...cond};
   // Behaviour scales from the recipe (life parameters): fixed for a configuration.
   const P={density:1,vitality:1,collective:1,environment:1,trails:1,music:1,attraction:1,repulsion:1,separation:1,alignment:1,cohesion:1,current:1,persistence:1,diffusion:1,radius:1,...spec.params};
+  const ECO2=P.ecology===2;
+  let cond=ECO2?{...COND1,...COND2}:{current:1,turb:1,cohesion:1,activity:1,attract:1,swing:0};let target={...cond};
+  // Ecology 2: the beat grid of the performance clock at the state's time (beat: beats since the clock's zero; per:
+  // beats per tick), set by the driver with the climate (a pure function of the time, carried by snapshots).
+  let grid={beat:0,per:0};
   const decayK=x=>Math.pow(x,1/Math.max(.25,P.persistence));
-  const dTrail=decayK(decay.trail),dEnergy=decayK(decay.energy),dDisturb=decayK(decay.disturb),dFlow=decay.flow;
+  let dTrail=decayK(decay.trail),dEnergy=decayK(decay.energy);const dDisturb=decayK(decay.disturb),dFlow=decay.flow;
   let tick=0;
   // Population targets per species (bounded by capacity shares).
   const quota=new Int32Array(NS);{let used=0;species.forEach((s,k)=>{quota[k]=k===NS-1?cap-used:Math.floor(cap*s.share);used+=quota[k];});}
   const slotSpecies=new Uint8Array(cap);{let k=0,left=quota[0];for(let i=0;i<cap;i++){while(left<=0&&k<NS-1){k++;left=quota[k];}slotSpecies[i]=k;left--;}}
   const activeQuota=k=>Math.round(quota[k]*Math.max(0,Math.min(1,(spec.activeShare?.[k]??1)*P.density)));
+  // ---- Ecology 2: the conditions as each species feels them, the attractor per site, the fields' memory ------------
+  // felt[c][k]: condition FELT[c] as species k feels it (its response weight is an exponent: neutral stays neutral).
+  const RW=FELT.map(c=>Float64Array.from(species,s=>Number.isFinite(s.respond?.[c])?s.respond[c]:1));
+  const felt=FELT.map(()=>new Float64Array(NS)),F_CUR=0,F_TURB=1,F_COH=2,F_ACT=3,F_GATH=5,F_EXPL=6;
+  const sux=new Float32Array(MAX_SITES),suz=new Float32Array(MAX_SITES);let persistAt=1;
+  function feel(){
+    for(let c=0;c<FELT.length;c++){const v=cond[FELT[c]],w=RW[c],o=felt[c];for(let k=0;k<NS;k++)o[k]=w[k]===1?v:Math.pow(v,w[k]);}
+    // A site's direction from the habitat's centre, as a share of the habitat's reach: the turning attractor moves
+    // the appeal of the sites at its edge the most and of one at its centre hardly at all.
+    let cx=0,cz=0;for(let k=0;k<nSites;k++){cx+=sx[k];cz+=sz[k];}if(nSites){cx/=nSites;cz/=nSites;}
+    let R=1;for(let k=0;k<nSites;k++)R=Math.max(R,len2(sx[k]-cx,sz[k]-cz));
+    for(let k=0;k<nSites;k++){sux[k]=(sx[k]-cx)/R;suz[k]=(sz[k]-cz)/R;}
+    // Sustained passages keep trails and energy longer (scaled by the life value `persistence` as before).
+    if(cond.persist!==persistAt){persistAt=cond.persist;const pk=x=>Math.pow(x,1/Math.max(.25,P.persistence*persistAt));dTrail=pk(decay.trail);dEnergy=pk(decay.energy);}
+  }
+  // How the turning attractor changes site k's appeal (1: not at all; always 1 in ecology 1).
+  const shiftOf=k=>ECO2&&k>=0&&k<nSites?Math.max(.1,1+cond.shiftX*sux[k]+cond.shiftZ*suz[k]):1;
+  const feltOf=(k,c)=>{const j=FELT.indexOf(c);return ECO2&&j>=0?felt[j][k]:cond[c]??1;};
+  if(ECO2)feel();
   // ---- Uniform grid over the bounds (counting sort; neighbours are found in the 27 cells around) -------------------
   let cell=0;for(const s of species)cell=Math.max(cell,s.radius*P.radius);cell=Math.max(.05,cell);
   const GX=Math.max(1,Math.ceil((maxX-minX)/cell)),GY=Math.max(1,Math.ceil((maxY-minY)/cell)),GZ=Math.max(1,Math.ceil((maxZ-minZ)/cell)),TB=GX*GY*GZ;
@@ -234,6 +273,7 @@ export function createEcosystem(spec){
     for(let c=0;c<CHANNELS;c++){const o=c*NC;for(let q=0;q<NC;q++){const v=field[o+q];if(c<CH.flowX&&v<0)field[o+q]=0;}}
   }
   function setClimate(t){const next={...target};for(const k in cond)if(Number.isFinite(t?.[k]))next[k]=t[k];target=next;}
+  function setGrid(g){if(Number.isFinite(g?.beat)&&Number.isFinite(g?.per))grid={beat:g.beat,per:g.per};}
   // ---- Modes --------------------------------------------------------------------------------------------------------
   function setMode(i,m){if(mode[i]!==m){mode[i]=m;modeT[i]=0;}}
   // Choose a site: attractive (strength, novelty, lasting, nourished, energy around it), not crowded, not strained,
@@ -242,7 +282,9 @@ export function createEcosystem(spec){
     if(!nSites)return -1;const s=species[sp[i]],x=px[i],z=pz[i];let total=0;const w=chooseW;
     for(let k=0;k<nSites;k++){const st=site(k),d=len2(sx[k]-x,sz[k]-z);
       let a=sw[k]*(1+st.novelty*1.5+st.lasting*.6+st.nourish*.8)*(.6+sample(CH.energy,sx[k],sz[k]))*cond.attract*P.attraction;
-      a*=1/(1+d/(6+s.radius*4));a*=1/(1+visits[k]/Math.max(1,s.crowd*.8));a*=1-.85*st.stress;if(k===tgt[i])a*=.25;
+      if(ECO2){a*=1/(1+d/((6+s.radius*4)*Math.sqrt(felt[F_EXPL][sp[i]])));a*=1/(1+visits[k]/Math.max(1,s.crowd*.8*felt[F_GATH][sp[i]]));a*=shiftOf(k);}
+      else{a*=1/(1+d/(6+s.radius*4));a*=1/(1+visits[k]/Math.max(1,s.crowd*.8));}
+      a*=1-.85*st.stress;if(k===tgt[i])a*=.25;
       w[k]=Math.max(0,a);total+=w[k];}
     if(total<=0)return -1;let u=u01(seed,i,gen[i],tick+7)*total;for(let k=0;k<nSites;k++){u-=w[k];if(u<=0)return k;}return nSites-1;
   }
@@ -256,12 +298,14 @@ export function createEcosystem(spec){
       case MODE.explore:
         if(en[i]<s.restBelow){setMode(i,MODE.rest);break;}
         if(s.settle>0&&u01(seed,i,tick,3)<s.settle&&flowSpeed(i)<s.settleFlow*.5){setMode(i,MODE.settle);break;}
-        if(s.orbit>0&&modeT[i]>HZ&&u01(seed,i,tick,1)<s.curiosity*P.vitality){const k=chooseSite(i);if(k>=0){tgt[i]=k;setMode(i,MODE.seek);}}break;
+        if(s.orbit>0&&modeT[i]>HZ&&u01(seed,i,tick,1)<s.curiosity*P.vitality*(ECO2?felt[F_EXPL][sp[i]]:1)){const k=chooseSite(i);if(k>=0){tgt[i]=k;setMode(i,MODE.seek);}}break;
       case MODE.seek:{const k=tgt[i];if(k<0){setMode(i,MODE.explore);break;}
         const d=len2(sx[k]-px[i],sz[k]-pz[i]);if(d<sr[k]*s.orbitRadius*1.6)setMode(i,MODE.orbit);
         else if(modeT[i]>40*HZ)setMode(i,MODE.explore);break;}
       case MODE.orbit:{const k=tgt[i];if(k<0){setMode(i,MODE.explore);break;}
-        if(nb>s.crowd*P.collective+2){setMode(i,MODE.disperse);break;}
+        if(nb>s.crowd*P.collective*(ECO2?felt[F_GATH][sp[i]]:1)+2){setMode(i,MODE.disperse);break;}
+        // (ecology 2: a site the turning attractor has left behind is left sooner, for one it now favours)
+        if(ECO2&&modeT[i]>4*HZ){const sh=shiftOf(k);if(sh<.85&&u01(seed,i,tick,4)<.01*(.85-sh)*felt[F_EXPL][sp[i]]){setMode(i,MODE.explore);break;}}
         // Fed: it leaves, carrying the site's influence along its way for a while (it lays a stronger trail).
         if(en[i]>=1){carry[i]=Math.round(12*HZ);setMode(i,MODE.explore);break;}
         if(site(k).stress>.5)setMode(i,MODE.disperse);break;}
@@ -282,7 +326,8 @@ export function createEcosystem(spec){
   const scratchF=[0,0,0];
   function step(){
     // Conditions relax toward the climate's targets (about six seconds): no abrupt jump on a section change.
-    const kc=1-Math.exp(-DT/6);for(const k in cond){const v=target[k];if(Number.isFinite(v))cond[k]+=(v-cond[k])*kc;}
+    if(ECO2){for(const k in cond){const v=target[k];if(Number.isFinite(v))cond[k]+=(v-cond[k])*KC2[k];}feel();}
+    else{const kc=1-Math.exp(-DT/6);for(const k in cond){const v=target[k];if(Number.isFinite(v))cond[k]+=(v-cond[k])*kc;}}
     for(const st of siteState.values()){st.novelty*=.9995;st.nourish*=.9985;st.stress*=.9997;st.swirl*=.999;}
     // A strained site (failing validation) stays unwelcome while the strain lasts: it keeps emitting disturbance
     // (bounded by saturation) until a recovery clears it or the strain fades.
@@ -297,6 +342,8 @@ export function createEcosystem(spec){
       if(!alive[i]){ax[i]=ay[i]=az[i]=0;continue;}
       const s=species[sp[i]],k=sp[i],x=px[i],y=py[i],z=pz[i],ux=vx[i],uy=vy[i],uz=vz[i];
       let fx=0,fy=0,fz=0;
+      // The conditions as this species feels them (ecology 2; ecology 1: the conditions themselves).
+      const actK=ECO2?felt[F_ACT][k]*P.vitality:activity,turbK=ECO2?felt[F_TURB][k]:turb,cohK=ECO2?felt[F_COH][k]:cond.cohesion,curK=ECO2?felt[F_CUR][k]/cond.current:1;
       // Neighbours: separation, alignment and cohesion with the same species; avoidance and chasing across species.
       // Each entity perceives its neighbourhood on alternate ticks (10 Hz) and keeps that perception in between (the
       // perception is state: snapshots carry it). At most NB_MAX neighbours are taken, nearest cells first.
@@ -319,7 +366,7 @@ export function createEcosystem(spec){
       perc[o13]=n;perc[o13+1]=cxs*inv;perc[o13+2]=cys*inv;perc[o13+3]=czs*inv;perc[o13+4]=avx*inv;perc[o13+5]=avy*inv;perc[o13+6]=avz*inv;
       perc[o13+7]=sxs;perc[o13+8]=sys;perc[o13+9]=szs;perc[o13+10]=ox;perc[o13+11]=oy;perc[o13+12]=oz;}
       const n=perc[o13];nbN[i]=n;
-      const coll=P.collective*cond.cohesion;
+      const coll=P.collective*cohK;
       const sep=s.sep*P.separation;fx+=perc[o13+7]*sep;fy+=perc[o13+8]*sep;fz+=perc[o13+9]*sep;
       if(n){const a=s.ali*P.alignment*coll,c=s.coh*P.cohesion*coll;
         fx+=(perc[o13+4]-ux)*a;fy+=(perc[o13+5]-uy)*a;fz+=(perc[o13+6]-uz)*a;
@@ -330,7 +377,7 @@ export function createEcosystem(spec){
       const tw=s.trail*P.trails*(m===MODE.seek?1.6:m===MODE.explore?1:m===MODE.orbit?.3:0);
       if(tw){const gx=at(D_TGX),gz=at(D_TGZ),gl=len2(gx,gz);if(gl>1e-6){const c=Math.min(1,gl*2)/gl*tw;fx+=gx*c;fz+=gz*c;}}
       if(s.avoid){const c=s.avoid*P.repulsion*(m===MODE.disperse?2:1);fx-=at(D_DGX)*c;fz-=at(D_DGZ)*c;}
-      if(s.flow){const c=s.flow*P.environment*(m===MODE.settle?0:1);fx+=(at(D_FX)-ux)*c;fy+=(at(D_FY)-uy)*c*.5;fz+=(at(D_FZ)-uz)*c;}
+      if(s.flow){const c=s.flow*P.environment*(m===MODE.settle?0:1);fx+=(at(D_FX)*curK-ux)*c;fy+=(at(D_FY)*curK-uy)*c*.5;fz+=(at(D_FZ)*curK-uz)*c;}
       // Sites: seek (arrive) or orbit at the entity's own radius, height and direction.
       const kt=tgt[i];
       if(kt>=0&&(m===MODE.seek||m===MODE.orbit)){
@@ -340,14 +387,15 @@ export function createEcosystem(spec){
         else{visitsNow[kt]++;const dir=h<.5?-1:1;let ex=x-sx[kt],ez=z-sz[kt];const d=len2(ex,ez)||1;ex/=d;ez/=d;
           const sw=1+(site(kt).swirl||0);const tvx=-ez*dir*s.orbitSpeed*sw*Math.max(.5,R0),tvz=ex*dir*s.orbitSpeed*sw*Math.max(.5,R0);
           fx+=((sx[kt]+ex*R0-x)*1.2+tvx-ux)*s.orbit;fz+=((sz[kt]+ez*R0-z)*1.2+tvz-uz)*s.orbit;fy+=((yy-y)*1.2-uy)*s.orbit*.6;
-          en[i]=Math.min(1.05,en[i]+s.satiate*(1+site(kt).nourish+site(kt).lasting*.3)*(1-site(kt).stress));}
+          // (ecology 2: exploring music shortens the visits, so more of them are on their way between sites)
+          en[i]=Math.min(1.05,en[i]+s.satiate*(ECO2?felt[F_EXPL][k]:1)*(1+site(kt).nourish+site(kt).lasting*.3)*(1-site(kt).stress));}
       }
       if(m===MODE.disperse){let ex=0,ez=0;if(kt>=0){ex=x-sx[kt];ez=z-sz[kt];}else if(n){ex=x-perc[o13+1];ez=z-perc[o13+3];}const d=len2(ex,ez);if(d>1e-6){fx+=ex/d*s.maxSpeed*1.2;fz+=ez/d*s.maxSpeed*1.2;}}
       // Wander: a slowly turning heading of its own (turbulence turns it faster).
       // (the heading turns every fourth tick, staggered per entity; its direction is kept as a vector in the state)
-      if(((i+tick)&3)===0){const jit=s.wanderJitter*(.5+.5*turb)*2;wa[i]+=(u01(seed,i,tick,8)-.5)*jit;wb[i]=Math.max(-.7,Math.min(.7,wb[i]+(u01(seed,i,tick,9)-.5)*jit*.5));
+      if(((i+tick)&3)===0){const jit=s.wanderJitter*(.5+.5*turbK)*2;wa[i]+=(u01(seed,i,tick,8)-.5)*jit;wb[i]=Math.max(-.7,Math.min(.7,wb[i]+(u01(seed,i,tick,9)-.5)*jit*.5));
         const cb=Math.cos(wb[i]);wv[i*3]=Math.cos(wa[i])*cb;wv[i*3+1]=Math.sin(wb[i])*.5;wv[i*3+2]=Math.sin(wa[i])*cb;}
-      const ww=s.wander*(m===MODE.rest?.3:m===MODE.settle?0:1)*(.6+.4*turb);
+      const ww=s.wander*(m===MODE.rest?.3:m===MODE.settle?0:1)*(.6+.4*turbK);
       fx+=wv[i*3]*ww;fy+=wv[i*3+1]*ww;fz+=wv[i*3+2]*ww;
       // Height band, rest and settle (slow down, hold still).
       if(s.yHold){const yt=m===MODE.rest&&s.yRest?s.yRest:Math.max(s.yMin,Math.min(s.yMax,y));fy+=(yt-y)*s.yHold;}
@@ -357,7 +405,7 @@ export function createEcosystem(spec){
       const mg=1.5;if(x<minX+mg)fx+=(minX+mg-x)*2;if(x>maxX-mg)fx+=(maxX-mg-x)*2;if(z<minZ+mg)fz+=(minZ+mg-z)*2;if(z>maxZ-mg)fz+=(maxZ-mg-z)*2;if(y<minY)fy+=(minY-y)*2;if(y>maxY)fy+=(maxY-y)*2;
       if(hooks.steer){scratchF[0]=fx;scratchF[1]=fy;scratchF[2]=fz;hooks.steer(api,i,scratchF,distLocal);fx=scratchF[0];fy=scratchF[1];fz=scratchF[2];}
       // Bounded steering: the force is limited, the mass gives inertia (entities never turn or stop instantly).
-      const fm=len3(fx,fy,fz),fmax=s.maxForce*(.6+.4*activity);if(fm>fmax){const c=fmax/fm;fx*=c;fy*=c;fz*=c;}
+      const fm=len3(fx,fy,fz),fmax=s.maxForce*(.6+.4*actK);if(fm>fmax){const c=fmax/fm;fx*=c;fy*=c;fz*=c;}
       ax[i]=fx/s.mass;ay[i]=fy/s.mass;az[i]=fz/s.mass;
       decide(i,n,distLocal);
     }
@@ -367,7 +415,7 @@ export function createEcosystem(spec){
       if(!alive[i])continue;const s=species[sp[i]];
       qx[i]=px[i];qy[i]=py[i];qz[i]=pz[i];
       let ux=vx[i]+ax[i]*DT,uy=vy[i]+ay[i]*DT,uz=vz[i]+az[i]*DT;const dr=1-s.drag*DT;ux*=dr;uy*=dr;uz*=dr;
-      const vmax=s.maxSpeed*(.7+.3*cond.activity*P.vitality)*(mode[i]===MODE.disperse?1.4:1),vmin=mode[i]===MODE.settle||mode[i]===MODE.rest?0:s.minSpeed;
+      const vmax=s.maxSpeed*(.7+.3*(ECO2?felt[F_ACT][sp[i]]:cond.activity)*P.vitality)*(mode[i]===MODE.disperse?1.4:1),vmin=mode[i]===MODE.settle||mode[i]===MODE.rest?0:s.minSpeed;
       const v=len3(ux,uy,uz);if(v>vmax){const c=vmax/v;ux*=c;uy*=c;uz*=c;}else if(v<vmin&&v>1e-6){const c=vmin/v;ux*=c;uy*=c;uz*=c;}
       if(!(Number.isFinite(ux)&&Number.isFinite(uy)&&Number.isFinite(uz))){ux=uy=uz=0;}
       vx[i]=ux;vy[i]=uy;vz[i]=uz;px[i]+=ux*DT;py[i]+=uy*DT;pz[i]+=uz*DT;
@@ -398,8 +446,9 @@ export function createEcosystem(spec){
   // ---- Snapshots ----------------------------------------------------------------------------------------------------
   const ARRAYS={perc,wv,px,py,pz,vx,vy,vz,qx,qy,qz,en,age,life,fade,wa,wb,fa,sp,mode,alive,modeT,gen,carry,tgt,ia,dead,tx,ty,tz,field,visits,sx,sy,sz,sr,sw,sKind};
   function snapshot(){const a={};for(const [k,v] of Object.entries(ARRAYS))a[k]=v.slice();
-    return {tick,arrays:a,nSites,siteIds:siteIds.slice(),siteState:structuredClone(siteState),cond:{...cond},target:{...target}};}
-  function restore(s){for(const [k,v] of Object.entries(ARRAYS))v.set(s.arrays[k]);tick=s.tick;nSites=s.nSites;siteIds=s.siteIds.slice();siteState=structuredClone(s.siteState);cond={...s.cond};target={...s.target};}
+    return {tick,arrays:a,nSites,siteIds:siteIds.slice(),siteState:structuredClone(siteState),cond:{...cond},target:{...target},grid:{...grid}};}
+  function restore(s){for(const [k,v] of Object.entries(ARRAYS))v.set(s.arrays[k]);tick=s.tick;nSites=s.nSites;siteIds=s.siteIds.slice();siteState=structuredClone(s.siteState);cond={...s.cond};target={...s.target};grid={...(s.grid||{beat:0,per:0})};
+    if(ECO2)feel();}
   // A digest of the whole state (tests: exact equality of two runs; FNV over the raw bytes).
   function digest(){let h=2166136261;for(const v of Object.values(ARRAYS)){const b=new Uint8Array(v.buffer,v.byteOffset,v.byteLength);for(let i=0;i<b.length;i++){h^=b[i];h=Math.imul(h,16777619);}}
     h^=tick;h=Math.imul(h,16777619);return (h>>>0).toString(16).padStart(8,'0');}
@@ -416,6 +465,9 @@ export function createEcosystem(spec){
     sites:{x:sx,y:sy,z:sz,r:sr,w:sw,kind:sKind,visits,get count(){return nSites;},get ids(){return siteIds;},state:k=>site(k)},
     get tick(){return tick;},get cond(){return cond;},params:P,
     get siteData(){return siteData;},
+    // Ecology 2: whether it is on, the beat grid, the turning attractor's effect on a site, a condition as a species
+    // feels it (all neutral, or the plain conditions, in ecology 1).
+    ecology:ECO2?2:1,get grid(){return grid;},shiftOf,felt:feltOf,setGrid,
     populate,step,setSites,setSiteData,influence,setClimate,setMode,sample,gradient,splat,disc,flowAt,snapshot,restore,digest,stats,
     random:(i,n)=>u01(seed,i,gen[i],tick*64+n),
     // The trail ring head: points are ordered newest first from here (k = 0..K-1).
