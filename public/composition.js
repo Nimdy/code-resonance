@@ -139,11 +139,15 @@
     }
     return out;
   }
+  // The music a composition may carry: the score's styles, profile keys and voice groups (public/score.js STYLES, PROFILE,
+  // GROUPS). Written out because this model also runs where no score is loaded (a pack frame); a test keeps them equal.
+  const MUSIC_STYLES=['ambient','pulse','cinematic','chip'];
+  const PROFILE_KEYS=['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space'],MIX_GROUPS=['pad','bass','melody','counter','arp','perc','atmos'];
   function musicOf(m){
     if(!m||typeof m!=='object')return null;const out={};
-    if(['ambient','pulse','cinematic','chip'].includes(m.style))out.style=m.style;
-    if(m.profile&&typeof m.profile==='object'){const p={};for(const k of ['mood','evolution','melody','rhythm','atmosphere','harmony','dynamics','space']){const v=num(m.profile[k]);if(Number.isFinite(v))p[k]=clamp(v,0,1);}
-      if(m.profile.mix&&typeof m.profile.mix==='object'){p.mix={};for(const g of ['pad','bass','melody','counter','arp','perc','atmos']){const v=num(m.profile.mix[g]);if(Number.isFinite(v))p.mix[g]=clamp(v,0,1.5);}}
+    if(MUSIC_STYLES.includes(m.style))out.style=m.style;
+    if(m.profile&&typeof m.profile==='object'){const p={};for(const k of PROFILE_KEYS){const v=num(m.profile[k]);if(Number.isFinite(v))p[k]=clamp(v,0,1);}
+      if(m.profile.mix&&typeof m.profile.mix==='object'){p.mix={};for(const g of MIX_GROUPS){const v=num(m.profile.mix[g]);if(Number.isFinite(v))p.mix[g]=clamp(v,0,1.5);}}
       out.profile=p;}
     return Object.keys(out).length?out:null;
   }
