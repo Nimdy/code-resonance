@@ -413,7 +413,7 @@ function drainIntents(state){const out=state.intents||[];state.intents=[];return
 // Every module is shown; the remaining budget goes to the most architecturally meaningful symbols, spread
 // round-robin across modules so large projects are represented evenly rather than by whichever files came first.
 const KIND_RANK={'api.route':0,'ui.component':1,'class':2,'interface':3,'function':4,'method':5,'type':6,'variable':7};
-const GRAPH_NODES=1400,MODULE_NODES=700,SYMBOLS_PER_MODULE=24,TIER_BUDGET=2400;
+const GRAPH_NODES=1400,MODULE_NODES=700,TIER_BUDGET=2400;
 function publicProjection(state) {
   const files=Object.keys(state.docs).sort();
   const symbolCount=file=>state.docs[file].analysis.symbols.filter(meaningful).length;

@@ -20,7 +20,6 @@ const validateSchema=compile(SCHEMA);
 const FILE=new RegExp(SCHEMA.$defs.file.pattern,'u');
 const LIMITS={files:64,fileBytes:1024*1024,totalBytes:8*1024*1024};
 const CODE=/\.(?:js|glsl|frag|vert)$/;
-const BUILTIN=Object.keys(catalog.FAMILIES);
 const sha256=b=>crypto.createHash('sha256').update(b).digest('hex');
 // SDK compatibility: '^1.N' runs on SDK 1.M when M >= N.
 function compatible(manifest,sdk=SDK_VERSION){
