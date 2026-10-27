@@ -83,9 +83,10 @@ export const ROLE_CLIMATE={
   resolve:{current:.9,turb:.75,cohesion:1.45,activity:.95,attract:1.4,swing:-.4,gather:1.55,explore:.8,persist:1.2,glow:1.18}};
 // How far the turning attractor leans in each role (a statement and a return lean toward the music's home direction,
 // the others toward a new one each section), and each condition's soft limit (log units for the ratios, units for the
-// rest): however expressive the music, a condition saturates there.
+// rest): however expressive the music, a condition saturates there. (`glow` is light only, read by presentation, never
+// by behaviour: its limit is wide, so expressive music lights the scene about twice as far as the default does.)
 const ROLE_SHIFT={statement:.3,development:.55,interlude:.42,return:.22,release:.45,tension:.35,resolve:.28};
-const LIMIT={current:.55,turb:.8,cohesion:.6,activity:.42,attract:.6,gather:.7,explore:1,persist:.5,glow:.5,swing:1.2,shift:.85};
+const LIMIT={current:.55,turb:.8,cohesion:.6,activity:.42,attract:.6,gather:.7,explore:1,persist:.5,glow:1,swing:1.2,shift:.85};
 const RATIO=['current','turb','cohesion','activity','attract','gather','explore','persist','glow'];
 const GOLDEN=2.399963;
 // Music influence (life.music, 0..2) -> how much of the music's ask reaches the ecology: none at 0, all of it at 1,

@@ -43,7 +43,7 @@ import {THREE,NOISE,BACKGROUND_VS,clamp,lerp,smooth,hash,rand,rng,instancedBuffe
 import {KINDS,ARCH,layoutOptions,precincts,towerPlans,linkPlans,symTotal} from './cathedral-layout.js';
 import {createCathedralGrammar,JOB as LIFE_JOB} from './life/cathedral.js';
 import {CH as LIFE_CH} from './life/sim.js';
-import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility} from './life/present.js';
+import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 // Storey proportions per symbol kind (KINDS) and architectures (ARCH): cathedral-layout.js.
 // Facade looks (shader): 0 lancet, 1 paired lancets, 2 stained glass, 3 tracery screen, 4 plinth, 5 roof spire,
@@ -1110,14 +1110,22 @@ export function createFamily(ctx){
     function cables(eco,net,v){cableMap(net);const n=Math.min(32,bridges.length);cableN.fill(0);cableD.fill(0);
       for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==net.tag)continue;const d=eco.ia[e*2];if(d<0)continue;const j=edgeCable[d];if(j<0||j>=n)continue;const w=lifeVisibility(eco,e,v);cableN[j]+=w;cableD[j]+=w*edgeDir[d];}
       for(let j=0;j<n;j++)glowB.write('kL',channels.length+j,Math.min(1,cableN[j]/4),cableN[j]>0?cableD[j]/cableN[j]:0);glowB.flush();}
-    function hide(){pts.commit(0);segs.commit(0);shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0};for(let j=0;j<bridges.length;j++)glowB.write('kL',channels.length+j,0,0);glowB.flush();
+    // The architecture's light (uMood.x, set by the world every frame before this) and the city's glow in the haze and
+    // on the horizon (kept here: set from their own values every frame), by the music's light (1: as without music).
+    const fogW0=common.uFogW.value.clone(),city0=common.uCity.value.clone();
+    function cityLight(k){common.uFogW.value.copy(fogW0);common.uCity.value.copy(city0);if(k===1)return;common.uMood.value.x*=k*k;common.uFogW.value.multiplyScalar(k*k*Math.sqrt(k));common.uCity.value.multiplyScalar(k*k);}
+    function hide(){cityLight(1);pts.commit(0);segs.commit(0);shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0};for(let j=0;j<bridges.length;j++)glowB.write('kL',channels.length+j,0,0);glowB.flush();
       if(texK!==0){for(let q=0;q<texBuf.length;q+=4){texBuf[q]=0;texBuf[q+1]=0;}lifeTex.needsUpdate=true;texK=0;texTick=-1;}}
     function update(i){
       const v=i.life;if(!v||!v.eco||v.restoring){hide();return;}
       const eco=v.eco,net=grammar.networkOf(eco);if(!net){hide();return;}
-      // Ecology 2: the routes' light follows the music's illumination (the architecture brightens as a passage opens
-      // up and dims as it settles), and the lanterns get their distance treatment (uLifeE).
-      const E2=v.ecology===2,lk=E2?v.fadeIn*Math.pow(Math.max(.5,Math.min(1.7,eco.cond.glow??1)),.8):v.fadeIn;lifeE.value=E2?1:0;
+      // Ecology 2: the music as the city shows it (musicLook: all 1 without music). The architecture's own light (its
+      // windows, channels and lit stone: a passage's weather; the world sets it afresh every frame before this), the
+      // routes' light (the traffic's trail on copings, channels, cables and the wet floor: brightest where the music
+      // gathers the traffic), the lanterns' light, size and comets; and the lanterns' distance treatment (uLifeE).
+      // (the city's own light in the low haze and on the horizon breathes widest: it is how the whole city reads at a
+      // distance)
+      const E2=v.ecology===2,M=musicLook(eco,v),lk=v.fadeIn*M.life;lifeE.value=E2?1:0;cityLight(M.light);
       // The traffic field (once per tick), its light (trail) and its dimming (disturbance) faded with the population.
       if(texTick!==eco.tick||texK!==lk){texTick=eco.tick;texK=lk;const F=eco.field,NC=F.nx*F.nz,d=F.data,dk=v.fadeIn;
         for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3*texK);texBuf[q*4+1]=b8(d[2*NC+q]/2.5*dk);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
@@ -1130,17 +1138,19 @@ export function createFamily(ctx){
         if(g>0){const l=cc.r*.3+cc.g*.59+cc.b*.11;cc.lerp(f3c.copy(COLD).multiplyScalar(l*.7),.8*g).multiplyScalar(1-.45*g);}
         // (wardens going back in after a recovery, gathered at the hub's foot and climbing together, burn brighter)
         const back=k===1&&g<=0&&(eco.ia[e*2+1]>>4&4)&&(job===J.go||job===J.linger||job===J.up);
-        const bk=vis*JOB_K[job]*(back?1.35:1),moving=job===J.travel||job===J.up||job===J.down||job===J.go||job===J.edge||job===J.migrate;
-        pts.write('position',n,p3[0],p3[1],p3[2]);pts.write('aC',n,cc.r*bk,cc.g*bk,cc.b*bk,E2&&moving?1.6:1);pts.write('aS',n,SIZE[k],MINPX[k]*(.7+.3*JOB_K[job]),HALO[k]);n++;
+        const bk=vis*JOB_K[job]*(back?1.35:1)*(M.bright===1?1:Math.pow(M.bright,1.4)),moving=job===J.travel||job===J.up||job===J.down||job===J.go||job===J.edge||job===J.migrate;
+        pts.write('position',n,p3[0],p3[1],p3[2]);pts.write('aC',n,cc.r*bk,cc.g*bk,cc.b*bk,E2&&moving?1.6:1);pts.write('aS',n,SIZE[k]*M.size,MINPX[k]*(.7+.3*JOB_K[job]),HALO[k]);n++;
         // The light trail: the recorded path, newest first, fading. Couriers and sparks draw it as a comet of soft points
         // (the heading in light), slow wardens as a short faint line. A jump (a relocation) or a sharp turn (a shaft's
         // step onto a gallery or a ledge, a corner) ends it: no hook is ever drawn in the air.
-        let px=p3[0],py=p3[1],pz=p3[2],hx=0,hy=0,hz=0;const T=Math.min(TK,moving?TRAIL[k]:3),comet=moving&&k!==1,line=k===1;
+        // (ecology 2: sustained music keeps the comets brighter along their length and a little longer, at most half again
+        // as many points: the point budget holds; tension cuts them short)
+        let px=p3[0],py=p3[1],pz=p3[2],hx=0,hy=0,hz=0;const T0=moving?TRAIL[k]:3,T=Math.min(TK,M.trail===1?T0:Math.max(2,Math.round(T0*Math.min(1.5,M.trail)))),fe=1.6/M.trail,comet=moving&&k!==1,line=k===1;
         for(let t=1;t<T;t++){const o=e*K+((head-t+1+K*4)%K),x=eco.tx[o],y=eco.ty[o],z=eco.tz[o],sx=px-x,sy=py-y,sz=pz-z,l2=sx*sx+sy*sy+sz*sz;if(l2>1)break;
           if(l2>1e-4){const l=Math.sqrt(l2);if(hx*sx+hy*sy+hz*sz<.5*l*Math.sqrt(hx*hx+hy*hy+hz*hz)&&(hx||hy||hz))break;hx=sx;hy=sy;hz=sz;}
           if(line){const a0=bk*(1-(t-1)/T)*.35,a1=bk*(1-t/T)*.35;segs.write('position',ns*2,px,py,pz);segs.write('aC',ns*2,cc.r,cc.g,cc.b,a0);segs.write('position',ns*2+1,x,y,z);segs.write('aC',ns*2+1,cc.r,cc.g,cc.b,a1);ns++;}
           // The comet: soft points along the segment, shrinking and fading with age.
-          if(comet&&n<PMAX-2)for(const f of q>=2?[.5]:[.3,.8]){const ag=(t-1+f)/T,w=(1-ag)**1.6*bk*.45;
+          if(comet&&n<PMAX-2)for(const f of q>=2?[.5]:[.3,.8]){const ag=(t-1+f)/T,w=(1-ag)**fe*bk*.45;
             pts.write('position',n,px+(x-px)*f,py+(y-py)*f,pz+(z-pz)*f);pts.write('aC',n,cc.r*w,cc.g*w,cc.b*w,1);pts.write('aS',n,SIZE[k]*.3*(1-ag),Math.max(1.5,3.5*(1-ag)),0);n++;nc++;}
           px=x;py=y;pz=z;}
         const F=q<=0?FOLLOW[k]:q===1?Math.min(1,FOLLOW[k]):0;

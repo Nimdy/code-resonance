@@ -36,9 +36,10 @@ const TRAIL_EVERY=3;           // a trail point every 3 ticks (0.15 s)
 // The climate's conditions (neutral values): ecology 1's, and those ecology 2 adds.
 export const COND1=Object.freeze({current:1,turb:1,cohesion:1,activity:1,attract:1,swing:0});
 export const COND2=Object.freeze({gather:1,explore:1,persist:1,glow:1,pulse:0,shiftX:0,shiftZ:0});
-// Ecology 2: how fast each condition follows the climate (seconds): activity and light answer within a few seconds,
-// the attractor and the fields' memory turn over a passage. (Ecology 1: all of them six seconds.)
-const TAU2={current:5,turb:4,cohesion:6,activity:3.5,attract:8,swing:9,gather:7,explore:4,persist:10,glow:2.5,pulse:1.5,shiftX:9,shiftZ:9};
+// Ecology 2: how fast each condition follows the climate (seconds): activity and light answer within a few seconds
+// (the light breathes in with a passage, never on the bar), the attractor and the fields' memory turn over a passage.
+// (Ecology 1: all of them six seconds.)
+const TAU2={current:5,turb:4,cohesion:6,activity:3.5,attract:8,swing:9,gather:7,explore:4,persist:10,glow:3.5,pulse:1.5,shiftX:9,shiftZ:9};
 const KC2=Object.fromEntries(Object.entries(TAU2).map(([k,t])=>[k,1-Math.exp(-DT/t)]));
 // The conditions a species feels through its response weights (ecology 2).
 const FELT=['current','turb','cohesion','activity','attract','gather','explore'];
