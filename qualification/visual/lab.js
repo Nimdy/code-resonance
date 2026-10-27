@@ -11,6 +11,8 @@
 //               validation.recovered / milestone.achieved, subsystem.created and repository.checkpoint found
 //   --idle      seconds after the last recorded event (no events added: the world's honest idle life)
 //   --warm      seconds rendered before each still, so motion, effects and the camera are in their real state
+//   --strip     NxS: after each still, N more frames S seconds apart, tiled into one contact sheet (<still>-strip.jpg,
+//               three per row, left to right then down): motion read from consecutive real frames
 // Copies the dataset to a temporary directory first: the dataset's own recipes are never changed.
 const path=require('node:path');
 const fs=require('node:fs');
@@ -22,6 +24,8 @@ const DATASET=arg('dataset','lumen'),FAMILY=arg('family',null),VARIANT=arg('vari
 const [W,H]=arg('size','1920x1080').split('x').map(Number),LABELS=arg('labels','cinematic'),FPS=15;
 const SRC=fs.existsSync(DATASET)?path.resolve(DATASET):path.join(__dirname,'..','results','datasets',DATASET);
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','lab')));
+const STRIP=arg('strip',null)?.split('x').map(Number)||null;
+const ffmpeg=require('ffmpeg-static'),cp=require('node:child_process');
 const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==null?`-v${VARIANT}`:''}`);
 (async()=>{
   if(!fs.existsSync(path.join(SRC,'projects')))throw new Error(`No dataset at ${SRC} (build them with visual/datasets.js)`);
@@ -53,8 +57,14 @@ const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==nul
         const from=m.t-WARM*1000;await page.evaluate(x=>window.__film.seek(x),from);let img;
         for(let t=from;t<=m.t;t+=1000/FPS)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/FPS]);
         const file=path.join(OUT,`${TAG}-${m.name}.jpg`);fs.writeFileSync(file,Buffer.from(img.split(',')[1],'base64'));shots.push(file);
+        if(STRIP){const [n,dt]=STRIP,frames=[file];let t=m.t;
+          for(let k=1;k<n;k++){const end=t+dt*1000;for(t+=1000/FPS;t<=end+1e-6;t+=1000/FPS)img=await page.evaluate(([t,dt])=>window.__film.frame(t,dt),[t,1/FPS]);t-=1000/FPS;
+            const f=file.replace(/\.jpg$/,`-s${k}.jpg`);fs.writeFileSync(f,Buffer.from(img.split(',')[1],'base64'));frames.push(f);}
+          const sheet=file.replace(/\.jpg$/,'-strip.jpg'),cols=3,rows=Math.ceil(n/cols);
+          cp.execFileSync(ffmpeg,['-y','-loglevel','error',...frames.flatMap(f=>['-i',f]),'-filter_complex',`${frames.map((_,k)=>`[${k}:v]scale=960:-1[v${k}]`).join(';')};${frames.map((_,k)=>`[v${k}]`).join('')}xstack=inputs=${frames.length}:layout=${frames.map((_,k)=>`${(k%cols)?Array.from({length:k%cols},()=>'w0').join('+'):'0'}_${Math.floor(k/cols)?Array.from({length:Math.floor(k/cols)},()=>'h0').join('+'):'0'}`).join('|')}:fill=black`,'-frames:v','1','-q:v','3',sheet]);
+          for(const f of frames.slice(1))fs.rmSync(f);console.log(`${path.relative(process.cwd(),sheet)}  ${n} frames ${dt} s apart`);}
         const st=await page.evaluate(()=>window.__film.stats());
-        console.log(`${path.relative(process.cwd(),file)}  family=${st?.family} drawCalls=${st?.drawCalls} updateMs=${st?.updateMs} drawMs=${st?.drawMs} gpuMs=${st?.gpuMs}`);
+        console.log(`${path.relative(process.cwd(),file)}  family=${st?.family} drawCalls=${st?.drawCalls} updateMs=${st?.updateMs} drawMs=${st?.drawMs} gpuMs=${st?.gpuMs}${st?.life?` life: tick ${st.life.tick} alive ${st.life.ecosystem?.alive} tickMs ${st.life.tickMs} modes ${JSON.stringify(st.life.ecosystem?.modes)}`:' life: off'}`);
       }
       if(errors.length)console.log('PAGE ERRORS:\n'+errors.slice(0,5).join('\n'));
       console.log(`renderer: ${renderer}; recipe: ${info.recipe?.family} v${info.recipe?.variant}; performance ${Math.round(span/1000)} s, ${info.windows} windows`);

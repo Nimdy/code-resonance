@@ -1,7 +1,8 @@
 {
-  "at": "2026-10-25T16:20:07.801Z",
+  "at": "2026-10-27T09:37:49.910Z",
   "browser": "chromium (playwright-core, headless, SwiftShader)",
   "quick": false,
+  "singleWindow": false,
   "checks": [
     {
       "name": "A: a clean installation starts with no project and says so",
@@ -16,7 +17,7 @@
     {
       "name": "A: the project appears without a reload (change feed)",
       "pass": true,
-      "detail": "after 426 ms"
+      "detail": "after 429 ms"
     },
     {
       "name": "A: the Stage opens on the project with the living world running",
@@ -91,12 +92,12 @@
     {
       "name": "H: a saved visual change reaches the OBS view and the Stage window",
       "pass": true,
-      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 23555 ms, new world running in 31288 ms"
+      "detail": "[\"machine-cathedral\",\"machine-cathedral\"]: recipe received in 13164 ms, new world running in 14437 ms"
     },
     {
       "name": "I: the Stage window kept playing through the change (music not restarted)",
       "pass": true,
-      "detail": "bar 2 → 32"
+      "detail": "bar 2 → 14"
     },
     {
       "name": "I: a global setting changed in one window reaches the other",
@@ -126,7 +127,7 @@
     {
       "name": "G: the recording finishes as a WebM file with sound",
       "pass": true,
-      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":12725,\"frames\":20,\"bytes\":370319,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1792945132768.webm\",\"at\":1792945132768}"
+      "detail": "{\"size\":\"1280x720\",\"mimeType\":\"video/webm;codecs=vp9,opus\",\"durationMs\":7358,\"frames\":19,\"presented\":19,\"bytes\":291890,\"audio\":true,\"audioLost\":false,\"audioLostMs\":0,\"reason\":\"stopped\",\"slowWarning\":false,\"file\":\"code-resonance-36bf9b09d6-1793093800201.webm\",\"at\":1793093800201}"
     },
     {
       "name": "G: the other window can record again once it stopped",
@@ -370,8 +371,8 @@
     }
   ],
   "measurements": {
-    "firstProjectMs": 426,
-    "savedChangeReceivedMs": 23555,
-    "savedChangeToViewsMs": 31288
+    "firstProjectMs": 429,
+    "savedChangeReceivedMs": 13164,
+    "savedChangeToViewsMs": 14437
   }
 }

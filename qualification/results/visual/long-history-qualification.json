@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T14:12:15.329Z",
+  "at": "2026-10-27T10:05:28.090Z",
   "dataset": "lumen-long (supplemental: 300 sessions of the real Lumen events)",
   "checks": [
     {
@@ -20,7 +20,7 @@
     {
       "name": "replay: early verified milestones still unlock ambient layers and keep their lasting blooms",
       "pass": true,
-      "detail": "2 unlocked, 163 crown instances"
+      "detail": "2 unlocked, 17 crown instances"
     },
     {
       "name": "replay: a minute of playback inside a session matches the fold (agents present, numbered by session)",
@@ -35,12 +35,12 @@
     {
       "name": "replay: the same moment renders the same frame regardless of seek history (long history)",
       "pass": true,
-      "detail": "2db1c1e9b944d13b / 2db1c1e9b944d13b"
+      "detail": "f0cd49b3813b82a3 / f0cd49b3813b82a3"
     },
     {
       "name": "live: opening the live view primes all intents of a long history, with its early milestones",
       "pass": true,
-      "detail": "49546 of 49546 intents, 2 unlocked, raw window 21546, 5117 ms"
+      "detail": "49546 of 49546 intents, 2 unlocked, raw window 21546, 4026 ms"
     },
     {
       "name": "no page errors in the live view (long history)",
@@ -66,8 +66,8 @@
         "agentNumbers": []
       }
     },
-    "openMs": 1410,
-    "seekQuietMs": 115,
+    "openMs": 1183,
+    "seekQuietMs": 103,
     "history": {
       "folded": 49381,
       "raw": 21381,
@@ -79,9 +79,9 @@
       "refolded": 0,
       "jumps": 0
     },
-    "crownsAtQuiet": 163,
-    "seekInsideMs": 29,
-    "heapMB": 73.1,
-    "livePrimeMs": 5117
+    "crownsAtQuiet": 17,
+    "seekInsideMs": 42,
+    "heapMB": 110.6,
+    "livePrimeMs": 4026
   }
 }

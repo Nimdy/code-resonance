@@ -1,0 +1,149 @@
+{
+ "dataset": "self",
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  0.81,
+  0.73,
+  0.78
+ ],
+ "worlds": [
+  {
+   "family": "fractal-biosphere",
+   "grammar": {
+    "id": "fractal-biosphere",
+    "version": 4
+   },
+   "capacity": 1000,
+   "alive": 980,
+   "field": [
+    64,
+    64
+   ],
+   "sites": 36,
+   "ticks": 25299,
+   "tickMs": {
+    "mean": 0.73,
+    "p50": 0.681,
+    "p95": 0.89,
+    "max": 12.855
+   },
+   "phases": {
+    "gridNeighboursSteeringMs": 0.5903,
+    "integrateDepositMs": 0.0376,
+    "fieldsMs": 0.0729
+   },
+   "neighbourPairsPerTick": 4473,
+   "habitat": {
+    "evaluations": 159,
+    "meanMs": 0.682,
+    "totalMs": 108.4
+   },
+   "checkpoints": {
+    "recent": 6,
+    "sparse": 24
+   },
+   "seek": {
+    "farFromFreshMs": 24668,
+    "farTicks": 24100,
+    "msPerSimulatedMinute": 1228,
+    "backToMiddleMs": 483,
+    "backFromCheckpoint": true,
+    "forwardAgainMs": 12001,
+    "sameStateAsContinuous": true
+   }
+  },
+  {
+   "family": "stellar-forge",
+   "grammar": {
+    "id": "stellar-forge",
+    "version": 4
+   },
+   "capacity": 1100,
+   "alive": 1069,
+   "field": [
+    64,
+    64
+   ],
+   "sites": 10,
+   "ticks": 25299,
+   "tickMs": {
+    "mean": 1.126,
+    "p50": 1.112,
+    "p95": 1.224,
+    "max": 7.178
+   },
+   "phases": {
+    "gridNeighboursSteeringMs": 0.8537,
+    "integrateDepositMs": 0.0884,
+    "fieldsMs": 0.1523
+   },
+   "neighbourPairsPerTick": 7120,
+   "habitat": {
+    "evaluations": 159,
+    "meanMs": 0.088,
+    "totalMs": 13.9
+   },
+   "checkpoints": {
+    "recent": 6,
+    "sparse": 24
+   },
+   "seek": {
+    "farFromFreshMs": 28399,
+    "farTicks": 24100,
+    "msPerSimulatedMinute": 1414,
+    "backToMiddleMs": 577,
+    "backFromCheckpoint": true,
+    "forwardAgainMs": 14496,
+    "sameStateAsContinuous": true
+   }
+  },
+  {
+   "family": "machine-cathedral",
+   "grammar": {
+    "id": "machine-cathedral",
+    "version": 3
+   },
+   "capacity": 960,
+   "alive": 948,
+   "field": [
+    96,
+    96
+   ],
+   "sites": 10,
+   "ticks": 25299,
+   "tickMs": {
+    "mean": 1.127,
+    "p50": 1.085,
+    "p95": 1.217,
+    "max": 38.897
+   },
+   "phases": {
+    "gridNeighboursSteeringMs": 0.6109,
+    "integrateDepositMs": 0.0708,
+    "fieldsMs": 0.3603
+   },
+   "neighbourPairsPerTick": 0,
+   "habitat": {
+    "evaluations": 159,
+    "meanMs": 5.226,
+    "totalMs": 830.9
+   },
+   "checkpoints": {
+    "recent": 6,
+    "sparse": 24
+   },
+   "seek": {
+    "farFromFreshMs": 27000,
+    "farTicks": 24100,
+    "msPerSimulatedMinute": 1344,
+    "backToMiddleMs": 494,
+    "backFromCheckpoint": true,
+    "forwardAgainMs": 13233,
+    "sameStateAsContinuous": true
+   }
+  }
+ ],
+ "performanceSeconds": 1205,
+ "windows": 158
+}

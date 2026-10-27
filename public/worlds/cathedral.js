@@ -40,13 +40,14 @@
 // climbing the great spire every sixteen bars, light flowing in channels and cables. Verified milestones unlock
 // searchlights, the clockwork's full light, spire beacons and an aurora over the glass.
 import {THREE,NOISE,BACKGROUND_VS,clamp,lerp,smooth,hash,rand,rng,instancedBuffers,pointBuffers} from './core.js';
+import {KINDS,ARCH,layoutOptions,precincts,towerPlans,linkPlans,symTotal} from './cathedral-layout.js';
+import {createCathedralGrammar,JOB as LIFE_JOB} from './life/cathedral.js';
+import {CH as LIFE_CH} from './life/sim.js';
+import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility} from './life/present.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
-const SQRT3=Math.sqrt(3);
-// Storey proportions per symbol kind (height, radius factor, facade look).
-const KINDS={function:{h:.46,r:1,look:0},method:{h:.38,r:.97,look:0},class:{h:.7,r:1.06,look:1},'ui.component':{h:.62,r:1.03,look:2},interface:{h:.4,r:.95,look:3},type:{h:.34,r:.93,look:3},variable:{h:.2,r:.98,look:9}};
+// Storey proportions per symbol kind (KINDS) and architectures (ARCH): cathedral-layout.js.
 // Facade looks (shader): 0 lancet, 1 paired lancets, 2 stained glass, 3 tracery screen, 4 plinth, 5 roof spire,
 // 7 crown step, 8 slab, 9 band, 10 pinnacle / needle, 11 lantern band, 12 roof pinnacle, 13 buttress pier / column.
-const ARCH={gothic:{sides:8,r:.35,id:0},brutalist:{sides:4,r:.44,id:1},deco:{sides:4,r:.38,id:2},spire:{sides:8,r:.3,id:3}};
 const DISTRICT_HUES=['#7fd6d0','#f0b77a','#b3a2f5','#f29dbb','#86c2f0','#a9e08e','#f2928a','#e8d47c'];
 const DMAX=24;
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
@@ -118,6 +119,14 @@ export function createFamily(ctx){
     uZenith:{value:zenith},uHorizon:{value:horizon},uCity:{value:cityGlow},
     uAgentL:{value:Array.from({length:4},()=>new THREE.Vector4())},uAgentC:{value:Array.from({length:4},()=>new THREE.Vector3())},uCarillon:{value:new THREE.Vector4(0,0,0,-1)},
     uWaves:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,-1e5))},uWaveC:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,0,1))}};
+  // Digital life (only when the recipe has it: ctx.life): the traffic field (trail, disturbance, flow) as a texture the
+  // copings, channels, cables and the wet floor read; without life none of this exists (the shaders are unchanged).
+  const LIFE=!!ctx.life,LIFE_N=96,LIFE_B=56;   // (the ecosystem's field: life/cathedral.js)
+  const lifeTex=LIFE?new THREE.DataTexture(new Uint8Array(LIFE_N*LIFE_N*4),LIFE_N,LIFE_N,THREE.RGBAFormat):null;
+  if(LIFE){lifeTex.magFilter=lifeTex.minFilter=THREE.LinearFilter;lifeTex.wrapS=lifeTex.wrapT=THREE.ClampToEdgeWrapping;lifeTex.needsUpdate=true;
+    common.uLifeF={value:lifeTex};common.uLifeB={value:new THREE.Vector4(-LIFE_B,-LIFE_B,1/(2*LIFE_B),1/(2*LIFE_B))};}
+  // r: trail (travelled routes), g: disturbance, b/a: flow (direction of traffic, signed around .5).
+  const LIFE_GLSL=LIFE?`uniform sampler2D uLifeF;uniform vec4 uLifeB;vec4 lifeAt(vec2 xz){return texture(uLifeF,clamp((xz-uLifeB.xy)*uLifeB.zw,0.,1.));}`:'';
   const WAVE=`uniform vec4 uWaves[4],uWaveC[4];uniform float uT,uSpeed;
     vec3 waves(vec3 p){vec3 a=vec3(0.);for(int i=0;i<4;i++){float age=(uT-uWaves[i].w)/uSpeed;if(age<0.||age>7.)continue;float r=age*uWaveC[i].w;float d=distance(p.xz,uWaves[i].xz);
       a+=uWaveC[i].rgb*exp(-pow((d-r)*1.6,2.))*(1.-age/7.)*(1.-age/7.);}return a;}`;
@@ -126,7 +135,7 @@ export function createFamily(ctx){
   const additive=m=>{m.transparent=true;m.depthWrite=false;m.blending=THREE.CustomBlending;m.blendEquation=THREE.AddEquation;m.blendSrc=THREE.OneFactor;m.blendDst=THREE.OneFactor;
     m.blendSrcAlpha=THREE.ZeroFactor;m.blendDstAlpha=THREE.OneFactor;return m;};
   const S=1.22*(Number.isFinite(G.space?.spread)?G.space.spread:1);
-  const plot=(q,r)=>new THREE.Vector3((SQRT3*q+SQRT3/2*r)*S,0,1.5*r*S);
+  const LO=layoutOptions(G);   // the city's pure layout (cathedral-layout.js), shared with its digital life
   // ---- A seeded, tileable noise texture (smoothed value noise, 4 channels): cheap texture lookups replace gradient
   // noise in the full-screen floor and the facades.
   const noiseTex=(()=>{const N=256,r=rng(hash(`noise/${seed}`)),a=new Float32Array(N*N*4);for(let i=0;i<a.length;i++)a[i]=r();
@@ -143,7 +152,7 @@ export function createFamily(ctx){
     uDC:{value:Array.from({length:DMAX},()=>new THREE.Vector4())},uObs:{value:new THREE.Color('#030406').lerp(capL(pal.deep.clone(),.003),.2)},uWet:{value:.35+.6*wetK},uTurb:{value:.4+1.5*turbK},uRose:{value:new THREE.Vector4(0,0,3,0)},uMetal:{value:metal}};
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:floorU,
     vertexShader:`uniform float uScale;uniform vec3 uCentre;varying vec3 vW;void main(){vec3 p=vec3(position.x*uScale+uCentre.x,0.,-position.y*uScale+uCentre.z);vW=p;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`${FOG}${SKY}${WAVE}uniform float uV,uAxis,uReflOn,uWet,uActivity,uRain;uniform float uTurb;uniform vec2 uRes;uniform sampler2D uRefl;uniform vec3 uObs,uWarm,uCentre,uMetal;
+    fragmentShader:`${FOG}${SKY}${WAVE}${LIFE_GLSL}uniform float uV,uAxis,uReflOn,uWet,uActivity,uRain;uniform float uTurb;uniform vec2 uRes;uniform sampler2D uRefl;uniform vec3 uObs,uWarm,uCentre,uMetal;
       uniform vec4 uD[${DMAX}],uD2[${DMAX}],uDC[${DMAX}],uRose,uUnlock,uCold;varying vec3 vW;
       float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float line(float d,float w){float a=max(fwidth(d),1e-5);return 1.-smoothstep(w,w+a*1.5,abs(d));}
@@ -202,6 +211,7 @@ export function createFamily(ctx){
         c+=uMetal*rose*(.05+.25*uRose.w)*(1.-F*.6);
         c+=lines*(1.-F*.4)+glow+waves(vW)*(1.-.5*F);
         if(uCold.w>0.){float k=uCold.w*exp(-pow(distance(p,uCold.xy)/uCold.z,2.));c=mix(c,vec3(dot(c,vec3(.3,.55,.15)))*vec3(.55,.8,1.35),k);}
+        ${LIFE?`{vec4 L=lifeAt(p);c+=uWarm*smoothstep(.02,.8,L.r)*.03*(1.-F*.4)*(1.-.9*smoothstep(.08,.6,L.g));}`:''}
         gl_FragColor=vec4(applyFog(c,vW),1.);}`}));
   floor.frustumCulled=false;floor.renderOrder=-2;scene.add(floor);
   // ---- Stone: plinths, storeys, roofs, pillars, buttresses, pinnacles (one instanced frustum, facades in the shader)
@@ -413,13 +423,19 @@ export function createFamily(ctx){
         if(vKind>.5&&vKind<1.5){float p=fract(vT*3.-uV*(.12+.12*uActivity)+vSeed);float pk=smoothstep(0.,.03,p)*(1.-smoothstep(.03,.12,p));em+=mix(uWarm,vC.rgb,.5)*(pk*2.6+.25)*core;em+=uMoonC*edge*.15;}
         gl_FragColor=vec4(mix(c+em*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
   const solidMesh=new THREE.Mesh(solidB.geometry,solidMat);solidMesh.frustumCulled=false;scene.add(solidMesh);mirrored(solidMesh);
-  const glowB=instancedBuffers(ribbonGeo,{kA:4,kB:4,kInfo:4,kC:4},256);
-  const glowMat=additive(new THREE.ShaderMaterial({uniforms:{...common},side:THREE.DoubleSide,vertexShader:RIBBON_VS,
-    fragmentShader:`${FOG}uniform float uV,uActivity;uniform vec3 uWarm;uniform vec4 uMood;varying float vT,vSide,vAl,vKind,vSeed,vFog,vFresh;varying vec4 vC;varying vec3 vW,vTan;
+  // With life, a cable's traffic (kL: how many inhabitants run along it and which way) lights it; a channel reads the field.
+  const glowB=instancedBuffers(ribbonGeo,LIFE?{kA:4,kB:4,kInfo:4,kC:4,kL:2}:{kA:4,kB:4,kInfo:4,kC:4},256);
+  const GLOW_VS=LIFE?RIBBON_VS.replace('void main(){',`${LIFE_GLSL}attribute vec2 kL;varying vec4 vLife;void main(){`).replace('p.y*=uMirror;vW=p;',
+    'vLife=lifeAt(p.xz);vLife.ba=vec2(dot(vLife.ba*2.-1.,normalize(tg.xz+1e-5)),0.);if(kind>.5&&kind<1.5)vLife=vec4(kL.x*.7,0.,kL.y*.25,0.);p.y*=uMirror;vW=p;'):RIBBON_VS;
+  const glowMat=additive(new THREE.ShaderMaterial({uniforms:{...common},side:THREE.DoubleSide,vertexShader:GLOW_VS,
+    fragmentShader:`${FOG}uniform float uV,uActivity;uniform vec3 uWarm;uniform vec4 uMood;varying float vT,vSide,vAl,vKind,vSeed,vFog,vFresh;varying vec4 vC;varying vec3 vW,vTan;${LIFE?'varying vec4 vLife;':''}
       void main(){if(vAl<.5)discard;float e=1.-vSide*vSide;vec3 c=vec3(0.);
         if(vKind<.5){float p=fract(vT*2.-uV*(.15+.2*uActivity)+vSeed);float pk=smoothstep(0.,.04,p)*(1.-smoothstep(.04,.16,p));c=vC.rgb*vC.w*e*(.35+pk*2.5);}
         else if(vKind<1.5){float p=fract(vT*2.5-uV*(.1+.12*uActivity)+vSeed);float pk=smoothstep(0.,.02,p)*(1.-smoothstep(.02,.06,p));c=vC.rgb*vC.w*(pow(e,3.)*(.7+3.*vFresh)+pk*pow(e,2.)*3.);}
         else{float f=pow(e,1.5)*(.75+.25*sin(vT*14.-uV*5.));c=vC.rgb*vC.w*f*(1.-vT*.5);}
+        ${LIFE?`if(vKind<1.5){float tr=smoothstep(.02,.7,vLife.r),fl=vLife.b,dir=fl>=0.?1.:-1.,gs=smoothstep(.08,.6,vLife.g);
+          float q=fract(dot(vW.xz,normalize(vTan.xz+1e-5))*1.6-uV*(.5+2.5*min(abs(fl)*4.,1.))*dir);float pk=smoothstep(0.,.05,q)*(1.-smoothstep(.05,.3,q))*(1.-gs)*(.3+.7*tr);
+          c+=mix(vC.rgb,uWarm,.5)*tr*min(1.,vC.w*2.5)*(vKind<.5?e*(.35+2.*pk):pow(e,2.)*(.45+2.6*pk))*(1.-.92*gs);}`:''}
         c*=(1.-vFog*.8)*uMood.x;if(!(c.r>=0.&&c.g>=0.&&c.b>=0.&&c.r<1e4))c=vec3(0.);
         gl_FragColor=vec4(c,0.);}`}));
   const glowMesh=new THREE.Mesh(glowB.geometry,glowMat);glowMesh.frustumCulled=false;glowMesh.renderOrder=2;scene.add(glowMesh);
@@ -428,16 +444,16 @@ export function createFamily(ctx){
   const bayShape=new THREE.BoxGeometry(1,1,1);bayShape.translate(0,.5,0);
   const bayB=instancedBuffers(bayShape,{aP:4,aS:4,aC:4,aQ:4,aF:4},128);
   const bayMat=new THREE.ShaderMaterial({uniforms:{...common,uStone:{value:stone},uMetal:{value:metal},uDLit:{value:new Float32Array(DMAX)}},
-    vertexShader:`${FOG}attribute vec4 aP,aS,aC,aQ,aF;uniform float uT,uSpeed,uBars,uDLit[${DMAX}];varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;
+    vertexShader:`${FOG}${LIFE_GLSL}attribute vec4 aP,aS,aC,aQ,aF;uniform float uT,uSpeed,uBars,uDLit[${DMAX}];varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;${LIFE?'varying vec4 vLife;':''}
       void main(){float age=(uT-aP.w)/uSpeed;float e=clamp(age/1.2,0.,1.);e=1.-pow(1.-e,3.);
         vec3 lp=position;vec3 q=lp*vec3(aS.x,aS.y,.12);q.y-=(1.-e)*(aS.y+.02);
         float c=cos(aP.z),s=sin(aP.z);vec3 w=vec3(aP.x+q.x*c-q.z*s,q.y,aP.y+q.x*s+q.z*c);
         vec3 n=vec3(normal.x*c-normal.z*s,normal.y,normal.x*s+normal.z*c);w.y*=uMirror;n.y*=uMirror;
         float ph=fract(aQ.x-uBars/aQ.y+aQ.z);float dd=min(ph,1.-ph)*aQ.w;vChase=exp(-dd*dd*1.2);
         float fk=(uT-aF.x)/uSpeed-aF.y;vFx=aF.z>.5&&fk>-1.&&fk<5.?exp(-fk*fk*2.)*4.+max(0.,fk)*exp(-fk*.7)*.6:0.;
-        vLit=uDLit[int(aS.z)];
+        vLit=uDLit[int(aS.z)];${LIFE?'vLife=lifeAt(w.xz);vLife.b=dot(vLife.ba*2.-1.,vec2(c,s));vLife.a=dot(w.xz,vec2(c,s));':''}
         vW=w;vN=n;vL=vec3(lp.x*aS.x,lp.y,lp.z);vC=aC.rgb;vK=aC.w;vAge=age;vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm;uniform float uV,uActivity,uBars;uniform vec4 uMood,uUnlock;varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uStone,uMetal,uKey,uWarm;uniform float uV,uActivity,uBars;uniform vec4 uMood,uUnlock;varying vec3 vW,vN,vL,vC;varying float vFog,vK,vAge,vChase,vFx,vLit;${LIFE?'varying vec4 vLife;':''}
       void main(){if(vAge<0.)discard;vec3 N=normalize(vN);vec3 V=normalize(cameraPosition-vW);
         float key=max(dot(N,uKey),0.);float rim=pow(1.-max(dot(N,V),0.),3.)*.2;float tex=texture(uNoise,vW.xz*.7+vW.y*.3).x;
         vec3 c=uStone*(.7+.4*tex)*(key*.35*uMoonC*cloudSh(vW.xz)+.03*uMoonC)+uMoonC*rim*.2;
@@ -445,6 +461,8 @@ export function createFamily(ctx){
         vec3 lc=mix(uWarm,vC,.35);
         float fresh=vAge<3.?exp(-vAge*1.2)*1.5:0.;
         vec3 em=lc*cop*(.05+.5*vLit+(fresh+vFx)*1.4+vChase*.12*(.3+.7*uUnlock.y));
+        ${LIFE?`{float tr=smoothstep(.02,.7,vLife.r),fl=vLife.b,gs=smoothstep(.08,.6,vLife.g);float q=fract(vLife.a*2.2-uV*(.4+2.*min(abs(fl)*4.,1.))*(fl>=0.?1.:-1.));
+          float pk=smoothstep(0.,.06,q)*(1.-smoothstep(.06,.35,q))*(1.-gs)*(.3+.7*tr);em*=1.-.85*gs;em+=mix(lc,uWarm,.5)*cop*tr*(.25+1.9*pk)*(1.-.8*gs);}`:''}
         gl_FragColor=vec4(mix((c+em)*uMood.x,fogCol(vW),vFog),outAlpha(vW));}`});
   const bayMesh=new THREE.Mesh(bayB.geometry,bayMat);bayMesh.frustumCulled=false;scene.add(bayMesh);mirrored(bayMesh);
   // ---- Pinnacles and needles: the same stone shader on a cheap four-sided geometry (they are many) ------------------
@@ -650,19 +668,11 @@ export function createFamily(ctx){
     const rot=axisAz+Math.PI/SIDES;
     // Precincts: raw centroids first, then canals: each precinct is pushed out from the city's centre, so wide dark
     // mirror canals separate them (positions stay a pure function of the model's persisted plots).
-    const raw=[];let cx=0,cz=0,cw=0;
-    for(const d of [...model.districts.values()].filter(d=>d.members.length).sort((a,b)=>a.order-b.order)){
-      const members=d.members.map(id=>model.modules.get(id)).filter(Boolean);if(!members.length)continue;
-      const pts=members.map(m=>plot(m.q,m.r));const c=new THREE.Vector3();for(const p of pts)c.add(p);c.multiplyScalar(1/pts.length);raw.push({d,members,pts,c});const w=Math.sqrt(members.length);cx+=c.x*w;cz+=c.z*w;cw+=w;}
-    if(cw){cx/=cw;cz/=cw;}
-    const canal=.32*streetK;const offsets=new Map();
-    for(const {d,members,pts,c} of raw){
-      const off=new THREE.Vector3((c.x-cx)*canal,0,(c.z-cz)*canal);for(const p of pts)p.add(off);c.add(off);offsets.set(d.id,off);
+    // (cathedral-layout.js: the same arithmetic the digital life's network is derived from)
+    const offsets=new Map();
+    for(const {d,members,c:cc,off:oo,ang,ex,ez,rx,rz} of precincts(model,LO)){
+      const c=new THREE.Vector3(cc.x,0,cc.z);offsets.set(d.id,new THREE.Vector3(oo.x,0,oo.z));
       // Principal axis and extents: the foundation is an ellipse around the district's towers; the nave runs along it.
-      let sxx=0,szz=0,sxz=0;for(const p of pts){const x=p.x-c.x,z=p.z-c.z;sxx+=x*x;szz+=z*z;sxz+=x*z;}
-      const ang=.5*Math.atan2(2*sxz,sxx-szz);const ca=Math.cos(ang),sa=Math.sin(ang);let ex=0,ez=0;
-      for(const p of pts){const x=p.x-c.x,z=p.z-c.z;ex=Math.max(ex,Math.abs(x*ca+z*sa));ez=Math.max(ez,Math.abs(-x*sa+z*ca));}
-      const rx=Math.max(1.7,(ex+1.2*S)*1.1),rz=Math.max(1.7,(ez+1.2*S)*1.1);
       const born=Math.min(...members.map(m=>m.born));const color=districtColor(d);
       const ds={d,centre:c,radius:Math.max(rx,rz),rx,rz,ex,ez,ang,color,ringColor:color.clone().multiplyScalar(.1),born,index:k,members,lit:0};districts.set(d.id,ds);
       if(k<DMAX){fu.uD.value[k].set(c.x,c.z,rx,rz);const perim=Math.PI*(3*(rx+rz)-Math.sqrt((3*rx+rz)*(rx+3*rz)));fu.uD2.value[k].set(-ang,secs(born,epoch),0,Math.max(12,Math.round(perim/.6)));fu.uDC.value[k].set(color.r,color.g,color.b,.3);}
@@ -676,28 +686,14 @@ export function createFamily(ctx){
     common.uFogH.value=1.5+extent*.06;common.uMistH.value=.3+.01*extent;
     // Towers.
     const list=[],pins=[];
-    const symTotal=m=>Object.entries(m.counts||{}).filter(([x])=>x!=='api.route'&&x!=='property').reduce((a,[,v])=>a+v,0);const landmark=new Map();let maxT=1;
-    for(const m of model.modules.values()){if(m.removed!==null)continue;const t=symTotal(m);maxT=Math.max(maxT,t);const best=landmark.get(m.group);if(!best||t>symTotal(best)||t===symTotal(best)&&m.id<best.id)landmark.set(m.group,m);}
     const gothicLike=archName==='gothic'||archName==='spire';const stageN=archName==='spire'?4:3;const stepK=.05+.3*setback;
-    // Hierarchy: the few largest precinct landmarks become the city's grand spires (much taller); in a large precinct
-    // the modules beyond its first few form a low, dense carpet of roofs (each still its own building) beneath them.
-    const alive=[...model.modules.values()].filter(m=>m.removed===null);const rankIn=new Map(),byGroup=new Map();
-    for(const m of alive){if(!byGroup.has(m.group))byGroup.set(m.group,[]);byGroup.get(m.group).push(m);}
-    for(const l of byGroup.values()){l.sort((a,b)=>symTotal(b)-symTotal(a)||(a.id<b.id?-1:1));l.forEach((m,k)=>rankIn.set(m.id,k));}
-    const greatsAll=[...landmark.values()].filter(m=>symTotal(m)>=4).sort((a,b)=>symTotal(b)-symTotal(a)||(a.id<b.id?-1:1));
-    const grandN=clamp(Math.round(1.2+Math.sqrt(greatsAll.length)*.8),1,5);const grand=new Set(greatsAll.slice(0,grandN).map(m=>m.id));
-    const grandK=smooth((alive.length-25)/220);   // the hierarchy steepens with the size of the project
-    for(const m of [...model.modules.values()].sort((a,b)=>a.order-b.order)){
-      const dist=districts.get(m.group);if(!dist)continue;const p=plot(m.q,m.r).add(offsets.get(m.group));
+    // Hierarchy (cathedral-layout.js towerPlans): the few largest precinct landmarks become the city's grand spires (much
+    // taller); in a large precinct the modules beyond its first few form a low, dense carpet of roofs (each still its own
+    // building) beneath them. Mass: larger modules get taller storeys (log of their symbols), each landmark much taller.
+    for(const {m,x:tx,z:tz,great,isGrand,carpet,shown,total,hk,R0,sd,grandK} of towerPlans(model,LO,offsets)){
+      const dist=districts.get(m.group);if(!dist)continue;const p=new THREE.Vector3(tx,0,tz);
       const born=secs(m.born,epoch),removed=m.removed===null?1e6:secs(m.removed,epoch);
-      const syms=[...m.symbols].map(id=>model.symbols.get(id)).filter(s=>s&&KINDS[s.kind]).sort((a,b)=>a.slot-b.slot||a.id.localeCompare(b.id));
       const routes=[...m.symbols].map(id=>model.symbols.get(id)).filter(s=>s&&s.kind==='api.route');
-      const great=landmark.get(m.group)===m&&symTotal(m)>=4,isGrand=great&&grand.has(m.id);
-      const carpet=!great&&(byGroup.get(m.group)?.length||0)>8&&(rankIn.get(m.id)??0)>=6;
-      const shown=syms.slice(0,carpet?3:16);const total=symTotal(m);
-      // Mass: larger modules get taller storeys (log of their symbols), each precinct's landmark much taller again.
-      const mass=.62+.88*Math.pow(clamp(Math.log2(1+total)/Math.log2(1+maxT)),1.6);const hk=mass*(isGrand?1.22+.6*grandK:great?1.22:carpet?.6:1);
-      const R0=A.r*(.9+.28*Math.min(1,total/12))*(m.test?.92:1)*(isGrand?1.25:great?1.15:carpet?1.4:1);const sd=rand(hash(m.id));
       const delay=p.distanceTo(orreryAt)*.09;
       const tw={id:m.id,pos:p,color:dist.color,born:m.born,top:.3,roofTop:.6,district:m.group,R:R0,count:shown.length,blocks:[],great,grand:isGrand,carpet,delay,storeys:[]};towers.set(m.id,tw);
       const add=(b,pin=false)=>{b.module=m.id;b.test=m.test;b.x=p.x;b.z=p.z;b.rot=b.rot??rot;b.seed=rand(hash(m.id+(b.symbol||b.kind)+(b.j||0)));b.color=dist.color;b.pin=pin;b.frac=b.frac??0;(pin?pins:list).push(b);tw.blocks.push(b);return b;};
@@ -773,14 +769,12 @@ export function createFamily(ctx){
     }
     // Dependencies: channels inlaid in the floor inside a precinct; across precincts a thin cable of light slung between
     // two towers at staggered heights, one per pair of precincts, the most-linked pairs first (a few dozen at most).
-    const all=[...model.links.values()].filter(l=>towers.has(l.a)&&towers.has(l.b));const internal=all.filter(l=>!l.cross).slice(-900);
+    const {internal,bridges:bplans}=linkPlans(model,new Map([...towers.values()].map(tw=>[tw.id,tw.district])));
     const quiet=Math.min(1,3/Math.sqrt(internal.length+1)+.25);
-    const pairs=new Map();for(const l of all.filter(l=>l.cross)){const key=[towers.get(l.a).district,towers.get(l.b).district].sort().join('|');if(!pairs.has(key))pairs.set(key,[]);pairs.get(key).push(l);}
     for(const l of internal){const a=towers.get(l.a),b=towers.get(l.b);const born=model.bornAt(l);
       channels.push({l,born:Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,removed:l.removed===null?1e6:secs(l.removed,epoch),k:.9*quiet,c:a.color.clone().lerp(b.color,.5)});}
-    const plist=[...pairs.entries()].sort((x,y)=>y[1].length-x[1].length||(x[0]<y[0]?-1:1)).slice(0,24);
-    for(const [,ls] of plist){ls.sort((x,y)=>(model.bornAt(x)-model.bornAt(y))||rand(hash(x.key))-rand(hash(y.key)));const kk=Math.min(2,1+.3*Math.log2(ls.length));const l=ls[0];const born=model.bornAt(l);
-      bridges.push({l,born:Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,removed:l.removed===null?1e6:secs(l.removed,epoch),k:kk,ha:.55+.35*rand(hash(l.key+'a')),hb:.55+.35*rand(hash(l.key+'b'))});}
+    for(const {l,k:kk,ha,hb} of bplans){const born=model.bornAt(l);
+      bridges.push({l,born:Number.isFinite(born)?secs(born,epoch):born===Infinity?1e6:-1e5,removed:l.removed===null?1e6:secs(l.removed,epoch),k:kk,ha,hb});}
     // Write static instance data.
     stoneB.ensure(list.length);pinB.ensure(pins.length);
     const writeStatic=(B,b,i)=>{b.index=i;b.buf=B;B.write('iB',i,b.rB,b.rT,b.h,b.look);B.write('iL',i,b.born,b.removed,b.weld,b.seed);B.write('iA',i,b.x,b.z,b.y||0,b.rot);
@@ -1068,7 +1062,87 @@ export function createFamily(ctx){
     beamB.commit(bi);
     moteMat.uniforms.uCount.value=Math.round(MOTES*(quality>=2?.5:1));
     common.uUnlock.value.set(unl[0]||0,unl[1]||0,unl[2]||0,unl[3]||0);
+    if(life)life.update(i);
   }
+  // ---- Digital life: the city's inhabitants (simulated: never labelled, never agents) ---------------------------------
+  // Small lanterns running the cathedral's routes (life/cathedral.js): a bright core in a soft halo (couriers the largest,
+  // sparks the smallest), a light trail behind each and, behind a travelling courier or spark, a comet of fading points
+  // along its own recorded path. Couriers sodium-warm, wardens a warm pale gold, sparks gold-white. What an inhabitant
+  // is doing sets its brightness (travelling brightest, waiting and lingering dim), so the streams read over the
+  // pottering; near a failure the lanterns cool and dim. Followers (by quality) run on their leader's own path.
+  // Depth-tested (the towers hide them), fogged like the lamps and mirrored in the wet floor. Without ctx.life nothing
+  // here exists.
+  const life=LIFE?(()=>{
+    const grammar=createCathedralGrammar({genome:G,axisAz}),driver=ctx.life.create(grammar);
+    const spec=grammar.ecosystem({},0),CAPN=spec.capacity,FMAX=2,TK=spec.trail,PN=CAPN*9;   // (leaders, followers and comet points: bounded, checked)
+    const pts=pointBuffers({aC:4,aS:3},PN),segs=pointBuffers({aC:4},CAPN*(TK-1)*2);
+    // aS: world size, smallest size on screen (px), halo (0..1).
+    const LIFE_VS=`${FOG}attribute vec4 aC;attribute vec3 aS;uniform float uPx;varying vec4 vC;varying float vH;void main(){vec3 p=position;p.y*=uMirror;vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=clamp(aS.x*uPx*210./max(.5,-mv.z),aS.y*uPx,18.*uPx);vH=aS.z;vC=vec4(aC.rgb*(1.-fogAmt(p)*.65),aC.a);}`;
+    const LIFE_FS=`varying vec4 vC;varying float vH;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;
+      float core=exp(-r*mix(5.,40.,vH))*(1.+1.4*vH),halo=exp(-r*4.)*(1.-r)*.7*vH;gl_FragColor=vec4(vC.rgb*(core+halo)*vC.a,0.);}`;
+    const ptMat=additive(new THREE.ShaderMaterial({uniforms:{...common},vertexShader:LIFE_VS,fragmentShader:LIFE_FS}));
+    const segMat=additive(new THREE.ShaderMaterial({uniforms:{...common},vertexShader:`${FOG}attribute vec4 aC;varying vec4 vC;void main(){vec3 p=position;p.y*=uMirror;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);vC=vec4(aC.rgb*aC.a*(1.-fogAmt(p)*.8),1.);}`,
+      fragmentShader:`varying vec4 vC;void main(){gl_FragColor=vec4(vC.rgb,0.);}`}));
+    const points=new THREE.Points(pts.geometry,ptMat),lines=new THREE.LineSegments(segs.geometry,segMat);
+    for(const o of [points,lines]){o.frustumCulled=false;o.renderOrder=6;scene.add(o);}
+    const pointsM=new THREE.Points(pts.geometry,ptMat),linesM=new THREE.LineSegments(segs.geometry,segMat);for(const o of [pointsM,linesM]){o.frustumCulled=false;mirror.add(o);}
+    const COL=[warm.clone().lerp(new THREE.Color('#ffd9a0'),.25).multiplyScalar(2.6),GOLD.clone().lerp(moonC,.3).multiplyScalar(1.7),GOLD.clone().lerp(new THREE.Color('#fff6e0'),.4).multiplyScalar(3)];
+    const COLD=moonC.clone().multiplyScalar(1/Math.max(.01,moonC.r*.3+moonC.g*.59+moonC.b*.11));   // (a failure's cold: the moon's own hue)
+    const SIZE=[3,2.1,1.2],MINPX=[12,9,6],HALO=[1,.8,.45],TRAIL=[TK,5,4],FOLLOW=[2,1,0];
+    // Brightness by job (life/cathedral.js JOB): travelling and climbing bright, waiting and lingering dim.
+    const J=LIFE_JOB,JOB_K=new Float32Array(16).fill(.8);JOB_K[J.travel]=1;JOB_K[J.dwell]=.42;JOB_K[J.wait]=.5;JOB_K[J.go]=.9;JOB_K[J.up]=1;JOB_K[J.circle]=.85;JOB_K[J.down]=.95;
+    JOB_K[J.edge]=.85;JOB_K[J.patrol]=.55;JOB_K[J.migrate]=1;JOB_K[J.linger]=.32;
+    const p3=[0,0,0],f3=[0,0,0],texBuf=lifeTex.image.data,cc=new THREE.Color();let shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0},texTick=-1,texK=-1;
+    const b8=v=>v<=0?0:v>=1?255:(v*255+.5)|0;
+    // Cable traffic: which drawn cable (bridge instance) each network edge belongs to, and which way along it.
+    let cableKey='',edgeCable=null,edgeDir=null;const cableN=new Float32Array(32),cableD=new Float32Array(32);
+    function cableMap(net){const key=net.key+'@'+builtVersion;if(key===cableKey)return;cableKey=key;edgeCable=new Int16Array(net.m*2).fill(-1);edgeDir=new Int8Array(net.m*2);
+      const byPair=new Map(bridges.map((x,j)=>[x.l.a+'|'+x.l.b,j]));
+      for(const c of net.cables){const j=byPair.get(c.a+'|'+c.b);if(j===undefined)continue;
+        for(let k=0;k+1<c.nodes.length;k++){const u=c.nodes[k],w=c.nodes[k+1];for(let q=net.adjOff[u];q<net.adjOff[u+1];q++){const d=net.adj[q],e=d>>1;if((net.ea[e]===u&&net.eb[e]===w)||(net.eb[e]===u&&net.ea[e]===w)){
+          const fwd=(d&1?net.eb[e]:net.ea[e])===u;edgeCable[d]=j;edgeDir[d]=fwd?1:-1;edgeCable[d^1]=j;edgeDir[d^1]=fwd?-1:1;}}}}}
+    function cables(eco,net,v){cableMap(net);const n=Math.min(32,bridges.length);cableN.fill(0);cableD.fill(0);
+      for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==net.tag)continue;const d=eco.ia[e*2];if(d<0)continue;const j=edgeCable[d];if(j<0||j>=n)continue;const w=lifeVisibility(eco,e,v);cableN[j]+=w;cableD[j]+=w*edgeDir[d];}
+      for(let j=0;j<n;j++)glowB.write('kL',channels.length+j,Math.min(1,cableN[j]/4),cableN[j]>0?cableD[j]/cableN[j]:0);glowB.flush();}
+    function hide(){pts.commit(0);segs.commit(0);shown={drawn:0,followers:0,trailSegments:0,trailPoints:0,drawCalls:0};for(let j=0;j<bridges.length;j++)glowB.write('kL',channels.length+j,0,0);glowB.flush();
+      if(texK!==0){for(let q=0;q<texBuf.length;q+=4){texBuf[q]=0;texBuf[q+1]=0;}lifeTex.needsUpdate=true;texK=0;texTick=-1;}}
+    function update(i){
+      const v=i.life;if(!v||!v.eco||v.restoring){hide();return;}
+      const eco=v.eco,net=grammar.networkOf(eco);if(!net){hide();return;}
+      // The traffic field (once per tick), its light (trail) and its dimming (disturbance) faded with the population.
+      if(texTick!==eco.tick||texK!==v.fadeIn){texTick=eco.tick;texK=v.fadeIn;const F=eco.field,NC=F.nx*F.nz,d=F.data;
+        for(let q=0;q<NC;q++){texBuf[q*4]=b8(d[q]/3*texK);texBuf[q*4+1]=b8(d[2*NC+q]/2.5*texK);texBuf[q*4+2]=b8(.5+d[3*NC+q]*1.5);texBuf[q*4+3]=b8(.5+d[4*NC+q]*1.5);}lifeTex.needsUpdate=true;}
+      cables(eco,net,v);
+      const q=quality,alpha=v.alpha,tv=i.tview,tag=net.tag,K=eco.K,head=eco.trailHead,PMAX=pts.capacity??PN;let n=0,nf=0,ns=0,nc=0;
+      for(let e=0;e<eco.capacity;e++){if(!eco.alive[e]||eco.fa[e*2+1]!==tag)continue;const vis=lifeVisibility(eco,e,v);if(vis<=.01)continue;
+        const k=eco.sp[e],job=eco.ia[e*2+1]&15;lifePosition(eco,e,alpha,p3);
+        // Colour: the species' own, cooled and dimmed near a failure (the disturbance where it is).
+        const sk=grammar.strainOf(eco,e),g=Math.min(1,Math.max(sk>.12?Math.min(1,(sk-.12)*3):0,(eco.sample(LIFE_CH.disturb,p3[0],p3[2])-.25)/1.25));cc.copy(COL[k]);
+        if(g>0){const l=cc.r*.3+cc.g*.59+cc.b*.11;cc.lerp(f3c.copy(COLD).multiplyScalar(l*.7),.8*g).multiplyScalar(1-.45*g);}
+        // (wardens going back in after a recovery, gathered at the hub's foot and climbing together, burn brighter)
+        const back=k===1&&g<=0&&(eco.ia[e*2+1]>>4&4)&&(job===J.go||job===J.linger||job===J.up);
+        const bk=vis*JOB_K[job]*(back?1.35:1),moving=job===J.travel||job===J.up||job===J.down||job===J.go||job===J.edge||job===J.migrate;
+        pts.write('position',n,p3[0],p3[1],p3[2]);pts.write('aC',n,cc.r*bk,cc.g*bk,cc.b*bk,1);pts.write('aS',n,SIZE[k],MINPX[k]*(.7+.3*JOB_K[job]),HALO[k]);n++;
+        // The light trail: the recorded path, newest first, fading. Couriers and sparks draw it as a comet of soft points
+        // (the heading in light), slow wardens as a short faint line. A jump (a relocation) or a sharp turn (a shaft's
+        // step onto a gallery or a ledge, a corner) ends it: no hook is ever drawn in the air.
+        let px=p3[0],py=p3[1],pz=p3[2],hx=0,hy=0,hz=0;const T=Math.min(TK,moving?TRAIL[k]:3),comet=moving&&k!==1,line=k===1;
+        for(let t=1;t<T;t++){const o=e*K+((head-t+1+K*4)%K),x=eco.tx[o],y=eco.ty[o],z=eco.tz[o],sx=px-x,sy=py-y,sz=pz-z,l2=sx*sx+sy*sy+sz*sz;if(l2>1)break;
+          if(l2>1e-4){const l=Math.sqrt(l2);if(hx*sx+hy*sy+hz*sz<.5*l*Math.sqrt(hx*hx+hy*hy+hz*hz)&&(hx||hy||hz))break;hx=sx;hy=sy;hz=sz;}
+          if(line){const a0=bk*(1-(t-1)/T)*.35,a1=bk*(1-t/T)*.35;segs.write('position',ns*2,px,py,pz);segs.write('aC',ns*2,cc.r,cc.g,cc.b,a0);segs.write('position',ns*2+1,x,y,z);segs.write('aC',ns*2+1,cc.r,cc.g,cc.b,a1);ns++;}
+          // The comet: soft points along the segment, shrinking and fading with age.
+          if(comet&&n<PMAX-2)for(const f of q>=2?[.5]:[.3,.8]){const ag=(t-1+f)/T,w=(1-ag)**1.6*bk*.45;
+            pts.write('position',n,px+(x-px)*f,py+(y-py)*f,pz+(z-pz)*f);pts.write('aC',n,cc.r*w,cc.g*w,cc.b*w,1);pts.write('aS',n,SIZE[k]*.3*(1-ag),Math.max(1.5,3.5*(1-ag)),0);n++;nc++;}
+          px=x;py=y;pz=z;}
+        const F=q<=0?FOLLOW[k]:q===1?Math.min(1,FOLLOW[k]):0;
+        for(let f=0;f<F&&n<PMAX;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,f3,{spread:.035,lag:.3}))break;pts.write('position',n,f3[0],f3[1],f3[2]);pts.write('aC',n,cc.r*bk*.5,cc.g*bk*.5,cc.b*bk*.5,1);pts.write('aS',n,SIZE[k]*.45,4,HALO[k]*.5);n++;nf++;}}
+      pts.commit(n);segs.commit(ns*2);shown={drawn:n-nf-nc,followers:nf,trailSegments:ns,trailPoints:nc,drawCalls:((n>0)+(ns>0))*(quality<2?2:1)};
+    }
+    const f3c=new THREE.Color();
+    function dispose(){for(const o of [points,lines]){scene.remove(o);}mirror.remove(pointsM,linesM);pts.geometry.dispose();segs.geometry.dispose();ptMat.dispose();segMat.dispose();lifeTex.dispose();}
+    return {update,dispose,stats:()=>({...shown}),grammar,driver};
+  })():null;
   let dCache=null,dCacheV=-1;function dList(){if(dCacheV!==builtVersion){dCache=[...districts.values()].sort((a,b)=>a.index-b.index).slice(0,4);dCacheV=builtVersion;}return dCache;}
   function orreryY(){const tw=orreryTower&&towers.get(orreryTower);return tw?Math.max(.8,tw.top*.84):2;}
   // The reflection pass (half resolution) runs inside the measured frame: from background() when the host asks for
@@ -1159,11 +1233,12 @@ export function createFamily(ctx){
     return {position:tw.pos.clone().setY(tw.top),text:`A tower · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'storey')} · ${plural(deps,'link')} · ${ctx.name(m.group)}`};}
   function stats(){return {districts:districts.size,towers:towers.size,stones:stoneCount,pinnacles:pinCount,naves:naves.length,spires:greats.length,flyers:flyers.length,bridges:bridges.length,channels:channels.length,rings:ringB.geometry.instanceCount,crowns:crowns.length,roses:roses.size,
     architecture:archName,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),estab:[estab.C.x,estab.C.y,estab.C.z,estab.S.x,estab.S.z,centre.x,centre.z].map(x=>+x.toFixed(1)),view:{L:+estab.L.toFixed(1),fov:+estab.fov.toFixed(1),moonEl:+moonEl.toFixed(3),mist:+common.uMistD.value.toFixed(4)}};}
-  function dispose(){for(const o of [floor,stoneMesh,pinMesh,naveMesh,latMesh,bayMesh,solidMesh,glowMesh,ringMesh,beamMesh,motePoints,lampPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}
+  function dispose(){life?.dispose();for(const o of [floor,stoneMesh,pinMesh,naveMesh,latMesh,bayMesh,solidMesh,glowMesh,ringMesh,beamMesh,motePoints,lampPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}
     mirror.clear();noiseTex.dispose();sky.dispose();frustum.dispose();pinGeo.dispose();naveGeo.dispose();latGeo.dispose();ribbonGeo.dispose();bayShape.dispose();ringGeo.dispose();beamGeo.dispose();reflRT.dispose();}
   // After a seek: transient effects are cleared (lasting rose windows and crowns come from director.lasting() each frame).
   function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of burstU.uBC.value)v.set(1,0,1,0);
     flashes.length=0;lockRings.length=0;beamFx.length=0;haloFx.length=0;moments.length=0;fxTower.clear();fxDistrict.clear();for(let k=0;k<bayCount;k++)bayB.arrays.aF[k*4]=-1e5;bayB.dirty('aF');bayB.flush();
     if(builtVersion>=0){for(const B of [stoneB,pinB]){for(let k=0;k<B.capacity;k++){B.arrays.iF[k*4]=-1e5;B.arrays.iF[k*4+1]=0;}B.dirty('iF');}for(let k=0;k<naves.length;k++)naveB.arrays.nD[k*4+1]=-1e5;naveB.dirty('nD');}lastingSig='';}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }

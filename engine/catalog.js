@@ -80,7 +80,29 @@ const FAMILIES={
     effects:['foundation','raise','storey','dismantle','lock-mechanism','stress-fracture','window-scan','restore','reassemble','illumination','set-in-stone','district-lights'],
     unlocks:['searchlights','mechanisms','beacons','aurora-glass']}
 };
-for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...COMMON};
+// Digital life (public/worlds/life): the built-in worlds' autonomous inhabitants. Every value is a scale around 1 (0..2)
+// over the world's own artist-directed behaviour, so no setting can make the simulation unstable. Off (or absent: an
+// identity saved before digital life existed) renders the world exactly as before. The inhabitants are simulated: they
+// never stand for agents, files or events.
+const LIFE={
+  'life.enabled':b('digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before)'),
+  'life.density':n(0,1,'population: the share of the world\'s inhabitants that live (1: all of them)'),
+  'life.vitality':n(.2,2,'vitality: how active they are (speed, curiosity, how often they move on)'),
+  'life.collective':n(0,2,'collective behaviour: how strongly groups form, align and move the currents together'),
+  'life.environment':n(0,2,'environmental influence: how strongly currents and engineering events move them'),
+  'life.trails':n(0,2,'trails: how much they mark their way and follow each other\'s, and how visible the trails are'),
+  'life.persistence':n(.25,2,'field memory: how long trails, energy and disturbances last'),
+  'life.music':n(0,2,'music influence: how much the musical sections change currents, turbulence and cohesion'),
+  'life.attraction':n(0,2,'advanced: attraction to favourable places and to other species they chase'),
+  'life.repulsion':n(0,2,'advanced: avoidance of disturbed places and of species they avoid'),
+  'life.separation':n(0,2,'advanced: personal space between neighbours'),
+  'life.alignment':n(0,2,'advanced: matching neighbours\' headings'),
+  'life.cohesion':n(0,2,'advanced: staying with the group'),
+  'life.current':n(0,2,'advanced: strength of the world\'s large-scale current'),
+  'life.diffusion':n(0,2,'advanced: how fast traces spread out'),
+  'life.radius':n(.5,1.5,'advanced: how far an inhabitant perceives its neighbours')
+};
+for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.
 function accepts(spec,value){
@@ -98,4 +120,4 @@ function accepts(spec,value){
 function get(obj,path){return path.split('.').reduce((o,k)=>o?.[k],obj);}
 // The class of an effect preset in a family (its effects are listed in EFFECT_TYPES order).
 function effectClass(family,effect){const k=FAMILIES[family]?.effects.indexOf(effect);return k>=0?EFFECT_CLASS[EFFECT_TYPES[k]]:null;}
-module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,COMMON,accepts,get,effectClass};
+module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,COMMON,LIFE,accepts,get,effectClass};

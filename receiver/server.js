@@ -411,7 +411,8 @@ function createService(options={}) {
       const expectedOrigins=[`http://localhost:${actualPort}`,`http://127.0.0.1:${actualPort}`,`http://[::1]:${actualPort}`];
       const u=new URL(req.url,`http://localhost:${actualPort}`);
       const pathname=u.pathname;
-      const worldFile=/^\/worlds\/[a-z0-9-]+\.js$/.test(pathname)&&!DEVICE.test(pathname)?pathname.slice(1):null;
+      // World modules: /worlds/<name>.js and the digital-life modules /worlds/life/<name>.js (one known subfolder, no other path).
+      const worldFile=/^\/worlds\/(?:life\/)?[a-z0-9-]+\.js$/.test(pathname)&&!DEVICE.test(pathname)?pathname.slice(1):null;
       // The pack frame has an opaque origin ("null"): it may fetch the public world modules and three.js, nothing else.
       const frameAsset=req.method==='GET'&&req.headers.origin==='null'&&(worldFile||pathname==='/vendor/three.module.min.js');
       if(req.headers.origin&&!expectedOrigins.includes(req.headers.origin)&&!frameAsset){response(res,403,{error:'Cross-origin access forbidden'});return;}

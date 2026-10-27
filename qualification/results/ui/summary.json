@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-25T16:20:17.764Z",
+  "at": "2026-10-27T09:37:59.865Z",
   "node": "v22.22.2",
   "quick": false,
   "suites": [
@@ -9,7 +9,7 @@
       "pass": 73,
       "fail": 0,
       "failures": [],
-      "seconds": 208
+      "seconds": 140
     },
     {
       "suite": "connections",
@@ -17,7 +17,7 @@
       "pass": 48,
       "fail": 0,
       "failures": [],
-      "seconds": 15
+      "seconds": 16
     },
     {
       "suite": "home",
@@ -25,7 +25,7 @@
       "pass": 45,
       "fail": 0,
       "failures": [],
-      "seconds": 37
+      "seconds": 31
     },
     {
       "suite": "music",
@@ -33,15 +33,15 @@
       "pass": 68,
       "fail": 0,
       "failures": [],
-      "seconds": 305
+      "seconds": 112
     },
     {
       "suite": "output",
       "exitCode": 0,
-      "pass": 41,
+      "pass": 48,
       "fail": 0,
       "failures": [],
-      "seconds": 63
+      "seconds": 163
     },
     {
       "suite": "packs",
@@ -49,7 +49,7 @@
       "pass": 52,
       "fail": 0,
       "failures": [],
-      "seconds": 38
+      "seconds": 34
     },
     {
       "suite": "projects",
@@ -57,7 +57,7 @@
       "pass": 48,
       "fail": 0,
       "failures": [],
-      "seconds": 85
+      "seconds": 60
     },
     {
       "suite": "settings",
@@ -68,17 +68,27 @@
       "seconds": 18
     },
     {
-      "suite": "visual",
+      "suite": "stage",
       "exitCode": 0,
-      "pass": 60,
+      "pass": 15,
       "fail": 0,
       "failures": [],
-      "seconds": 222
+      "seconds": 39
+    },
+    {
+      "suite": "visual",
+      "exitCode": 1,
+      "pass": 53,
+      "fail": 1,
+      "failures": [
+        "FAIL  qualification ran to the end — locator.click: Timeout 30000ms exceeded."
+      ],
+      "seconds": 194
     }
   ],
-  "passed": true,
+  "passed": false,
   "checks": {
-    "pass": 476,
-    "fail": 0
+    "pass": 491,
+    "fail": 1
   }
 }

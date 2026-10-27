@@ -31,9 +31,9 @@ const CURATED=[
   {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0]}}}];
 // The few parameters that change a world the most, shown first; every other one stays under its group.
 const ESSENTIALS={
-  'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway'],
-  'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed'],
-  'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows'],
+  'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','life.enabled'],
+  'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed','life.enabled'],
+  'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows','life.enabled'],
   common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
@@ -42,7 +42,7 @@ const CLASSIC=[
   {id:'nebula',icon:'spark',line:'The same layout wound into a turning spiral (Canvas 2D)'}];
 // Parameter groups (the first genome path segment), named for the sub-headings inside a creative purpose.
 const GROUPS=[['params','World controls'],['uniforms','Look controls'],['geometry','Geometry'],['secondary','Secondary forms'],['space','Space'],['material','Materials'],['atmosphere','Atmosphere'],
-  ['light','Light'],['motion','Motion'],['camera','Camera'],['palette','Palette'],['grade','Grade'],['music','Music response'],['agents','Agents'],['limits','Labels on screen'],['technique','Rendering technique']];
+  ['light','Light'],['motion','Motion'],['camera','Camera'],['palette','Palette'],['grade','Grade'],['music','Music response'],['agents','Agents'],['limits','Labels on screen'],['technique','Rendering technique'],['life','Digital life']];
 const GROUP_OF={agentProminence:'agents'};
 // Every parameter sits under the creative purpose an artist looks for (not under its genome group): the world's own
 // controls first (a world pack's parameters, a shader look's uniforms), then form, atmosphere, motion, colour, music
@@ -55,6 +55,7 @@ const PURPOSES=[
   {id:'form',name:'Form and material',groups:['geometry','secondary','space','material']},
   {id:'atmosphere',name:'Atmosphere and light',groups:['atmosphere','light']},
   {id:'motion',name:'Motion and camera',groups:['motion','camera']},
+  {id:'life',name:'Digital life',groups:['life'],note:'Autonomous inhabitants simulated in the world: they never stand for agents, files or events. Off shows the world exactly as before.'},
   {id:'colour',name:'Colour',groups:['palette','grade']},
   {id:'music',name:'Music, agents and labels',groups:['music','agents','limits']},
   {id:'rendering',name:'Rendering',groups:['technique'],note:'Multipliers over the world\'s own light (Atmosphere and light) and grade (Colour): 1 leaves it as it is.'}];
@@ -65,7 +66,12 @@ const purposeOf=g=>PURPOSES.find(x=>x.groups.includes(g))?.id||'other';
 const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.contrast':1,'technique.saturation':1,'technique.vignette':1,'technique.grain':1,'technique.aberration':.004,'technique.tint':[1,1,1],'technique.lift':[0,0,0]};
 // Values a world renders when an older genome lacks a parameter added later (generator v2 added these to the Machine
 // Cathedral; the numbers are its own fallbacks in public/worlds/cathedral.js), so a control starts from what is shown.
-const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6}};
+// Digital life (generator v3): an older identity has none, so its controls start from off and neutral scales.
+const LIFE_OFF={'life.enabled':false,'life.density':1,'life.vitality':1,'life.collective':1,'life.environment':1,'life.trails':1,'life.persistence':1,'life.music':1,
+  'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1};
+const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF}};
+// Parameters whose last path segment alone would not say what they are (the Essentials list them out of their group).
+const LABEL_OF={'life.enabled':'Digital life'};
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
 const LABEL_DOCS={cinematic:'Titles and major moments only',explorer:'Click the world to inspect it',stream:'A lower third for streams (no private names)',off:'The world alone'};
@@ -647,7 +653,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     return !rest?null:/\s/.test(rest)?cap(rest):cap(d);
   }
   function paramField(path,spec,s){
-    const label=humanize(path.split('.').at(-1));
+    const label=LABEL_OF[path]||humanize(path.split('.').at(-1));
     const ctrl=parameterControl(spec,valueOf(s,path,spec),{label,onInput:v=>setTune(path,v,false),onChange:v=>setTune(path,v,true)});
     // The toolkit builds on/off switches without a visible label (the field shows it), so the input gets its name here.
     if(ctrl.input&&!ctrl.input.hasAttribute('aria-label'))ctrl.input.setAttribute('aria-label',label);

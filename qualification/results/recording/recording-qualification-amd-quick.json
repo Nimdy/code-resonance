@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-26T02:27:26.609Z",
+  "at": "2026-10-27T10:10:52.852Z",
   "gpu": "amd",
   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
   "seconds": 8,
@@ -10,7 +10,7 @@
     {
       "name": "Stellar Forge (built-in world): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
       "pass": true,
-      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 3.59 MB"
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 3.79 MB"
     },
     {
       "name": "Stellar Forge (built-in world): encoded dimensions are the selected recording size (720p)",
@@ -20,32 +20,32 @@
     {
       "name": "Stellar Forge (built-in world): duration matches the time recorded",
       "pass": true,
-      "detail": "video 7.832 s, audio 7.86 s, recorded 7.9 s by the player (8.0 s including start-up)"
+      "detail": "video 7.835 s, audio 7.98 s, recorded 8.0 s by the player (8.1 s including start-up)"
     },
     {
       "name": "Stellar Forge (built-in world): a steady video stream after start-up (no interval over 2.5× the median or 500 ms)",
       "pass": true,
-      "detail": "23.88 fps in the file (player drew 26.8), frame interval median 39 ms, p95 57 ms, max 161 ms (start-up 121 ms), 0 gaps > 250 ms"
+      "detail": "28.72 fps in the file (player drew 32.7), frame interval median 31 ms, p95 62 ms, max 65 ms (start-up 64 ms), 0 gaps > 250 ms"
     },
     {
       "name": "Stellar Forge (built-in world): the picture is a living world (not black, not frozen)",
       "pass": true,
-      "detail": "mean luma 54.3, 99 % of frames change"
+      "detail": "mean luma 57.8, 99 % of frames change"
     },
     {
       "name": "Stellar Forge (built-in world): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
       "pass": true,
-      "detail": "sound 7.86 s for 7.832 s of video; music mean -52.8 dBFS (rests: 24 % below -60 dB, longest 1850 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+      "detail": "sound 7.98 s for 7.835 s of video; music mean -31.3 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
     },
     {
       "name": "Stellar Forge (built-in world): finalised promptly and named without project details",
       "pass": true,
-      "detail": "8 ms · code-resonance-c6c876a59a-1792981592932.webm"
+      "detail": "9 ms · code-resonance-c6c876a59a-1793095803354.webm"
     },
     {
       "name": "Stellar Forge (built-in world): functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)",
       "pass": true,
-      "detail": "1 markers, 1 flashes, 1 chirps; offsets -18…23 ms (sound − picture)"
+      "detail": "1 markers, 1 flashes, 1 chirps; offsets -10…45 ms (sound − picture)"
     },
     {
       "name": "Stellar Forge (built-in world): the player stayed on the world, with no page errors",
@@ -55,7 +55,7 @@
     {
       "name": "Ember Observatory (declarative pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
       "pass": true,
-      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 3.58 MB"
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 4.52 MB"
     },
     {
       "name": "Ember Observatory (declarative pack): encoded dimensions are the selected recording size (720p)",
@@ -65,32 +65,32 @@
     {
       "name": "Ember Observatory (declarative pack): duration matches the time recorded",
       "pass": true,
-      "detail": "video 7.938 s, audio 7.98 s, recorded 8.0 s by the player (8.0 s including start-up)"
+      "detail": "video 7.83 s, audio 7.92 s, recorded 8.0 s by the player (8.0 s including start-up)"
     },
     {
       "name": "Ember Observatory (declarative pack): a steady video stream after start-up (no interval over 2.5× the median or 500 ms)",
       "pass": true,
-      "detail": "21.42 fps in the file (player drew 25.8), frame interval median 41 ms, p95 84 ms, max 194 ms (start-up 126 ms), 0 gaps > 250 ms"
+      "detail": "29.63 fps in the file (player drew 32.6), frame interval median 31 ms, p95 60 ms, max 67 ms (start-up 65 ms), 0 gaps > 250 ms"
     },
     {
       "name": "Ember Observatory (declarative pack): the picture is a living world (not black, not frozen)",
       "pass": true,
-      "detail": "mean luma 55.2, 99 % of frames change"
+      "detail": "mean luma 54.8, 99 % of frames change"
     },
     {
       "name": "Ember Observatory (declarative pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
       "pass": true,
-      "detail": "sound 7.98 s for 7.938 s of video; music mean -31.3 dBFS (rests: 1 % below -60 dB, longest 50 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+      "detail": "sound 7.92 s for 7.83 s of video; music mean -31.7 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
     },
     {
       "name": "Ember Observatory (declarative pack): finalised promptly and named without project details",
       "pass": true,
-      "detail": "10 ms · code-resonance-c6c876a59a-1792981606997.webm"
+      "detail": "6 ms · code-resonance-c6c876a59a-1793095816155.webm"
     },
     {
       "name": "Ember Observatory (declarative pack): functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)",
       "pass": true,
-      "detail": "1 markers, 1 flashes, 1 chirps; offsets 3…44 ms (sound − picture)"
+      "detail": "1 markers, 1 flashes, 1 chirps; offsets -7…22 ms (sound − picture)"
     },
     {
       "name": "Ember Observatory (declarative pack): the player stayed on the world, with no page errors",
@@ -100,7 +100,7 @@
     {
       "name": "Blueprint Cathedral (shader pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
       "pass": true,
-      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 3.62 MB"
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 3.57 MB"
     },
     {
       "name": "Blueprint Cathedral (shader pack): encoded dimensions are the selected recording size (720p)",
@@ -110,32 +110,32 @@
     {
       "name": "Blueprint Cathedral (shader pack): duration matches the time recorded",
       "pass": true,
-      "detail": "video 7.974 s, audio 7.98 s, recorded 8.0 s by the player (8.1 s including start-up)"
+      "detail": "video 7.931 s, audio 7.92 s, recorded 8.0 s by the player (8.0 s including start-up)"
     },
     {
       "name": "Blueprint Cathedral (shader pack): a steady video stream after start-up (no interval over 2.5× the median or 500 ms)",
       "pass": true,
-      "detail": "29.97 fps in the file (player drew 59.9), frame interval median 33 ms, p95 38 ms, max 46 ms (start-up 41 ms), 0 gaps > 250 ms"
+      "detail": "30.13 fps in the file (player drew 60.1), frame interval median 33 ms, p95 34 ms, max 35 ms (start-up 35 ms), 0 gaps > 250 ms"
     },
     {
       "name": "Blueprint Cathedral (shader pack): the picture is a living world (not black, not frozen)",
       "pass": true,
-      "detail": "mean luma 52.7, 99 % of frames change"
+      "detail": "mean luma 53.1, 99 % of frames change"
     },
     {
       "name": "Blueprint Cathedral (shader pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
       "pass": true,
-      "detail": "sound 7.98 s for 7.974 s of video; music mean -31 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+      "detail": "sound 7.92 s for 7.931 s of video; music mean -31.3 dBFS (rests: 1 % below -60 dB, longest 50 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
     },
     {
       "name": "Blueprint Cathedral (shader pack): finalised promptly and named without project details",
       "pass": true,
-      "detail": "9 ms · code-resonance-c6c876a59a-1792981620009.webm"
+      "detail": "5 ms · code-resonance-c6c876a59a-1793095828497.webm"
     },
     {
       "name": "Blueprint Cathedral (shader pack): functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)",
       "pass": true,
-      "detail": "1 markers, 1 flashes, 1 chirps; offsets -23…10 ms (sound − picture)"
+      "detail": "1 markers, 1 flashes, 1 chirps; offsets 2…36 ms (sound − picture)"
     },
     {
       "name": "Blueprint Cathedral (shader pack): the player stayed on the world, with no page errors",
@@ -145,7 +145,7 @@
     {
       "name": "Cymatic Field (executable world pack): a WebM file with a VP8/VP9 video stream and an Opus audio stream",
       "pass": true,
-      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 4.68 MB"
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 4.49 MB"
     },
     {
       "name": "Cymatic Field (executable world pack): encoded dimensions are the selected recording size (720p)",
@@ -155,32 +155,32 @@
     {
       "name": "Cymatic Field (executable world pack): duration matches the time recorded",
       "pass": true,
-      "detail": "video 7.979 s, audio 7.98 s, recorded 8.0 s by the player (8.1 s including start-up)"
+      "detail": "video 7.931 s, audio 7.92 s, recorded 8.0 s by the player (8.0 s including start-up)"
     },
     {
       "name": "Cymatic Field (executable world pack): a steady video stream after start-up (no interval over 2.5× the median or 500 ms)",
       "pass": true,
-      "detail": "29.95 fps in the file (player drew 59.9), frame interval median 33 ms, p95 38 ms, max 44 ms (start-up 40 ms), 0 gaps > 250 ms"
+      "detail": "30.13 fps in the file (player drew 60.1), frame interval median 33 ms, p95 35 ms, max 36 ms (start-up 36 ms), 0 gaps > 250 ms"
     },
     {
       "name": "Cymatic Field (executable world pack): the picture is a living world (not black, not frozen)",
       "pass": true,
-      "detail": "mean luma 38.2, 99 % of frames change"
+      "detail": "mean luma 38.1, 99 % of frames change"
     },
     {
       "name": "Cymatic Field (executable world pack): sound is present and continuous for the whole recording (no gap in the qualification pilot)",
       "pass": true,
-      "detail": "sound 7.98 s for 7.979 s of video; music mean -31 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+      "detail": "sound 7.92 s for 7.931 s of video; music mean -31.3 dBFS (rests: 1 % below -60 dB, longest 50 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
     },
     {
       "name": "Cymatic Field (executable world pack): finalised promptly and named without project details",
       "pass": true,
-      "detail": "10 ms · code-resonance-c6c876a59a-1792981632976.webm"
+      "detail": "7 ms · code-resonance-c6c876a59a-1793095840535.webm"
     },
     {
       "name": "Cymatic Field (executable world pack): functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)",
       "pass": true,
-      "detail": "1 markers, 1 flashes, 1 chirps; offsets 1…35 ms (sound − picture)"
+      "detail": "1 markers, 1 flashes, 1 chirps; offsets 2…36 ms (sound − picture)"
     },
     {
       "name": "Cymatic Field (executable world pack): the player stayed on the world, with no page errors",
@@ -190,7 +190,7 @@
     {
       "name": "Cymatic Field (executable world pack) at 720p: a WebM file with a VP8/VP9 video stream and an Opus audio stream",
       "pass": true,
-      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 4.68 MB"
+      "detail": "matroska,webm, · vp9 1280×720 · opus 48000 Hz · 4.50 MB"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: encoded dimensions are the selected recording size (720p)",
@@ -200,32 +200,32 @@
     {
       "name": "Cymatic Field (executable world pack) at 720p: duration matches the time recorded",
       "pass": true,
-      "detail": "video 7.947 s, audio 7.92 s, recorded 8.0 s by the player (8.0 s including start-up)"
+      "detail": "video 7.946 s, audio 7.92 s, recorded 8.0 s by the player (8.0 s including start-up)"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: a steady video stream after start-up (no interval over 2.5× the median or 500 ms)",
       "pass": true,
-      "detail": "29.95 fps in the file (player drew 60.0), frame interval median 33 ms, p95 41 ms, max 50 ms (start-up 47 ms), 0 gaps > 250 ms"
+      "detail": "30.08 fps in the file (player drew 60.0), frame interval median 33 ms, p95 34 ms, max 35 ms (start-up 34 ms), 0 gaps > 250 ms"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: the picture is a living world (not black, not frozen)",
       "pass": true,
-      "detail": "mean luma 37.6, 99 % of frames change"
+      "detail": "mean luma 37.5, 99 % of frames change"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: sound is present and continuous for the whole recording (no gap in the qualification pilot)",
       "pass": true,
-      "detail": "sound 7.92 s for 7.947 s of video; music mean -30.2 dBFS (rests: 1 % below -60 dB, longest 100 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
+      "detail": "sound 7.92 s for 7.946 s of video; music mean -30.2 dBFS (rests: 1 % below -60 dB, longest 50 ms); pilot -55.2 dBFS, 0 gaps, longest 0 ms"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: finalised promptly and named without project details",
       "pass": true,
-      "detail": "7 ms · code-resonance-c6c876a59a-1792981645419.webm"
+      "detail": "7 ms · code-resonance-c6c876a59a-1793095852182.webm"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: functional sync: every marker found in picture and sound, its offset interval within ±250 ms (± one frame interval)",
       "pass": true,
-      "detail": "1 markers, 1 flashes, 1 chirps; offsets -12…22 ms (sound − picture)"
+      "detail": "1 markers, 1 flashes, 1 chirps; offsets -13…21 ms (sound − picture)"
     },
     {
       "name": "Cymatic Field (executable world pack) at 720p: no page errors",
@@ -248,29 +248,29 @@
             "sampleRate": 48000,
             "layout": "stereo"
           },
-          "frames": 188,
-          "videoDuration": 7.832,
-          "fps": 23.88,
+          "frames": 226,
+          "videoDuration": 7.835,
+          "fps": 28.72,
           "frameInterval": {
-            "median": 39,
-            "p95": 57,
-            "max": 161
+            "median": 31,
+            "p95": 62,
+            "max": 65
           },
           "longGaps": 0,
           "gapsAt": [],
-          "startupMaxMs": 121,
-          "maxIntervalAfterStartupMs": 161,
-          "changingFrames": 0.989,
-          "meanLuma": 54.3,
-          "audioDuration": 7.86,
-          "audioMeanDb": -52.8,
-          "silentShare": 0.236,
-          "longestSilenceMs": 1850,
+          "startupMaxMs": 64,
+          "maxIntervalAfterStartupMs": 65,
+          "changingFrames": 0.991,
+          "meanLuma": 57.8,
+          "audioDuration": 7.98,
+          "audioMeanDb": -31.3,
+          "silentShare": 0.013,
+          "longestSilenceMs": 100,
           "continuity": {
             "pilotDb": -55.2,
             "gaps": 0,
             "longestGapMs": 0,
-            "windows": 726
+            "windows": 738
           },
           "sync": {
             "method": "v2: green flash + 3-6 kHz chirp, matched filter",
@@ -278,19 +278,19 @@
             "chirps": 1,
             "pairs": [
               {
-                "flash": 2.255,
-                "prevFrame": 2.214,
-                "chirp": 2.2375,
-                "r": 0.833,
-                "offsetMs": -18,
+                "flash": 2.247,
+                "prevFrame": 2.192,
+                "chirp": 2.2374,
+                "r": 0.82,
+                "offsetMs": -10,
                 "offsetRangeMs": [
-                  -18,
-                  23
+                  -10,
+                  45
                 ]
               }
             ],
-            "meanOffsetMs": -18,
-            "maxAbsOffsetMs": 18,
+            "meanOffsetMs": -10,
+            "maxAbsOffsetMs": 10,
             "spreadMs": 0,
             "unpaired": 0,
             "extraChirps": 0
@@ -298,85 +298,86 @@
         },
         "player": {
           "mimeType": "video/webm;codecs=vp9,opus",
-          "durationMs": 7874,
-          "frames": 211,
-          "bytes": 3769018,
+          "durationMs": 7988,
+          "frames": 229,
+          "presented": 261,
+          "bytes": 3976628,
           "audio": true,
           "audioLost": false,
           "audioLostMs": 0,
           "reason": "stopped",
           "size": "1280x720",
           "slowWarning": false,
-          "file": "code-resonance-c6c876a59a-1792981592932.webm",
-          "at": 1792981592932
+          "file": "code-resonance-c6c876a59a-1793095803354.webm",
+          "at": 1793095803354
         },
-        "finalizeMs": 8,
+        "finalizeMs": 9,
         "cpuPercent": {
           "browser": 0.5,
-          "renderer": 62.9,
-          "GPU": 13,
-          "network.mojom.NetworkService": 0,
+          "renderer": 71.5,
+          "GPU": 13.6,
+          "network.mojom.NetworkService": 0.1,
           "audio.mojom.AudioService": 0.5
         },
         "heapMb": {
-          "start": 7.6,
-          "end": 9.7
+          "start": 13.6,
+          "end": 10.9
         },
         "processMb": {
           "start": {
-            "node": 208,
-            "browser": 98,
-            "gpu": 356,
-            "renderer": 149,
-            "other": 150
+            "node": 204,
+            "browser": 92,
+            "gpu": 367,
+            "renderer": 191,
+            "other": 148
           },
           "end": {
-            "node": 194,
-            "browser": 105,
-            "gpu": 372,
-            "renderer": 200,
-            "other": 209
+            "node": 171,
+            "browser": 101,
+            "gpu": 377,
+            "renderer": 218,
+            "other": 206
           }
         },
         "samples": [
           {
-            "t": 147,
-            "heapMb": 7.1,
+            "t": 103,
+            "heapMb": 15.9,
             "frames": 1,
             "bytes": 0,
             "active": true,
-            "gpuMs": 10.85,
+            "gpuMs": 10.78,
             "quality": 0,
             "transport": null
           },
           {
-            "t": 2166,
-            "heapMb": 9.3,
-            "frames": 49,
-            "bytes": 673381,
+            "t": 2133,
+            "heapMb": 11.6,
+            "frames": 57,
+            "bytes": 327623,
             "active": true,
-            "gpuMs": 11.31,
+            "gpuMs": 11.92,
             "quality": 0,
             "transport": null
           },
           {
-            "t": 4185,
-            "heapMb": 9.9,
-            "frames": 96,
-            "bytes": 1666989,
+            "t": 4148,
+            "heapMb": 10.2,
+            "frames": 111,
+            "bytes": 1297457,
             "active": true,
-            "gpuMs": 10.58,
-            "quality": 1,
+            "gpuMs": 12.04,
+            "quality": 0,
             "transport": null
           },
           {
-            "t": 6202,
-            "heapMb": 9.7,
-            "frames": 146,
-            "bytes": 2297498,
+            "t": 6167,
+            "heapMb": 10.9,
+            "frames": 171,
+            "bytes": 2373191,
             "active": true,
-            "gpuMs": 9.55,
-            "quality": 1,
+            "gpuMs": 12.42,
+            "quality": 0,
             "transport": null
           }
         ]
@@ -394,29 +395,29 @@
             "sampleRate": 48000,
             "layout": "stereo"
           },
-          "frames": 171,
-          "videoDuration": 7.938,
-          "fps": 21.42,
+          "frames": 233,
+          "videoDuration": 7.83,
+          "fps": 29.63,
           "frameInterval": {
-            "median": 41,
-            "p95": 84,
-            "max": 194
+            "median": 31,
+            "p95": 60,
+            "max": 67
           },
           "longGaps": 0,
           "gapsAt": [],
-          "startupMaxMs": 126,
-          "maxIntervalAfterStartupMs": 194,
-          "changingFrames": 0.988,
-          "meanLuma": 55.2,
-          "audioDuration": 7.98,
-          "audioMeanDb": -31.3,
-          "silentShare": 0.006,
-          "longestSilenceMs": 50,
+          "startupMaxMs": 65,
+          "maxIntervalAfterStartupMs": 67,
+          "changingFrames": 0.991,
+          "meanLuma": 54.8,
+          "audioDuration": 7.92,
+          "audioMeanDb": -31.7,
+          "silentShare": 0.013,
+          "longestSilenceMs": 100,
           "continuity": {
             "pilotDb": -55.2,
             "gaps": 0,
             "longestGapMs": 0,
-            "windows": 738
+            "windows": 732
           },
           "sync": {
             "method": "v2: green flash + 3-6 kHz chirp, matched filter",
@@ -424,19 +425,19 @@
             "chirps": 1,
             "pairs": [
               {
-                "flash": 2.33,
-                "prevFrame": 2.289,
-                "chirp": 2.3335,
-                "r": 0.837,
-                "offsetMs": 3,
+                "flash": 2.337,
+                "prevFrame": 2.308,
+                "chirp": 2.3303,
+                "r": 0.803,
+                "offsetMs": -7,
                 "offsetRangeMs": [
-                  3,
-                  44
+                  -7,
+                  22
                 ]
               }
             ],
-            "meanOffsetMs": 3,
-            "maxAbsOffsetMs": 3,
+            "meanOffsetMs": -7,
+            "maxAbsOffsetMs": 7,
             "spreadMs": 0,
             "unpaired": 0,
             "extraChirps": 0
@@ -444,85 +445,86 @@
         },
         "player": {
           "mimeType": "video/webm;codecs=vp9,opus",
-          "durationMs": 7978,
-          "frames": 206,
-          "bytes": 3753022,
+          "durationMs": 7971,
+          "frames": 236,
+          "presented": 260,
+          "bytes": 4743277,
           "audio": true,
           "audioLost": false,
           "audioLostMs": 0,
           "reason": "stopped",
           "size": "1280x720",
           "slowWarning": false,
-          "file": "code-resonance-c6c876a59a-1792981606997.webm",
-          "at": 1792981606997
+          "file": "code-resonance-c6c876a59a-1793095816155.webm",
+          "at": 1793095816155
         },
-        "finalizeMs": 10,
+        "finalizeMs": 6,
         "cpuPercent": {
           "browser": 0.4,
-          "renderer": 60.3,
-          "GPU": 12.4,
+          "renderer": 59.7,
+          "GPU": 12.8,
           "network.mojom.NetworkService": 0,
           "audio.mojom.AudioService": 0.4
         },
         "heapMb": {
-          "start": 9.2,
-          "end": 9.6
+          "start": 10.6,
+          "end": 7.7
         },
         "processMb": {
           "start": {
-            "node": 224,
-            "browser": 101,
-            "gpu": 357,
-            "renderer": 147,
-            "other": 210
+            "node": 192,
+            "browser": 97,
+            "gpu": 359,
+            "renderer": 145,
+            "other": 206
           },
           "end": {
-            "node": 225,
-            "browser": 106,
-            "gpu": 377,
-            "renderer": 203,
-            "other": 210
+            "node": 193,
+            "browser": 102,
+            "gpu": 374,
+            "renderer": 204,
+            "other": 206
           }
         },
         "samples": [
           {
-            "t": 74,
-            "heapMb": 6.6,
-            "frames": 1,
+            "t": 55,
+            "heapMb": 10.9,
+            "frames": 0,
             "bytes": 0,
             "active": true,
-            "gpuMs": 10.66,
+            "gpuMs": 10.26,
             "quality": 0,
             "transport": null
           },
           {
-            "t": 2092,
-            "heapMb": 9.1,
-            "frames": 48,
-            "bytes": 198652,
+            "t": 2073,
+            "heapMb": 7.5,
+            "frames": 59,
+            "bytes": 369511,
             "active": true,
-            "gpuMs": 11.44,
+            "gpuMs": 11.84,
             "quality": 0,
             "transport": null
           },
           {
-            "t": 4113,
+            "t": 4090,
             "heapMb": 10,
-            "frames": 96,
-            "bytes": 1170290,
+            "frames": 117,
+            "bytes": 1488200,
             "active": true,
-            "gpuMs": 11.56,
-            "quality": 1,
+            "gpuMs": 12.95,
+            "quality": 0,
             "transport": null
           },
           {
-            "t": 6130,
-            "heapMb": 9.6,
-            "frames": 145,
-            "bytes": 2112535,
+            "t": 6105,
+            "heapMb": 7.7,
+            "frames": 178,
+            "bytes": 2908438,
             "active": true,
-            "gpuMs": 10.14,
-            "quality": 1,
+            "gpuMs": 12.93,
+            "quality": 0,
             "transport": null
           }
         ]
@@ -541,28 +543,28 @@
             "layout": "stereo"
           },
           "frames": 240,
-          "videoDuration": 7.974,
-          "fps": 29.97,
+          "videoDuration": 7.931,
+          "fps": 30.13,
           "frameInterval": {
             "median": 33,
-            "p95": 38,
-            "max": 46
+            "p95": 34,
+            "max": 35
           },
           "longGaps": 0,
           "gapsAt": [],
-          "startupMaxMs": 41,
-          "maxIntervalAfterStartupMs": 46,
-          "changingFrames": 0.992,
-          "meanLuma": 52.7,
-          "audioDuration": 7.98,
-          "audioMeanDb": -31,
-          "silentShare": 0.013,
-          "longestSilenceMs": 100,
+          "startupMaxMs": 35,
+          "maxIntervalAfterStartupMs": 35,
+          "changingFrames": 0.987,
+          "meanLuma": 53.1,
+          "audioDuration": 7.92,
+          "audioMeanDb": -31.3,
+          "silentShare": 0.006,
+          "longestSilenceMs": 50,
           "continuity": {
             "pilotDb": -55.2,
             "gaps": 0,
             "longestGapMs": 0,
-            "windows": 738
+            "windows": 732
           },
           "sync": {
             "method": "v2: green flash + 3-6 kHz chirp, matched filter",
@@ -570,19 +572,19 @@
             "chirps": 1,
             "pairs": [
               {
-                "flash": 2.24,
-                "prevFrame": 2.207,
-                "chirp": 2.2174,
-                "r": 0.821,
-                "offsetMs": -23,
+                "flash": 2.332,
+                "prevFrame": 2.298,
+                "chirp": 2.3336,
+                "r": 0.834,
+                "offsetMs": 2,
                 "offsetRangeMs": [
-                  -23,
-                  10
+                  2,
+                  36
                 ]
               }
             ],
-            "meanOffsetMs": -23,
-            "maxAbsOffsetMs": 23,
+            "meanOffsetMs": 2,
+            "maxAbsOffsetMs": 2,
             "spreadMs": 0,
             "unpaired": 0,
             "extraChirps": 0
@@ -590,65 +592,66 @@
         },
         "player": {
           "mimeType": "video/webm;codecs=vp9,opus",
-          "durationMs": 7991,
-          "frames": 479,
-          "bytes": 3796732,
+          "durationMs": 7970,
+          "frames": 240,
+          "presented": 479,
+          "bytes": 3742503,
           "audio": true,
           "audioLost": false,
           "audioLostMs": 0,
           "reason": "stopped",
           "size": "1280x720",
           "slowWarning": false,
-          "file": "code-resonance-c6c876a59a-1792981620009.webm",
-          "at": 1792981620009
+          "file": "code-resonance-c6c876a59a-1793095828497.webm",
+          "at": 1793095828497
         },
-        "finalizeMs": 9,
+        "finalizeMs": 5,
         "cpuPercent": {
-          "browser": 0.2,
-          "renderer": 77.8,
-          "GPU": 28.7,
+          "browser": 0.4,
+          "renderer": 67.1,
+          "GPU": 26.3,
           "network.mojom.NetworkService": 0,
-          "audio.mojom.AudioService": 0.2
+          "audio.mojom.AudioService": 0.4
         },
         "heapMb": {
-          "start": 4.5,
-          "end": 3.9
+          "start": 4.1,
+          "end": 3.8
         },
         "processMb": {
           "start": {
-            "node": 226,
-            "browser": 102,
-            "gpu": 330,
-            "renderer": 148,
-            "other": 210
+            "node": 199,
+            "browser": 98,
+            "gpu": 331,
+            "renderer": 144,
+            "other": 206
           },
           "end": {
-            "node": 224,
-            "browser": 106,
-            "gpu": 336,
+            "node": 199,
+            "browser": 102,
+            "gpu": 337,
             "renderer": 205,
-            "other": 210
+            "other": 206
           }
         },
         "samples": [
           {
-            "t": 91,
-            "heapMb": 5.6,
-            "frames": 0,
+            "t": 58,
+            "heapMb": 4.4,
+            "frames": 1,
             "bytes": 0,
             "active": true,
-            "gpuMs": 5.61,
+            "gpuMs": 5.41,
             "quality": 0,
             "transport": {
-              "semantic": 58,
+              "semantic": 57,
               "sent": 186,
               "acknowledged": 185,
-              "skippedHere": 24,
+              "skippedHere": 14,
               "skippedInFrame": 0,
-              "latencyMs": 3.1,
-              "maxLatencyMs": 459,
-              "renderMs": 1.34,
-              "maxRenderMs": 445.2,
+              "latencyMs": 1.4,
+              "maxLatencyMs": 242.9,
+              "renderMs": 0.62,
+              "maxRenderMs": 231.6,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -656,47 +659,23 @@
             }
           },
           {
-            "t": 2111,
-            "heapMb": 4.3,
-            "frames": 121,
-            "bytes": 389163,
-            "active": true,
-            "gpuMs": 5.63,
-            "quality": 0,
-            "transport": {
-              "semantic": 102,
-              "sent": 306,
-              "acknowledged": 306,
-              "skippedHere": 25,
-              "skippedInFrame": 0,
-              "latencyMs": 3.2,
-              "maxLatencyMs": 459,
-              "renderMs": 1.95,
-              "maxRenderMs": 445.2,
-              "queue": 0,
-              "maxQueue": 0,
-              "films": 0,
-              "inFlight": 0
-            }
-          },
-          {
-            "t": 4124,
+            "t": 2075,
             "heapMb": 4.4,
-            "frames": 242,
-            "bytes": 1268018,
+            "frames": 61,
+            "bytes": 382265,
             "active": true,
-            "gpuMs": 6.16,
+            "gpuMs": 5.47,
             "quality": 0,
             "transport": {
-              "semantic": 205,
-              "sent": 427,
-              "acknowledged": 427,
-              "skippedHere": 25,
+              "semantic": 101,
+              "sent": 307,
+              "acknowledged": 307,
+              "skippedHere": 14,
               "skippedInFrame": 0,
-              "latencyMs": 1.9,
-              "maxLatencyMs": 459,
-              "renderMs": 1.09,
-              "maxRenderMs": 445.2,
+              "latencyMs": 1.8,
+              "maxLatencyMs": 242.9,
+              "renderMs": 1,
+              "maxRenderMs": 231.6,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -704,23 +683,47 @@
             }
           },
           {
-            "t": 6165,
-            "heapMb": 3.9,
-            "frames": 365,
-            "bytes": 2317861,
+            "t": 4091,
+            "heapMb": 4.4,
+            "frames": 122,
+            "bytes": 1257072,
             "active": true,
-            "gpuMs": 6.12,
+            "gpuMs": 6.13,
             "quality": 0,
             "transport": {
-              "semantic": 240,
+              "semantic": 204,
+              "sent": 428,
+              "acknowledged": 428,
+              "skippedHere": 14,
+              "skippedInFrame": 0,
+              "latencyMs": 1.5,
+              "maxLatencyMs": 242.9,
+              "renderMs": 0.94,
+              "maxRenderMs": 231.6,
+              "queue": 0,
+              "maxQueue": 0,
+              "films": 0,
+              "inFlight": 0
+            }
+          },
+          {
+            "t": 6106,
+            "heapMb": 3.8,
+            "frames": 182,
+            "bytes": 2290723,
+            "active": true,
+            "gpuMs": 6.07,
+            "quality": 0,
+            "transport": {
+              "semantic": 239,
               "sent": 549,
               "acknowledged": 549,
-              "skippedHere": 26,
+              "skippedHere": 14,
               "skippedInFrame": 0,
-              "latencyMs": 1.7,
-              "maxLatencyMs": 459,
-              "renderMs": 0.79,
-              "maxRenderMs": 445.2,
+              "latencyMs": 1.5,
+              "maxLatencyMs": 242.9,
+              "renderMs": 0.91,
+              "maxRenderMs": 231.6,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -743,28 +746,28 @@
             "layout": "stereo"
           },
           "frames": 240,
-          "videoDuration": 7.979,
-          "fps": 29.95,
+          "videoDuration": 7.931,
+          "fps": 30.13,
           "frameInterval": {
             "median": 33,
-            "p95": 38,
-            "max": 44
+            "p95": 35,
+            "max": 36
           },
           "longGaps": 0,
           "gapsAt": [],
-          "startupMaxMs": 40,
-          "maxIntervalAfterStartupMs": 44,
+          "startupMaxMs": 36,
+          "maxIntervalAfterStartupMs": 36,
           "changingFrames": 0.987,
-          "meanLuma": 38.2,
-          "audioDuration": 7.98,
-          "audioMeanDb": -31,
-          "silentShare": 0.013,
-          "longestSilenceMs": 100,
+          "meanLuma": 38.1,
+          "audioDuration": 7.92,
+          "audioMeanDb": -31.3,
+          "silentShare": 0.006,
+          "longestSilenceMs": 50,
           "continuity": {
             "pilotDb": -55.2,
             "gaps": 0,
             "longestGapMs": 0,
-            "windows": 738
+            "windows": 732
           },
           "sync": {
             "method": "v2: green flash + 3-6 kHz chirp, matched filter",
@@ -772,19 +775,19 @@
             "chirps": 1,
             "pairs": [
               {
-                "flash": 2.24,
-                "prevFrame": 2.206,
-                "chirp": 2.2406,
+                "flash": 2.332,
+                "prevFrame": 2.298,
+                "chirp": 2.3336,
                 "r": 0.834,
-                "offsetMs": 1,
+                "offsetMs": 2,
                 "offsetRangeMs": [
-                  1,
-                  35
+                  2,
+                  36
                 ]
               }
             ],
-            "meanOffsetMs": 1,
-            "maxAbsOffsetMs": 1,
+            "meanOffsetMs": 2,
+            "maxAbsOffsetMs": 2,
             "spreadMs": 0,
             "unpaired": 0,
             "extraChirps": 0
@@ -792,65 +795,66 @@
         },
         "player": {
           "mimeType": "video/webm;codecs=vp9,opus",
-          "durationMs": 8007,
-          "frames": 480,
-          "bytes": 4905751,
+          "durationMs": 7976,
+          "frames": 240,
+          "presented": 479,
+          "bytes": 4705793,
           "audio": true,
           "audioLost": false,
           "audioLostMs": 0,
           "reason": "stopped",
           "size": "1280x720",
           "slowWarning": false,
-          "file": "code-resonance-c6c876a59a-1792981632976.webm",
-          "at": 1792981632976
+          "file": "code-resonance-c6c876a59a-1793095840535.webm",
+          "at": 1793095840535
         },
-        "finalizeMs": 10,
+        "finalizeMs": 7,
         "cpuPercent": {
           "browser": 0.4,
-          "renderer": 76.9,
-          "GPU": 26,
-          "network.mojom.NetworkService": 0,
+          "renderer": 67.1,
+          "GPU": 24,
+          "network.mojom.NetworkService": 0.1,
           "audio.mojom.AudioService": 0.5
         },
         "heapMb": {
-          "start": 4.6,
-          "end": 3.7
+          "start": 4.4,
+          "end": 3.8
         },
         "processMb": {
           "start": {
-            "node": 225,
-            "browser": 102,
+            "node": 200,
+            "browser": 98,
             "gpu": 312,
-            "renderer": 145,
-            "other": 210
+            "renderer": 142,
+            "other": 207
           },
           "end": {
-            "node": 225,
-            "browser": 108,
-            "gpu": 317,
-            "renderer": 203,
-            "other": 210
+            "node": 191,
+            "browser": 92,
+            "gpu": 315,
+            "renderer": 197,
+            "other": 159
           }
         },
         "samples": [
           {
-            "t": 85,
+            "t": 60,
             "heapMb": 4.3,
             "frames": 1,
             "bytes": 0,
             "active": true,
-            "gpuMs": 4.45,
+            "gpuMs": 3.67,
             "quality": 0,
             "transport": {
               "semantic": 57,
-              "sent": 187,
-              "acknowledged": 186,
-              "skippedHere": 8,
+              "sent": 186,
+              "acknowledged": 185,
+              "skippedHere": 6,
               "skippedInFrame": 0,
-              "latencyMs": 4,
-              "maxLatencyMs": 117.9,
-              "renderMs": 1.65,
-              "maxRenderMs": 110.5,
+              "latencyMs": 1.5,
+              "maxLatencyMs": 110,
+              "renderMs": 0.43,
+              "maxRenderMs": 101.4,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -858,23 +862,23 @@
             }
           },
           {
-            "t": 2128,
-            "heapMb": 4.3,
-            "frames": 123,
-            "bytes": 1075454,
+            "t": 2079,
+            "heapMb": 4.5,
+            "frames": 61,
+            "bytes": 395187,
             "active": true,
-            "gpuMs": 4.7,
+            "gpuMs": 3.51,
             "quality": 0,
             "transport": {
               "semantic": 101,
-              "sent": 308,
-              "acknowledged": 308,
-              "skippedHere": 9,
+              "sent": 307,
+              "acknowledged": 307,
+              "skippedHere": 6,
               "skippedInFrame": 0,
-              "latencyMs": 2.2,
-              "maxLatencyMs": 117.9,
-              "renderMs": 0.96,
-              "maxRenderMs": 110.5,
+              "latencyMs": 1.4,
+              "maxLatencyMs": 110,
+              "renderMs": 0.81,
+              "maxRenderMs": 101.4,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -882,23 +886,23 @@
             }
           },
           {
-            "t": 4144,
-            "heapMb": 4.3,
-            "frames": 244,
-            "bytes": 1686777,
+            "t": 4097,
+            "heapMb": 4.4,
+            "frames": 122,
+            "bytes": 1611308,
             "active": true,
-            "gpuMs": 3.55,
+            "gpuMs": 3.66,
             "quality": 0,
             "transport": {
               "semantic": 204,
-              "sent": 429,
-              "acknowledged": 429,
-              "skippedHere": 9,
+              "sent": 428,
+              "acknowledged": 428,
+              "skippedHere": 6,
               "skippedInFrame": 0,
-              "latencyMs": 1.4,
-              "maxLatencyMs": 117.9,
-              "renderMs": 0.65,
-              "maxRenderMs": 110.5,
+              "latencyMs": 1.1,
+              "maxLatencyMs": 110,
+              "renderMs": 0.64,
+              "maxRenderMs": 101.4,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -906,23 +910,23 @@
             }
           },
           {
-            "t": 6176,
-            "heapMb": 3.7,
-            "frames": 366,
-            "bytes": 3092832,
+            "t": 6114,
+            "heapMb": 3.8,
+            "frames": 182,
+            "bytes": 2991246,
             "active": true,
-            "gpuMs": 4.08,
+            "gpuMs": 4.05,
             "quality": 0,
             "transport": {
               "semantic": 239,
-              "sent": 551,
-              "acknowledged": 551,
-              "skippedHere": 9,
+              "sent": 549,
+              "acknowledged": 549,
+              "skippedHere": 6,
               "skippedInFrame": 0,
-              "latencyMs": 1.5,
-              "maxLatencyMs": 117.9,
-              "renderMs": 0.68,
-              "maxRenderMs": 110.5,
+              "latencyMs": 1.4,
+              "maxLatencyMs": 110,
+              "renderMs": 0.78,
+              "maxRenderMs": 101.4,
               "queue": 0,
               "maxQueue": 0,
               "films": 0,
@@ -941,26 +945,27 @@
           "width": 1280,
           "height": 720
         },
-        "fps": 29.95,
+        "fps": 30.08,
         "frameInterval": {
           "median": 33,
-          "p95": 41,
-          "max": 50
+          "p95": 34,
+          "max": 35
         },
-        "maxAbsOffsetMs": 12,
+        "maxAbsOffsetMs": 13,
         "player": {
           "mimeType": "video/webm;codecs=vp9,opus",
-          "durationMs": 7972,
-          "frames": 478,
-          "bytes": 4903772,
+          "durationMs": 7971,
+          "frames": 239,
+          "presented": 478,
+          "bytes": 4721784,
           "audio": true,
           "audioLost": false,
           "audioLostMs": 0,
           "reason": "stopped",
           "size": "1280x720",
           "slowWarning": false,
-          "file": "code-resonance-c6c876a59a-1792981645419.webm",
-          "at": 1792981645419
+          "file": "code-resonance-c6c876a59a-1793095852182.webm",
+          "at": 1793095852182
         }
       }
     }

@@ -116,6 +116,7 @@ export function createModel({speed=1,tempo=92}={}){
     // Replays and films pin the origin to the recording's start, so ambient motion at a performance time does not
     // depend on where playback first seeked.
     setEpoch(t){if(Number.isFinite(t)&&t>1e11&&t!==epoch){epoch=t;version++;}},
+    clearEpoch(){if(epoch!==null){epoch=null;version++;}},
     get epoch(){return epoch??0;},get version(){return version;},get speed(){return speed;},
     // A module's district is alive from its first born module; its symbol counts by kind at time t.
     districtBorn(d){let b=Infinity;for(const id of d.members){const m=modules.get(id);if(m)b=Math.min(b,m.born);}return b;},

@@ -131,3 +131,23 @@ test('A failed step up waits three times longer; a level then held through its p
   assert(changes.some(c=>c.reason==='failed-step-up'),JSON.stringify(changes));
   assert.equal(g.level,0,'High once it can be held');assert.equal(g.hold(0),30,'one failure (×3), then held through probation (÷2)');
 });
+// Presents frames like runGpu(), also with the main thread's own work per frame `cpu(level, t)` (ms).
+function runCpu(g,fps,gpu,cpu,seconds,t=0){const end=t+seconds,changes=[];
+  while(t<end){t+=1/fps(g.level,t);const c=g.frame(t,gpu(g.level,t),cpu(g.level,t));if(c)changes.push({...c,at:+t.toFixed(2)});}
+  return {t,changes};}
+test('A GPU timer that misses part of the frame (untimed GPU or presentation work): Auto steps down and does not settle in the slow level',async()=>{
+  const {createQualityGovernor}=await load();const g=createQualityGovernor();
+  // Measured on the AMD integrated GPU (D3D12) at 1920x1080, Stellar Forge: 19 / 21 / 60 / 60 fps by level, the timer
+  // reporting 21 / 17 / 9 / 5 ms, the main thread 3 ms.
+  const fps=l=>[19,21,60,60][l],gpu=l=>[21,17,9.3,5.1][l],cpu=()=>3.2;
+  let {t,changes}=runCpu(g,fps,gpu,cpu,10);
+  assert.deepEqual(changes.map(c=>[c.from,c.to,c.reason]),[[0,2,'slow']]);assert(changes[0].at<=1.5+2.6,`stepped down at ${changes[0].at} s`);
+  assert.equal(g.gpuTimerBlind,true);
+  // Twenty minutes later: still at the level that holds; any attempt to climb went straight back, ever more rarely.
+  ({changes}=runCpu(g,fps,gpu,cpu,1200,t));assert.equal(g.level,2);
+  const ups=changes.filter(c=>c.to<c.from);assert(ups.length<=5,JSON.stringify(changes));
+  for(const u of ups){const back=changes.find(c=>c.at>u.at);assert(back&&back.to===2&&back.at-u.at<=10,`a climb that cannot hold returns within its probation: ${JSON.stringify(changes)}`);}
+  for(let k=2;k<ups.length;k++)assert(ups[k].at-ups[k-1].at>=ups[k-1].at-ups[k-2].at,'attempts are ever rarer');
+  // Where the main thread is what is slow, fewer pixels would not help: the level stays (as without a processor time).
+  const h=createQualityGovernor();({changes}=runCpu(h,()=>20,()=>6,()=>40,60));assert.equal(changes.length,0);assert.equal(h.gpuTimerBlind,false);
+});

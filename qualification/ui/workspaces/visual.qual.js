@@ -220,6 +220,35 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     const conv=await until(async()=>(await B.textContent('.vs-family'))==='Stellar Forge'&&await B.evaluate(()=>window.__worldStats?.()?.family)==='stellar-forge',20000);
     r=await recipe();
     check('the second window converges on the applied identity (change feed)',conv&&await B.evaluate(()=>window.ResonancePlayer.state.recipe.revision)===r.revision,`revision ${r.revision}`);
+    // ---- Digital life: preview, adjust, cancel, apply, reload; a preview never reaches the other window ---------------
+    const lifeOf=page=>page.evaluate(()=>{const l=window.__worldStats?.()?.life;return l?{grammar:l.grammar,alive:l.ecosystem?.alive??0}:null;});
+    // (as a person does: the visible switch, whose label toggles the visually hidden input)
+    const setSwitch=async(page,p,on)=>{const input=page.locator(`.field[data-path="${p}"] input`).first();if((await input.isChecked())!==on)await page.locator(`.field[data-path="${p}"] .switch`).first().click();};
+    r=await recipe();
+    check('a new built-in identity has digital life on (generator v3)',r.genome.life?.enabled===true&&r.recipeVersion===3,JSON.stringify(r.genome.life));
+    check('the stage runs the identity\'s ecosystem',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)),JSON.stringify(await lifeOf(A)));
+    check('the Digital life switch is among the Essentials, named for what it does',await A.locator('.vs-sec-ess .field[data-path="life.enabled"]').count()===1&&(await A.textContent('.vs-sec-ess .field[data-path="life.enabled"]')).includes('Digital life'));
+    check('a Digital life group lists the life controls under their purpose',await A.locator('details[data-purpose="life"] .field[data-path="life.density"]').count()===1&&await A.locator('details[data-purpose="life"] .field[data-path="life.alignment"]').count()===1);
+    await setSwitch(A,'life.enabled',false);await previewing(A);
+    await A.waitForFunction(()=>window.ResonancePlayer.state.preview?.recipe.genome.life?.enabled===false,null,{timeout:20000});
+    const offShown=await until(async()=>(await lifeOf(A))===null,30000);
+    check('turning life off previews the world without its ecosystem',!!offShown);
+    check('the life preview saves nothing and does not reach the other window',(await recipe()).genome.life.enabled===true&&(await lifeOf(B))?.grammar==='stellar-forge',JSON.stringify(await lifeOf(B)));
+    await A.click('#vsCancel');await settled(A);
+    check('Cancel brings the saved ecosystem back',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)));
+    await setSwitch(A,'life.enabled',false);await previewing(A);await A.waitForFunction(()=>!document.querySelector('#vsApply').disabled,null,{timeout:10000});
+    await A.click('#vsApply');await settled(A);r=await recipe();
+    check('Apply saves life off',r.genome.life.enabled===false&&r.tuning?.values?.['life.enabled']===false,JSON.stringify(r.tuning?.values));
+    check('the other window follows the applied identity (no ecosystem)',!!(await until(async()=>(await lifeOf(B))===null,30000)));
+    await setSwitch(A,'life.enabled',true);await previewing(A);await setParam(A,'life.density',.5);
+    await A.waitForFunction(()=>window.ResonancePlayer.state.preview?.recipe.genome.life?.density===.5,null,{timeout:20000});
+    check('previewing life on with a lower population runs the ecosystem',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)));
+    await A.waitForFunction(()=>!document.querySelector('#vsApply').disabled,null,{timeout:10000});
+    await A.click('#vsApply');await settled(A);r=await recipe();
+    check('Apply saves life on and the population value',r.genome.life.enabled===true&&r.genome.life.density===.5,JSON.stringify(r.genome.life));
+    await A.reload();await ready(A);
+    check('after a reload the saved ecosystem runs',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)));
+    await shot(A,'life-1440');
     await B.close();B=null;
     // ---- Classic stages: preview locally, save as the project's stage ------------------------------------------------
     await tab(A,'classic');await card(A,'nexus');

@@ -161,7 +161,7 @@
   // Schedules one recorded window: its frame at the window start, each cue at its own time.
   // Cues before `from` (e.g. earlier in a window that a seek lands inside) join the feed silently, never as a burst.
   function schedule(entry,{animate=true,from=-Infinity}={}){
-    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);});
+    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);living?.applyDelta(entry.graph,entry.start,entry.end);if(entry.frame)living?.observe?.(entry.frame,entry.start);});
     // Canonical intents (engine/intents.js) drive the living world's effects at their own recorded times.
     // Each intent carries its recorded position (window, index): with its timestamp, the canonical order of history.
     (entry.intents||[]).forEach((intent,k)=>{if(intent.ord===undefined)intent.ord=entry.seq*65536+k;const time=clamp(intent.ts,entry.start,Math.max(entry.start,entry.end-1));if(animate&&time>=from)at(time,()=>living?.intent(intent,time));});
@@ -900,7 +900,7 @@
     music.setClock(perfNow,value==='replay'?speedChoice||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
     changed('mode','position');
     if(value==='replay'){void loadReplay().then(()=>{if(mode!=='replay'||!replay)return;seek(replay.start);});}
-    else{replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
+    else{replay=null;etag='';feedCues=[];living?.newPerformance?.();resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
   }
   function play(){const h=history();if(mode!=='replay'||!h.cues.length&&!replay?.entries.length)return false;if(replayPos>=h.end)seek(h.start);playback=true;replayClock=performance.now();changed('position');return true;}
   function pause(){if(!playback)return;replayPos=perfNow();playback=false;changed('position');}
@@ -1001,6 +1001,8 @@
       // A World DNA action as the panel sends it (switching between built-in families and packs rebuilds the world).
       async recipeAction(action){await recipeAction(action);return {family:recipe?.family,remote:!!living?.remote,frames:document.querySelectorAll('iframe.pack-frame').length};},
       setLabels(m){living?.setLabels(m);},
+      // The rendering quality level (qualification: the ecosystem's state must not depend on it).
+      quality(q){living?.setQuality?.(q,false);return living?.performance?.().level??null;},
       memory(){const s=living?.stats();return {geometries:s?.geometries,textures:s?.textures,heap:performance.memory?performance.memory.usedJSHeapSize:null};}
     };
   }else{

@@ -22,7 +22,10 @@
 // (model data: lastHuman / lastAgent); that is observation, never an effect.
 import {THREE,BACKGROUND_VS,clamp,lerp,smooth,easeOut,hash,rand,rng,instancedBuffers,pointBuffers} from './core.js';
 import {growForest,growBloom,buildCrown,crownDecay,SPECIES,SEG,LEAF,GLOW,TPL,CROWN_KEYS,CROWN_VARIANTS} from './biosphere-growth.js';
-import {COMMON,MAXO,SEG_VS,SEG_FS,CROWN_VS,LEAF_VS,LEAF_FS,GLOW_VS,GLOW_FS,SHAFT_VS,SHAFT_FS,PILLAR_VS,PILLAR_FS,GROUND_VS,GROUND_FS,SKY_FS} from './biosphere-glsl.js';
+import {COMMON,MAXO,SEG_VS,SEG_FS,CROWN_VS,LEAF_VS,LEAF_FS,GLOW_VS,GLOW_FS,SHAFT_VS,SHAFT_FS,PILLAR_VS,PILLAR_FS,GROUND_VS,GROUND_FS,SKY_FS,withLife,LIFE_PT_VS,LIFE_PT_FS,LIFE_RIB_VS,LIFE_RIB_FS} from './biosphere-glsl.js';
+import {biosphereGrammar,POLLINATOR,SPORE,PLANKTON,DRIFTER} from './life/biosphere.js';
+import {MODE} from './life/sim.js';
+import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility} from './life/present.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
 const num=(x,d)=>Number.isFinite(x)?x:d;
@@ -54,6 +57,11 @@ export function createFamily(ctx){
     uBL:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,0))},uBLC:{value:Array.from({length:8},()=>new THREE.Vector4(1,1,1,1))},uOrgC:{value:orgColors},uOrgS:{value:orgSpecies},uPal:{value:palU},
     uFogC:{value:fogC.clone()},uFogLit:{value:fogLit.clone()},uLightDir:{value:new THREE.Vector3(0,1,0)},uBody:{value:new THREE.Vector3(...env.body)},
     uWave:{value:Array.from({length:8},()=>new THREE.Vector4(-1,-1e5,1,1))},uWaveC:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,1))},uState:{value:null}};
+  // Digital life (life/biosphere.js): only when the recipe has it on. Off, nothing differs from the world without it (no
+  // resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
+  if(LIFE)Object.assign(U,{uLifeF:{value:null},uLifeO:{value:Array.from({length:MAXO},()=>new THREE.Vector4())},uLifeC:{value:Array.from({length:MAXO},()=>new THREE.Vector4())},uLifeD:{value:Array.from({length:MAXO},()=>new THREE.Vector4())},uLifeB:{value:new THREE.Vector4(0,0,1,1)},uLifeK:{value:0}});
+  const SEG_FS_=LIFE?withLife(SEG_FS,'seg'):SEG_FS,GLOW_VS_=LIFE?withLife(GLOW_VS,'glow'):GLOW_VS,LEAF_FS_=LIFE?withLife(LEAF_FS,'leaf'):LEAF_FS,GROUND_FS_=LIFE?withLife(GROUND_FS,'ground'):GROUND_FS;
   // ---- Module state texture (2 texels per module: state, pulse) ----------------------------------------------------
   let stateTex=null,stateData=null;
   function ensureState(n){n=Math.max(1,n);if(stateTex&&stateTex.image.height>=n)return;stateTex?.dispose();
@@ -65,7 +73,7 @@ export function createFamily(ctx){
   const tube=(radial,height)=>{const g=new THREE.CylinderGeometry(1,1,1,radial,height,true);g.translate(0,.5,0);g.deleteAttribute('normal');g.deleteAttribute('uv');return g;};
   const thickGeo=tube(10,5),fineGeo=tube(5,2);
   const thick=instancedBuffers(thickGeo,SEG_LAYOUT,512),fine=instancedBuffers(fineGeo,SEG_LAYOUT,1024);
-  const segMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:SEG_VS,fragmentShader:SEG_FS,side:THREE.DoubleSide});
+  const segMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:SEG_VS,fragmentShader:SEG_FS_,side:THREE.DoubleSide});
   const thickMesh=new THREE.Mesh(thick.geometry,segMat),fineMesh=new THREE.Mesh(fine.geometry,segMat);
   for(const m of [thickMesh,fineMesh]){m.frustumCulled=false;scene.add(m);}
   // ---- Crowns: one instanced mesh per recursive template (rebuilt only when the level of detail changes) -------------
@@ -77,7 +85,7 @@ export function createFamily(ctx){
       g.setAttribute('position',new THREE.BufferAttribute(C.pos,3));g.setAttribute('aO',new THREE.BufferAttribute(C.aO,4));g.setAttribute('aS',new THREE.BufferAttribute(C.aS,4));
       g.setAttribute('aP',new THREE.BufferAttribute(C.aP,4));g.setAttribute('aA',new THREE.BufferAttribute(C.aA,1));g.setIndex(new THREE.BufferAttribute(C.index,1));
       const buf=instancedBuffers(g,CROWN_LAYOUT,64);
-      const material=new THREE.ShaderMaterial({uniforms:{...U,uCrownD:{value:C.maxD},uTwist:{value:CROWN_TWIST[name]},uTipBreath:{value:name==='fan'?1:.5}},vertexShader:CROWN_VS,fragmentShader:SEG_FS,side:THREE.DoubleSide});
+      const material=new THREE.ShaderMaterial({uniforms:{...U,uCrownD:{value:C.maxD},uTwist:{value:CROWN_TWIST[name]},uTipBreath:{value:name==='fan'?1:.5}},vertexShader:CROWN_VS,fragmentShader:SEG_FS_,side:THREE.DoubleSide});
       const mesh=new THREE.Mesh(buf.geometry,material);mesh.frustumCulled=false;mesh.visible=false;scene.add(mesh);
       crownSets[key]={base:g,buf,material,mesh,count:0};}
     crownLite=lite;
@@ -85,10 +93,10 @@ export function createFamily(ctx){
   // ---- Leaves and glows ----------------------------------------------------------------------------------------------
   const leafGeo=new THREE.PlaneGeometry(1,1,1,6);leafGeo.deleteAttribute('normal');leafGeo.deleteAttribute('uv');
   const leaves=instancedBuffers(leafGeo,{lP:4,lD:4,lW:4,lM:4},512);
-  const leafMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LEAF_VS,fragmentShader:LEAF_FS,transparent:true,depthWrite:false,side:THREE.DoubleSide});
+  const leafMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LEAF_VS,fragmentShader:LEAF_FS_,transparent:true,depthWrite:false,side:THREE.DoubleSide});
   const leafMesh=new THREE.Mesh(leaves.geometry,leafMat);leafMesh.frustumCulled=false;leafMesh.renderOrder=2;scene.add(leafMesh);
   const glows=pointBuffers({gP:4,gG:4,gM:4},512);
-  const glowMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:GLOW_VS,fragmentShader:GLOW_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+  const glowMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:GLOW_VS_,fragmentShader:GLOW_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
   const glowPoints=new THREE.Points(glows.geometry,glowMat);glowPoints.frustumCulled=false;glowPoints.renderOrder=4;scene.add(glowPoints);
   // ---- Ground ------------------------------------------------------------------------------------------------------
   const moss=pal.primary.clone().lerp(pal.valid,.35);
@@ -96,7 +104,7 @@ export function createFamily(ctx){
     uWeb:{value:new THREE.Vector3(pal.accent.r,pal.accent.g,pal.accent.b).lerp(new THREE.Vector3(pal.highlight.r,pal.highlight.g,pal.highlight.b),.3)},
     uRipple:{value:Array.from({length:6},()=>new THREE.Vector4(0,0,0,-1e5))},uRippleC:{value:Array.from({length:6},()=>new THREE.Vector4(1,1,1,4))},uUnlock:{value:new THREE.Vector4()},
     uWebK:{value:num(SEC.veins,.7)*(species==='mycelial'?1.6:1)},uTideK:{value:1},uCaustK:{value:env.caust*(.4+.6*num(ATM.lightShafts,.7))}};
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:groundU,vertexShader:GROUND_VS,fragmentShader:GROUND_FS}));
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:groundU,vertexShader:GROUND_VS,fragmentShader:GROUND_FS_}));
   ground.frustumCulled=false;ground.renderOrder=-2;scene.add(ground);
   // ---- Light shafts: soft sheets slanting down from the light through the whole scene ----------------------------
   const SHAFTS=9,shaftGeo=new THREE.PlaneGeometry(1,1,1,4);shaftGeo.deleteAttribute('normal');shaftGeo.deleteAttribute('uv');
@@ -469,6 +477,134 @@ export function createFamily(ctx){
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
     agentPts.commit(n);
   }
+  // ---- Digital life: the ecology among the organisms (life/biosphere.js; only when the recipe has life on) -----------
+  // The ecosystem's entities are the authoritative inhabitants (always drawn); followers on their own paths add bodies
+  // to the plankton colonies and spore clouds (more at full quality, none at the lowest). Ambient inhabitants are small
+  // and part of the water: the observed agents keep their own larger, brighter swarms. Each species has its own
+  // signature, not only its hue:
+  //  - pollinators: a warm white core (brighter than any crown, so a gathering shows on a pink flower as on a teal
+  //    one, and never in the hue of an observed agent's swarm) in a halo of the palette's highlight. Light follows
+  //    behaviour: explorers are faint motes without a tail; seekers have a short one (longer and brighter while they
+  //    carry a crown's influence: a thread between two crowns); orbiters are the brightest and largest, each drawing a
+  //    short arc of its circle around the crown, so a gathering of fifteen reads as one ring of light from afar;
+  //    scattering ones are dim; dormant ones (more than the habitat feeds) almost invisible; a slow wing-beat flicker.
+  //    Near an observed agent's swarm they fade (presentation only), so the swarm never looks larger than it is;
+  //  - plankton: tight twinkling clusters (a leader and its followers close around it) breathing together (a slow pulse
+  //    shared by neighbours); a scattering colony dims (a disturbance is never a celebration);
+  //  - spores: fine motes, a faint streak along the current they ride (the gyres can be read against the floor),
+  //    gathering light where they settle: a soft cloud with some depth, brightest at its centre;
+  //  - drifters: larger, slow, soft translucent forms near the floor with a faint wake, brighter as they are aroused.
+  // Presentation reads only the ecosystem's state, the tick fraction (alpha) and the view time.
+  const life=LIFE?(()=>{
+    LIFE.create(biosphereGrammar(recipe));
+    // The world's palette, made vivid (living light is saturated; the hue stays the palette's), each species at its own
+    // saturation and lightness so they separate even where the palette's hues are close.
+    const vivid=(c,s0,l)=>{const hsl={};c.getHSL(hsl);const o=new THREE.Color().setHSL(hsl.h,Math.max(hsl.s,s0),l);return [o.r,o.g,o.b];};
+    const COL=[vivid(pal.highlight.clone().lerp(pal.secondary,.2),.7,.64),vivid(pal.valid,.6,.62),vivid(pal.haze,.45,.72),vivid(pal.accent.clone().lerp(pal.haze,.45),.35,.45)];
+    const FOLLOW={[PLANKTON]:[4,3,1,0],[SPORE]:[1,1,0,0]},WAKE=4,PL=4,ARC=4;
+    const ARC_C=COL[POLLINATOR].map(x=>x*.55+.45);
+    let pts=null,rib=null,ptsObj=null,ribObj=null,ptMat=null,ribMat=null,cap=0,K=0,ftex=null,texEco=null,idsRef=null;const siteOfOrg=new Map();
+    const statsNow={drawn:0,followers:0,trailSegments:0,drawCalls:0};
+    const P3=[0,0,0],F3=[0,0,0],FOPT_PL={spread:.17,lag:.45},FOPT_SP={spread:.22,lag:.8};
+    // Writers into the reused buffers (no allocation per frame).
+    let C=null,SZ=null,PP=null,RA=null,RB=null,RC=null,ptCap=0,ribCap=0,n=0,ns=0;
+    function put(x,y,z,c,b,size,kind){if(n>=ptCap)return;const o=n*3,o4=n*4;PP[o]=x;PP[o+1]=y;PP[o+2]=z;C[o4]=c[0];C[o4+1]=c[1];C[o4+2]=c[2];C[o4+3]=b;SZ[o4]=size;SZ[o4+1]=kind;SZ[o4+2]=0;SZ[o4+3]=0;n++;}
+    function seg(x0,y0,z0,a0,x1,y1,z1,a1,c,w){if(ns>=ribCap)return;const o=ns*4;RA[o]=x0;RA[o+1]=y0;RA[o+2]=z0;RA[o+3]=a0;RB[o]=x1;RB[o+1]=y1;RB[o+2]=z1;RB[o+3]=a1;RC[o]=c[0];RC[o+1]=c[1];RC[o+2]=c[2];RC[o+3]=w;ns++;}
+    // A tail along the entity's recorded path (newest first), fading out quadratically.
+    function tail(e,L,tb,c,w){const o=e*K,h=eco0.trailHead;let x0=P3[0],y0=P3[1],z0=P3[2],a0=tb;
+      for(let j=1;j<=L;j++){const r=o+((h-j+1+K*4)%K),x1=eco0.tx[r],y1=eco0.ty[r],z1=eco0.tz[r],f=1-j/L,a1=tb*f*f;seg(x0,y0,z0,a0,x1,y1,z1,a1,c,w);x0=x1;y0=y1;z0=z1;a0=a1;}}
+    // An orbiter's arc: the stretch of its circle around the crown it has just flown (behind it, in its own direction),
+    // fading; fifteen of them on one crown draw a ring.
+    function arc(e,S,b,w){const k=eco0.tgt[e];if(k<0)return;const cx=S.x[k],cz=S.z[k],ex=P3[0]-cx,ez=P3[2]-cz,d=Math.hypot(ex,ez);if(d<.05)return;
+      const dir=(ex*eco0.vz[e]-ez*eco0.vx[e])>=0?1:-1,th=Math.atan2(ez,ex),step=Math.min(.2,.55/(ARC*d))*dir;
+      let x0=P3[0],z0=P3[2],a0=b;for(let j=1;j<=ARC;j++){const t=th-step*j,x1=cx+Math.cos(t)*d,z1=cz+Math.sin(t)*d,f=1-j/ARC,a1=b*f*f;seg(x0,P3[1],z0,a0,x1,P3[1],z1,a1,ARC_C,w);x0=x1;z0=z1;a0=a1;}}
+    // Observed agents' swarm centres this frame (their presences; read for presentation only, never by the ecosystem).
+    const AG=new Float32Array(30);let nAg=0;
+    const agentFade=(x,y,z)=>{let f=1;for(let a=0;a<nAg;a++){const dx=x-AG[a*3],dy=y-AG[a*3+1],dz=z-AG[a*3+2],d2=dx*dx+dy*dy+dz*dz;if(d2<6.25){const u=Math.sqrt(d2)/2.5;f=Math.min(f,.15+.85*u*u);}}return f;};
+    // The crowns and roots this frame (where settled spore clouds have their centres).
+    const CW=new Int16Array(128);let nCw=0;
+    let eco0=null;
+    function alloc(eco){
+      cap=eco.capacity;K=eco.K;
+      // Buffers sized once from the ecosystem's species quotas (the most each species can have alive).
+      const share=eco.species.map(s=>s.share);let used=0;const quota=share.map((x,k)=>{const q=k===share.length-1?cap-used:Math.floor(cap*x);used+=q;return q;});
+      const nF=quota[PLANKTON]*FOLLOW[PLANKTON][0]+quota[SPORE]*FOLLOW[SPORE][0];
+      pts=pointBuffers({lC:4,lS:4},cap+nF);
+      ptMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LIFE_PT_VS,fragmentShader:LIFE_PT_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+      ptsObj=new THREE.Points(pts.geometry,ptMat);ptsObj.frustumCulled=false;ptsObj.renderOrder=6;scene.add(ptsObj);
+      const quad=new THREE.BufferGeometry();quad.setAttribute('position',new THREE.Float32BufferAttribute([-1,0,0,1,0,0,-1,1,0,1,1,0],3));quad.setIndex([0,2,1,1,2,3]);
+      rib=instancedBuffers(quad,{rA:4,rB:4,rC:4},quota[POLLINATOR]*Math.max(ARC,Math.min(PL,K-1))+quota[DRIFTER]*WAKE+quota[SPORE]);
+      ribMat=new THREE.ShaderMaterial({uniforms:U,vertexShader:LIFE_RIB_VS,fragmentShader:LIFE_RIB_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+      ribObj=new THREE.Mesh(rib.geometry,ribMat);ribObj.frustumCulled=false;ribObj.renderOrder=6;scene.add(ribObj);
+    }
+    function hide(){if(ptsObj){pts.commit(0);rib.commit(0);ptsObj.visible=ribObj.visible=false;}U.uLifeK.value=0;statsNow.drawn=statsNow.followers=statsNow.trailSegments=statsNow.drawCalls=0;}
+    function update(i){
+      const v=i.life;if(!v||!v.eco){hide();return;}
+      const eco=v.eco;eco0=eco;if(!pts)alloc(eco);
+      const show=v.restoring?0:v.fadeIn;if(show<=0){hide();return;}
+      // Fields -> the organisms' light.
+      if(eco!==texEco){ftex?.dispose();ftex=lifeFieldTexture(THREE,eco,{scale:[1.2,2,2.5,6]});texEco=eco;U.uLifeF.value=ftex.texture;
+        const f=eco.field;U.uLifeB.value.set(f.min[0],f.min[1],f.max[0]-f.min[0],f.max[1]-f.min[1]);}
+      ftex.update();U.uLifeK.value=show;
+      const S=eco.sites;if(S.ids!==idsRef){idsRef=S.ids;siteOfOrg.clear();S.ids.forEach((id,k)=>siteOfOrg.set(id,k));}
+      for(const L of [U.uLifeO,U.uLifeC,U.uLifeD])for(const v4 of L.value)v4.set(0,0,0,0);
+      // The water's flinch after a failure anywhere (kept alike by every crown): every crown's glow drops by up to
+      // half, released as slowly as it fell.
+      let flinch=0;for(let k=0;k<S.count;k++)if(S.kind[k]===0)flinch=Math.max(flinch,S.state(k)?.flinch||0);
+      nCw=0;for(let k=0;k<S.count&&nCw<128;k++)CW[nCw++]=k;
+      nAg=0;for(const st of agentState.values()){if(nAg>=10)break;AG[nAg*3]=st.pos.x;AG[nAg*3+1]=st.pos.y;AG[nAg*3+2]=st.pos.z;nAg++;}
+      // Per organism (its one or two heads): each head's glow, the organism's lasting and strain; each head's centre
+      // and reach.
+      for(const o of orgList){const k=siteOfOrg.get(o.id);if(k===undefined)continue;const st=S.state(k),j=o.index%MAXO,k2=siteOfOrg.get(`${o.id}#h1`),st2=k2!==undefined?S.state(k2):null;
+        U.uLifeO.value[j].set(st?Math.min(1,st.glow||0)*(1-.5*flinch):0,st?Math.min(1,st.lasting/2):0,st2?Math.min(1,st2.glow||0)*(1-.5*flinch):0,st?st.stress:0);U.uLifeC.value[j].set(S.x[k],S.y[k],S.z[k],S.r[k]);
+        if(st2)U.uLifeD.value[j].set(S.x[k2],S.y[k2],S.z[k2],S.r[k2]);}
+      // Inhabitants.
+      const q=Math.max(0,Math.min(3,i.quality|0)),a=v.alpha,tv=i.tview;C=pts.arrays.lC;SZ=pts.arrays.lS;PP=pts.arrays.position;
+      RA=rib.arrays.rA;RB=rib.arrays.rB;RC=rib.arrays.rC;ribCap=rib.capacity;ptCap=pts.capacity;n=0;ns=0;let nf=0;
+      const h=eco.trailHead,PLK=Math.min(PL,K-1);
+      for(let e=0;e<cap;e++){
+        const vis=lifeVisibility(eco,e,v);if(vis<=.002)continue;
+        const k=eco.sp[e],m=eco.mode[e],c=COL[k],ph=((e*.618034+eco.gen[e]*.371)%1);
+        lifePosition(eco,e,a,P3);let b,size;
+        if(k===POLLINATOR){
+          const carry=eco.carry[e]>0,wing=Math.sin(tv*(7+ph*4)+ph*40),fl=.78+.22*wing*wing;let L=0,ta=0,w=.012;
+          if(m===MODE.orbit){b=2.1;size=.21;}
+          else if(m===MODE.seek){b=carry?1.05:.8;size=.11;L=carry?3:1;ta=carry?.12:.08;w=carry?.014:.012;}
+          else if(m===MODE.rest){b=.03;size=.05;}
+          else if(m===MODE.disperse){b=.45;size=.08;L=2;ta=.08;}
+          else{b=carry?.55:.3;size=.075;L=carry?1:0;ta=.08;}
+          b*=fl*(nAg?agentFade(P3[0],P3[1],P3[2]):1);
+          if(m===MODE.orbit)arc(e,S,vis*b*.16,.016);else if(L)tail(e,L,vis*b*ta,c,w);
+        }else if(k===SPORE){
+          // Spores collecting in calm water brighten slowly (gathered light) and spread a little in height (a cloud with
+          // depth, not a sheet), brightest at the cloud's centre (the structure they collect at); drifting ones are
+          // faint and leave a faint streak along the current they ride.
+          if(m===MODE.settle){const held=Math.min(1,eco.modeT[e]/60);let best=9,rc=.6;
+            for(let j=0;j<nCw;j++){const q=CW[j];let dn;
+              if(S.kind[q]===0){const dx=P3[0]-S.x[q],dy=P3[1]-S.y[q],dz=P3[2]-S.z[q];dn=Math.sqrt(dx*dx+dy*dy+dz*dz)/S.r[q];if(dn<best){best=dn;rc=S.r[q];}}
+              else if(P3[1]<1.8){dn=Math.hypot(P3[0]-S.x[q],P3[2]-S.z[q])/1.3;if(dn<best){best=dn;rc=.7;}}}
+            P3[1]=Math.max(.2,P3[1]+(((e*.7548777+eco.gen[e]*.5698403)%1)-.5)*.8*rc*held);
+            b=(.45+.75*held*(.8+.2*Math.sin(tv*.9+ph*30)))*Math.max(.2,Math.min(1,1.25-best*.75));size=.065;}
+          else{b=m===MODE.disperse?.5:.4;size=.05;const r=e*K+((h-1+K*4)%K);seg(P3[0],P3[1],P3[2],vis*b*.38,eco.tx[r],eco.ty[r],eco.tz[r],0,c,.01);}
+        }else if(k===PLANKTON){
+          // Colonies breathe together (a slow pulse shared by neighbours); a startled colony dims as it scatters.
+          const br=.7+.3*Math.sin(tv*.75+P3[0]*.31+P3[2]*.27);
+          b=m===MODE.rest?.13:.5*br*(.8+.2*Math.sin(tv*(1.3+ph*2)+ph*40));if(m===MODE.disperse)b*=1-.6*Math.exp(-eco.modeT[e]/40);size=.045;
+        }else{
+          const ar=Math.max(0,Math.min(1,eco.fa[e*2+1]));b=.3+.9*ar;size=.3;
+          tail(e,WAKE,vis*b*.08,c,.06);
+        }
+        put(P3[0],P3[1],P3[2],c,b*vis,size,k);
+        const F=FOLLOW[k]?.[q]||0;
+        for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,a,tv,F3,k===PLANKTON?FOPT_PL:FOPT_SP))break;put(F3[0],F3[1],F3[2],c,b*vis*.7,size*.8,k);nf++;}
+      }
+      pts.dirty('position');pts.dirty('lC');pts.dirty('lS');pts.commit(n);rib.dirty('rA');rib.dirty('rB');rib.dirty('rC');rib.commit(ns);
+      ptsObj.visible=n>0;ribObj.visible=ns>0;
+      statsNow.drawn=n-nf;statsNow.followers=nf;statsNow.trailSegments=ns;statsNow.drawCalls=(n>0?1:0)+(ns>0?1:0);
+    }
+    function dispose(){if(ptsObj){scene.remove(ptsObj);scene.remove(ribObj);pts.geometry.dispose();rib.geometry.dispose();ptMat.dispose();ribMat.dispose();}ftex?.dispose();ftex=null;}
+    return {update,dispose,stats:()=>({...statsNow})};
+  })():null;
   // ---- Effects --------------------------------------------------------------------------------------------------
   let waveNext=0,rippleNext=0;const transients={flash:[],shadow:[],swell:[],shafts:[],light:[]},pulses=new Map();
   function wave(org,start,color,{speed=4,width=1.2,down=false,heal=false,k=1}={}){const s=waveNext++%8;U.uWave.value[s].set(org,start,speed,down?-1:heal?2:1);U.uWaveC.value[s].set(color.r*k,color.g*k,color.b*k,width);}
@@ -585,6 +721,7 @@ export function createFamily(ctx){
         const an=forest.anchors.get(id);D[o+4]=ps;D[o+5]=pk;D[o+6]=an?Math.max(0,an.dist-(an.size||1)):0;D[o+7]=healed;});
       stateTex.needsUpdate=true;}
     updateAgents(i);buildBlooms(i);updateBloomLights(i);
+    if(life)life.update(i);
     // Quality 2 and below: half the motes (the shaft and crown motes are interleaved, so both halve).
     {const h=q>=2?Math.round(moteN/2):0;air.geometry.setDrawRange(h,AIRN-h);}
     U.uIntensity.value=i.overrides?.intensity??1;
@@ -728,10 +865,11 @@ export function createFamily(ctx){
   function dispose(){for(const o of [thickMesh,fineMesh,leafMesh,glowPoints,ground,shaftMesh,pillarMesh,mistMesh,cordMesh,airPoints,burstPoints,bloomMesh,bloomPoints,bloomLeafMesh,agentPoints]){scene.remove(o);o.geometry.dispose();}
     for(const set of Object.values(crownSets)){scene.remove(set.mesh);set.mesh.geometry.dispose();set.base.dispose();set.material.dispose();}
     for(const m of [segMat,leafMat,glowMat,ground.material,shaftMat,pillarMat,mistMat,cordMat,airMat,burstMat,agentMat,sky])m.dispose();
-    for(const g of [thickGeo,fineGeo,leafGeo,shaftGeo,pillarGeo,mistGeo,ribbon])g.dispose();stateTex?.dispose();stateTex=null;}
+    for(const g of [thickGeo,fineGeo,leafGeo,shaftGeo,pillarGeo,mistGeo,ribbon])g.dispose();stateTex?.dispose();stateTex=null;life?.dispose();}
   // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified history (buildBlooms).
   function onPrime(){for(const v of U.uWave.value)v.y=-1e5;for(const v of groundU.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of pillarU.uCol.value)v.z=-1e5;
     for(const L of Object.values(transients))L.length=0;pulses.clear();lastBloomKey='';agentState.clear();}
   makeCrowns(false);
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime};
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }

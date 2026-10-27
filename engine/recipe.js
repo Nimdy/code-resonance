@@ -30,8 +30,10 @@
 const {sha}=require('../receiver/protocol');
 const catalog=require('./catalog');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
-const RECIPE_VERSION=2;      // generator: bump when the same inputs would produce a different genome
-                             // (2: Fractal Biosphere species from the data; Machine Cathedral shafts and wetness added)
+const RECIPE_VERSION=3;      // generator: bump when the same inputs would produce a different genome
+                             // (2: Fractal Biosphere species from the data; Machine Cathedral shafts and wetness added;
+                             //  3: digital life, `life`, for the built-in families, from a separate random stream so every
+                             //  v2 value is unchanged)
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
 const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
@@ -311,12 +313,21 @@ function generate(project,{seed,variant=0,family=null,pack=null,source='generate
   const overlay=pack?usable(registry,pack):null;
   const applied=overlay?.overlay&&overlay.overlay.base===chosen?overlay:null;
   if(applied)g=applyOverlay(g,applied.overlay,rng('pack',applied.id,s,variant),t);
+  // Digital life is part of a new built-in identity (a pack's world or look is its author's: never added to it). A
+  // stored identity keeps exactly what it had; the Visual Studio can turn life on for it (tuning `life.enabled`).
+  if(!world&&!applied&&FAMILIES.includes(chosen))g={...g,life:lifeGenome(chosen,s,variant)};
   const user=!!family||!!applied;
   return {schema:RECIPE_SCHEMA,recipeVersion:RECIPE_VERSION,rendererVersion:RENDERER_VERSION,projectSeed:s,variant,
     source:user?'user':source,locked:!!locked||user,founded:user||!!locked||t.modules>=FOUNDING_MODULES,
     createdAt:now,traits:t,family:chosen,familyName:world?world.name:FAMILY_NAMES[chosen],familyKind:world?'pack':'builtin',familyScores:scores,genome:g,
     pack:applied?{id:applied.id,version:applied.version,kind:applied.kind}:null,
     overrides:{...DEFAULT_OVERRIDES},aliases:{},title:null};
+}
+// Artist-directed defaults with a little per-project character (each world's grammar sets the behaviour itself).
+function lifeGenome(family,seed,variant){
+  const r=rng('life',family,seed,variant);
+  return {enabled:true,density:between(r,.85,1),vitality:between(r,.85,1.15),collective:between(r,.85,1.2),environment:1,trails:between(r,.85,1.15),persistence:1,music:1,
+    attraction:1,repulsion:1,separation:1,alignment:1,cohesion:1,current:1,diffusion:1,radius:1};
 }
 // What a stored recipe needs from the installed packs, and whether they are there.
 function availability(stored,registry){

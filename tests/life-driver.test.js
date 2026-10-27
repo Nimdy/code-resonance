@@ -1,0 +1,122 @@
+'use strict';
+// Digital life on the performance timeline (public/worlds/life/driver.js, timeline.js): the ecosystem at a moment is
+// the same whatever path playback took to reach it (continuous play at any frame rate, a seek back, a checkpoint, a
+// fresh session), it keeps living through long idle stretches with bounded memory, and canonical events change its
+// conditions without ever adding events. Far seeks and long live sessions: life-driver-long.test.js; generations:
+// life-driver-generations*.test.js. Rendering is qualified in a browser (qualification/visual/life.qual.js).
+const test=require('node:test'),assert=require('node:assert/strict');
+const {load,score,T0,WIN,group,mod,recording,grammar,player}=require('./life-driver-fixture.js');
+const AT=T0+4*60000+1234;   // 4 min 1.234 s into the performance
+test('F. The ecosystem at a moment is the same after continuous play, seeks back and forth, and in a fresh session',async()=>{
+  const entries=recording(40);
+  const ref=await player({entries});ref.at(AT);const want=ref.driver.digest();assert.match(want,/^[0-9a-f]{8}$/);
+  // Continuous play from the start, delivering windows as they come (live-like: nothing primed).
+  const cont=await player({entries,prime:false});cont.play(T0,AT,60);
+  assert.equal(cont.driver.digest(),want,'continuous play (windows delivered as playback reaches them)');
+  // Seek far ahead, back before the moment, then forward to it.
+  const seeks=await player({entries});seeks.play(T0,T0+90000,30);seeks.at(T0+6*60000);seeks.seek(T0+60000);seeks.play(T0+60000,AT,30);
+  assert.equal(seeks.driver.digest(),want,'forward, far ahead, back, forward again');
+  // A checkpoint: past the moment, back to just before it (restored from a checkpoint, not from the start).
+  const cp=await player({entries});cp.play(T0,AT+30000,20);const before=cp.driver.stats().fromCheckpoint;cp.at(AT);
+  assert.equal(cp.driver.digest(),want,'restored from a checkpoint');assert(cp.driver.stats().fromCheckpoint>before,'a checkpoint was used');
+  // Late deliveries (a seek re-schedules the window it lands in): duplicates change nothing.
+  const dup=await player({entries});dup.play(T0,AT-20000,24);dup.timeline.prime(entries);dup.play(AT-20000,AT,24);
+  assert.equal(dup.driver.digest(),want,'duplicate inputs are ignored');
+});
+test('G. Frame-rate independence: 15, 30, 60 and 120 frames per second reach the same state at the same tick',async()=>{
+  const entries=recording(20);const t1=T0+150000+333;const digests=[];
+  for(const fps of [15,30,60,120]){const p=await player({entries,prime:false});p.play(T0,t1,fps);digests.push(p.driver.digest());}
+  assert.equal(new Set(digests).size,1,`digests ${digests.join(' ')}`);
+  // Presentation interpolates between ticks; the state never depends on where in a tick a frame falls.
+  const p=await player({entries});const a=p.at(t1);const b=p.at(t1+1);assert.equal(a.tick,b.tick);assert(b.alpha>=a.alpha);
+});
+test('Speed is part of the clock: the same performance at 4x reaches the same view time with the same ticks',async()=>{
+  const entries=recording(30);const p=await player({entries,speed:4});const v=p.at(T0+4*60000);
+  assert.equal(v.tick,Math.floor(60*20),'4 minutes at 4x is one minute of view time');
+  const q=await player({entries,speed:4,prime:false});q.play(T0,T0+4*60000,30);assert.equal(q.driver.digest(),p.driver.digest());
+});
+test('H. Long idle: ten quiet minutes keep the population alive and moving, invent no events, and keep memory bounded',async()=>{
+  const entries=recording(66,{quietAfter:6});   // one minute of work, then ten minutes with no events at all
+  const p=await player({entries});const items=p.timeline.items.length;
+  const pos=e=>{let s=0;for(let i=0;i<e.capacity;i++)if(e.alive[i])s+=e.px[i]+e.pz[i]*7;return s;};
+  const minute=[];let prevPos=null;
+  for(let m=1;m<=11;m++){const v=p.at(T0+m*60000);const e=v.eco,st=e.stats(),c=pos(e);
+    minute.push({alive:st.alive,speed:st.meanSpeed,moved:prevPos===null?1:Math.abs(c-prevPos),modes:st.modes});prevPos=c;
+    for(let i=0;i<e.capacity;i++)if(e.alive[i])assert(Number.isFinite(e.px[i])&&Number.isFinite(e.vx[i]));}
+  assert.equal(p.timeline.items.length,items,'no input was created');
+  const idle=minute.slice(2);
+  for(const m of idle){assert(m.alive>=250,`population held (${m.alive})`);assert(m.speed>.2,`still moving (${m.speed.toFixed(2)})`);assert(m.moved>1,'positions keep changing');}
+  // The behaviour keeps changing too: modes (exploring, gathering, dispersing, resting) are mixed in every minute.
+  for(const m of idle)assert(Object.values(m.modes).filter(x=>x>5).length>=3,`mixed behaviour ${JSON.stringify(m.modes)}`);
+  const s=p.driver.stats();assert(s.checkpoints.recent<=6&&s.checkpoints.sparse<=24,'bounded checkpoints');
+});
+test('Events change conditions in kind: a failure disturbs its site, a recovery clears it, a verified milestone lasts',async()=>{
+  const entries=recording(30);const p=await player({entries});
+  const site=(id)=>{const e=p.driver.ecosystem;const k=e.sites.ids.indexOf(id);return k<0?null:e.sites.state(k);};
+  p.at(T0+12*WIN+2000);assert.equal(site('g0').stress,0,'before the failure');
+  p.at(T0+12*WIN+5000);assert(site('g0').stress>.2,'the failure strains its subsystem');
+  const e=p.driver.ecosystem;let dist=0;for(let q=0;q<e.field.nx*e.field.nz;q++)dist+=e.field.data[2*e.field.nx*e.field.nz+q];assert(dist>0,'and disturbs the field around it');
+  p.at(T0+18*WIN+5000);assert.equal(site('g0').stress,0,'the recovery clears it');
+  p.at(T0+24*WIN+6000);assert.equal(site('g1').lasting,1,'a verified milestone leaves a lasting attractor');
+  p.at(T0+29*WIN);assert.equal(site('g1').lasting,1,'and it stays');
+  // An observed (unverified) milestone never lasts.
+  const weak=recording(30).map(x=>({...x,intents:x.intents.map(i=>i.type==='milestone.achieved'?{...i,id:i.id+'w',evidence:'inferred'}:i)}));
+  const q=await player({entries:weak});q.at(T0+29*WIN);const k=q.driver.ecosystem.sites.ids.indexOf('g1');assert.equal(q.driver.ecosystem.sites.state(k).lasting,0);
+});
+test('Silence and music: the climate comes from the recorded frames on the bar grid, so it is the same with sound off; sections change conditions',async()=>{
+  const entries=recording(30);const p=await player({entries});p.at(T0+12*WIN+9000);
+  assert.equal(p.driver.stats().climate.section,'tension','tension in the frames gives the tension section');
+  const turb=p.driver.ecosystem.cond.turb;p.at(T0+26*WIN);assert(p.driver.ecosystem.cond.turb<turb,'turbulence relaxes once tension resolves');
+  // Music influence 0: conditions stay neutral whatever the section.
+  const flat=await player({entries,params:{music:0}});flat.at(T0+12*WIN+9000);assert(Math.abs(flat.driver.ecosystem.cond.turb-1)<1e-9);
+});
+test('Configuration: a replay rebuilds exactly for new life parameters; a live session keeps its population through the change',async()=>{
+  const entries=recording(20);
+  const r=await player({entries});r.at(T0+100000);r.set({params:{density:.5}});r.at(T0+100000);
+  const ref=await player({entries,params:{density:.5}});ref.at(T0+100000);assert.equal(r.driver.digest(),ref.driver.digest(),'replay: same as starting with the new parameters');
+  const l=await player({entries,live:true,prime:false});l.play(T0,T0+100000,30);const before=l.driver.ecosystem.px.slice();
+  l.set({params:{vitality:1.5}});l.at(T0+100000);assert.deepEqual(Array.from(l.driver.ecosystem.px),Array.from(before),'live: the population continues from where it was');
+});
+test('Joining a live session late: only lasting conditions carry over from before the origin',async()=>{
+  const [{createLifeDriver},{createLifeTimeline}]=await load();
+  const timeline=createLifeTimeline();const origin=T0+20*WIN;
+  const driver=createLifeDriver({grammar,timeline,seed:1,config:()=>({speed:1,tempo:96,epoch:origin,params:{},live:true}),score});
+  driver.setBase({nodes:[group('g0',0,0),group('g1',2,0),mod('m0','g0',0,0),mod('m1','g1',0,0)],edges:[]},origin);
+  for(const e of recording(20))for(const i of e.intents)timeline.intent(i);
+  driver.update({tview:.05});const e=driver.ecosystem,st=id=>e.sites.state(e.sites.ids.indexOf(id));
+  assert.equal(e.sites.count,2,'the habitat is the structure as joined');
+  assert.equal(st('g0').stress,0,'an old failure does not strain the present');
+  assert.equal(st('g1').lasting,0,'no verified milestone in this history yet');
+});
+test('Habitat data travels with the sites: after a restore the ecosystem holds the data of its own moment',async()=>{
+  const [{createLifeDriver},{createLifeTimeline}]=await load();
+  const withData={...grammar,habitat:(model,t)=>{const sites=grammar.habitat(model,t);return {sites,data:{key:sites.map(s=>s.id).join(',')}};}};
+  const timeline=createLifeTimeline();timeline.prime(recording(30));
+  const driver=createLifeDriver({grammar:withData,timeline,seed:5,config:()=>({speed:1,tempo:96,epoch:T0,params:{}}),score});
+  driver.update({tview:250},{budgetMs:1e9});const late=driver.ecosystem.siteData.key;
+  driver.update({tview:30},{budgetMs:1e9});const early=driver.ecosystem.siteData.key;
+  assert.notEqual(late,early,'the habitat grew between the two moments');
+  assert.equal(early,driver.ecosystem.sites.ids.join(','),'restored: the data matches the restored sites');
+  assert.equal(driver.stats().fromCheckpoint>0||driver.stats().resets>1,true);
+});
+
+test('Intents are mapped on the structure where the ecosystem is: after a seek back, as in a fresh session',async()=>{
+  // An intent about a module whose window starts 50 ms after the intent's own timestamp (windows are chosen by when
+  // they were received): at the intent's moment the module does not exist yet, on every path to that moment.
+  const entries=recording(30).map(e=>({...e,intents:[...e.intents]}));
+  const w=entries[9];w.graph={add:[...(w.graph.add||w.graph.nodes),mod('mNew','g0',1,0)],remove:[],addEdges:[],removeEdges:[]};
+  w.intents.push({v:1,id:'late:validation.failed',type:'validation.failed',ts:w.start-50,tier:2,magnitude:.8,evidence:'verified',subject:{fileIds:['mNew']},detail:{}});
+  const at=T0+9*WIN+5000;   // the seek back restores the checkpoint at 80 s and consumes the intent again
+  const fresh=await player({entries});fresh.at(at);
+  const seek=await player({entries});seek.at(T0+29*WIN);seek.at(at);
+  assert(seek.driver.stats().fromCheckpoint>0,'the seek back restored a checkpoint');
+  assert.equal(seek.driver.digest(),fresh.driver.digest(),'same state after the seek back');
+});
+test('Live: a change of tempo (a music style) keeps the population; the bars continue from the current one',async()=>{
+  const entries=recording(30);
+  const l=await player({entries,live:true,prime:false});l.play(T0,T0+120000,20);const resets=l.driver.stats().resets,before=l.driver.ecosystem.px.slice();
+  l.set({tempo:132});const v=l.at(T0+120000);
+  assert.equal(l.driver.stats().resets,resets,'no rebuild');assert.equal(v.restoring,false);
+  assert.deepEqual(Array.from(l.driver.ecosystem.px),Array.from(before),'the population continues from where it was');
+  const v2=l.at(T0+125000);assert.equal(v2.tick,v2.target,'keeps up');assert.equal(v2.restoring,false);
+});

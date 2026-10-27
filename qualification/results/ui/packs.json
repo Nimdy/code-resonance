@@ -1,6 +1,6 @@
 {
  "suite": "ui/workspaces/packs",
- "at": "2026-10-25T16:15:15.336Z",
+ "at": "2026-10-27T09:30:18.591Z",
  "passed": 52,
  "failed": 0,
  "checks": [
@@ -57,7 +57,7 @@
   {
    "name": "library: listed as \"Declarative · data only\" and \"Data only — no approval needed\"",
    "pass": true,
-   "detail": "Ember Observatory v1.0.0 DECLARATIVE · DATA ONLY by Northlight Works (fictional) A Stellar Forge seen through an old observatory lens: a binary core, embers instead of plasma, slow orbits, warm film grade. Data only. Data only — no approval needed Not used yet"
+   "detail": "Ember Observatory v1.0.0 · by Northlight Works (fictional) A Stellar Forge seen through an old observatory lens: a binary core, embers instead of plasma, slow orbits, warm film grade. Data only. DECLARATIVE · DATA ONLY On Stellar Forge Data only — no approval needed Not used yet"
   },
   {
    "name": "second window: the installed pack appears without a reload (change feed)",
@@ -117,7 +117,7 @@
   {
    "name": "library: the code pack is listed \"World · runs code\" and \"Needs approval\"",
    "pass": true,
-   "detail": "Cymatic Field v1.0.0 WORLD · RUNS CODE by Halcyon Visuals (fictional) Every subsystem is a resonant plate. Sand gathers on its nodal lines as the code grows, failures make it dissonant, verified milestones leave golden halos, agents excite ripples, the beat drives the vibration. Needs approval Not used yet"
+   "detail": "Cymatic Field v1.0.0 · by Halcyon Visuals (fictional) Every subsystem is a resonant plate. Sand gathers on its nodal lines as the code grows, failures make it dissonant, verified milestones leave golden halos, agents excite ripples, the beat drives the vibration. WORLD · RUNS CODE A world family of its own Needs approval Not used yet"
   },
   {
    "name": "rail badge: one pack awaits approval",

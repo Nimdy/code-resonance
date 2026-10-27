@@ -87,14 +87,19 @@ test('Choosing "automatic" returns to the identity the code would generate, keep
   const back=recipe.update(chosen,{type:'automatic'},p);
   assert.equal(back.family,generated.family);assert.equal(back.source,'generated');assert.equal(back.overrides.intensity,.4);
 });
-test('Generated identities are pinned: generator v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
+test('Generated identities are pinned: generator v3, what v3 keeps from v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
-  assert.equal(recipe.RECIPE_VERSION,2);
-  assert.equal(h(['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome)),'96bd1fb42ab0c111');
+  assert.equal(recipe.RECIPE_VERSION,3);
+  const v3=['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome);
+  assert.equal(h(v3),'ccb6221a53e0c619');
+  // v3 only added digital life (its own random stream): without `life` every genome is exactly v2's.
+  assert(v3.every(g=>g.life?.enabled===true));
+  assert.equal(h(v3.map(g=>{const c={...g};delete c.life;return c;})),'96bd1fb42ab0c111');
+  const strip=g=>{const c=JSON.parse(JSON.stringify(g));delete c.life;return c;};
   // v2 changed only what it meant to: Stellar Forge is identical to v1, Machine Cathedral keeps every v1 value (its two
   // added values come from their own stream), Fractal Biosphere chooses its species from the data. Stored recipes are
   // never re-derived once founded, so existing projects keep their identity whatever the generator does.
-  assert.equal(h(recipe.generate(p,{family:'stellar-forge',now:0}).genome),'024d658c1eb3fc83');
-  const c=JSON.parse(JSON.stringify(recipe.generate(p,{family:'machine-cathedral',now:0}).genome));delete c.atmosphere.shafts;delete c.material.wetness;
+  assert.equal(h(strip(recipe.generate(p,{family:'stellar-forge',now:0}).genome)),'024d658c1eb3fc83');
+  const c=strip(recipe.generate(p,{family:'machine-cathedral',now:0}).genome);delete c.atmosphere.shafts;delete c.material.wetness;
   assert.equal(h(c),'51647ee6517edb4c');
 });

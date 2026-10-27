@@ -1,10 +1,10 @@
 {
-  "at": "2026-10-24T15:43:00.887Z",
-  "sdk": "1.0.0",
+  "at": "2026-10-27T10:08:07.838Z",
+  "sdk": "1.1.0",
   "gpu": "amd",
   "checks": [
     {
-      "name": "manifest: valid and compatible with SDK 1.0.0",
+      "name": "manifest: valid and compatible with SDK 1.1.0",
       "pass": true,
       "detail": "halcyon.cymatic-field 1.0.0 (world)"
     },
@@ -19,9 +19,14 @@
       "detail": "fallback while unapproved: stellar-forge"
     },
     {
-      "name": "isolation: from the pack frame nothing reaches the receiver or an outside listener; no storage, cookies, player, WebRTC, workers or popups",
+      "name": "isolation (pack worker, where pack code runs): no receiver, network, sockets, outside scripts, storage, DOM, parent, WebRTC or navigation",
       "pass": true,
-      "detail": "{\"fetchReceiver\":\"blocked\",\"fetchOutside\":\"blocked\",\"xhr\":\"blocked\",\"websocket\":\"blocked\",\"importApi\":\"blocked\",\"importOutside\":\"blocked\",\"parentDocument\":\"blocked\",\"localStorage\":\"blocked\",\"cookie\":\"blocked\",\"webrtc\":\"blocked\",\"worker\":\"blocked\",\"popup\":\"blocked\"} · outside listener received 0"
+      "detail": "{\"fetchReceiver\":\"blocked\",\"fetchOutside\":\"blocked\",\"xhr\":\"blocked\",\"websocket\":\"blocked\",\"scriptReceiverApi\":\"blocked\",\"scriptOutside\":\"blocked\",\"moduleOutside\":\"blocked\",\"indexedDB\":\"blocked\",\"cacheStorage\":\"blocked\",\"document\":\"blocked\",\"parentWindow\":\"blocked\",\"webrtc\":\"blocked\",\"navigation\":\"blocked\",\"nestedWorkerNetwork\":\"blocked\"}"
+    },
+    {
+      "name": "isolation (pack frame): nothing reaches the receiver or an outside listener; no storage, cookies, player, WebRTC, networked workers or popups",
+      "pass": true,
+      "detail": "{\"fetchReceiver\":\"blocked\",\"fetchOutside\":\"blocked\",\"xhr\":\"blocked\",\"websocket\":\"blocked\",\"importApi\":\"blocked\",\"importOutside\":\"blocked\",\"parentDocument\":\"blocked\",\"localStorage\":\"blocked\",\"cookie\":\"blocked\",\"webrtc\":\"blocked\",\"workerNetwork\":\"blocked\",\"popup\":\"blocked\"} · outside listener received 0"
     },
     {
       "name": "isolation: the pack frame has an opaque origin",
@@ -29,9 +34,9 @@
       "detail": "null"
     },
     {
-      "name": "isolation: a pack that navigates its frame away is stopped by the player (the navigation request itself is a documented residual risk)",
+      "name": "isolation: a pack frame that navigates away is stopped by the player (pack code cannot navigate: it runs in a worker)",
       "pass": true,
-      "detail": "navigation request did not reach the listener; player: Cymatic Field stopped: the pack navigated its frame away"
+      "detail": "navigation request did not reach the listener; player: Cymatic Field stopped: the pack frame navigated away"
     },
     {
       "name": "events: the world received and expressed the recording's semantic events",
@@ -79,14 +84,14 @@
       "detail": "0/1 0/1 0/1 0/1"
     },
     {
-      "name": "resources: GPU objects return to their level after four switches",
+      "name": "resources: GPU objects return to their level after 4 switches",
       "pass": true,
       "detail": "geometries 13->13, textures 13->13, programs 12->12"
     },
     {
       "name": "resources: the player's heap does not grow with switches (within 25 MB)",
       "pass": true,
-      "detail": "15 -> 15 MB"
+      "detail": "26 -> 26 MB"
     },
     {
       "name": "recipe: another project (self) gets its own parameters from the same pack",
@@ -96,12 +101,12 @@
     {
       "name": "performance: within the declared budget (scene draw calls, all passes, triangles, points, CPU update time)",
       "pass": true,
-      "detail": "7 draw calls, 21 passes, 15364 triangles, 71897 points, update 0.12 ms"
+      "detail": "7 draw calls, 21 passes, 15364 triangles, 71897 points, update 0.07 ms"
     },
     {
       "name": "performance: frame rate, GPU time and adaptive quality measured",
       "pass": true,
-      "detail": "60 fps full quality (GPU 13.68 ms per frame), 60 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+      "detail": "60 fps full quality (GPU 10.16 ms per frame), 60 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
     },
     {
       "name": "no page errors in the live player",
@@ -147,13 +152,29 @@
         "localStorage": "blocked",
         "cookie": "blocked",
         "webrtc": "blocked",
-        "worker": "blocked",
+        "workerNetwork": "blocked",
         "popup": "blocked"
+      },
+      "workerProbes": {
+        "fetchReceiver": "blocked",
+        "fetchOutside": "blocked",
+        "xhr": "blocked",
+        "websocket": "blocked",
+        "scriptReceiverApi": "blocked",
+        "scriptOutside": "blocked",
+        "moduleOutside": "blocked",
+        "indexedDB": "blocked",
+        "cacheStorage": "blocked",
+        "document": "blocked",
+        "parentWindow": "blocked",
+        "webrtc": "blocked",
+        "navigation": "blocked",
+        "nestedWorkerNetwork": "blocked"
       },
       "outsideRequests": [],
       "selfNavigation": {
         "reachedListener": false,
-        "noticed": "Cymatic Field stopped: the pack navigated its frame away"
+        "noticed": "Cymatic Field stopped: the pack frame navigated away"
       }
     },
     "session": {
@@ -188,6 +209,9 @@
         "phase": "active",
         "activity": 0.376,
         "quality": 0,
+        "degraded": false,
+        "qualityChanges": 0,
+        "gpuTimerBlind": false,
         "drawCalls": 7,
         "passes": 21,
         "triangles": 1220,
@@ -195,11 +219,14 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "updateMs": 0.4,
-        "drawMs": 0.4,
-        "gpuMs": 4.81,
+        "updateMs": 0.23,
+        "drawMs": 0.26,
+        "gpuMs": 3.96,
         "rendered": 961,
-        "now": 26265.699999928474,
+        "skipped": 0,
+        "semantic": 707,
+        "renderMs": 0.5,
+        "now": 21244.900000095367,
         "remote": true,
         "pack": "halcyon.cymatic-field"
       }
@@ -267,7 +294,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 15
+        "heapMB": 26
       },
       {
         "awayFrames": 0,
@@ -275,7 +302,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 15
+        "heapMB": 26
       },
       {
         "awayFrames": 0,
@@ -283,7 +310,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 15
+        "heapMB": 26
       },
       {
         "awayFrames": 0,
@@ -291,7 +318,7 @@
         "geometries": 13,
         "textures": 13,
         "programs": 12,
-        "heapMB": 15
+        "heapMB": 26
       }
     ],
     "otherProject": {
@@ -313,30 +340,32 @@
     "performance": {
       "dataset": "excalidraw",
       "full": {
+        "stoppedByWatchdog": null,
         "fps": 60,
         "quality": 0,
         "drawCalls": 7,
         "passes": 21,
         "triangles": 15364,
         "points": 71897,
-        "updateMs": 0.12,
-        "drawMs": 0.37,
-        "gpuMs": 13.68,
+        "updateMs": 0.07,
+        "drawMs": 0.19,
+        "gpuMs": 10.16,
         "geometries": 13,
         "textures": 13,
         "programs": 12,
         "errors": []
       },
       "adaptive": {
+        "stoppedByWatchdog": null,
         "fps": 60,
         "quality": 0,
         "drawCalls": 7,
         "passes": 21,
         "triangles": 15364,
         "points": 71897,
-        "updateMs": 0.12,
-        "drawMs": 0.33,
-        "gpuMs": 13.72,
+        "updateMs": 0.05,
+        "drawMs": 0.17,
+        "gpuMs": 9.88,
         "geometries": 13,
         "textures": 13,
         "programs": 12,
