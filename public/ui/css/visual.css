@@ -41,6 +41,9 @@
 .ws-visual .vs-card-text{display:grid;gap:2px;padding:8px 11px 10px;min-width:0}
 .ws-visual .vs-card-text strong{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-card-line{font-size:11.5px;line-height:1.35;color:var(--text-3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ws-visual .vs-card-why{font-size:11px;line-height:1.4;color:var(--text-4);margin-top:3px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft,rgba(117,237,255,.12));color:var(--accent,#75edff)}
+.ws-visual .vs-essentials-note{margin:0 0 8px}
 .ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:4px 11px 10px;margin-top:auto;min-height:30px}
 .ws-visual .vs-card-foot .pill{height:19px;font-size:10.5px;padding:0 7px}
 .ws-visual .vs-card.preset .vs-card-foot{padding:8px 0 10px}
@@ -97,7 +100,7 @@
 .ws-visual .vs-dialog,.modal .vs-dialog{display:grid;gap:10px}
 .modal .vs-error{color:var(--danger)}.modal .vs-error:empty{display:none}
 /* Laptops: a shorter strip leaves the stage its height. */
-@media (max-height:780px){.ws-visual .vs-main{padding:12px 16px 10px;gap:9px}.ws-visual .vs-card{flex-basis:164px}.ws-visual .vs-card-line{-webkit-line-clamp:1}
+@media (max-height:780px){.ws-visual .vs-main{padding:12px 16px 10px;gap:9px}.ws-visual .vs-card{flex-basis:164px}.ws-visual .vs-card-line{-webkit-line-clamp:1}.ws-visual .vs-card-why{display:none}
   .ws-visual .vs-term>span{display:none}.ws-visual .vs-thumb-cap{font-size:9.5px;left:6px;right:6px}.ws-visual .vs-head .title-l{font-size:18px}
   .ws-visual .vs-cards{min-height:0}}
 /* Narrow: the inspector stacks below, the stage takes the full width, Apply stays in reach. */

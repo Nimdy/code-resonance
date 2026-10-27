@@ -14,7 +14,7 @@
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
-const {REPO,projectOf,launch,rendererOf,withService,recipeAction,filmPage,thumb,diff,sha,checker}=require('./harness');
+const {REPO,projectOf,launch,rendererOf,withService,recipeAction,filmPage,thumb,diff,sha,checker,withQuality}=require('./harness');
 const packs=require(path.join(REPO,'engine/packs'));
 const {lumen}=require('./datasets');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
@@ -192,7 +192,7 @@ async function play(page,from,to,fps,each){await page.evaluate(x=>window.__film.
       const project=projectOf(perfDir);await choose(svc,project,m);measurements.performance={dataset:big||'lumen'};
       for(const [label,query] of QUICK?[['full','&adapt=0']]:[['full','&adapt=0'],['adaptive','']]){
         const page=await browser.newPage({viewport:QUICK?{width:1280,height:720}:{width:1920,height:1080}});const errors=[];page.on('pageerror',e=>errors.push(String(e)));
-        await page.goto(`http://127.0.0.1:${svc.port}/?overlay=1&labels=off&project=${project}&world=living${query}`);
+        await page.goto(`http://127.0.0.1:${svc.port}/?overlay=1&labels=off&project=${project}&world=living${withQuality(query)}`);
         await page.waitForFunction(()=>window.__worldStats?.()?.drawCalls>0,null,{timeout:90000});
         await page.waitForTimeout(label==='adaptive'?14000:4000);
         const a=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));await page.waitForTimeout(QUICK?4000:8000);let b=await page.evaluate(()=>({s:window.__worldStats(),t:performance.now()}));

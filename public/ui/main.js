@@ -127,6 +127,8 @@ function updateShell(topics){
     text(recordBtn.querySelector('.label'),active?`Stop ${timecode(r.stats.elapsedMs)}${r.audio&&!r.audioLost?'':' · no sound'}`:other?'Recording elsewhere':'Record');
     recordBtn.disabled=other;recordBtn.title=other?'Another window of Code Resonance is recording':active?'Stop and save the recording':'Record the stage and the music to a WebM file';
   }
+  if(!topics||topics.has('world')||topics.has('recipe')){const s=P.state,name=s.world==='living'?(s.recipe?.familyName||'Living world'):({construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'})[s.world];
+    stageBtn.replaceChildren(icon('stage'),h('span',{text:'Stage'}),h('span',{class:'stage-btn-world',text:name||''}));stageBtn.title=`Enter the Performance Stage: ${name} (F)`;}
   if(!topics||topics.has('mode')||topics.has('position')){
     const live=s.mode==='live';modePill.className=`pill ${live?'accent live':'plain'}`;text(modePill,live?'Live':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);
   }

@@ -87,8 +87,14 @@ test('Choosing "automatic" returns to the identity the code would generate, keep
   const back=recipe.update(chosen,{type:'automatic'},p);
   assert.equal(back.family,generated.family);assert.equal(back.source,'generated');assert.equal(back.overrides.intensity,.4);
 });
-test('Identities generated before visual packs existed are unchanged (genome fingerprint pinned)',()=>{
-  const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}};
-  const genomes=JSON.stringify(['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome));
-  assert.equal(require('node:crypto').createHash('sha256').update(genomes).digest('hex').slice(0,16),'878fd3c463891211');
+test('Generated identities are pinned: generator v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
+  const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
+  assert.equal(recipe.RECIPE_VERSION,2);
+  assert.equal(h(['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome)),'96bd1fb42ab0c111');
+  // v2 changed only what it meant to: Stellar Forge is identical to v1, Machine Cathedral keeps every v1 value (its two
+  // added values come from their own stream), Fractal Biosphere chooses its species from the data. Stored recipes are
+  // never re-derived once founded, so existing projects keep their identity whatever the generator does.
+  assert.equal(h(recipe.generate(p,{family:'stellar-forge',now:0}).genome),'024d658c1eb3fc83');
+  const c=JSON.parse(JSON.stringify(recipe.generate(p,{family:'machine-cathedral',now:0}).genome));delete c.atmosphere.shafts;delete c.material.wetness;
+  assert.equal(h(c),'51647ee6517edb4c');
 });

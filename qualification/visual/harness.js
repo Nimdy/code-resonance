@@ -14,6 +14,10 @@ const AUTOPLAY='--autoplay-policy=no-user-gesture-required';
 // Chromium's own audio output, never the machine's sound server: the tests measure the recorded stream, and a host
 // sound server that stalls (WSLg's did, overnight) stops every audio clock in the browser.
 const {PULSE_SERVER,...BASE_ENV}=process.env;
+// CR_QUALITY (CI): the rendering quality a user of a slow machine would choose (a runner without a GPU), as CR_UI_QUALITY
+// for the interface suites; added to every player and film page unless the page asks for a quality itself.
+const CI_QUALITY=['0','1','2','3'].includes(process.env.CR_QUALITY)?process.env.CR_QUALITY:null;
+const withQuality=query=>CI_QUALITY&&!/[?&]quality=/.test(query)?`${query}&quality=${CI_QUALITY}`:query;
 function launch(gpu=null){
   if(gpu==='amd')return chromium.launch({args:['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu',AUTOPLAY],
     env:{...BASE_ENV,GALLIUM_DRIVER:'d3d12',MESA_D3D12_DEFAULT_ADAPTER_NAME:'AMD',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}});
@@ -56,7 +60,7 @@ const setFamily=(svc,project,family)=>recipeAction(svc,project,{type:'family',fa
 async function filmPage(browser,svc,project,{width=1280,height=720,query=''}={}){
   const page=await browser.newPage({viewport:{width,height}});const errors=[];
   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-  await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&project=${project}${query}${pairFragment(svc,'')}`);await page.waitForFunction(()=>!!window.__film);
+  await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=living&project=${project}${withQuality(query)}${pairFragment(svc,'')}`);await page.waitForFunction(()=>!!window.__film);
   const info=await page.evaluate(p=>window.__film.open({project:p,speed:1}),project);
   return {page,info,errors};
 }
@@ -73,7 +77,7 @@ async function playerPage(browser,svc,project,{speed=4,init=null,width=1280,heig
   const page=await browser.newPage({viewport:{width,height},acceptDownloads:true});const errors=[];
   if(init)await page.addInitScript(init);
   page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text().slice(0,300));});
-  await page.goto(`http://127.0.0.1:${svc.port}/?world=living&project=${project}&qual=1${query}${pairFragment(svc,'/stage')}`);await page.waitForFunction(()=>!!window.__qual);
+  await page.goto(`http://127.0.0.1:${svc.port}/?world=living&project=${project}&qual=1${withQuality(query)}${pairFragment(svc,'/stage')}`);await page.waitForFunction(()=>!!window.__qual);
   await page.evaluate(()=>document.getElementById('replayBtn').click());
   await page.waitForFunction(()=>!document.getElementById('playBtn').disabled,null,{timeout:30000});
   await page.evaluate(s=>{const sel=document.getElementById('speedSelect');sel.value=String(s);sel.dispatchEvent(new Event('change'));document.getElementById('playBtn').click();},speed);
@@ -97,4 +101,4 @@ function processMemory(){
   return Object.fromEntries(Object.entries(out).map(([k,v])=>[k,Math.round(v)]));
 }
 function checker(){const checks=[];return {checks,check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(detail)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${detail}`:''}`);}};}
-module.exports={REPO,projectOf,launch,rendererOf,withService,adminPost,recipeAction,setFamily,filmPage,playerPage,worldReady,processMemory,renderTo,thumb,diff,sha,checker};
+module.exports={CI_QUALITY,withQuality,REPO,projectOf,launch,rendererOf,withService,adminPost,recipeAction,setFamily,filmPage,playerPage,worldReady,processMemory,renderTo,thumb,diff,sha,checker};

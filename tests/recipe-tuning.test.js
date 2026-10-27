@@ -151,3 +151,23 @@ test('applyActions applies a batch in order; the same actions on the same recipe
   assert.throws(()=>recipe.applyActions(r,{type:'tune'},P,0,reg),/Invalid actions/);
   assert.throws(()=>recipe.applyActions(r,Array.from({length:17},()=>({type:'lock'})),P,0,reg),/Invalid actions/);
 });
+test('The Visual Studio\'s curated presets and Essentials name real parameters of their families, within range',()=>{
+  const {FAMILIES:F,COMMON}=require('../engine/catalog');
+  const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/ui/workspaces/visual.js'),'utf8');
+  const constant=name=>Function(`return ${src.match(new RegExp(`const ${name}=([\\s\\S]*?);\\n`))[1]}`)();
+  const params=f=>({...COMMON,...F[f].parameters});
+  const curated=constant('CURATED');
+  assert.ok(curated.length>=6);
+  for(const p of curated){
+    assert.ok(F[p.payload.family],`${p.name}: family ${p.payload.family}`);
+    for(const [path,v] of Object.entries(p.payload.tuning)){
+      const s=params(p.payload.family)[path];assert.ok(s,`${p.name}: ${path} is a parameter of ${p.payload.family}`);
+      if(s.type==='enum')assert.ok(s.values.includes(v),`${p.name}: ${path}=${v}`);
+      else for(const x of [v].flat())assert.ok(x>=s.min&&x<=s.max,`${p.name}: ${path}=${v} within ${s.min}..${s.max}`);
+    }
+  }
+  const essentials=constant('ESSENTIALS');
+  for(const [f,paths] of Object.entries(essentials))for(const path of paths){
+    if(f==='common')assert.ok(COMMON[path],`common essential ${path}`);else assert.ok(params(f)[path],`${f} essential ${path}`);
+  }
+});

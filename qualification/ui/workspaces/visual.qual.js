@@ -159,6 +159,18 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     check('Rename renames the preset',await until(async()=>(await get('/api/presets')).presets.some(p=>p.id===preset.id&&p.name==='Lit Cathedral II'),10000));
     await A.click(`.vs-card[data-preset="${preset.id}"] button[aria-label^="Delete"]`);await A.click('.modal button:has-text("Delete preset")');
     check('Delete (after confirmation) removes the preset',await until(async()=>!(await get('/api/presets')).presets.some(p=>p.id===preset.id),10000));
+    // The Essentials group: first, open, with the few parameters that change this family the most.
+    const ess=await A.evaluate(()=>{const d=document.querySelector('.vs-params details');return {summary:d?.querySelector('summary')?.textContent||'',open:!!d?.open,paths:[...(d?.querySelectorAll('.field[data-path]')||[])].map(f=>f.dataset.path)};});
+    check('Essentials come first, open, with the world\'s high-value parameters',/^Essentials/.test(ess.summary.trim())&&ess.open&&ess.paths.includes('atmosphere.shafts')&&ess.paths.includes('technique.exposure'),JSON.stringify(ess));
+    // Curated looks: built in, read-only, previewed like any preset and saved only by Apply.
+    const curated=await A.$$eval('.vs-card.curated',els=>els.map(e=>({id:e.dataset.preset,rename:!!e.querySelector('button[aria-label^="Rename"]'),del:!!e.querySelector('button[aria-label^="Delete"]')})));
+    check('six curated looks are offered, read-only',curated.length===6&&curated.every(c=>!c.rename&&!c.del),JSON.stringify(curated));
+    const rc=await recipe();
+    await A.click('.vs-card[data-preset="curated:abyss"] button[aria-label^="Preview"]');await previewing(A);
+    const cv=await state(A,()=>{const c=window.ResonancePlayer.state.preview.recipe;return {family:c.family,terrain:c.genome.atmosphere.terrain,glow:c.genome.material.bioluminescence};});
+    check('previewing a curated look shows its family and values',cv.family==='fractal-biosphere'&&cv.terrain==='abyss'&&cv.glow===1.6,JSON.stringify(cv));
+    r=await recipe();check('the curated preview saves nothing',r.revision===rc.revision&&r.family===rc.family,`revision ${r.revision}`);
+    await A.click('#vsCancel');await settled(A);
     // A preset that needs a pack which is not installed: honest unavailability, nothing previewed.
     await A.evaluate(()=>window.ResonancePlayer.api.post('/api/presets',{action:'create',kind:'visual',name:'Needs a pack',payload:{family:'someone.missing-world',look:null,tuning:{},overrides:{}}}));
     await A.waitForSelector('.vs-card[data-preset] .vs-card-text strong:text("Needs a pack")',{timeout:10000});
@@ -236,7 +248,8 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     await A.focus('.vs-card[data-card="fractal-biosphere"] .vs-card-main');await A.keyboard.press('Enter');await previewing(A);
     check('a world card works from the keyboard (Enter) and keeps the focus',await state(A,()=>window.ResonancePlayer.state.preview.recipe.family)==='fractal-biosphere'&&await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='fractal-biosphere');
     await A.keyboard.press('Tab');
-    check('Tab moves on to the next card',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='machine-cathedral');
+    // The built-in worlds are shown Fractal Biosphere, Stellar Forge, Machine Cathedral.
+    check('Tab moves on to the next card',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='stellar-forge');
     await A.click('#vsCancel');await settled(A);
     await A.click('#vsQuality button[data-value="2"]');
     check('quality is set for this device only',await state(A,()=>window.ResonancePlayer.state.quality)==='2'&&await state(A,()=>JSON.parse(localStorage.getItem('code-resonance-device-v1')).quality)==='2');

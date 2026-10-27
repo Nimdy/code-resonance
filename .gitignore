@@ -12,3 +12,8 @@ data/
 coverage/
 playwright-report/
 test-results/
+# Local render output: lab stills, films and their audio and recipes, interface-suite screenshots (rendered on demand)
+qualification/results/lab/
+qualification/results/films/
+qualification/results/ui/*.png
+qualification/results/ui/*.jpg

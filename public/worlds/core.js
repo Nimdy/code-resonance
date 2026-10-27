@@ -48,24 +48,41 @@ export function createPipeline(renderer,{samples=4}={}){
     void main(){vec3 s=texture2D(src,vUv+vec2(-px.x*2.,0.)).rgb+texture2D(src,vUv+vec2(-px.x,px.y)).rgb*2.+texture2D(src,vUv+vec2(0.,px.y*2.)).rgb+texture2D(src,vUv+px).rgb*2.
       +texture2D(src,vUv+vec2(px.x*2.,0.)).rgb+texture2D(src,vUv+vec2(px.x,-px.y)).rgb*2.+texture2D(src,vUv+vec2(0.,-px.y*2.)).rgb+texture2D(src,vUv-px).rgb*2.;
       gl_FragColor=vec4(texture2D(base,vUv).rgb+s/12.*weight,1.);}`,{src:{value:null},base:{value:null},px:{value:new THREE.Vector2()},weight:{value:1}});
-  // Final grade: shockwave refraction, chromatic fringe, bloom, exposure, ACES, contrast/saturation, vignette, grain.
-  const composite=pass(`varying vec2 vUv;uniform sampler2D src,bloom;uniform float exposure,bloomStrength,contrast,saturation,vignette,grain,time,aberration,flash;
-    uniform vec4 waves[4];uniform vec2 aspect;uniform vec3 lift,tint;
+  // Final grade: shockwave refraction, chromatic fringe, bloom (tinted: halation), anamorphic streaks, light shafts toward
+  // up to two screen-space lights, exposure, tone mapping (ACES, or AgX: highlights roll off into colour instead of
+  // clipping to white), contrast/saturation, vignette, grain. Every addition defaults to off, so a world (or a visual
+  // pack) that does not ask for it renders exactly as before.
+  const composite=pass(`varying vec2 vUv;uniform sampler2D src,bloom,wide;uniform float exposure,bloomStrength,contrast,saturation,vignette,grain,time,aberration,flash,tonemap,streak,rayDecay;
+    uniform vec4 waves[4];uniform vec4 rays[2];uniform vec3 rayColor[2];uniform vec2 aspect;uniform vec3 lift,tint,bloomTint,streakTint;
     vec3 aces(vec3 x){const float a=2.51,b=.03,c=2.43,d=.59,e=.14;return clamp((x*(a*x+b))/(x*(c*x+d)+e),0.,1.);}
+    // Minimal AgX (Troy Sobotka's transform, polynomial fit by Benjamin Wrensch), punchy look; returns display-linear.
+    vec3 agx(vec3 c){const mat3 m=mat3(.842479062253094,.0423282422610123,.0423756549057051,.0784335999999992,.878468636469772,.0784336,.0792237451477643,.0791661274605434,.879142973793104);
+      const mat3 mi=mat3(1.19687900512017,-.0528968517574562,-.0529716355144438,-.0980208811401368,1.15190312990417,-.0980434501171241,-.0990297440797205,-.0989611768448433,1.15107367264116);
+      c=m*max(c,vec3(1e-10));c=clamp((log2(c)+12.47393)/16.5,0.,1.);
+      vec3 x2=c*c,x4=x2*x2;c=15.5*x4*x2-40.14*x4*c+31.96*x4-6.868*x2*c+.4298*x2+.1191*c-.00232;
+      float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,1.15);c=pow(max(c,0.),vec3(1.35));
+      return clamp(pow(max(mi*c,0.),vec3(2.2)),0.,1.);}
     float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
     void main(){vec2 uv=vUv;
       for(int i=0;i<4;i++){vec4 w=waves[i];if(w.w<=0.)continue;vec2 d=(uv-w.xy)*aspect;float r=length(d);float band=exp(-pow((r-w.z)*18.,2.));uv-=normalize(d+1e-5)/aspect*band*w.w*.035;}
       vec2 c=uv-.5;float edge=dot(c,c);
       vec3 col=vec3(texture2D(src,uv+c*aberration*edge).r,texture2D(src,uv).g,texture2D(src,uv-c*aberration*edge).b);
-      col+=texture2D(bloom,uv).rgb*bloomStrength*.22;
-      col*=exposure*(1.+flash*.6);col=aces(col*tint);
+      col+=texture2D(bloom,uv).rgb*bloomStrength*.22*bloomTint;
+      // Anamorphic streak: the wide bloom level stretched horizontally (a lens's horizontal flare on bright points).
+      if(streak>0.){vec3 st=vec3(0.);for(int k=-6;k<=6;k++){float o=float(k)/6.;st+=texture2D(wide,uv+vec2(o*.22,0.)).rgb*exp(-abs(o)*3.);}col+=st/5.*streak*streakTint;}
+      // Light shafts: the bloom gathered along the line toward each light (screen-space god rays).
+      for(int r=0;r<2;r++){vec4 L=rays[r];if(L.z<=0.)continue;vec2 d=(L.xy-uv)/24.;vec2 q=uv;float w=1.;vec3 acc=vec3(0.);
+        for(int k=0;k<24;k++){q+=d;acc+=texture2D(wide,q).rgb*w;w*=rayDecay;}col+=acc/24.*L.z*rayColor[r];}
+      col*=exposure*(1.+flash*.6);col=tonemap>.5?agx(col*tint):aces(col*tint);
       col=pow(col,vec3(1./2.2));
       float l=dot(col,vec3(.2126,.7152,.0722));col=mix(vec3(l),col,saturation);col=(col-.5)*contrast+.5+lift;
       col*=1.-vignette*smoothstep(.15,.9,length(c*vec2(1.15,1.)));
       col+=(h(vUv*vec2(1920.,1080.)+fract(time*.731)*vec2(37.,91.))-.5)*grain;
       gl_FragColor=vec4(clamp(col,0.,1.),1.);}`,
     {src:{value:null},bloom:{value:null},exposure:{value:1},bloomStrength:{value:1},contrast:{value:1},saturation:{value:1.05},vignette:{value:.3},grain:{value:.025},
-     time:{value:0},aberration:{value:.004},flash:{value:0},waves:{value:[0,1,2,3].map(()=>new THREE.Vector4())},aspect:{value:new THREE.Vector2(1,1)},lift:{value:new THREE.Vector3()},tint:{value:new THREE.Vector3(1,1,1)}});
+     time:{value:0},aberration:{value:.004},flash:{value:0},waves:{value:[0,1,2,3].map(()=>new THREE.Vector4())},aspect:{value:new THREE.Vector2(1,1)},lift:{value:new THREE.Vector3()},tint:{value:new THREE.Vector3(1,1,1)},
+     wide:{value:null},tonemap:{value:0},streak:{value:0},streakTint:{value:new THREE.Vector3(1,1,1)},bloomTint:{value:new THREE.Vector3(1,1,1)},
+     rays:{value:[new THREE.Vector4(),new THREE.Vector4()]},rayColor:{value:[new THREE.Vector3(1,1,1),new THREE.Vector3(1,1,1)]},rayDecay:{value:.96}});
   let width=4,height=4;
   // Optional full-screen passes on the HDR scene before bloom (visual packs): ping-pong half-float targets.
   // The targets exist only while passes are set, so worlds without post-processing pay nothing for them.
@@ -80,7 +97,10 @@ export function createPipeline(renderer,{samples=4}={}){
     let x=Math.max(1,w>>1),y=Math.max(1,h>>1);for(let i=0;i<LEVELS;i++){down[i].setSize(x,y);up[i].setSize(x,y);x=Math.max(1,x>>1);y=Math.max(1,y>>1);}
     composite.uniforms.aspect.value.set(w/Math.max(1,h),1);
   }
-  function render(drawScene,{bloom=1,threshold=.7,exposure=1,contrast=1,saturation=1.05,vignette=.3,grain=.025,time=0,flash=0,waves=[],lift=null,tint=null,aberration=.004}={}){
+  // Grade options: tonemap 'aces' (default) | 'agx'; streak (0 = off) with streakTint; bloomTint (halation colour);
+  // rays: up to two {x, y (0..1 screen), strength, color: THREE.Color|Vector3} light shafts, rayDecay (0.9..0.99).
+  function render(drawScene,{bloom=1,threshold=.7,exposure=1,contrast=1,saturation=1.05,vignette=.3,grain=.025,time=0,flash=0,waves=[],lift=null,tint=null,aberration=.004,
+    tonemap='aces',streak=0,streakTint=null,bloomTint=null,rays=[],rayDecay=.96}={}){
     renderer.setRenderTarget(scene);renderer.setClearColor(0x000000,1);renderer.clear(true,true,true);drawScene(scene);
     let hdr=scene.texture;
     post.forEach((m,i)=>{const target=postTargets[i%2];if(m.uniforms.tInput)m.uniforms.tInput.value=hdr;if(m.uniforms.uRes)m.uniforms.uRes.value.set(width,height);
@@ -94,7 +114,11 @@ export function createPipeline(renderer,{samples=4}={}){
     const u=composite.uniforms;u.src.value=hdr;u.bloom.value=up[0].texture;u.aberration.value=aberration;
     Object.assign(u.bloomStrength,{value:bloom});u.exposure.value=exposure;u.contrast.value=contrast;u.saturation.value=saturation;u.vignette.value=vignette;u.grain.value=grain;u.time.value=time;u.flash.value=flash;
     for(let i=0;i<4;i++){const w=waves[i];if(w)u.waves.value[i].set(w.x,w.y,w.r,w.a);else u.waves.value[i].set(0,0,0,0);}
-    if(lift)u.lift.value.copy(lift);if(tint)u.tint.value.copy(tint);
+    if(lift)u.lift.value.copy(lift);else u.lift.value.set(0,0,0);if(tint)u.tint.value.copy(tint);else u.tint.value.set(1,1,1);
+    u.wide.value=up[2].texture;u.tonemap.value=tonemap==='agx'?1:0;u.streak.value=streak;u.rayDecay.value=rayDecay;
+    u.streakTint.value.set(1,1,1);if(streakTint)u.streakTint.value.set(streakTint.x??streakTint.r,streakTint.y??streakTint.g,streakTint.z??streakTint.b);
+    u.bloomTint.value.set(1,1,1);if(bloomTint)u.bloomTint.value.set(bloomTint.x??bloomTint.r,bloomTint.y??bloomTint.g,bloomTint.z??bloomTint.b);
+    for(let i=0;i<2;i++){const r=rays[i];if(r&&r.strength>0){u.rays.value[i].set(r.x,r.y,r.strength,0);const c=r.color;u.rayColor.value[i].set(c?.x??c?.r??1,c?.y??c?.g??1,c?.z??c?.b??1);}else u.rays.value[i].set(0,0,0,0);}
     renderer.setRenderTarget(null);renderer.render(composite.scene,ortho);
   }
   // A background pass (nebula, sky) rendered at half resolution into its own target and drawn first into the scene.
