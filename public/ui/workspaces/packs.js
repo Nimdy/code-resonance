@@ -7,13 +7,20 @@
 // "Allow this code".
 import {h,text,button,segmented,disclosure,pill,callout,emptyState,kv,copyable,modal,confirmDialog,toast,styles,humanize} from '../dom.js';
 import {icon} from '../icons.js';
-import {dateTime,bytes,count} from '../format.js';
+import {dateTime,bytes,count,projectName} from '../format.js';
 import {renderMarkdown,openDoc,DOCS} from '../markdown.js';
+import {exportDialog,applyMusicOf} from './artist.js';
 // The pack limits of engine/packs.js (LIMITS) and the receiver's import body limit, checked here first so a person is
 // told at once, before anything is uploaded. The receiver checks again.
 const LIMITS={files:64,fileBytes:1024*1024,totalBytes:8*1024*1024,archiveBytes:12*1024*1024};
-const KIND={declarative:{label:'Declarative · data only',short:'Data only',code:false},shader:{label:'Shader · runs code',short:'Runs code',code:true},world:{label:'World · runs code',short:'Runs code',code:true}};
-const kindOf=p=>KIND[p?.kind]||{label:`${humanize(p?.kind||'unknown')} · unknown kind`,short:'Unknown',code:!!p?.executable};
+const KIND={declarative:{label:'Declarative · data only',short:'Data only',code:false},shader:{label:'Shader · runs code',short:'Runs code',code:true},world:{label:'World · runs code',short:'Runs code',code:true},
+  creation:{label:'Creation · data only',short:'Data only',code:false}};
+const kindOf=p=>(p?.composition?KIND.creation:KIND[p?.kind])||{label:`${humanize(p?.kind||'unknown')} · unknown kind`,short:'Unknown',code:!!p?.executable};
+// The library's groups: what a person looks for (an artist's creation or a tuned look, a shader, a whole world).
+const GROUPS=[{id:'data',name:'Imported creations and looks',line:'Data only: Artist Studio compositions and tuned looks of the built-in worlds',test:p=>p.kind==='declarative'},
+  {id:'shader',name:'Shader packs',line:'GLSL on a built-in world: runs code, approved before it runs',test:p=>p.kind==='shader'},
+  {id:'world',name:'Full coded worlds',line:'Complete worlds in JavaScript and GLSL: run code, approved before they run',test:p=>p.kind==='world'}];
+const groupOf=p=>{const i=GROUPS.findIndex(g=>g.test(p));return i<0?GROUPS.length:i;};
 // What an approved code pack can reach, and what the browser cannot promise: the same facts as docs/packs/security.md
 // and receiver/pack-import.js access() (the import report brings the receiver's own wording; installed packs use this).
 const ACCESS=['Runs in a worker inside an isolated frame: no network, no access to the receiver, your files, your recordings or the player page.',
@@ -31,7 +38,8 @@ const importMessage=e=>{const base=IMPORT_ERRORS[e.code]||(e.status===413?'The u
 const author=p=>p?.author?.name||'Not stated';
 const cap=s=>{s=String(s||'stopped');return s.charAt(0).toUpperCase()+s.slice(1);};
 const short=hash=>hash?`${hash.slice(0,12)}…`:'—';
-const paletteOf=p=>p?.kind==='declarative'?Object.entries(p.parameters?.overrides||{}).filter(([k,v])=>k.startsWith('palette.')&&/^#[0-9a-f]{6}$/i.test(v)).map(([,v])=>v).slice(0,5):[];
+const paletteOf=p=>p?.composition?[...new Set(p.composition.layers.flatMap(l=>[l.params.color,l.params.colorB||l.params.tip]).filter(Boolean))].slice(0,5):
+  p?.kind==='declarative'?Object.entries(p.parameters?.overrides||{}).filter(([k,v])=>k.startsWith('palette.')&&/^#[0-9a-f]{6}$/i.test(v)).map(([,v])=>v).slice(0,5):[];
 // The library's approval column, in one place: the four states the inspector, the rows and the review agree on.
 function approval(p){
   if(!p.ok)return {label:'Has problems',kind:'danger'};
@@ -65,13 +73,18 @@ export default {mount(view,{store,player:P,navigate,params}){
     h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'pkLibraryTitle',text:'Library'}),h('span',{class:'note',text:'Installed on this computer'})),filterHolder),
     hiddenNote,cols,list);
   const creator=buildCreator();
+  // My creations: the Artist Studio's compositions (receiver compositions.json), with what can be done with each here.
+  const mineList=h('div',{class:'pk-mine-list',id:'pkMine'}),mineNote=h('span',{class:'note'});
+  const mine=h('section',{class:'panel pk-mine','aria-labelledby':'pkMineTitle'},
+    h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'pkMineTitle',text:'My creations'}),mineNote),
+      button({label:'Artist Studio',icon:'brush',kind:'ghost',size:'sm',onClick:()=>navigate('artist')})),mineList);
   const page=h('div',{class:'page'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Visual Pack SDK'}),h('h1',{class:'title-l',text:'Visual Packs'}),summary),h('div',{class:'actions'},creatorBtn,importBtn)),
-    banner,library,creator));
+    banner,mine,library,creator));
   const inspector=h('aside',{class:'inspector pk-inspector','aria-label':'Pack details'});
   view.append(h('div',{class:'split ws-packs'},h('div',{class:'main'},page),inspector));
   // ---- Library ------------------------------------------------------------------------------------------------
-  const packs=()=>[...(P.state.packs||[])].sort((a,b)=>String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id)));
+  const packs=()=>[...(P.state.packs||[])].sort((a,b)=>groupOf(a)-groupOf(b)||String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id)));
   const current=()=>packs().find(p=>p.id===selected)||null;
   // The pack the inspector shows: the one named, or with none named the first (as renderInspector chooses).
   const inspected=()=>current()||(params[0]?null:packs()[0]||null);
@@ -142,9 +155,11 @@ export default {mount(view,{store,player:P,navigate,params}){
       button({label:'Show all',size:'sm',kind:'ghost',onClick:()=>{filter='all';renderFilter(packs());renderList(true);
         // The button is gone with the message: the focus goes to the filter it changed (or, with none drawn, a row).
         const f=filterHolder.querySelector('[aria-checked="true"]');if(f)f.focus();else focusRow();}})));
-    const marked=inspected()?.id;
+    const marked=inspected()?.id;let group=-1;
     for(const p of shown){
       const k=kindOf(p),a=approval(p);
+      if(groupOf(p)!==group){group=groupOf(p);const g=GROUPS[group];if(g)list.append(h('li',{class:'pk-group',role:'presentation'},h('span',{class:'eyebrow',text:g.name}),h('span',{class:'faint small',text:g.line}),
+        h('span',{class:'faint small num pk-group-count',text:String(shown.filter(x=>groupOf(x)===group).length)})));}
       const row=h('button',{type:'button',class:['pk-row',k.code?'code':'data'],dataset:{id:p.id},'aria-current':p.id===marked?'true':null},
         glyphOf(p),
         h('strong',{class:'pk-row-title ellipsis',text:p.name}),
@@ -167,7 +182,7 @@ export default {mount(view,{store,player:P,navigate,params}){
     return h('span',{class:['pk-glyph',k.code?'code':'data',large?'lg':''],'aria-hidden':'true'},swatches.length?h('span',{class:'pk-swatches'},...swatches.map(c=>{const s=h('i');s.style.background=c;return s;})):icon(k.code?'code':'layers'));
   }
   // What a pack changes: the built-in world it is drawn on, or a world of its own.
-  function baseLine(p){if(p.kind==='world')return 'A world family of its own';return p.base?`On ${baseName(p.base)}`:'';}
+  function baseLine(p){if(p.kind==='world')return 'A world family of its own';if(p.composition)return p.composition.base==='canvas'?`On the artist canvas · ${count(p.composition.layers.length,'layer')}`:`On ${baseName(p.composition.base)} · ${count(p.composition.layers.length,'layer')}`;return p.base?`On ${baseName(p.base)}`:'';}
   function select(id,fromUser=false){
     selected=id||'';for(const r of list.querySelectorAll('.pk-row'))r.setAttribute('aria-current',String(r.dataset.id===selected));
     renderInspector(true);renderHidden();
@@ -191,6 +206,9 @@ export default {mount(view,{store,player:P,navigate,params}){
     const k=kindOf(p),a=approval(p);
     const actions=h('div',{class:'pk-actions'});
     if(reviewable(p))actions.append(button({label:'Review & approve',icon:'shield-check',kind:'primary',id:'pkReviewBtn',onClick:()=>openReview(p)}));
+    else if(p.composition)actions.append(button({label:'Use',icon:'check',kind:usable(p)?'primary':'',id:'pkUseBtn',disabled:!usable(p)||!store.state.selected,
+        title:store.state.selected?'Apply this creation to the selected project (its layers, finish and music; the project keeps its own structure and data)':'Select a project first',onClick:()=>useCreation(p)}),
+      button({label:'Open in Artist Studio',icon:'brush',kind:'outline',id:'pkOpenArtist',disabled:!p.ok,title:'An editable copy in My creations',onClick:()=>openCreation(p)}));
     else actions.append(button({label:'Use it',icon:'visual',kind:usable(p)?'primary':'',id:'pkUseBtn',disabled:!usable(p),
       title:usable(p)?(p.kind==='world'?'Open Visual Studio with this world for the selected project (a preview until you save)':'Open Visual Studio with this look for the selected project (a preview until you save)'):'It has problems and cannot be used',onClick:()=>use(p)}));
     actions.append(h('span',{class:'grow'}));
@@ -220,7 +238,7 @@ export default {mount(view,{store,player:P,navigate,params}){
       ['SDK',sdkLine(p,c.sdk)],['Used by',p.usedBy?count(p.usedBy,'project'):'No project yet'],
       ['Installed',dateTime(p.installedAt)],['License',p.license||'Not stated'],
       b?['Budget',[b.drawCalls&&`${b.drawCalls} draw calls`,b.triangles&&`${Math.round(b.triangles/1000)}k triangles`,b.points&&`${Math.round(b.points/1000)}k points`,b.updateMs&&`${b.updateMs} ms update`].filter(Boolean).join(' · '),'wide']:null].filter(Boolean)));
-    body.append(parametersBlock(p)||'');
+    body.append((p.composition?compositionBlock(p):parametersBlock(p))||'');
     const total=(p.files||[]).reduce((n,f)=>n+f.size,0);
     body.append(disclosure({summary:`Files · ${(p.files||[]).length} · ${bytes(total)}`,open:(p.files||[]).length<=6},filesTable(p.files||[]),
       h('div',{class:'pk-digest'},h('span',{class:'eyebrow',text:'Digest (SHA-256 of every file)'}),copyable(p.digest||'—',{label:'Copy'}))));
@@ -271,8 +289,52 @@ export default {mount(view,{store,player:P,navigate,params}){
       h('thead',{},h('tr',{},h('th',{text:'File'}),h('th',{class:'r',text:'Size'}),h('th',{text:'SHA-256'}))),
       h('tbody',{},...files.map(f=>h('tr',{},h('td',{class:'mono',text:f.path}),h('td',{class:'r num',text:bytes(f.size)}),h('td',{class:'mono faint',title:f.sha256,text:short(f.sha256)}))))));
   }
+  // A creation's layers and what each reacts to, in the Artist Studio's words (shared with its README).
+  let words=globalThis.ResonanceCompositionText||null;
+  if(!words)import('/composition-text.js').then(()=>{words=globalThis.ResonanceCompositionText;renderInspector(true);renderMine();}).catch(()=>{});
+  function compositionBlock(p){
+    const c=p.composition;if(!words)return h('p',{class:'faint small',text:'Loading…'});
+    const maps=c.layers.reduce((n,l)=>n+l.mappings.length,0)+c.mappings.length;
+    return disclosure({summary:`Composition · ${count(c.layers.length,'layer')} · ${count(maps,'mapping')}`,open:true},
+      h('p',{class:'faint small',text:`${words.BASE_WORDS[c.base]||c.base}${c.finish?` · ${words.FINISH_WORDS[c.finish]} finish`:''}${c.music?.style?` · ${humanize(c.music.style)} music profile`:''}. Data only: layers from the Artist Studio\u2019s allowlist, nothing that runs.`}),
+      h('ul',{class:'pk-comp-layers'},...c.layers.map(l=>h('li',{},h('div',{class:'pk-comp-layer'},h('strong',{text:l.name}),h('span',{class:'faint small',text:`${words.layerLine(l)} · ${words.DEPTH_WORDS[l.depth]?.badge||''}`})),
+        ...l.mappings.map(m=>h('div',{class:'small muted pk-comp-map',text:words.mappingSentence(m)}))))));
+  }
   // ---- Actions ----------------------------------------------------------------------------------------------------
-  function use(p){navigate('visual',p.kind==='world'?'family':'look',p.id);}
+  function use(p){if(p.composition){void useCreation(p);return;}navigate('visual',p.kind==='world'?'family':'look',p.id);}
+  // A creation (or one of My creations) applied to the selected project as its composition, never as an overlay: the
+  // project keeps its own structure, events and digital life.
+  async function applyComposition(c,label){
+    const pr=store.project();if(!pr){toast('Select a project first.','warning');return;}
+    if(!await confirmDialog({title:`Use ${label} on ${projectName(pr)}?`,confirm:'Use it',
+      body:h('div',{class:'pk-confirm'},h('p',{text:'Its layers, finish and music profile become part of this project\u2019s identity. The project keeps its own structure, events and digital life, so the same creation looks different on each project.'}),
+        h('p',{class:'faint',text:'The Artist Studio can change it later; applying another composition replaces it.'}))}))return;
+    try{await P.recipeAction([{type:'composition',composition:c}],{ifRevision:P.state.recipe?.revision});await applyMusicOf(store,c).catch(()=>{});
+      toast(`${label} is applied to ${projectName(pr)}.`,'ok');}
+    catch(e){toast(e.code==='stale'?'The identity changed in another window: try again to apply it on the new version.':`Not applied: ${e.message}`,e.code==='stale'?'warning':'error');}
+  }
+  const useCreation=p=>applyComposition(p.composition,p.name);
+  async function openCreation(p){
+    try{const r=await store.compositionAction({action:'create',composition:p.composition,origin:{kind:'pack',ref:p.id}});toast(`A copy of ${p.name} is in My creations.`,'ok');navigate('artist','edit',r.created);}
+    catch(e){toast(`Not opened: ${e.message}`,'error');}
+  }
+  // ---- My creations -------------------------------------------------------------------------------------------------
+  function renderMine(){
+    const lib=store.state.compositions,r=P.state.recipe,list=lib?[...lib.compositions].sort((a,b)=>b.updatedAt-a.updatedAt):[];
+    text(mineNote,lib?`${count(list.length,'composition')} made in the Artist Studio · on this computer`:'Made in the Artist Studio');
+    if(!lib){mineList.replaceChildren(h('p',{class:'faint small pk-mine-empty',text:store.state.errors?.compositions?`Not loaded: ${store.state.errors.compositions}`:'Loading…'}));return;}
+    if(!list.length){mineList.replaceChildren(h('div',{class:'pk-mine-empty'},h('p',{class:'small muted',text:'Nothing made yet. In the Artist Studio, start from a starter or a world, add layers that answer the music and real events, then save: it appears here, ready to use on any project or to export as a pack.'}),
+      button({label:'Create a composition',icon:'brush',size:'sm',kind:'outline',onClick:()=>navigate('artist')})));return;}
+    mineList.replaceChildren(...list.map(e=>{const c=e.composition,here=r?.composition?.id===e.id,sw=paletteOf({composition:c});
+      return h('div',{class:'pk-mine-row',dataset:{id:e.id}},
+        h('span',{class:'pk-glyph data','aria-hidden':'true'},sw.length?h('span',{class:'pk-swatches'},...sw.map(v=>{const i=h('i');i.style.background=v;return i;})):icon('brush')),
+        h('div',{class:'pk-mine-text'},h('strong',{class:'ellipsis',text:c.name}),h('span',{class:'faint small ellipsis',text:`${words?.BASE_WORDS[c.base]||humanize(c.base)} · ${count(c.layers.length,'layer')} · version ${e.version} · ${dateTime(e.updatedAt)}`})),
+        here?pill('On this project','accent',{plain:true}):h('span'),
+        h('div',{class:'pk-mine-actions'},
+          button({label:'Use',size:'sm',kind:'outline',disabled:!store.state.selected,title:'Apply it to the selected project',onClick:()=>applyComposition({...c},c.name)}),
+          button({label:'Edit',icon:'brush',size:'sm',kind:'ghost',onClick:()=>navigate('artist','edit',e.id)}),
+          button({label:'Export',icon:'download',size:'sm',kind:'ghost',title:'A data-only pack to share',onClick:()=>exportDialog({S:store,id:e.id})})));}));
+  }
   // The approval dialog: identity, exact files, digest, access, limits; "Allow this code" approves exactly this digest.
   function openReview(p){
     const fresh=(P.state.packs||[]).find(x=>x.id===p.id)||p;
@@ -438,11 +500,13 @@ export default {mount(view,{store,player:P,navigate,params}){
     return el;
   }
   // ---- Wiring -----------------------------------------------------------------------------------------------------
-  function renderAll(force=false){renderSummary();renderBanner();renderList(force);renderInspector(force);}
+  function renderAll(force=false){renderSummary();renderBanner();renderMine();renderList(force);renderInspector(force);}
   renderAll(true);
   P.reloadPacks().then(()=>{loaded=true;renderAll();});
   if(!store.state.catalog)void store.loadCatalog();
+  if(!store.state.compositions)void store.loadCompositions();
   offs.push(store.on(t=>{
+    if(t.has('compositions')||t.has('recipe')||t.has('selection'))renderMine();
     if(t.has('packs')||t.has('status')){loaded=true;renderSummary();renderList();renderInspector();}
     if(t.has('catalog'))renderInspector();
     if(t.has('notice')||t.has('world')||t.has('receiver')||t.has('recipe')){renderBanner();renderList();renderInspector();}

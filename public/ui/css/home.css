@@ -68,6 +68,10 @@
 .ws-home .home-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .ws-home .home-links .btn{min-width:0;color:var(--text-2)}
 .ws-home .home-links .btn:hover{color:var(--text-1)}
+/* The creation links: a composition's name may be long; it is cut, whole in the tooltip. */
+.ws-home .home-links .btn span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ws-home .home-links #homeCreate,.ws-home .home-links #homeContinue{color:var(--text-1)}
+.ws-home .home-links #homeCreate svg{color:var(--accent)}
 .ws-home .home-cap{display:grid;gap:12px;padding:16px 20px 18px;border-top:1px solid var(--line);background:var(--bg-1)}
 .ws-home .home-status{list-style:none;margin:0;padding:0;display:grid;gap:11px}
 .ws-home .home-status li{display:flex;gap:11px;align-items:flex-start;font-size:14px;line-height:1.45;min-width:0}
