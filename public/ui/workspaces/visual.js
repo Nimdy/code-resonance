@@ -77,7 +77,7 @@ const DOC_OF={'life.music':'How strongly the music shapes the conditions the inh
 // Choices named for what they are rather than their stored value.
 const VALUE_LABELS={'life.ecology':{1:'Earlier climate',2:'Musical ecology'}};
 // The music influence scale: what 0, 1 and 2 mean (life.music; docs/LIFE.md).
-const INFLUENCE=[[0,'Independent','The ecology lives by itself: exactly the same with or without music.'],
+const INFLUENCE=[[0,'Independent','The ecology lives by itself: the music changes nothing.'],
   [1,'Musical','Sections visibly change how the inhabitants gather, roam and glow. The default.'],
   [2,'Expressive','Unmistakable: each section reshapes the ecosystem, which stays autonomous.']];
 // The finish: a lens and colour profile over the world's own grade (public/worlds/host.js FINISHES). Classic is no

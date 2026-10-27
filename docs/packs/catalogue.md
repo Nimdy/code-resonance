@@ -51,7 +51,7 @@ built-in family, with its range (every family is rendered with all parameters at
 | `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
 | `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
 | `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
-| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (exactly the same with or without music), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
 | `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
 | `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
 | `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
@@ -142,7 +142,7 @@ Ambient layers unlocked by verified milestones, in order: `aurora-veils`, `plasm
 | `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
 | `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
 | `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
-| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (exactly the same with or without music), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
 | `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
 | `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
 | `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
@@ -226,7 +226,7 @@ Ambient layers unlocked by verified milestones, in order: `fireflies`, `blossom-
 | `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
 | `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
 | `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
-| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (exactly the same with or without music), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
 | `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
 | `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
 | `life.separation` | number 0 … 2 | advanced: personal space between neighbours |

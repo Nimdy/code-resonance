@@ -94,7 +94,7 @@ const LIFE={
   'life.environment':n(0,2,'environmental influence: how strongly currents and engineering events move them'),
   'life.trails':n(0,2,'trails: how much they mark their way and follow each other\'s, and how visible the trails are'),
   'life.persistence':n(.25,2,'field memory: how long trails, energy and disturbances last'),
-  'life.music':n(0,2,'music influence: 0 an independent ecology (exactly the same with or without music), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous)'),
+  'life.music':n(0,2,'music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous)'),
   'life.attraction':n(0,2,'advanced: attraction to favourable places and to other species they chase'),
   'life.repulsion':n(0,2,'advanced: avoidance of disturbed places and of species they avoid'),
   'life.separation':n(0,2,'advanced: personal space between neighbours'),
