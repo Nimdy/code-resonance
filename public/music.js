@@ -53,7 +53,7 @@
       pulse:{wave:'sawtooth',cutoff:520,q:1.1,env:950,envDecay:.18,drive:2,hp:38,attack:.005,release:.16,gain:.3,reverb:.04},
       cinematic:{wave:'triangle',sub:.07,harm:.16,drive:1.3,cutoff:620,hp:36,attack:.06,release:1.1,gain:.38,reverb:.16},
       chip:{wave:'triangle',cutoff:2800,hp:40,attack:.002,release:.06,gain:.36,reverb:.02}},
-    lead:{ambient:{wave:'sine',blend:{wave:'triangle',gain:.4},breath:.05,cutoff:3600,hp:220,attack:.07,release:.95,vibrato:{rate:5,depth:.003,delay:.35},gain:.31,reverb:.52,delay:.22},
+    lead:{ambient:{wave:'sine',blend:{wave:'triangle',gain:.4},breath:.05,cutoff:3600,hp:220,attack:.07,release:.95,vibrato:{rate:5,depth:.003,delay:.35},gain:.26,reverb:.52,delay:.22},
       pulse:{wave:'sawtooth',blend:{wave:'square',gain:.25},cutoff:1900,q:1.4,env:1700,envDecay:.24,hp:240,attack:.005,release:.26,gain:.17,reverb:.26,delay:.3},
       cinematic:{wave:'sawtooth',voices:2,detune:4,spread:.3,cutoff:2300,q:.5,env:1100,envDecay:1.2,hp:200,attack:.16,release:1.05,vibrato:{rate:5.2,depth:.0035,delay:.4},gain:.2,reverb:.56,delay:.12},
       chip:{wave:'duty25',cutoff:6000,hp:250,attack:.003,release:.08,vibrato:{rate:6,depth:.005,delay:.16},gain:.12,reverb:.1,delay:.18}},

@@ -317,7 +317,7 @@
   const ORCH={
     statement:{pad:.8,bass:.8,melody:1,counter:0,arp:.45,perc:.5,atmos:.3},
     development:{pad:.7,bass:1,melody:.85,counter:.9,arp:.85,perc:.8,atmos:.35},
-    interlude:{pad:.9,bass:.35,melody:.3,counter:0,arp:.3,perc:.15,atmos:1},
+    interlude:{pad:.9,bass:.35,melody:.42,counter:0,arp:.3,perc:.15,atmos:1},
     return:{pad:.9,bass:1,melody:1,counter:.6,arp:.7,perc:.9,atmos:.5},
     release:{pad:1,bass:.45,melody:.6,counter:0,arp:0,perc:0,atmos:.8},
     tension:{pad:.85,bass:.9,melody:.6,counter:.5,arp:.6,perc:.55,atmos:.6},
