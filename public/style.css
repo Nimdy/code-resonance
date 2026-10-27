@@ -4,7 +4,7 @@
 /* Independent composition control surface */
 .panel.left{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#293954 transparent}
 .studio-label{margin-top:18px;margin-bottom:12px}
-.worlds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.worlds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .world{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:51px;background:#101827;color:#8395ad;border:1px solid #26354b;border-radius:6px;font:8px var(--mono);letter-spacing:.035em;transition:.2s}
 .world span{font-size:18px;line-height:16px}.world:hover{color:#eefaff;border-color:#6182a0}.world.active{background:rgba(98,215,246,.10);border-color:#62d9f8;color:#93eafa;box-shadow:inset 0 0 18px rgba(78,210,246,.04)}
 .sound-controls{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:6px;background:#0a1020}
@@ -20,3 +20,10 @@ body.overlay{background:#060a12}body.overlay .toolbar,body.overlay .panel,body.o
 body.overlay .stage-empty{display:none !important}body.overlay .stage-lower-left,body.overlay .stage-lower-right{opacity:.45}
 @media(max-height:730px){.panel.left{padding-top:15px}.studio-label{margin-top:11px}.world{min-height:40px}.sound-controls{gap:3px;padding:8px}.identity{padding:12px 0}.fineprint{display:none}}
 @media(max-width:1190px){.brand-title{font-size:17px}.toolbar-center{display:none}.action{font-size:9px}.panel.left{padding:14px 12px}}
+
+/* The Construct renders on its own WebGL canvas; captions narrate meaningful changes for any viewer. */
+#construct{position:absolute;inset:0;width:100%;height:100%;display:block}#construct.hidden,#stage.hidden{display:none}
+.caption{position:absolute;left:50%;bottom:64px;transform:translate(-50%,6px);font:500 15px/1.4 var(--sans);letter-spacing:.02em;color:#e9eef8;
+  text-shadow:0 1px 12px rgba(5,8,14,.9);opacity:0;transition:opacity .6s,transform .6s;pointer-events:none;white-space:nowrap;z-index:3}
+.caption.show{opacity:.92;transform:translate(-50%,0)}
+body.overlay .caption{bottom:56px;font-size:18px}

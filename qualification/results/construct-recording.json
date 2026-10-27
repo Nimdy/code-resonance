@@ -1,0 +1,174 @@
+{
+  "startedAt": "2026-10-23T19:56:53.505Z",
+  "extensionRef": "working-tree",
+  "vscode": {
+    "executable": "/home/nimda/projects/solonerds-projects/code-resonance/qualification/.vscode-test/vscode-linux-x64-1.143.1/code",
+    "version": "1.143.1"
+  },
+  "root": "/tmp/cr-vscode-qual-D1mAYc",
+  "port": 45107,
+  "phases": {
+    "construct": {
+      "phase": "construct",
+      "vscodeVersion": "1.143.1",
+      "remoteName": null,
+      "platform": "linux",
+      "checks": [
+        {
+          "name": "capture started",
+          "pass": true,
+          "detail": ""
+        },
+        {
+          "name": "recording contains a failing test run and a recovery",
+          "pass": true,
+          "detail": "{\"events\":230,\"files\":17,\"agentEvents\":164,\"attributedCues\":54,\"testsFailed\":1,\"testsPassed\":4,\"crossDependencies\":2,\"commits\":2,\"refactorMilestones\":0,\"editorEdits\":4,\"costUsd\":0.508}"
+        },
+        {
+          "name": "recording contains attributed agent work and cross-district integration",
+          "pass": true,
+          "detail": ""
+        }
+      ],
+      "measurements": {
+        "recording": {
+          "events": 230,
+          "files": 17,
+          "agentEvents": 164,
+          "attributedCues": 54,
+          "testsFailed": 1,
+          "testsPassed": 4,
+          "crossDependencies": 2,
+          "commits": 2,
+          "refactorMilestones": 0,
+          "editorEdits": 4,
+          "costUsd": 0.508
+        }
+      },
+      "notes": [],
+      "projectId": "c6c876a59a661b8d8772059a2f3bd44255110676c4ad7f9d11e60328395f117b",
+      "timeline": [
+        {
+          "label": "editor: text utilities",
+          "at": 1792785423124
+        },
+        {
+          "label": "agent data starts",
+          "at": 1792785424988
+        },
+        {
+          "label": "agent ui starts",
+          "at": 1792785424992
+        },
+        {
+          "label": "editor: slugify while agents work",
+          "at": 1792785430995
+        },
+        {
+          "label": "agent data done",
+          "at": 1792785444152
+        },
+        {
+          "label": "agent ui done",
+          "at": 1792785460102
+        },
+        {
+          "label": "agent tests-first starts",
+          "at": 1792785465104
+        },
+        {
+          "label": "agent tests-first done",
+          "at": 1792785493593
+        },
+        {
+          "label": "agent implement starts",
+          "at": 1792785498593
+        },
+        {
+          "label": "agent implement done",
+          "at": 1792785511957
+        },
+        {
+          "label": "agent integrate starts",
+          "at": 1792785516959
+        },
+        {
+          "label": "agent integrate done",
+          "at": 1792785589438
+        },
+        {
+          "label": "commit",
+          "at": 1792785594438
+        },
+        {
+          "label": "agent refactor starts",
+          "at": 1792785602453
+        },
+        {
+          "label": "agent refactor done",
+          "at": 1792785637260
+        },
+        {
+          "label": "commit",
+          "at": 1792785642262
+        }
+      ],
+      "agents": [
+        {
+          "label": "data",
+          "exitCode": 0,
+          "seconds": 19,
+          "turns": 3,
+          "costUsd": 0.0688013,
+          "stderr": ""
+        },
+        {
+          "label": "ui",
+          "exitCode": 0,
+          "seconds": 35,
+          "turns": 6,
+          "costUsd": 0.09607480000000002,
+          "stderr": ""
+        },
+        {
+          "label": "tests-first",
+          "exitCode": 0,
+          "seconds": 28,
+          "turns": 6,
+          "costUsd": 0.0525213,
+          "stderr": ""
+        },
+        {
+          "label": "implement",
+          "exitCode": 0,
+          "seconds": 13,
+          "turns": 4,
+          "costUsd": 0.034836400000000003,
+          "stderr": ""
+        },
+        {
+          "label": "integrate",
+          "exitCode": 0,
+          "seconds": 72,
+          "turns": 30,
+          "costUsd": 0.17677910000000005,
+          "stderr": ""
+        },
+        {
+          "label": "refactor",
+          "exitCode": 0,
+          "seconds": 35,
+          "turns": 17,
+          "costUsd": 0.0793063,
+          "stderr": ""
+        }
+      ],
+      "persistedWorkspaceState": {}
+    }
+  },
+  "vsixInstall": {
+    "exitCode": 0,
+    "output": "Installing extensions...\nExtension 'code-resonance.vsix' was successfully installed.\n(node:2387555) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `code --trace-deprecation ...` to show where the warning was created)",
+    "listed": "zerobandwidth.code-resonance@0.3.0"
+  }
+}

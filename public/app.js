@@ -8,25 +8,29 @@
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
   const dom={project:$('projectSelect'),feed:$('feed'),scrub:$('scrub'),sound:$('soundBtn'),chapter:$('chapter')};
   const params=new URLSearchParams(location.search);
+  const WORLDS=['construct','nexus','city','nebula'];
+  // Film mode: the clock is driven frame by frame (window.__film), so a recorded performance renders deterministically.
+  const FILM=params.has('film');
   const overlay=params.has('overlay');
   let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0;
   let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,feedDirty=false;
   // World coordinates are centred on (0,0); the camera eases to frame the structure as it grows.
-  const scene={nodes:new Map(),edges:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
+  const scene={nodes:new Map(),edges:new Map(),groups:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
   let firstBar=null;
   const queue=[];
   const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;setText('barCounter',`BAR ${String(index-firstBar+1).padStart(3,'0')}`);if(s)section=s;if(key)setText('seedLabel',key.toUpperCase());});
-  let selectedWorld='nexus',recorder=null,recordChunks=[],recordStreams=[];
+  let selectedWorld='construct',recorder=null,recordChunks=[],recordStreams=[];
+  let construct=null,constructLoading=null,constructFailed=false,filmTime=0,filmSections=[],caption={text:'',at:-1e12};
   let soundEnabled=false;
   try {const prefs=JSON.parse(localStorage.getItem('code-resonance-player-v1')||'{}');
-    if(['nexus','city','nebula'].includes(prefs.world))selectedWorld=prefs.world;
+    if(WORLDS.includes(prefs.world))selectedWorld=prefs.world;
     if(window.ResonanceScore.STYLES.includes(prefs.style))music.setOptions({style:prefs.style});
     if(Number.isFinite(prefs.volume)&&prefs.volume>=0&&prefs.volume<=1)music.setOptions({volume:prefs.volume});
     if(Number.isFinite(prefs.tempo)&&prefs.tempo>=58&&prefs.tempo<=160)music.setOptions({tempo:prefs.tempo});
     if(prefs.tempoMode==='manual'||prefs.tempoMode==='project')music.setOptions({tempoMode:prefs.tempoMode});
     if(Number.isFinite(prefs.texture)&&prefs.texture>=0&&prefs.texture<=1)music.setOptions({texture:prefs.texture});
   }catch{}
-  if(params.get('world')&&['nexus','city','nebula'].includes(params.get('world')))selectedWorld=params.get('world');
+  if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
   if(params.get('style')&&window.ResonanceScore.STYLES.includes(params.get('style')))music.setOptions({style:params.get('style')});
   const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
@@ -61,18 +65,18 @@
   function kindClass(type){return type.startsWith('agent.')?'ai':type.startsWith('validation.')||type.startsWith('milestone.')||type==='source.parse.diagnostics'?'validation':type.startsWith('symbol.')||type.startsWith('dependency.')?'structure':'system';}
   function eventLabel(c){if(c.detail?.symbolType)return `${readable(c.type)} · ${c.detail.symbolType.toUpperCase()}`;return readable(c.type);}
   // ---- Performance clock and scheduling ------------------------------------------------------------------
-  function perfNow(){return mode==='replay'?replayPos:Date.now()-delayMs;}
+  function perfNow(){return FILM?filmTime:mode==='replay'?replayPos:Date.now()-delayMs;}
   function at(time,fn){let i=queue.length;while(i>0&&queue[i-1].time>time)i--;queue.splice(i,0,{time,fn});}
   function runQueue(){const now=perfNow();while(queue.length&&queue[0].time<=now)queue.shift().fn();}
   const cueTime=(cue,entry)=>clamp(cue.ts,entry.start,Math.max(entry.start,entry.end-1));
   // Schedules one recorded window: its frame at the window start, each cue at its own time.
   // Cues before `from` (e.g. earlier in a window that a seek lands inside) join the feed silently, never as a burst.
   function schedule(entry,{animate=true,from=-Infinity}={}){
-    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);});
+    at(entry.start,()=>{applyFrame(entry.frame);applyDelta(entry.graph,entry.start,entry.end);construct?.applyDelta(entry.graph,entry.start,entry.end);});
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
-      at(time,()=>{if(live)animateCue(cue);feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
+      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);feedDirty=true;});
     }
   }
   function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);if(model)setStats(model);}
@@ -88,8 +92,10 @@
     node.tx=(parent?parent.tx:0)+Math.cos(a)*r;node.ty=(parent?parent.ty:0)+Math.sin(a)*r;node.angle=a;node.radius=r;
   }
   function addNode(n,born){
+    // Architectural districts are drawn only by the Construct; the 2D worlds keep modules and symbols.
+    if(n.type==='group'){scene.groups.set(n.id,{...n});return;}
     const existing=scene.nodes.get(n.id);
-    if(existing){existing.weight=n.weight;existing.type=n.type;existing.dying=null;return;}
+    if(existing){Object.assign(existing,{...n,x:existing.x,y:existing.y,tx:existing.tx,ty:existing.ty,dying:null});return;}
     const node={...n,born,dying:null,x:0,y:0,glow:0};
     scene.nodes.set(n.id,node);
     if(n.type==='module')placeModule(node);else placeSymbol(node);
@@ -98,7 +104,7 @@
   const edgeKey=e=>`${e.a}>${e.b}>${e.kind}`;
   // `birth` (replay) orders modules by when they first appeared, so every seek rebuilds the same layout.
   function resetScene(graph,birth){
-    scene.nodes.clear();scene.edges.clear();scene.order=0;scene.extent=.12;
+    scene.nodes.clear();scene.edges.clear();scene.groups.clear();scene.order=0;scene.extent=.12;
     for(const e of graph.edges)scene.edges.set(edgeKey(e),e);
     const parents=new Map();for(const e of graph.edges)if(e.kind==='contains')parents.set(e.b,e.a);
     const modules=graph.nodes.filter(n=>n.type==='module');
@@ -107,7 +113,9 @@
     for(const n of graph.nodes.filter(n=>n.type!=='module'))addNode({...n,parent:n.parent||parents.get(n.id)},-Infinity);
     for(const n of scene.nodes.values()){n.x=n.tx;n.y=n.ty;}
     scene.view=scene.extent;
+    construct?.reset(constructGraph(),perfNow());
   }
+  function constructGraph(){return {nodes:[...scene.groups.values(),...[...scene.nodes.values()].filter(n=>n.dying===null)],edges:[...scene.edges.values()]};}
   // Births are staggered across the window so new structure appears in step with the music.
   function applyDelta(d,start,end){
     if(!d)return;
@@ -399,15 +407,46 @@
     drawComets(w,h,n=>positions.get(n.parent||n.id)||fallback(n));
     drawPulses(dt,n=>positions.get(n.parent||n.id)||fallback(n));
   }
-  let lastPaint=performance.now(),clock=0;
-  function paint(nowMs){
-    resize();const dt=Math.min(.07,(nowMs-lastPaint)/1000);lastPaint=nowMs;clock+=dt;
-    if(mode==='replay'&&playback)tickReplay(nowMs);
+  // ---- The Construct (WebGL), loaded on demand; Monolith is the fallback where WebGL is unavailable ----------
+  function replaySpeed(){return FILM?filmSpeed:mode==='replay'?Number($('speedSelect').value)||1:1;}
+  let filmSpeed=1;
+  function ensureConstruct(){
+    if(construct||constructFailed)return Promise.resolve(construct);
+    if(!constructLoading)constructLoading=import('/construct.js').then(m=>{
+      try{construct=m.createConstruct($('construct'),{onCaption:showCaption,film:FILM,speed:replaySpeed()});construct.reset(constructGraph(),perfNow());}
+      catch(e){console.error('Construct unavailable, using Monolith',e);constructFailed=true;construct=null;if(selectedWorld==='construct'){selectedWorld='city';syncPlayerControls();}}
+      constructLoading=null;return construct;
+    });
+    return constructLoading;
+  }
+  // Plain-language narration of meaningful changes, so the performance reads without knowing code.
+  let captionTimer=null;
+  function showCaption(text){
+    caption={text,at:perfNow()};if(params.get('captions')==='0')return;
+    const el=$('caption');el.textContent=text;el.classList.add('show');clearTimeout(captionTimer);if(!FILM)captionTimer=setTimeout(()=>el.classList.remove('show'),3800);
+  }
+  function showWorldCanvas(){const c=selectedWorld==='construct'&&construct;$('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!c);}
+  let lastPaint=performance.now(),clock=0,constructSize='';
+  function renderAt(dt,now){
+    clock+=dt;
     runQueue();
-    const now=perfNow(),pulse=beat();
+    const pulse=beat();
     stepScene(dt,now);
-    if(scaledW&&scaledH){backdrop(clock);
+    showWorldCanvas();
+    if(selectedWorld==='construct'&&construct){
+      const r=$('construct').getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),size=`${r.width}x${r.height}x${dpr}`;
+      if(size!==constructSize&&r.width>0){constructSize=size;construct.resize(r.width,r.height,dpr);}
+      if(FILM){const s=filmSections.filter(x=>x.at<=now).at(-1);if(s)section=s.section;}
+      const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
+      construct.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
+      construct.render(now,dt,{phase:barPhase});
+    }else if(scaledW&&scaledH){backdrop(clock);
       if(selectedWorld==='nexus')drawNexus(clock,dt,now,pulse);else if(selectedWorld==='city')drawCity(clock,dt,now,pulse);else drawNebula(clock,dt,now,pulse);}
+  }
+  function paint(nowMs){
+    resize();const dt=Math.min(.07,(nowMs-lastPaint)/1000);lastPaint=nowMs;
+    if(mode==='replay'&&playback)tickReplay(nowMs);
+    renderAt(dt,perfNow());
     requestAnimationFrame(paint);
   }
   // ---- Sound, preferences, recording -----------------------------------------------------------------------
@@ -439,17 +478,19 @@
     setText('styleReadout',music.options.style.toUpperCase());
     setText('stageMode',`${selectedWorld==='city'?'MONOLITH':selectedWorld.toUpperCase()} / ${mode==='live'?'GENERATIVE STAGE':'RECORDED PERFORMANCE'}`);
   }
-  function setWorld(world){if(!['nexus','city','nebula'].includes(world))return;
+  function setWorld(world){if(!WORLDS.includes(world))return;
     selectedWorld=world;syncPlayerControls();storePrefs();
+    if(world==='construct')void ensureConstruct();
   }
   async function toggleRecord(){
     if(recorder){if(recorder.state==='recording')recorder.stop();return;}
-    if(!window.MediaRecorder||!canvas.captureStream){alert('WebM recording requires a browser with MediaRecorder and canvas.captureStream support.');return;}
+    const source=selectedWorld==='construct'&&construct?$('construct'):canvas;
+    if(!window.MediaRecorder||!source.captureStream){alert('WebM recording requires a browser with MediaRecorder and canvas.captureStream support.');return;}
     if(!soundEnabled)await toggleSound();
     const preferred=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
     const mimeType=preferred.find(t=>MediaRecorder.isTypeSupported(t));
     if(!mimeType){alert('This browser cannot record WebM video.');return;}
-    const video=canvas.captureStream(30),audio=music.stream;
+    const video=source.captureStream(30),audio=music.stream;
     const combined=new MediaStream([...video.getVideoTracks(),...(audio?.getAudioTracks()||[])]);
     recordStreams=[video,combined];recordChunks=[];
     const capture=new MediaRecorder(combined,{mimeType,videoBitsPerSecond:6000000});recorder=capture;
@@ -539,7 +580,7 @@
     dom.scrub.disabled=value==='live';$('playBtn').disabled=value==='live';
     syncPlayerControls();
     $('liveIndicator').textContent=value==='live'?'LIVE':'REPLAY';
-    music.setClock(perfNow,value==='replay'?Number($('speedSelect').value)||1:1);
+    music.setClock(perfNow,value==='replay'?Number($('speedSelect').value)||1:1);construct?.setSpeed(replaySpeed());
     if(value==='replay'){dom.scrub.value='0';
       void loadReplay().then(()=>{if(mode!=='replay')return;seek(replay.start);});}
     else{dom.scrub.value='1000';replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
@@ -553,7 +594,7 @@
     if(replayPos>=h.end)seek(h.start);
     playback=!playback;replayClock=performance.now();$('playBtn').textContent=playback?'Ⅱ':'▶';
   });
-  $('speedSelect').addEventListener('change',()=>{if(mode==='replay'){music.setClock(perfNow,Number($('speedSelect').value)||1);seek(replayPos);}});
+  $('speedSelect').addEventListener('change',()=>{if(mode==='replay'){music.setClock(perfNow,Number($('speedSelect').value)||1);construct?.setSpeed(replaySpeed());seek(replayPos);}});
   dom.scrub.addEventListener('input',()=>{if(mode==='replay'){playback=false;$('playBtn').textContent='▶';seek(timestampFromScrub(dom.scrub.value));}});
   dom.sound.addEventListener('click',()=>toggleSound().catch(e=>{console.error(e);setText('soundBtn','AUDIO ERROR');}));
   for(const btn of document.querySelectorAll('[data-world]'))btn.addEventListener('click',()=>setWorld(btn.dataset.world));
@@ -572,7 +613,37 @@
   getJSON('/health').then(r=>{const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;setText('renderDelay',`${(delayMs/1000).toFixed(1)}s PERFORMANCE DELAY`);}).catch(()=>{});
   // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
   if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
-  setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
-  setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
-  pollProjects().then(pollProject);requestAnimationFrame(paint);
+  if(FILM){
+    // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
+    document.body.classList.add('overlay');mode='replay';
+    window.__film={
+      async open({project,speed=1}){selected=project;filmSpeed=speed;await pollProject();await loadReplay();await ensureConstruct();construct?.setSpeed(speed);
+        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!construct};},
+      sections(list){filmSections=list;},
+      seek(t){filmTime=t;seek(t);},
+      frame(t,dt){
+        filmTime=t;replayPos=t;
+        while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=t+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
+        renderAt(dt,t);
+        // Composite the stage with the caption layer so the film carries the narration.
+        const src=selectedWorld==='construct'&&construct?$('construct'):canvas,out=document.createElement('canvas');out.width=src.width;out.height=src.height;
+        const g2=out.getContext('2d');g2.drawImage(src,0,0);
+        const age=(t-caption.at)/Math.max(1,filmSpeed);
+        if(caption.text&&age<4200&&params.get('captions')!=='0'){
+          const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=out.width/1920;
+          g2.globalAlpha=Math.max(0,a)*.92;g2.font=`500 ${Math.round(30*scale)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='center';
+          g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*scale;g2.fillStyle='#eef3fb';g2.fillText(caption.text,out.width/2,out.height-90*scale);
+        }
+        return out.toDataURL('image/jpeg',.92);
+      },
+      stats(){return construct?.stats();}
+    };
+  }else{
+    // Render counts only (draw calls, buildings, …) for the technical qualification.
+    window.__constructStats=()=>construct?.stats();
+    setInterval(pollProjects,5000);setInterval(pollProject,3000);setInterval(pollTimeline,1000);
+    setInterval(()=>{if(feedDirty&&model&&mode==='live'){feedDirty=false;renderFeed();setStats(model);}},1000);
+    pollProjects().then(pollProject);requestAnimationFrame(paint);
+    if(selectedWorld==='construct')void ensureConstruct();
+  }
 })();

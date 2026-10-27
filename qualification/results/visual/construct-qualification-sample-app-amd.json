@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-23T21:37:21.032Z",
+  "sample": "sample-app",
+  "checks": [
+    {
+      "name": "the Construct renders with WebGL in the player",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no file paths reach the page",
+      "pass": true,
+      "detail": "src/api/server.ts"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "project": {
+      "files": 10,
+      "symbols": 12,
+      "districts": 6,
+      "modules": 10,
+      "tiers": 12
+    },
+    "fps": 60.1,
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+    "scene": {
+      "districts": 6,
+      "buildings": 10,
+      "tiers": 12,
+      "links": 7,
+      "bridges": 5,
+      "agents": 0,
+      "drawCalls": 100,
+      "triangles": 3942,
+      "quality": 0,
+      "detail": "fine",
+      "updateMs": 0.11,
+      "drawMs": 0.51
+    }
+  }
+}

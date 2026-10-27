@@ -34,7 +34,9 @@ function journal(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(p
 function journalText(pid){try{return fs.readFileSync(path.join(DATA,'projects',sha(pid),'events.jsonl'),'utf8');}catch{return '';}}
 // The export's timeline is the recorded performance: one entry per window, each carrying its cues.
 async function cues(pid){await flush(pid);const x=await getJSON(`/api/export?id=${pid}`);return x?x.timeline.flatMap(e=>e.cues):[];}
-const fileId=f=>sha(f).slice(0,14);
+// Public module ids are salted per project (interpretation v5); the salt is readable only on this machine.
+let currentPid=null;
+const fileId=f=>{let salt='';try{salt=fs.readFileSync(path.join(DATA,'projects',sha(currentPid),'salt'),'utf8').trim();}catch{}return sha(`${salt}:m:${f}`).slice(0,14);};
 
 let consentPrompts=0;
 function patchConsent(){
@@ -73,7 +75,7 @@ async function measureTyping(editor,text,pid){
 function rssMB(pid){try{const m=fs.readFileSync(`/proc/${pid}/status`,'utf8').match(/VmRSS:\s+(\d+)/);return m?+(Number(m[1])/1024).toFixed(1):null;}catch{return null;}}
 
 async function mainPhase(){
-  const folder=vscode.workspace.workspaceFolders[0];const pid=sha(folder.uri.toString());results.projectId=pid;
+  const folder=vscode.workspace.workspaceFolders[0];const pid=sha(folder.uri.toString());results.projectId=pid;currentPid=pid;
   results.measurements.workspaceUri=folder.uri.toString();
   patchConsent();
   const ext=vscode.extensions.getExtension('zerobandwidth.code-resonance');
@@ -285,8 +287,73 @@ async function restartPhase(){
   await stopReceiver();
 }
 
+// ---- Recorded project for the Construct: real editing and real Claude Code agents building an app ----------
+function runAgent(label,prompt,results){
+  const env={...process.env,HOME:E.CR_QUAL_REAL_HOME,RESONANCE_DATA:DATA,RESONANCE_PORT:String(PORT)};
+  for(const k of Object.keys(env))if(/^(CLAUDECODE|CLAUDE_CODE_|CLAUDE_PID|CLAUDE_AGENT_SDK|CLAUDE_EFFORT|ELECTRON_|VSCODE_)/.test(k))delete env[k];
+  const started=Date.now();results.timeline.push({label:`agent ${label} starts`,at:started});step(`agent ${label} starts`);
+  return new Promise(resolve=>{
+    const child=cp.spawn(E.CR_QUAL_CLAUDE||'claude',['-p',prompt,'--model','haiku','--max-budget-usd','0.50','--permission-mode','acceptEdits',
+      '--allowedTools','Read','Edit','Write','Glob','Grep','Bash(npm test)','--output-format','json'],{cwd:WS,env,stdio:['ignore','pipe','pipe']});
+    let out='',err='';child.stdout.on('data',d=>out+=d);child.stderr.on('data',d=>err+=d);
+    const timer=setTimeout(()=>child.kill('SIGTERM'),420000);
+    child.on('close',code=>{clearTimeout(timer);let summary={};try{summary=JSON.parse(out);}catch{}
+      const r={label,exitCode:code,seconds:Math.round((Date.now()-started)/1000),turns:summary.num_turns??null,costUsd:summary.total_cost_usd??null,stderr:err.slice(0,200)};
+      results.agents.push(r);results.timeline.push({label:`agent ${label} done`,at:Date.now()});step(`agent ${label} done (${r.seconds}s, $${r.costUsd})`);resolve(r);});
+  });
+}
+async function typeFile(rel,text){
+  const uri=vscode.Uri.file(path.join(WS,rel));
+  if(!fs.existsSync(uri.fsPath)){const we=new vscode.WorkspaceEdit();we.createFile(uri,{ignoreIfExists:true});await vscode.workspace.applyEdit(we);}
+  const ed=await editorFor(rel);moveToEnd(ed);
+  // A person types in bursts: a line, a short pause.
+  for(const line of text.split('\n')){await typeText(ed,line+'\n');await sleep(350);}
+  await ed.document.save();
+}
+async function constructScenario(){
+  const folder=vscode.workspace.workspaceFolders[0];const pid=sha(folder.uri.toString());results.projectId=pid;currentPid=pid;
+  results.timeline=[];results.agents=[];const mark=label=>{results.timeline.push({label,at:Date.now()});step(label);};
+  patchConsent();await vscode.extensions.getExtension('zerobandwidth.code-resonance').activate();await startReceiver();
+  cp.execFileSync('git',['init','-q','-b','main'],{cwd:WS});cp.execFileSync('git',['-c','user.name=Recipes','-c','user.email=r@example.invalid','commit','-q','--allow-empty','-m','start'],{cwd:WS});
+  cp.execFileSync(E.CR_QUAL_NODE,[path.join(REPO,'scripts','hooks','install-claude-code.js'),WS]);
+  await vscode.commands.executeCommand('resonance.start');
+  check('capture started',!!await waitFor(()=>journal(pid).some(e=>e.kind==='workspace.started'),20000));
+  await sleep(4000);
+  mark('editor: text utilities');
+  await typeFile('src/lib/text.js',"export function normalize(text) {\n  return String(text).trim().replace(/\\s+/g, ' ');\n}\n");
+  const data=runAgent('data',"Create the data layer of a small recipe app (plain JavaScript ES modules, no dependencies): src/data/models.js with createRecipe({title, ingredients, minutes}) and isValidRecipe(recipe); src/data/store.js with an in-memory store exposing addRecipe, getRecipe, listRecipes, updateRecipe and removeRecipe. Keep each function small. Do not create tests.",results);
+  const ui=runAgent('ui',"Create the user interface of a small recipe app as React-style function components in .jsx files under src/ui/: RecipeCard.jsx, RecipeList.jsx, RecipeForm.jsx, SearchBar.jsx, and App.jsx that composes them. Plain JSX, no imports from npm packages, no tests.",results);
+  await sleep(6000);mark('editor: slugify while agents work');
+  await typeFile('src/lib/text.js',"export function slugify(text) {\n  return normalize(text).toLowerCase().replace(/[^a-z0-9]+/g, '-');\n}\n");
+  await Promise.all([data,ui]);await sleep(5000);
+  await runAgent('tests-first',"Write tests first, using node:test and node:assert, in test/search.test.js for a function searchRecipes(recipes, query) that will live in src/data/search.js: it must match the query against title and ingredients case-insensitively and put title matches before ingredient matches. Do NOT create or implement src/data/search.js. Run npm test once and report the result.",results);
+  await sleep(5000);
+  await runAgent('implement',"Implement src/data/search.js so that the tests in test/search.test.js pass. Run npm test to confirm.",results);
+  await sleep(5000);
+  await runAgent('integrate',"Integrate the recipe app: create src/server/router.js (a tiny method+path router), src/server/routes.js registering GET /recipes, POST /recipes and GET /recipes/search using src/data/store.js and src/data/search.js, and src/server/server.js that serves them with node:http. Then create src/ui/api.js with fetch-based client functions and use it from src/ui/App.jsx to load recipes. Run npm test.",results);
+  await sleep(5000);mark('commit');
+  cp.execFileSync('git',['add','-A'],{cwd:WS});cp.execFileSync('git',['-c','user.name=Recipes','-c','user.email=r@example.invalid','commit','-qm','recipe app: data, ui, search, api'],{cwd:WS});
+  await sleep(8000);
+  await runAgent('refactor',"Refactor for clarity without changing behaviour: move all recipe validation (from src/data/models.js and any checks in src/server/routes.js) into a new src/data/validate.js, delete code that is no longer used, and keep the tests passing. Run npm test.",results);
+  await sleep(5000);mark('commit');
+  cp.execFileSync('git',['add','-A'],{cwd:WS});cp.execFileSync('git',['-c','user.name=Recipes','-c','user.email=r@example.invalid','commit','-qm','refactor validation'],{cwd:WS});
+  await sleep(12000);
+  await vscode.commands.executeCommand('resonance.stop');await sleep(4000);
+  // What the recording contains, for the film's annotations and the report.
+  const j=journal(pid),tl=await cues(pid);
+  results.measurements.recording={events:j.length,files:[...new Set(j.filter(e=>e.file).map(e=>e.file))].length,
+    agentEvents:j.filter(e=>e.origin==='hook').length,attributedCues:tl.filter(c=>c.detail?.attribution==='correlated').length,
+    testsFailed:tl.filter(c=>c.type==='validation.test.failed').length,testsPassed:tl.filter(c=>c.type==='validation.test.passed').length,
+    crossDependencies:tl.filter(c=>c.type==='dependency.added'&&c.detail?.cross).length,commits:tl.filter(c=>c.type==='repository.commit.observed').length,
+    refactorMilestones:tl.filter(c=>c.type==='milestone.refactor.validated').length,editorEdits:j.filter(e=>e.kind==='document.edits').length,
+    costUsd:+results.agents.reduce((a,x)=>a+(x.costUsd||0),0).toFixed(3)};
+  check('recording contains a failing test run and a recovery',results.measurements.recording.testsFailed>0&&results.measurements.recording.testsPassed>0,JSON.stringify(results.measurements.recording));
+  check('recording contains attributed agent work and cross-district integration',results.measurements.recording.attributedCues>0&&results.measurements.recording.crossDependencies>0);
+  await stopReceiver();
+}
+
 async function run(){
-  try{if(PHASE==='main')await mainPhase();else await restartPhase();}
+  try{if(PHASE==='main')await mainPhase();else if(PHASE==='construct')await constructScenario();else await restartPhase();}
   catch(e){results.checks.push({name:'suite completed without exceptions',pass:false,detail:String(e&&e.stack||e).slice(0,1500)});}
   finally{await stopReceiver().catch(()=>{});fs.writeFileSync(E.CR_QUAL_RESULT,JSON.stringify(results,null,2));}
 }

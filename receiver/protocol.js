@@ -42,6 +42,8 @@ function validateEvent(value) {
   if (value.file !== undefined && !file) throw new Error('Invalid or sensitive filename');
   const result = { v:1, id:value.id, ts, kind:value.kind, projectId, sessionId: cleanString(value.sessionId,100), origin:cleanString(value.origin,35) || 'unknown' };
   if (file) result.file=file;
+  // Rename source; an unsafe or excluded source path is dropped rather than rejecting the event.
+  if (value.from !== undefined) { const from = safeRelative(value.from); if (from) result.from = from; }
   if (value.name) result.name=cleanString(value.name,100);
   if (value.content !== undefined) {
     if (typeof value.content !== 'string' || Buffer.byteLength(value.content,'utf8')>160*1024) throw new Error('Document too large');

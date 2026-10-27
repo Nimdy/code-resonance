@@ -105,7 +105,8 @@ test('Public graph shows every module and fills its budget with the most meaning
   for(let i=0;i<30;i++)apply(state,e('document.snapshot',{file:`src/m${i}.tsx`,content:`import {x} from './m${(i+1)%30}';\nexport const v${i} = 1;\nexport function helper${i}(){ const local = 2; return local; }\nexport function View${i}(){ return <div/>; }`,meta:{reason:'baseline'}}));
   const {graph}=publicProjection(state);
   assert.equal(graph.nodes.filter(n=>n.type==='module').length,30);
-  const order=graph.nodes.filter(n=>n.type!=='module').map(n=>n.type);
+  // Group nodes (architectural districts, added in interpretation v5) come first; symbols follow.
+  const order=graph.nodes.filter(n=>n.type!=='module'&&n.type!=='group').map(n=>n.type);
   assert.equal(order[0],'ui.component');assert(order.indexOf('variable')>order.lastIndexOf('ui.component'));
   assert(!graph.nodes.some(n=>n.type==='callsite'));
   assert(graph.nodes.filter(n=>n.parent).every(n=>graph.nodes.some(m=>m.id===n.parent)));

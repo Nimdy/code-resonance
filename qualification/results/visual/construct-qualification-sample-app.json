@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-23T21:15:01.056Z",
+  "sample": "sample-app",
+  "checks": [
+    {
+      "name": "the Construct renders with WebGL in the player",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no file paths reach the page",
+      "pass": true,
+      "detail": "src/api/server.ts"
+    },
+    {
+      "name": "no page errors",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "project": {
+      "files": 10,
+      "symbols": 12,
+      "districts": 6,
+      "modules": 10,
+      "tiers": 12
+    },
+    "fps": 33.1,
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "scene": {
+      "districts": 6,
+      "buildings": 10,
+      "tiers": 12,
+      "links": 7,
+      "bridges": 5,
+      "agents": 0,
+      "drawCalls": 100,
+      "triangles": 3942,
+      "quality": 1,
+      "detail": "fine",
+      "updateMs": 0.19,
+      "drawMs": 0.72
+    }
+  }
+}

@@ -50,6 +50,7 @@ function build({repo,out,commits=120,minutes=30,start=Date.UTC(2026,9,23,9,0,0)}
     touched.forEach((x,j)=>{
       const t=previousAt+window*(j+1)/(touched.length+1);
       if(x.status==='D'){add(t,'file.deleted',{file:x.file});return;}
+      if(x.status==='R'&&x.from!==x.file)add(t-1600,'file.renamed',{file:x.file,from:x.from});
       const content=contents.get(`${commit}:${x.file}`);if(content===undefined||Buffer.byteLength(content)>150*1024)return;
       const lines=numstat[x.file]||10;
       if(x.status==='A'){add(t-1500,'file.created',{file:x.file});files++;}

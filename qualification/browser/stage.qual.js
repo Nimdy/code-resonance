@@ -97,8 +97,9 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     const overlay=await browser.newPage({viewport:{width:1920,height:1080}});
     await overlay.goto(url+'/?overlay=1');await overlay.waitForTimeout(4000);
     check('OBS overlay hides all controls',!(await overlay.isVisible('.toolbar'))&&!(await overlay.isVisible('.panel.left'))&&!(await overlay.isVisible('.transport')));
-    const canvasBox=await overlay.$eval('#stage',e=>{const r=e.getBoundingClientRect();return [r.width,r.height];});
-    check('OBS overlay canvas fills the frame',canvasBox[0]===1920&&canvasBox[1]===1080,canvasBox.join('x'));
+    // The visible world canvas: the Construct (WebGL) by default, the 2D stage for the other worlds or without WebGL.
+    const canvasBox=await overlay.evaluate(()=>{const e=[...document.querySelectorAll('#construct,#stage')].find(c=>!c.classList.contains('hidden'));const r=e.getBoundingClientRect();return [r.width,r.height,e.id];});
+    check('OBS overlay canvas fills the frame',canvasBox[0]===1920&&canvasBox[1]===1080,canvasBox.join(' '));
     await overlay.screenshot({path:path.join(OUT,'overlay.png')});
     const text=(await page.evaluate(()=>document.body.innerText))+(await overlay.evaluate(()=>document.body.innerText));
     check('no file paths reach the page',!text.includes(secretPath)&&!text.includes('src/'),secretPath);

@@ -37,6 +37,13 @@ async function ids(){
   }
   return all;
 }
+// Per-project secret for public ids. Created once and kept across rebuilds so re-interpretation stays identical.
+async function ensureSalt(dir){
+  const file=path.join(dir,'salt');
+  try{return (await fs.readFile(file,'utf8')).trim();}
+  catch{const salt=require('node:crypto').randomBytes(16).toString('hex');await fs.mkdir(dir,{recursive:true,mode:0o700});
+    try{await fs.writeFile(file,salt,{flag:'wx',mode:0o600});return salt;}catch{return (await fs.readFile(file,'utf8')).trim();}}
+}
 function fresh(id){const s=newState(id);s.window={lastIndex:-1,lastEnd:0,seq:0};s.graph={nodes:{},edges:{}};s.performanceBytes=0;delete s.replayGraphs;return s;}
 async function load(id){
   if(states.has(id))return states.get(id);
@@ -53,6 +60,7 @@ async function load(id){
     await fs.truncate(perf,state.performanceBytes);
   }
   state.seenSet=new Set(state.seen);
+  state.salt=await ensureSalt(dir);
   states.set(id,state);return state;
 }
 async function readEvent(dir,line){
@@ -72,8 +80,9 @@ function graphDelta(state,graph,keyframe){
   for(const n of graph.nodes)nodes[n.id]=n;
   for(const e of graph.edges)edges[`${e.a}>${e.b}>${e.kind}`]=e;
   const prev=state.graph;
+  // Any field change (building state, tier slot, counts) re-sends the node.
   const delta=keyframe?{keyframe:true,nodes:graph.nodes,edges:graph.edges}:{
-    add:graph.nodes.filter(n=>!prev.nodes[n.id]||prev.nodes[n.id].weight!==n.weight||prev.nodes[n.id].type!==n.type),
+    add:graph.nodes.filter(n=>!prev.nodes[n.id]||JSON.stringify(prev.nodes[n.id])!==JSON.stringify(n)),
     remove:Object.keys(prev.nodes).filter(id=>!nodes[id]),
     addEdges:graph.edges.filter(e=>!prev.edges[`${e.a}>${e.b}>${e.kind}`]),
     removeEdges:Object.keys(prev.edges).filter(k=>!edges[k]).map(k=>{const [a,b,kind]=k.split('>');return {a,b,kind};})

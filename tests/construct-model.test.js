@@ -1,0 +1,76 @@
+'use strict';
+// Interpretation v5: the architectural model the Construct is drawn from.
+const test=require('node:test'),assert=require('node:assert/strict');
+const {newState,apply,publicProjection}=require('../engine/reducer');
+const {sha}=require('../receiver/protocol');
+const projectId=sha('construct-model');let seq=0;
+const e=(kind,extra={})=>({v:1,kind,id:`construct-${++seq}`,ts:1750000000000+seq*1000,projectId,sessionId:'s',origin:'test',...extra});
+const snap=(file,content,reason='edit')=>e('document.snapshot',{file,content,meta:{reason}});
+const fresh=(salt='test-salt')=>{const s=newState(projectId);s.salt=salt;return s;};
+const node=(state,predicate)=>publicProjection(state).graph.nodes.find(predicate);
+const moduleOf=(state,fileIdFromCue)=>node(state,n=>n.id===fileIdFromCue);
+test('Tiers stack in the order symbols appear; removing one lets the rest settle',()=>{
+  const s=fresh();
+  apply(s,snap('src/lib/a.ts','export function one(){}\nexport function two(){}'));
+  const created=apply(s,snap('src/lib/a.ts','export function one(){}\nexport function two(){}\nexport function three(){}'));
+  const mid=created.find(c=>c.type==='symbol.created').detail.fileId;
+  const tiers=()=>publicProjection(s).graph.nodes.filter(n=>n.parent===mid).sort((a,b)=>a.slot-b.slot).map(n=>n.id);
+  const before=tiers();assert.equal(before.length,3);
+  apply(s,snap('src/lib/a.ts','export function one(){}\nexport function three(){}'));
+  const after=tiers();assert.deepEqual(after,[before[0],before[2]]);
+  assert.deepEqual(publicProjection(s).graph.nodes.filter(n=>n.parent===mid).map(n=>n.slot).sort(),[0,1]);
+});
+test('Material states: draft on change, stressed by a failing run, validated by a passing one, committed by a commit',()=>{
+  const s=fresh();
+  const ui=apply(s,snap('src/ui/App.tsx','export function App(){return <main/>}')).find(c=>c.detail.fileId).detail.fileId;
+  const api=apply(s,snap('src/api/users.ts','export function list(){return []}')).find(c=>c.detail.fileId).detail.fileId;
+  assert.equal(moduleOf(s,ui).state,'draft');
+  const failed=apply(s,e('terminal.command.finished',{meta:{category:'test',exitCode:1}}));
+  assert.deepEqual(failed[0].detail.fileIds.sort(),[ui,api].sort());
+  assert.equal(moduleOf(s,ui).state,'stressed');
+  apply(s,snap('src/api/users.ts','export function list(){return [1]}'));
+  assert.equal(moduleOf(s,api).state,'stressed','a repair in progress stays stressed until tests pass');
+  apply(s,e('terminal.command.finished',{meta:{category:'test',exitCode:0}}));
+  assert.equal(moduleOf(s,ui).state,'validated');assert.equal(moduleOf(s,api).state,'validated');
+  apply(s,snap('src/ui/Card.tsx','export function Card(){return <div/>}'));
+  const commit=apply(s,e('repository.commit.observed',{meta:{commit:'a'.repeat(40),parent:'b'.repeat(40)}}));
+  assert.equal(commit[0].detail.fileIds.length,1);assert.equal(moduleOf(s,commit[0].detail.fileIds[0]).state,'committed');
+  assert.equal(moduleOf(s,ui).state,'validated','a commit does not downgrade validated work');
+});
+test('A renamed file keeps its identity and its plot, explicitly or by close match after a delete',()=>{
+  const s=fresh();const code='export function alpha(){}\nexport function beta(){}\nexport function gamma(){}';
+  const mid=apply(s,snap('src/data/store.js',code)).find(c=>c.detail.fileId).detail.fileId;
+  const plot=(({q,r})=>[q,r])(moduleOf(s,mid));
+  const renamed=apply(s,e('file.renamed',{file:'src/data/repository.js',from:'src/data/store.js'}));
+  assert.equal(renamed[0].type,'module.renamed');assert.equal(renamed[0].detail.fileId,mid);
+  assert.deepEqual((({q,r})=>[q,r])(moduleOf(s,mid)),plot);
+  apply(s,e('file.deleted',{file:'src/data/repository.js'}));
+  const recreated=apply(s,snap('src/data/repo.js',code+'\nexport function delta(){}'));
+  assert(recreated.some(c=>c.type==='module.renamed'&&c.detail.fileId===mid));
+  assert(recreated.some(c=>c.type==='symbol.created'&&c.detail.fileId===mid),'only the real change is new');
+  assert.deepEqual((({q,r})=>[q,r])(moduleOf(s,mid)),plot);
+  const other=apply(s,snap('src/data/other.js','export function unrelated(){}')).find(c=>c.detail.fileId).detail.fileId;
+  assert.notEqual(other,mid);
+});
+test('Cues say where things happen: editing, dependencies (and whether they cross districts)',()=>{
+  const s=fresh();
+  apply(s,snap('src/data/store.ts','export function load(){}'));
+  apply(s,snap('src/ui/List.tsx','export function List(){return <ul/>}'));
+  const edit=apply(s,e('document.edits',{file:'src/ui/List.tsx',meta:{edits:12,insertedLines:1}}));
+  assert(edit[0].detail.fileId);
+  const dep=apply(s,snap('src/ui/List.tsx',"import { load } from '../data/store';\nexport function List(){return <ul/>}")).find(c=>c.type==='dependency.added');
+  assert.equal(dep.detail.cross,true);assert.equal(moduleOf(s,dep.detail.targetId).type,'module');
+  const edges=publicProjection(s).graph.edges.filter(x=>x.kind==='depends');
+  assert.equal(edges.length,1);assert.equal(edges[0].cross,true);
+});
+test('Districts come from the architecture; public ids are salted and cannot be matched to guessed paths',()=>{
+  const a=fresh('salt-a'),b=fresh('salt-b');
+  for(const s of [a,b])for(const f of ['index.ts','src/ui/A.tsx','src/ui/B.tsx','src/api/x.ts'])apply(s,snap(f,'export function f(){}','baseline'));
+  const groups=publicProjection(a).graph.nodes.filter(n=>n.type==='group');
+  assert.equal(groups.length,3);assert.equal(groups.filter(g=>g.core).length,1);
+  const ui=publicProjection(a).graph.nodes.filter(n=>n.type==='module'&&n.group===groups.find(g=>g.modules===2).id);assert.equal(ui.length,2);
+  const ids=x=>publicProjection(x).graph.nodes.map(n=>n.id).sort();
+  assert.notDeepEqual(ids(a),ids(b));
+  const text=JSON.stringify(publicProjection(a));
+  for(const f of ['index.ts','src/ui/A.tsx','src/ui'])assert(!text.includes(sha(f).slice(0,14)),`unsalted hash of ${f} leaked`);
+});

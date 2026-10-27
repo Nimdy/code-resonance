@@ -97,7 +97,8 @@ Timing is planned and compressed; the code changes are real; there are no test r
   session re-rendered.
 - Contact sheet of the Stage across the session: `results/session/contact-sheet-nexus.png` (not committed). The
   structure grows from one module cluster to dependency-linked modules; after the replay birth-order fix the layout is
-  stable across seeks. A file rename appears as a module moving, because it gets a new identity.
+  stable across seeks. A file rename appeared as a module moving, because it got a new identity (before
+  interpretation v6).
 
 ## Soak
 
@@ -106,15 +107,48 @@ streamed ~1300 events and grew to 88 modules. Frame rate 60.1–60.4 fps through
 no page errors; JS heap followed a garbage-collection sawtooth between 2.4 and 26.5 MB and ended at 10.3 MB; DOM nodes
 539–891 and event listeners 36–69 without monotonic growth; receiver memory 176 → ~200 MB and then flat.
 
+## The Construct (candidate visual world)
+
+Technical results only; whether it is good to watch is a human judgement that has not been made yet.
+
+- **Real recording:** `qualification/recordings/lumen-recipes` (committed; journal, blobs, id and salt only), made
+  with `CR_QUAL_SCENARIO=construct` in VS Code 1.143: editor typing plus six Claude Code (Haiku) agents building a
+  recipe app. 230 events, 17 files, 164 agent events, 54 cues attributed to an agent by its own hook event, 1 failing
+  and 4 passing test runs, 2 dependencies between districts, 2 commits, $0.51 of agent usage
+  (`results/construct-recording.json`). The refactor step removed one symbol, below the refactor-milestone threshold,
+  so the milestone path is not shown in this recording.
+- **Film:** `visual/film.js` renders the recording frame by frame at exact performance times with the offline-rendered
+  music: `results/visual/construct-lumen-recipes.webm` (VP9 1920×1080 30 fps + Opus; not committed, too large for
+  git). Representative frames are committed in `docs/construct/`.
+- **Determinism:** stills rendered twice for the same moment from the committed fixture are byte-identical, and
+  identical to stills from the original export.
+- **Scale** (`visual/construct.qual.js`, Excalidraw, first 450 files: 450 buildings, 3,185 symbols, 939 storeys
+  drawn, 11 districts, 1,008 conduits): 3,622 draw calls, 300k triangles at full quality.
+  Frame rate in headless Chromium at 1920×1080, each run measured over 5 s (the JSON files keep the last run):
+
+  | Renderer | Sample app (10 files) | Excalidraw (450 files) |
+  |---|---|---|
+  | AMD Radeon integrated GPU, WSL2 (ANGLE GL → Mesa d3d12) | 60.1 fps | 31–48 fps (5 runs) |
+  | NVIDIA RTX 5090, same path | 60.1 fps | 18–39 fps (4 runs) |
+  | SwiftShader (CPU) | 33.1 fps | 4.1 fps |
+
+  Scene update takes about 1.5 ms; the rest is submitting 3,622 draw calls through the WSL translation layer
+  (19–35 ms, varying from run to run), which is why the faster GPU does not score higher. Before level of detail and
+  merged conduits it was 6,017 draw calls and 26–28 fps with shadows already switched off by adaptive quality. Native
+  browsers (Windows ANGLE D3D11, macOS Metal) were not measured.
+- **Privacy:** no file paths in the page (a real path from the sample is checked), no page errors.
+
 ## Not verified
 
 - Native Windows and macOS (no Windows Node, and WSL interop is disabled in this environment). VS Code Remote-SSH.
-- GPU-accelerated browsers; Firefox and Safari.
+- Native GPU browsers (GPU numbers above are through WSL2's translation layer); Firefox and Safari.
+- Artistic acceptance of the Construct, and whether people who do not code understand it without explanation.
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
 - Multi-hour real development sessions (the longest soak was 30 minutes).
-- Rename detection: a renamed module is treated as a new module (new position).
+- Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
+  rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - `npm test` failed once (one receiver test) while the machine was saturated by parallel renders; it did not
   reproduce in 7 later local runs or 2 GitHub runs, and its output was not captured.
 - AI agents other than Claude Code.
