@@ -232,9 +232,9 @@ export function createStellarGrammar({layout,capacity=1100}){
     const relations=[[null,null,null,{avoid:1.4,radius:1.3}],[null,null,null,{avoid:1,radius:1.2}],[null,{chase:.22,radius:1.6},null,{avoid:2.2,radius:1.5}],[]];
     return {capacity,trail:KTRAIL,bounds:{min:[-B,-YB,-B],max:[B,YB,B]},
       field:{nx:NX,nz:NX,decay:{trail:.9975,energy:.993,disturb:.986,flow:.975},diffuse:{trail:.1,energy:.08,disturb:.12,flow:.12},saturate:{trail:4,energy:4,disturb:3,flow:1.2},advect:.9},
-      species,relations,hooks:makeHooks()};
+      species,relations,hooks:makeHooks(),siteSlots:[0]};
   }
-  return {id:'stellar-forge',version:3,ecosystem,habitat,capacity,trail:KTRAIL};
+  return {id:'stellar-forge',version:4,ecosystem,habitat,capacity,trail:KTRAIL};
 }
 // ---- Presentation helper: the matter map (macro scale; reads the ecosystem, never writes it) ------------------------
 // An N x N RGBA8 map over the ecosystem's field rectangle, rebuilt from the state at a tick (a pure function of it):

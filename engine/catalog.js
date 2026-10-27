@@ -86,7 +86,7 @@ const FAMILIES={
 // never stand for agents, files or events.
 const LIFE={
   'life.enabled':b('digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before)'),
-  'life.density':n(0,2,'population: how many inhabitants live in the world'),
+  'life.density':n(0,1,'population: the share of the world\'s inhabitants that live (1: all of them)'),
   'life.vitality':n(.2,2,'vitality: how active they are (speed, curiosity, how often they move on)'),
   'life.collective':n(0,2,'collective behaviour: how strongly groups form, align and move the currents together'),
   'life.environment':n(0,2,'environmental influence: how strongly currents and engineering events move them'),

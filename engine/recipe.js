@@ -326,7 +326,7 @@ function generate(project,{seed,variant=0,family=null,pack=null,source='generate
 // Artist-directed defaults with a little per-project character (each world's grammar sets the behaviour itself).
 function lifeGenome(family,seed,variant){
   const r=rng('life',family,seed,variant);
-  return {enabled:true,density:between(r,.9,1.1),vitality:between(r,.85,1.15),collective:between(r,.85,1.2),environment:1,trails:between(r,.85,1.15),persistence:1,music:1,
+  return {enabled:true,density:between(r,.85,1),vitality:between(r,.85,1.15),collective:between(r,.85,1.2),environment:1,trails:between(r,.85,1.15),persistence:1,music:1,
     attraction:1,repulsion:1,separation:1,alignment:1,cohesion:1,current:1,diffusion:1,radius:1};
 }
 // What a stored recipe needs from the installed packs, and whether they are there.

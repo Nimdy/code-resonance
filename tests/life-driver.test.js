@@ -37,11 +37,11 @@ const grammar={id:'test',version:1,
     hooks:{current(x,y,z,t,c,out){out[0]=.4*Math.cos(t*.05+z*.1+c.swing);out[2]=.4*Math.sin(t*.05+x*.1);}}}),
   habitat:(model,t)=>[...model.districts.values()].filter(d=>model.districtBorn(d)<=t).map(d=>({id:d.id,x:d.q*4,y:3,z:d.r*4,r:1+.2*d.members.length,w:1}))};
 // A player: delivers the recorded windows as playback reaches them (or all at once, as a replay primes) and renders.
-async function player({entries,prime=true,speed=1,params={},live=false,film=false}){
+async function player({entries,prime=true,speed=1,params={},live=false,film=false,opts={}}){
   const [{createLifeDriver},{createLifeTimeline}]=await load();
   const timeline=createLifeTimeline();
   let cfg={speed,tempo:96,epoch:T0,params,live,film};
-  const driver=createLifeDriver({grammar,timeline,seed:1234,config:()=>cfg,score});
+  const driver=createLifeDriver({grammar,timeline,seed:1234,config:()=>cfg,score,...opts});
   if(prime)timeline.prime(entries);
   let next=0;
   const deliver=t=>{while(next<entries.length&&entries[next].start<=t){const e=entries[next++];timeline.structure(e.graph,e.start,e.end,e.seq);timeline.frame(e.frame,e.start);for(const i of e.intents)timeline.intent(i);}};
@@ -156,4 +156,44 @@ test('Habitat data travels with the sites: after a restore the ecosystem holds t
   assert.notEqual(late,early,'the habitat grew between the two moments');
   assert.equal(early,driver.ecosystem.sites.ids.join(','),'restored: the data matches the restored sites');
   assert.equal(driver.stats().fromCheckpoint>0||driver.stats().resets>1,true);
+});
+
+test('Intents are mapped on the structure where the ecosystem is: after a seek back, as in a fresh session',async()=>{
+  // An intent about a module whose window starts 50 ms after the intent's own timestamp (windows are chosen by when
+  // they were received): at the intent's moment the module does not exist yet, on every path to that moment.
+  const entries=recording(30).map(e=>({...e,intents:[...e.intents]}));
+  const w=entries[9];w.graph={add:[...(w.graph.add||w.graph.nodes),mod('mNew','g0',1,0)],remove:[],addEdges:[],removeEdges:[]};
+  w.intents.push({v:1,id:'late:validation.failed',type:'validation.failed',ts:w.start-50,tier:2,magnitude:.8,evidence:'verified',subject:{fileIds:['mNew']},detail:{}});
+  const at=T0+9*WIN+5000;   // the seek back restores the checkpoint at 80 s and consumes the intent again
+  const fresh=await player({entries});fresh.at(at);
+  const seek=await player({entries});seek.at(T0+29*WIN);seek.at(at);
+  assert(seek.driver.stats().fromCheckpoint>0,'the seek back restored a checkpoint');
+  assert.equal(seek.driver.digest(),fresh.driver.digest(),'same state after the seek back');
+});
+test('Live: a change of tempo (a music style) keeps the population; the bars continue from the current one',async()=>{
+  const entries=recording(30);
+  const l=await player({entries,live:true,prime:false});l.play(T0,T0+120000,20);const resets=l.driver.stats().resets,before=l.driver.ecosystem.px.slice();
+  l.set({tempo:132});const v=l.at(T0+120000);
+  assert.equal(l.driver.stats().resets,resets,'no rebuild');assert.equal(v.restoring,false);
+  assert.deepEqual(Array.from(l.driver.ecosystem.px),Array.from(before),'the population continues from where it was');
+  const v2=l.at(T0+125000);assert.equal(v2.tick,v2.target,'keeps up');assert.equal(v2.restoring,false);
+});
+test('Live: a long session folds its consumed inputs (bounded memory) and the ecosystem continues exactly; a new world starts from the folded base',async()=>{
+  const entries=recording(60),AT2=T0+59*WIN;
+  const whole=await player({entries,live:true,prime:false,opts:{rebaseAfter:Infinity}});whole.play(T0,AT2,20);
+  let base=null;
+  const folded=await player({entries,live:true,prime:false,opts:{rebaseAfter:40,onRebase:b=>{base=b;}}});folded.play(T0,AT2,20);
+  assert(folded.driver.stats().rebases>=3,`folded ${folded.driver.stats().rebases} times`);
+  assert(folded.timeline.items.length<whole.timeline.items.length/3,`inputs kept: ${folded.timeline.items.length} of ${whole.timeline.items.length}`);
+  assert.equal(folded.driver.digest(),whole.driver.digest(),'the folded session is the same ecosystem');
+  // Inputs at or before the last fold are history now: a late one is refused.
+  assert.equal(folded.timeline.intent({v:1,id:'too-late',type:'validation.failed',ts:base.from-1,tier:2,magnitude:1,evidence:'verified',subject:{groupId:'g0'}}),false);
+  // A world switched to now: its ecosystem is born at the base, not at the session's origin.
+  const [{createLifeDriver}]=await load();
+  const next=createLifeDriver({grammar,timeline:folded.timeline,seed:99,config:()=>({speed:1,tempo:96,epoch:T0,params:{},live:true,film:false}),score});
+  next.setBase(base.graph,base.t,base.from);
+  const v=next.update({tview:(AT2-T0)/1000},{budgetMs:1e9});
+  assert(next.stats().ticks<=(AT2-base.from)/50+2,`caught up ${next.stats().ticks} ticks only`);
+  assert.equal(v.tick,v.target);assert(next.stats().ecosystem.alive>100);
+  assert.deepEqual([...next.ecosystem.sites.ids],[...folded.driver.ecosystem.sites.ids],'the base holds the same sites');
 });

@@ -364,9 +364,9 @@ export function biosphereGrammar(recipe){
     };
     return {capacity:CAPACITY,trail:TRAIL_K,bounds:{min:[-HALF,.1,-HALF],max:[HALF,14,HALF]},
       field:{nx:64,nz:64,decay:{trail:.994,energy:.996,disturb:.992,flow:.95},diffuse:{trail:.1,energy:.06,disturb:.08,flow:.12},advect:.5},
-      species:SPECIES_SPEC,relations:RELATIONS,hooks};
+      species:SPECIES_SPEC,relations:RELATIONS,hooks,siteSlots:[0]};   // ia[i*2]: the crown a pollinator last left
   }
-  return {id:'fractal-biosphere',version:3,ecosystem,habitat,climate:section=>CLIMATE[section]||CLIMATE.home,
+  return {id:'fractal-biosphere',version:4,ecosystem,habitat,climate:section=>CLIMATE[section]||CLIMATE.home,
     // For tests and inspection.
     summarise:(model,d)=>organism(model,d,0,0)};
 }

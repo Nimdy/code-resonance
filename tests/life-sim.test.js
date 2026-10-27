@@ -125,3 +125,10 @@ test('Snapshots restore exactly the same future (the digest of the whole state)'
   e.restore(s);for(let k=0;k<400;k++){if(k===100)e.influence({kind:'disturb',site:'a',amount:.8});e.step();}
   assert.equal(e.digest(),d1);
 });
+test('Site indices a grammar keeps (siteSlots) follow their sites when the habitat changes; a vanished site becomes -1',async()=>{
+  const e=await eco({capacity:3,species:[lone()],siteSlots:[0]});
+  e.setSites([{id:'b',x:0,y:4,z:0,r:1,w:1},{id:'c',x:4,y:4,z:0,r:1,w:1}]);e.populate();
+  e.ia[0]=0;e.ia[2]=1;e.ia[4]=-1;e.ia[1]=5;            // entity 0 -> 'b', entity 1 -> 'c', entity 2 -> none; slot 1 is not a site
+  e.setSites([{id:'a',x:-4,y:4,z:0,r:1,w:1},{id:'c',x:4,y:4,z:0,r:1,w:1}]);   // 'a' sorts first, 'b' is gone
+  assert.equal(e.ia[0],-1,"'b' vanished");assert.equal(e.sites.ids[e.ia[2]],'c',"still 'c'");assert.equal(e.ia[4],-1);assert.equal(e.ia[1],5,'other slots untouched');
+});

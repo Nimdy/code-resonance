@@ -152,8 +152,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const lifeOn=r=>r?.familyKind!=='pack'&&!families[r?.family]&&r?.genome?.life?.enabled===true;
   const lifeConfig=()=>({speed:speedK,tempo:mood.tempo,epoch:model.epoch,params:current?.genome?.life||{},film,live:!lifeReplay&&!film});
   const lifeFor=next=>lifeOn(next)?{params:next.genome.life,create(grammar){
-    lifeDriver=createLifeDriver({grammar,timeline:lifeTimeline,seed:hash(`${next.projectSeed}/${next.variant||0}/life`),config:lifeConfig});
-    if(lifeBase&&!lifeReplay)lifeDriver.setBase(lifeBase.graph,lifeBase.t);return lifeDriver;}}:null;
+    lifeDriver=createLifeDriver({grammar,timeline:lifeTimeline,seed:hash(`${next.projectSeed}/${next.variant||0}/life`),config:lifeConfig,onRebase:b=>{lifeBase=b;}});
+    if(lifeBase&&!lifeReplay)lifeDriver.setBase(lifeBase.graph,lifeBase.t,lifeBase.from);return lifeDriver;}}:null;
   // GPU time of the whole frame (background, scene, post, bloom, grade) where the driver offers timer queries; results
   // arrive a few frames later and feed a moving average. Null when unsupported (SwiftShader, many drivers).
   const gl=renderer.getContext(),timer=gl.getExtension('EXT_disjoint_timer_query_webgl2'),queries=[];let gpuMs=null;
@@ -178,6 +178,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   async function load(next){
     const mod=families[next.family]||await import(BUILTIN[next.family]);
     if(world){world.dispose();}
+    // Live: the next world's ecosystem starts from the structure as it is now, not from the session's join.
+    if(lifeDriver&&!lifeReplay&&!film)lifeDriver.rebase();
     lifeDriver?.dispose();lifeDriver=null;
     disposeExtension();
     if(scene)scene.traverse(o=>{o.geometry?.dispose?.();const m=o.material;if(m)(Array.isArray(m)?m:[m]).forEach(x=>{for(const v of Object.values(x.uniforms||{}))v?.value?.isTexture&&v.value.dispose();x.dispose();});});
@@ -266,6 +268,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);stale=true;},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
+    // Replay -> live: a new performance (its origin is set by the next reset; the replay's inputs are not its own).
+    newPerformance(){pinnedStart=null;model.clearEpoch();lifeTimeline.clear();lifeReplay=false;lifeBase=null;lifeDriver?.clearBase();stale=true;},
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;
       // Another performance: its ecosystem starts from its own inputs only.
       if(lifeTimeline.items.length){lifeTimeline.clear();lifeReplay=false;}}},

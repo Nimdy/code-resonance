@@ -62,6 +62,7 @@ export function createEcosystem(spec){
   for(let a=0;a<NS;a++)for(let b=0;b<NS;b++){const r=rel[a]?.[b];relAvoid[a*NS+b]=r?.avoid||0;relChase[a*NS+b]=r?.chase||0;relR[a*NS+b]=r?.radius||species[a].radius;}
   const B=spec.bounds,minX=B.min[0],minY=B.min[1],minZ=B.min[2],maxX=B.max[0],maxY=B.max[1],maxZ=B.max[2];
   const hooks=spec.hooks||{};
+  const siteSlots=(spec.siteSlots||[]).filter(o=>o===0||o===1);   // which grammar int-scratch slots hold site indices
   // ---- Entity state (structure of arrays) ---------------------------------------------------------------------------
   const px=new Float32Array(cap),py=new Float32Array(cap),pz=new Float32Array(cap);
   const vx=new Float32Array(cap),vy=new Float32Array(cap),vz=new Float32Array(cap);
@@ -185,8 +186,9 @@ export function createEcosystem(spec){
     const a=wa[i],sp0=s.maxSpeed*.3;vx[i]=Math.cos(a)*sp0;vy[i]=0;vz[i]=Math.sin(a)*sp0;
     for(let k2=0;k2<K;k2++){tx[i*K+k2]=px[i];ty[i*K+k2]=py[i];tz[i*K+k2]=pz[i];}
   }
-  // The first population: each species fills its active quota, deterministically.
-  function populate(){for(let i=0;i<cap;i++){alive[i]=0;gen[i]=0;dead[i]=0;}
+  // The first population: each species fills its active quota, deterministically. `at`: the tick it is born at (a
+  // live ecosystem started later than its session's origin; 0 otherwise).
+  function populate(at=0){tick=Math.max(0,at|0);for(let i=0;i<cap;i++){alive[i]=0;gen[i]=0;dead[i]=0;}
     const want=new Int32Array(NS);for(let k=0;k<NS;k++)want[k]=activeQuota(k);
     for(let i=0;i<cap;i++){const k=slotSpecies[i];if(want[k]>0){spawn(i);want[k]--;age[i]=Math.floor(u01(seed,i,0,12)*life[i]*.8);fade[i]=1;}}}
   // ---- Sites --------------------------------------------------------------------------------------------------------
@@ -203,6 +205,8 @@ export function createEcosystem(spec){
       if(!siteState.has(s.id))siteState.set(s.id,{novelty:0,stress:0,lasting:0,nourish:0,swirl:0});});
     const old=visits.slice();visits.fill(0);for(let p=0;p<MAX_SITES;p++)if(remap[p]>=0)visits[remap[p]]=old[p];
     for(let i=0;i<cap;i++){if(tgt[i]>=0)tgt[i]=remap[tgt[i]];if(tgt[i]<0&&(mode[i]===MODE.seek||mode[i]===MODE.orbit))setMode(i,MODE.explore);}
+    // Site indices a grammar keeps in its integer scratch (spec.siteSlots) follow their sites too (-1: site gone).
+    for(const o of siteSlots)for(let i=0;i<cap;i++){const v=ia[i*2+o];if(v>=0)ia[i*2+o]=v<MAX_SITES?remap[v]:-1;}
     // Conditions of sites that no longer exist are forgotten (bounded memory).
     const live=new Set(siteIds);for(const id of [...siteState.keys()])if(!live.has(id))siteState.delete(id);
   }

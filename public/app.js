@@ -900,7 +900,7 @@
     music.setClock(perfNow,value==='replay'?speedChoice||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
     changed('mode','position');
     if(value==='replay'){void loadReplay().then(()=>{if(mode!=='replay'||!replay)return;seek(replay.start);});}
-    else{replay=null;etag='';feedCues=[];resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
+    else{replay=null;etag='';feedCues=[];living?.newPerformance?.();resetScene({nodes:[],edges:[]});lastSeq=-1;pollProject();}
   }
   function play(){const h=history();if(mode!=='replay'||!h.cues.length&&!replay?.entries.length)return false;if(replayPos>=h.end)seek(h.start);playback=true;replayClock=performance.now();changed('position');return true;}
   function pause(){if(!playback)return;replayPos=perfNow();playback=false;changed('position');}

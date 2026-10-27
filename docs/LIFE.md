@@ -48,6 +48,14 @@ live a seeded lifetime, fade out, and their slot is reused by a new generation a
 with time: no per-event spawning, fixed arrays, fixed trail length, a bounded number of sites (64) whose conditions are
 forgotten when the site disappears.
 
+## The three ecologies
+
+| World | Inhabitants | What they do | What the world shows of them |
+|---|---|---|---|
+| Fractal Biosphere (`life/biosphere.js`) | pollinators, spores, plankton colonies, drifters (about 1000) | Pollinators choose an organism's crown heads by appeal (visitors, trail, the organism's prominence, lasting milestones; winner-take-more), crowd above a threshold that scales with the crown, drain its nectar and leave in small streams for the next crown. Plankton colonies gather and move on between crowns; spores ride the gyre and settle in calm water; drifters wake where the water is disturbed. A failure opens a void around the strained organism and scatters life; a recovery lets it return. | Visited crowns and buds light up locally (the organisms' own photophores); explorers are dim and tail-less, gatherings are the brightest. |
+| Stellar Forge (`life/stellar.js`) | dust, accretion fragments, charged motes, stellar wind (about 1100) | Matter moves with the galaxy's differential rotation, density waves and eddies; systems capture fragments on eccentric bands; a failure's onset blows a system's halo out and its wind thickens, a recovery draws the matter back; a new system pulls harder for a while; verified milestones are lasting attractors. | Soft tapered ribbons and uneven beaded clumps; the gas map brightens along the streams matter keeps using (a matter map rebuilt from the state each tick). The galaxy stays the protagonist. |
+| Machine Cathedral (`life/cathedral.js`) | couriers, wardens, sparks | Routed on the city's own network (kerbs, docks, shafts on each tower's stone, galleries, spokes, channels, canal corridors, cables), never through stone. Traffic on a route deters the next traveller (congestion) or draws it (trail); shaft gates release climbers in convoys, kerb junctions admit platoons on the precinct's beat. A failure withdraws the wardens from the struck precinct; after a recovery they gather at the hub's foot and climb together. | Lanterns with their own halo shader; copings, channels and cables lit by recent traffic. |
+
 ## Determinism
 
 ### Clock
@@ -68,7 +76,14 @@ All inputs are canonical, kept in canonical order (time, kind, recorded order, i
   floor(time / bar length)`, the grid the music anchors to): energy smoothed per bar as the music smooths it, and the
   score's own section rule (`ResonanceScore.chooseSection`) on the recorded tension, with milestones from the
   intents. Nothing is read from the audio device; sound off changes nothing.
-- **Intents**: the canonical intents by id.
+- **Intents**: the canonical intents by id. An intent names modules; it is mapped to its site on the shadow model
+  at the ecosystem's own position (the structure consumed so far), so a seek back maps it exactly as continuous play
+  did.
+
+A grammar's habitat can carry **data** derived from the same structure (the Machine Cathedral's navigation network):
+the driver hands it to the ecosystem with the sites and again after every restore, so a restored state never depends
+on what a grammar happens to have cached. Site indices a grammar keeps per inhabitant (`siteSlots`) follow their sites
+when the habitat changes, as the ecosystem's own targets do.
 
 ### Contract
 
@@ -106,8 +121,19 @@ Measured costs are in [QUALIFICATION.md](QUALIFICATION.md#digital-life).
 
 A live session's origin is when it was joined. Its habitat starts from the structure as joined; intents from before
 the origin carry over only their lasting conditions (verified milestones), never transient ones. A change of life
-values in a live session applies from now (the population continues); a replay or a film derives its state from the
-values, so a change there rebuilds it exactly.
+values or of tempo (a music style) in a live session applies from now: the population continues, the bars continue
+from the current one. A replay or a film derives its state from the values, so a change there rebuilds it exactly.
+Switching from a replay to live starts a new performance (a new origin, an empty timeline): the replay's inputs are
+not the live session's.
+
+A live session's memory is bounded. Past 1200 consumed inputs the driver **folds** them: the timeline keeps only what
+is not consumed yet (plus verified lasting intents, as history), refuses inputs at or before that moment, and the
+structure as it is becomes the session's base. The running ecosystem continues exactly (it keeps its population, its
+own shadow model and its habitat; tested bit-identical against a session that never folds). A world switched to
+during a live session starts its ecosystem at the last fold, from that base, rather than replaying the session from
+its join. The base is the structure without its history (births before it, module order renumbered), so a new
+world's habitat can differ slightly from what an unfolded history would give. Live sessions are not replays: none of
+this applies to replays or films, which keep their whole recorded timeline and are exact.
 
 ## Engineering events
 
@@ -143,9 +169,10 @@ a new coding agent, a courier is never a tool call.
 
 ### Controls (`engine/catalog.js`, `life.*`)
 
-Every value is a scale (0–2, 1 = the world's own artist-directed behaviour), so no setting can make the simulation
-unstable: `enabled`, `density`, `vitality`, `collective`, `environment`, `trails`, `persistence`, `music`, and the
-advanced `attraction`, `repulsion`, `separation`, `alignment`, `cohesion`, `current`, `diffusion`, `radius`.
+Every value is a scale (1 = the world's own artist-directed behaviour; 0–2 unless noted), so no setting can make the
+simulation unstable: `enabled`, `density` (0–1: the share of the world's inhabitants that live; the world's own
+population is its ceiling), `vitality`, `collective`, `environment`, `trails`, `persistence`, `music`, and the advanced
+`attraction`, `repulsion`, `separation`, `alignment`, `cohesion`, `current`, `diffusion`, `radius`.
 
 ## Visual packs
 

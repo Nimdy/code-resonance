@@ -133,6 +133,13 @@ function copy(name){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-life-'));
           await page.evaluate(f=>window.ResonancePlayer.seekFraction(f),f);const t0=Date.now();let saw=false,last=null;
           for(let k=0;k<1200;k++){const s=await page.evaluate(()=>window.__worldStats?.()?.life);if(s?.restoring)saw=true;last=s;if(saw&&s&&!s.restoring)break;if(!saw&&k>40)break;await new Promise(r=>setTimeout(r,100));}
           results.push({fraction:f,restoringShown:saw,wallMs:Date.now()-t0,lastRestoreMs:last?.lastRestoreMs,ticks:last?.lastRestoreTicks,fromCheckpoint:last?.fromCheckpoint});}
+        // Replay -> live: a new performance (its origin now): no restoring of the hours since the recording began, none of
+        // the replay's inputs.
+        const replayInputs=(await page.evaluate(()=>window.__worldStats?.()?.life?.inputs))?.items??0;
+        await page.evaluate(()=>window.ResonancePlayer.setMode('live'));const tl=Date.now();let lv=null;
+        for(let k=0;k<300;k++){await new Promise(r=>setTimeout(r,100));lv=await page.evaluate(()=>window.__worldStats?.()?.life);if(lv&&!lv.restoring&&lv.tick>20&&Date.now()-tl>3000)break;}
+        measurements.replayToLive={wallMs:Date.now()-tl,tick:lv?.tick,restoring:lv?.restoring,inputs:lv?.inputs?.items,replayInputs,resets:lv?.resets};
+        check('replay -> live: the live ecosystem starts at the switch (no restoring, a new origin, not the replay\'s inputs)',!!lv&&!lv.restoring&&lv.tick<20*60&&(lv.inputs?.items??0)<replayInputs,JSON.stringify(measurements.replayToLive));
         await page.close();measurements.farSeek=results;
         check('far seek: restoring is reported, then the ecosystem is current again',results.every(r=>!r.restoringShown||r.lastRestoreMs!==null),JSON.stringify(results));
         check('far seek: no page errors',!errors.length,errors.slice(0,2).join(' | '));

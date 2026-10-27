@@ -91,7 +91,7 @@ test('Generated identities are pinned: generator v3, what v3 keeps from v2, and 
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
   assert.equal(recipe.RECIPE_VERSION,3);
   const v3=['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome);
-  assert.equal(h(v3),'a4720410eb0c80a4');
+  assert.equal(h(v3),'ccb6221a53e0c619');
   // v3 only added digital life (its own random stream): without `life` every genome is exactly v2's.
   assert(v3.every(g=>g.life?.enabled===true));
   assert.equal(h(v3.map(g=>{const c={...g};delete c.life;return c;})),'96bd1fb42ab0c111');

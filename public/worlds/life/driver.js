@@ -27,10 +27,11 @@
 // bounded per frame (films excepted: a film frame waits for the exact state); while far behind, the view reports
 // `restoring` with its progress and the world hides the population rather than show a stale one.
 import {createEcosystem,HZ,DT,SIM_VERSION} from './sim.js';
-import {createShadow,KIND} from './timeline.js';
+import {createShadow,graphOf,KIND} from './timeline.js';
 export {HZ,DT,SIM_VERSION};
 const RECENT_EVERY=2*HZ,RECENT_KEEP=6,SPARSE_EVERY=20*HZ,SPARSE_KEEP=24;
 const RESTORE_AHEAD=3*HZ;          // further behind than this: the view is "restoring"
+const LIVE_REBASE=1200;            // a live session folds its consumed inputs into a new base past this many
 const TIER_W=[.15,.3,.6,.9,1],EVIDENCE_W={observed:.8,derived:1,inferred:.5,verified:1};
 const NEUTRAL={current:1,turb:1,cohesion:1,activity:1,attract:1,swing:0};
 // Section -> conditions (relaxed toward; `swing` turns the macro current, read by the grammar's current).
@@ -85,14 +86,17 @@ export function lifeScales(p={}){const n=(k,d=1)=>Number.isFinite(+p[k])?+p[k]:d
 //           habitat(model, t) -> sites [{id, x, y, z, r, w, kind}], siteOf?(id, model) -> site id,
 //           climate?(section, energy, tension) -> condition targets}
 // config(): {speed, tempo, epoch (ms), params (the recipe's life values), film, live}
-export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.ResonanceScore}){
+// onRebase(base): a live session's new base ({graph, t, from}) after its consumed inputs were folded into it;
+// rebaseAfter: how many consumed inputs a live session keeps before it folds them.
+export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.ResonanceScore,onRebase=null,rebaseAfter=LIVE_REBASE}){
   seed=seed>>>0;
   const shadow=createShadow();
-  let eco=null,frameKey='',paramKey='',cursor=0,climate=null,base=null,current=null;
+  let eco=null,frameKey='',liveKey='',paramKey='',cursor=0,climate=null,base=null,current=null;
   let structList=[],structVersion=-1,shadowApplied=-1;const habitats=[];   // habitat per structure item (index + 1; 0: base)
-  let recent=[],sparse=[],restoring=false,progress=1,shownSince=-1,lastView=null,restoreStart=null,structPos=-1,sitesSig='';
-  const counters={restores:0,resets:0,fromCheckpoint:0,ticks:0,catchUpMs:0,tickMs:0,lastRestoreMs:null,lastRestoreTicks:0};
-  const frameKeyOf=c=>fnv(JSON.stringify([grammar.id,grammar.version,SIM_VERSION,seed,c.speed,c.tempo,c.epoch,base?`${base.t}|${base.graph?.nodes?.length||0}`:'']));
+  let keptN=0,recent=[],sparse=[],restoring=false,progress=1,shownSince=-1,lastView=null,restoreStart=null,structPos=-1,sitesSig='';
+  const counters={restores:0,resets:0,fromCheckpoint:0,ticks:0,catchUpMs:0,tickMs:0,lastRestoreMs:null,lastRestoreTicks:0,rebases:0};
+  const frameKeyOf=(c,tempo=c.tempo)=>fnv(JSON.stringify([grammar.id,grammar.version,SIM_VERSION,seed,c.speed,tempo,c.epoch,base?`${base.t}|${base.graph?.nodes?.length||0}`:'']));
+  const liveKeyOf=c=>frameKeyOf(c,null);   // a live session keeps its population through a tempo change
   const paramKeyOf=c=>fnv(JSON.stringify(c.params||{}));
   const make=c=>createEcosystem({...grammar.ecosystem(c.params||{},seed),seed,params:lifeScales(c.params)});
   // ---- Structure and habitat --------------------------------------------------------------------------------------
@@ -101,6 +105,9 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     return structList;
   }
   const siteOf=id=>grammar.siteOf?grammar.siteOf(id,shadow.model):(shadow.model.modules.get(id)?.group??(shadow.model.districts.has(id)?id:null));
+  // Intents name modules: they are mapped on the structure as it was where the ecosystem is (the shadow may be ahead
+  // after a seek back, its habitats cached), so every path to a moment maps them alike.
+  const siteHere=id=>{shadowTo(structPos);return siteOf(id);};
   // The shadow model holding the base graph and structure items 0..k (forward only; rebuilt when asked to go back).
   function shadowTo(k){
     const list=structures();
@@ -144,16 +151,18 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     for(;cursor<n;cursor++){const x=items[cursor];
       if(x.kind===KIND.structure){structPos=structures().indexOf(x);const h=habitatAt(structPos);eco.setSiteData(h.data);if(h.sig!==sitesSig){sitesSig=h.sig;eco.setSites(h.sites);}}
       else if(x.kind===KIND.frame){climate.fe=x.energy;climate.ft=x.tension;climate.fend=x.end;}
-      else{const i=x.intent,history=i.ts<c.epoch;
+      else{const i=x.intent,history=i.ts<c.epoch||(c.live&&base&&i.ts<base.from);
         if(!history&&MILESTONE.has(i.type)&&(i.tier>=2||i.evidence==='verified'))climate.milestone=true;
-        for(const ev of influencesOf(i,siteOf,{history}))eco.influence(ev);}
+        for(const ev of influencesOf(i,siteHere,{history}))eco.influence(ev);}
     }
   }
   // ---- States, checkpoints, restore -----------------------------------------------------------------------------------
-  function fresh(c){
-    eco=make(c);cursor=0;climate=climateInit(c);structPos=-1;
-    const h=habitatAt(-1);sitesSig=h.sig;eco.setSiteData(h.data);eco.setSites(h.sites);eco.populate();
-    consume(tickTime(0,c),c);climateStep(tickTime(0,c),c);counters.resets++;
+  // A live session's ecosystem is born at its base (the session joined, or its last rebase), not at its origin.
+  const startTick=(c,target)=>c.live&&base?Math.max(0,Math.min(target,Math.floor((base.from-c.epoch)/(DT*1000*c.speed)))):0;
+  function fresh(c,target=0){
+    eco=make(c);cursor=0;climate=climateInit(c);structPos=-1;const k0=startTick(c,target);
+    const h=habitatAt(-1);sitesSig=h.sig;eco.setSiteData(h.data);eco.setSites(h.sites);eco.populate(k0);
+    consume(tickTime(k0,c),c);climateStep(tickTime(k0,c),c);counters.resets++;
   }
   function snapshot(){return {tick:eco.tick,cursor,print:timeline.print(cursor),frameKey,paramKey,sim:eco.snapshot(),climate:{...climate},structPos,sitesSig};}
   function restore(cp){eco.restore(cp.sim);cursor=cp.cursor;climate={...cp.climate};structPos=cp.structPos;sitesSig=cp.sitesSig;eco.setSiteData(habitatAt(cp.structPos).data);}
@@ -175,7 +184,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     if(eco&&eco.tick<=target&&validState(eco.tick,cursor,consumedPrint,c))return;
     recent=recent.filter(x=>validCp(x,c));sparse=sparse.filter(x=>validCp(x,c));
     const cp=[...sparse,...recent].filter(x=>x.tick<=target).sort((a,b)=>b.tick-a.tick)[0];
-    if(cp){if(!eco)eco=make(c);restore(cp);counters.fromCheckpoint++;}else fresh(c);
+    if(cp){if(!eco)eco=make(c);restore(cp);counters.fromCheckpoint++;}else fresh(c,target);
     consumedPrint=timeline.print(cursor);counters.restores++;
   }
   let consumedPrint=[0,0];
@@ -189,17 +198,19 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   function update(info,{budgetMs=6}={}){
     const c=config();current=c;
     if(!Number.isFinite(c.epoch)||c.epoch<=0||!Number.isFinite(info.tview))return lastView=null;
-    const fk=frameKeyOf(c),pk=paramKeyOf(c);
+    const fk=frameKeyOf(c),lk=liveKeyOf(c),pk=paramKeyOf(c);
     if(fk!==frameKey||pk!==paramKey){
-      // A live session keeps its population through a change of life parameters (it applies from now); replays and
-      // films derive the state from the configuration, so any change rebuilds it exactly.
-      if(eco&&c.live&&fk===frameKey){const snap=snapshot();eco=make(c);restore(snap);}
+      // A live session keeps its population through a change of life parameters or tempo (they apply from now: the
+      // structure applied so far stays, the bars continue from the current one); replays and films derive the state
+      // from the configuration, so any change rebuilds it exactly.
+      if(eco&&c.live&&lk===liveKey){const snap=snapshot();eco=make(c);restore(snap);
+        if(fk!==frameKey){shadow.retune(c.tempo);climate.bar=Math.floor(tickTime(eco.tick,c)/barMs(c));}}
       else{eco=null;if(fk!==frameKey){shadow.configure({speed:c.speed,tempo:c.tempo});habitats.length=0;shadowApplied=-1;}}
-      frameKey=fk;paramKey=pk;recent=[];sparse=[];
+      frameKey=fk;liveKey=lk;paramKey=pk;recent=[];sparse=[];
     }
     const change=timeline.takeChange();if(change<Infinity)forgetFrom(change);
     const target=Math.max(0,Math.floor(info.tview*HZ+1e-6));
-    if(!eco){fresh(c);consumedPrint=timeline.print(cursor);}
+    if(!eco){fresh(c,target);consumedPrint=timeline.print(cursor);}
     if(eco.tick>target||change<=tickTime(eco.tick,c))settle(target,c);
     if(target-eco.tick>RESTORE_AHEAD&&!c.film&&!restoring){restoring=true;restoreStart={at:performance.now(),from:eco.tick};}
     const began=performance.now(),limit=c.film?Infinity:restoring?Math.max(budgetMs,12):Math.max(budgetMs,4);
@@ -208,15 +219,33 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     if(restoring){progress=clamp((eco.tick-restoreStart.from)/Math.max(1,target-restoreStart.from));
       if(eco.tick>=target){restoring=false;counters.lastRestoreMs=Math.round(performance.now()-restoreStart.at);counters.lastRestoreTicks=eco.tick-restoreStart.from;restoreStart=null;shownSince=info.tview;}}
     else progress=1;
+    if(c.live&&!restoring&&eco.tick===target&&cursor-keptN>=rebaseAfter)rebase(c);
     // Presentation: alpha interpolates from the previous tick (state at tick-1 + alpha of one tick).
     const alpha=eco.tick===target?clamp(info.tview*HZ-target):1;
     const fadeIn=shownSince<0||info.tview<shownSince?1:clamp((info.tview-shownSince)/.6);
     return lastView={eco,alpha,restoring,progress,fadeIn,tick:eco.tick,target,climate:{section:climate.section,energy:+climate.energy.toFixed(3)}};
   }
+  // ---- A live session's bounded memory --------------------------------------------------------------------------------
+  // The consumed inputs are folded away: the timeline keeps only what is not consumed yet (and the verified lasting
+  // intents, as history), refuses inputs older than now, and the structure as it is becomes the base a new world
+  // starts from. This ecosystem continues exactly (its population, its own shadow and habitat); only a rebuild of the
+  // shadow (an out-of-order window) or a new world starts from the base, which is the structure without its history.
+  function rebase(c=config()){
+    if(!eco||!c.live||restoring)return false;
+    const h0=habitatAt(structPos);shadowTo(structPos);
+    const list=structures(),T=tickTime(eco.tick,c),tEval=structPos>=0?(list[structPos].end??list[structPos].t):(base?.t??T);
+    const lasting=x=>x.kind===KIND.intent&&(x.intent.type==='milestone.achieved'||x.intent.type==='refactor.validated')&&x.intent.evidence==='verified';
+    const kept=timeline.compact(cursor,T,lasting);
+    base={graph:graphOf(shadow.model,tEval),t:tEval,from:T};
+    habitats.length=0;habitats[0]=h0;shadowApplied=0;structVersion=-1;cursor=keptN=kept;structPos=-1;
+    frameKey=frameKeyOf(c);liveKey=liveKeyOf(c);recent=[snapshot()];sparse=[];consumedPrint=timeline.print(cursor);
+    counters.rebases++;onRebase?.(base);return true;
+  }
   return {
-    update,
-    // Live: the structure the session was joined with (replays never use it: their recorded windows are the structure).
-    setBase(graph,t){if(!graph||!Number.isFinite(t))return;base={graph,t};habitats.length=0;shadowApplied=-1;},
+    update,rebase,
+    // Live: the structure the session was joined with, or its last rebase (`from`: inputs before it are history).
+    // Replays never use it: their recorded windows are the structure.
+    setBase(graph,t,from=t){if(!graph||!Number.isFinite(t))return;base={graph,t,from};habitats.length=0;shadowApplied=-1;},
     clearBase(){if(!base)return;base=null;habitats.length=0;shadowApplied=-1;},
     get ecosystem(){return eco;},get view(){return lastView;},
     // The site a canonical subject belongs to (labels and inspection).
@@ -224,7 +253,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     stats(){const s=eco?eco.stats():null;return {grammar:grammar.id,version:grammar.version,sim:SIM_VERSION,hz:HZ,tick:eco?.tick??0,restoring,progress:+progress.toFixed(3),
       checkpoints:{recent:recent.length,sparse:sparse.length},inputs:timeline.stats(),habitats:habitats.filter(Boolean).length,climate:climate?{section:climate.section,energy:+climate.energy.toFixed(3),bar:climate.bar}:null,
       tickMs:+counters.tickMs.toFixed(3),catchUpMs:+counters.catchUpMs.toFixed(2),restores:counters.restores,resets:counters.resets,fromCheckpoint:counters.fromCheckpoint,ticks:counters.ticks,
-      lastRestoreMs:counters.lastRestoreMs,lastRestoreTicks:counters.lastRestoreTicks,ecosystem:s};},
+      lastRestoreMs:counters.lastRestoreMs,lastRestoreTicks:counters.lastRestoreTicks,rebases:counters.rebases,ecosystem:s};},
     digest:()=>eco?.digest()??null,
     dispose(){eco=null;recent=[];sparse=[];habitats.length=0;shadow.reset();}
   };

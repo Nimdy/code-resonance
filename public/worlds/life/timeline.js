@@ -19,12 +19,13 @@ const idHash=s=>{let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.c
 const extend=(p,x)=>[(Math.imul(p[0],31)+x)>>>0,(Math.imul(p[1]^x,2654435761)+0x9e3779b9)>>>0];
 export function compareItems(a,b){return a.t-b.t||a.kind-b.kind||a.ord-b.ord||(a.key<b.key?-1:a.key>b.key?1:0);}
 export function createLifeTimeline(){
-  let items=[],keys=new Set(),prints=[[0,0]],version=0,earliestChange=Infinity;
+  let items=[],keys=new Set(),prints=[[0,0]],version=0,earliestChange=Infinity,floor=-Infinity,compactions=0;
   const listeners=new Set();
   function printFrom(k){prints.length=k+1;for(let i=k;i<items.length;i++)prints.push(extend(prints[i],items[i].h));}
-  // Inserts an item in canonical order. Returns false for a duplicate.
+  // Inserts an item in canonical order. Returns false for a duplicate, or for an input at or before the floor (a live
+  // session's inputs older than its last compaction are history).
   function insert(item){
-    if(keys.has(item.key))return false;keys.add(item.key);
+    if(keys.has(item.key)||item.t<=floor)return false;keys.add(item.key);
     let p=items.length;while(p>0&&compareItems(items[p-1],item)>0)p--;
     items.splice(p,0,item);printFrom(p);version++;earliestChange=Math.min(earliestChange,item.t);
     return true;
@@ -52,8 +53,18 @@ export function createLifeTimeline(){
     print:k=>prints[k],
     // The earliest time an input was added since the last call (a checkpoint after it may no longer be valid).
     takeChange(){const t=earliestChange;earliestChange=Infinity;return t;},
-    clear(){items=[];keys=new Set();prints=[[0,0]];version++;earliestChange=-Infinity;},
-    stats(){let s=0,f=0,n=0;for(const x of items)x.kind===0?s++:x.kind===1?f++:n++;return {items:items.length,structure:s,frames:f,intents:n};}};
+    clear(){items=[];keys=new Set();prints=[[0,0]];version++;earliestChange=-Infinity;floor=-Infinity;},
+    // A live session's bounded memory (life/driver.js rebase): drops the first n items (already consumed, all at or
+    // before time t) except those `keep` names, and from now on refuses inputs at or before t. Not an input change:
+    // the ecosystem that consumed them continues. Returns how many were kept (they stay first).
+    compact(n,t,keep=()=>false){
+      const head=items.slice(0,n),kept=head.filter(keep);
+      for(const x of head)if(!kept.includes(x))keys.delete(x.key);
+      items=[...kept,...items.slice(n)];prints=[[0,0]];printFrom(0);version++;floor=Math.max(floor,t);compactions++;
+      return kept.length;
+    },
+    get floor(){return floor;},
+    stats(){let s=0,f=0,n=0;for(const x of items)x.kind===0?s++:x.kind===1?f++:n++;return {items:items.length,structure:s,frames:f,intents:n,compactions};}};
 }
 // The structure as it was: a model of its own, created with the world model's rules (speed and tempo snap births to
 // the music's step grid), fed the timeline's structure items in order by the driver.
@@ -62,6 +73,24 @@ export function createShadow({speed=1,tempo=92}={}){
   return {
     get model(){return model;},
     configure({speed:s=speed,tempo:t=tempo}){speed=s;tempo=t;model=createModel({speed,tempo});},
+    // A live tempo change: the structure applied so far stays, later births snap to the new grid.
+    retune(t){if(t>0){tempo=t;model.setTempo(t);}},
     reset(){model=createModel({speed,tempo});}
   };
+}
+// The structure a model holds at time t as a graph (the shape a world model is reset with): what exists at t, in the
+// model's own order. A live session's rebase keeps it as the base a new world (or a rebuilt shadow) starts from. It
+// is the structure, not its history: births before t become -Infinity and module order is renumbered, so a habitat
+// derived from it can differ slightly from the one the running ecosystem had (which keeps its own shadow).
+export function graphOf(model,t){
+  const nodes=[],edges=[],here=x=>model.bornAt(x)<=t&&(x.removed===null||x.removed>t);
+  for(const d of [...model.districts.values()].sort((a,b)=>a.order-b.order))
+    nodes.push({id:d.id,type:'group',core:d.core,order:d.order,q:d.q,r:d.r,angle:d.angle,counts:d.counts,test:d.test,modules:d.modules});
+  for(const m of [...model.modules.values()].sort((a,b)=>a.order-b.order)){if(!here(m))continue;
+    nodes.push({id:m.id,type:'module',group:m.group,dir:m.dir,q:m.q,r:m.r,lang:m.lang,test:m.test,counts:m.counts,weight:m.weight,state:model.stateAt(m,t)});
+    edges.push({a:m.group,b:m.id,kind:'contains'});}
+  const mods=new Set(nodes.filter(n=>n.type==='module').map(n=>n.id));
+  for(const s of model.symbols.values())if(here(s)&&mods.has(s.parent))nodes.push({id:s.id,type:s.kind,parent:s.parent,slot:s.slot,weight:s.weight});
+  for(const l of model.links.values())if(here(l)&&mods.has(l.a)&&mods.has(l.b))edges.push({a:l.a,b:l.b,kind:'depends',cross:l.cross});
+  return {nodes,edges};
 }
