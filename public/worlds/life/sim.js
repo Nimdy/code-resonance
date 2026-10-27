@@ -50,7 +50,8 @@ export const SPECIES_DEFAULTS=Object.freeze({
   life:[90,300],fade:2.5,respawn:[1,6],
   yMin:-1e9,yMax:1e9,yHold:0,yRest:0,
   congestion:0,congestionAbove:6,    // disturbance deposited where density exceeds congestionAbove
-  routes:0                           // >0: the grammar's route hook steers this species (mode route)
+  routes:0,                          // >0: the grammar's route hook steers this species (mode route)
+  perceive:true                      // false: no neighbour perception at all (a species steered by its own rules)
 });
 export function createEcosystem(spec){
   const seed=spec.seed>>>0,cap=Math.max(1,spec.capacity|0);
@@ -189,6 +190,10 @@ export function createEcosystem(spec){
     const want=new Int32Array(NS);for(let k=0;k<NS;k++)want[k]=activeQuota(k);
     for(let i=0;i<cap;i++){const k=slotSpecies[i];if(want[k]>0){spawn(i);want[k]--;age[i]=Math.floor(u01(seed,i,0,12)*life[i]*.8);fade[i]=1;}}}
   // ---- Sites --------------------------------------------------------------------------------------------------------
+  // Data a grammar derives from the same structure as the sites (a navigation network, say): supplied by the driver
+  // with every habitat and again after a restore, so it is never a cache the grammar must keep in step itself.
+  let siteData=null;
+  function setSiteData(d){siteData=d??null;}
   function setSites(list){
     // list: [{id, x, y, z, r, w, kind}] sorted by the world; at most MAX_SITES (the strongest kept).
     const sorted=list.slice().sort((a,b)=>(b.w-a.w)||(a.id<b.id?-1:a.id>b.id?1:0)).slice(0,MAX_SITES).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
@@ -278,6 +283,8 @@ export function createEcosystem(spec){
     // A strained site (failing validation) stays unwelcome while the strain lasts: it keeps emitting disturbance
     // (bounded by saturation) until a recovery clears it or the strain fades.
     for(let k=0;k<nSites;k++){const st=site(k);if(st.stress>.05)disc(CH.disturb,sx[k],sz[k],sr[k]*2.2,.06*st.stress*P.environment);}
+    // The grammar's own per-tick preparation (tables shared by its steering), before any entity moves.
+    if(hooks.tick)hooks.tick(api);
     let c0=clock();buildGrid();derive();
     density.fill(0);for(let i=0;i<cap;i++)if(alive[i]){const gx=Math.floor((px[i]-FX0)/cw),gz=Math.floor((pz[i]-FZ0)/ch);if(gx>=0&&gz>=0&&gx<NX&&gz<NZ)density[gz*NX+gx]+=1;}
     visitsNow.fill(0);
@@ -290,7 +297,7 @@ export function createEcosystem(spec){
       // Each entity perceives its neighbourhood on alternate ticks (10 Hz) and keeps that perception in between (the
       // perception is state: snapshots carry it). At most NB_MAX neighbours are taken, nearest cells first.
       const o13=i*PN;
-      if(((i+tick)&1)===0||modeT[i]===0){
+      if(s.perceive&&(((i+tick)&1)===0||modeT[i]===0)){
       const R=s.radius*P.radius,R2=R*R,SR=s.sepRadius*P.radius;let n=0,cxs=0,cys=0,czs=0,avx=0,avy=0,avz=0,sxs=0,sys=0,szs=0,ox=0,oy=0,oz=0;
       const X=cix[i],Y=ciy[i],Z=ciz[i],z0=Z>0?Z-1:0,z1=Z<GZ-1?Z+1:Z,y0=Y>0?Y-1:0,y1=Y<GY-1?Y+1:Y,x0=X>0?X-1:0,x1=X<GX-1?X+1:X;let seen=0;
       for(let cz=z0;cz<=z1&&seen<NB_MAX;cz++)for(let cy=y0;cy<=y1&&seen<NB_MAX;cy++)for(let cx=x0;cx<=x1&&seen<NB_MAX;cx++){
@@ -344,7 +351,7 @@ export function createEcosystem(spec){
       if(m===MODE.settle||m===MODE.rest){fx-=ux*1.5;fy-=uy*1.5;fz-=uz*1.5;}
       // World bounds: steer back before the edge.
       const mg=1.5;if(x<minX+mg)fx+=(minX+mg-x)*2;if(x>maxX-mg)fx+=(maxX-mg-x)*2;if(z<minZ+mg)fz+=(minZ+mg-z)*2;if(z>maxZ-mg)fz+=(maxZ-mg-z)*2;if(y<minY)fy+=(minY-y)*2;if(y>maxY)fy+=(maxY-y)*2;
-      if(hooks.steer){scratchF[0]=fx;scratchF[1]=fy;scratchF[2]=fz;hooks.steer(api,i,scratchF);fx=scratchF[0];fy=scratchF[1];fz=scratchF[2];}
+      if(hooks.steer){scratchF[0]=fx;scratchF[1]=fy;scratchF[2]=fz;hooks.steer(api,i,scratchF,distLocal);fx=scratchF[0];fy=scratchF[1];fz=scratchF[2];}
       // Bounded steering: the force is limited, the mass gives inertia (entities never turn or stop instantly).
       const fm=len3(fx,fy,fz),fmax=s.maxForce*(.6+.4*activity);if(fm>fmax){const c=fmax/fm;fx*=c;fy*=c;fz*=c;}
       ax[i]=fx/s.mass;ay[i]=fy/s.mass;az[i]=fz/s.mass;
@@ -404,7 +411,8 @@ export function createEcosystem(spec){
     px,py,pz,vx,vy,vz,qx,qy,qz,en,age,life,fade,sp,mode,alive,modeT,gen,carry,tgt,fa,ia,tx,ty,tz,nb:nbN,
     sites:{x:sx,y:sy,z:sz,r:sr,w:sw,kind:sKind,visits,get count(){return nSites;},get ids(){return siteIds;},state:k=>site(k)},
     get tick(){return tick;},get cond(){return cond;},params:P,
-    populate,step,setSites,influence,setClimate,setMode,sample,gradient,splat,disc,flowAt,snapshot,restore,digest,stats,
+    get siteData(){return siteData;},
+    populate,step,setSites,setSiteData,influence,setClimate,setMode,sample,gradient,splat,disc,flowAt,snapshot,restore,digest,stats,
     random:(i,n)=>u01(seed,i,gen[i],tick*64+n),
     // The trail ring head: points are ordered newest first from here (k = 0..K-1).
     get trailHead(){return Math.floor(Math.max(0,tick-1)/TRAIL_EVERY)%K;}

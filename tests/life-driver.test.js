@@ -146,3 +146,14 @@ test('Joining a live session late: only lasting conditions carry over from befor
   assert.equal(st('g0').stress,0,'an old failure does not strain the present');
   assert.equal(st('g1').lasting,0,'no verified milestone in this history yet');
 });
+test('Habitat data travels with the sites: after a restore the ecosystem holds the data of its own moment',async()=>{
+  const [{createLifeDriver},{createLifeTimeline}]=await load();
+  const withData={...grammar,habitat:(model,t)=>{const sites=grammar.habitat(model,t);return {sites,data:{key:sites.map(s=>s.id).join(',')}};}};
+  const timeline=createLifeTimeline();timeline.prime(recording(30));
+  const driver=createLifeDriver({grammar:withData,timeline,seed:5,config:()=>({speed:1,tempo:96,epoch:T0,params:{}}),score});
+  driver.update({tview:250});const late=driver.ecosystem.siteData.key;
+  driver.update({tview:30});const early=driver.ecosystem.siteData.key;
+  assert.notEqual(late,early,'the habitat grew between the two moments');
+  assert.equal(early,driver.ecosystem.sites.ids.join(','),'restored: the data matches the restored sites');
+  assert.equal(driver.stats().fromCheckpoint>0||driver.stats().resets>1,true);
+});

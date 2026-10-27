@@ -111,8 +111,10 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   function habitatAt(k){
     if(habitats[k+1])return habitats[k+1];
     shadowTo(k);const list=structures(),t=k>=0?(list[k].end??list[k].t):(base?.t??0);
-    const sites=grammar.habitat(shadow.model,t)||[];
-    const h={sites,t,sig:fnv(JSON.stringify(sites.map(s=>[s.id,+s.x.toFixed(3),+s.y.toFixed(3),+s.z.toFixed(3),+s.r.toFixed(3),+s.w.toFixed(3),s.kind|0])))};
+    // A grammar returns the sites, or {sites, data}: data derived from the same structure (e.g. a navigation network),
+    // handed to the ecosystem with the sites and again after every restore.
+    const r=grammar.habitat(shadow.model,t)||[],sites=Array.isArray(r)?r:(r.sites||[]),data=Array.isArray(r)?null:(r.data??null);
+    const h={sites,data,t,sig:fnv(JSON.stringify(sites.map(s=>[s.id,+s.x.toFixed(3),+s.y.toFixed(3),+s.z.toFixed(3),+s.r.toFixed(3),+s.w.toFixed(3),s.kind|0])))};
     habitats[k+1]=h;return h;
   }
   // Inputs changed at or after time t: habitats after it are recomputed, the shadow model rebuilt if it passed it.
@@ -140,7 +142,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   function consume(T,c){
     const items=timeline.items,n=timeline.upto(T);
     for(;cursor<n;cursor++){const x=items[cursor];
-      if(x.kind===KIND.structure){structPos=structures().indexOf(x);const h=habitatAt(structPos);if(h.sig!==sitesSig){sitesSig=h.sig;eco.setSites(h.sites);}}
+      if(x.kind===KIND.structure){structPos=structures().indexOf(x);const h=habitatAt(structPos);eco.setSiteData(h.data);if(h.sig!==sitesSig){sitesSig=h.sig;eco.setSites(h.sites);}}
       else if(x.kind===KIND.frame){climate.fe=x.energy;climate.ft=x.tension;climate.fend=x.end;}
       else{const i=x.intent,history=i.ts<c.epoch;
         if(!history&&MILESTONE.has(i.type)&&(i.tier>=2||i.evidence==='verified'))climate.milestone=true;
@@ -150,11 +152,11 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   // ---- States, checkpoints, restore -----------------------------------------------------------------------------------
   function fresh(c){
     eco=make(c);cursor=0;climate=climateInit(c);structPos=-1;
-    const h=habitatAt(-1);sitesSig=h.sig;eco.setSites(h.sites);eco.populate();
+    const h=habitatAt(-1);sitesSig=h.sig;eco.setSiteData(h.data);eco.setSites(h.sites);eco.populate();
     consume(tickTime(0,c),c);climateStep(tickTime(0,c),c);counters.resets++;
   }
   function snapshot(){return {tick:eco.tick,cursor,print:timeline.print(cursor),frameKey,paramKey,sim:eco.snapshot(),climate:{...climate},structPos,sitesSig};}
-  function restore(cp){eco.restore(cp.sim);cursor=cp.cursor;climate={...cp.climate};structPos=cp.structPos;sitesSig=cp.sitesSig;}
+  function restore(cp){eco.restore(cp.sim);cursor=cp.cursor;climate={...cp.climate};structPos=cp.structPos;sitesSig=cp.sitesSig;eco.setSiteData(habitatAt(cp.structPos).data);}
   // A state (tick, inputs consumed, their fingerprint) is valid while no input at or before its time changed.
   function validState(tick,cur,print,c){
     if(cur>timeline.items.length||!samePrint(timeline.print(cur),print))return false;
