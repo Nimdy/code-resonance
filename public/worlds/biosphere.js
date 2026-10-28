@@ -12,7 +12,9 @@
 //                            drained, leaves curl and rust, dull embers in the bark) on exactly the failing files
 //  - repaired file        -> fresh leaves open at its tip and stay (a lasting sign of the recovery, from the states)
 //  - dependency           -> across organisms a braided mycelial cord on the ground; inside one a faint silk thread
-//  - agent                -> a firefly swarm (or pollinators) gathered at the branch it reads or edits
+//  - agent                -> a firefly swarm (or pollinators) gathered at the branch it reads or edits, brighter while
+//                            it works; each edit touches the file (touch.js): the branch flares in the agent's colour,
+//                            a pulse runs up it into the crown and a ring of light opens at its tip (gentler for a read)
 //  - lasting milestones   -> a phyllotactic fractal flower (milestone) or crystalline star (refactor) on the organism,
 //                            kept and accumulated around its crown for the project's whole life; ambient unlocks add
 //                            fireflies, drifting petals, brighter veins and a bioluminescent tide
@@ -27,6 +29,7 @@ import {biosphereGrammar,POLLINATOR,SPORE,PLANKTON,DRIFTER} from './life/biosphe
 import {MODE} from './life/sim.js';
 import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {presence} from '../providers.js';
+import {touchesAt,touchOf,touchRing,touchTravel,touchGain,touchSprites,touchVisits,visitBlend} from './touch.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
 const num=(x,d)=>Number.isFinite(x)?x:d;
@@ -57,7 +60,8 @@ export function createFamily(ctx){
     uLean:{value:new THREE.Vector2()},uRes:{value:new THREE.Vector2(1920,1080)},uOrg:{value:Array.from({length:MAXO},()=>new THREE.Vector4(0,0,1,1))},uOrgB:{value:Array.from({length:MAXO},()=>new THREE.Vector4(1,0,0,0))},
     uBL:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,0))},uBLC:{value:Array.from({length:8},()=>new THREE.Vector4(1,1,1,1))},uOrgC:{value:orgColors},uOrgS:{value:orgSpecies},uPal:{value:palU},
     uFogC:{value:fogC.clone()},uFogLit:{value:fogLit.clone()},uLightDir:{value:new THREE.Vector3(0,1,0)},uBody:{value:new THREE.Vector3(...env.body)},
-    uWave:{value:Array.from({length:8},()=>new THREE.Vector4(-1,-1e5,1,1))},uWaveC:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,1))},uState:{value:null}};
+    uWave:{value:Array.from({length:8},()=>new THREE.Vector4(-1,-1e5,1,1))},uWaveC:{value:Array.from({length:8},()=>new THREE.Vector4(0,0,0,1))},uState:{value:null},
+    uTouch:{value:Array.from({length:4},()=>new THREE.Vector4(-1,-1e5,0,0))},uTouchC:{value:Array.from({length:4},()=>new THREE.Vector4())}};
   // Digital life (life/biosphere.js): only when the recipe has it on. Off, nothing differs from the world without it (no
   // resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
   const LIFE=ctx.life||null;
@@ -244,7 +248,7 @@ export function createFamily(ctx){
       uShafts:{value:num(ATM.lightShafts,.7)*env.shafts},uAbyss:{value:terrain==='abyss'?1:0},uSurface:{value:env.surface},uTerrain:{value:env.t},uUnlock:groundU.uUnlock},vertexShader:BACKGROUND_VS,fragmentShader:SKY_FS,depthWrite:false,depthTest:false});
   // ---- Structure ------------------------------------------------------------------------------------------------------
   let forest=null,builtVersion=-1,builtQuality=-1,extent=6,canopyH=4,worldExtent=6;const centre=new THREE.Vector3();
-  const orgs=new Map(),orgList=[];
+  const orgs=new Map(),orgList=[],moduleRow=new Map();
   function copy(buf,packed,stride,names){const n=packed.length/stride;buf.ensure(n);
     names.forEach((name,a)=>{const arr=buf.arrays[name];for(let i=0;i<n;i++){const o=i*stride+a*4,t=i*4;arr[t]=packed[o];arr[t+1]=packed[o+1];arr[t+2]=packed[o+2];arr[t+3]=packed[o+3];}buf.dirty(name);});
     buf.commit(n);return n;}
@@ -317,7 +321,7 @@ export function createFamily(ctx){
     counts.thick=copy(thick,forest.seg,SEG,SEG_NAMES);counts.fine=copy(fine,forest.fine,SEG,SEG_NAMES);
     counts.leaves=copy(leaves,forest.leaf,LEAF,['lP','lD','lW','lM']);
     counts.glows=copy(glows,forest.glow,GLOW,['gP','gG','gM']);
-    ensureState(forest.moduleIds.length);
+    ensureState(forest.moduleIds.length);moduleRow.clear();forest.moduleIds.forEach((id,k)=>moduleRow.set(id,k));
     // Organism colours: one family of hues per world (the primary, a little toward the accent); organisms differ in
     // saturation and value, accent hues are kept for blooms and events.
     for(const o of orgList){const k=o.index%MAXO,r1=rand(hash(o.id)),r2=rand(hash(o.id)+5),r3=rand(hash(o.id)+9);
@@ -450,33 +454,60 @@ export function createFamily(ctx){
   // Where a presence's swarm is at the frame's time (a pure function of the observed lifecycle and the time, so a seek
   // and continuous play agree): the goal of its current state, eased in from the goal of the state before it.
   const goalKey=p=>`${p.display}|${p.fileId}|${p.home}`;
-  function agentAt(a,i,out){out.copy(agentGoal(a,i));
+  function settledAt(a,i,out){out.copy(agentGoal(a,i));
     const spd=ctx.speed(),W=(a.display==='tool'?1.6:2.8)*1000*spd,before=ctx.agents.presence(a.id,i.t-W);
     if(!before||goalKey(before)===goalKey(a))return out;
     // The moment the goal changed (within the last W): bisected over the pure lifecycle.
     let lo=i.t-W,hi=i.t;for(let n=0;n<12;n++){const mid=(lo+hi)/2,p=ctx.agents.presence(a.id,mid);if(p&&goalKey(p)===goalKey(a))hi=mid;else lo=mid;}
     const prev=ctx.agents.presence(a.id,lo);if(!prev)return out;
     return out.lerp(tmpP.copy(agentGoal(prev,i)),1-smooth((i.t-hi)/W));}
+  // ...drawn to the branches it has just touched (touch.js: an edit's tool lasts a moment, its visit a few seconds).
+  function agentAt(a,i,out){settledAt(a,i,out);const v=touchVisits(ctx.agents,a.id,i.t,ctx.speed(),id=>!!forest?.anchors.has(id));
+    if(v.length){const ph=rand(hash(a.id))*6.283;visitBlend(out,v,id=>anchorPos(id)?.add(tmp.set(Math.cos(ph)*.6,.45,Math.sin(ph)*.6)),out);}return out;}
   function updateAgents(i){
-    let n=0;const seen=new Set();const cap=agentPts.capacity;
+    let n=0;const seen=new Set();const cap=agentPts.capacity,lite=(i.quality||0)>=2;
     for(const a of i.agents.slice(0,MAX_AGENTS)){
       seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}
       agentAt(a,i,st.pos);
       const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.45)*num(G.agentProminence,.8),ph=rand(hash(a.id))*100;
       const spread=a.display==='tool'?.5:a.busy?.95:.6;
+      // While it works the swarm burns brighter and a little larger, most of all as it touches a file.
+      const T=touchOf(touches,a.id),tk=T?T.env*T.k:0,work=a.display==='tool'?1:a.busy?.4:0,lift=1+.5*work+1.1*tk,grow=1+.25*work+.4*tk;
       for(let k=0;k<SWARM;k++){const u=k/SWARM*6.283+ph,rk=spread*(.35+.65*rand(k*31+7)),wk=(pollinator?.7:1.2)+k*.045;
         for(let j=0;j<TRAIL&&n<cap;j++){const tt=i.tview-j*.07;
           const x=st.pos.x+Math.cos(u+tt*wk)*rk,y=st.pos.y+Math.sin(tt*(1.9+k*.07)+k)*rk*.55,z=st.pos.z+Math.sin(u*1.3+tt*wk*.9)*rk;
           const blink=pollinator?.8+.2*Math.sin(tt*30+k):Math.max(0,Math.sin(tt*(2.4+k*.23)+k*2.1))**2;
-          agentPts.write('position',n,x,y,z);agentPts.write('aCol',n,c.r*2.4,c.g*2.4,c.b*2.4,alpha*blink*(1-j/TRAIL)*(j?.5:1));agentPts.write('aSize',n,(pollinator?3.2:1.6)*(j?.6:1));n++;}}
+          agentPts.write('position',n,x,y,z);agentPts.write('aCol',n,c.r*2.4*lift,c.g*2.4*lift,c.b*2.4*lift,alpha*blink*(1-j/TRAIL)*(j?.5:1));agentPts.write('aSize',n,(pollinator?3.2:1.6)*(j?.6:1)*grow);n++;}}
       // The presence's heart: one soft light at the swarm's centre.
-      if(n<cap){agentPts.write('position',n,st.pos.x,st.pos.y,st.pos.z);agentPts.write('aCol',n,c.r*1.4,c.g*1.4,c.b*1.4,alpha*(a.busy?.9:.5));agentPts.write('aSize',n,a.display==='tool'?9:6);n++;}
-      if(a.display==='tool'&&a.fileId){const tip=anchorPos(a.fileId);if(tip){const inward=a.activity==='reading'||a.activity==='searching';
-        for(let k=0;k<16&&n<cap;k++){let f=(i.tview*.6+k/16)%1;if(inward)f=1-f;const p=st.pos.clone().lerp(tip,f);p.y+=Math.sin(f*Math.PI)*.25;
-          agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*1.6,c.g*1.6,c.b*1.6,alpha*Math.sin(f*Math.PI)*.6);agentPts.write('aSize',n,.6);n++;}}}
+      if(n<cap){const hk=1.4*(1+.4*work+1.2*tk);agentPts.write('position',n,st.pos.x,st.pos.y,st.pos.z);agentPts.write('aCol',n,c.r*hk,c.g*hk,c.b*hk,alpha*(a.busy?.9:.5));agentPts.write('aSize',n,(a.display==='tool'?9:6)*(1+.5*tk));n++;}
+      // A thin stream of motes between the swarm and the branch it works on (toward the swarm while it reads), held while
+      // its touch of that branch lasts.
+      const file=a.display==='tool'&&a.fileId?a.fileId:tk>.02?T.fileId:null,tip=file?anchorPos(file):null;
+      if(tip){const now=a.display==='tool'&&a.fileId===file,act=now?a.activity:T.activity,inward=act==='reading'||act==='searching',hold=now?1:smooth(tk*4),N=lite?8:16;
+        for(let k=0;k<N&&n<cap;k++){let f=(i.tview*(.6+.4*tk)+k/N)%1;if(inward)f=1-f;const p=st.pos.clone().lerp(tip,f);p.y+=Math.sin(f*Math.PI)*.25;const mk=1.6*(1+tk);
+          agentPts.write('position',n,p.x,p.y,p.z);agentPts.write('aCol',n,c.r*mk,c.g*mk,c.b*mk,alpha*Math.sin(f*Math.PI)*(.6+.5*tk)*hold);agentPts.write('aSize',n,.6+.6*tk);n++;}}
     }
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
     agentPts.commit(n);
+  }
+  // ---- Touches (touch.js): the edited branch flares in the agent's colour (touchAt in the shaders: a pulse runs up it into
+  // its crown) and a ring of light opens at its tip; a read draws a dimmer ring inward. Four at once at most, sized in
+  // pixels so a touch reads from the establishing view of a large ecosystem; a little dimmer deep in the haze.
+  let touches=[];const sprites=touchSprites(THREE,{uniforms:U});sprites.points.renderOrder=8;scene.add(sprites.points);const tipC=new THREE.Color();
+  function updateTouches(i){
+    touches=forest?touchesAt(ctx.agents,i.agents.slice(0,MAX_AGENTS),i.t,ctx.speed(),{known:id=>forest.anchors.has(id)}):[];
+    const gain=touchGain(G,i.overrides),lite=(i.quality||0)>=2;sprites.begin();
+    for(let k=0;k<4;k++){const x=touches[k],T=U.uTouch.value[k];if(!x){T.set(-1,-1e5,0,0);continue;}
+      const a=forest.anchors.get(x.fileId),c=AGENT_COLORS[x.voice%8];
+      T.set(moduleRow.get(x.fileId)??-1,secs(x.at,model.epoch),x.k*gain,Math.max(0,a.dist-(a.size||1)));U.uTouchC.value[k].set(c.r,c.g,c.b,a.dist);
+      const tip=anchorPos(x.fileId);if(!tip)continue;
+      const fog=1-.35*(1-Math.exp(-tip.distanceTo(camera.position)*U.uFogD.value)),e=x.k*gain*fog,edit=x.kind==='edit';
+      // The tip lights as the pulse arrives; the ring opens from it (an edit) or gathers into it (a read).
+      sprites.add(tip,tipC.copy(c).multiplyScalar(2.4),x.env*e*touchTravel(x.age+.4),(edit?26:14)+40*x.env,{world:.8});
+      const ring=edit?touchRing(x.age,.25,1.6):touchRing(x.age,.2,1.6);
+      if(ring)sprites.add(tip,tipC.copy(c).multiplyScalar(1.6),ring.a*e*2,edit?30+250*ring.r:130-100*ring.r,{kind:1,width:.05});
+      if(edit&&!lite){const r2=touchRing(x.age,.6,1.5);if(r2)sprites.add(tip,c,r2.a*e*1.1,20+150*r2.r,{kind:1,width:.05});}}
+    sprites.commit();
   }
   // ---- Digital life: the ecology among the organisms (life/biosphere.js; only when the recipe has life on) -----------
   // The ecosystem's entities are the authoritative inhabitants (always drawn); followers on their own paths add bodies
@@ -738,7 +769,7 @@ export function createFamily(ctx){
         const touch=Math.max(Number.isFinite(m.lastHuman)?m.lastHuman:-Infinity,Number.isFinite(m.lastAgent)?m.lastAgent:-Infinity);if(Number.isFinite(touch)&&touch<=i.t&&i.t-touch<6000){const ts=secs(touch,epoch);if(ts>ps){ps=ts;pk=0;}}
         const an=forest.anchors.get(id);D[o+4]=ps;D[o+5]=pk;D[o+6]=an?Math.max(0,an.dist-(an.size||1)):0;D[o+7]=healed;});
       stateTex.needsUpdate=true;}
-    updateAgents(i);buildBlooms(i);updateBloomLights(i);
+    updateTouches(i);updateAgents(i);buildBlooms(i);updateBloomLights(i);
     if(life)life.update(i);
     // Quality 2 and below: half the motes (the shaft and crown motes are interleaved, so both halve).
     {const h=q>=2?Math.round(moteN/2):0;air.geometry.setDrawRange(h,AIRN-h);}
@@ -880,11 +911,11 @@ export function createFamily(ctx){
     return {position:swayed(a.tip,a.dist,a.org),text:`A branch · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'twig')} · ${plural(deps,'strand')} · ${ctx.name(m.group)}`};}
   function stats(){const sp={};for(const o of orgList)sp[o.species]=(sp[o.species]||0)+1;
     return {organisms:orgList.length,species:sp,dominant:species,segments:counts.thick+counts.fine,structural:counts.thick,twigs:counts.fine,crowns:counts.crowns,farSilhouettes:counts.far,leaves:counts.leaves,glows:counts.glows,cords:counts.cords,bloomSegments:bloomCount,
-    motes:moteN,terrain,palette:P,anchor:comp?`${comp.A.species}/${comp.A.members.length}`:null,view:camState.view,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),canopy:+canopyH.toFixed(1)};}
+    motes:moteN,touches:touches.length,terrain,palette:P,anchor:comp?`${comp.A.species}/${comp.A.members.length}`:null,view:camState.view,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),canopy:+canopyH.toFixed(1)};}
   function dispose(){for(const o of [thickMesh,fineMesh,leafMesh,glowPoints,ground,shaftMesh,pillarMesh,mistMesh,cordMesh,airPoints,burstPoints,bloomMesh,bloomPoints,bloomLeafMesh,agentPoints]){scene.remove(o);o.geometry.dispose();}
     for(const set of Object.values(crownSets)){scene.remove(set.mesh);set.mesh.geometry.dispose();set.base.dispose();set.material.dispose();}
     for(const m of [segMat,leafMat,glowMat,ground.material,shaftMat,pillarMat,mistMat,cordMat,airMat,burstMat,agentMat,sky])m.dispose();
-    for(const g of [thickGeo,fineGeo,leafGeo,shaftGeo,pillarGeo,mistGeo,ribbon])g.dispose();stateTex?.dispose();stateTex=null;life?.dispose();}
+    for(const g of [thickGeo,fineGeo,leafGeo,shaftGeo,pillarGeo,mistGeo,ribbon])g.dispose();stateTex?.dispose();stateTex=null;life?.dispose();scene.remove(sprites.points);sprites.dispose();}
   // After a seek: transient effects are cleared; lasting blooms are rebuilt from the verified history (buildBlooms).
   function onPrime(){for(const v of U.uWave.value)v.y=-1e5;for(const v of groundU.uRipple.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of pillarU.uCol.value)v.z=-1e5;
     for(const L of Object.values(transients))L.length=0;pulses.clear();lastBloomKey='';agentState.clear();}

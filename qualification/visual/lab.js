@@ -9,6 +9,7 @@
 //   --at        moments as fractions of the recorded performance (1 = its end: the mature project)
 //   --events    stills around real recorded intents: 1 s and 3.5 s after the first validation.failed,
 //               validation.recovered / milestone.achieved, subsystem.created and repository.checkpoint found
+//   --touch     stills during agents' touches: 0.5 s and 1.4 s after the first recorded edit of a file, and of a read
 //   --idle      seconds after the last recorded event (no events added: the world's honest idle life)
 //   --warm      seconds rendered before each still, so motion, effects and the camera are in their real state
 //   --strip     NxS: after each still, N more frames S seconds apart, tiled into one contact sheet (<still>-strip.jpg,
@@ -43,9 +44,10 @@ const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==nul
       await page.evaluate(m=>window.__film.setLabels(m),LABELS);
       const span=info.end-info.start,moments=[];
       for(const f of (arg('at','')||'').split(',').filter(Boolean))moments.push({name:`at${f}`,t:info.start+span*Number(f)});
+      const all=has('events')||has('touch')?(await (await fetch(`http://127.0.0.1:${svc.port}/api/timeline?id=${project}&fields=intents&limit=2000`)).json()).entries.flatMap(e=>e.intents||[]):[];
+      if(has('touch'))for(const act of ['editing','reading']){const i=all.find(x=>x.type==='agent.state'&&x.detail?.state==='tool'&&x.detail?.activity===act&&x.subject?.fileId);
+        if(i)for(const d of [500,1400])moments.push({name:`touch-${act}+${d/1000}s`,t:i.ts+d});}
       if(has('events')){
-        const r=await (await fetch(`http://127.0.0.1:${svc.port}/api/timeline?id=${project}&fields=intents&limit=2000`)).json();
-        const all=r.entries.flatMap(e=>e.intents||[]);
         for(const type of ['validation.failed','validation.recovered','milestone.achieved','subsystem.created','repository.checkpoint']){
           const i=all.find(x=>x.type===type);if(!i)continue;
           for(const d of [1000,3500])moments.push({name:`${type.replace(/\./g,'-')}+${d/1000}s`,t:i.ts+d});
@@ -64,7 +66,7 @@ const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==nul
           cp.execFileSync(ffmpeg,['-y','-loglevel','error',...frames.flatMap(f=>['-i',f]),'-filter_complex',`${frames.map((_,k)=>`[${k}:v]scale=960:-1[v${k}]`).join(';')};${frames.map((_,k)=>`[v${k}]`).join('')}xstack=inputs=${frames.length}:layout=${frames.map((_,k)=>`${(k%cols)?Array.from({length:k%cols},()=>'w0').join('+'):'0'}_${Math.floor(k/cols)?Array.from({length:Math.floor(k/cols)},()=>'h0').join('+'):'0'}`).join('|')}:fill=black`,'-frames:v','1','-q:v','3',sheet]);
           for(const f of frames.slice(1))fs.rmSync(f);console.log(`${path.relative(process.cwd(),sheet)}  ${n} frames ${dt} s apart`);}
         const st=await page.evaluate(()=>window.__film.stats());
-        console.log(`${path.relative(process.cwd(),file)}  family=${st?.family} drawCalls=${st?.drawCalls} updateMs=${st?.updateMs} drawMs=${st?.drawMs} gpuMs=${st?.gpuMs}${st?.life?` life: tick ${st.life.tick} alive ${st.life.ecosystem?.alive} tickMs ${st.life.tickMs} modes ${JSON.stringify(st.life.ecosystem?.modes)}`:' life: off'}`);
+        console.log(`${path.relative(process.cwd(),file)}  family=${st?.family} touches=${st?.touches??'-'} drawCalls=${st?.drawCalls} updateMs=${st?.updateMs} drawMs=${st?.drawMs} gpuMs=${st?.gpuMs}${st?.life?` life: tick ${st.life.tick} alive ${st.life.ecosystem?.alive} tickMs ${st.life.tickMs} modes ${JSON.stringify(st.life.ecosystem?.modes)}`:' life: off'}`);
       }
       if(errors.length)console.log('PAGE ERRORS:\n'+errors.slice(0,5).join('\n'));
       console.log(`renderer: ${renderer}; recipe: ${info.recipe?.family} v${info.recipe?.variant}; performance ${Math.round(span/1000)} s, ${info.windows} windows`);

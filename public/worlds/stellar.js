@@ -21,7 +21,10 @@
 //                             pairs); the strongest pair also carries a plasma current of particles
 //  - agent                 -> a comet with an ion tail (pointing away from the nearest star) and a dust trail: it circles its
 //                             home system while working on a request, hangs over the planet it reads or edits while a tool
-//                             runs, waits at the system's edge, and leaves when the session ends
+//                             runs, waits at the system's edge, and leaves when the session ends; brighter while it
+//                             works. Each edit touches the file (touch.js): its world flares in the comet's colour with
+//                             a ring of light, its orbit lights, and a brief streak runs from the comet to it (from the
+//                             world to the comet, dimmer, for a read)
 //  - verified milestones   -> lasting remnant nebulae (director.lasting()): each verified milestone or validated refactor
 //                             leaves a shell nebula (limb-brightened broken filaments, in the galaxy march) around its
 //                             system that stays, grows with repetition and slowly expands
@@ -49,6 +52,7 @@ import {createStellarGrammar,createMatterMap,RN as LIFE_RN,NUCLEUS_KIND} from '.
 import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {u01} from './life/sim.js';
 import {presence} from '../providers.js';
+import {touchesAt,touchOf,touchRing,touchTravel,touchGain,touchSprites} from './touch.js';
 const MAX_SYS=48,MAPR=1.35;
 // Stellar temperatures by role (blackbody-like tints).
 const ROLE_COLOR={interface:'#8fb8ff',services:'#ffc65a',model:'#ff9050',logic:'#ffe09a',tests:'#c09cff',core:'#ffdcae'};
@@ -776,7 +780,7 @@ export function createFamily(ctx){
     fragmentShader:`varying vec3 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC*exp(-r*3.),1.);}`}));
   add(new THREE.Points(discPts.geometry,discMat),1);
   // ---- Agents: comet heads, dust trails, ion tails and work streams (one point cloud) -----------------------------
-  const TAIL=30,ION=34,STREAM=24,MAX_AGENTS=10,agentPts=pointBuffers({aCol:4,aSize:1},MAX_AGENTS*(TAIL+ION+STREAM+2));
+  const TAIL=30,ION=34,STREAM=24,STREAK=14,MAX_AGENTS=10,agentPts=pointBuffers({aCol:4,aSize:1},MAX_AGENTS*(TAIL+ION+STREAM+STREAK+2));
   const agentMat=keep(new THREE.ShaderMaterial({uniforms:common,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
     vertexShader:`attribute vec4 aCol;attribute float aSize;uniform float uPx;varying vec4 vC;void main(){vec4 mv=viewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(max(aSize*uPx*34./max(.5,-mv.z),aSize*uPx*2.6),1.,18.*uPx);vC=aCol;}`,
     fragmentShader:`varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=dot(d,d)*4.;if(r>1.)discard;gl_FragColor=vec4(vC.rgb*(exp(-r*4.)+exp(-r*24.)*1.5)*vC.a,1.);}`}));
@@ -791,6 +795,8 @@ export function createFamily(ctx){
     fragmentShader:`uniform float uV;varying float vT,vSide;varying vec3 vC;void main(){float s=vSide;float st=.75+.25*sin(s*7.+vT*5.);
       gl_FragColor=vec4(vC*exp(-s*s*(3.+6.*(1.-vT)))*pow(1.-vT,1.4)*smoothstep(0.,.03,vT)*st,1.);}`}));
   add(new THREE.Mesh(ionTails.geometry,ionMat),5);
+  // Touches (touch.js): the touched world's flare and ring, sized in pixels so they read at galaxy scale.
+  const sprites=touchSprites(THREE,{uniforms:common});add(sprites.points,6);let touches=[];const touchK=new Map(),touchC=new THREE.Color();
   // ---- Effects (pooled; appearance seeded by the command, so a slot never carries history) --------------------------
   const BURSTS=32,PER=40,burstPts=pointBuffers({bDir:4},BURSTS*PER);
   {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*TAU,s=Math.sqrt(1-u*u);burstPts.write('position',b*PER+k,r(),r(),r());burstPts.write('bDir',b*PER+k,Math.cos(a)*s,u,Math.sin(a)*s,b+r()*.9);}burstPts.commit(BURSTS*PER);}
@@ -941,17 +947,18 @@ export function createFamily(ctx){
     return a;}
   const fwd=new THREE.Vector3();
   function updateAgents(i){
-    const list=i.agents.slice(0,MAX_AGENTS);let n=0,tn=0;const seen=new Set();const sp=ctx.speed();const head=new THREE.Vector3(),q=new THREE.Vector3(),star=new THREE.Vector3();
+    const list=i.agents.slice(0,MAX_AGENTS);let n=0,tn=0;const seen=new Set();const sp=ctx.speed();const head=new THREE.Vector3(),q=new THREE.Vector3(),star=new THREE.Vector3();const lite=(i.quality||0)>=2;
     camera.getWorldDirection(fwd);const H=ctx.pipeline.size[1],pyy=camera.projectionMatrix.elements[5];
     for(const a of list){seen.add(a.id);
       if(!agentAt(a.id,i.t,i.tview,head))continue;let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.copy(head);
       const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.6)*clamp(num(G.agentProminence,.8),0,1)*(i.overrides.intensity===0?.6:1),tailK=clamp(num(G.agents?.tail,1),.2,2.2);
       // the comet keeps a legible length at galaxy scale (an ion tail at least ~70 px)
       const depth=Math.max(.5,tmp.copy(head).sub(camera.position).dot(fwd)),ppu=pyy*H*.5/depth,minLen=70*(H/1080)/ppu;
-      // coma and nucleus
-      agentPts.write('position',n,head.x,head.y,head.z);agentPts.write('aCol',n,c.r*1.5,c.g*1.5,c.b*1.5,alpha*1.4);agentPts.write('aSize',n,2.4);n++;
+      // coma and nucleus (brighter and a little larger while it works, most of all as it touches a file)
+      const T=touchOf(touches,a.id),tk=T?T.env*T.k:0,work=a.display==='tool'?1:a.busy?.4:0,lift=1+.4*work+tk,ck=1.5*lift;
+      agentPts.write('position',n,head.x,head.y,head.z);agentPts.write('aCol',n,c.r*ck,c.g*ck,c.b*ck,alpha*1.4);agentPts.write('aSize',n,2.4*(1+.3*work+.5*tk));n++;
       const beacon=PROBE?.4+.6*Math.pow(Math.max(0,Math.sin(i.tview*2.4+a.number)),8):1;
-      agentPts.write('position',n,head.x,head.y,head.z);agentPts.write('aCol',n,1.6*beacon,1.6*beacon,1.7*beacon,alpha);agentPts.write('aSize',n,PROBE?1.6:1.1);n++;
+      agentPts.write('position',n,head.x,head.y,head.z);agentPts.write('aCol',n,1.6*beacon*lift,1.6*beacon*lift,1.7*beacon*lift,alpha);agentPts.write('aSize',n,(PROBE?1.6:1.1)*(1+.4*tk));n++;
       // dust trail: where the comet was (sampled from its pure path)
       for(let k=1;k<=TAIL;k++){const tt=i.t-k*45*sp*tailK;if(!agentAt(a.id,tt,i.tview-k*.045*tailK,q))break;const f=1-k/TAIL;
         agentPts.write('position',n,q.x,q.y,q.z);agentPts.write('aCol',n,c.r*(.6+f),c.g*(.55+f*.9),c.b*(.5+f*.8),alpha*f*f*.45);agentPts.write('aSize',n,(.9+f*1.4)*tailK);n++;}
@@ -963,9 +970,22 @@ export function createFamily(ctx){
       const b=a.fileId?bodies.get(a.fileId):null;
       if(b&&a.display==='tool'){const target=bodyPos(tmp2,b,i.tview);const inward=a.activity==='reading'||a.activity==='searching';
         for(let k=0;k<STREAM;k++){let f=((i.tview*.5+k/STREAM)%1);if(inward)f=1-f;q.copy(head).lerp(target,f);q.y+=Math.sin(f*Math.PI)*.3;
-          agentPts.write('position',n,q.x,q.y,q.z);agentPts.write('aCol',n,c.r*1.6,c.g*1.6,c.b*1.6,alpha*Math.sin(f*Math.PI)*.8);agentPts.write('aSize',n,.75);n++;}}}
+          agentPts.write('position',n,q.x,q.y,q.z);agentPts.write('aCol',n,c.r*1.6,c.g*1.6,c.b*1.6,alpha*Math.sin(f*Math.PI)*.8);agentPts.write('aSize',n,.75);n++;}}
+      // its touch: a brief streak from the comet to the world it edits (from the world, dimmer, as it reads), a bright
+      // head with a tapering tail, gone once it arrives
+      const tb=T?bodies.get(T.fileId):null,fade=T?1-smooth((T.age-.6)/.35):0;
+      if(tb&&fade>0){const target=bodyPos(tmp2,tb,i.tview),f=touchTravel(T.age*1.5),edit=T.kind==='edit',N=lite?6:STREAK;
+        for(let k=0;k<N;k++){const u=k/(N-1),g=f-(1-u)*.45;if(g<=0)continue;q.copy(head).lerp(target,edit?g:1-g);const w=u*u,sk=2.2*(1+u);
+          agentPts.write('position',n,q.x,q.y,q.z);agentPts.write('aCol',n,c.r*sk,c.g*sk,c.b*sk,alpha*w*fade*T.k*(edit?1:.6));agentPts.write('aSize',n,.5+1.3*w);n++;}}}
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
     agentPts.commit(n);ionTails.commit(tn);
+    // The touched worlds flare in the agent's colour and a ring of light opens around them (gathers in, for a read).
+    sprites.begin();const tg=touchGain(G,i.overrides);
+    for(const x of touches){const b=bodies.get(x.fileId);if(!b)continue;const p=bodyPos(tmp2,b,i.tview),c=AGENT_COLORS[x.voice%8],e=x.k*tg,edit=x.kind==='edit';
+      sprites.add(p,touchC.copy(c).multiplyScalar(1.6),x.env*e,(edit?14:9)+20*x.env,{world:b.size*3});
+      const ring=edit?touchRing(x.age,.35,1.3):touchRing(x.age,.2,1.5);if(ring)sprites.add(p,c,ring.a*e*1.3,edit?26+140*ring.r:110-80*ring.r,{kind:1,width:.07});
+      if(edit&&!lite){const r2=touchRing(x.age,.65,1.4);if(r2)sprites.add(p,c,r2.a*e*.6,18+90*r2.r,{kind:1,width:.05});}}
+    sprites.commit();
   }
   // ---- Remnants (lasting): one shell nebula per system that earned verified milestones, in the galaxy march ----------
   function remnantSite(l){const s=l.subject||{};
@@ -1312,17 +1332,19 @@ export function createFamily(ctx){
     // Modules: state transitions (blended in the shader), agents at work, human edits; orbit arcs light for active ones.
     // Per system: how many worlds are alive (its size), how many are stressed, and how recently work touched it.
     const working=new Map();for(const a of i.agents)if(a.fileId&&a.display==='tool')working.set(a.fileId,a);
+    // An agent's touch flares its world and lights its orbit (and, through the orbit, its threads and its star's beacon).
+    touches=touchesAt(ctx.agents,i.agents.slice(0,MAX_AGENTS),i.t,sp,{known:id=>bodies.has(id)});touchK.clear();{const g=touchGain(G,i.overrides);for(const x of touches)touchK.set(x.fileId,x.env*x.k*g);}
     const recent=(at,ms)=>Number.isFinite(at)&&i.t>=at?Math.exp(-(i.t-at)/(ms*sp)):0;
     stressOf.clear();sizeOf.clear();actOf.clear();let stressed=0,alive=0,beltDirty=false;
     for(const id of moduleIds){const m=model.modules.get(id),b=bodies.get(id);if(!m||!b)continue;
       let cur=m.initial,prev=m.initial,at=-1e5,atMs=-Infinity;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;at=secs(e.at,epoch);atMs=e.at;}
-      const act=Math.max(working.has(id)?1:0,recent(m.lastHuman,12000),recent(atMs,15000),recent(model.bornAt(m),15000));
+      const tk=touchK.get(id)||0,act=Math.max(working.has(id)?1:0,recent(m.lastHuman,12000),recent(atMs,15000),recent(model.bornAt(m),15000),Math.min(1,tk*1.2));
       if(aliveAt(m,i.t)){alive++;sizeOf.set(m.group,(sizeOf.get(m.group)||0)+1);actOf.set(m.group,Math.max(actOf.get(m.group)||0,act));
         if(model.stateAt(m,i.t)==='stressed'){stressOf.set(m.group,(stressOf.get(m.group)||0)+1);stressed++;}}
       if(b.belt){const v=STATE_INDEX[cur]??1;if(beltState[b.index]!==v){beltState[b.index]=v;for(let k=0;k<BELT_N;k++)belt.arrays.kC[(b.index*BELT_N+k)*4+3]=v;beltDirty=true;}continue;}
       const k=b.index;planets.write('iLook',k,b.style,STATE_INDEX[cur]??1,STATE_INDEX[prev]??1,b.sub);
       const life=planets.arrays.iLife;life[k*4+2]=at;planets.dirty('iLife');
-      const glow=working.has(id)?.8:Number.isFinite(m.lastHuman)&&i.t>=m.lastHuman&&i.t-m.lastHuman<4000*sp?.6*(1-(i.t-m.lastHuman)/(4000*sp)):0;
+      const glow=Math.max(tk*1.6,working.has(id)?.8:Number.isFinite(m.lastHuman)&&i.t>=m.lastHuman&&i.t-m.lastHuman<4000*sp?.6*(1-(i.t-m.lastHuman)/(4000*sp)):0);
       planets.write('iGlow',k,glow,b.seed);orbits.arrays.oAct[k]=act;}
     planets.flush();orbits.dirty('oAct');orbits.flush();if(beltDirty){belt.dirty('kC');belt.flush();}
     bindShared(pSpriteGeo,planets.geometry,['iOrbit','iTilt','iLife','iLook','iColor','iGlow'],planetIds.length);
@@ -1460,7 +1482,7 @@ export function createFamily(ctx){
     if(id.startsWith('sys:')){const s=sys.get(id.slice(4));return s&&s.pos?{position:s.pos.clone(),text:groupName(s.d.id),sub:`${plural(s.d.members.length,'module')} · star of this subsystem`}:null;}
     const m=model.modules.get(id),b=bodies.get(id);if(!m||!b)return null;const syms=model.symbolsAt(m,i.t);const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
     return {position:bodyPos(new THREE.Vector3(),b,i.tview),text:`A ${['UI','typed','test','logic','configuration'][b.style]} ${b.belt?'asteroid clump':'world'} · ${model.stateAt(m,i.t)}`,sub:`${plural(syms,'symbol')} · ${plural(deps,'dependency')} · ${ctx.name(m.group)}`};}
-  function stats(){return {systems:[...sys.values()].filter(s=>s.alive).length,planets:planetIds.length,belts:beltIds.length,moons:symbolIds.length,links:linkKeys.length,bridges:bridgeList.length,remnants:remCount,galaxyStars:GSTARS,
+  function stats(){return {systems:[...sys.values()].filter(s=>s.alive).length,touches:touches.length,planets:planetIds.length,belts:beltIds.length,moons:symbolIds.length,links:linkKeys.length,bridges:bridgeList.length,remnants:remCount,galaxyStars:GSTARS,
     galaxy:+galR.toFixed(2),arrangement:ARR,camera:camera.position.toArray().map(x=>+x.toFixed(1))};}
   function dispose(){skyFar?.dispose();skyNear?.dispose();
     const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});
