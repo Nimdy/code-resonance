@@ -4,6 +4,7 @@ const crypto=require('node:crypto');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const {DurableOutbox}=require('./outbox');
+const {verifyServer}=require('./proof');
 const {SOURCE_GLOB,EXCLUDE_GLOB,isFileEligible,countNewlines,classifyCommand}=require('./filters');
 const VERSION=require('./package.json').version;
 const SETTINGS_QUERY='@ext:zerobandwidth.code-resonance';
@@ -212,7 +213,7 @@ async function start(context,showConsent=true){
   const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null,reported:null};
   rec.outbox=new DurableOutbox({directory,port:conf().get('receiverPort',4174),onStatus:(kind)=>{
     if(recording!==rec)return;
-    decorateStatus({online:'recording',offline:'queued offline','disk-error':'storage error','queue-full':'queue full','rejected':'recording (events rejected)'}[kind]||'recording');
+    decorateStatus({online:'recording',offline:'queued offline',unverified:'queued (receiver not verified)','disk-error':'storage error','queue-full':'queue full','rejected':'recording (events rejected)'}[kind]||'recording');
   }});
   await rec.outbox.start().catch(()=>{});
   recording=rec;
@@ -246,15 +247,9 @@ async function recordPrompt(){
 // valid minutes, which the page exchanges for the pairing key. The key itself never appears in a link or a command line.
 async function pairingFragment(port){try{
   const a=JSON.parse(await fs.readFile(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));if(!a.token)return '';
-  // Same HMAC as receiver/proof.js; inlined so the VSIX stays self-contained (it does not ship receiver/).
-  const nonce=crypto.randomBytes(16).toString('hex');
-  const ch=await fetch(`http://127.0.0.1:${port}/v1/challenge?nonce=${nonce}`,{signal:AbortSignal.timeout(2000)});
-  if(!ch.ok)return '';
-  const body=await ch.json();
-  const expected=crypto.createHmac('sha256',String(a.token)).update(nonce).digest('hex');
-  const x=Buffer.from(String(body?.proof||'')),y=Buffer.from(expected);
-  if(x.length!==y.length||!crypto.timingSafeEqual(x,y))return '';
-  const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${a.token}`},signal:AbortSignal.timeout(2000)});
+  // The occupant proves it holds the token for this port before it is sent (./proof.js, shared with the receiver).
+  await verifyServer(port,a.token,2000);
+  const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',redirect:'error',headers:{Authorization:`Bearer ${a.token}`},signal:AbortSignal.timeout(2000)});
   if(!r.ok)return '';const {code}=await r.json();return /^[0-9a-f]{32}$/.test(code||'')?`#pair=${code}`:'';}catch{return '';}}
 async function openStage(overlay=false){
   const port=conf().get('receiverPort',4174);

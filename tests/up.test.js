@@ -142,6 +142,28 @@ test('up: a fake CR-health occupant without a challenge still never receives Aut
   assert(!seen.some(x=>x.auth),'no Authorization header');
   assert(!seen.some(x=>(x.url||'').split('?')[0]==='/v1/pairing-code'),'pairing-code was not called');
 });
+test('up: an occupant that redirects or relays the challenge to a real receiver on another port never receives Authorization',async t=>{
+  const dir=tempDir(t,'cr-up-relay-'), {env}=trap(t);
+  const svc=await startService(t,{port:0,dataDir:dir,quiet:true});
+  const real=`http://127.0.0.1:${svc.port}`;
+  for(const mode of ['redirect','relay']){
+    const seen=[];
+    const {port}=await occupyHttp(t,async(req,res)=>{
+      seen.push({url:req.url||'',auth:req.headers.authorization||null});
+      const p=(req.url||'').split('?')[0];
+      if(p==='/health'){crHealth(req,res);return;}
+      if(p==='/v1/challenge'&&mode==='redirect'){res.writeHead(302,{Location:real+req.url});res.end();return;}
+      if(p==='/v1/challenge'){const r=await fetch(real+req.url);res.writeHead(r.status,{'Content-Type':'application/json'});res.end(await r.text());return;}
+      res.writeHead(404);res.end();
+    });
+    const r=await runUp(['--data',dir,'--port',String(port),...FLAGS],env);
+    assert.equal(r.code,1,r.out);
+    assert.match(r.out,/did not prove/,mode);
+    assert(!PAIR.test(r.out),`${mode}: no pairing link`);
+    assert(!seen.some(x=>x.auth),`${mode}: no Authorization header`);
+    assert(!seen.some(x=>x.url.split('?')[0]==='/v1/pairing-code'),`${mode}: pairing-code was not called`);
+  }
+});
 test('up: leftover-on-port (CR health, no auth file) refuses',async t=>{
   const dir=tempDir(t,'cr-up-left-'), {env}=trap(t);
   const {port}=await occupyHttp(t,crHealth);

@@ -3,6 +3,7 @@
 // Identifiers must be opaque tokens (salted ids, hashes): anything that could be a path, file name, project name,
 // session id or free text is removed. Intent ids, which embed client-chosen event ids, are replaced by hashes.
 // Pure (no DOM), unit-tested with planted secrets (tests/pack-view.test.js).
+import {catalogued} from '../providers.js';
 const TOKEN=/^[A-Za-z0-9_-]{1,64}$/;
 const SYMBOL_TYPES=new Set(['function','method','class','interface','type','variable','ui.component','api.route','callsite','module']);
 const STATES=new Set(['draft','committed','validated','stressed']);
@@ -15,13 +16,13 @@ const ACTIVITIES=new Set(['reading','searching','editing','researching','delegat
 const MILESTONE_KINDS=/^[a-z]+(?:-[a-z]+)*$/;
 const ATTRIBUTION=new Set(['correlated','direct']);
 const SCOPE=new Set(['file','subsystem']);
-const PROVIDER=/^[a-z0-9-]{1,40}$/;
 const num=(x,lo=-1e15,hi=1e15)=>typeof x==='number'&&Number.isFinite(x)?Math.max(lo,Math.min(hi,x)):undefined;
 const int=(x,lo,hi)=>Number.isInteger(x)?Math.max(lo,Math.min(hi,x)):undefined;
 const token=x=>typeof x==='string'&&TOKEN.test(x)?x:undefined;
 const tokens=(xs,max=256)=>Array.isArray(xs)?xs.map(token).filter(Boolean).slice(0,max):undefined;
-const catalogId=x=>typeof x==='string'&&PROVIDER.test(x)?x:undefined;
-const catalogIds=xs=>Array.isArray(xs)?xs.filter(x=>typeof x==='string'&&PROVIDER.test(x)).slice(0,8):undefined;
+// A provider reaches a pack only as a catalog id (Claude, Cursor, …); any other id an agent reported is dropped.
+const catalogId=x=>catalogued(x)?x:undefined;
+const catalogIds=xs=>Array.isArray(xs)?xs.filter(catalogued).slice(0,8):undefined;
 const seats=xs=>Array.isArray(xs)?xs.filter(x=>Number.isInteger(x)&&x>=0&&x<=7).slice(0,8):undefined;
 const oneOf=(set,x)=>set.has(x)?x:undefined;
 const bool=x=>typeof x==='boolean'?x:undefined;

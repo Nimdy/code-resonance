@@ -247,7 +247,7 @@ Intents are emitted by the reducer next to the facts that justify them and recor
 | `milestone.achieved` | 3, rarely 4 | verified | a passing run plus a structural reason (first validation, integration validated, recovery, refactor); tier 4 needs several together |
 | `repository.checkpoint` | 2 | observed | a commit, magnitude from structure since the last commit |
 | `agent.state` | 0 | observed | hook-reported lifecycle and tool activity |
-| `agent.collision` | 2 | derived | two catalogued providers share a file or district inside 60 s (interpretation 8; last-writer still attributes the edit) |
+| `agent.collision` | 2 | derived | two catalogued providers share a file or district inside 60 s (interpretation 8; since 9 only catalogued providers count and its cue adds no progress; last-writer still attributes the edit) |
 | `world.expanded` | 2 | derived | accumulated structure reaches a new chapter (growth, not completion) |
 
 Rules that keep the worlds honest: a failure never produces a success effect; no agent message, visible thinking or
@@ -288,8 +288,9 @@ minutes without any observation; the last 512 departed agents keep their numbers
 
 Agents are a CAST in the project's world: a catalog name, a stable orchestra seat, a voice. The catalog
 (`engine/providers.js`, player copy `public/providers.js`) is Claude, Cursor, Codex, Grok, Qwen, Kimi on seats 0–5;
-unknown ids hash into seats 6–7. Stage chips show those catalog names, never vendor art styles. Worlds draw them as
-that family's presence (fireflies, comets, servitors).
+unknown ids hash into seats 6–7. Stage chips and callouts show those catalog names, never vendor art styles; any other
+id an agent reports is shown as "Agent" (only the Control Center names it), and packs receive catalog ids only. Worlds
+draw them as that family's presence (fireflies, comets, servitors).
 
 Presences follow observed lifecycles only (`engine/intents.js`, `public/worlds/agents.js`): connected, working on a
 request (prompt submitted, no response yet), using a tool (reading, searching, editing, running, testing, building,
@@ -297,8 +298,10 @@ checking, researching, delegating), reasoning (only when the provider exposed it
 waiting for the next prompt, finished (subagents), disconnected. After three silent minutes a busy agent reads
 "status unknown" and dims; a waiting agent goes dormant after two; a disconnected agent departs. The Claude Code hook
 now names the file a `Read` looks at, so reading is visible; only edits attribute later changes to an agent.
-`agent.collision` (interpretation 8) is an intent plus a derived cue when two providers share a file or district inside
-60 s; last-writer still attributes. Worlds express it; they never invent one.
+`agent.collision` (interpretation 8) is an intent plus a derived cue when two catalogued providers (Claude, Cursor, Codex,
+Grok, Qwen, Kimi) share a file or district inside 60 s; an unspecified or uncatalogued agent is not a second provider.
+Since interpretation 9 its cue weighs nothing, like every agent cue: two agents never raise the progress or the chapter.
+Last-writer still attributes. Worlds express it; they never invent one.
 
 ## Labels and privacy
 

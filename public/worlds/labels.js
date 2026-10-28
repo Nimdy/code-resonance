@@ -1,5 +1,5 @@
 // Public text on the Stage, OBS and films. Only two kinds of words may appear: generic words chosen by Code Resonance
-// (family names, event categories, catalog agent names, generated subsystem names) and text the user explicitly approved as
+// (family names, event categories, catalog agent names or "Agent" for any other, generated subsystem names) and text the user explicitly approved as
 // public (the recipe's public title and subsystem aliases, set through the World DNA panel or POST /api/recipe).
 // The project folder name the extension shares for the player's project list is never an input here.
 // Pure (no rendering), so the privacy rules are unit-tested in Node.
