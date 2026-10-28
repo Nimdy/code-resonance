@@ -133,7 +133,6 @@
     try{const v=JSON.parse(params.get('music')||'null');return v&&typeof v==='object'&&!Array.isArray(v)?window.ResonanceScore.profileOf(v):null;}catch{return null;}})()}:null;
   if(FILM)music.setOptions({profile:filmMusic.profile});
   function filmScore(){const v=filmMusic.score??window.ResonanceScore.versionOf((living?.recipe||recipe)?.genome?.music?.score);if(music.options.scoreVersion!==v)music.setOptions({scoreVersion:v});return v;}
-  const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
   const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
   // Section colour temperature: the image follows the music's form.
   const SECTION_TINT={home:[104,233,255],away:[170,140,255],tension:[255,150,120],resolve:[140,255,200],lift:[255,220,140],breath:[90,140,230]};
@@ -352,52 +351,6 @@
   // Birth is a flash and a growing ring; death a fade. Visible-from time keeps future nodes hidden until born.
   function life(n,now){if(n.born>now)return 0;if(n.dying!==null)return clamp(1-(now-n.dying)/1500);return 1;}
   function birthFlash(n,now){const a=(now-n.born)/1200;return a>=0&&a<1?1-a:0;}
-  // Settled edges are batched into one path per kind; only edges being born or removed are drawn individually.
-  function drawEdges(now,w,h,mapXY,pulse){
-    g.lineWidth=.8;const depends=new Path2D(),contains=new Path2D(),flows=[];
-    for(const e of scene.edges.values()){
-      const a=scene.nodes.get(e.a),b=scene.nodes.get(e.b);if(!a||!b)continue;
-      const vis=Math.min(life(a,now),life(b,now));if(vis<=0)continue;
-      const [x1,y1]=mapXY(a),[x2,y2]=mapXY(b);
-      if(e.kind==='depends'){
-        const mx=(x1+x2)/2+(y2-y1)*.12,my=(y1+y2)/2-(x2-x1)*.12;
-        if(vis<1){g.strokeStyle=`rgba(237,148,255,${.18*vis})`;g.beginPath();g.moveTo(x1,y1);g.quadraticCurveTo(mx,my,x2,y2);g.stroke();}
-        else{depends.moveTo(x1,y1);depends.quadraticCurveTo(mx,my,x2,y2);}
-        if(flows.length<240)flows.push([x1,y1,mx,my,x2,y2,rand(hash(e.a+e.b))]);
-      }else if(vis>=1){contains.moveTo(x1,y1);contains.lineTo(x2,y2);}
-    }
-    g.strokeStyle='rgba(106,212,242,.08)';g.stroke(contains);
-    g.strokeStyle=`rgba(237,148,255,${.15+.08*pulse})`;g.stroke(depends);
-    const dot=sprite('#efb9ff');
-    for(const [x1,y1,mx,my,x2,y2,r] of flows){const f=((now/7000)+r)%1,u=1-f;g.drawImage(dot,u*u*x1+2*u*f*mx+f*f*x2-5,u*u*y1+2*u*f*my+f*f*y2-5,10,10);}
-  }
-  function drawNodes(now,mapXY,pulse,density){
-    let i=0;
-    for(const n of scene.nodes.values()){
-      const vis=life(n,now);if(vis<=0){i++;continue;}
-      const [x,y]=mapXY(n);const color=typeColor[n.type]||'#8cbad8',flash=birthFlash(n,now);
-      const base=(n.type==='module'?5:2.2)*clamp(n.weight||1,.6,3)*.7;
-      const r=base*(1+.25*pulse*(n.type==='module'?1:.4)+.8*n.glow+1.4*flash);
-      const glow=r*(n.type==='module'?5:3.4);
-      g.globalAlpha=vis*density*(.55+.25*Math.sin(now/900+i*.7)+.4*n.glow+.6*flash);
-      g.drawImage(sprite(color),x-glow,y-glow,glow*2,glow*2);
-      g.globalAlpha=vis;g.fillStyle=color;g.beginPath();g.arc(x,y,Math.max(.8,base*.55),0,Math.PI*2);g.fill();
-      if(flash>0){g.globalAlpha=flash*.8;g.strokeStyle=color;g.lineWidth=1.2;g.beginPath();g.arc(x,y,base+(1-flash)*26,0,Math.PI*2);g.stroke();}
-      i++;
-    }
-    g.globalAlpha=1;
-  }
-  function drawCore(t,pulse){
-    const w=scaledW,h=scaledH,core=Math.min(w,h),x=w*.5,y=h*.5;
-    const energy=frame?.controls?.energy||0,tension=frame?.controls?.tension||0;
-    for(let ring=0;ring<3;ring++){
-      const radius=core*(.05+ring*.03)*(1+.04*pulse),rot=t*(ring%2?-.08:.06)+(ring*1.7),arc=Math.PI*(.7+ring*.13);
-      g.save();g.translate(x,y);g.rotate(rot);g.strokeStyle=tint(.08+energy*.12);g.lineWidth=ring===0?1.5:1;
-      g.beginPath();g.arc(0,0,radius,0,arc);g.stroke();g.restore();
-    }
-    const rad=core*(.02+energy*.006)*(1+.15*pulse);
-    g.globalAlpha=.8;g.drawImage(sprite(tension>.35?'#f4adc3':'#8bdcf4'),x-rad*5,y-rad*5,rad*10,rad*10);g.globalAlpha=1;
-  }
   function drawComets(w,h,mapXY){
     for(const c of scene.comets.values()){
       const color=AGENT_COLORS[c.voice%8];
@@ -418,22 +371,6 @@
     }
   }
   function camera(){const w=scaledW,h=scaledH,s=Math.min(w,h)*.45/Math.max(.08,scene.view);return n=>[w/2+n.x*s,h/2+n.y*s*.86];}
-  function drawNexus(t,dt,now,pulse){
-    const w=scaledW,h=scaledH,mapXY=camera();
-    drawCore(t,pulse);drawEdges(now,w,h,mapXY,pulse);drawNodes(now,mapXY,pulse,1);drawComets(w,h,mapXY);drawPulses(mapXY);
-  }
-  function drawNebula(t,dt,now,pulse){
-    const w=scaledW,h=scaledH,size=Math.min(w,h),cx=w*.5,cy=h*.51;
-    // The same stable layout, wrapped into a slowly turning spiral.
-    const fit=.5/Math.max(.08,scene.view);
-    const mapXY=n=>{const r=Math.hypot(n.x,n.y)*fit,a=Math.atan2(n.y,n.x)+t*.03+r*2.4;return [cx+Math.cos(a)*r*size*.95,cy+Math.sin(a)*r*size*.6];};
-    const core=g.createRadialGradient(cx,cy,0,cx,cy,size*.45);core.addColorStop(0,tint(.16+.08*pulse));core.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=core;g.fillRect(0,0,w,h);
-    g.save();g.globalCompositeOperation='lighter';
-    // Additive light is normalised by node count, so large projects stay luminous instead of blowing out white.
-    const density=clamp(Math.sqrt(140/Math.max(140,scene.nodes.size)),.18,1);
-    drawEdges(now,w,h,mapXY,pulse*.5);drawNodes(now,mapXY,pulse,density*.8);g.restore();
-    drawComets(w,h,mapXY);drawPulses(mapXY);
-  }
   function drawCity(t,dt,now,pulse){
     const w=scaledW,h=scaledH,modules=[...scene.nodes.values()].filter(n=>n.type==='module');
     const energy=frame?.controls?.energy||0,count=Math.max(9,modules.length),cols=Math.max(3,Math.ceil(Math.sqrt(count))),rows=Math.ceil(count/cols);
@@ -689,7 +626,8 @@
       construct.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
       construct.render(now,dt,{phase:barPhase});
     }else if(scaledW&&scaledH){backdrop(clock);
-      if(selectedWorld==='nexus')drawNexus(clock,dt,now,pulse);else if(selectedWorld==='city')drawCity(clock,dt,now,pulse);else drawNebula(clock,dt,now,pulse);}
+      // Monolith; while a WebGL world is still loading, its empty backdrop.
+      if(selectedWorld==='city')drawCity(clock,dt,now,pulse);}
     if(recording.active)recording.frame((g2,w,h)=>composeFrame(g2,w,h,now));
   }
   // The presented frame, for the recording: the world and its labels as the viewer sees them (right after rendering,
