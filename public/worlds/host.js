@@ -15,7 +15,8 @@ import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
 import {createMusical} from './musical.js';
 import {createQualityGovernor} from './quality.js';
-const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js'};
+// Synaptic Storm is a preview: built in like the three, but a recipe names it only when chosen (engine/recipe.js PREVIEWS).
+const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js','synaptic-storm':'./synaptic.js'};
 // Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
 // whose base is the artist canvas runs on the canvas world (canvas.js) instead of the family's; the canvas is never
 // chosen for a project otherwise.

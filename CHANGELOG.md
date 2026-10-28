@@ -5,6 +5,15 @@
 - **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
   included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
   ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
+- **Synaptic Storm (preview):** a fourth built-in world family, chosen only explicitly (Visual Studio, marked
+  *Preview*; the render lab's `--family synaptic-storm`). Subsystems are clusters of glassy neurons placed by a force
+  layout over the real dependencies, files are dendrite branches, symbols boutons, dependencies axons; agents travel as
+  signals in their CAST colour and shape and make the neuron of the file they edit fire; tests sweep activation waves,
+  failures misfire and dim their neighbourhood, recovery resynchronises, and a verified milestone with the director's
+  token, at least 4 minutes after the last, earns a synchronous storm. Idle firing sits on the score's beat grid. Never
+  part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
+  (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
+  digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
 - **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
   preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
   there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,

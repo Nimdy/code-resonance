@@ -23,6 +23,12 @@
 // overlay on its base family (parameters, palette, light, technique, effect mapping). A recipe that names a pack which
 // is no longer installed is served without it (flagged `unavailable`) and kept as stored, so reinstalling restores it.
 //
+// Preview families (PREVIEWS, engine/catalog.js PREVIEWS): built-in worlds still being designed, chosen only explicitly
+// (the Visual Studio, the render lab's --family) exactly as a pack is. They are never scored and never drawn: FAMILIES
+// alone drives the family scores and their random draws, and a preview's genome and palette come from its own streams,
+// so adding one changes no existing identity (tests/recipe.test.js and tests/synaptic.test.js pin that). Taking one into
+// the automatic choice later is a new generator version with its own scoring stream.
+//
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
 // value each one replaced, so a reset restores the generated genome exactly; a regenerated genome on the same family
@@ -41,7 +47,8 @@ const RECIPE_VERSION=4;      // generator: bump when the same inputs would produ
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
 const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
-const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral'};
+const PREVIEWS=['synaptic-storm'];
+const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -113,6 +120,16 @@ function palette(r,family,traits,hues=null){
     highlight:hsl(base+offset[0]*.5,.35,.86),deep:hsl(deepHue,.55,between(r,.035,.06)),haze:hsl(deepHue+12,.5,.16),
     warning:hsl(pick(r,[8,14,355]),.85,.58),valid:hsl(pick(r,[48,165,140]),.7,.7)};
 }
+// Synaptic Storm (preview): golden somas in a navy-violet void; the membrane's hue and the somas' warmth are the
+// identity's own, from its own stream.
+function synapticPalette(r,family,traits){
+  const scheme=weighted(r,[['complementary',3],['split',2],['analogous',1]]);
+  const mem=pick(r,[226,238,250,262,274,288,204,192])+between(r,-8,8),soma=pick(r,[30,36,26,40,22,33])+between(r,-4,4);
+  const sat=between(r,.5,.75)*(1-.15*clamp(traits.tests*2));
+  return {scheme,hue:round(mem,1),primary:hsl(soma,.92,.58),secondary:hsl(mem,sat,.62),accent:hsl(soma+12,1,.7),highlight:hsl(soma+20,.6,.9),
+    deep:hsl(mem+6,.62,between(r,.04,.065)),haze:hsl(mem+20,.5,.17),warning:hsl(pick(r,[350,6,340]),.82,.58),valid:hsl(pick(r,[160,172,186]),.66,.66)};
+}
+const PALETTES={'synaptic-storm':synapticPalette};
 // ---- Family genomes: the structural language of each universe -------------------------------------------------------
 const GENOMES={
   'stellar-forge'(r,t){
@@ -168,13 +185,34 @@ const GENOMES={
         'refactor.validated':'reassemble','milestone.achieved':'illumination','repository.checkpoint':'set-in-stone','world.expanded':'district-lights'}
     };
     return g;
+  },
+  // Preview (chosen only explicitly). Size sets how many files share a neuron, symbols per file the dendrites' reach,
+  // cross-subsystem coupling how tightly clusters gather, function-heavy code how much the processes wander, the agents'
+  // share of the work the spontaneous firing, tests how tightly it keeps the beat.
+  'synaptic-storm'(r,t){
+    const size=clamp(Math.log2(1+t.modules)/9);
+    return {
+      geometry:{filesPerNeuron:t.modules<40?pick(r,[3,4]):t.modules<200?pick(r,[4,5,6]):pick(r,[6,7,8]),clustering:round(between(r,.8,1.2)*(1-.2*clamp(t.crossDensity||0))),
+        dendrites:round(between(r,.85,1.15)*(.85+.3*clamp((t.depth||0)/12))),branchAngle:between(r,.35,.75),curl:round(clamp(between(r,.15,.5)+.25*clamp(t.functions||0))),somaSize:between(r,.85,1.25)},
+      space:{spread:between(r,.9,1.2),depth:round(between(r,.4,.85)+.15*size)},
+      material:{translucency:between(r,.45,.9),glow:between(r,.85,1.3)},
+      atmosphere:{particles:between(r,.6,1.1),haze:between(r,.5,1),depthOfField:between(r,.6,1.1),ghosts:round(between(r,.6,1)*(1.15-.3*size))},
+      motion:{firingRate:round(between(r,.75,1.15)*(.85+.35*clamp((t.agentShare||0)*2))),conduction:between(r,.8,1.25),drift:between(r,.4,1),breath:pick(r,[2,4,4,8]),
+        sync:round(clamp(between(r,.35,.75)+.25*clamp((t.tests||0)*3)))},
+      camera:{personality:pick(r,['orbit','glide']),distance:between(r,.9,1.12),elevation:between(r,.16,.42),fov:pick(r,[30,34,38]),drift:between(r,.4,1)},
+      agents:{form:'signal',trail:between(r,.6,1.4)},
+      effects:{'subsystem.created':'neurogenesis','module.created':'sprout','structure.created':'arborize','structure.removed':'prune',
+        'subsystem.connected':'axon-link','validation.failed':'misfire','validation.passed':'activation-wave','validation.recovered':'resync',
+        'refactor.validated':'consolidate','milestone.achieved':'storm','repository.checkpoint':'potentiate','world.expanded':'expand'}
+    };
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
 const AMBIENT={
   'stellar-forge':{base:['nebula','starfield','convection','orbits','corona-loops','dust-lanes'],unlocks:['aurora-veils','plasma-currents','distant-pulsar','galactic-halo']},
   'fractal-biosphere':{base:['spores','sway','nutrient-flow','light-shafts','breathing-glow'],unlocks:['fireflies','blossom-drift','canopy-veins','bioluminescent-tide']},
-  'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']}
+  'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']},
+  'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']}
 };
 function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);
@@ -194,7 +232,7 @@ function genome(family,seed,variant,traits){
   const g=GENOMES[family](r,traits);
   ADDED[family]?.(rng('genome-added',family,seed,variant),g);
   const {light,music,agentProminence,limits}=common(r,traits);
-  return {...g,palette:palette(rng('palette',family,seed,variant),family,traits),light,ambient:AMBIENT[family],music,agentProminence,limits};
+  return {...g,palette:(PALETTES[family]||palette)(rng('palette',family,seed,variant),family,traits),light,ambient:AMBIENT[family],music,agentProminence,limits};
 }
 // A world pack's genome: its declared parameters (seeded, optionally derived from a project trait), a palette from its
 // preferred hues, and the shared light / music / limits; its effect vocabulary and ambient layers come from the manifest.
@@ -243,7 +281,8 @@ function tunable(recipe,registry=null){
   const out={};
   const add=(p,s,name)=>{out[p]={type:s.type,...(s.type==='number'||s.type==='integer'||s.type==='vec3'?{min:s.min,max:s.max}:{}),...(s.type==='enum'?{values:[...s.values]}:{}),
     doc:s.doc||s.description||name,group:p.split('.')[0]};};
-  if(catalog.FAMILIES[recipe?.family])for(const [p,s] of Object.entries(catalog.FAMILIES[recipe.family].parameters))add(p,s,p);
+  const own=catalog.FAMILIES[recipe?.family]||(Object.hasOwn(catalog.PREVIEWS,recipe?.family??'')?catalog.PREVIEWS[recipe.family]:null);
+  if(own)for(const [p,s] of Object.entries(own.parameters))add(p,s,p);
   else{const world=recipe?.familyKind==='pack'?packFamily(registry,recipe.family):null;if(!world)return out;
     for(const [p,s] of Object.entries(catalog.COMMON))add(p,s,p);
     for(const [k,s] of Object.entries(world.parameters||{}))add(`params.${k}`,s,k);}
@@ -312,8 +351,10 @@ function generate(project,{seed,variant=0,family=null,pack=null,source='generate
   const s=(seed??project?.performance?.identity?.seed??parseInt(sha(project?.projectId||'').slice(0,8),16))>>>0;
   const t=traits||traitsOf(project);
   const scores=familyScores(t,s,variant);
-  const world=family&&!FAMILIES.includes(family)?packFamily(registry,family):null;
-  const chosen=family&&(FAMILIES.includes(family)||world)?family:FAMILIES.slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
+  // A preview is chosen only when asked for; the scores never include it.
+  const preview=PREVIEWS.includes(family);
+  const world=family&&!FAMILIES.includes(family)&&!preview?packFamily(registry,family):null;
+  const chosen=family&&(FAMILIES.includes(family)||preview||world)?family:FAMILIES.slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
   let g=world?packGenome(world,s,variant,t):genome(chosen,s,variant,t);
   const overlay=pack?usable(registry,pack):null;
   const applied=overlay?.overlay&&overlay.overlay.base===chosen?overlay:null;
@@ -324,7 +365,7 @@ function generate(project,{seed,variant=0,family=null,pack=null,source='generate
   if(builtin)g={...g,life:lifeGenome(chosen,s,variant,version)};
   // v4: the cinematic finish is a new built-in identity's lens, never a pack's (an author's world or look keeps its own
   // grade until a finish is chosen for it); the composed score is every new identity's music.
-  if(version>=4){if(builtin)g={...g,technique:{...g.technique,finish:'cinematic'}};g={...g,music:{...g.music,score:3}};}
+  if(version>=4){if(builtin||preview)g={...g,technique:{...g.technique,finish:'cinematic'}};g={...g,music:{...g.music,score:3}};}
   const user=!!family||!!applied;
   return {schema:RECIPE_SCHEMA,recipeVersion:version,rendererVersion:RENDERER_VERSION,projectSeed:s,variant,
     source:user?'user':source,locked:!!locked||user,founded:user||!!locked||t.modules>=FOUNDING_MODULES,
@@ -415,7 +456,7 @@ function update(recipe,action,project,now=Date.now(),registry=null){
   const keep=(r,tuning=recipe.tuning,withComposition=true)=>{const out=retune(Object.assign(r,{overrides:recipe.overrides,aliases:recipe.aliases,title:recipe.title}),tuning,registry);return withComposition?carry(out):out;};
   const pack=recipe.pack?.id||null;
   switch(action?.type){
-    case 'family':{if(!FAMILIES.includes(action.family)&&!packFamily(registry,action.family))throw new Error('Unknown family');
+    case 'family':{if(!FAMILIES.includes(action.family)&&!PREVIEWS.includes(action.family)&&!packFamily(registry,action.family))throw new Error('Unknown family');
       // A pack overlay stays when it belongs to the new family.
       const keepPack=pack&&usable(registry,pack)?.overlay?.base===action.family?pack:null;
       return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:action.family,pack:keepPack,traits:recipe.traits,now,registry}));}
@@ -468,4 +509,4 @@ function structuralDifferences(a,b){
   walk(a.genome,b.genome,'');
   return diffs;
 }
-module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,FAMILY_NAMES,FOUNDING_MODULES,traitsOf,familyScores,generate,resolve,update,applyActions,tunable,baseValues,structuralDifferences};
+module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,PREVIEWS,FAMILY_NAMES,FOUNDING_MODULES,traitsOf,familyScores,generate,resolve,update,applyActions,tunable,baseValues,structuralDifferences};

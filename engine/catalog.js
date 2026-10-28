@@ -106,6 +106,25 @@ const LIFE={
   'life.ecology':e([1,2],'ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded')
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
+// Preview families: built in, chosen only explicitly (the Visual Studio, the render lab's --family), never by the
+// family scoring, and not yet a base for declarative packs (their parameters may still change). No digital life yet.
+const PREVIEWS={
+  'synaptic-storm':{name:'Synaptic Storm (preview)',preview:true,parameters:{
+    'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
+    'geometry.clustering':n(.4,1.8,'how far the neurons of a cluster stand apart'),'geometry.dendrites':n(.5,1.6,'dendrite length'),
+    'geometry.branchAngle':n(.2,1,'angle of the dendrites\' forks (radians)'),'geometry.curl':n(0,1,'how much dendrites and axons wander'),'geometry.somaSize':n(.6,1.6,'soma size'),
+    'space.spread':n(.7,1.5,'distance between clusters'),'space.depth':n(.2,1.2,'depth of the network: a flat sheet of cortex (low) or a volume (high)'),
+    'material.translucency':n(.2,1,'how glassy membranes are: bright rims over a dim, clear body'),'material.glow':n(.5,1.6,'inner light of the somas and the branches near them'),
+    'atmosphere.particles':n(0,1.5,'motes and bokeh in the void'),'atmosphere.haze':n(0,1.5,'violet haze in the void'),'atmosphere.depthOfField':n(0,1.5,'depth of field: how soft the near and far network is'),
+    'atmosphere.ghosts':n(0,1.5,'the far network: dim, out-of-focus neurons around the project\'s own (ambient, never the code)'),
+    'motion.firingRate':n(.2,2,'spontaneous firing (always on the beat grid; work and recent events raise it)'),'motion.conduction':n(.5,1.8,'speed of the signals along dendrites and axons'),
+    'motion.drift':n(0,1.5,'slow drift of the neurons'),'motion.breath':e([2,4,8],'breathing period of the glow (bars)'),'motion.sync':n(0,1,'how tightly spontaneous firing locks to the beat'),
+    'camera.personality':e(['orbit','glide'],'camera behaviour'),'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,.8,'elevation'),'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
+    'agents.form':e(['signal'],'agent form: a travelling signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    effects:['neurogenesis','sprout','arborize','prune','axon-link','misfire','activation-wave','resync','consolidate','storm','potentiate','expand'],
+    unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']}
+};
+for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.
 function accepts(spec,value){
@@ -123,4 +142,4 @@ function accepts(spec,value){
 function get(obj,path){return path.split('.').reduce((o,k)=>o?.[k],obj);}
 // The class of an effect preset in a family (its effects are listed in EFFECT_TYPES order).
 function effectClass(family,effect){const k=FAMILIES[family]?.effects.indexOf(effect);return k>=0?EFFECT_CLASS[EFFECT_TYPES[k]]:null;}
-module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,COMMON,LIFE,accepts,get,effectClass};
+module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,PREVIEWS,COMMON,LIFE,accepts,get,effectClass};

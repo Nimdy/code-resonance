@@ -1,0 +1,611 @@
+// Synaptic Storm (preview): the software as an immense living neural network. Design brief: docs/worlds/synaptic-storm.md.
+//
+// Data -> image (nothing here is decoration that claims engineering work):
+//  - subsystem (district) -> a cluster of glassy neurons, laid out by a force layout over the real cross-subsystem
+//                            dependencies (synaptic-layout.js); its first neuron is the hub
+//  - file (module)        -> a dendrite branch of a neuron (K files per neuron, in creation order), a recursive tree
+//                            seeded by the file that grows outward as far as the file's symbols reach
+//  - symbol               -> a bouton on its file's branch (nearest first), lit while it exists
+//  - dependency           -> an axon from the importing file's neuron to a synapse on the imported file's branch; axons
+//                            between two clusters bundle into one tract
+//  - agent                -> a travelling signal in its provider's colour and shape (CAST seat): it rides to the branch
+//                            it works on, injects pulses into it on the beat while a tool runs (inward along the branch,
+//                            in its colour), and that neuron fires: the soma flashes and the spike runs down its axons to
+//                            the synapses of what the file imports, where a spark jumps the gap
+//  - human edit, new file, new symbols -> an input pulse along that branch (warm white, gold)
+//  - tests passing        -> an activation wave sweeping across the covered branches; their neurons fire in its order
+//  - failure              -> the covered branches misfire: static crackles along them, their neurons fire off the beat
+//                            and the spikes die halfway down the axon; the neighbourhood dims (inhibition). Never gold
+//  - recovery             -> resynchronisation: the repaired neurons fire together on the next three beats
+//  - verified milestone   -> the earned storm (a synchronous cascade from the subject through the network graph, three
+//                            volleys), at most once per STORM_GAP of performance time and only with the director's
+//                            milestone token; otherwise a local cascade. It leaves myelin on the subject's axons (lasting)
+// Ambient life (never progress): spontaneous low-rate firing on the beat grid (seeded per neuron and beat, raised by
+// recent work), the glow breathing on the bars, slow drift, motes and bokeh, a far out-of-focus network (atmosphere).
+// Every image is a function of the model, the recipe, the director's fold and the performance clock.
+import {THREE,NOISE,clamp,lerp,smooth,hash,rand} from './core.js';
+import {layoutConfig,createLayout,dendriteTree,slotDirection,spontaneous} from './synaptic-layout.js';
+import {presence} from '../providers.js';
+const TAU=Math.PI*2,TW=128,NT=5,FT=5,NONE=-1e5,FAR=1e6;
+const MAX_AXONS=720,MAX_FX=6000,MOTES=1800,STORM_GAP=240000,DWELL=4500;
+// Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers);
+// the shape is the seat's index in the signal shader: four-point spark, ring, diamond, six-point star, triangle, double
+// ring, then a soft dot.
+const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
+// Colour codes in the state textures: 0-7 agent seats, then these.
+const C_HUMAN=8,C_GROW=9,C_VALID=10,C_STORM=11,C_MIS=12,C_SPONT=13;
+const STRONG=new Set(['editing','writing','running','testing','building','checking']),LIGHT=new Set(['reading','searching','researching']);
+const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?FAR:NONE);
+// GLSL shared by every material: state lookups, drift (the JS drift below must agree), depth of field.
+const COMMON=`
+uniform highp sampler2D uN,uF;
+uniform float uT,uV,uSpeed,uDrift,uFocus,uDof,uPx,uTrans,uGlowK,uVd,uVa,uBreath,uBeat,uMyelin,uQ,uAxK;
+uniform vec2 uRes;
+uniform vec3 uSoma,uMem,uSpark,uHi,uWarn,uValid;
+uniform vec3 uCol[14];
+vec4 nT(float n,int k){int i=int(n+.5);return texelFetch(uN,ivec2(i%128,(i/128)*${NT}+k),0);}
+vec4 fT(float f,int k){int i=int(f+.5);return texelFetch(uF,ivec2(i%128,(i/128)*${FT}+k),0);}
+vec3 drift(float s){return uDrift*vec3(sin(uV*.13+s*6.2832)*.55,sin(uV*.097+s*12.1)*.4,sin(uV*.111+s*3.7)*.55);}
+float age(float t0){return (uT-t0)/uSpeed;}
+float ppu(float z){return projectionMatrix[1][1]*uRes.y*.5/max(z,.1);}
+float coc(float z){return uDof*clamp(abs(z-uFocus)/max(z,1.),0.,1.)*15.*uPx;}
+// What passes right in front of the lens fades out instead of filling the frame.
+float nearFade(float z){return smoothstep(3.,max(8.,.42*uFocus),z);}
+vec3 colOf(float c){return uCol[int(clamp(c,0.,13.)+.5)];}
+`;
+// A glassy tube: bright rims (sharp in focus), a clear body, inner light in the core, a soft halo.
+const TUBE_VARY='varying vec3 vCol,vMemC,vPulse;varying float vV,vE,vBl,vCrk,vD,vSeed;';
+const TUBE_FS=`uniform float uTrans;uniform vec3 uWarn;uniform float uV;${TUBE_VARY}
+float hh(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+void main(){float v=abs(vV),core=exp(-v*v*2.2),rim=exp(-pow((v-.84)*(4.5-2.5*vBl),2.))*(1.-.6*vBl),halo=exp(-v*v*.55)*.2;
+  vec3 c=vMemC*(rim*uTrans*.55+halo)+vCol*core+vPulse*(core*1.2+halo*2.);
+  if(vCrk>.01){float k=step(.8,hh(vec2(floor(vD*5.),floor(uV*15.+vSeed*40.))));c+=uWarn*k*vCrk*(core+halo)*1.6;}
+  gl_FragColor=vec4(c*vE,1.);}`;
+// Quad expansion shared by dendrites and axons: a camera-facing ribbon between a and b, at least ~1 px wide, widened
+// and dimmed by the circle of confusion (energy kept).
+const RIBBON=`
+vec4 ribbon(vec3 a,vec3 b,float r,out float e,out float bl){
+  vec4 va=viewMatrix*vec4(a,1.),vb=viewMatrix*vec4(b,1.),vp=mix(va,vb,position.x);
+  vec3 sd=cross(vb.xyz-va.xyz,vp.xyz);sd=length(sd)>1e-7?normalize(sd):vec3(1.,0.,0.);
+  float z=max(-vp.z,.1),k=ppu(z),rpx=r*k,cc=coc(z),w=min(max(rpx,.75*uPx)+cc,36.*uPx);
+  vp.xyz+=sd*position.y*w*1.8/k;vV=position.y*1.8;bl=clamp(cc/w,0.,1.);e=max(rpx,.75*uPx)/max(w,max(rpx,.75*uPx))*min(1.,rpx/(.75*uPx)*.6+.4)*nearFade(z);
+  return projectionMatrix*vp;}
+`;
+export function createFamily(ctx){
+  const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P=G.palette||{};
+  const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
+  const atm=G.atmosphere||{},mtl=G.material||{},mot=G.motion||{},cam=G.camera||{},LT=G.light||{},MU=G.music||{};
+  const col=(c,d)=>new THREE.Color(typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)?c:d);
+  const pal={primary:col(P.primary,'#ffae42'),secondary:col(P.secondary,'#7c6cf0'),accent:col(P.accent,'#ffd979'),highlight:col(P.highlight,'#fff1dc'),
+    deep:col(P.deep,'#05061a'),haze:col(P.haze,'#1e1642'),warning:col(P.warning,'#ff4d6a'),valid:col(P.valid,'#6fe3c8')};
+  // The void stays a void whatever a tuned palette says.
+  const capL=(c,max)=>{const h={};c.getHSL(h);if(h.l>max)c.setHSL(h.h,h.s,max);return c;};capL(pal.deep,.075);capL(pal.haze,.2);
+  const seed=(recipe.projectSeed>>>0)||1;
+  const layout=createLayout(layoutConfig(recipe)),cfg=layout.cfg;
+  const V3=(c,k=1)=>new THREE.Vector3(c.r*k,c.g*k,c.b*k);
+  const agentCol=AGENT_COLORS.map(c=>new THREE.Color(c));
+  const COLS=[...agentCol.map(c=>V3(c,1.5)),V3(new THREE.Color('#fff4e4'),1.3),V3(pal.primary,1.4),V3(pal.valid,1.3),V3(pal.accent.clone().lerp(pal.primary,.35).lerp(pal.highlight,.25),1.9),V3(pal.warning,1.1),V3(pal.primary,1)];
+  const RATE=clamp(num(mot.firingRate,1),.1,2.2),SYNC=clamp(num(mot.sync,.55),0,1),COND=clamp(num(mot.conduction,1),.4,2);
+  const VD=7*COND,VA=11*COND,GHOSTS=clamp(num(atm.ghosts,.8),0,1.6),PARTICLES=clamp(num(atm.particles,.85),0,1.6);
+  const U={uT:{value:0},uV:{value:0},uSpeed:{value:1},uDrift:{value:0},uFocus:{value:60},uDof:{value:clamp(num(atm.depthOfField,.85),0,1.6)},uPx:{value:1},uRes:{value:new THREE.Vector2(1920,1080)},
+    uTrans:{value:.5+.9*clamp(num(mtl.translucency,.65),0,1)},uGlowK:{value:clamp(num(mtl.glow,1),.4,1.8)},uVd:{value:VD},uVa:{value:VA},uBreath:{value:0},uBeat:{value:0},uMyelin:{value:0},uQ:{value:0},uAxK:{value:1},
+    uSoma:{value:V3(pal.primary)},uMem:{value:V3(pal.secondary)},uSpark:{value:V3(pal.accent,1.6)},uHi:{value:V3(pal.highlight)},uWarn:{value:V3(pal.warning)},uValid:{value:V3(pal.valid)},
+    uCol:{value:COLS},uN:{value:null},uF:{value:null}};
+  const disposables=[];const keep=x=>{disposables.push(x);return x;};
+  const add=(o,order=0)=>{o.frustumCulled=false;o.renderOrder=order;scene.add(o);return o;};
+  const glow=(vertexShader,fragmentShader,extra={})=>keep(new THREE.ShaderMaterial({uniforms:{...U,...extra},vertexShader,fragmentShader,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending}));
+  // ---- State textures: per neuron and per file, rewritten every frame (positions, firings, inputs, conditions) --------
+  function stateTex(texels){let tex=null,cap=0,data=null;
+    return {ensure(n){if(tex&&n<=cap)return;cap=Math.max(TW,2**Math.ceil(Math.log2(Math.max(1,n))));data=new Float32Array(TW*Math.ceil(cap/TW)*texels*4);
+        tex?.dispose();tex=new THREE.DataTexture(data,TW,Math.ceil(cap/TW)*texels,THREE.RGBAFormat,THREE.FloatType);tex.minFilter=tex.magFilter=THREE.NearestFilter;tex.generateMipmaps=false;tex.needsUpdate=true;},
+      set(i,k,a,b,c,d){const o=((Math.floor(i/TW)*texels+k)*TW+i%TW)*4;data[o]=a;data[o+1]=b;data[o+2]=c;data[o+3]=d;},
+      commit(){tex.needsUpdate=true;},get texture(){return tex;},dispose(){tex?.dispose();}};}
+  const NS=stateTex(NT),FS=stateTex(FT);NS.ensure(1);FS.ensure(1);
+  // ---- Background: the navy-violet void, slow haze, two vast soft glows of the far brain -------------------------------
+  const bgU={uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uDeep:{value:V3(pal.deep)},uHaze:{value:V3(pal.haze)},uMem:U.uMem,uSoma:U.uSoma,uV:U.uV,uQ:U.uQ,
+    uHazeK:{value:clamp(num(atm.haze,.75),0,1.6)},uStress:{value:0},uTide:{value:0},uStorm:{value:0},uSeed:{value:new THREE.Vector3(rand(seed)*9,rand(seed+1)*9,rand(seed+2)*9)}};
+  const background_=keep(new THREE.ShaderMaterial({uniforms:bgU,depthWrite:false,depthTest:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uDeep,uHaze,uMem,uSoma,uSeed;uniform float uV,uQ,uHazeK,uStress,uTide,uStorm;
+      void main(){vec4 pp=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(pp.xyz/pp.w-uCam);
+        vec3 c=uDeep*(1.5+1.2*smoothstep(-.6,.8,d.y));
+        float n=uQ>2.5?.2:fbm3(d*1.8+uSeed+vec3(0.,uV*.004,0.)),m=gnoise(d*4.1+uSeed.zxy+vec3(uV*.003,0.,0.));
+        c+=uHaze*(.3+uHazeK*(.5+1.2*smoothstep(-.3,.5,n))*(.7+.3*m))*(1.-.4*uStress);
+        vec3 w=normalize(vec3(cos(uSeed.x),.18,sin(uSeed.x))),k=normalize(vec3(cos(uSeed.y),-.1,sin(uSeed.y)));
+        c+=uSoma*.07*uHazeK*exp(-(1.-dot(d,w))*4.)*(1.+.8*uStorm)+uMem*.12*uHazeK*exp(-(1.-dot(d,k))*2.5);
+        c+=uMem*uTide*.05*smoothstep(.1,.9,gnoise(d*2.3+vec3(uV*.02,0.,0.))+.4);
+        gl_FragColor=vec4(c,1.);}`}));
+  // ---- Dendrites: instanced ribbons in each neuron's frame ---------------------------------------------------------------
+  const quad=keep(new THREE.BufferGeometry());quad.setAttribute('position',new THREE.Float32BufferAttribute([0,-1,0,1,-1,0,0,1,0,1,1,0],3));quad.setIndex([0,1,2,2,1,3]);
+  const dend=instancedBuffersOf(quad,{sA:4,sB:4,sI:4,sD:4});
+  const dendMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}attribute vec4 sA,sB,sI,sD;
+    void main(){
+      vec4 FC=fT(sI.y,2);float R=max(FC.w,.01),g0=sI.z/R,g1=sI.w/R,grow=clamp((FC.z-g0)/max(1e-4,g1-g0),0.,1.);
+      vec4 NA=nT(sI.x,0),ND=nT(sI.x,3);
+      float life=ND.x*smoothstep(0.,.8,age(FC.x))*(1.-smoothstep(0.,1.6,age(FC.y)));
+      if(grow<=0.||life<=.002){gl_Position=vec4(0.,0.,2.,1.);return;}
+      vec3 base=NA.xyz+drift(ND.z)+sD.xyz*NA.w*.85;
+      float e,bl;gl_Position=ribbon(base+sA.xyz,base+mix(sA.xyz,sB.xyz,grow),mix(sA.w,sB.w,position.x),e,bl);
+      float d=mix(sI.z,mix(sI.z,sI.w,grow),position.x),near=exp(-d/(2.4*uGlowK));
+      vec4 NB=nT(sI.x,1),NC=nT(sI.x,2),NE=nT(sI.x,4),FA=fT(sI.y,0),FB=fT(sI.y,1),FD=fT(sI.y,3);
+      float stress=FB.w;
+      vec3 inner=mix(uMem*.42,uSoma*1.35*uGlowK,near)*(.7+.3*uBreath+.25*uBeat*near);
+      vec3 p=vec3(0.);
+      // a soma's firing floods back into its dendrites
+      float a1=age(NB.x),a2=age(NB.w);
+      p+=colOf(NB.z)*abs(NB.y)*step(0.,a1)*exp(-a1*2.4)*exp(-d*.32);
+      p+=colOf(NC.y)*abs(NC.x)*step(0.,a2)*exp(-a2*2.4)*exp(-d*.32);
+      // inputs run inward from the branch's reach to the soma
+      float rv=R-d,i1=age(FA.x),i2=age(FA.w),done=R/uVd+.4;
+      p+=colOf(FA.z)*FA.y*step(0.,i1)*exp(-pow((rv-uVd*i1)*.9,2.))*(1.-smoothstep(done-.3,done,i1))*2.2;
+      p+=colOf(FB.y)*FB.x*step(0.,i2)*exp(-pow((rv-uVd*i2)*.9,2.))*(1.-smoothstep(done-.3,done,i2))*2.2;
+      // tests passing: an activation wave out from the soma
+      float w1=age(FB.z);p+=uValid*1.4*step(0.,w1)*exp(-pow((d-uVd*1.3*w1)*.7,2.))*exp(-w1*.3);
+      // a synapse of an incoming axon fired
+      float s1=age(FD.x);p+=uSpark*FD.y*step(0.,s1)*exp(-abs(d-.3*R)*.8)*exp(-s1*2.);
+      // the storm floods everything; potentiation (a commit) warms it
+      p+=colOf(11.)*NC.w*(.45+.55*near)+uSoma*NE.y*.6*near;
+      // an agent's attributed edit leaves the branch glowing in its colour for a while
+      vec4 FE=fT(sI.y,4);float t1=age(FE.x);p+=colOf(FE.y)*FE.z*step(0.,t1)*exp(-t1/3.5)*(.7+.6*near);
+      inner+=uValid*FD.w*.22*near;
+      inner=mix(inner,uWarn*.3+uMem*.12,stress*.75)*(1.-.45*stress);
+      float dim=(1.-.7*NC.z)*ND.y;
+      vCol=inner*dim;vPulse=p*dim;vMemC=uMem*dim*(.55+.45*near)*(1.-.35*stress);vE=e*life;vBl=bl;vCrk=stress;vD=d;vSeed=ND.z;}`,TUBE_FS);
+  add(new THREE.Mesh(dend.geometry,dendMat),2);
+  // ---- Axons: cubic curves between neurons, evaluated on the GPU from the neurons' live positions -----------------------
+  const axon=instancedBuffersOf(quad,{xA:4,xB:4,xC:4,xD:4});
+  const BEZ=`vec3 bez(vec3 p0,vec3 p1,vec3 p2,vec3 p3,float u){float v=1.-u;return v*v*v*p0+3.*v*v*u*p1+3.*v*u*u*p2+u*u*u*p3;}`;
+  const axonMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}${BEZ}attribute vec4 xA,xB,xC,xD;
+    float spike(float t0,float s,float u,float L){float a=age(t0);if(a<0.)return 0.;float f=uVa*a/L;if(f>1.08)return 0.;
+      float k=s<0.?1.-smoothstep(.22,.5,f):1.;return abs(s)*k*(exp(-pow((u-f)*L*.8,2.))*1.6+step(u,f)*exp(-(f-u)*L/3.)*.35);}
+    void main(){
+      vec4 SA=nT(xA.x,0),SD=nT(xA.x,3),DA=nT(xA.y,0),DD=nT(xA.y,3);
+      float life=min(SD.x,DD.x)*(1.-smoothstep(0.,1.6,age(xD.y))),gr=smoothstep(0.,2.4,age(xD.x));
+      if(life<=.002||gr<=xA.z){gl_Position=vec4(0.,0.,2.,1.);return;}
+      vec3 s=SA.xyz+drift(SD.z),e=DA.xyz+drift(DD.z)+xB.xyz,ch=e-s;float L=max(length(ch),1e-3);vec3 dir=ch/L,p0=s+dir*SA.w*.9;
+      vec3 up=abs(dir.y)<.9?vec3(0.,1.,0.):vec3(1.,0.,0.),n1=normalize(cross(up,dir)),n2=cross(dir,n1);
+      vec3 p1=p0+ch*.33+(n1*xC.x+n2*xC.y)*L,p2=p0+ch*.67+(n1*xC.z+n2*xC.w)*L;
+      float u0=xA.z,u1=min(xA.w,gr),e2,bl;
+      gl_Position=ribbon(bez(p0,p1,p2,e,u0),bez(p0,p1,p2,e,u1),xB.w*(1.-.35*mix(u0,u1,position.x)),e2,bl);
+      float u=mix(u0,u1,position.x),Ls=L*1.12;
+      vec4 NB=nT(xA.x,1),NC=nT(xA.x,2),NE=nT(xA.x,4);
+      vec3 p=colOf(NB.z)*spike(NB.x,NB.y,u,Ls)+colOf(NC.y)*spike(NB.w,NC.x,u,Ls)+colOf(11.)*NC.w*.5;
+      float my=max(SD.w,uMyelin*.4),bead=smoothstep(.5,.95,.5+.5*cos(u*Ls*2.2+xD.z*30.));
+      float dim=(1.-.6*NC.z)*min(SD.y,DD.y);
+      vCol=(uMem*.16+uSoma*my*bead*.55*uGlowK)*dim;vPulse=p*dim;vMemC=uMem*(.5+.35*xD.w+.4*my)*dim*(1.-.3*NE.x);
+      vE=e2*life;vMemC*=uAxK;vCol*=uAxK;vPulse*=.5+.5*uAxK;vBl=bl;vCrk=NE.x*.6;vD=u*Ls;vSeed=xD.z;}`,TUBE_FS);
+  add(new THREE.Mesh(axon.geometry,axonMat),1);
+  // ---- Somas: glass spheres around a golden nucleus (billboards) ------------------------------------------------------
+  const sq=keep(new THREE.PlaneGeometry(2,2));
+  const soma=instancedBuffersOf(sq,{sN:1});
+  const somaMat=glow(`${COMMON}attribute float sN;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd;varying vec3 vNuc,vMemS,vRc;
+    void main(){
+      vec4 NA=nT(sN,0),NB=nT(sN,1),NC=nT(sN,2),ND=nT(sN,3),NE=nT(sN,4);
+      if(ND.x<=.002){gl_Position=vec4(0.,0.,2.,1.);return;}
+      vec3 c=NA.xyz+drift(ND.z);vec4 vc=viewMatrix*vec4(c,1.);float z=max(-vc.z,.1),k=ppu(z),R=NA.w*(.3+.7*ND.x),cc=coc(z),cw=cc/k;
+      float H=(R+cw)*3.2;vc.xy+=position.xy*H;vQ=position.xy*H/(R+cw);vK=R/(R+cw);vBl=cc/(R*k+cc);
+      float a1=age(NB.x),a2=age(NB.w);vFl=abs(NB.y)*step(0.,a1)*exp(-a1*3.)+abs(NC.x)*step(0.,a2)*exp(-a2*3.)+NC.w*.8+NE.y*.4;
+      vAr=a1;vRs=abs(NB.y)*step(0.,a1);vRc=colOf(NB.z);vSt=NE.x;vSd=ND.z;
+      vNuc=mix(uSoma*uGlowK,colOf(NB.z),clamp(abs(NB.y)*step(0.,a1)*exp(-a1*1.5)*.7,0.,.7))*(.85+.25*uBreath+.3*uBeat);
+      vNuc=mix(vNuc,uWarn*.45+uMem*.1,NE.x*.7);vMemS=uMem;
+      vE=ND.y*(1.-.7*NC.z)*vK*vK*nearFade(z);
+      gl_Position=projectionMatrix*vc;}`,
+    `uniform float uTrans,uV;uniform vec3 uHi,uWarn;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd;varying vec3 vNuc,vMemS,vRc;
+    void main(){float r=length(vQ),b=vBl,inside=1.-smoothstep(1.-.06-b*.5,1.+b*.4,r),zc=sqrt(max(0.,1.-r*r));
+      float fres=pow(1.-zc,2.)*inside*(1.-.6*b),nuc=exp(-r*r*(6.-3.5*b)),halo=exp(-max(0.,r-.9)*3.2)*.16;
+      vec2 hl=vQ-vec2(-.36,.4);float spec=exp(-dot(hl,hl)*28.)*inside*(1.-b);
+      float ring=vRs*exp(-pow((r-(1.05+vAr*3.))*6.,2.))*exp(-vAr*4.)*.18;
+      float flick=vSt>.01?.55+.45*step(.45,fract(sin(floor(uV*13.+vSd*50.)*91.7)*4375.85)):1.;
+      vec3 c=vMemS*(.1*inside+fres*1.3)*uTrans+vNuc*(nuc*(1.1+vFl*2.6)*flick+halo*(.5+vFl*1.2))+uHi*spec*.7+uHi*ring;
+      gl_FragColor=vec4(c*vE,1.);}`);
+  add(new THREE.Mesh(soma.geometry,somaMat),3);
+  // ---- Boutons: one per symbol on its file's branch (GPU points in the neuron's frame) -----------------------------------
+  const tips=pointBuffersOf({tI:4,tL:4,tD:4});
+  const tipMat=glow(`${COMMON}attribute vec4 tI,tL,tD;varying vec3 vC;varying float vB;
+    void main(){vec4 FC=fT(tI.y,2),FD=fT(tI.y,3),NA=nT(tI.x,0),ND=nT(tI.x,3);float R=max(FC.w,.01);
+      float vis=step(tI.z+.5,FD.z)*step(tI.w/R,FC.z)*ND.x*smoothstep(0.,.8,age(FC.x))*(1.-smoothstep(0.,1.6,age(FC.y)));
+      if(vis<=.002){gl_Position=vec4(0.,0.,2.,1.);gl_PointSize=0.;return;}
+      vec4 vp=viewMatrix*vec4(NA.xyz+drift(ND.z)+tD.xyz*NA.w*.85+tL.xyz,1.);float z=max(-vp.z,.1),s=(tL.w>.5?.17:.11)*ppu(z)*2.,cc=coc(z);
+      gl_PointSize=clamp(max(s,1.6*uPx)+cc,1.,96.);vB=cc/(s+cc);vis*=nearFade(z);
+      vec4 FA=fT(tI.y,0),NB=nT(tI.x,1);float i1=age(FA.x),rv=R-tI.w,hit=FA.y*step(0.,i1)*exp(-pow((rv-uVd*i1)*.9,2.));
+      float f1=age(NB.x),back=abs(NB.y)*step(0.,f1)*exp(-f1*2.4)*exp(-tI.w*.32);
+      vC=(uSoma*.75*uGlowK+colOf(FA.z)*hit*2.+colOf(NB.z)*back)*vis*ND.y*pow(max(s,1.6*uPx)/(max(s,1.6*uPx)+cc),2.)*(1.-.5*fT(tI.y,1).w);
+      gl_Position=projectionMatrix*vp;}`,
+    `varying vec3 vC;varying float vB;void main(){vec2 q=gl_PointCoord*2.-1.;float r=length(q);
+      float a=mix(exp(-r*r*6.)*1.3+exp(-r*r*40.)*1.5,smoothstep(1.,.75,r)*(.5+.5*smoothstep(.4,.95,r)),vB);gl_FragColor=vec4(vC*a,1.);}`);
+  add(new THREE.Points(tips.geometry,tipMat),4);
+  // ---- Motes and bokeh: the void's dust (GPU points, pure functions of time) ----------------------------------------------
+  const motes=pointBuffersOf({mP:4,mS:4});
+  {const r=n=>rand(hash(`mote/${seed}/${n}`));
+    for(let k=0;k<MOTES;k++){const u=r(k*5)*2-1,a=r(k*5+1)*TAU,q=Math.pow(r(k*5+2),.5)*1.9,s=Math.sqrt(1-u*u);
+      motes.write('position',k,0,0,0);motes.write('mP',k,Math.cos(a)*s*q,u*q*.6,Math.sin(a)*s*q,r(k*5+3));motes.write('mS',k,1+3.2*Math.pow(r(k*5+4),3),Math.floor(r(k*7)*3),0,0);}
+    motes.commit(MOTES);}
+  const moteMat=glow(`${COMMON}attribute vec4 mP,mS;uniform vec4 uNet;uniform float uGlial;varying vec3 vC;varying float vB;
+    void main(){float s0=mP.w*6.2832;vec3 p=uNet.xyz+mP.xyz*uNet.w+uNet.w*.06*vec3(sin(uV*.021+s0),sin(uV*.017+s0*1.7)*.6,cos(uV*.019+s0*2.3));
+      vec4 vp=viewMatrix*vec4(p,1.);float z=max(-vp.z,.1),s=mS.x*uPx*(1.+uGlial*.4),cc=coc(z)*1.2;gl_PointSize=clamp(s+cc,1.,110.);vB=cc/(s+cc);
+      vec3 c=mS.y<.5?uSoma:mS.y<1.5?uMem*1.3:uSpark*.6;vC=c*(.6+.4*uGlial)*pow(s/(s+cc),1.6)*(.6+.4*sin(uV*.4+s0*3.));gl_Position=projectionMatrix*vp;}`,
+    `varying vec3 vC;varying float vB;void main(){vec2 q=gl_PointCoord*2.-1.;float r=length(q);
+      float a=mix(exp(-r*r*5.),smoothstep(1.,.82,r)*(.45+.55*smoothstep(.5,.96,r)),vB);gl_FragColor=vec4(vC*a,1.);}`,{uNet:{value:new THREE.Vector4(0,0,0,40)},uGlial:{value:0}});
+  add(new THREE.Points(motes.geometry,moteMat),0);
+  // ---- Signals: agents, their trails, injections, spikes' heads, synaptic sparks (CPU points) ---------------------------
+  const fx=pointBuffersOf({fC:4,fS:2},512);
+  const fxMat=glow(`${COMMON}attribute vec4 fC;attribute vec2 fS;varying vec4 vC;varying float vSh,vB;
+    void main(){vec4 vp=viewMatrix*vec4(position,1.);float z=max(-vp.z,.1),s=fS.x*uPx,cc=coc(z)*(fS.y<7.5?.35:.8);
+      gl_PointSize=clamp(s+cc,1.,180.);vB=cc/(s+cc);vC=vec4(fC.rgb*pow(s/(s+cc),1.4),fC.a);vSh=fS.y;gl_Position=projectionMatrix*vp;}`,
+    `varying vec4 vC;varying float vSh,vB;
+    float tri(vec2 p){const float k=1.7320508;p.x=abs(p.x)-.5;p.y=p.y+.5/k;if(p.x+k*p.y>0.)p=vec2(p.x-k*p.y,-k*p.x-p.y)/2.;p.x-=clamp(p.x,-1.,0.);return -length(p)*sign(p.y);}
+    void main(){vec2 q=gl_PointCoord*2.-1.;q.y=-q.y;float r=length(q),a=0.,g=exp(-r*r*4.5)*.45;int sh=int(vSh+.5);
+      if(sh==0){a=max(0.,1.-(abs(q.x)*7.+abs(q.y)*1.15))+max(0.,1.-(abs(q.y)*7.+abs(q.x)*1.15))+exp(-r*r*30.)*1.4;}
+      else if(sh==1){a=exp(-pow((r-.5)*10.,2.))*1.5+exp(-r*r*45.)*.9;}
+      else if(sh==2){float d=abs(q.x)+abs(q.y);a=exp(-pow((d-.55)*10.,2.))*1.4+exp(-d*d*35.);}
+      else if(sh==3){float t=atan(q.y,q.x),k=pow(abs(cos(t*3.)),10.);a=exp(-r*(7.-6.*k))*1.5;}
+      else if(sh==4){float d=tri(q*1.25);a=exp(-pow(d*14.,2.))*1.4+exp(-r*r*40.);}
+      else if(sh==5){a=exp(-pow((r-.62)*12.,2.))*1.2+exp(-pow((r-.32)*12.,2.))*1.2+exp(-r*r*50.);}
+      else if(sh==8){a=exp(-r*r*6.);g=0.;}
+      else if(sh==9){a=max(0.,1.-(abs(q.x)*9.+abs(q.y)*1.3))+max(0.,1.-(abs(q.y)*9.+abs(q.x)*1.3))+exp(-r*r*22.)*1.6;g*=.6;}
+      else{a=exp(-r*r*14.)*1.4;}
+      a=mix(a+g,smoothstep(1.,.8,r)*.8,vB)*(1.-smoothstep(.92,1.,r));gl_FragColor=vec4(vC.rgb*a*vC.a,1.);}`);
+  add(new THREE.Points(fx.geometry,fxMat),5);
+  function instancedBuffersOf(base,layout){
+    const g=new THREE.InstancedBufferGeometry();g.index=base.index;for(const [k,v] of Object.entries(base.attributes))g.setAttribute(k,v);
+    const self={geometry:g,capacity:0,arrays:{},n:0};
+    self.ensure=n=>{if(n<=self.capacity)return;let c=Math.max(64,self.capacity);while(c<n)c*=2;
+      for(const [name,size] of Object.entries(layout)){const arr=new Float32Array(c*size),old=self.arrays[name];if(old)arr.set(old.subarray(0,Math.min(old.length,arr.length)));
+        self.arrays[name]=arr;g.deleteAttribute(name);const at=new THREE.InstancedBufferAttribute(arr,size);g.setAttribute(name,at);}
+      self.capacity=c;};
+    self.write=(name,i,...v)=>{const s=layout[name],a=self.arrays[name];for(let k=0;k<s;k++)a[i*s+k]=v[k]??0;};
+    self.commit=n=>{g.instanceCount=n;self.n=n;for(const name of Object.keys(layout))g.attributes[name].needsUpdate=true;};
+    self.dispose=()=>g.dispose();g.instanceCount=0;keep(self);return self;
+  }
+  function pointBuffersOf(layout,cap=64){
+    const all={position:3,...layout},g=new THREE.BufferGeometry(),self={geometry:g,capacity:0,arrays:{},n:0};
+    self.ensure=n=>{if(n<=self.capacity)return;let c=Math.max(cap,self.capacity);while(c<n)c*=2;
+      for(const [name,size] of Object.entries(all)){const arr=new Float32Array(c*size),old=self.arrays[name];if(old)arr.set(old.subarray(0,Math.min(old.length,arr.length)));
+        self.arrays[name]=arr;g.deleteAttribute(name);const at=new THREE.BufferAttribute(arr,size);at.setUsage(THREE.DynamicDrawUsage);g.setAttribute(name,at);}
+      self.capacity=c;};
+    self.ensure(cap);g.setDrawRange(0,0);
+    self.write=(name,i,...v)=>{if(i>=self.capacity)self.ensure(i+1);const s=all[name],a=self.arrays[name];for(let k=0;k<s;k++)a[i*s+k]=v[k]??0;};
+    self.commit=n=>{g.setDrawRange(0,n);self.n=n;for(const name of Object.keys(all))g.attributes[name].needsUpdate=true;};
+    self.dispose=()=>g.dispose();keep(self);return self;
+  }
+  // ---- The far network: dim, out-of-focus neurons around the project's own (atmosphere: it never stands for code) ------
+  const GH=Math.round(34*GHOSTS),ghostCfg={...cfg,LEVELS:4,DENDRITE:cfg.DENDRITE*2.6,CURL:cfg.CURL+.15};
+  const ghosts=Array.from({length:GH},(_,k)=>{const h=hash(`ghost/${seed}/${k}`),u=(1-2*(k+.5)/Math.max(1,GH))*.8,s=Math.sqrt(1-u*u),a=k*2.39996+rand(h)*.6;
+    const id=`ghost/${seed}/${k}`,files=Array.from({length:3+Math.floor(rand(h+1)*3)},(_,j)=>`${id}/${j}`);
+    return {id,ghost:true,dir:[Math.cos(a)*s,u*.5,Math.sin(a)*s],far:2.7+1.3*rand(h+2),seed:rand(h+3),files,R:(1.4+1.2*rand(h+4))*cfg.SOMA};});
+  // ---- Structure: rebuilt when the network's membership or its axons change ------------------------------------------------
+  const trees=new Map();
+  const treeOf=(fileId,neuron,j,c=cfg)=>{const key=`${fileId}|${neuron}|${j}`;let t=trees.get(key);if(!t){t={dir:slotDirection(neuron,j,c.K),...dendriteTree(fileId,slotDirection(neuron,j,c.K),c)};
+    const lv0=t.segs.filter(s=>s.level===0);t.entry=lv0[lv0.length-1].b;t.entryD=lv0[lv0.length-1].d1;t.syn=lv0[Math.min(lv0.length-1,1)].b;
+    trees.set(key,t);if(trees.size>4096)trees.delete(trees.keys().next().value);}return t;};
+  let net=null,built={key:'',cheap:''},neuronList=[],fileList=[],fileIdx=new Map(),neuronIdx=new Map(),axons=[],adjacency=[],realSegs=0,ghostSegs=0,realTips=0;
+  function axonsOf(t){
+    const pairs=new Map();
+    for(const l of model.links.values()){if(!model.alive(l,t))continue;const a=net.fileNeuron.get(l.a),b=net.fileNeuron.get(l.b);if(!a||!b||a.neuron===b.neuron)continue;
+      const key=`${a.neuron.id}>${l.b}`;let x=pairs.get(key);if(!x){x={key,src:a.neuron,dst:b.neuron,target:l.b,born:Infinity,removed:-Infinity,live:0};pairs.set(key,x);}
+      x.born=Math.min(x.born,model.bornAt(l));if(l.removed===null)x.live++;else x.removed=Math.max(x.removed,l.removed);}
+    return [...pairs.values()].sort((x,y)=>x.born-y.born||(x.key<y.key?-1:1)).slice(0,MAX_AXONS);
+  }
+  function structureKey(t){return net.neurons.map(n=>`${n.id}:${n.files.join('.')}`).join(',')+'|'+axonsOf(t).map(x=>x.key+(x.live?'':'~')).join(',');}
+  function build(t){
+    const epoch=model.epoch;neuronList=[...net.neurons,...ghosts];neuronIdx=new Map(neuronList.map((n,i)=>[n.id,i]));
+    fileList=[];fileIdx=new Map();
+    for(const n of net.neurons)n.files.forEach((f,j)=>{fileIdx.set(f,fileList.length);fileList.push({id:f,neuron:n,slot:n.slots[j],tree:treeOf(f,n.id,n.slots[j])});});
+    const realFiles=fileList.length;
+    for(const g of ghosts)g.files.forEach((f,j)=>{fileIdx.set(f,fileList.length);fileList.push({id:f,neuron:g,slot:j,ghost:true,tree:treeOf(f,g.id,j,{...ghostCfg,K:g.files.length})});});
+    NS.ensure(neuronList.length);FS.ensure(fileList.length);U.uN.value=NS.texture;U.uF.value=FS.texture;
+    let ns=0,nt=0;const count=(from,to)=>{for(let k=from;k<to;k++){ns+=fileList[k].tree.segs.length;nt+=fileList[k].tree.sites.length;}};
+    count(0,realFiles);realSegs=ns;realTips=nt;count(realFiles,fileList.length);ghostSegs=ns-realSegs;
+    dend.ensure(ns);tips.ensure(nt);let si=0,ti=0;
+    fileList.forEach((f,fi)=>{const ni=neuronIdx.get(f.neuron.id),{segs,sites,dir}=f.tree;
+      for(const s of segs){dend.write('sA',si,...s.a,s.ra);dend.write('sB',si,...s.b,s.rb);dend.write('sI',si,ni,fi,s.d0,s.d1);dend.write('sD',si,...dir,s.level);si++;}
+      sites.forEach((s,k)=>{tips.write('position',ti,0,0,0);tips.write('tI',ti,ni,fi,k,s.d);tips.write('tL',ti,...s.p,s.tip?1:0);tips.write('tD',ti,...dir,0);ti++;});});
+    dend.commit(si);tips.commit(ti);
+    // Axons: one per (neuron, imported file); tracts between two clusters share their bend, so they bundle.
+    axons=axonsOf(t).map(x=>{const tf=fileList[fileIdx.get(x.target)],cross=x.src.cluster!==x.dst.cluster,h=hash(x.key),hb=hash(cross?[x.src.cluster,x.dst.cluster].sort().join('|'):x.key);
+      const bend=cross?.2:.32,j=cross?.05:.12,c=[0,1,2,3].map(k=>(rand(hb+k)-.5)*2*bend*(.5+cfg.CURL)+(rand(h+k)-.5)*2*j);
+      return {...x,si:neuronIdx.get(x.src.id),di:neuronIdx.get(x.dst.id),ti:fileIdx.get(x.target),c,cross,seed:rand(h),r:cross?.085:.06,S:cross?14:8,
+        local:tf?[tf.tree.dir[0]*.85,tf.tree.dir[1]*.85,tf.tree.dir[2]*.85]:[0,0,0],syn:tf?tf.tree.syn:[0,0,0],bornS:secs(x.born,epoch),goneS:x.live?FAR:secs(x.removed,epoch)};});
+    let n=0;for(const a of axons)n+=a.S;axon.ensure(n);let k=0;
+    for(const a of axons){for(let s=0;s<a.S;s++){axon.write('xA',k,a.si,a.di,s/a.S,(s+1)/a.S);axon.write('xB',k,0,0,0,a.r);axon.write('xC',k,...a.c);axon.write('xD',k,a.bornS,a.goneS,a.seed,a.cross?1:0);k++;}}
+    axon.commit(k);
+    U.uAxK.value=clamp(Math.sqrt(90/Math.max(1,axons.length)),.3,1);
+    adjacency=neuronList.map(()=>[]);for(const a of axons){if(!adjacency[a.si].includes(a.di))adjacency[a.si].push(a.di);if(!adjacency[a.di].includes(a.si))adjacency[a.di].push(a.si);}
+    soma.ensure(neuronList.length);neuronList.forEach((_,i)=>soma.write('sN',i,i));soma.commit(neuronList.length);
+  }
+  function rebuild(){built.cheap='';built.key='';}
+  // The target of each axon (the synapse on the imported file's branch) moves with the soma it sits on: rewritten per frame.
+  function placeSynapses(){let k=0;for(const a of axons){const R=somaR[a.di]||1,x=a.local[0]*R+a.syn[0],y=a.local[1]*R+a.syn[1],z=a.local[2]*R+a.syn[2];
+    for(let s=0;s<a.S;s++){axon.write('xB',k,x,y,z,a.r);k++;}}axon.geometry.attributes.xB.needsUpdate=true;}
+  // ---- Per-frame state -------------------------------------------------------------------------------------------------
+  let info={t:0,tsec:0,tview:0,overrides:{},agents:[]};
+  let somaR=new Float32Array(0),npos=new Float32Array(0),nseed=new Float32Array(0);
+  const waves=[],misfires=[],resyncs=[],storms=[],potentiations=[],expands=[];
+  const push=(list,x,max=6)=>{list.push(x);if(list.length>max)list.shift();};
+  const tempoOf=i=>Math.max(40,i.mood?.tempo||92);
+  // JS twin of the shader's drift.
+  const driftK=()=>clamp(num(mot.drift,.7),0,1.6)*clamp(info.overrides?.motion??1,0,2)*1.2;
+  function neuronWorld(ni,out){const s=nseed[ni],tv=info.tview,k=U.uDrift.value;out[0]=npos[ni*3]+k*Math.sin(tv*.13+s*6.2832)*.55;out[1]=npos[ni*3+1]+k*Math.sin(tv*.097+s*12.1)*.4;out[2]=npos[ni*3+2]+k*Math.sin(tv*.111+s*3.7)*.55;return out;}
+  const top2=()=>({t1:-Infinity,s1:0,c1:0,t2:-Infinity,s2:0,c2:0});
+  const offer=(x,t,s,c,now)=>{if(!(t<=now)||!Number.isFinite(t))return;if(t>x.t1){x.t2=x.t1;x.s2=x.s1;x.c2=x.c1;x.t1=t;x.s1=s;x.c1=c;}else if(t>x.t2){x.t2=t;x.s2=s;x.c2=c;}};
+  const seatOf=a=>presence(a.provider).seat%8;
+  // What each agent is doing to which file now: pulses on the beat while a tool runs (and through the switch from the
+  // previous one), the first at the moment the tool started.
+  function agentInputs(i,beatMs){
+    const out=new Map(),addIn=(f,t,s,c)=>{let l=out.get(f);if(!l)out.set(f,l=[]);l.push([t,s,c]);};
+    const beats=(f,from,to,s,c,every)=>{if(!fileIdx.has(f))return;addIn(f,from,s,c);let k=Math.floor(to/beatMs);for(let n=0;n<3&&k*beatMs>=from;k--){if(k%every)continue;addIn(f,k*beatMs,s,c);n++;}};
+    // after an attributed edit lands (the model's correlated cue), its seat keeps pulsing into that branch on the beat
+    const dwell=DWELL*ctx.speed();for(const m of model.modules.values())if(Number.isInteger(m.agentVoice)&&m.lastAgent<=i.t&&i.t-m.lastAgent<dwell)beats(m.id,m.lastAgent,Math.min(i.t,m.lastAgent+dwell),1,m.agentVoice%8,1);
+    for(const a of i.agents){const c=seatOf(a),kind=x=>STRONG.has(x)?[1,1]:LIGHT.has(x)?[.5,2]:[.75,1];
+      if(a.display==='tool'&&a.fileId){const [s,e]=kind(a.activity);beats(a.fileId,i.t-a.since,i.t,s*a.alpha,c,e);}
+      if(a.since<2500){const p=ctx.agents.presence(a.id,i.t-a.since-1);if(p&&p.display==='tool'&&p.fileId&&p.fileId!==a.fileId){const [s,e]=kind(p.activity);beats(p.fileId,i.t-a.since-p.since-1,i.t-a.since,s,c,e);}}}
+    return out;
+  }
+  const near=(list,i,ms)=>list.filter(x=>x.at<=i.t&&i.t-x.at<ms*ctx.speed());
+  const filesNeurons=ids=>{const out=new Set();for(const id of ids||[]){const f=net.fileNeuron.get(id),ni=f&&neuronIdx.get(f.neuron.id);if(ni!==undefined)out.add(ni);}return out;};
+  // Hop distances through the axon graph (undirected) from a set of neurons; unreachable ones by distance.
+  function hops(from){if(!from.size)return new Array(neuronList.length).fill(0);const d=new Array(neuronList.length).fill(-1),q=[...from];for(const n of from)d[n]=0;
+    for(let h=0;h<q.length;h++){const n=q[h];for(const m of adjacency[n]||[])if(d[m]<0){d[m]=d[n]+1;q.push(m);}}
+    let max=0;for(const x of d)max=Math.max(max,x);const c=[...from].map(n=>[npos[n*3],npos[n*3+1],npos[n*3+2]]),R=Math.max(12,net.radius);
+    return d.map((x,n)=>x>=0?x:max+1+Math.round(Math.min(...c.map(p=>Math.hypot(npos[n*3]-p[0],npos[n*3+1]-p[1],npos[n*3+2]-p[2])))/R*3));}
+  // Which verified milestones may storm: the first, then each at least STORM_GAP of performance time after the last
+  // that did (a pure fold over the director's lasting record).
+  function stormAllowed(at){const times=[];for(const l of ctx.director.lasting())for(const x of new Set([l.first,...(l.times||[])]))if(x<=at)times.push(x);
+    times.sort((a,b)=>a-b);let last=-Infinity,ok=false;for(const x of times){const can=x-last>=STORM_GAP;if(can)last=x;if(x===at)ok=can;}return ok;}
+  let stormNow=0,stressNow=0,flashNow=0,storming=null,lastStats={};
+  function writeState(i){
+    const t=i.t,ep=model.epoch,sp=ctx.speed(),S=ms=>secs(ms,ep),beatMs=60000/tempoOf(i),b=Math.floor(t/beatMs);
+    const N=neuronList.length,F=fileList.length,real=net.neurons.length;
+    if(somaR.length<N){somaR=new Float32Array(N*2);npos=new Float32Array(N*6);nseed=new Float32Array(N*2);}
+    // Neuron positions (the layout at t; the far network around it) and soma sizes.
+    const c=net.center,R=net.radius;
+    neuronList.forEach((n,ni)=>{let p,r;if(n.ghost){p=[c[0]+n.dir[0]*R*n.far,c[1]+n.dir[1]*R*n.far,c[2]+n.dir[2]*R*n.far];r=n.R;nseed[ni]=n.seed;}
+      else{const cur=net.neurons[ni]?.id===n.id?net.neurons[ni]:n;p=cur.pos;r=layout.somaRadius(model,cur,t);nseed[ni]=rand(hash(n.id));}npos[ni*3]=p[0];npos[ni*3+1]=p[1];npos[ni*3+2]=p[2];somaR[ni]=r;});
+    // Activity per beat (spontaneous firing rises with recent work): one director query per beat of the window.
+    const act=new Map(),actAt=k=>{let v=act.get(k);if(v===undefined){v=ctx.director.activityAt(k*beatMs);act.set(k,v);}return v;};
+    const mu=i.music,energy=clamp(mu?mu.energy:i.energy||0),dyn=clamp(mu?.dynamics??.7),reactive=clamp(num(MU.reactivity,.6),0,1);
+    const spontS=(.5+.35*energy*reactive+.15*dyn*reactive)*clamp(i.overrides.intensity??1,.3,1.4);
+    // Files: inputs, conditions, growth.
+    const inputs=agentInputs(i,beatMs),fileFire=new Array(F),fileSym=new Float32Array(F),fileValid=new Float32Array(F);
+    const stressN=new Float32Array(N);
+    for(let fi=0;fi<F;fi++){const f=fileList[fi];
+      if(f.ghost){FS.set(fi,0,NONE,0,0,NONE);FS.set(fi,1,0,0,NONE,0);FS.set(fi,2,NONE,FAR,1,f.tree.reach);FS.set(fi,3,NONE,0,4,0);FS.set(fi,4,NONE,0,0,0);fileFire[fi]=null;continue;}
+      const m=model.modules.get(f.id),x=top2();
+      for(const [tt,s,cc] of inputs.get(f.id)||[])offer(x,tt,s,cc,t);
+      if(Number.isFinite(m.lastAgent)&&Number.isInteger(m.agentVoice))offer(x,m.lastAgent,1,m.agentVoice%8,t);
+      offer(x,m.lastHuman,.8,C_HUMAN,t);offer(x,model.bornAt(m),.9,C_GROW,t);
+      let latest=-Infinity,nsym=0;for(const id of m.symbols){const s=model.symbols.get(id);if(!s)continue;const bs=model.bornAt(s);if(model.alive(s,t)&&s.removed===null)nsym++;if(bs<=t&&bs>latest&&bs>model.bornAt(m)+1)latest=bs;if(s.weldAt<=t&&s.weldAt>latest)latest=s.weldAt;}
+      offer(x,latest,.55,C_GROW,t);
+      // material state: stressed (eased in), relaxing after a change away from it; validated leaves a calm sheen
+      let cur=m.initial,prev=m.initial,at=-Infinity;for(const e of m.states){if(e.at>t)break;prev=cur;cur=e.state;at=e.at;}
+      const since=(t-at)/sp;const stress=cur==='stressed'?smooth(since/1500):prev==='stressed'?1-smooth(since/4000):0;
+      const valid=cur==='validated'?.35+.65*Math.exp(-since/9000):0;
+      const ni=neuronIdx.get(f.neuron.id);stressN[ni]=Math.max(stressN[ni],stress);
+      let tw=-Infinity;for(const w of near(waves,i,9000))if(w.files.has(f.id)){const o=w.order.get(f.id)??0;tw=Math.max(tw,w.at+o*sp);}
+      // growth: the branch reaches as far as its symbols (eased in at birth, folding back when removed)
+      const life=model.alive(m,t)?smooth((t-model.bornAt(m))/(2600*sp)):0,Gt=(.58+.42*clamp(Math.log2(1+nsym)/4))*life;
+      FS.set(fi,0,S(x.t1),x.s1,x.c1,S(x.t2));FS.set(fi,1,x.s2,x.c2,S(tw),stress);FS.set(fi,2,S(model.bornAt(m)),m.removed===null?FAR:S(m.removed),Gt,f.tree.reach);
+      fileSym[fi]=nsym;fileValid[fi]=valid;fileFire[fi]={x,travel:f.tree.reach/VD*1000*sp,ni,tw};
+      const touch=Number.isFinite(m.lastAgent)&&m.lastAgent<=t&&Number.isInteger(m.agentVoice);FS.set(fi,4,touch?S(m.lastAgent):NONE,touch?m.agentVoice%8:0,touch?1:0,0);}
+    // Neurons: spontaneous firing, driven firings, waves, resynchronisation, storms, misfires.
+    const fires=neuronList.map(()=>top2()),glowN=new Float32Array(N),potN=new Float32Array(N);
+    neuronList.forEach((n,ni)=>{const h=hash(n.id),pn=RATE*clamp(.95/Math.sqrt(real+4),.02,.14)*(.6+.8*rand(h+5))*(n.ghost?.5:1);
+      const [k1,k2]=spontaneous(h,b,k=>pn*(n.ghost?1:1+1.4*actAt(k)),64),jit=k=>(1-SYNC)*rand((h^Math.imul(k|0,0x85ebca6b))>>>0)*beatMs*.5;
+      for(const k of [k1,k2])if(k!==null)offer(fires[ni],k*beatMs-jit(k),spontS*(n.ghost?.7:1),C_SPONT,t);});
+    for(let fi=0;fi<F;fi++){const q=fileFire[fi];if(!q)continue;const {x,travel,ni,tw}=q;
+      if(x.t1>-Infinity)offer(fires[ni],x.t1+travel,Math.max(.5,x.s1),x.c1,t);if(x.t2>-Infinity)offer(fires[ni],x.t2+travel,Math.max(.5,x.s2),x.c2,t);
+      if(tw>-Infinity)offer(fires[ni],tw+travel*.4,.85,C_VALID,t);}
+    for(const r of near(resyncs,i,8000)){const k0=Math.floor(r.at/beatMs);for(const ni of filesNeurons(r.files))for(let k=1;k<=3;k++)offer(fires[ni],(k0+k)*beatMs,1.05,C_VALID,t);}
+    for(const m of near(misfires,i,4000)){for(const ni of filesNeurons(m.files)){const h=hash(`${m.at}/${ni}`);for(let k=0;k<14;k++){const tt=m.at+(k*.19+rand(h+k)*.12)*1000*sp;offer(fires[ni],tt,-.9,C_MIS,t);}}}
+    // lingering strain: off-beat abortive firings while stressed
+    for(let ni=0;ni<real;ni++)if(stressN[ni]>.05){const h=hash(`mis/${neuronList[ni].id}`),step=beatMs*.37,k=Math.floor(t/step);
+      for(let j=0;j<6;j++){const kk=k-j;if(rand((h^Math.imul(kk|0,0x27d4eb2d))>>>0)<.45*stressN[ni]){offer(fires[ni],kk*step+rand(h+kk)*step*.8,-.7*stressN[ni],C_MIS,t);}}}
+    stormNow=0;storming=null;
+    for(const s of near(storms,i,16000)){const from=filesNeurons(s.files);if(!from.size)for(let ni=0;ni<real;ni++)if(neuronList[ni].k===0)from.add(ni);
+      const d=hops(from),hopMs=(s.full?240:200)*sp,vol=s.grand?4:s.full?3:2,gap=beatMs*2;
+      for(let ni=0;ni<N;ni++){if(!s.full&&d[ni]>1)continue;if(neuronList[ni].ghost&&!s.full)continue;const h=hash(`${s.at}/${ni}`);
+        for(let v=0;v<vol;v++){const tt=s.at+d[ni]*hopMs+v*gap+rand(h+v)*90*sp;offer(fires[ni],tt,s.full?1.45:1.1,C_STORM,t);const a=(t-tt)/1000/sp;if(a>=0)glowN[ni]+=Math.exp(-a*1.7)*(s.full?.55:.35);}}
+      const a=(t-s.at)/1000/sp;if(s.full&&a>=0){stormNow=Math.max(stormNow,smooth(a/.8)*(1-smooth((a-7)/4)));storming=s;}}
+    for(const p of near(potentiations,i,8000)){const from=filesNeurons(p.files),a=(t-p.at)/1000/sp;for(const ni of from){potN[ni]+=Math.exp(-a*.7)*smooth(a/.5)*p.s;offer(fires[ni],p.at+300*sp,.7,C_GROW,t);}}
+    // inhibition: the neighbourhood of a struggling neuron dims
+    const inhib=new Float32Array(N),stressed=[];for(let ni=0;ni<real;ni++)if(stressN[ni]>.05)stressed.push(ni);stressNow=stressed.length?clamp(stressed.length/Math.max(3,real*.3)):0;
+    if(stressed.length)for(let ni=0;ni<N;ni++){if(stressN[ni]>.05)continue;let v=0;for(const s of stressed){const d=Math.hypot(npos[ni*3]-npos[s*3],npos[ni*3+1]-npos[s*3+1],npos[ni*3+2]-npos[s*3+2]);v=Math.max(v,stressN[s]*Math.exp(-d/18));}inhib[ni]=v*.75;}
+    // lasting: myelin on the clusters that earned verified milestones
+    const myelin=myelinOf(i);
+    neuronList.forEach((n,ni)=>{const x=fires[ni];
+      const life=n.ghost?1:clamp(n.files.reduce((m,id)=>{const mm=model.modules.get(id);return Math.max(m,mm?smooth((t-model.bornAt(mm))/(1800*sp))*(model.alive(mm,t)?1:0):0);},0));
+      NS.set(ni,0,npos[ni*3],npos[ni*3+1],npos[ni*3+2],somaR[ni]);NS.set(ni,1,S(x.t1),x.s1,x.c1,S(x.t2));NS.set(ni,2,x.s2,x.c2,inhib[ni],Math.min(1.4,glowN[ni]));
+      NS.set(ni,3,life,n.ghost?.34+.3*(i.unlocks[3]?.level||0):1,nseed[ni],n.ghost?0:myelin.get(n.cluster)||0);NS.set(ni,4,stressN[ni],Math.min(1,potN[ni]),0,0);});
+    // Axons: spikes' heads, synaptic sparks; the imported branch feels the synapse.
+    const syn=new Map();let fxn=0;const pa=[0,0,0],pb=[0,0,0];
+    for(const a of axons){const L=Math.max(1e-3,dist3(neuronWorld(a.si,pa),endOf(a,pb))),Ls=L*1.12,x=fires[a.si];
+      for(const [tf,s,cc] of [[x.t1,x.s1,x.c1],[x.t2,x.s2,x.c2]]){if(!(tf>-Infinity))continue;const ag=(t-tf)/1000/sp,fr=VA*ag/Ls;if(ag<0)continue;
+        const col=COLS[cc]||COLS[C_SPONT],k=Math.abs(s);
+        if(fr<1&&(s>0||fr<.5)){const p=curve(a,fr);fxn=fxPoint(fxn,p,col,k*(s<0?.5:1)*(1-(s<0?smooth((fr-.25)/.25):0))*1.3,5.5,8);}
+        else if(fr>=1&&s>0){const aa=(ag-Ls/VA);if(aa<.7){const p=curve(a,1),f=1-aa/.7;fxn=fxPoint(fxn,p,COLS[C_STORM],k*f*f*1.6,16*f+4,9);}
+          const at=tf+Ls/VA*1000*sp,prev=syn.get(a.ti);if(!prev||prev[0]<at)syn.set(a.ti,[at,Math.min(1,k)]);}}
+      // the synaptic gap: a knob before it, the bouton after it
+      if(fxn<MAX_FX-2){fxn=fxPoint(fxn,curve(a,.955),U.uMem.value,.32,3.4,8);fxn=fxPoint(fxn,curve(a,1),U.uSoma.value,.3,3,8);}}
+    for(let fi=0;fi<F;fi++){if(fileList[fi].ghost)continue;const x=syn.get(fi);FS.set(fi,3,x?S(x[0]):NONE,x?x[1]:0,fileSym[fi],fileValid[fi]);}
+    NS.commit();FS.commit();lastStats={fires:fires.filter(x=>x.t1>-Infinity).length};
+    return fxn;
+  }
+  const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+  // An axon's synapse in world space, and its curve (the shader's, in JS).
+  function endOf(a,out){neuronWorld(a.di,out);const R=somaR[a.di]||1;out[0]+=a.local[0]*R+a.syn[0];out[1]+=a.local[1]*R+a.syn[1];out[2]+=a.local[2]*R+a.syn[2];return out;}
+  const cs=[0,0,0],ce=[0,0,0];
+  function curve(a,u){neuronWorld(a.si,cs);endOf(a,ce);const ch=[ce[0]-cs[0],ce[1]-cs[1],ce[2]-cs[2]],L=Math.max(1e-3,Math.hypot(...ch)),d=[ch[0]/L,ch[1]/L,ch[2]/L];
+    const R=somaR[a.si]||1,p0=[cs[0]+d[0]*R*.9,cs[1]+d[1]*R*.9,cs[2]+d[2]*R*.9],up=Math.abs(d[1])<.9?[0,1,0]:[1,0,0];
+    let n1=[up[1]*d[2]-up[2]*d[1],up[2]*d[0]-up[0]*d[2],up[0]*d[1]-up[1]*d[0]];const l1=Math.hypot(...n1)||1;n1=n1.map(v=>v/l1);const n2=[d[1]*n1[2]-d[2]*n1[1],d[2]*n1[0]-d[0]*n1[2],d[0]*n1[1]-d[1]*n1[0]];
+    const c=a.c,p1=[0,1,2].map(k=>p0[k]+ch[k]*.33+(n1[k]*c[0]+n2[k]*c[1])*L),p2=[0,1,2].map(k=>p0[k]+ch[k]*.67+(n1[k]*c[2]+n2[k]*c[3])*L),v=1-u;
+    return [0,1,2].map(k=>v*v*v*p0[k]+3*v*v*u*p1[k]+3*v*u*u*p2[k]+u*u*u*ce[k]);}
+  let fxCount=0;
+  function fxPoint(n,p,c,k,size,shape){if(n>=MAX_FX||k<=.003)return n;fx.write('position',n,p[0],p[1],p[2]);fx.write('fC',n,(c.x??c.r)*k,(c.y??c.g)*k,(c.z??c.b)*k,1);fx.write('fS',n,size,shape);return n+1;}
+  let mySig='',myMap=new Map();
+  function myelinOf(i){const all=ctx.director.lasting();let sig=`${model.version}|${net.neurons.length}`;for(const l of all)if(l.first<=i.t)sig+=`|${l.first}:${l.count}`;
+    if(sig===mySig)return myMap;mySig=sig;myMap=new Map();
+    for(const l of all){if(l.first>i.t)continue;const s=l.subject||{},ids=s.fileIds||(s.fileId?[s.fileId]:[]);const cl=new Set();if(s.groupId)cl.add(s.groupId);
+      for(const id of ids){const f=net.fileNeuron.get(id);if(f)cl.add(f.neuron.cluster);}
+      for(const c of cl)myMap.set(c,Math.min(1,(myMap.get(c)||0)+.45+.15*Math.min(4,(l.count||1)-1)));}
+    return myMap;}
+  // ---- Agents: travelling signals (positions are pure functions of the observed lifecycle and time) -------------------------
+  const agentState=new Map();
+  function siteOf(fileId,out){const fi=fileIdx.get(fileId);if(fi===undefined)return null;const f=fileList[fi],ni=neuronIdx.get(f.neuron.id);neuronWorld(ni,out);
+    const R=somaR[ni]||1,e=f.tree.entry,d=f.tree.dir;out[0]+=d[0]*R*.85+e[0];out[1]+=d[1]*R*.85+e[1];out[2]+=d[2]*R*.85+e[2];return out;}
+  // The file an agent works on at t: the tool's file while one runs, otherwise the file its last attributed edit landed on
+  // (the model's correlated cue) for DWELL after it. Edits are found per CAST seat, newest first, once per frame.
+  let editsT=null;const edits=new Map();
+  function editsOf(voice){if(editsT!==info.t){edits.clear();editsT=info.t;}let l=edits.get(voice);
+    if(!l){l=[...model.modules.values()].filter(m=>m.agentVoice===voice&&Number.isFinite(m.lastAgent)&&fileIdx.has(m.id)).sort((a,b)=>b.lastAgent-a.lastAgent).slice(0,4);edits.set(voice,l);}return l;}
+  const lastEdit=(p,t)=>{for(const m of editsOf(p.voice))if(m.lastAgent<=t)return m;return null;};
+  function workOf(p,t){if(p.display==='tool'&&p.fileId&&fileIdx.has(p.fileId))return p.fileId;const m=lastEdit(p,t);return m&&t-m.lastAgent<DWELL*ctx.speed()?m.id:null;}
+  function goalOf(p,tv,out,t){
+    const w=workOf(p,t);if(w&&siteOf(w,out)){const d=fileList[fileIdx.get(w)].tree.dir;out[0]+=d[0]*1.1;out[1]+=d[1]*1.1+.6;out[2]+=d[2]*1.1;return out;}
+    const ph=rand(hash(p.id))*TAU,home=p.home?fileIdx.get(p.home):undefined;
+    if(home!==undefined){const ni=neuronIdx.get(fileList[home].neuron.id);neuronWorld(ni,out);const waiting=p.display==='waiting'||p.display==='dormant'||p.display==='connected';
+      const r=waiting?(somaR[ni]||1)*3+7:(somaR[ni]||1)*2.6+3.5,w=p.busy?.32:.07;out[0]+=Math.cos(ph+tv*w)*r;out[1]+=2+Math.sin(tv*.4+ph)*.8;out[2]+=Math.sin(ph+tv*w)*r;return out;}
+    const r=Math.max(10,net.radius)*.55;out[0]=net.center[0]+Math.cos(ph+tv*.05)*r;out[1]=net.center[1]+4;out[2]=net.center[2]+Math.sin(ph+tv*.05)*r;return out;}
+  const ga=[0,0,0],gb=[0,0,0];
+  // From the goal before the latest change (a state, an edit landing, its dwell ending) to this one over 1.8 s, along a
+  // lifted arc: a signal travelling the network.
+  function agentAt(id,t,tv,out){const a=ctx.agents.presence(id,t);if(!a)return null;goalOf(a,tv,out,t);
+    const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
+    if(t-tc<1800*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const k=smooth((t-tc)/(1800*sp));goalOf(prev,tv,ga,tc-1);const lift=Math.sin(k*Math.PI)*Math.min(14,dist3(ga,out)*.3);
+      for(let c=0;c<3;c++)out[c]=lerp(ga[c],out[c],k);out[1]+=lift;}}
+    return a;}
+  function updateAgents(i,n){
+const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1);const seen=new Set(),head=[0,0,0],q=[0,0,0],site=[0,0,0];
+    for(const a of i.agents.slice(0,12)){if(!agentAt(a.id,i.t,i.tview,head))continue;seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...head);
+      const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent?.75:1;
+      // the trail: where the signal was (sampled from its pure path)
+      for(let k=22;k>=1;k--){const tt=i.t-k*60*sp*trailK;if(!agentAt(a.id,tt,i.tview-k*.06*trailK,q))continue;const f=1-k/23;n=fxPoint(n,q,c,alpha*f*f*1.1,(3+8*f)*sub,8);}
+      n=fxPoint(n,head,c,alpha*.5,90*sub,8);n=fxPoint(n,head,c,alpha*1.6,46*sub,seat<6?seat:6);n=fxPoint(n,head,{r:1,g:1,b:1},alpha,8*sub,8);
+      // injection: particles from the signal into the branch it edits (from the branch while it reads)
+      const work=workOf(a,i.t);if(work&&siteOf(work,site)){const inward=!(a.display==='tool'&&LIGHT.has(a.activity));
+        for(let k=0;k<10;k++){let f=(i.tview*1.1+k/10)%1;if(!inward)f=1-f;for(let c2=0;c2<3;c2++)q[c2]=lerp(head[c2],site[c2],f);q[1]+=Math.sin(f*Math.PI)*.6;
+          n=fxPoint(n,q,c,alpha*Math.sin(f*Math.PI)*1.1,4.5,8);}
+        n=fxPoint(n,site,c,alpha*(.6+.4*Math.pow(1-((i.t/(60000/tempoOf(i)))%1),3)),14,9);}}
+    for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
+    return n;
+  }
+  // ---- Effects: recorded intents only -----------------------------------------------------------------------------------
+  function effect(cmd,i){
+    if(i)info=i;const s=clamp(cmd.scale,0,1.6),subj=cmd.subject||{},at=Number.isFinite(cmd.at)?cmd.at:info.t;if(s<=0)return;
+    const files=new Set(subj.fileIds||(subj.fileId?[subj.fileId]:[]));
+    switch(cmd.effect){
+      case 'activation-wave':{// a sweep across the covered branches, ordered along a direction seeded by the run
+        const h=rand(hash(String(cmd.id??at)))*TAU,dir=[Math.cos(h),.25,Math.sin(h)],order=new Map();const proj=[];
+        if(net)for(const id of files){const f=net.fileNeuron.get(id);if(f)proj.push([id,f.neuron.pos[0]*dir[0]+f.neuron.pos[1]*dir[1]+f.neuron.pos[2]*dir[2]]);}
+        const min=Math.min(0,...proj.map(x=>x[1]));for(const [id,p] of proj)order.set(id,(p-min)/(14*COND)*1000);
+        push(waves,{at,files,order,s});break;}
+      case 'misfire':push(misfires,{at,files,s});break;
+      case 'resync':push(resyncs,{at,files,s});break;
+      case 'storm':case 'consolidate':{const full=cmd.tier>=3&&stormAllowed(cmd.at);push(storms,{at,files,s,full,grand:full&&cmd.tier>=4,refactor:cmd.effect==='consolidate'},4);break;}
+      case 'potentiate':push(potentiations,{at,files,s});break;
+      case 'expand':push(expands,{at,s});break;
+      default:break;// growth (neurogenesis, sprout, arborize, prune, axon-link) is drawn from the model's own times
+    }
+  }
+  // ---- Frame -------------------------------------------------------------------------------------------------------------
+  function update(i){
+    info=i;const sp=ctx.speed();U.uT.value=i.tsec;U.uV.value=i.tview;U.uSpeed.value=sp;U.uQ.value=i.quality||0;
+    const [w,h]=ctx.pipeline.size;U.uPx.value=Math.max(.4,h/1080);U.uRes.value.set(w,h);
+    const reactive=clamp(num(MU.reactivity,.6),0,1),tempo=tempoOf(i),breathS=Math.max(2,num(mot.breath,4))*4*60/tempo;
+    U.uBreath.value=(.5+.5*Math.sin(i.tview/breathS*TAU))*(.4+.6*reactive);U.uBeat.value=i.beat*num(MU.beatPulse,.4)*reactive;
+    U.uDrift.value=driftK();U.uMyelin.value=i.unlocks[2]?.level||0;
+    net=layout.networkAt(model,i.t);
+    // Files and dependencies become alive as the performance reaches them, also without a new model version.
+    let files=0,links=0;for(const n of net.neurons)files+=n.files.length;for(const l of model.links.values())if(model.alive(l,i.t))links++;
+    const cheap=`${model.version}|${net.neurons.length}|${files}|${links}`;
+    if(cheap!==built.cheap){built.cheap=cheap;const k=structureKey(i.t);if(k!==built.key){built.key=k;build(i.t);}}
+    const q=i.quality||0,atmo=clamp(i.overrides.atmosphere??1,0,2);
+    dend.geometry.instanceCount=realSegs+(q>=3?0:q>=2?ghostSegs>>1:ghostSegs);
+    motes.geometry.setDrawRange(0,Math.round(MOTES*clamp(PARTICLES*atmo,0,2)/2*(q>=3?.35:q>=2?.55:1)));
+    const spikes=writeState(i);placeSynapses();fxCount=updateAgents(i,spikes);fx.commit(fxCount);
+    moteMat.uniforms.uNet.value.set(net.center[0],net.center[1],net.center[2],Math.max(14,net.radius));moteMat.uniforms.uGlial.value=i.unlocks[0]?.level||0;
+    bgU.uStress.value=stressNow;bgU.uStorm.value=stormNow;bgU.uTide.value=i.unlocks[1]?.level||0;bgU.uHazeK.value=clamp(num(atm.haze,.75),0,1.6)*atmo;
+  }
+  const fwd=new THREE.Vector3(),tmp=new THREE.Vector3();let goalTarget=new THREE.Vector3();
+  function afterCamera(i){camera.updateMatrixWorld();bgU.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);bgU.uCam.value.copy(camera.position);
+    camera.getWorldDirection(fwd);U.uFocus.value=Math.max(4,tmp.copy(goalTarget).sub(camera.position).dot(fwd));}
+  function background(){return background_;}
+  function grade(i){
+    const inten=i.overrides.intensity??1,sec=i.mood?.section,sp=ctx.speed();
+    let flash=0;for(const s of storms){const a=(i.t-s.at)/1000/sp;if(s.full&&a>=0&&a<3)flash+=.05*Math.exp(-a*1.8)*(s.grand?1.6:1);}
+    let ex=0;for(const e of expands){const a=(i.t-e.at)/1000/sp;if(a>=0&&a<6)ex+=.04*e.s*smooth(a/.6)*Math.exp(-a*.5);}
+    const tint=new THREE.Vector3(1,1,1);if(sec==='tension')tint.set(1.03,.98,.99);else if(sec==='resolve')tint.set(.98,1.01,1.03);
+    tint.lerp(new THREE.Vector3(.96,.95,1.06),stressNow*.6);
+    return {tonemap:'agx',bloom:clamp(num(LT.bloom,1),.3,2)*.95*(1+.45*stormNow+.12*(i.activity||0)),threshold:clamp(num(LT.bloomThreshold,.65),.5,.9)*.9,
+      exposure:(1+(clamp(num(LT.exposure,1.05),.4,2.2)-1)*.6)*1.15*(1-.12*stressNow)*(1+.12*stormNow+ex)*(sec==='breath'?.97:sec==='lift'?1.03:1),
+      contrast:clamp(num(LT.contrast,1),.85,1.3)*1.05,saturation:1.1*(1-.25*stressNow),vignette:num(LT.vignette,.3)*1.15,grain:num(LT.grain,.025)*.6,
+      flash:flash*inten,tint,aberration:.002,bloomTint:{x:1,y:.93,z:.88},streak:.12};
+  }
+  // ---- Camera: an establishing view into the network, attention on what changed, a pull-back for the storm ----------------
+  const baseAz=rand(seed+11)*TAU;
+  function cameraGoal(i){
+    const fov=clamp(num(cam.fov,34),20,55),tanHalf=Math.tan(fov*Math.PI/360),motion=clamp(i.overrides.motion??1,0,2),drift=clamp(num(cam.drift,.7),0,1.6);
+    const c=net?net.center:[0,0,0],R=Math.max(14,net?net.radius:14);
+    // a small network fits the frame; a large one fills it and runs past its edges (distance grows with its square root)
+    let distance=Math.min(R*.5,3.1*Math.sqrt(R))/tanHalf*clamp(num(cam.distance,1),.6,1.6)*(1+.22*stormNow);
+    const az=cam.personality==='glide'?baseAz+Math.sin(i.tview/160)*.55*drift*motion:baseAz+i.tview*TAU/1300*motion*(.5+.5*drift);
+    let elev=.06+.42*clamp(num(cam.elevation,.3),.05,.9)+Math.sin(i.tview/97)*.04*drift*motion;
+    const target=new THREE.Vector3(c[0],c[1],c[2]);
+    const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;let k=0;
+    if(att&&since<13&&!stormNow){const p=attentionPos(att);if(p){k=smooth(since/1.6)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1)*.8;
+      target.lerp(p,k);distance=lerp(distance,Math.max(16,R*.42/tanHalf),k);}}
+    if(k<.01){const busy=i.agents.map(a=>workOf(a,i.t)).find(Boolean);
+      if(busy){const p=siteOf(busy,[0,0,0]);if(p){target.lerp(tmp.set(...p),.22);distance=lerp(distance,Math.max(18,R*.6/tanHalf),.18);}}}
+    goalTarget.copy(target);
+    return {target,distance,azimuth:az,elevation:elev,fov,omega:k>.01?.75:.5};
+  }
+  function attentionPos(c){const s=c.subject||{};
+    if(s.fileId&&fileIdx.has(s.fileId)){const p=siteOf(s.fileId,[0,0,0]);if(s.targetId&&fileIdx.has(s.targetId)){const q=siteOf(s.targetId,[0,0,0]);return new THREE.Vector3((p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2);}return new THREE.Vector3(...p);}
+    if(s.groupId&&net){const cl=net.clusters.find(x=>x.id===s.groupId);if(cl)return new THREE.Vector3(...cl.pos);}
+    const cl=mostAffected(s.fileIds);return cl?new THREE.Vector3(...cl.pos):null;}
+  function mostAffected(ids){if(!net)return null;const n=new Map();for(const id of ids||[]){const f=net.fileNeuron.get(id);if(f)n.set(f.neuron.cluster,(n.get(f.neuron.cluster)||0)+1);}
+    const best=[...n].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1))[0];return best?net.clusters.find(c=>c.id===best[0]):null;}
+  // ---- Words -------------------------------------------------------------------------------------------------------------
+  const role=id=>model.districts.get(id)?.role||'logic';
+  const MILESTONE={'first-validation':'First validation','integration-validated':'Integration validated','recovery':'Recovery','refactor':'Refactor validated'};
+  const milestoneWords=c=>(c.detail?.kinds||[]).map(x=>MILESTONE[x]||x).join(' · ');
+  const stormOf=c=>storms.find(s=>s.at===c.at);
+  function describe(c,i){const s=c.subject||{},d=c.detail||{},n=(s.fileIds||[]).length;const pos=attentionPos(c)||new THREE.Vector3(...(net?.center||[0,0,0]));
+    switch(c.intent){
+      case 'subsystem.created':return {text:'A new cluster of neurons forms',sub:s.groupId?`${ctx.name(s.groupId)} · ${role(s.groupId)}`:'',position:pos};
+      case 'structure.created':return {text:'New branches arborise',sub:Object.entries(d.kinds||{}).filter(([k])=>k!=='variable').map(([k,v])=>`${v} ${k.replace('ui.component','component').replace('api.route','route')}`).join(' · ')||`${d.count||1} symbol${(d.count||1)===1?'':'s'}`,position:pos};
+      case 'structure.removed':return {text:'Branches are pruned',sub:'structure removed',position:pos};
+      case 'subsystem.connected':{const a=net?.fileNeuron.get(s.fileId),b=net?.fileNeuron.get(s.targetId);
+        return {text:d.first?'Integration · a new axon pathway links two clusters':'The pathway between two clusters strengthens',sub:a&&b?`${ctx.name(a.neuron.cluster)} → ${ctx.name(b.neuron.cluster)}`:'',position:pos};}
+      case 'validation.failed':return {text:`Tests fail · ${n} branch${n===1?'':'es'} misfire`,sub:'observed failing run',position:pos,color:'#ff7a8a'};
+      case 'validation.passed':return {text:`Tests pass · an activation wave crosses ${n} branch${n===1?'':'es'}`,sub:'observed passing run',position:pos,color:'#8dffd8'};
+      case 'validation.recovered':return {text:'Recovered · the network fires in step again',sub:'the tests pass again',position:pos,color:'#8dffd8',banner:'Recovery',bannerSub:'the tests pass again'};
+      case 'refactor.validated':return {text:'Refactor validated · pathways consolidate',sub:`${d.removedSymbols||0} symbol${d.removedSymbols===1?'':'s'} removed`,position:pos,banner:'Refactor validated',bannerSub:'verified by a passing test run'};
+      case 'milestone.achieved':{const k=milestoneWords(c),st=stormOf(c);return {text:`${st?.full?'Synaptic storm':'A cascade'} · ${k}`,sub:'verified by a passing test run · myelin remains',position:pos,banner:k,bannerSub:'milestone · verified by a passing test run'};}
+      case 'repository.checkpoint':return {text:n?`Committed · ${n} branch${n===1?'':'es'} potentiated`:'Committed · the work is potentiated',sub:'commit observed',position:pos};
+      case 'world.expanded':return {text:`The network grows · chapter ${d.chapter}`,sub:'accumulated structure',position:pos};
+      case 'agent.collision':return {text:'Two agents meet at one neuron',sub:(d.providers||[]).map(id=>presence(id).display).join(' · '),position:pos};
+      default:return null;}}
+  function agentPosition(id){return agentState.get(id)?.pos||null;}
+  function agentColor(a){return '#'+agentCol[seatOf(a)].getHexString();}
+  function subsystemLabels(){if(!net)return [];return net.clusters.map(c=>{const files=c.neurons.reduce((a,n)=>a+n.live,0);
+    return {position:new THREE.Vector3(c.pos[0],c.pos[1]+Math.min(c.R*.55,9)+2,c.pos[2]),text:ctx.name(c.id),sub:`${role(c.id)} · ${c.neurons.length} neuron${c.neurons.length===1?'':'s'} · ${files} file${files===1?'':'s'}`};});}
+  function status(i){let v=0,st=0;for(const f of fileList){if(f.ghost)continue;const m=model.modules.get(f.id);if(!m||!model.alive(m,i.t))continue;const s=model.stateAt(m,i.t);if(s==='validated')v++;if(s==='stressed')st++;}
+    return st?`${st} branch${st===1?'':'es'} misfiring`:v?`${v} validated`:'';}
+  function pick(x,y,cam,i){let best=null,bd=.06;const p=new THREE.Vector3(),w=[0,0,0];for(let ni=0;ni<(net?.neurons.length||0);ni++){p.set(...neuronWorld(ni,w)).project(cam);const d=Math.hypot(p.x-x,(p.y-y)*.7);if(p.z<1&&d<bd){bd=d;best=`n:${neuronList[ni].id}`;}}return best;}
+  function inspect(id,i){if(!id?.startsWith('n:'))return null;const ni=neuronIdx.get(id.slice(2)),n=neuronList[ni];if(!n||n.ghost)return null;
+    const st=n.files.map(f=>model.modules.get(f)).filter(Boolean).map(m=>model.stateAt(m,i.t)),stressed=st.filter(x=>x==='stressed').length;
+    return {position:new THREE.Vector3(...neuronWorld(ni,[0,0,0])),text:`A neuron of ${ctx.name(n.cluster)}${n.k===0?' · hub':''}`,sub:`${n.files.length} branch${n.files.length===1?'':'es'}${stressed?` · ${stressed} misfiring`:''}`};}
+  function stats(){return {clusters:net?.clusters.length||0,neurons:net?.neurons.length||0,ghosts:GH,files:fileList.filter(f=>!f.ghost).length,segments:realSegs,ghostSegments:ghostSegs,boutons:realTips,
+    axons:axons.length,fx:fxCount,storms:storms.filter(s=>s.full).length,firing:lastStats.fires||0,radius:+(net?.radius||0).toFixed(1)};}
+  function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
+    for(const x of disposables)x.dispose?.();NS.dispose();FS.dispose();}
+  // After a seek: no transient survives (lasting myelin comes back from the director's record).
+  function onPrime(){for(const l of [waves,misfires,resyncs,storms,potentiations,expands])l.length=0;agentState.clear();mySig='';}
+  // Composition anchors (layers.js): the clusters, the neurons, the work, the network's rim. Read-only.
+  const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
+  function composeAnchors(i){if(!net)return composeA;composeA.center.set(...net.center);composeA.extent=Math.max(6,net.radius);composeA.boundary.radius=net.radius*1.1;composeA.boundary.y=net.center[1];
+    composeA.subsystems=net.clusters.map(c=>({id:c.id,pos:new THREE.Vector3(...c.pos),size:Math.max(1,c.R*.5)}));
+    composeA.nodes=net.neurons.slice(0,64).map(n=>({pos:new THREE.Vector3(...n.pos)}));
+    const att=i?ctx.director.attentionAt(i.t,1):null;composeA.active.pos.copy((att&&attentionPos(att))||composeA.center);return composeA;}
+  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+    compose:{camera,scene,anchors:composeAnchors}};
+}
