@@ -12,13 +12,14 @@ something lasting. Everything runs locally, with no account, cloud service, mode
 
 *An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered by the player in
 Stellar Forge with its composed score. Claude, Cursor and Codex appear as CAST; a meeting is labelled “Two agents
-meet in orbit”. Catalog names only: no path, prompt or folder. How it was cut:
-[docs/media/README.md](docs/media/README.md).*
+meet in orbit”. Claude was a live session; the Cursor and Codex events were posted through their observe-only adapters
+in the same window (those editors do not run on the machine that recorded it). Catalog names only: no path, prompt or
+folder. How it was cut: [docs/media/README.md](docs/media/README.md).*
 
 | | | |
 |---|---|---|
 | ![Two agents meet in orbit](docs/media/cast-collision.jpg) | ![Claude working on a request](docs/media/cast-claude.jpg) | ![Recovery: the tests pass again](docs/media/cast-recovery.jpg) |
-| **Collision.** Codex and Cursor meet in orbit; Cursor is editing. | **Claude** working on a request, as a CAST presence in the galaxy. | **Recovery.** A failing suite passing again is a milestone the world keeps. |
+| **Collision.** Codex and Cursor (posted events) meet in orbit; Cursor is editing. | **Claude** working on a request, as a CAST presence in the galaxy. | **Recovery.** A failing suite passing again is a milestone the world keeps. |
 
 The three flagship worlds, finishes, music influence and the Artist Studio, from an earlier recorded session:
 

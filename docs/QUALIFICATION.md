@@ -724,7 +724,8 @@ robustness quick 15/15; recording quick 45/45. `npm test` 30/30 runs under `unit
 one timing-dependent test was made deterministic (24/30 before; the receiver's behaviour was correct, the test assumed
 which of two orders happened).
 
-**In CI.** GitHub's runners for this private repository have two cores and no GPU. There, the studios that render WebGL
+**In CI.** GitHub's runners had two cores and no GPU when this was measured (PR #7, while the repository was
+private). There, the studios that render WebGL
 continuously (Visual, Music, Record & Broadcast) and the acceptance scenarios with three windows rendering at once starve
 the browser (measured on PR #7: clicks timing out after 30 s, screenshots refused, a saved change taking 105 s to appear
 in the other windows). The required `ui` job therefore runs Connections, Home, Packs, Projects, Settings and the

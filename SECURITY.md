@@ -85,4 +85,12 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 
 Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key; paired browsers then need the new link). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Artist Studio compositions belong to no project: deleting a project's folder leaves them in `~/.code-resonance/compositions.json` (delete them in the Artist Studio, or that file for all of them). A browser's own storage for the receiver's address is cleared with its site data. Nothing is copied anywhere else.
 
-Report vulnerabilities privately to the repository owner; do not attach recordings that may contain secrets.
+## Reporting a vulnerability
+
+Report it privately through GitHub: on the repository's **Security** tab choose **Report a vulnerability** (private
+vulnerability reporting), so the report and the discussion stay private until a fix is released. Please do not open a
+public issue for it. Include the version (the release you installed: the VSIX has it in its name), the steps to reproduce
+and what an attacker gains. Do not attach recordings, exports or receiver data that may contain secrets or source.
+
+Fixes go into the latest release only. Code Resonance is maintained by one person: reports are answered as soon as
+possible, without a guaranteed response time.
