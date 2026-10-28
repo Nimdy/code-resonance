@@ -20,8 +20,12 @@
   web of fine filaments and gold specks on their membranes and gold beads along every fibre; somas have lobed
   membranes, organelles and a bright nucleus inside two shells. A recorded event the director gives attention is seen
   up close, an agent's work in a medium close-up. The detail is drawn only where it is large enough on screen to read,
-  and not at quality 3. The render lab takes `--after` (seconds after each event, with `--events`). The brief's stills
-  are now rendered on a GPU.
+  and not at quality 3. Behind the network, the far tissue: out-of-focus fibres with bokeh nodes in every direction
+  (atmosphere, never code; about 1–2 ms on an integrated GPU at 1080p). The render lab takes `--after` (seconds after
+  each event, with `--events`). The brief's stills are now rendered on a GPU.
+- **Public repository:** REPOSITORY.md no longer calls it private; SECURITY.md says how to report a vulnerability
+  privately (GitHub's private vulnerability reporting); the README's hero caption says the Cursor and Codex events in
+  that film were posted through their adapters, Claude was a live session.
 - **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
   preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
   there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,
