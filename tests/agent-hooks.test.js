@@ -191,6 +191,21 @@ test('Codex hook installer is idempotent and its unmerge is the inverse',()=>{
   assert(leftover.hooks.PostToolUse.some(g=>g.matcher==='apply_patch|Edit|Write'));
   assert.equal(mergeCodex({hooks:{PreToolUse:[{hooks:[{type:'command',command:codexCommand,timeout:5}]}]}}).hooks.PreToolUse,undefined);
 });
+test('Codex installer removes its handler from a group it shares with the user\'s own hook',()=>{
+  const ours={type:'command',command:codexCommand,timeout:5},mine={type:'command',command:'my-own-hook'};
+  // Removal: the group survives with the user's hook only, and nothing of ours is left in any event.
+  const shared={model:'gpt',hooks:{SessionStart:[{hooks:[mine,ours]}],Stop:[{matcher:'x',hooks:[ours,mine]},{hooks:[mine]}]}};
+  assert.deepEqual(unmergeCodex(shared),{model:'gpt',hooks:{SessionStart:[{hooks:[mine]}],Stop:[{matcher:'x',hooks:[mine]},{hooks:[mine]}]}});
+  const installed=mergeCodex({hooks:{SessionStart:[{hooks:[mine]}]}});
+  installed.hooks.SessionStart[0].hooks.push(ours);installed.hooks.SessionStart.pop();
+  const removed=unmergeCodex(installed);
+  assert(!Object.values(removed.hooks||{}).flat().some(g=>(g.hooks||[]).some(h=>h.command===codexCommand)),JSON.stringify(removed));
+  // Install: an event we never install (it can deny) loses our handler even when it shares a group with the user's.
+  const deny=mergeCodex({hooks:{PreToolUse:[{hooks:[{type:'command',command:'allow.sh'},ours]}],PermissionRequest:[{matcher:'*',hooks:[ours,mine]}]}});
+  assert.deepEqual(deny.hooks.PreToolUse,[{hooks:[{type:'command',command:'allow.sh'}]}]);
+  assert.deepEqual(deny.hooks.PermissionRequest,[{matcher:'*',hooks:[mine]}]);
+  assert.deepEqual(unmergeCodex(deny),{hooks:{PreToolUse:[{hooks:[{type:'command',command:'allow.sh'}]}],PermissionRequest:[{matcher:'*',hooks:[mine]}]}});
+});
 test('Codex adapter prints nothing, exits 0, and never emits a deny',()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'cr-codex-cli-'));const data=fs.mkdtempSync(path.join(os.tmpdir(),'cr-codex-data-'));
   fs.mkdirSync(path.join(root,'.git'));
