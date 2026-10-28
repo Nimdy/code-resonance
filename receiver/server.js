@@ -23,6 +23,7 @@ const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
 const providers=require('../engine/providers');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
+const cursorHooks=require('../scripts/hooks/install-cursor');
 const VERSION=require('../package.json').version;
 const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
@@ -49,7 +50,8 @@ const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Cont
 const INERT=type=>({'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox",'Cross-Origin-Resource-Policy':'same-origin'});
 // Administrative (mutating) routes: a control capability (receiver/control.js) is required before anything else is read.
 const ADMIN=new Set(['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
-  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply','/api/compositions']);
+  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply',
+  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/compositions']);
 // Coded errors of the modules → HTTP status; anything uncoded is a receiver failure (500).
 const STATUS={invalid:400,'invalid-json':400,'pack-unavailable':409,'invalid-archive':400,'unsafe-path':400,'too-large':400,'too-many-files':400,'not-found':404,stale:409,changed:409,'invalid-pack':422,'pending-limit':429};
 const LOOPBACK_HOSTS=['127.0.0.1','::1','localhost'];
@@ -145,7 +147,16 @@ const CLAUDE_CAPTURED=['Session start and end, with the reason Claude Code gives
 const CLAUDE_EXCLUDED=['Prompt text (unless RESONANCE_CAPTURE_PROMPT_TEXT=1 is set in the environment Claude Code runs hooks in)',
   'Assistant and subagent message text','Command lines, tool inputs and tool outputs','File contents',
   'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
-async function claudePlan(dataDir,{projectPath,action}={}){
+// Accurate to scripts/hooks/cursor.js (translate()): observe-only after-hooks; hunks and command text never leave.
+const CURSOR_CAPTURED=['Session start and end, when Cursor sends them',
+  'File edits: the project-relative path a file tool edits, when it passes the same filters as the extension',
+  'Shell: a command category (test, build, lint, typecheck, …), never the command line or its output',
+  'Subagents: stop by type (two of the same type share a voice)',
+  'Response completed when the agent loop stops'];
+const CURSOR_EXCLUDED=['Edit hunks (old_string / new_string) and file contents','Command lines and command output','Prompt text (beforeSubmitPrompt is not installed)',
+  'Subagent start (subagentStart is a permission hook and is not installed)',
+  'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
+async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unmerge}){
   if(action!=='install'&&action!=='remove')throw coded('invalid','action must be "install" or "remove"',{key:'action'});
   if(typeof projectPath!=='string'||!projectPath||projectPath.length>1024||!path.isAbsolute(projectPath))throw coded('invalid','projectPath must be an absolute path',{key:'projectPath'});
   // A network path (\\host\share, //host/share) would make the receiver connect to that host (on Windows, with the user's
@@ -156,22 +167,24 @@ async function claudePlan(dataDir,{projectPath,action}={}){
   if(path.parse(dir).root===dir)throw coded('invalid','projectPath cannot be the root of a file system',{key:'projectPath'});
   const data=await fs.realpath(dataDir).catch(()=>dataDir),rel=path.relative(data,dir);
   if(!rel||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel)))throw coded('invalid','projectPath cannot be inside the receiver\'s data directory',{key:'projectPath'});
-  const file=path.join(dir,'.claude','settings.local.json');
+  const file=path.join(dir,folder,name);
   // Only the project's own folder and file, never one a link points to (a cloned repository can contain links): the
   // plan would show, and apply overwrite, whatever is at the other end (the receiver's token, another settings file).
   // Windows junctions are reported as symbolic links too. Anything but a regular file (a FIFO would block) is refused.
   for(const [p,kind] of [[path.dirname(file),'directory'],[file,'file']]){
     let st=null;try{st=await fs.lstat(p);}catch(e){if(e.code!=='ENOENT')throw e;}
-    if(st&&(st.isSymbolicLink()||(kind==='directory'?!st.isDirectory():!st.isFile())))throw coded('invalid',`${kind==='file'?'.claude/settings.local.json':'.claude'} is a link or not a ${kind}: only a regular file inside the project is edited`,{key:'projectPath'});
+    if(st&&(st.isSymbolicLink()||(kind==='directory'?!st.isDirectory():!st.isFile())))throw coded('invalid',`${kind==='file'?`${folder}/${name}`:folder} is a link or not a ${kind}: only a regular file inside the project is edited`,{key:'projectPath'});
     if(!st)break;
   }
   let buf=null;try{buf=await fs.readFile(file);}catch(e){if(e.code!=='ENOENT')throw e;}
   const text=buf&&buf.toString('utf8');let current={};
   if(buf){try{current=JSON.parse(text);}catch{throw coded('invalid-json',`${file} is not valid JSON: fix or remove it first`);}
     if(!isPlain(current))throw coded('invalid-json',`${file} does not hold a JSON object`);}
-  const next=action==='install'?claudeHooks.merge(current):claudeHooks.unmerge(current),changed=JSON.stringify(next)!==JSON.stringify(current);
+  const next=action==='install'?merge(current):unmerge(current),changed=JSON.stringify(next)!==JSON.stringify(current);
   return {file,exists:!!buf,current:text,next:changed||!buf?JSON.stringify(next,null,2)+'\n':text,changed,currentHash:buf?crypto.createHash('sha256').update(buf).digest('hex'):''};
 }
+async function claudePlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.claude',name:'settings.local.json',merge:claudeHooks.merge,unmerge:claudeHooks.unmerge});}
+async function cursorPlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.cursor',name:'hooks.json',merge:cursorHooks.merge,unmerge:cursorHooks.unmerge});}
 function createService(options={}) {
   const dataDir=path.resolve(options.dataDir||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
   const intervalMs=Number(options.sortIntervalMs)||1000;
@@ -370,20 +383,24 @@ function createService(options={}) {
       capabilities:control.count(),...(authorized?{dataDir}:{})};
   }
   async function integrations(authorized){
-    const vscode=[],claude=[];
+    const vscode=[],claude=[],cursorProjects=[];
     for(const p of await listProjects()){
       const doc=await evidence.get(p.id);if(!doc||doc.building)continue;
       // The demonstration (scripts/demo.js) sends workspace events too, but no editor was involved.
       if(!doc.demonstration&&(doc.editor.events||doc.editor.capture.state))vscode.push({projectId:p.id,name:p.name,editor:publicEvidence(doc).editor});
       const a=doc.agents['claude-code'];if(a)claude.push({projectId:p.id,name:p.name,lastAt:a.lastAt,events:a.events});
+      const c=doc.agents.cursor;if(c)cursorProjects.push({projectId:p.id,name:p.name,lastAt:c.lastAt,events:c.events});
     }
     const settings=Object.entries(EXTENSION.contributes?.configuration?.properties||{}).map(([id,s])=>({id,type:s.type,default:s.default,description:s.description}));
+    const firstParty=id=>id==='claude-code'||id==='cursor';
     return {vscode:{projects:vscode,latestVersion:EXTENSION.version,install:{package:'npm run package:vsix',install:`code --install-extension code-resonance-${EXTENSION.version}.vsix`},
         settings,openSettingsUri:`vscode://${EXTENSION.publisher}.${EXTENSION.name}/settings`},
       claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:claudeHooks.adapter}:{}),
         command:'npm run hooks:claude -- /path/to/project'},
+      cursor:{projects:cursorProjects,events:[...cursorHooks.EVENTS],captured:CURSOR_CAPTURED,excluded:CURSOR_EXCLUDED,...(authorized?{adapter:cursorHooks.adapter}:{}),
+        command:'npm run hooks:cursor -- /path/to/project'},
       generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'},
-      providers:Object.values(providers.PROVIDERS).map(p=>({id:p.id,display:p.display,chip:p.chip,seat:p.seat,adapter:p.id==='claude-code'?'first-party':'generic'}))};
+      providers:Object.values(providers.PROVIDERS).map(p=>({id:p.id,display:p.display,chip:p.chip,seat:p.seat,adapter:firstParty(p.id)?'first-party':'generic'}))};
   }
   async function exportProject(res,id,entry){
     const p=JSON.parse(entry.json);
@@ -545,15 +562,16 @@ function createService(options={}) {
           evidence:evidence.compact(await evidence.get(p.id))})))});return;
       }
       if(req.method==='GET'&&pathname==='/api/integrations'){response(res,200,await integrations(control.read(req,expectedOrigins).ok));return;}
-      if(req.method==='POST'&&(pathname==='/api/integrations/claude/plan'||pathname==='/api/integrations/claude/apply')){
+      if(req.method==='POST'&&(pathname==='/api/integrations/claude/plan'||pathname==='/api/integrations/claude/apply'||pathname==='/api/integrations/cursor/plan'||pathname==='/api/integrations/cursor/apply')){
         const body=await readBody(req,res,8192);if(!body)return;
+        const planOf=pathname.includes('/cursor/')?cursorPlan:claudePlan;
         try{
-          if(pathname.endsWith('/plan')){response(res,200,await claudePlan(dataDir,body));return;}
-          const plan=await claudePlan(dataDir,body);
+          if(pathname.endsWith('/plan')){response(res,200,await planOf(dataDir,body));return;}
+          const plan=await planOf(dataDir,body);
           response(res,200,await store.withLock(plan.file,async()=>{
             // Planned again under the lock: what is written is computed from the file as it is now, and only if the user
             // saw exactly that file.
-            const now=await claudePlan(dataDir,body);
+            const now=await planOf(dataDir,body);
             if(typeof body.expectHash!=='string'||body.expectHash!==now.currentHash)throw coded('changed','The settings file changed since it was shown; review it again');
             if(now.changed)await store.writeAtomic(now.file,now.next);
             return {file:now.file,written:now.changed};

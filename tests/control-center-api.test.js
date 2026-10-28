@@ -8,11 +8,13 @@ const {sha}=require('../receiver/protocol');
 const {crc32}=require('../receiver/pack-import');
 const {translate}=require('../scripts/hooks/claude-code');
 const {EVENTS}=require('../scripts/hooks/install-claude-code');
+const {EVENTS:CURSOR_EVENTS}=require('../scripts/hooks/install-cursor');
 const {tempDir,startService}=require('./helpers');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 const NAME='secret-project-name',FILE='src/secret-dir/hidden-file.ts';
 const ADMIN=['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
-  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply','/api/compositions'];
+  '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply',
+  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/compositions'];
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 // A path as it appears in text and inside JSON (where Windows backslashes are escaped).
 const forms=p=>[p,JSON.stringify(p).slice(1,-1)];
@@ -335,9 +337,12 @@ test('Capture evidence: the extension\'s reported settings and capture state, ag
   assert.equal(integrations.vscode.projects.find(p=>p.projectId===projectId).name,NAME);
   assert.equal(integrations.claude.projects.find(p=>p.projectId===projectId).events,5);
   assert.deepEqual(integrations.claude.events,EVENTS);assert.equal(integrations.claude.adapter,undefined,'adapter path: capability only');
+  assert.deepEqual(integrations.cursor.events,CURSOR_EVENTS);assert.equal(integrations.cursor.adapter,undefined,'adapter path: capability only');
+  assert(!integrations.cursor.events.includes('subagentStart'));
   assert.deepEqual(integrations.providers.map(p=>p.id),['claude-code','cursor','codex','grok','qwen','kimi']);
-  assert.equal(integrations.providers[0].adapter,'first-party');
-  assert(integrations.providers.slice(1).every(p=>p.adapter==='generic'));
+  assert.equal(integrations.providers.find(p=>p.id==='claude-code').adapter,'first-party');
+  assert.equal(integrations.providers.find(p=>p.id==='cursor').adapter,'first-party');
+  assert(integrations.providers.filter(p=>p.id!=='claude-code'&&p.id!=='cursor').every(p=>p.adapter==='generic'));
   assert.equal(integrations.providers[0].display,'Claude');assert.equal(integrations.providers[0].seat,0);
   // The demonstration (scripts/demo.js: a demo- session) sends workspace events, but no editor was involved.
   const demo=sha('control-center-demo');
@@ -364,6 +369,7 @@ test('Status, documentation and the Control Center files; no public response car
   assert.equal((await get('/api/status',admin)).dataDir,svc.dataDir);
   assert.equal((await get('/api/status',{...admin,Origin:base})).dataDir,svc.dataDir);
   assert.equal((await get('/api/integrations',admin)).claude.adapter,path.join(__dirname,'..','scripts','hooks','claude-code.js'));
+  assert.equal((await get('/api/integrations',admin)).cursor.adapter,path.join(__dirname,'..','scripts','hooks','cursor.js'));
   assert.equal('dataDir' in await get('/api/status',{...admin,'Sec-Fetch-Site':'cross-site'}),false,'never to another site');
   assert.equal('dataDir' in await get('/api/status',{...admin,'X-Resonance-Capability':'0'.repeat(64)}),false);
   // Documentation: a fixed list, inert text.
@@ -469,4 +475,66 @@ test('Claude Code hooks: plan and apply install, then remove, leaving the rest o
   assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'settings.local.json is a directory');
   fs.rmSync(claude,{recursive:true});fs.writeFileSync(claude,'not a folder');
   assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'.claude is a file');
+});
+test('Cursor hooks: plan and apply install, then remove, leaving the rest of the hooks file untouched',async t=>{
+  const {svc,dir,send}=await start(t,{events:false});
+  const project=tempDir(t,'cr-cc-cursor-'),file=path.join(fs.realpathSync.native(project),'.cursor','hooks.json');
+  const plan=body=>send('/api/integrations/cursor/plan',body),apply=body=>send('/api/integrations/cursor/apply',body);
+  let r=await plan({projectPath:project,action:'install'});assert.equal(r.status,200);let p=await r.json();
+  assert.equal(p.file,file);assert.equal(p.exists,false);assert.equal(p.current,null);assert.equal(p.currentHash,'');assert.equal(p.changed,true);
+  r=await apply({projectPath:project,action:'install',expectHash:''});assert.deepEqual(await r.json(),{file,written:true});
+  const created=JSON.parse(fs.readFileSync(file,'utf8'));assert.deepEqual(Object.keys(created.hooks).sort(),[...CURSOR_EVENTS].sort());
+  assert.equal(created.version,1);
+  fs.rmSync(path.join(project,'.cursor'),{recursive:true});
+  const own={version:1,hooks:{afterFileEdit:[{command:'format.sh'}],beforeShellExecution:[{command:'block.sh',timeout:10}]}};
+  fs.mkdirSync(path.dirname(file));const original=JSON.stringify(own,null,4);fs.writeFileSync(file,original);
+  r=await plan({projectPath:project,action:'install'});p=await r.json();
+  assert.equal(p.exists,true);assert.equal(p.current,original);assert.equal(p.changed,true);assert.equal(p.currentHash,crypto.createHash('sha256').update(original).digest('hex'));
+  const next=JSON.parse(p.next);assert.deepEqual(next.hooks.beforeShellExecution,own.hooks.beforeShellExecution);assert.equal(next.version,1);
+  assert.equal(next.hooks.afterFileEdit.length,2);assert.deepEqual(next.hooks.afterFileEdit[0],own.hooks.afterFileEdit[0]);
+  assert.equal(fs.readFileSync(file,'utf8'),original,'a plan writes nothing');
+  r=await apply({projectPath:project,action:'install',expectHash:p.currentHash});assert.equal(r.status,200);assert.equal((await r.json()).written,true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),next);
+  r=await plan({projectPath:project,action:'install'});assert.equal((await r.json()).changed,false,'installing twice changes nothing');
+  r=await plan({projectPath:project,action:'remove'});p=await r.json();assert.equal(p.changed,true);
+  fs.writeFileSync(file,JSON.stringify({...next,version:2},null,2));
+  r=await apply({projectPath:project,action:'remove',expectHash:p.currentHash});assert.equal(r.status,409);assert.equal((await r.json()).code,'changed');
+  assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).version,2);
+  fs.writeFileSync(file,JSON.stringify(next,null,2));
+  r=await plan({projectPath:project,action:'remove'});p=await r.json();
+  r=await apply({projectPath:project,action:'remove',expectHash:p.currentHash});assert.equal((await r.json()).written,true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),own,'removal leaves exactly the user\'s settings');
+  fs.writeFileSync(file,JSON.stringify(created));
+  r=await plan({projectPath:project,action:'remove'});p=await r.json();assert.equal(p.next,'{\n  "version": 1\n}\n');
+  fs.writeFileSync(file,'{ not json');
+  r=await plan({projectPath:project,action:'install'});assert.equal(r.status,400);assert.equal((await r.json()).code,'invalid-json');
+  for(const body of [{projectPath:'relative/dir',action:'install'},{projectPath:path.parse(project).root,action:'install'},{projectPath:dir,action:'install'},
+    {projectPath:path.join(dir,'projects'),action:'install'},{projectPath:path.join(project,'missing'),action:'install'},{projectPath:project,action:'delete'},
+    {projectPath:'/'+'x'.repeat(1100),action:'install'},{projectPath:file,action:'install'}])
+    assert.equal((await plan(body)).status,400,JSON.stringify(body).slice(0,80));
+  fs.mkdirSync(path.join(dir,'projects'),{recursive:true});
+  assert.equal((await plan({projectPath:path.join(dir,'projects'),action:'install'})).status,400,'inside the data directory');
+  r=await plan({projectPath:process.platform==='win32'?'\\\\127.0.0.1\\c$\\project':'//127.0.0.1/share/project',action:'install'});
+  assert.equal(r.status,400);assert.match((await r.json()).error,/network path/);
+  const linked=tempDir(t,'cr-cc-cursor-linked-'),cursorDir=path.join(linked,'.cursor'),auth=path.join(dir,'receiver-auth.json');
+  const link=(target,at,type)=>{try{fs.symlinkSync(target,at,type);return true;}catch(e){if(['EPERM','EACCES'].includes(e.code))return false;throw e;}};
+  if(link(dir,cursorDir,'junction')){
+    for(const action of ['install','remove']){r=await plan({projectPath:linked,action});assert.equal(r.status,400,action);assert.match((await r.json()).error,/\.cursor is a link/);}
+    r=await apply({projectPath:linked,action:'install',expectHash:''});assert.equal(r.status,400);
+    assert(!fs.existsSync(path.join(dir,'hooks.json')),'nothing written through the link');
+    try{fs.unlinkSync(cursorDir);}catch{fs.rmdirSync(cursorDir);}
+  }else t.diagnostic('directory links unavailable here: skipped');
+  fs.mkdirSync(cursorDir);
+  if(link(auth,path.join(cursorDir,'hooks.json'),'file')){
+    r=await plan({projectPath:linked,action:'install'});assert.equal(r.status,400);
+    const text=await r.text();assert(!text.includes(svc.token),'the token is never shown');assert.match(text,/hooks\.json is a link/);
+    r=await apply({projectPath:linked,action:'install',expectHash:crypto.createHash('sha256').update(fs.readFileSync(auth)).digest('hex')});assert.equal(r.status,400);
+    assert(fs.lstatSync(path.join(cursorDir,'hooks.json')).isSymbolicLink(),'the link is not replaced');
+    assert.equal(JSON.parse(fs.readFileSync(auth,'utf8')).token,svc.token);
+    fs.rmSync(path.join(cursorDir,'hooks.json'));
+  }else t.diagnostic('file links unavailable here (Windows without the privilege): skipped');
+  fs.mkdirSync(path.join(cursorDir,'hooks.json'));
+  assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'hooks.json is a directory');
+  fs.rmSync(cursorDir,{recursive:true});fs.writeFileSync(cursorDir,'not a folder');
+  assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'.cursor is a file');
 });
