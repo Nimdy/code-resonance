@@ -96,23 +96,40 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Quick start
 
-```bash
-npm run up
-```
+Two places are involved: the **receiver**, which runs in a terminal in this folder and keeps running, and the **VS Code
+window of the project you want to watch**, where the extension captures your work. If that project is open in VS Code
+through WSL, run the receiver inside WSL too.
 
-About a minute to a visible world. Starts the receiver on `http://127.0.0.1:4174` (or reuses one already there; refuses
-any other occupant of the port), prints a **pairing link** `http://127.0.0.1:4174/#pair=…` and opens it, builds
-`code-resonance-0.7.1.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
-have no real project yet. Data stays in `~/.code-resonance` (`RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port`
-change them). `Ctrl+C` stops a receiver this command started. The link works once, within 15 minutes; `npm run pair`
-prints a new one. An unpaired browser still shows everything, plays and records, but changes nothing.
+1. **Start the receiver** in this folder, and leave the terminal open (`Ctrl+C` stops it):
 
-Then: a trusted workspace, **CR** in the status bar, accept local capture, **Enable sound**. `npm run doctor` checks
-the setup. Step by step, with the manual `npm start` fallback and troubleshooting: [Getting started](docs/FIRST-RUN.md).
+   ```bash
+   npm run up
+   ```
 
-**0.7.1.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a sped-up
-highlight). `npm run film` renders that same window once a public title is set. The reel above is a 70-second CAST
-session of Pulse. Overnight CAST and a public OBS night: [docs/campaign-0.7.md](docs/campaign-0.7.md).
+   It starts the receiver on `http://127.0.0.1:4174` (or reuses one already running), builds the VS Code extension and
+   installs it when the `code` command works, and prints a **pairing link**. If you have no real project yet, it also
+   posts a short session labelled *Demonstration (fictional)*; `--no-demo` skips it.
+2. **Open the Control Center** with that link. From a Windows browser while the receiver runs in WSL, use the
+   `localhost` link printed under *From Windows (WSL)*. A link works once, within 15 minutes, and `npm run pair`
+   prints a new one. A browser that is not paired can still watch, play and record, but changes nothing.
+3. **Load the extension in your project's window.** If `npm run up` could not install it, use *Extensions › … › Install
+   from VSIX* there and pick `code-resonance-0.7.1.vsix` from this folder. If **CR** does not appear in the status bar,
+   run **Developer: Reload Window**.
+4. **Start capture.** Click **CR stopped** in the status bar, choose **Start Code Performance** and accept local
+   capture. The workspace must be trusted. Within seconds the project appears by name, with its files, in the
+   Control Center.
+5. **Watch and listen.** Click **Enable sound**, then **Open Stage**. The Stage runs about 10 seconds behind your work,
+   by design.
+
+**AI agents (optional).** `npm run hooks:claude -- /path/to/your/project` (or `hooks:cursor`, `hooks:codex`) adds
+observe-only hooks, so the agent joins the world as a CAST presence. Start a new agent session afterwards: a session
+that is already running does not pick up new hooks.
+
+**After the first time,** run `npm run up` (or `npm start`) in this folder. Capture in VS Code resumes by itself until
+you stop it from **CR**.
+
+Something not right? `npm run doctor` checks the setup, and [Getting started](docs/FIRST-RUN.md#troubleshooting) lists
+symptoms and fixes, including what to do when the picture looks grainy.
 
 ## The VS Code extension
 
@@ -240,3 +257,9 @@ npm run package:vsix   # the VSIX, with Node only
 
 On Windows (PowerShell) the same commands work; if PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. Focused checks,
 the qualification harnesses and what CI runs: [ARCHITECTURE.md](ARCHITECTURE.md#focused-checks).
+
+## License
+
+[MIT](LICENSE). Two third-party components are included and keep their own licences: three.js (MIT) in `public/vendor/`
+and TypeScript (Apache-2.0) in `vendor/`. They and the separately installed qualification tools are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

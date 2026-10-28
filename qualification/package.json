@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Real-environment qualification harnesses (VS Code extension host, browser). Kept apart so the product stays dependency-free.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "vscode": "node vscode/run.js",
     "browser": "node browser/stage.qual.js"

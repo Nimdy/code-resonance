@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
+  included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
+  ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
 - **Token proof for every client, bound to the port:** the extension's capture outbox, the Claude Code, Cursor and Codex
   hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`; in 0.7.1 only
   `npm run up`, `npm run pair` and the extension's pairing link did. The proof is now

@@ -4,7 +4,7 @@
   "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
   "version": "0.7.1",
   "publisher": "zerobandwidth",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.99.0"
   },
