@@ -5,9 +5,11 @@ receiver prints, and what has and has not been verified. Setting it up for the f
 
 ## Status
 
-Product version **0.6.0** (the tag `v0.6.0`): for private use on your own machine. It is not stable and has no installer;
-it runs from this repository. The product version is separate from the versions of the data formats, the score, the
-Visual Recipe generator and the Visual Pack SDK ([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)).
+Product version **0.7.0**. The last tagged public floor is **0.6.0** (`v0.6.0`). For private use on your own machine; it
+is not stable and has no installer; it runs from this repository. The product version is separate from the versions of
+the data formats, the score, the Visual Recipe generator, the interpretation (8) and the Visual Pack SDK
+([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)). One overnight CAST session, a morning reel, a
+README hero and a later OBS night: [campaign-0.7.md](campaign-0.7.md) (none of those has been run yet).
 
 ## Supported environments (what was actually tested)
 
@@ -34,7 +36,9 @@ procedure to check it. The measurements behind each mark are in [QUALIFICATION.m
 - **Listening and viewing:** the owner has reviewed the application, its worlds, the digital-life films and the
   creative direction. No one else has, and whether the music stays pleasant through hours of work is not established.
 - **Interpretation:** TypeScript and JavaScript are analysed in depth, Python and manifests partly, other languages
-  at file level. AI agents other than Claude Code, Cursor and Codex can report only through `scripts/event.js`.
+  at file level. Interpretation **8** (CAST seats, `agent.collision`) is independent of product 0.7.0. AI agents other
+  than Claude Code, Cursor and Codex can report only through `scripts/event.js`. Stage chips show CAST catalog names
+  (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor art.
 - **Cursor hooks:** prove only in a trusted workspace; CI does not run Cursor.
 - **Codex hooks:** prove only in a trusted workspace (project `.codex/` must be trusted); CI does not run Codex. Paths only from patches; `PreToolUse` is not installed.
 - **Labels at the edge:** a label that follows a moving object can be cut by the frame's edge, on screen and in
@@ -83,11 +87,16 @@ Center, which also shows a paired browser this receiver's data directory.
 
 - **Record**, the **Audio** (WAV) and **Performance data** (JSON) exports and an Artist Studio **Export** (zip) are
   saved by the browser to its downloads folder. Code Resonance keeps no copy and no library.
-- **Home Last night** is a sped-up replay of a scored highlight window. It is not a film and does not use Playwright.
+- **Home Last night** is a sped-up replay of a scored highlight window (default 4×; 16× when the window is long). It is
+  not a film and does not use Playwright.
 - **Films** (`npm run film`, a wrapper around `qualification/visual/film.js`) need a public title, always pass `--copy`
-  (so `~/.code-resonance` is not changed), and write `qualification/results/films/last-night.webm` unless `--out` says
-  otherwise (never committed), each with the recipe it used next to it. Direct `qualification/visual/film.js` still
-  defaults to `qualification/results/visual/`. First time: `cd qualification && npm ci`.
+  (so `~/.code-resonance` is not changed), default to cinematic labels, and write
+  `qualification/results/films/last-night.webm` unless `--out` says otherwise (never committed), each with the recipe it
+  used next to it. Prefer `--gpu amd` on the development machine. Direct `qualification/visual/film.js` still defaults
+  to `qualification/results/visual/`. First time: `cd qualification && npm ci`.
+- **Record** is live (what the stage shows now, held in the browser's memory). If you run an overnight CAST session,
+  capture lives in the journal; use OBS if you want a live picture of the stage for hours. Last night and `npm run film`
+  read the recorded performance, not a WebM from Record.
 
 ## Backup
 
@@ -130,7 +139,8 @@ On the first start the receiver adapts what it finds, and nothing you made is re
 - A receiver from before 0.5 had no pairing key: one is created, and browsers pair once with the printed link.
 - A browser's player choices from before 0.5 move to the receiver once.
 - If the interpretation version differs from the one a project was built with, its derived files are rebuilt from the
-  journal (the journal itself is never rewritten). It has been 7 since the living worlds.
+  journal (the journal itself is never rewritten). Interpretation is **8** (CAST seats and `agent.collision`); that
+  version is independent of product 0.7.0. It was 7 from the living worlds until the CAST catalog.
 - **Identities keep their look and sound.** A project's saved identity keeps the classic score (v2), the Classic finish
   and ecology 1 (or no digital life) until you change them: *Use the composed score* in the Music Studio, *Use the
   Phase 11 finish* (and ecology) and the *Digital life* switch in the Visual Studio. Each is an ordinary tuning you

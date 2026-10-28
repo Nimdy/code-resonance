@@ -12,15 +12,15 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 
 | Workspace | Route | What it is for |
 |---|---|---|
-| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide; the way into the studios (Create a composition, Continue the last one) |
+| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide; **Last night** (a sped-up highlight replay, 4× default, 16× if long); the way into the studios (Create a composition, Continue the last one) |
 | Projects | `#/projects`, `#/projects/<id>` | The projects the receiver knows, their identity, statistics, timeline, agents, exports |
-| Visual Studio | `#/visual` | Worlds, the Visual Recipe (World DNA), metadata-driven parameters, previews, visual presets |
+| Visual Studio | `#/visual` | Worlds, the Visual Recipe (World DNA), metadata-driven parameters, previews, visual presets, public title, **Propose public names** (writes only on Accept) |
 | Artist Studio | `#/artist`, `#/artist/new/<starter>`, `#/artist/from/<family>`, `#/artist/edit/<id>`, `#/artist/project` | Compositions of procedural layers over a flagship world or the artist canvas, what they react to, previewed on the stage, saved with versions, applied to a project, exported as a pack ([ARTIST-STUDIO.md](ARTIST-STUDIO.md)) |
 | Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
 | Visual Packs | `#/packs` | My creations; installed packs grouped as imported creations and looks, shader packs and full coded worlds; install (zip or folder), review, approve, revoke, remove, inspect; creator documentation |
-| Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code hooks, other agents |
-| Record & Broadcast | `#/output` | Recording profiles and state, the OBS browser source, exports and replay |
-| Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics |
+| Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code / Cursor / Codex hooks, CAST catalog, other agents |
+| Record & Broadcast | `#/output` | Recording profiles and state, the OBS browser source, exports, the `npm run film` command (not a live record) |
+| Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics, documentation (including the 0.7.0 campaign runbook) |
 | Performance Stage | `#/stage` | The immersive stage: live/replay, labels, world, sound, record, full screen |
 
 ## One engine, many views
@@ -106,3 +106,7 @@ See [SECURITY.md](../SECURITY.md) and [packs/security.md](packs/security.md).
 - An atmospheric layer is labelled a screen-space field; a layer's depth (behind, integrated, in front) is the order it
   is really drawn in, and the layer stack is listed in that order.
 - Recordings are saved by the browser to its downloads folder; Code Resonance keeps no video library.
+- Agent chips on the Stage use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), never vendor marks. A
+  meeting of two providers is `agent.collision` only when the journal justifies it.
+- **Last night** is a replay of a scored highlight; **Record** is live; a **film** (`npm run film`) is the publish path.
+  None of them draws source, paths, prompts or folder names.

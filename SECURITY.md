@@ -4,7 +4,7 @@
 
 ## What is collected, and where it stays
 
-| Data | Collected | Stored | Ever on the Stage / OBS / exports |
+| Data | Collected | Stored | Ever on the Stage / OBS / films / exports |
 |---|---|---|---|
 | Source snapshots (≤150 KB, after Start, unless `resonance.captureDocumentContents` is off) | yes | gzip blobs on the receiver machine | **never** |
 | Typed text | **no** — only per-second counts of edits, characters and lines | — | never |
@@ -75,7 +75,7 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - **This browser** keeps, in its storage for the receiver's origin: the pairing key, the active project's id, the last
   view, rendering quality, a few interface choices (such as the OBS URL options), the composition last opened in the
   Artist Studio, and the author name and licence you last used for an export. No project names, paths or tokens.
-- **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded.
+- **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded. **Films** (`npm run film`) and **Home Last night** follow the same floor. Agent chips use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), never vendor marks.
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data

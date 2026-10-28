@@ -204,6 +204,7 @@ Intents are emitted by the reducer next to the facts that justify them and recor
 | `milestone.achieved` | 3, rarely 4 | verified | a passing run plus a structural reason (first validation, integration validated, recovery, refactor); tier 4 needs several together |
 | `repository.checkpoint` | 2 | observed | a commit, magnitude from structure since the last commit |
 | `agent.state` | 0 | observed | hook-reported lifecycle and tool activity |
+| `agent.collision` | 2 | derived | two catalogued providers share a file or district inside 60 s (interpretation 8; last-writer still attributes the edit) |
 | `world.expanded` | 2 | derived | accumulated structure reaches a new chapter (growth, not completion) |
 
 Rules that keep the worlds honest: a failure never produces a success effect; no agent message, visible thinking or
@@ -242,23 +243,32 @@ minutes without any observation; the last 512 departed agents keep their numbers
 
 ## Agents
 
+Agents are a CAST in the project's world: a catalog name, a stable orchestra seat, a voice. The catalog
+(`engine/providers.js`, player copy `public/providers.js`) is Claude, Cursor, Codex, Grok, Qwen, Kimi on seats 0–5;
+unknown ids hash into seats 6–7. Stage chips show those catalog names, never vendor art styles. Worlds draw them as
+that family's presence (fireflies, comets, servitors).
+
 Presences follow observed lifecycles only (`engine/intents.js`, `public/worlds/agents.js`): connected, working on a
 request (prompt submitted, no response yet), using a tool (reading, searching, editing, running, testing, building,
 checking, researching, delegating), reasoning (only when the provider exposed it, labelled "reasoning (visible)"),
 waiting for the next prompt, finished (subagents), disconnected. After three silent minutes a busy agent reads
 "status unknown" and dims; a waiting agent goes dormant after two; a disconnected agent departs. The Claude Code hook
 now names the file a `Read` looks at, so reading is visible; only edits attribute later changes to an agent.
+`agent.collision` (interpretation 8) is an intent plus a derived cue when two providers share a file or district inside
+60 s; last-writer still attributes. Worlds express it; they never invent one.
 
 ## Labels and privacy
 
 Modes: **cinematic** (title card, callouts for structural events and above, milestone banners, agent chips when
 their activity changes), **explorer** (subsystem labels always, click to inspect a structure), **stream** (a lower
 third: public title and family, current event, agent status, validation status), **off**. Text comes only from roles,
-counts, states, activity categories, generated names (pronounceable, derived from salted ids, filtered against crude
-words), user aliases and the **public title**, which exists only when the user sets it in the Visual Studio; without
-it the title card shows the family name and the lower third "Code Resonance · <family>". The project folder name is
-never an input (`public/worlds/labels.js`, unit-tested). No path, file name, prompt or source identifier is ever drawn
-(checked in qualification).
+counts, states, activity categories, CAST catalog names, generated names (pronounceable, derived from salted ids,
+filtered against crude words), user aliases and the **public title**, which exists only when the user sets it in the
+Visual Studio; without it the title card shows the family name and the lower third "Code Resonance · <family>".
+**Propose public names** fills aliases from each subsystem's role plus a generated name (`Craft - Vauos`) and writes
+only on Accept; the hyphen is required because aliases reject a middle-dot. The project folder name is never an input
+(`public/worlds/labels.js`, unit-tested). No path, file name, prompt or source identifier is ever drawn (checked in
+qualification).
 
 ## Music
 
