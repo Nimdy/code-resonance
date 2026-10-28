@@ -129,3 +129,14 @@ test('Two providers on one file emit one collision intent; two Claude subagents 
   assert.equal(run(same,[agent('agent.tool.completed',{tool:'Edit',agent:'session-a'},{file:'src/lib/a.ts'}),
     agent('agent.tool.completed',{tool:'Write',agent:'session-b'},{file:'src/lib/a.ts'})]).filter(i=>i.type==='agent.collision').length,0);
 });
+
+test('Two providers on different files in one district emit one subsystem collision',()=>{
+  const s=fresh();
+  const collisions=run(s,[agent('agent.tool.completed',{tool:'Edit'},{file:'src/lib/a.ts'}),
+    e('agent.tool.completed',{origin:'hook',file:'src/lib/b.ts',meta:{provider:'cursor',source:'generic',agent:'cursor-1',tool:'Edit'}})]).filter(i=>i.type==='agent.collision');
+  assert.equal(collisions.length,1);
+  assert.equal(collisions[0].detail.scope,'subsystem');
+  assert.deepEqual(collisions[0].detail.providers,['claude-code','cursor']);
+  assert(!/src\/|lib\/|a\.ts|b\.ts/.test(JSON.stringify(collisions)),'subsystem collision has no paths');
+  assert.equal(run(s,[e('document.snapshot',{file:'src/lib/a.ts',content:'export function a(){return 1}',meta:{reason:'edit'}})]).filter(i=>i.type==='agent.collision').length,0);
+});

@@ -14,7 +14,6 @@ const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[c
 const SNAPSHOT_CREDIT_CAP=6;
 const CHAPTER_UNIT=12;
 const AGENT_ATTRIBUTION_MS=60000;
-const AGENT_VOICES=8;
 // Credit for structure that appears, by symbol kind. Local variables and call sites are facts, not progress.
 const CREATED={'ui.component':2,'api.route':2.2,'class':1.4,'function':0.9,'method':0.6,'interface':0.5,'type':0.35,'property':0.12,'variable':0.15,'callsite':0};
 const MODIFIED={'ui.component':0.15,'api.route':0.15,'function':0.12,'method':0.1,'class':0.03,'interface':0.05,'type':0.05,'property':0.02,'variable':0,'callsite':0};
@@ -90,8 +89,7 @@ function agentFor(state,event){
   return a;
 }
 function pruneRing(ring,now){
-  if(!Array.isArray(ring))return ring&&ring.agentId?[ring]:[];
-  return ring.filter(x=>now-x.ts>=0&&now-x.ts<=AGENT_ATTRIBUTION_MS);
+  return (Array.isArray(ring)?ring:[]).filter(x=>now-x.ts>=0&&now-x.ts<=AGENT_ATTRIBUTION_MS);
 }
 function setRing(map,key,ring){if(!map)return;if(ring.length)map[key]=ring;else delete map[key];}
 function writersOf(state,file,now){
@@ -192,18 +190,17 @@ function apply(state,event) {
     }
     state.validation[category]='pass';c(`validation.${category}.passed`,'observed',weight,{fileIds:category==='test'?covered:[]});return true;
   }
-  function emitCollision(file,fileRing,preferred){
+  function emitCollision(file,fileRing){
     if(!file)return;
-    const fileProviders=providerIds(fileRing||[]);
-    let scope=preferred,ring=fileRing||[];
-    if(fileProviders.length>=2)scope='file';
+    let scope,ring=fileRing||[];
+    if(providerIds(ring).length>=2)scope='file';
     else{
       ring=groupWritersOf(state,file,event.ts);
       const files=new Set(ring.map(x=>x.file).filter(Boolean));
       if(providerIds(ring).length<2||files.size<2)return;
       scope='subsystem';
     }
-    const providers=providerIds(ring);if(providers.length<2)return;
+    const providers=providerIds(ring);
     const key=`${scope}:${scope==='file'?file:groupKey(file)}:${providers.join(',')}`;
     if(!noteCollision(state,key,event.ts))return;
     const fileId=moduleId(state,file),groupId=pid(state,'g',groupKey(file));
@@ -292,7 +289,7 @@ function apply(state,event) {
         state.moduleState[mid]=state.moduleState[mid]==='stressed'?'stressed':'draft';}
       else if(!before)state.moduleState[mid]='draft';
       if(before)state.pending.removedLines+=Math.max(0,(before.analysis.lines||0)-(analysis.lines||0));
-      emitCollision(file,ring,'file');
+      emitCollision(file,ring);
       break;
     }
     case 'document.change': case 'document.edits': {
@@ -365,7 +362,7 @@ function apply(state,event) {
       const tool=typeof event.meta?.tool==='string'?event.meta.tool:'';
       if(event.file&&(event.kind==='agent.file.modified'||(event.kind==='agent.tool.completed'&&!READ_ONLY_TOOLS.has(tool)))){
         rememberWriter(state,event.file,agent,event.ts);
-        emitCollision(event.file,writersOf(state,event.file,event.ts),'file');
+        emitCollision(event.file,writersOf(state,event.file,event.ts));
       }
       // Lifecycle from hook-reported events only; what an agent is doing is a tool category, never its arguments.
       const before={state:agent.state||null,activity:agent.activity||null};

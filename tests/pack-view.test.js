@@ -30,7 +30,7 @@ test('Cues lose project, session, tool and any unknown detail; intents get opaqu
   const i=clean(v.intent({v:1,id:'session-1234-abcd:agent.state:0',type:'agent.state',ts:5,ord:7,tier:0,magnitude:.2,evidence:'observed',
     subject:{agentId:'a1b2c3d4e5',voice:1,fileId:'1db0005537a90f',prompt:'raw source text'},detail:{state:'tool',activity:'editing',provider:'claude-code',thought:'password=hunter2',file:'src/secret/keys.ts'}}));
   assert.match(i.id,/^[0-9a-f]{16}$/);assert.notEqual(i.id,'session-1234-abcd:agent.state:0');
-  assert.deepEqual(i.subject,{fileId:'1db0005537a90f',agentId:'a1b2c3d4e5',voice:1});assert.deepEqual(i.detail,{state:'tool',activity:'editing'});
+  assert.deepEqual(i.subject,{fileId:'1db0005537a90f',agentId:'a1b2c3d4e5',voice:1});assert.deepEqual(i.detail,{state:'tool',activity:'editing',provider:'claude-code'});
   // The same id always maps to the same opaque id (deduplication across priming and playback still works).
   assert.equal(v.intent({id:'x:milestone.achieved:0',type:'milestone.achieved',ts:1}).id,v.intent({id:'x:milestone.achieved:0',type:'milestone.achieved',ts:2}).id);
   const m=clean(v.intent({id:'e:milestone.achieved:0',type:'milestone.achieved',ts:1,tier:3,detail:{kinds:['integration-validated','src/secret/keys.ts','raw source text']}}));
@@ -51,6 +51,13 @@ test('Collision providers and seats survive; planted paths and out-of-range voic
   assert.deepEqual(c.detail.providers,['claude-code','cursor']);
   assert.equal(c.detail.file,undefined);
   assert.equal(v.intent({id:'e:agent.collision:1',type:'agent.collision',ts:1,detail:{scope:'secret',providers:['Claude']}}).detail.scope,undefined);
+  const st=clean(v.intent({v:1,id:'e:agent.state:1',type:'agent.state',ts:1,subject:{agentId:'a1b2c3d4e5',voice:0},
+    detail:{state:'connected',provider:'claude-code',file:'src/secret/keys.ts'}}));
+  assert.equal(st.detail.provider,'claude-code');
+  const planted=clean(v.intent({v:1,id:'e:agent.state:2',type:'agent.state',ts:1,detail:{state:'connected',provider:'src/secret/keys.ts'}}));
+  assert.equal(planted.detail.provider,undefined);
+  const cueProv=clean(v.cue({type:'agent.tool.completed',ts:1,detail:{provider:'claude-code',file:'src/secret/keys.ts'}}));
+  assert.equal(cueProv.detail.provider,'claude-code');
 });
 test('Recipes keep the genome, traits, settings and only the public strings the user approved',async()=>{
   const v=await load();

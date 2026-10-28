@@ -133,6 +133,27 @@ test('Two providers on one file emit one collision; two Claude subagents do not'
   assert.deepEqual(voices,[0,0]);
   assert.equal(new Set(Object.values(same.agents).map(x=>x.id)).size,2);
 });
+test('Two providers on different files in one district emit one subsystem collision',()=>{
+  const state=newState(projectId);state.salt='cast-salt';
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+  apply(state,e('agent.tool.completed',{file:'src/b.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}}));
+  const first=drainIntents(state).filter(i=>i.type==='agent.collision');
+  assert.equal(first.length,1);
+  assert.equal(first[0].detail.scope,'subsystem');
+  assert.deepEqual(first[0].detail.providers,['claude-code','cursor']);
+  assert(!/src\/|a\.ts|b\.ts/.test(JSON.stringify({intents:first,subject:first[0].subject})),'subsystem collision has no paths');
+  apply(state,e('document.snapshot',{file:'src/a.ts',content:'export function a(){}',meta:{reason:'edit'}}));
+  assert.equal(drainIntents(state).filter(i=>i.type==='agent.collision').length,0,'snapshot after a subsystem collision is not a second');
+
+  const after=newState(projectId);after.salt='cast-salt';
+  apply(after,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+  apply(after,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}}));
+  drainIntents(after);
+  apply(after,e('agent.tool.completed',{file:'src/b.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}}));
+  const sibling=drainIntents(after).filter(i=>i.type==='agent.collision');
+  assert.equal(sibling.length,1);
+  assert.equal(sibling[0].detail.scope,'subsystem','a later sibling write is a distinct district meeting');
+});
 test('Interpretation v8 is current; two apply() runs of a collision journal match',()=>{
   assert.equal(INTERPRETATION_VERSION,8);
   function run(){

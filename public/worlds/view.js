@@ -20,6 +20,7 @@ const num=(x,lo=-1e15,hi=1e15)=>typeof x==='number'&&Number.isFinite(x)?Math.max
 const int=(x,lo,hi)=>Number.isInteger(x)?Math.max(lo,Math.min(hi,x)):undefined;
 const token=x=>typeof x==='string'&&TOKEN.test(x)?x:undefined;
 const tokens=(xs,max=256)=>Array.isArray(xs)?xs.map(token).filter(Boolean).slice(0,max):undefined;
+const catalogId=x=>typeof x==='string'&&PROVIDER.test(x)?x:undefined;
 const catalogIds=xs=>Array.isArray(xs)?xs.filter(x=>typeof x==='string'&&PROVIDER.test(x)).slice(0,8):undefined;
 const seats=xs=>Array.isArray(xs)?xs.filter(x=>Number.isInteger(x)&&x>=0&&x<=7).slice(0,8):undefined;
 const oneOf=(set,x)=>set.has(x)?x:undefined;
@@ -57,7 +58,7 @@ export function cue(c){
     detail:compact({fileId:token(d.fileId),fileIds:tokens(d.fileIds),symbolId:token(d.symbolId),symbolType:oneOf(SYMBOL_TYPES,d.symbolType),targetId:token(d.targetId),
       dependencyId:token(d.dependencyId),cross:bool(d.cross),voice:int(d.voice,0,64),attribution:oneOf(ATTRIBUTION,d.attribution),agentId:token(d.agentId),
       count:int(d.count,0,1e6),edits:int(d.edits,0,1e6),errors:int(d.errors,0,1e6),warnings:int(d.warnings,0,1e6),insertedNewlines:int(d.insertedNewlines,0,1e6),
-      size:int(d.size,0,1e9),truncated:bool(d.truncated),internal:bool(d.internal),voices:seats(d.voices),providers:catalogIds(d.providers)})});
+      size:int(d.size,0,1e9),truncated:bool(d.truncated),internal:bool(d.internal),voices:seats(d.voices),providers:catalogIds(d.providers),provider:catalogId(d.provider)})});
 }
 function kinds(k){
   if(Array.isArray(k))return k.filter(x=>typeof x==='string'&&MILESTONE_KINDS.test(x)&&x.length<=40).slice(0,8);
@@ -72,7 +73,7 @@ export function intent(i){
       voice:int(s.voice,0,64),fileIds:tokens(s.fileIds),provenance:oneOf(ATTRIBUTION,s.provenance)}),
     detail:compact({state:oneOf(AGENT_STATES,d.state),activity:oneOf(ACTIVITIES,d.activity),subagent:bool(d.subagent),count:int(d.count,0,1e6),kinds:kinds(d.kinds),
       chapter:int(d.chapter,0,1e4),category:typeof d.category==='string'&&/^[a-z]{1,16}$/.test(d.category)?d.category:undefined,repaired:int(d.repaired,0,1e6),
-      first:bool(d.first),removedSymbols:int(d.removedSymbols,0,1e6),providers:catalogIds(d.providers),scope:oneOf(SCOPE,d.scope)})});
+      first:bool(d.first),removedSymbols:int(d.removedSymbols,0,1e6),providers:catalogIds(d.providers),provider:catalogId(d.provider),scope:oneOf(SCOPE,d.scope)})});
 }
 const FAMILY_ID=/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 // Recipe fields a pack may read: its family, seed, genome (numbers, enums, colours), aggregate traits, the viewer's

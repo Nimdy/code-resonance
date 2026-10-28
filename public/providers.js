@@ -18,5 +18,4 @@ function presence(provider){
 }
 const api={PROVIDERS,UNKNOWN_SEATS,presence};
 export {PROVIDERS,UNKNOWN_SEATS,presence};
-export default api;
 if(typeof module==='object'&&module.exports)module.exports=api;
