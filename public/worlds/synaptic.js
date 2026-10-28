@@ -28,8 +28,8 @@ import {layoutConfig,createLayout,dendriteTree,slotDirection,spontaneous} from '
 import {presence} from '../providers.js';
 const TAU=Math.PI*2,TW=128,NT=5,FT=5,NONE=-1e5,FAR=1e6;
 const MAX_AXONS=720,MAX_FX=6000,MOTES=1800,STORM_GAP=240000,DWELL=4500;
-// A synaptic terminal's bell, in axon radii.
-const TERM=8;
+// A synaptic terminal's bell, in axon radii. The far tissue's fibres.
+const TERM=8,FIBRES=32;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers);
 // the shape is the seat's index in the signal shader: four-point spark, ring, diamond, six-point star, triangle, double
 // ring, then a soft dot.
@@ -133,14 +133,31 @@ export function createFamily(ctx){
       commit(){tex.needsUpdate=true;},get texture(){return tex;},dispose(){tex?.dispose();}};}
   const NS=stateTex(NT),FS=stateTex(FT);NS.ensure(1);FS.ensure(1);
   // ---- Background: the navy-violet void, slow haze, two vast soft glows of the far brain -------------------------------
-  const bgU={uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uDeep:{value:V3(pal.deep)},uHaze:{value:V3(pal.haze)},uMem:U.uMem,uSoma:U.uSoma,uV:U.uV,uQ:U.uQ,
-    uHazeK:{value:clamp(num(atm.haze,.75),0,1.6)},uStress:{value:0},uTide:{value:0},uStorm:{value:0},uSeed:{value:new THREE.Vector3(rand(seed)*9,rand(seed+1)*9,rand(seed+2)*9)}};
+  // The far tissue's fibres (seeded per project): per fibre its arc's normal and depth, two wander directions and a
+  // phase, whether it is warm; a bokeh node on each arc.
+  const fibres=[],nodes=[];
+  {const r=k=>rand(hash(`fibre/${seed}/${k}`)),unit=k=>{const u=r(k)*2-1,a=r(k+1)*TAU,s=Math.sqrt(1-u*u);return [Math.cos(a)*s,u,Math.sin(a)*s];};
+    for(let k=0;k<FIBRES;k++){const o=k*16,n=unit(o),t=unit(o+10),dt=t[0]*n[0]+t[1]*n[1]+t[2]*n[2],p=[t[0]-n[0]*dt,t[1]-n[1]*dt,t[2]-n[2]*dt],l=Math.hypot(...p)||1;
+      fibres.push(new THREE.Vector4(...n,r(o+6)),new THREE.Vector4(...unit(o+2),r(o+7)*TAU),new THREE.Vector4(...unit(o+4),r(o+8)<.15?1:0));
+      nodes.push(new THREE.Vector4(p[0]/l,p[1]/l,p[2]/l,.006+.016*r(o+12)));}}
+  const bgU={uFib:{value:fibres},uNode:{value:nodes},uInv:{value:new THREE.Matrix4()},uCam:{value:new THREE.Vector3()},uDeep:{value:V3(pal.deep)},uHaze:{value:V3(pal.haze)},uMem:U.uMem,uSoma:U.uSoma,uV:U.uV,uQ:U.uQ,
+    uHazeK:{value:clamp(num(atm.haze,.75),0,1.6)},uWebK:{value:0},uStress:{value:0},uTide:{value:0},uStorm:{value:0},uSeed:{value:new THREE.Vector3(rand(seed)*9,rand(seed+1)*9,rand(seed+2)*9)}};
   const background_=keep(new THREE.ShaderMaterial({uniforms:bgU,depthWrite:false,depthTest:false,vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
-    fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uDeep,uHaze,uMem,uSoma,uSeed;uniform float uV,uQ,uHazeK,uStress,uTide,uStorm;
+    fragmentShader:`${NOISE}varying vec2 vUv;uniform mat4 uInv;uniform vec3 uCam,uDeep,uHaze,uMem,uSoma,uSeed;uniform float uV,uQ,uHazeK,uWebK,uStress,uTide,uStorm;
+      uniform vec4 uFib[${FIBRES*3}],uNode[${FIBRES}];
       void main(){vec4 pp=uInv*vec4(vUv*2.-1.,1.,1.);vec3 d=normalize(pp.xyz/pp.w-uCam);
         vec3 c=uDeep*(1.5+1.2*smoothstep(-.6,.8,d.y));
         float n=uQ>2.5?.2:fbm3(d*1.8+uSeed+vec3(0.,uV*.004,0.)),m=gnoise(d*4.1+uSeed.zxy+vec3(uV*.003,0.,0.));
         c+=uHaze*(.3+uHazeK*(.5+1.2*smoothstep(-.3,.5,n))*(.7+.3*m))*(1.-.4*uStress);
+        // the far tissue (atmosphere, never code): out-of-focus fibres in every direction (seeded arcs that wander, break
+        // off and differ in depth: wider and softer nearer), soft bokeh nodes on them; it drifts very slowly
+        if(uQ<2.5&&uWebK>.001){vec3 fib=vec3(0.),warm=uMem*.6+uSoma*.25;float t=uV*.004;
+          // a pixel well outside a fibre's band (its wander plus three widths) skips it: most pixels see two or three
+          for(int k=0;k<${FIBRES};k++){vec4 N=uFib[k*3];float d0=dot(d,N.xyz);if(abs(d0)>.058)continue;vec4 A=uFib[k*3+1],B=uFib[k*3+2];
+            float da=dot(d,A.xyz),db=dot(d,B.xyz),dist=abs(d0+.022*sin(da*14.+A.w+t)+.007*sin(db*31.+A.w*2.)),wd=mix(.0022,.009,N.w);
+            fib+=mix(uMem,warm,B.w)*smoothstep(.15,.55,.5+.5*sin(db*4.+A.w*3.))*exp(-dist*dist/(wd*wd))*mix(1.,.35,N.w);
+            vec4 P=uNode[k];float q=1.-dot(d,P.xyz);fib+=uSoma*.6*smoothstep(P.w*P.w*.5,0.,q)*(.7+.3*sin(uV*.25+A.w))*mix(1.,.4,N.w);}
+          c+=fib*.16*uWebK*(.6+.4*smoothstep(-.4,.6,n))*(1.-.4*uStress);}
         vec3 w=normalize(vec3(cos(uSeed.x),.18,sin(uSeed.x))),k=normalize(vec3(cos(uSeed.y),-.1,sin(uSeed.y)));
         c+=uSoma*.07*uHazeK*exp(-(1.-dot(d,w))*4.)*(1.+.8*uStorm)+uMem*.12*uHazeK*exp(-(1.-dot(d,k))*2.5);
         c+=uMem*uTide*.05*smoothstep(.1,.9,gnoise(d*2.3+vec3(uV*.02,0.,0.))+.4);
@@ -628,6 +645,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     const spikes=writeState(i);placeSynapses();fxCount=updateAgents(i,spikes);fx.commit(fxCount);
     moteMat.uniforms.uNet.value.set(net.center[0],net.center[1],net.center[2],Math.max(14,net.radius));moteMat.uniforms.uGlial.value=i.unlocks[0]?.level||0;
     bgU.uStress.value=stressNow;bgU.uStorm.value=stormNow;bgU.uTide.value=i.unlocks[1]?.level||0;bgU.uHazeK.value=clamp(num(atm.haze,.75),0,1.6)*atmo;
+    bgU.uWebK.value=GHOSTS*atmo*(1+.5*(i.unlocks[3]?.level||0));
   }
   const fwd=new THREE.Vector3(),tmp=new THREE.Vector3();let goalTarget=new THREE.Vector3();
   function afterCamera(i){camera.updateMatrixWorld();bgU.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);bgU.uCam.value.copy(camera.position);
