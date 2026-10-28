@@ -105,13 +105,13 @@ Step by step, with troubleshooting: [Getting started](docs/FIRST-RUN.md).
 ## The VS Code extension
 
 ```bash
-npm run package:vsix          # writes code-resonance-0.5.0.vsix, with Node only (Windows, Linux, macOS)
+npm run package:vsix          # writes code-resonance-0.6.0.vsix, with Node only (Windows, Linux, macOS)
 ```
 
-It is not on the Marketplace: install the file yourself, with `code --install-extension code-resonance-0.5.0.vsix`
+It is not on the Marketplace: install the file yourself, with `code --install-extension code-resonance-0.6.0.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
---install-extension code-resonance-0.5.0.vsix`, then open your project with the same two options.
+--install-extension code-resonance-0.6.0.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
 accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
@@ -203,7 +203,7 @@ rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Versions
 
-0.5.0 is the product version and has not been released. The score (2 or 3), the Visual Recipe generator (4), digital
+0.6.0 is the product version, released as the tag `v0.6.0`. The score (2 or 3), the Visual Recipe generator (4), digital
 life's ecology (1 or 2), the Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
 

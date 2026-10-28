@@ -37,7 +37,7 @@ posts a fictional session, always labelled *Demonstration (fictional)*.
 
 ```bash
 npm run package:vsix
-code --install-extension code-resonance-0.5.0.vsix
+code --install-extension code-resonance-0.6.0.vsix
 ```
 
 Open a trusted workspace, click **CR** in the status bar (or **CODE RESONANCE: Start Code Performance**) and accept
