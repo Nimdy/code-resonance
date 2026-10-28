@@ -62,7 +62,7 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 - **Grows a world of its own.** Each project has a persistent visual identity, its Visual Recipe, derived from its code:
   a galaxy (Stellar Forge), a bioluminescent reef (Fractal Biosphere) or a cathedral city on water (Machine Cathedral).
   The structures are the real architecture; the world stays alive between events without inventing progress, and an
-  ecosystem of simulated inhabitants (digital life, which you can turn off) lives in it. The Construct (WebGL) and
+  ecosystem of simulated inhabitants (digital life, which you can turn off) lives in it. The Construct (WebGL2) and
   Monolith, a flat architectural elevation drawn in Canvas 2D, remain available.
 - **Lets you make your own.** The Artist Studio composes original looks from procedural layers that react to the music
   and to real events, without code. Visual packs (SDK 1.2) add looks, shaders and whole worlds; packs with code run
@@ -90,8 +90,8 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 - **Node.js 20 or later** (CI uses 22). The application has no runtime dependencies: nothing to install.
 - **VS Code 1.99 or later** for capture.
 - **A Chromium-based browser** (Chrome or Edge) for the Control Center and for recording; other browsers have not been
-  tested. **WebGL2** for the flagship worlds, ideally with a GPU; without WebGL2 the player falls back to the Construct
-  (WebGL), then to Monolith (Canvas 2D).
+  tested. **WebGL2** for the flagship worlds and the Construct, ideally with a GPU; without it the player shows
+  Monolith (Canvas 2D).
 - The qualification harnesses in `qualification/` have their own dependencies (`cd qualification && npm ci`).
 
 ## Quick start
@@ -207,11 +207,12 @@ the worlds, 720p recording), and GitHub's Linux and Windows runners without a GP
 extension, the Stage in Chromium, OBS Studio 32.2 on Linux). The Stage uses the browser's GPU. Headless films use it
 too (`npm run film`; `--gpu nvidia` or `--gpu amd` pins an adapter; `--gpu off` is software).
 
-**Without WebGL2** the player falls back to the Construct (WebGL), then to Monolith (Canvas 2D, no WebGL or GPU
-needed), and a machine too slow for the living world is offered Monolith. Monolith was measured in headless Chromium
-with software rendering: 60 fps at 1280×720 on a 450-file project, its main thread busy about 3 % of the time while
-nothing happens. Nexus and Nebula, two earlier 2D worlds, were retired after 0.7.1: a saved choice or an OBS URL that
-names one (`world=nexus`, `world=nebula`) shows Monolith ([WORLDS.md](docs/WORLDS.md#classic-stages)).
+**Fallbacks:** a living world that cannot start falls back to the Construct; both need WebGL2 (the vendored three.js
+r170 has no WebGL 1), so without it the player shows Monolith (Canvas 2D, no WebGL or GPU needed), and a machine too
+slow for the living world is offered Monolith. Monolith was measured in headless Chromium with software rendering: 60
+fps at 1280×720 on a 450-file project, its main thread busy about 3 % of the time while nothing happens. Nexus and
+Nebula, two earlier 2D worlds, were retired after 0.7.1: a saved choice or an OBS URL that names one (`world=nexus`,
+`world=nebula`) shows Monolith ([WORLDS.md](docs/WORLDS.md#classic-stages)).
 
 **Not verified:** macOS; Windows or macOS desktops with a GPU; OBS on Windows or macOS; Firefox and Safari; multi-hour
 sessions with the final code; listening and viewing by anyone other than the owner.

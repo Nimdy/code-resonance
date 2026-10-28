@@ -192,11 +192,12 @@ packs set them and are validated against it; making them work now would change t
 Two fixed stages without World DNA stay beside the living worlds (Visual Studio › Classic stages, the Stage's world
 buttons, Settings › Default world). They draw the same public graph and follow the same performance clock.
 
-- **The Construct** (WebGL, `public/construct.js`): the first architectural model, kept unchanged
+- **The Construct** (WebGL2 through three.js, `public/construct.js`): the first architectural model, kept unchanged
   ([CONSTRUCT.md](CONSTRUCT.md)).
 - **Monolith** (Canvas 2D, `public/worlds/monolith.js`): the project's site plan drawn flat, as an architectural
   elevation. It is the lightweight stage, the one offered to a machine too slow for the living world, and the last
-  fallback without WebGL (the living world falls back to the Construct, the Construct to Monolith).
+  fallback (a living world that cannot start falls back to the Construct, the Construct to Monolith; without WebGL2
+  neither WebGL world starts).
 
 | What you see in Monolith | What it means |
 |---|---|

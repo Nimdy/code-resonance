@@ -20,7 +20,7 @@ public/         the player, served by the receiver:
   music.js        the Web Audio performer and offline renderer
   recording.js    live WebM recording
   composition.js  the Artist Studio's data model (allowlists, limits, validation); composition-text.js its words
-  construct.js    the Construct (WebGL)
+  construct.js    the Construct (WebGL2, three.js)
   worlds/         the living worlds: host, renderer core, the three flagship families, director, agents, labels,
                   Monolith (monolith.js, the 2D world and last fallback),
                   musical expression, Artist Studio layers (layers*.js, canvas.js), the pack frame and worker, the
@@ -61,7 +61,7 @@ VS Code extension (workspace host)        Agent hooks (Claude Code, Cursor, Code
                  ├── music.js      Web Audio performer, offline renderer
                  ├── worlds/       living worlds: flagship families, finishes, digital life (life/), Artist Studio
                  │                 layers; packs with code in an isolated frame and worker
-                 ├── construct.js  the Construct (WebGL); worlds/monolith.js is Monolith (Canvas 2D)
+                 ├── construct.js  the Construct (WebGL2); worlds/monolith.js is Monolith (Canvas 2D)
                  └── recording.js  live WebM of the stage and the music
                   ▲
         Control Center and Performance Stage (public/ui/) drive it through window.ResonancePlayer
@@ -71,9 +71,9 @@ The engine renders no controls: the Control Center and the Performance Stage (`p
 `window.ResonancePlayer`, and configuration lives in the receiver (settings, project preferences, presets, recipes,
 compositions), announced to every open view by `GET /api/changes`. See [docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md).
 
-When a world cannot run, the engine falls back and says so: the living world (WebGL2) to the Construct (WebGL), the
-Construct to Monolith (Canvas 2D). A machine on which no quality level draws the living world smoothly gets a notice
-offering Monolith; the selected world is never changed without the viewer.
+When a world cannot run, the engine falls back and says so: the living world (WebGL2) to the Construct (WebGL2 too,
+through three.js r170), the Construct to Monolith (Canvas 2D). A machine on which no quality level draws the living
+world smoothly gets a notice offering Monolith; the selected world is never changed without the viewer.
 
 **Who owns which state.** The receiver owns everything that persists: the journal and derived files, settings,
 project preferences, presets, recipes, compositions, packs and approvals ([where each
