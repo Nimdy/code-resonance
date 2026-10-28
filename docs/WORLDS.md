@@ -199,6 +199,11 @@ buttons, Settings › Default world). They draw the same public graph and follow
   fallback (a living world that cannot start falls back to the Construct, the Construct to Monolith; without WebGL2
   neither WebGL world starts).
 
+| | |
+|---|---|
+| ![Monolith on a 450-file project](worlds/monolith-excalidraw.jpg) | ![Monolith during a replay](worlds/monolith-replay.jpg) |
+| A 450-file project: nine districts in the project's palette, dependencies as arcs below the ground line. | During a replay: an edited file's tower lit, an agent's mark over its file, a commit sweeping the ground line. |
+
 | What you see in Monolith | What it means |
 |---|---|
 | A tower standing on the floor | A file, on its persisted plot (`engine/layout.js`, the Construct's site plan seen from the front): plots never move, so the skyline grows without reshuffling; rows further back stand higher and paler |
