@@ -14,6 +14,14 @@
   part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
   (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
   digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
+- **Synaptic Storm up close:** each axon now ends in a synaptic terminal, a glass bell of vesicles facing a cup on the
+  receiving branch; a spike's arrival sparks across the cleft and the vesicles at the mouth cross it. Branches are
+  seamless tubes (consecutive segments share their joint, free ends are rounded) whose trunks swell at the soma, with a
+  web of fine filaments and gold specks on their membranes and gold beads along every fibre; somas have lobed
+  membranes, organelles and a bright nucleus inside two shells. A recorded event the director gives attention is seen
+  up close, an agent's work in a medium close-up. The detail is drawn only where it is large enough on screen to read,
+  and not at quality 3. The render lab takes `--after` (seconds after each event, with `--events`). The brief's stills
+  are now rendered on a GPU.
 - **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
   preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
   there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,
