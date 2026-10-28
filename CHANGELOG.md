@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
+  included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
+  ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
+
 ## 0.7.1 — 2026-10-28
 
 Product 0.7.1, for private use on your own machine; not stable. Interpretation **8** is unchanged. The last published

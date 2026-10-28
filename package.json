@@ -3,7 +3,7 @@
   "version": "0.7.1",
   "private": true,
   "description": "Local-first software development sonification and generative visual performance player",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
