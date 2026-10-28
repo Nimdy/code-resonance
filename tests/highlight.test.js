@@ -170,6 +170,37 @@ test('film wrapper passes --gpu amd when the probe says so, and omits it for --g
   await film.main(['--data',dir,'--project',projectId,'--gpu','off'],{...tools(calls,[]),probe:()=>true});
   assert(!calls[0].args.includes('--gpu'));
 });
+test('film wrapper refuses an unknown --gpu, and lets only a GPU it detected itself fall back to software',async t=>{
+  const {dir,projectId}=plantFilm(t,{title:'Night Build'});
+  for(const bad of ['banana','AMD','--copy','intel']){
+    const logs=[],calls=[];
+    const code=await film.main(['--data',dir,'--project',projectId,'--gpu',bad],{...tools(calls,logs),probe:()=>'nvidia'});
+    if(bad==='--copy'){assert.equal(code,0);assert.equal(calls[0].args[calls[0].args.indexOf('--gpu')+1],'auto');continue;}
+    assert.equal(code,1,bad);assert.equal(calls.length,0,bad);assert.equal(logs.join('\n'),film.GPU_MSG);
+  }
+  const detected=[];
+  await film.main(['--data',dir,'--project',projectId],{...tools(detected,[]),probe:()=>'nvidia'});
+  assert.equal(detected[0].args[detected[0].args.indexOf('--gpu')+1],'nvidia');
+  assert(detected[0].args.includes('--gpu-fallback'),'a detected GPU may fall back to software');
+  for(const pinned of ['auto','amd','nvidia']){
+    const calls=[];
+    await film.main(['--data',dir,'--project',projectId,'--gpu',pinned],{...tools(calls,[]),probe:()=>'nvidia'});
+    assert.equal(calls[0].args[calls[0].args.indexOf('--gpu')+1],pinned);
+    assert(!calls[0].args.includes('--gpu-fallback'),`--gpu ${pinned} insists on the GPU`);
+  }
+});
+test('The film renderer stops the receiver on every failure after it starts, and removes its copy on signals',()=>{
+  const src=fs.readFileSync(path.join(__dirname,'..','qualification','visual','film.js'),'utf8');
+  const body=src.slice(src.indexOf('(async()=>{'));
+  const open=body.indexOf('  try{\n'),close=body.lastIndexOf('}finally{await stop();}');
+  assert(open>0&&close>open,'one try … finally around the receiver, the browser and the render');
+  assert(body.indexOf('createService(')>open,'the receiver starts inside it');
+  for(let at=body.indexOf('throw new Error(');at>=0;at=body.indexOf('throw new Error(',at+1))assert(at>open&&at<close,`a throw outside the finally at ${body.slice(at,at+60)}`);
+  assert.match(src,/temporaryCopy\(dataDir,\{stop\}\)/);
+  assert(!/process\.on\('exit'/.test(src),'the copy is not left to an exit handler alone');
+  assert.match(src,/software&&gpuFallback/);
+  assert.match(src,/GPUS\.includes\(gpu\)/);
+});
 test('film wrapper pins nvidia, auto, and a bare --gpu; /dev/dri alone is not a GPU',async t=>{
   const {dir,projectId}=plantFilm(t,{title:'Night Build'});
   const wrap=(extra)=>({

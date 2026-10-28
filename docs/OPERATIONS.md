@@ -94,7 +94,10 @@ Center, which also shows a paired browser this receiver's data directory.
   (so `~/.code-resonance` is not changed), default to cinematic labels, and write
   `qualification/results/films/last-night.webm` unless `--out` says otherwise (never committed), each with the recipe it
   used next to it. Uses the GPU when one is present (`--gpu nvidia` / `--gpu amd` pins an adapter; `--gpu off` is
-  software). Direct `qualification/visual/film.js` still defaults to `qualification/results/visual/`. First time:
+  software; any other value is refused). A GPU it detected itself that the browser cannot use is reported and the film
+  renders in software (slower); a `--gpu` you passed fails instead. The temporary copy (which holds
+  `receiver-auth.json`) is removed when the film ends, fails or is stopped with Ctrl-C or SIGTERM. Direct
+  `qualification/visual/film.js` still defaults to `qualification/results/visual/`. First time:
   `cd qualification && npm ci`.
 - **Record** is live (what the stage shows now, held in the browser's memory). If you run an overnight CAST session,
   capture lives in the journal; use OBS if you want a live picture of the stage for hours. Last night and `npm run film`

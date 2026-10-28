@@ -6,7 +6,9 @@
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
 //        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
 //        [--note "text shown on every frame"] [--pack <dir> (install and approve a visual pack in --data first)]
-//        [--look <pack id> (apply a declarative or shader pack)] [--gpu auto|amd|nvidia (hardware GPU; omit for SwiftShader)]
+//        [--look <pack id> (apply a declarative or shader pack)] [--gpu auto|amd|nvidia|off (hardware GPU; omit or off for SwiftShader)]
+//        [--gpu-fallback (npm run film, when it detected the GPU itself: a browser that reports a software renderer renders
+//         in software instead of failing, and the adapter is not checked)]
 //        [--tune '{"life.enabled":false}' (tuned genome values, as the Visual Studio applies them)]
 //        [--copy (render from a temporary copy of --data: the data directory's recipes are never changed)]
 //        [--music '{"mood":.7,"space":.8,"mix":{"perc":0}}' (the composed score's performance profile; absent = as composed)]
@@ -20,6 +22,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const cp=require('node:child_process');
 const {launch,rendererOf,adminPost}=require('./harness');
+const {temporaryCopy}=require('./film-copy');
 const ffmpeg=require('ffmpeg-static');
 const REPO=path.resolve(__dirname,'../..');
 const {createService}=require(path.join(REPO,'receiver/server'));
@@ -30,31 +33,40 @@ const world=arg('world','living'),labels=arg('labels','cinematic'),tail=Number(a
 const musicArg=arg('music',null),scoreArg=arg('score',null);
 if(musicArg!==null){let v;try{v=JSON.parse(musicArg);}catch{throw new Error('--music must be a JSON object, e.g. \'{"mood":.7}\'');}if(!v||typeof v!=='object'||Array.isArray(v))throw new Error('--music must be a JSON object');}
 if(scoreArg!==null&&!['2','3'].includes(scoreArg))throw new Error('--score must be 2 or 3');
+const GPUS=['auto','amd','nvidia','off'],gpu=arg('gpu',null),gpuFallback=process.argv.includes('--gpu-fallback');
+if(gpu!==null&&!GPUS.includes(gpu))throw new Error(`--gpu must be one of ${GPUS.join(', ')}`);
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 (async()=>{
   fs.mkdirSync(path.dirname(OUT),{recursive:true});
   let dataDir=path.resolve(arg('data'));
-  if(process.argv.includes('--copy')){const tmp=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cr-film-'));fs.cpSync(dataDir,tmp,{recursive:true});dataDir=tmp;process.on('exit',()=>fs.rmSync(tmp,{recursive:true,force:true}));}
+  // Every way out stops the browser and the receiver (its worker would keep the process alive) and removes the copy.
+  let svc=null,browser=null,enc=null,stopped=null;
+  const stop=()=>stopped||(stopped=(async()=>{if(enc&&enc.exitCode===null&&enc.signalCode===null)enc.kill();
+    await browser?.close().catch(()=>{});await svc?.stop().catch(()=>{});})());
+  if(process.argv.includes('--copy'))dataDir=temporaryCopy(dataDir,{stop}).dir;
   // A pinned recipe is installed before the receiver starts, so the player loads exactly that identity.
   if(arg('recipe')){const dir=path.join(dataDir,'projects',sha(arg('project')));fs.copyFileSync(path.resolve(arg('recipe')),path.join(dir,'recipe.json'));}
   // A visual pack for this film: installed into the film's data directory and approved there (local qualification).
   if(arg('pack')){const packs=require(path.join(REPO,'engine/packs'));const r=packs.install(path.resolve(arg('pack')),dataDir);if(r.executable)packs.setTrust(r.id,dataDir,{trusted:true});console.log(`pack ${r.id} ${r.version} (${r.kind})`);}
-  const svc=await createService({port:0,dataDir}).start();
-  // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
-  await svc.flush();
-  if(arg('look')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'pack',pack:arg('look')}});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
-  if(arg('family')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'family',family:arg('family')}});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
-  if(arg('tune')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'tune',values:JSON.parse(arg('tune'))}});if(!r.ok)throw new Error(`tune: ${await r.text()}`);}
-  const gpu=arg('gpu',null);
-  const browser=await launch(gpu);
-  const renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
-  if(gpu&&gpu!=='off'){
-    if(/SwiftShader|llvmpipe|softpipe/i.test(renderer)){await browser.close();throw new Error(`Requested the GPU but got ${renderer}`);}
-    if(gpu==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}
-    if(gpu==='nvidia'&&!/NVIDIA|GeForce|Quadro|RTX|GTX/i.test(renderer)){await browser.close();throw new Error(`Requested the NVIDIA GPU but got ${renderer}`);}
-  }
-  const started=Date.now();
   try{
+    svc=createService({port:0,dataDir});await svc.start();
+    // Let interpretation catch up (e.g. a rebuild after an interpretation upgrade) without writing to the journal.
+    await svc.flush();
+    if(arg('look')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'pack',pack:arg('look')}});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
+    if(arg('family')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'family',family:arg('family')}});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
+    if(arg('tune')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'tune',values:JSON.parse(arg('tune'))}});if(!r.ok)throw new Error(`tune: ${await r.text()}`);}
+    browser=await launch(gpu);
+    let renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
+    if(gpu&&gpu!=='off'){
+      const software=/SwiftShader|llvmpipe|softpipe/i.test(renderer);
+      if(software&&gpuFallback){
+        console.log(`No hardware GPU reached the browser (${renderer}): rendering in software instead, which is slower. --gpu off skips the attempt; --gpu nvidia or --gpu amd insists on one.`);
+        await browser.close();browser=null;browser=await launch(null);renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
+      }else if(software)throw new Error(`Requested the GPU but got ${renderer}`);
+      else if(!gpuFallback&&gpu==='amd'&&!/AMD|Radeon/i.test(renderer))throw new Error(`Requested the AMD GPU but got ${renderer}`);
+      else if(!gpuFallback&&gpu==='nvidia'&&!/NVIDIA|GeForce|Quadro|RTX|GTX/i.test(renderer))throw new Error(`Requested the NVIDIA GPU but got ${renderer}`);
+    }
+    const started=Date.now();
     const page=await browser.newPage({viewport:{width,height}});
     const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
     const musicQuery=`${musicArg!==null?`&music=${encodeURIComponent(musicArg)}`:''}${scoreArg!==null?`&score=${scoreArg}`:''}`;
@@ -105,7 +117,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
       }
     }else{
       const wavFile=OUT.replace(/\.webm$/,'.wav');fs.writeFileSync(wavFile,Buffer.from(audio.wav,'base64'));
-      const enc=cp.spawn(ffmpeg,['-y','-loglevel','error','-f','image2pipe','-framerate',String(fps),'-c:v','mjpeg','-i','-','-i',wavFile,
+      enc=cp.spawn(ffmpeg,['-y','-loglevel','error','-f','image2pipe','-framerate',String(fps),'-c:v','mjpeg','-i','-','-i',wavFile,
         '-c:v','libvpx-vp9','-b:v','6M','-deadline','good','-cpu-used','4','-row-mt','1','-pix_fmt','yuv420p','-c:a','libopus','-b:a','160k','-shortest',OUT],{stdio:['pipe','inherit','inherit']});
       const keyframes=(arg('keyframes')||'').split(',').filter(Boolean).map(Number);
       await page.evaluate(x=>window.__film.seek(x),from);
@@ -122,5 +134,5 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
       console.log(`film ${OUT} (${(fs.statSync(OUT).size/1e6).toFixed(1)} MB, ${seconds.toFixed(1)} s) rendered in ${((Date.now()-started)/60000).toFixed(1)} min`);
     }
     if(errors.length)console.log('page errors:',errors.slice(0,5));
-  }finally{await browser.close();await svc.stop();}
+  }finally{await stop();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

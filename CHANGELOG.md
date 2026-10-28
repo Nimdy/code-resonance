@@ -37,6 +37,13 @@
   (measured from its last window), and from the whole history only if nothing there scores; the receiver then parses
   only those windows. Home asks for it at most once per 30 s per project, and again only after the project's recorded
   performance grew (it asked on every project update while there was none, and never refreshed one it had).
+- **`npm run film` ends cleanly:** a failure after the temporary receiver started (a software renderer where a GPU was
+  asked for, a refused look or tune, a browser that would not launch, a failed frame) left it and the ffmpeg encoder
+  running, so the command never returned; now every failure stops them. The temporary copy of the data directory
+  (with `receiver-auth.json`) was removed only on a normal exit; now also on Ctrl-C, SIGTERM and SIGHUP, and the wrapper
+  passes a signal on to the renderer and waits for it. A GPU the wrapper detected itself (no `--gpu`) that the browser
+  cannot use now falls back to software with a message instead of failing; `--gpu auto|amd|nvidia` still insists.
+  `--gpu` accepts only `auto`, `amd`, `nvidia` or `off`.
 
 ## 0.7.1 — 2026-10-28
 
