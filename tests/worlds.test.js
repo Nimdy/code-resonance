@@ -105,6 +105,10 @@ test('Generated subsystem names are stable and reveal nothing; user aliases repl
   assert.equal(generatedName('0123456789abcd'),generatedName('0123456789abcd'));
   assert.notEqual(generatedName('0123456789abcd'),generatedName('fedcba98765432'));
   assert.match(generatedName('0123456789abcd'),/^[A-Z][a-z]+$/);
+  // They live in labels.js (pure, so Monolith can name districts without three.js): the same names as before the move.
+  const labels=await import('../public/worlds/labels.js');assert.equal(labels.generatedName,generatedName);
+  const pinned={'0123456789abcd':'Hyaneth',fedcba98765432:'Lyeonon','404470372c88a3':'Deen','6d5cffc3e589d9':'Zaulel','80f461e0771437':'Laera','142d798637357e':'Vauos'};
+  for(const [id,name] of Object.entries(pinned))assert.equal(generatedName(id),name,id);
 });
 test('The shader time origin is a real timestamp, never the replay\'s initial reset at time 0',async()=>{
   const {createModel}=await load('model');const m=createModel();

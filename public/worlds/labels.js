@@ -6,6 +6,22 @@
 export const GENERIC_TITLE='Code Resonance';
 export const LABEL_MODES=['cinematic','explorer','stream','off'];
 const CALLOUT_MS=5200,BANNER_MS=6500,CHIP_MS=6000,TITLE_MS=9000;
+// A pronounceable name derived from a salted subsystem id: memorable, stable, and it reveals nothing about the code (the
+// living worlds' subsystem labels, Monolith's districts). Its hash and generator are core.js's, copied so that this module
+// stays free of three.js.
+const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
+const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
+const CODA=['l','r','n','s','th','v','d','m','','',''];
+const ENDING=['ra','ris','on','el','is','ar','en','or','ia','eth','ion','yn','os','ae','ix','ara','ene','ira'];
+// Re-roll anything that could read as a crude or offensive word.
+const BLOCK=/anu|nus|ass|cum|tit|fag|nig|sex|pis|poo|shi|fuc|dic|coc|kik|rap|cun|vag|tw|hor|slu|wh|nazi|dam|hel/i;
+function hash(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+export function generatedName(id){
+  const r=rng(hash(id)^0x9e3779b9),pick=list=>list[Math.floor(r()*list.length)];
+  for(let i=0;i<12;i++){const name=pick(ONSET)+pick(VOWEL)+pick(CODA)+pick(ENDING);if(!BLOCK.test(name))return name;}
+  return 'Aurel';
+}
 // The approved public title, or null.
 export function publicTitle(recipe){const t=recipe?.title;return typeof t==='string'&&t.trim()?t.trim():null;}
 export function titleCard(recipe){
