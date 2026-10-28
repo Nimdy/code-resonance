@@ -141,7 +141,7 @@ exports the derived performance data as JSON.
 
 ## Last night
 
-Home shows **Last night** beside the live world once a real (not demo) project has a recorded performance long enough to
+Home shows **Last night** under the live world once a real (not demo) project has a recorded performance long enough to
 score: a sped-up replay of one highlight (failure and recovery, a meeting of agents, a structure). Play it there; the
 player does not need Playwright.
 

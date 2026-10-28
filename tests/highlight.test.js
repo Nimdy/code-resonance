@@ -32,7 +32,8 @@ test('A recording with nothing of tier 2 scores null; publicView pins the empty 
   assert.equal(highlight.pick(quiet,T0,T0+1_200_000),null);
   const empty=highlight.publicView('p-123456789012',null);
   assert.equal(empty.schema,'code-resonance.highlight.v1');
-  assert.equal(empty.highlight,null);assert.equal(empty.from,null);assert.equal(empty.score,null);
+  assert.equal(empty.from,null);assert.equal(empty.to,null);assert.equal(empty.score,null);
+  assert.equal('highlight' in empty,false);
   assert.deepEqual(empty.reasons,[]);assert.deepEqual(empty.providers,[]);
 });
 test('GET /api/highlight shares the picker, 404s a missing project, and never names a folder',async t=>{
@@ -67,7 +68,7 @@ test('GET /api/highlight on a project with no recording returns the empty shape'
   fs.writeFileSync(path.join(pdir,'id'),projectId);
   const svc=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000});
   const doc=await (await fetch(`http://127.0.0.1:${svc.port}/api/highlight?id=${projectId}`)).json();
-  assert.equal(doc.highlight,null);assert.equal(doc.from,null);
+  assert.equal(doc.from,null);assert.equal('highlight' in doc,false);
 });
 function plantFilm(t,{title=null,intents=CLUSTER}={}){
   const dir=tempDir(t,'cr-film-');
@@ -117,6 +118,22 @@ test('film wrapper passes --gpu amd when the probe says so, and omits it for --g
   await film.main(['--data',dir,'--project',projectId,'--gpu','off'],{...tools(calls,[]),probe:()=>true});
   assert(!calls[0].args.includes('--gpu'));
 });
+test('film wrapper does not treat /dev/dri alone as AMD; amdgpu does',async t=>{
+  const {dir,projectId}=plantFilm(t,{title:'Night Build'});
+  const wrap=(extra)=>({
+    existsSync(p){if(extra.existsSync){const v=extra.existsSync(p);if(v!==undefined)return v;}return fs.existsSync(p);},
+    readdirSync(p,opts){if(extra.readdirSync){const v=extra.readdirSync(p,opts);if(v!==undefined)return v;}return fs.readdirSync(p,opts);},
+    readFileSync:(...a)=>fs.readFileSync(...a)
+  });
+  const run=async(fsApi,calls)=>film.main(['--data',dir,'--project',projectId],{
+    exists:p=>/playwright-core$|ffmpeg-static$/.test(p),fs:fsApi,spawn:(cmd,args)=>{calls.push(args);return 0;},log(){},err(){}});
+  const dri=[];
+  await run(wrap({existsSync:p=>p==='/dev/dri'?true:p==='/sys/module/amdgpu'?false:undefined,readdirSync:p=>p==='/sys/class/drm'?[]:undefined}),dri);
+  assert(!dri[0].includes('--gpu'));
+  const amd=[];
+  await run(wrap({existsSync:p=>p==='/sys/module/amdgpu'?true:p==='/dev/dri'?false:undefined}),amd);
+  assert.equal(amd[0][amd[0].indexOf('--gpu')+1],'amd');
+});
 test('Home play does not require Playwright; product stays dependency-free; film script is wired',()=>{
   const root=path.join(__dirname,'..');
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
@@ -127,9 +144,14 @@ test('Home play does not require Playwright; product stays dependency-free; film
   const home=fs.readFileSync(path.join(root,'public/ui/workspaces/home.js'),'utf8');
   const renderer=fs.readFileSync(path.join(root,'qualification/visual/film.js'),'utf8');
   assert.match(app,/function playWindow/);
-  const body=app.slice(app.indexOf('function playWindow'),app.indexOf('function playWindow')+700);
+  const body=app.slice(app.indexOf('function playWindow'),app.indexOf('function playWindow')+900);
   assert.match(body,/\[1,4,16\]/);assert(!/speed\s*===\s*2|==\s*2/.test(body));
+  assert.match(body,/music\.setClock\(perfNow/);
+  assert(!/music\.setClock\(from/.test(body));
   assert.match(home,/\/api\/highlight/);assert.match(home,/playWindow/);
+  assert.match(home,/a new structure/);
+  assert.match(home,/nightCache=null/);
+  assert.match(home,/setMode\('live'\)/);
   assert(!/playwright-core|require\(['"]playwright|from ['"]playwright/.test(app+home));
   assert.match(renderer,/includes\('--copy'\)/);
   assert.match(fs.readFileSync(path.join(root,'scripts/film.js'),'utf8'),/'--copy'/);

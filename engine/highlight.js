@@ -60,7 +60,6 @@ function clampWindow(from,to,start,end){
 function cmp(a,b){
   if(b.score!==a.score)return b.score-a.score;
   if(b.from!==a.from)return b.from-a.from;
-  if(b.viewMs!==a.viewMs)return b.viewMs-a.viewMs;
   if(a.speed!==b.speed)return a.speed-b.speed;
   return a.to-b.to;
 }
@@ -69,36 +68,34 @@ function pick(intents,recordingStart,recordingEnd){
   if(!Number.isFinite(start)||!Number.isFinite(end)||!(end>start))return null;
   const all=(intents||[]).filter(i=>i&&Number.isFinite(i.ts)).slice().sort((a,b)=>a.ts-b.ts||String(a.id||'').localeCompare(String(b.id||'')));
   const rec=end-start;
-  const views=[rec<VIEW_MS?FALLBACK_MS:VIEW_MS];
+  const V=rec<VIEW_MS?FALLBACK_MS:VIEW_MS;
   const seen=new Set(),cands=[];
-  const add=(from,to,speed,viewMs)=>{
+  const add=(from,to,speed)=>{
     const w=clampWindow(from,to,start,end);if(!w)return;
-    const key=`${w.from}:${w.to}:${speed}:${viewMs}`;if(seen.has(key))return;seen.add(key);
+    const key=`${w.from}:${w.to}:${speed}`;if(seen.has(key))return;seen.add(key);
     const s=scoreWindow(inWindow(all,w.from,w.to));
-    cands.push({from:w.from,to:w.to,speed,viewMs,score:s.score,reasons:s.reasons,providers:s.providers});
+    cands.push({from:w.from,to:w.to,speed,viewMs:V,score:s.score,reasons:s.reasons,providers:s.providers});
   };
-  const addPlaced=(desired,S,speed,viewMs)=>add(desired,desired+S,speed,viewMs);
-  for(const V of views){
-    for(const speed of [4,16]){
-      const S=V*speed,lead=(S*LEAD)/100;
-      for(const i of all)if(isAnchor(i))addPlaced(i.ts-lead,S,speed,V);
-    }
-    const recovered=all.filter(i=>i.type==='validation.recovered');
-    for(const fail of all){
-      if(fail.type!=='validation.failed'||(fail.tier|0)<2)continue;
-      const recov=pairRecovered(fail,recovered);if(!recov)continue;
-      const A=recov.ts-fail.ts;if(!(A>0))continue;
-      if(A>V*16){
-        const S=V*16,lo=fail.ts,hi=recov.ts,starts=new Set([lo,hi-S]);
-        for(const i of all)if(i.ts>=lo&&i.ts<=hi)starts.add(i.ts);
-        for(const s of starts){
-          let from=s;if(from+S>hi)from=hi-S;if(from<lo)from=lo;
-          add(from,from+S,16,V);
-        }
-      }else{
-        const speed=A>V*4?16:4;
-        addPlaced(fail.ts,V*speed,speed,V);
+  const addPlaced=(desired,S,speed)=>add(desired,desired+S,speed);
+  for(const speed of [4,16]){
+    const S=V*speed,lead=(S*LEAD)/100;
+    for(const i of all)if(isAnchor(i))addPlaced(i.ts-lead,S,speed);
+  }
+  const recovered=all.filter(i=>i.type==='validation.recovered');
+  for(const fail of all){
+    if(fail.type!=='validation.failed'||(fail.tier|0)<2)continue;
+    const recov=pairRecovered(fail,recovered);if(!recov)continue;
+    const A=recov.ts-fail.ts;if(!(A>0))continue;
+    if(A>V*16){
+      const S=V*16,lo=fail.ts,hi=recov.ts,starts=new Set([lo,hi-S]);
+      for(const i of all)if(i.ts>=lo&&i.ts<=hi)starts.add(i.ts);
+      for(const s of starts){
+        let from=s;if(from+S>hi)from=hi-S;if(from<lo)from=lo;
+        add(from,from+S,16);
       }
+    }else{
+      const speed=A>V*4?16:4;
+      addPlaced(fail.ts,V*speed,speed);
     }
   }
   if(!cands.length)return null;
@@ -118,12 +115,9 @@ function fromWindows(windows){
   if(!(end>start))return null;
   return pick(intents,start,end);
 }
-function empty(projectId){
-  return {schema:SCHEMA,projectId,from:null,to:null,speed:null,viewMs:null,score:null,reasons:[],providers:[],highlight:null};
-}
 function publicView(projectId,picked){
-  if(!picked)return empty(projectId);
+  if(!picked)return {schema:SCHEMA,projectId,from:null,to:null,speed:null,viewMs:null,score:null,reasons:[],providers:[]};
   return {schema:SCHEMA,projectId,from:picked.from,to:picked.to,speed:picked.speed,viewMs:picked.viewMs,
     score:picked.score,reasons:picked.reasons,providers:picked.providers};
 }
-module.exports={SCHEMA,VIEW_MS,FALLBACK_MS,pick,fromWindows,publicView,empty};
+module.exports={pick,fromWindows,publicView};

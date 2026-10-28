@@ -66,6 +66,7 @@ test('Propose public names is client-only; alias still requires an explicit acti
   const engine=fs.readFileSync(path.join(__dirname,'../engine/recipe.js'),'utf8');
   assert.match(visual,/Propose public names/);
   assert.match(visual,/type:'alias'/);
+  assert.match(visual,/Some names saved/);
   assert(!/type:\s*['"]propose['"]/.test(visual));
   assert(!/case ['"]propose['"]/.test(engine));
   const p=project('propose',{modules:12,ui:4});

@@ -524,13 +524,16 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       if(!NAME.test(name)){input.setAttribute('aria-invalid','true');input.focus();toast(NAME_RULE,'error');return;}
       actions.push({type:'alias',id:input.dataset.alias,name});
     }
-    if(!actions.length){proposing=false;renderAliases(true);return;}
+    if(!actions.length){proposing=false;proposed=null;renderAliases(true);return;}
+    let next=null;
     try{
-      let next=null;
       for(let i=0;i<actions.length;i+=16)next=await P.recipeAction(actions.slice(i,i+16));
       proposing=false;proposed=null;if(next)await afterDirectSave(next);else renderAliases(true);
       toast('Public names saved.','ok');
-    }catch(e){toast(`Not saved: ${e.message}`,'error');}
+    }catch(e){
+      if(next)await afterDirectSave(next);
+      toast(next?`Some names saved, then: ${e.message}`:`Not saved: ${e.message}`,'error');
+    }
   }
   function cancelProposed(){proposing=false;proposed=null;renderAliases(true);}
   // ---- Presets ------------------------------------------------------------------------------------------------------

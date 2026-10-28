@@ -934,7 +934,7 @@
     const id=selected;
     return (async()=>{
       if(mode!=='replay'){mode='replay';playback=false;queue.length=0;changed('mode','position');}
-      speedChoice=speed;music.setClock(from,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
+      speedChoice=speed;music.setClock(perfNow,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
       await loadReplay();
       if(selected!==id||mode!=='replay'||!replay)return false;
       windowUntil=to;seek(from);playback=true;replayClock=performance.now();changed('position');

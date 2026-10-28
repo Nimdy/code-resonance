@@ -16,7 +16,6 @@ const CI_HINT='cd qualification && npm ci';
 function flag(argv,k){const i=argv.indexOf(`--${k}`);return i<0?undefined:argv[i+1];}
 function has(argv,k){return argv.includes(`--${k}`);}
 function amdLooksPresent(fsApi){
-  try{if(fsApi.existsSync('/dev/dri'))return true;}catch{}
   try{if(fsApi.existsSync('/sys/module/amdgpu'))return true;}catch{}
   try{const drm=fsApi.readdirSync('/sys/class/drm');if(drm.some(n=>n!=='version'&&/amdgpu/i.test(n)))return true;}catch{}
   return false;

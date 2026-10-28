@@ -614,7 +614,9 @@ function createService(options={}) {
         for(;;){
           const {entries,total}=await readTimeline(id,after,2000);
           if(!entries.length)break;
-          windows.push(...entries);after=entries.at(-1).seq;
+          // Graphs and cues are unused by the picker; a long session is large.
+          for(const x of entries)windows.push({start:x.start,end:x.end,intents:x.intents});
+          after=entries.at(-1).seq;
           if(windows.length>=total)break;
         }
         response(res,200,highlight.publicView(id,highlight.fromWindows(windows)));return;

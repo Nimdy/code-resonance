@@ -4,8 +4,11 @@
    resizes it. */
 .ws-home{--home-side:clamp(384px,24vw,560px);--home-gap:clamp(18px,1.3vw,28px);
   /* The widest stage the window's height allows: the window less the top bar, the page's top padding, the one-line head
-     and its gap, and a margin that keeps the recent projects' heading in view. */
-  --hero-max:calc((100dvh - var(--topbar) - 182px) * 16 / 9)}
+     and its gap, and a margin that keeps the recent projects' heading in view. Last night, when shown, is extra height
+     in the hero, so the budget grows and the 16:9 slot shrinks. */
+  --hero-budget:182px;
+  --hero-max:calc((100dvh - var(--topbar) - var(--hero-budget)) * 16 / 9)}
+.ws-home:has(.home-night:not([hidden])){--hero-budget:340px}
 .ws-home.page{padding-top:20px}
 .ws-home .page-inner{gap:18px}
 /* One line: the title and the product name on one baseline, so the stage starts higher. */

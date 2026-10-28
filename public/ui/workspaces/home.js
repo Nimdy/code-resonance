@@ -223,7 +223,7 @@ export default {mount(view,ctx){
   }
   // ---- Last night: sped-up replay of the scored highlight (Playwright is not involved) ----------------------------
   const REASON_WORDS={
-    'validation.failed+recovered':'failure and recovery','providers>=2':'two agents','structure.created':'a structure of tier 2',
+    'validation.failed+recovered':'failure and recovery','providers>=2':'two agents','structure.created':'a new structure',
     'subsystem.connected':'subsystems joined','agent.collision':'a meeting of agents','milestone.achieved':'a milestone',
     'refactor.validated':'a refactor proved','repository.checkpoint':'a checkpoint'};
   let nightSeq=0,nightCache=null,nightId='';
@@ -241,20 +241,23 @@ export default {mount(view,ctx){
       h('div',{class:'home-night-actions'},
         button({label:'Play last night',icon:'play',kind:'primary',size:'sm',title:'Replay this highlight in the slot',onClick:()=>{
           const go=P.playWindow({from:hl.from,to:hl.to,speed:hl.speed});
-          if(go&&typeof go.then==='function')return go.then(ok=>{if(ok===false)toast('The recorded performance could not be played.','error');});
+          if(go&&typeof go.then==='function')return go.then(ok=>{if(ok===false)toast('The recorded performance could not be played.','error');},()=>toast('The recorded performance could not be played.','error'));
           if(go===false)toast('The recorded performance could not be played.','error');
         },attrs:fk('night-play')}),
+        P.state.mode==='replay'?button({label:'Live',kind:'ghost',size:'sm',title:'Return the slot to the live world',onClick:()=>P.setMode('live'),attrs:fk('night-live')}):null,
         titled?copyable(`npm run film -- --project ${pr.id}`):button({label:'Set a public title to publish',kind:'outline',size:'sm',onClick:()=>navigate('visual'),attrs:fk('night-publish')}))]);
   }
   async function loadNight(){
     const pr=S.project(),seq=++nightSeq;
     if(!pr||isDemo(pr)){nightCache=null;nightId='';night.hidden=true;night.replaceChildren();return;}
-    if(nightId===pr.id&&nightCache){renderNight(pr,nightCache);return;}
+    if(nightId===pr.id&&nightCache&&nightCache.from!=null){renderNight(pr,nightCache);return;}
     try{
       const doc=await S.get(`/api/highlight?id=${encodeURIComponent(pr.id)}`);
       if(seq!==nightSeq)return;
-      nightCache=doc;nightId=pr.id;renderNight(pr,doc);
-    }catch{if(seq!==nightSeq)return;night.hidden=true;}
+      nightId=pr.id;
+      if(doc&&doc.from!=null){nightCache=doc;renderNight(pr,doc);}
+      else{nightCache=null;renderNight(pr,null);}
+    }catch{if(seq!==nightSeq)return;nightCache=null;night.hidden=true;night.replaceChildren();}
   }
   // ---- Updates ---------------------------------------------------------------------------------------------------
   function layout(){
@@ -278,13 +281,14 @@ export default {mount(view,ctx){
     if(has('layout'))layout();
     if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('chrome'))renderChrome();
     if(t.has('selection')||t.has('projects'))void loadNight();
-    else if(t.has('recipe')&&nightCache)renderNight(S.project(),nightCache);
+    else if((t.has('recipe')||t.has('mode'))&&nightId===S.project()?.id&&nightCache)renderNight(S.project(),nightCache);
     const sup=P.state.recording.supported.ok;if(has('attention')||(t.has('recording')&&sup!==wasSupported)){wasSupported=sup;renderAttention();}
   }));
   // Relative times ("2 min ago") and the 2-minute capture window age without any event arriving.
   const tick=setInterval(()=>{renderProject();renderRecent();},15000);
   return {unmount(){
     for(const f of offs)f();clearInterval(tick);overlay.remove();
+    if(P.state.mode==='replay')P.setMode('live');
     // Leaving Home for the Stage (rail, F, top bar) completes the guide's last step on this device.
     if(location.hash.startsWith('#/stage'))S.setUi({stageOpened:true});
   }};
