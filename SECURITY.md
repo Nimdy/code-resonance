@@ -48,14 +48,15 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
   pack whose files changed cannot be approved, and the reserved names `trust.json` and Windows device names are refused.
 - **Claude Code hooks from the Control Center** write only `<project>/.claude/settings.local.json`, only the adapter's
   hook entries, after showing you the exact before/after, and only if the file did not change meanwhile; links
-  (`.claude` or the file itself), network paths and folders inside the data directory are refused.
+  (`.claude` or the file itself), network paths, folders inside the data directory and your home directory (or a link
+  to it: its hook files are your user-level settings, which run in every workspace) are refused.
 - **Cursor hooks from the Control Center** write only `<project>/.cursor/hooks.json`, only the adapter's observe-only
-  after-hook entries, after the same review; links (`.cursor` or the file itself), network paths and folders inside
-  the data directory are refused. Prove them only in a **trusted workspace**. The adapter never persists edit hunks
+  after-hook entries, after the same review; links (`.cursor` or the file itself), network paths, folders inside
+  the data directory and the home directory are refused. Prove them only in a **trusted workspace**. The adapter never persists edit hunks
   (`old_string` / `new_string`), command lines or command output.
 - **Codex hooks from the Control Center** write only `<project>/.codex/hooks.json`, only the adapter's observe-only
-  entries, after the same review; links (`.codex` or the file itself), network paths and folders inside the data
-  directory are refused. Prove them only in a **trusted workspace**. `PreToolUse` and `PermissionRequest` are not
+  entries, after the same review; links (`.codex` or the file itself), network paths, folders inside the data
+  directory and the home directory are refused. Prove them only in a **trusted workspace**. `PreToolUse` and `PermissionRequest` are not
   installed (they can deny). The adapter never persists patch hunks, command lines or tool output: paths only, from
   patch headers.
 - **Capture evidence** (Connections) is derived from the journal: session times, the extension's *reported* capture

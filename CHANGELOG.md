@@ -44,6 +44,11 @@
   passes a signal on to the renderer and waits for it. A GPU the wrapper detected itself (no `--gpu`) that the browser
   cannot use now falls back to software with a message instead of failing; `--gpu auto|amd|nvidia` still insists.
   `--gpu` accepts only `auto`, `amd`, `nvidia` or `off`.
+- **Hook installers:** removing the Codex adapter from the Control Center (or merging it again) left its handler in
+  place when it shared a group with one of your own hooks (the group count did not change, so the event looked
+  untouched); it is now removed and your hook stays. The Connections plan and apply for Claude Code, Cursor and Codex
+  refuse your home directory and anything that resolves to it: `~/.claude`, `~/.cursor/hooks.json` and
+  `~/.codex/hooks.json` are user-level and run in every workspace. A project folder inside the home directory is fine.
 
 ## 0.7.1 — 2026-10-28
 

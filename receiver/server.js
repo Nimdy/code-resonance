@@ -179,6 +179,10 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
   let dir;try{dir=await fs.realpath(projectPath);}catch{throw coded('invalid','projectPath does not exist',{key:'projectPath'});}
   if(!(await fs.stat(dir)).isDirectory())throw coded('invalid','projectPath is not a directory',{key:'projectPath'});
   if(path.parse(dir).root===dir)throw coded('invalid','projectPath cannot be the root of a file system',{key:'projectPath'});
+  // The home directory is not a project: its .claude, .cursor and .codex hold the user-level settings and hooks, which
+  // run in every workspace. Compared after resolving both, so a link to it or a path that ends there is refused too.
+  const home=await fs.realpath(os.homedir()).catch(()=>path.resolve(os.homedir()));
+  if(path.relative(home,dir)==='')throw coded('invalid','projectPath cannot be your home directory: hooks there apply to every workspace, so choose the project folder',{key:'projectPath'});
   const data=await fs.realpath(dataDir).catch(()=>dataDir),rel=path.relative(data,dir);
   if(!rel||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel)))throw coded('invalid','projectPath cannot be inside the receiver\'s data directory',{key:'projectPath'});
   const file=path.join(dir,folder,name);

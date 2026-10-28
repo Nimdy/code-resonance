@@ -550,6 +550,25 @@ test('Cursor hooks: plan and apply install, then remove, leaving the rest of the
   fs.rmSync(cursorDir,{recursive:true});fs.writeFileSync(cursorDir,'not a folder');
   assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'.cursor is a file');
 });
+test('Hooks refuse the home directory (its hook files are user-level, for every workspace), a link to it and a path ending there',async t=>{
+  // A temporary home for this test: os.homedir() follows HOME (USERPROFILE on Windows).
+  const home=tempDir(t,'cr-home-'),key=process.platform==='win32'?'USERPROFILE':'HOME',saved=process.env[key];
+  process.env[key]=home;t.after(()=>{if(saved===undefined)delete process.env[key];else process.env[key]=saved;});
+  const {send}=await start(t,{events:false});
+  const project=path.join(home,'code','app');fs.mkdirSync(project,{recursive:true});
+  const linked=path.join(tempDir(t,'cr-home-link-'),'me');let link=true;
+  try{fs.symlinkSync(home,linked,'junction');}catch(e){if(!['EPERM','EACCES'].includes(e.code))throw e;link=false;}
+  for(const adapter of ['claude','cursor','codex']){
+    const plan=body=>send(`/api/integrations/${adapter}/plan`,body),apply=body=>send(`/api/integrations/${adapter}/apply`,body);
+    for(const projectPath of [home,path.join(home,'code','..'),...(link?[linked]:[])])for(const action of ['install','remove']){
+      for(const r of [await plan({projectPath,action}),await apply({projectPath,action,expectHash:''})]){
+        assert.equal(r.status,400,`${adapter} ${action} ${projectPath}`);assert.match((await r.json()).error,/home directory/);
+      }
+    }
+    assert.equal((await plan({projectPath:project,action:'install'})).status,200,`${adapter}: a project inside the home directory is fine`);
+  }
+  for(const f of ['.claude','.cursor','.codex'])assert.equal(fs.existsSync(path.join(home,f)),false,`nothing written in ${f}`);
+});
 test('Codex hooks: plan and apply install, then remove, leaving the rest of the hooks file untouched',async t=>{
   const {svc,dir,send}=await start(t,{events:false});
   const project=tempDir(t,'cr-cc-codex-'),file=path.join(fs.realpathSync.native(project),'.codex','hooks.json');
