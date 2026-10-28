@@ -28,6 +28,8 @@ import {layoutConfig,createLayout,dendriteTree,slotDirection,spontaneous} from '
 import {presence} from '../providers.js';
 const TAU=Math.PI*2,TW=128,NT=5,FT=5,NONE=-1e5,FAR=1e6;
 const MAX_AXONS=720,MAX_FX=6000,MOTES=1800,STORM_GAP=240000,DWELL=4500;
+// A synaptic terminal's bell, in axon radii.
+const TERM=8;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers);
 // the shape is the seat's index in the signal shader: four-point spark, ring, diamond, six-point star, triangle, double
 // ring, then a soft dot.
@@ -53,23 +55,52 @@ float coc(float z){return uDof*clamp(abs(z-uFocus)/max(z,1.),0.,1.)*15.*uPx;}
 float nearFade(float z){return smoothstep(3.,max(8.,.42*uFocus),z);}
 vec3 colOf(float c){return uCol[int(clamp(c,0.,13.)+.5)];}
 `;
-// A glassy tube: bright rims (sharp in focus), a clear body, inner light in the core, a soft halo.
-const TUBE_VARY='varying vec3 vCol,vMemC,vPulse;varying float vV,vE,vBl,vCrk,vD,vSeed;';
-const TUBE_FS=`uniform float uTrans;uniform vec3 uWarn;uniform float uV;${TUBE_VARY}
+// Fragment noise for the membranes' fine structure: a hash, value noise, and a web of fine filaments (ridged, two octaves).
+const FRAG_NOISE=`
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+1.),f.x),f.y);}
+float web(vec2 p){float a=1.-abs(vn(p)*2.-1.),b=1.-abs(vn(p*2.3+7.1)*2.-1.);return pow(a,7.)*.75+pow(b,9.)*.5;}
+`;
+// A glassy tube: bright rims (sharp in focus), a clear body, inner light in the core, a soft halo. Up close (where the
+// tube is wide enough on screen to hold it, in focus) its membrane shows a web of fine filaments with gold specks caught
+// in it; gold beads ride every fibre. vEnd: where an axon gives way to its synaptic terminal. vAl, vLen: the position
+// along the segment and its length on screen (px), past which a free end is rounded.
+const TUBE_VARY='varying vec3 vCol,vMemC,vPulse;varying float vV,vE,vBl,vCrk,vD,vSeed,vW,vWb,vR,vGold,vEnd,vAl,vLen;';
+const TUBE_FS=`uniform float uTrans,uV,uQ;uniform vec3 uWarn,uSpark;${TUBE_VARY}${FRAG_NOISE}
 float hh(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
-void main(){float v=abs(vV),core=exp(-v*v*2.2),rim=exp(-pow((v-.84)*(4.5-2.5*vBl),2.))*(1.-.6*vBl),halo=exp(-v*v*.55)*.2;
+void main(){float o=max(0.,max(-vAl,vAl-vLen))/max(vWb,1e-3),v=length(vec2(vV,o));if(v>1.8)discard;
+  float core=exp(-v*v*2.2),rim=exp(-pow((v-.84)*(4.5-2.5*vBl),2.))*(1.-.6*vBl),halo=exp(-v*v*.55)*.2*smoothstep(1.8,1.4,v);
   vec3 c=vMemC*(rim*uTrans*.55+halo)+vCol*core+vPulse*(core*1.2+halo*2.);
+  float sharp=(1.-vBl)*step(uQ,2.5),ppw=vW/max(vR,1e-3);
+  if(sharp>.01){
+    // the web is laid out in tube radii (around the visible half, and along), so every tube carries the same weave
+    float tex=smoothstep(4.,10.,vW)*sharp*(1.-smoothstep(.92,1.02,v));
+    if(tex>.01){vec2 q=vec2(vD/max(vR,1e-3)*.55,asin(clamp(vV,-1.,1.))*1.3+vSeed*9.);
+      c+=vMemC*web(q*1.7)*(.35+.65*smoothstep(.2,.95,v))*tex*1.1;
+      vec2 g=q*vec2(1.6,2.2),f=fract(g)-.5;float hs=hh(floor(g)+vSeed*31.);
+      if(hs>.83)c+=uSpark*exp(-dot(f,f)*90.)*tex*(.6+.4*sin(uV*(1.3+hs*2.)+hs*40.))*1.4*vGold;}
+    // round beads, at least a pixel and a half, where they stand apart on screen
+    float cw=max(vR*5.,.45),cpx=cw*ppw,bx=vD/cw+vSeed*13.,bc=floor(bx),bh=hh(vec2(bc,vSeed*7.));
+    if(bh>.6){float rad=max(1.5,.5*vW),dx=(fract(bx)-.2-.6*hh(vec2(bc+3.,1.)))*cpx,dy=vV*vWb;
+      c+=uSpark*exp(-(dx*dx+dy*dy)/(rad*rad))*(.55+.45*sin(uV*(.9+bh*1.7)+bh*60.))*vGold*sharp*smoothstep(5.,12.,cpx/rad)*1.3;}}
   if(vCrk>.01){float k=step(.8,hh(vec2(floor(vD*5.),floor(uV*15.+vSeed*40.))));c+=uWarn*k*vCrk*(core+halo)*1.6;}
-  gl_FragColor=vec4(c*vE,1.);}`;
+  gl_FragColor=vec4(c*vE*(1.-smoothstep(vEnd-.3,vEnd,vD)),1.);}`;
 // Quad expansion shared by dendrites and axons: a camera-facing ribbon between a and b, at least ~1 px wide, widened
-// and dimmed by the circle of confusion (energy kept).
+// and dimmed by the circle of confusion (energy kept). ta, tb: the tangents at the ends, shared with the neighbouring
+// segment at a joint so that their edges meet exactly; ca, cb: 1 at a free end, which reaches out by the half-width and
+// is rounded. wpx: the tube's own radius in pixels here; wb: the ribbon's (blurred) half-width unit in pixels.
 const RIBBON=`
-vec4 ribbon(vec3 a,vec3 b,float r,out float e,out float bl){
+vec2 scr(vec4 v){vec4 c=projectionMatrix*v;return c.xy/max(c.w,1e-3)*uRes*.5;}
+vec4 ribbon(vec3 a,vec3 b,vec3 ta,vec3 tb,float ra,float rb,float ca,float cb,out float e,out float bl,out float wpx,out float wb){
   vec4 va=viewMatrix*vec4(a,1.),vb=viewMatrix*vec4(b,1.),vp=mix(va,vb,position.x);
-  vec3 sd=cross(vb.xyz-va.xyz,vp.xyz);sd=length(sd)>1e-7?normalize(sd):vec3(1.,0.,0.);
-  float z=max(-vp.z,.1),k=ppu(z),rpx=r*k,cc=coc(z),w=min(max(rpx,.75*uPx)+cc,36.*uPx);
-  vp.xyz+=sd*position.y*w*1.8/k;vV=position.y*1.8;bl=clamp(cc/w,0.,1.);e=max(rpx,.75*uPx)/max(w,max(rpx,.75*uPx))*min(1.,rpx/(.75*uPx)*.6+.4)*nearFade(z);
-  return projectionMatrix*vp;}
+  vec3 t=mat3(viewMatrix)*mix(ta,tb,position.x),sd=cross(t,vp.xyz);sd=length(sd)>1e-7?normalize(sd):vec3(1.,0.,0.);
+  vec3 tv=t-sd*dot(t,sd);tv=length(tv)>1e-7?normalize(tv):vec3(0.,1.,0.);
+  float r=mix(ra,rb,position.x),z=max(-vp.z,.1),k=ppu(z),rpx=r*k,cc=coc(z),w=min(max(rpx,.75*uPx)+cc,36.*uPx);
+  float cap=mix(ca,cb,position.x)*w*1.8,sx=position.x*2.-1.;
+  vLen=length(scr(vb)-scr(va));vAl=position.x*vLen+sx*cap;
+  vp.xyz+=sd*position.y*w*1.8/k+tv*sx*cap/k;vV=position.y*1.8;bl=clamp(cc/w,0.,1.);e=max(rpx,.75*uPx)/max(w,max(rpx,.75*uPx))*min(1.,rpx/(.75*uPx)*.6+.4)*nearFade(z);
+  wpx=rpx;wb=w;return projectionMatrix*vp;}
 `;
 export function createFamily(ctx){
   const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P=G.palette||{};
@@ -116,19 +147,22 @@ export function createFamily(ctx){
         gl_FragColor=vec4(c,1.);}`}));
   // ---- Dendrites: instanced ribbons in each neuron's frame ---------------------------------------------------------------
   const quad=keep(new THREE.BufferGeometry());quad.setAttribute('position',new THREE.Float32BufferAttribute([0,-1,0,1,-1,0,0,1,0,1,1,0],3));quad.setIndex([0,1,2,2,1,3]);
-  const dend=instancedBuffersOf(quad,{sA:4,sB:4,sI:4,sD:4});
-  const dendMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}attribute vec4 sA,sB,sI,sD;
+  const dend=instancedBuffersOf(quad,{sA:4,sB:4,sI:4,sD:4,sT:4,sU:4});
+  const dendMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}attribute vec4 sA,sB,sI,sD,sT,sU;
     void main(){
       vec4 FC=fT(sI.y,2);float R=max(FC.w,.01),g0=sI.z/R,g1=sI.w/R,grow=clamp((FC.z-g0)/max(1e-4,g1-g0),0.,1.);
       vec4 NA=nT(sI.x,0),ND=nT(sI.x,3);
       float life=ND.x*smoothstep(0.,.8,age(FC.x))*(1.-smoothstep(0.,1.6,age(FC.y)));
       if(grow<=0.||life<=.002){gl_Position=vec4(0.,0.,2.,1.);return;}
       vec3 base=NA.xyz+drift(ND.z)+sD.xyz*NA.w*.85;
-      float e,bl;gl_Position=ribbon(base+sA.xyz,base+mix(sA.xyz,sB.xyz,grow),mix(sA.w,sB.w,position.x),e,bl);
       float d=mix(sI.z,mix(sI.z,sI.w,grow),position.x),near=exp(-d/(2.4*uGlowK));
+      // a trunk swells where it leaves the soma (not in the far network: it is only atmosphere); a growing tip is a free end
+      float tk=step(sD.w,.5)*step(.9,ND.y)*1.8,RS=.55*max(NA.w,.3),dB=mix(sI.z,sI.w,grow);
+      float ra=sA.w*(1.+tk*exp(-sI.z/RS)),rb=sB.w*(1.+tk*exp(-dB/RS)),r=mix(ra,rb,position.x),open=step(grow,.999);
+      float e,bl,wpx,wb;gl_Position=ribbon(base+sA.xyz,base+mix(sA.xyz,sB.xyz,grow),sT.xyz,mix(sU.xyz,sB.xyz-sA.xyz,open),ra,rb,sT.w,max(sU.w,open),e,bl,wpx,wb);
       vec4 NB=nT(sI.x,1),NC=nT(sI.x,2),NE=nT(sI.x,4),FA=fT(sI.y,0),FB=fT(sI.y,1),FD=fT(sI.y,3);
       float stress=FB.w;
-      vec3 inner=mix(uMem*.42,uSoma*1.35*uGlowK,near)*(.7+.3*uBreath+.25*uBeat*near);
+      vec3 inner=mix(uMem*.36,uSoma*1.3*uGlowK,near*near)*(.7+.3*uBreath+.25*uBeat*near);
       vec3 p=vec3(0.);
       // a soma's firing floods back into its dendrites
       float a1=age(NB.x),a2=age(NB.w);
@@ -149,55 +183,118 @@ export function createFamily(ctx){
       inner+=uValid*FD.w*.22*near;
       inner=mix(inner,uWarn*.3+uMem*.12,stress*.75)*(1.-.45*stress);
       float dim=(1.-.7*NC.z)*ND.y;
-      vCol=inner*dim;vPulse=p*dim;vMemC=uMem*dim*(.55+.45*near)*(1.-.35*stress);vE=e*life;vBl=bl;vCrk=stress;vD=d;vSeed=ND.z;}`,TUBE_FS);
+      vCol=inner*dim;vPulse=p*dim;vMemC=uMem*dim*(.55+.45*near)*(1.-.35*stress);vE=e*life;vBl=bl;vCrk=stress;vD=d;
+      vSeed=fract(ND.z+sin(dot(sA.xyz,vec3(12.9898,78.233,37.719)))*43758.5453);vW=wpx;vWb=wb;vR=r;vGold=(.55+.7*near)*dim*(1.-stress);vEnd=1e6;}`,TUBE_FS);
   add(new THREE.Mesh(dend.geometry,dendMat),2);
   // ---- Axons: cubic curves between neurons, evaluated on the GPU from the neurons' live positions -----------------------
   const axon=instancedBuffersOf(quad,{xA:4,xB:4,xC:4,xD:4});
-  const BEZ=`vec3 bez(vec3 p0,vec3 p1,vec3 p2,vec3 p3,float u){float v=1.-u;return v*v*v*p0+3.*v*v*u*p1+3.*v*u*u*p2+u*u*u*p3;}`;
-  const axonMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}${BEZ}attribute vec4 xA,xB,xC,xD;
+  // An axon's curve from its source soma to its synapse (xB: the synapse's offset on the target neuron, the axon's radius).
+  const AXON=`vec3 bez(vec3 p0,vec3 p1,vec3 p2,vec3 p3,float u){float v=1.-u;return v*v*v*p0+3.*v*v*u*p1+3.*v*u*u*p2+u*u*u*p3;}
+    vec3 bezd(vec3 p0,vec3 p1,vec3 p2,vec3 p3,float u){float v=1.-u;return 3.*v*v*(p1-p0)+6.*v*u*(p2-p1)+3.*u*u*(p3-p2);}
+    void axonPts(vec4 xA,vec4 xB,vec4 xC,out vec3 p0,out vec3 p1,out vec3 p2,out vec3 e,out float L,out vec4 SD,out vec4 DD){
+      vec4 SA=nT(xA.x,0),DA=nT(xA.y,0);SD=nT(xA.x,3);DD=nT(xA.y,3);
+      vec3 s=SA.xyz+drift(SD.z),ch;e=DA.xyz+drift(DD.z)+xB.xyz;ch=e-s;L=max(length(ch),1e-3);vec3 dir=ch/L;p0=s+dir*SA.w*.9;
+      vec3 up=abs(dir.y)<.9?vec3(0.,1.,0.):vec3(1.,0.,0.),n1=normalize(cross(up,dir)),n2=cross(dir,n1);
+      p1=p0+ch*.33+(n1*xC.x+n2*xC.y)*L;p2=p0+ch*.67+(n1*xC.z+n2*xC.w)*L;}`;
+  const axonMat=glow(`${COMMON}${TUBE_VARY}${RIBBON}${AXON}attribute vec4 xA,xB,xC,xD;
     float spike(float t0,float s,float u,float L){float a=age(t0);if(a<0.)return 0.;float f=uVa*a/L;if(f>1.08)return 0.;
       float k=s<0.?1.-smoothstep(.22,.5,f):1.;return abs(s)*k*(exp(-pow((u-f)*L*.8,2.))*1.6+step(u,f)*exp(-(f-u)*L/3.)*.35);}
     void main(){
-      vec4 SA=nT(xA.x,0),SD=nT(xA.x,3),DA=nT(xA.y,0),DD=nT(xA.y,3);
+      vec3 p0,p1,p2,e;float L;vec4 SD,DD;axonPts(xA,xB,xC,p0,p1,p2,e,L,SD,DD);
       float life=min(SD.x,DD.x)*(1.-smoothstep(0.,1.6,age(xD.y))),gr=smoothstep(0.,2.4,age(xD.x));
       if(life<=.002||gr<=xA.z){gl_Position=vec4(0.,0.,2.,1.);return;}
-      vec3 s=SA.xyz+drift(SD.z),e=DA.xyz+drift(DD.z)+xB.xyz,ch=e-s;float L=max(length(ch),1e-3);vec3 dir=ch/L,p0=s+dir*SA.w*.9;
-      vec3 up=abs(dir.y)<.9?vec3(0.,1.,0.):vec3(1.,0.,0.),n1=normalize(cross(up,dir)),n2=cross(dir,n1);
-      vec3 p1=p0+ch*.33+(n1*xC.x+n2*xC.y)*L,p2=p0+ch*.67+(n1*xC.z+n2*xC.w)*L;
-      float u0=xA.z,u1=min(xA.w,gr),e2,bl;
-      gl_Position=ribbon(bez(p0,p1,p2,e,u0),bez(p0,p1,p2,e,u1),xB.w*(1.-.35*mix(u0,u1,position.x)),e2,bl);
+      float u0=xA.z,u1=min(xA.w,gr),e2,bl,wpx,wb,ra=xB.w*(1.-.35*u0),rb=xB.w*(1.-.35*u1),r=mix(ra,rb,position.x);
+      gl_Position=ribbon(bez(p0,p1,p2,e,u0),bez(p0,p1,p2,e,u1),bezd(p0,p1,p2,e,u0),bezd(p0,p1,p2,e,u1),ra,rb,step(u0,1e-4),min(1.,step(u1,xA.w-1e-4)+step(.9999,xA.w)),e2,bl,wpx,wb);
       float u=mix(u0,u1,position.x),Ls=L*1.12;
       vec4 NB=nT(xA.x,1),NC=nT(xA.x,2),NE=nT(xA.x,4);
       vec3 p=colOf(NB.z)*spike(NB.x,NB.y,u,Ls)+colOf(NC.y)*spike(NB.w,NC.x,u,Ls)+colOf(11.)*NC.w*.5;
       float my=max(SD.w,uMyelin*.4),bead=smoothstep(.5,.95,.5+.5*cos(u*Ls*2.2+xD.z*30.));
       float dim=(1.-.6*NC.z)*min(SD.y,DD.y);
       vCol=(uMem*.16+uSoma*my*bead*.55*uGlowK)*dim;vPulse=p*dim;vMemC=uMem*(.5+.35*xD.w+.4*my)*dim*(1.-.3*NE.x);
-      vE=e2*life;vMemC*=uAxK;vCol*=uAxK;vPulse*=.5+.5*uAxK;vBl=bl;vCrk=NE.x*.6;vD=u*Ls;vSeed=xD.z;}`,TUBE_FS);
+      vE=e2*life;vMemC*=uAxK;vCol*=uAxK;vPulse*=.5+.5*uAxK;vBl=bl;vCrk=NE.x*.6;vD=u*Ls;vSeed=xD.z;
+      vW=wpx;vWb=wb;vR=r;vGold=.7*dim*uAxK;vEnd=gr>=1.?Ls-${(TERM*.85).toFixed(2)}*xB.w*1.12:1e6;}`,TUBE_FS);
   add(new THREE.Mesh(axon.geometry,axonMat),1);
-  // ---- Somas: glass spheres around a golden nucleus (billboards) ------------------------------------------------------
+  // ---- Somas: irregular glass cells around a golden nucleus (billboards) ----------------------------------------------
   const sq=keep(new THREE.PlaneGeometry(2,2));
   const soma=instancedBuffersOf(sq,{sN:1});
-  const somaMat=glow(`${COMMON}attribute float sN;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd;varying vec3 vNuc,vMemS,vRc;
+  const somaMat=glow(`${COMMON}attribute float sN;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd,vPx;varying vec3 vNuc,vMemS,vRc;
     void main(){
       vec4 NA=nT(sN,0),NB=nT(sN,1),NC=nT(sN,2),ND=nT(sN,3),NE=nT(sN,4);
       if(ND.x<=.002){gl_Position=vec4(0.,0.,2.,1.);return;}
       vec3 c=NA.xyz+drift(ND.z);vec4 vc=viewMatrix*vec4(c,1.);float z=max(-vc.z,.1),k=ppu(z),R=NA.w*(.3+.7*ND.x),cc=coc(z),cw=cc/k;
-      float H=(R+cw)*3.2;vc.xy+=position.xy*H;vQ=position.xy*H/(R+cw);vK=R/(R+cw);vBl=cc/(R*k+cc);
+      float H=(R+cw)*3.2;vc.xy+=position.xy*H;vQ=position.xy*H/(R+cw);vK=R/(R+cw);vBl=cc/(R*k+cc);vPx=R*k;
       float a1=age(NB.x),a2=age(NB.w);vFl=abs(NB.y)*step(0.,a1)*exp(-a1*3.)+abs(NC.x)*step(0.,a2)*exp(-a2*3.)+NC.w*.8+NE.y*.4;
       vAr=a1;vRs=abs(NB.y)*step(0.,a1);vRc=colOf(NB.z);vSt=NE.x;vSd=ND.z;
       vNuc=mix(uSoma*uGlowK,colOf(NB.z),clamp(abs(NB.y)*step(0.,a1)*exp(-a1*1.5)*.7,0.,.7))*(.85+.25*uBreath+.3*uBeat);
       vNuc=mix(vNuc,uWarn*.45+uMem*.1,NE.x*.7);vMemS=uMem;
       vE=ND.y*(1.-.7*NC.z)*vK*vK*nearFade(z);
       gl_Position=projectionMatrix*vc;}`,
-    `uniform float uTrans,uV;uniform vec3 uHi,uWarn;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd;varying vec3 vNuc,vMemS,vRc;
-    void main(){float r=length(vQ),b=vBl,inside=1.-smoothstep(1.-.06-b*.5,1.+b*.4,r),zc=sqrt(max(0.,1.-r*r));
-      float fres=pow(1.-zc,2.)*inside*(1.-.6*b),nuc=exp(-r*r*(6.-3.5*b)),halo=exp(-max(0.,r-.9)*3.2)*.16;
+    `uniform float uTrans,uV,uQ;uniform vec3 uHi,uWarn,uSpark;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd,vPx;varying vec3 vNuc,vMemS,vRc;
+    ${FRAG_NOISE}
+    void main(){float r0=length(vQ),b=vBl,s=vSd*40.,det=smoothstep(8.,30.,vPx)*(1.-b)*step(uQ,2.5);
+      // lobes where the cell pulls out into its trunks, slowly changing (a small neuron stays a round point of light)
+      float t=atan(vQ.y,vQ.x),r=r0/(1.+det*(.07*sin(t*3.+s)+.05*sin(t*5.+s*1.7+uV*.05)+.03*sin(t*8.+s*2.3)));
+      float inside=1.-smoothstep(1.-.06-b*.5,1.+b*.4,r),zc=sqrt(max(0.,1.-r*r));
+      float fres=pow(1.-zc,2.)*inside*(1.-.6*b),halo=exp(-max(0.,r-.9)*3.2)*.16;
+      // up close the golden nucleus draws in to a bright core inside two glassy shells
+      float nuc=mix(exp(-r0*r0*(6.-3.5*b)),exp(-r0*r0*11.)*.9+exp(-r0*r0*55.)*1.1,det);
       vec2 hl=vQ-vec2(-.36,.4);float spec=exp(-dot(hl,hl)*28.)*inside*(1.-b);
       float ring=vRs*exp(-pow((r-(1.05+vAr*3.))*6.,2.))*exp(-vAr*4.)*.18;
       float flick=vSt>.01?.55+.45*step(.45,fract(sin(floor(uV*13.+vSd*50.)*91.7)*4375.85)):1.;
       vec3 c=vMemS*(.1*inside+fres*1.3)*uTrans+vNuc*(nuc*(1.1+vFl*2.6)*flick+halo*(.5+vFl*1.2))+uHi*spec*.7+uHi*ring;
+      if(det>.01){
+        // the membrane: a web of fine filaments wrapped on the cell, gold specks caught in it
+        vec2 sp=vQ/(zc+.35);c+=vMemS*web(sp*3.2+vec2(s,uV*.01))*inside*(.25+.9*fres)*det*1.3;
+        vec2 g=sp*7.+s,f=fract(g)-.5;float hs=h21(floor(g));
+        if(hs>.86)c+=uSpark*exp(-dot(f,f)*70.)*inside*det*(.6+.4*sin(uV*(1.+hs*2.)+hs*50.));
+        c+=vNuc*(exp(-pow((r0-.42)*16.,2.))*.45+exp(-pow((r0-.6)*20.,2.))*.25)*det;
+        // organelles: glassy vesicles around the nucleus
+        for(int k=0;k<6;k++){float fk=float(k),a=fk*1.047+s+sin(uV*.07+fk)*.2;vec2 o=vec2(cos(a),sin(a))*(.48+.2*h21(vec2(fk,s)));
+          float d=length(vQ-o)/(.07+.06*h21(vec2(s,fk)));c+=(vMemS*1.2*exp(-pow((d-1.)*5.,2.))+uSpark*.25*exp(-d*d*6.))*det*.8;}}
       gl_FragColor=vec4(c*vE,1.);}`);
   add(new THREE.Mesh(soma.geometry,somaMat),3);
+  // ---- Synaptic terminals: where each axon ends, a glass bell of vesicles facing a cup on the receiving branch across
+  // the cleft; the spike's arrival is a spark jumping the gap (billboards along the axon's last stretch, on the GPU) ----
+  const term=instancedBuffersOf(sq,{xA:4,xB:4,xC:4,xD:4});
+  const termMat=glow(`${COMMON}${AXON}attribute vec4 xA,xB,xC,xD;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;
+    void main(){
+      vec3 p0,p1,p2,e;float L;vec4 SD,DD;axonPts(xA,xB,xC,p0,p1,p2,e,L,SD,DD);
+      float life=min(SD.x,DD.x)*(1.-smoothstep(0.,1.6,age(xD.y)))*smoothstep(.85,1.,smoothstep(0.,2.4,age(xD.x)));
+      if(life<=.002){gl_Position=vec4(0.,0.,2.,1.);return;}
+      float Rb=xB.w*${TERM}.,Ls=L*1.12;
+      vec4 ve=viewMatrix*vec4(e,1.),vb=viewMatrix*vec4(bez(p0,p1,p2,e,clamp(1.-3.*Rb/Ls,.5,.98)),1.);vec3 ax=ve.xyz-vb.xyz;float al=max(length(ax),1e-5);
+      vec2 dx=length(ax.xy)>1e-6?normalize(ax.xy):vec2(1.,0.),dy=vec2(-dx.y,dx.x);float fl=length(ax.xy)/al,sx=max(fl,.35);
+      vec4 vc=ve-vec4(ax/al*Rb*.55,0.);float z=max(-vc.z,.1),k=ppu(z),cc=coc(z),cw=cc/k,hx=3.*Rb*sx+cw,hy=1.5*Rb+cw;
+      vc.xy+=dx*position.x*hx+dy*position.y*hy;
+      vQ=vec2(position.x*hx/(Rb*sx),position.y*hy/Rb);vPx=Rb*k;vBl=cc/(Rb*k+cc);vFl=fl;vSd=xD.z;
+      vec4 NB=nT(xA.x,1),NC=nT(xA.x,2);
+      float a1=age(NB.x)-Ls/uVa,a2=age(NB.w)-Ls/uVa,s1=NB.y>0.?NB.y*step(0.,a1)*exp(-a1*3.):0.,s2=NC.x>0.?NC.x*step(0.,a2)*exp(-a2*3.):0.;
+      vSp=max(s1,s2)+NC.w*.4;vRel=s1>=s2?a1:a2;vSpC=mix(uSpark,colOf(s1>=s2?NB.z:NC.y),.45);
+      float dim=(1.-.6*NC.z)*min(SD.y,DD.y);vMemT=uMem*1.1*dim;vE=life*dim*(Rb*k/(Rb*k+cc))*nearFade(z);
+      gl_Position=projectionMatrix*vc;}`,
+    `uniform float uV,uQ,uTrans;uniform vec3 uSpark,uHi;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;
+    ${FRAG_NOISE}
+    // a glass wall: a faint body, bright where the line of sight grazes it; a rim seen at an angle
+    float wall(float y,float rho,float aa){float v=y/max(rho,1e-3);return smoothstep(1.+aa,1.-aa,v)*(.12+.9*exp(-pow((v-.9)*6.,2.)));}
+    float rim(vec2 q,float x0,float rx,float ry,float b){return exp(-pow((length(vec2((q.x-x0)/rx,q.y/ry))-1.)*(4.-2.*b),2.));}
+    void main(){vec2 q=vQ;float x=q.x,y=abs(q.y),b=vBl,aa=1.5/max(vPx,1.)+b*.8,s=vSd*50.,det=smoothstep(6.,20.,vPx)*(1.-b)*step(uQ,2.5),rx=.14+.6*(1.-vFl);
+      // presynaptic bell (the axon's stalk swelling into a cup open towards the cleft), postsynaptic cup on the branch
+      float rho=mix(.16,1.,smoothstep(0.,.7,clamp((x+2.6)/2.35,0.,1.))),pre=smoothstep(-2.6-aa,-2.6+aa,x)*smoothstep(-.25+aa,-.25-aa,x);
+      float rho2=mix(.92,.3,smoothstep(0.,1.,(x-.25)/1.55)),post=smoothstep(.25-aa,.25+aa,x)*smoothstep(1.8+aa,1.8-aa,x);
+      vec3 c=vMemT*(wall(y,rho,aa)*pre+wall(y,rho2,aa)*post*.85)*uTrans+mix(vMemT,uSpark,.35)*rim(q,-.25,rx,.9,b)*.8+vMemT*rim(q,.25,rx,.94,b)*.6;
+      // the cleft: a faint warm glow at rest; when a spike arrives a spark jumps the gap
+      c+=uSpark*exp(-x*x*18.-y*y*2.5)*.12;
+      if(vSp>.002){float yy=q.y-.12*sin(x*17.+uV*37.+s)*exp(-max(vRel,0.)*2.);
+        c+=vSpC*vSp*(exp(-yy*yy*60.)*smoothstep(.4,.2,abs(x))*2.2+exp(-(x*x+q.y*q.y)*7.)*2.+exp(-(x*x*2.+q.y*q.y*.6)*1.2)*.5);}
+      if(det>.01){
+        c+=vMemT*web(q*2.6+s)*(pre*smoothstep(1.,.2,y/rho)+post*smoothstep(1.,.2,y/rho2))*det*.9;
+        // vesicles waiting in the bell; those near its mouth glow and cross the gap when it fires
+        for(int k=0;k<9;k++){float fk=float(k),cx=-1.65+1.25*h21(vec2(fk,s)),ry=mix(.16,1.,smoothstep(0.,.7,(cx+2.6)/2.35))*.62;
+          float sz=.11+.07*h21(vec2(fk*3.,s)),rel=min(1.,vSp)*smoothstep(-1.1,-.45,cx);
+          vec2 o=vec2(cx+rel*min(max(vRel,0.),.6)*1.1,(h21(vec2(s,fk+.5))*2.-1.)*ry),dq=(q-o)/sz,hq=dq+vec2(.3,-.3);float d=length(dq);
+          c+=(vMemT*1.4*exp(-pow((d-1.)*4.,2.))+uHi*.5*exp(-dot(hq,hq)*30.)+uSpark*(.25+1.6*rel)*exp(-d*d*3.))*det;}}
+      gl_FragColor=vec4(c*vE,1.);}`);
+  add(new THREE.Mesh(term.geometry,termMat),3);
   // ---- Boutons: one per symbol on its file's branch (GPU points in the neuron's frame) -----------------------------------
   const tips=pointBuffersOf({tI:4,tL:4,tD:4});
   const tipMat=glow(`${COMMON}attribute vec4 tI,tL,tD;varying vec3 vC;varying float vB;
@@ -275,8 +372,14 @@ export function createFamily(ctx){
   // ---- Structure: rebuilt when the network's membership or its axons change ------------------------------------------------
   const trees=new Map();
   const treeOf=(fileId,neuron,j,c=cfg)=>{const key=`${fileId}|${neuron}|${j}`;let t=trees.get(key);if(!t){t={dir:slotDirection(neuron,j,c.K),...dendriteTree(fileId,slotDirection(neuron,j,c.K),c)};
-    const lv0=t.segs.filter(s=>s.level===0);t.entry=lv0[lv0.length-1].b;t.entryD=lv0[lv0.length-1].d1;t.syn=lv0[Math.min(lv0.length-1,1)].b;
+    const lv0=t.segs.filter(s=>s.level===0);t.entry=lv0[lv0.length-1].b;t.entryD=lv0[lv0.length-1].d1;t.syn=lv0[Math.min(lv0.length-1,1)].b;t.joints=jointsOf(t.segs);
     trees.set(key,t);if(trees.size>4096)trees.delete(trees.keys().next().value);}return t;};
+  // A segment that continues the one before it (the tree lists a branch's segments in order, its first child next) shares
+  // the tangent at their joint; an end that continues nothing is free (capped).
+  function jointsOf(segs){const dir=s=>{const d=[s.b[0]-s.a[0],s.b[1]-s.a[1],s.b[2]-s.a[2]],l=Math.hypot(...d)||1;return d.map(x=>x/l);};
+    const mean=(a,b)=>{const m=[a[0]+b[0],a[1]+b[1],a[2]+b[2]],l=Math.hypot(...m)||1;return m.map(x=>x/l);};
+    return segs.map((s,k)=>{const d=dir(s),p=segs[k-1],n=segs[k+1],prev=p&&p.b===s.a,next=n&&n.a===s.b;
+      return {tin:prev?mean(dir(p),d):d,tout:next?mean(d,dir(n)):d,capA:prev?0:1,capB:next?0:1};});}
   let net=null,built={key:'',cheap:''},neuronList=[],fileList=[],fileIdx=new Map(),neuronIdx=new Map(),axons=[],adjacency=[],realSegs=0,ghostSegs=0,realTips=0;
   function axonsOf(t){
     const pairs=new Map();
@@ -296,8 +399,9 @@ export function createFamily(ctx){
     let ns=0,nt=0;const count=(from,to)=>{for(let k=from;k<to;k++){ns+=fileList[k].tree.segs.length;nt+=fileList[k].tree.sites.length;}};
     count(0,realFiles);realSegs=ns;realTips=nt;count(realFiles,fileList.length);ghostSegs=ns-realSegs;
     dend.ensure(ns);tips.ensure(nt);let si=0,ti=0;
-    fileList.forEach((f,fi)=>{const ni=neuronIdx.get(f.neuron.id),{segs,sites,dir}=f.tree;
-      for(const s of segs){dend.write('sA',si,...s.a,s.ra);dend.write('sB',si,...s.b,s.rb);dend.write('sI',si,ni,fi,s.d0,s.d1);dend.write('sD',si,...dir,s.level);si++;}
+    fileList.forEach((f,fi)=>{const ni=neuronIdx.get(f.neuron.id),{segs,sites,dir,joints}=f.tree;
+      segs.forEach((s,j)=>{const J=joints[j];dend.write('sA',si,...s.a,s.ra);dend.write('sB',si,...s.b,s.rb);dend.write('sI',si,ni,fi,s.d0,s.d1);dend.write('sD',si,...dir,s.level);
+        dend.write('sT',si,...J.tin,J.capA);dend.write('sU',si,...J.tout,J.capB);si++;});
       sites.forEach((s,k)=>{tips.write('position',ti,0,0,0);tips.write('tI',ti,ni,fi,k,s.d);tips.write('tL',ti,...s.p,s.tip?1:0);tips.write('tD',ti,...dir,0);ti++;});});
     dend.commit(si);tips.commit(ti);
     // Axons: one per (neuron, imported file); tracts between two clusters share their bend, so they bundle.
@@ -308,14 +412,17 @@ export function createFamily(ctx){
     let n=0;for(const a of axons)n+=a.S;axon.ensure(n);let k=0;
     for(const a of axons){for(let s=0;s<a.S;s++){axon.write('xA',k,a.si,a.di,s/a.S,(s+1)/a.S);axon.write('xB',k,0,0,0,a.r);axon.write('xC',k,...a.c);axon.write('xD',k,a.bornS,a.goneS,a.seed,a.cross?1:0);k++;}}
     axon.commit(k);
+    term.ensure(axons.length);axons.forEach((a,j)=>{term.write('xA',j,a.si,a.di,0,1);term.write('xB',j,0,0,0,a.r);term.write('xC',j,...a.c);term.write('xD',j,a.bornS,a.goneS,a.seed,a.cross?1:0);});
+    term.commit(axons.length);
     U.uAxK.value=clamp(Math.sqrt(90/Math.max(1,axons.length)),.3,1);
     adjacency=neuronList.map(()=>[]);for(const a of axons){if(!adjacency[a.si].includes(a.di))adjacency[a.si].push(a.di);if(!adjacency[a.di].includes(a.si))adjacency[a.di].push(a.si);}
     soma.ensure(neuronList.length);neuronList.forEach((_,i)=>soma.write('sN',i,i));soma.commit(neuronList.length);
   }
   function rebuild(){built.cheap='';built.key='';}
   // The target of each axon (the synapse on the imported file's branch) moves with the soma it sits on: rewritten per frame.
-  function placeSynapses(){let k=0;for(const a of axons){const R=somaR[a.di]||1,x=a.local[0]*R+a.syn[0],y=a.local[1]*R+a.syn[1],z=a.local[2]*R+a.syn[2];
-    for(let s=0;s<a.S;s++){axon.write('xB',k,x,y,z,a.r);k++;}}axon.geometry.attributes.xB.needsUpdate=true;}
+  function placeSynapses(){let k=0;axons.forEach((a,j)=>{const R=somaR[a.di]||1,x=a.local[0]*R+a.syn[0],y=a.local[1]*R+a.syn[1],z=a.local[2]*R+a.syn[2];
+    for(let s=0;s<a.S;s++){axon.write('xB',k,x,y,z,a.r);k++;}term.write('xB',j,x,y,z,a.r);});
+    axon.geometry.attributes.xB.needsUpdate=true;term.geometry.attributes.xB.needsUpdate=true;}
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0,overrides:{},agents:[]};
   let somaR=new Float32Array(0),npos=new Float32Array(0),nseed=new Float32Array(0);
@@ -422,9 +529,7 @@ export function createFamily(ctx){
         const col=COLS[cc]||COLS[C_SPONT],k=Math.abs(s);
         if(fr<1&&(s>0||fr<.5)){const p=curve(a,fr);fxn=fxPoint(fxn,p,col,k*(s<0?.5:1)*(1-(s<0?smooth((fr-.25)/.25):0))*1.3,5.5,8);}
         else if(fr>=1&&s>0){const aa=(ag-Ls/VA);if(aa<.7){const p=curve(a,1),f=1-aa/.7;fxn=fxPoint(fxn,p,COLS[C_STORM],k*f*f*1.6,16*f+4,9);}
-          const at=tf+Ls/VA*1000*sp,prev=syn.get(a.ti);if(!prev||prev[0]<at)syn.set(a.ti,[at,Math.min(1,k)]);}}
-      // the synaptic gap: a knob before it, the bouton after it
-      if(fxn<MAX_FX-2){fxn=fxPoint(fxn,curve(a,.955),U.uMem.value,.32,3.4,8);fxn=fxPoint(fxn,curve(a,1),U.uSoma.value,.3,3,8);}}
+          const at=tf+Ls/VA*1000*sp,prev=syn.get(a.ti);if(!prev||prev[0]<at)syn.set(a.ti,[at,Math.min(1,k)]);}}}
     for(let fi=0;fi<F;fi++){if(fileList[fi].ghost)continue;const x=syn.get(fi);FS.set(fi,3,x?S(x[0]):NONE,x?x[1]:0,fileSym[fi],fileValid[fi]);}
     NS.commit();FS.commit();lastStats={fires:fires.filter(x=>x.t1>-Infinity).length};
     return fxn;
@@ -549,13 +654,15 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     const az=cam.personality==='glide'?baseAz+Math.sin(i.tview/160)*.55*drift*motion:baseAz+i.tview*TAU/1300*motion*(.5+.5*drift);
     let elev=.06+.42*clamp(num(cam.elevation,.3),.05,.9)+Math.sin(i.tview/97)*.04*drift*motion;
     const target=new THREE.Vector3(c[0],c[1],c[2]);
+    // what changed is seen up close (a few soma widths fill the frame: the membranes, the nucleus, the synapses); an agent's
+    // work in a medium close-up; between them the network
     const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;let k=0;
-    if(att&&since<13&&!stormNow){const p=attentionPos(att);if(p){k=smooth(since/1.6)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1)*.8;
-      target.lerp(p,k);distance=lerp(distance,Math.max(16,R*.42/tanHalf),k);}}
+    if(att&&since<13&&!stormNow){const p=attentionPos(att);if(p){k=smooth(since/1.6)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1)*.85;
+      target.lerp(p,k);distance=lerp(distance,Math.min(distance,4.4/tanHalf),k);}}
     if(k<.01){const busy=i.agents.map(a=>workOf(a,i.t)).find(Boolean);
-      if(busy){const p=siteOf(busy,[0,0,0]);if(p){target.lerp(tmp.set(...p),.22);distance=lerp(distance,Math.max(18,R*.6/tanHalf),.18);}}}
+      if(busy){const p=siteOf(busy,[0,0,0]);if(p){target.lerp(tmp.set(...p),.5);distance=lerp(distance,Math.min(distance,7/tanHalf),.55);}}}
     goalTarget.copy(target);
-    return {target,distance,azimuth:az,elevation:elev,fov,omega:k>.01?.75:.5};
+    return {target,distance,azimuth:az,elevation:elev,fov,omega:k>.01?1.1:.5};
   }
   function attentionPos(c){const s=c.subject||{};
     if(s.fileId&&fileIdx.has(s.fileId)){const p=siteOf(s.fileId,[0,0,0]);if(s.targetId&&fileIdx.has(s.targetId)){const q=siteOf(s.targetId,[0,0,0]);return new THREE.Vector3((p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2);}return new THREE.Vector3(...p);}

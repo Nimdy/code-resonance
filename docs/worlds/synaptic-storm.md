@@ -13,16 +13,20 @@ Nobody has reviewed it artistically yet. Everything below marked *prototype* is 
 ![A large project as a network](synaptic-storm-network.jpg)
 
 *Excalidraw (450 files, 9 subsystems), generated identity, at the end of its recording: clusters of neurons, the
-dependency tracts between them, spikes travelling the tracts. Software rendering, 960×540.*
+dependency tracts between them, spikes travelling the tracts. Every still on this page: GPU (AMD Radeon iGPU through
+WSL2), rendered at 1920×1080, shown at 960×540.*
 
 | | |
 |---|---|
+| ![Synaptic terminals](synaptic-storm-synapses.jpg) | ![A close-up after a recovery](synaptic-storm-closeup.jpg) |
+| The end of the session: the axons from the neurons below end in glass bells of vesicles on the hub's trunks; gold beads ride the fibres | A recorded event seen up close (here the recovery, 6 s on): the soma's lobed membrane, its organelles and nucleus, the branches' weave |
 | ![An agent at work](synaptic-storm-agent.jpg) | ![A failing test run](synaptic-storm-failure.jpg) |
-| An agent's attributed edit: the signal (Claude, rose) at the branch it edited, the branch lit in its colour, the neuron firing | A failing run: the covered branches misfire in the warning colour, static crackles along them, the void dims |
+| An agent's attributed edit: the signal (Claude, rose) at the branch it edited, the branch lit in its colour, the neuron firing | A failing run, 6 s on, up close: the covered branches misfire in the warning colour, static crackles along them, the void dims |
 | ![The earned storm](synaptic-storm-storm.jpg) | ![Idle](synaptic-storm-idle.jpg) |
 | The first verified milestone (a recovery): the earned storm floods the network gold-white from the subject outward | 90 s after the last event: the same network breathing, spontaneous firing on the beat, drift, motes |
 
-*Lumen Recipes (17 files in 6 subsystems at its end), the same identity throughout; from `qualification/visual/lab.js`.*
+*Lumen Recipes (17 files in 6 subsystems at its end), the same identity throughout; from `qualification/visual/lab.js`
+(`--events --after 6` for the close-ups).*
 
 ## Mapping: what drives what
 
@@ -33,7 +37,7 @@ Every structure is project data from the world model (`public/worlds/model.js`);
 | Subsystem: `model.districts` (`id`, `order`, `q`, `r`, `role`, `districtBorn`) | A **cluster** of neurons; its first neuron is the hub (a slightly larger soma) | Placed by the force layout below; `role` is named in labels only |
 | File: `model.modules` (`group`, `order`, `born`, `removed`, `states`) | A **dendrite branch** of a neuron. A subsystem's files fill neurons of *K* branches each, in creation order (`geometry.filesPerNeuron`) | A file never changes neuron or branch slot: only files born before it count |
 | File's symbols: `model.symbols` (`born`, `removed`, `weldAt`) | How far the branch **reaches** (58 % of its tree with no symbols, all of it from 15), and one **bouton** per live symbol, nearest the soma first | The tree's shape is seeded by the file id and never depends on the count: growth only reveals it |
-| Dependency: `model.links` (`a` imports `b`, `born`, `removed`) | An **axon** from the importing file's neuron to a **synapse** on the imported file's branch; axons between two clusters share their bend and bundle into a **tract** | One axon per (neuron, imported file); at most 720; grows from the source over 2.4 s when born |
+| Dependency: `model.links` (`a` imports `b`, `born`, `removed`) | An **axon** from the importing file's neuron to a **synapse** on the imported file's branch, where it ends in a **synaptic terminal** (a bell of vesicles facing a cup on the branch); axons between two clusters share their bend and bundle into a **tract** | One axon per (neuron, imported file); at most 720; grows from the source over 2.4 s when born |
 | Neuron soma size | Its live files and their symbols (`somaRadius`), eased in at birth | |
 | Material state (`stateAt`): `stressed`, `validated` | Misfiring and static (stressed), a calm sheen (validated) | Eased in 1.5 s, relaxes over 4 s |
 | `m.lastAgent`, `m.agentVoice` (a **correlated** edit, the model's cue) | The edit lands: an input pulse in the agent's colour, more on each beat for 4.5 s (dwell), the branch glowing in that colour (fading over about 10 s), the neuron firing | The agent signal goes to that branch for the dwell |
@@ -54,11 +58,22 @@ it) but does not fire: one hop, sub-threshold, so activity shows influence witho
 - **Palette** (its own stream, `synapticPalette` in `engine/recipe.js`): `primary` the somas' golden-orange (hue 22–40),
   `secondary` the membrane (blue, indigo, violet, magenta-violet or teal), `accent` the spark, `highlight` speculars,
   `deep` and `haze` the void (navy to violet, kept dark whatever a tuning says), `warning` failure, `valid` tests.
-- **Somas**: billboarded glass spheres: a dim clear body, a Fresnel rim in the membrane colour, a specular highlight,
+- **Somas**: billboarded glass cells: a dim clear body, a Fresnel rim in the membrane colour, a specular highlight,
   a golden nucleus that flashes when the neuron fires (tinted by the cause: an agent's colour, gold growth, valid
-  green, storm white-gold, warning for a misfire), a thin ring on firing.
+  green, storm white-gold, warning for a misfire), a thin ring on firing. Up close (a soma wider than about 8 px and in
+  focus) the outline turns lobed and slowly changing, the membrane shows a web of fine filaments with gold specks, the
+  nucleus draws in to a bright core inside two glassy shells, and six organelles sit around it; small, a soma stays a
+  round point of light.
 - **Processes**: camera-facing ribbons with a glass-tube profile (bright rims, inner light); the inner light is gold
-  near the soma and the membrane's colour farther out; dendrites taper from the soma to their tips along smooth arcs.
+  close to the soma and the membrane's colour beyond; dendrites taper from the soma to their tips along smooth arcs,
+  their trunks swelling where they leave it. Consecutive segments share the tangent at their joint, so a branch is one
+  seamless tube; free ends (tips, growing ends, branch starts) are rounded. Gold beads ride every fibre wherever they
+  stand apart on screen; where a tube is wider than about 4 px its membrane carries the same filament web and specks,
+  laid out in tube radii.
+- **Synaptic terminals**: each axon ends in a glass bell (8 axon radii) whose mouth faces a cup on the receiving branch
+  across the cleft; nine vesicles wait in the bell, the cleft glows faintly. When a spike arrives (the same arrival the
+  axon's spike computes, on the GPU), a spark jumps the gap in the spike's colour and the vesicles at the mouth glow and
+  cross it. Up close only: the vesicles and the membrane web need about 6 px of bell radius.
 - **Depth of field**: a circle of confusion from the focus distance (the camera's subject) widens and dims ribbons,
   somas and points (energy kept), so the near and far network turns to bokeh; anything just in front of the lens fades out.
 - **Atmosphere** (never code): a far network of dim, out-of-focus neurons beyond the camera's orbit, slow violet haze,
@@ -84,7 +99,10 @@ Pure functions of the model and the time (`synaptic-layout.js`, no THREE; pinned
 4. **Axons**: cubic curves from the source soma to the synapse, evaluated on the GPU from the neurons' live positions;
    the bend comes from the cluster pair's seed (tracts) plus a small per-axon jitter.
 5. **Framing**: the centre is weighted by neurons; the camera's distance grows with the square root of the network's
-   radius, so a small project fits the frame and a large one fills it and runs past its edges.
+   radius, so a small project fits the frame and a large one fills it and runs past its edges. A recorded event the
+   director gives attention is seen up close (4.4 / tan(fov/2) from its subject: the membranes, nuclei and synapses
+   fill the frame), an agent's work in a medium close-up (7 / tan(fov/2)); never farther out than the network view,
+   and not during a full storm, which pulls back.
 
 ## Idle behaviour
 
@@ -118,7 +136,8 @@ null in a pack frame):
   farther out (waiting), or circling the network. Moving between goals it travels a lifted arc for 1.8 s with a trail.
 - **What its work does**: pulses in its colour run into that branch on every beat while it works and during the
   dwell, the branch keeps a glow in its colour, the neuron fires, the spike runs to the files it imports, a spark jumps
-  each synapse. Reading draws particles out of the branch instead of into it. The camera leans toward the work.
+  each synapse. Reading draws particles out of the branch instead of into it. The camera moves in to a medium close-up
+  of the work.
 - Real data is sparse here: in the recorded datasets an agent's tool state lasts about 40 ms and rarely names a file,
   which is why the attributed edit (not the tool state) drives the dwell. Several agents on one file share it; *planned*:
   `agent.collision` drawn as two signals meeting at one neuron (today it borrows the axon-link look, as the director
@@ -165,9 +184,16 @@ effects are dropped and the lasting myelin comes back from the director's record
 
 ## Performance
 
-Seven draw calls (background at half resolution, motes, axons, dendrites, somas, boutons, signals), all instanced
-ribbons, billboards and points with additive blending, no raymarching, no extra render target. Per-frame CPU state
-goes into two RGBA float textures read with `texelFetch`.
+Eight draw calls (background at half resolution, motes, axons, synaptic terminals, dendrites, somas, boutons,
+signals), all instanced ribbons, billboards and points with additive blending, no raymarching, no extra render target.
+Per-frame CPU state goes into two RGBA float textures read with `texelFetch`. The terminals are evaluated on the GPU
+from the axons' own curves (one billboard per axon); the CPU no longer draws two points per axon for the synapse.
+
+| GPU time per frame (lab `gpuMs`; AMD Radeon iGPU, WSL2 d3d12; 1920×1080, quality 0) | Lumen (17 files) | Excalidraw (450 files) |
+|---|---|---|
+| Before the close-up detail (the end of the session and two agent-touch stills) | 12.4–13.6 ms | not measured |
+| With it, the same three stills | 14.3–16.4 ms | |
+| With it, 13 stills (events, touches, the end) | 14.1–17.9 ms | 23.0 ms (the end) |
 
 | Measured (Node update / lab, SwiftShader 960×540) | Lumen (17 files) | Self (92 files) | Excalidraw (450 files) |
 |---|---|---|---|
@@ -181,11 +207,12 @@ goes into two RGBA float textures read with `texelFetch`.
 | 0 | MSAA 4×, everything |
 | 1 | No MSAA (host) |
 | 2 | 75 % resolution (host); half the far network; 55 % of the motes |
-| 3 | 55 % resolution (host); no far network; 35 % of the motes; the void's haze without its noise |
+| 3 | 55 % resolution (host); no far network; 35 % of the motes; the void's haze without its noise; none of the close-up detail (membrane web, specks, beads, lobes, organelles, vesicles) |
 
-Not yet measured: GPU time on an integrated GPU at Auto, OBS capture, long soak. The costs to watch: fill (soma
-billboards are 3.2× the soma; blurred ribbons widen up to 36 px) and, in large projects, the CPU update (the per-frame
-layout signature walks every link; spike heads and synapse sparks evaluate each axon's curve on the CPU).
+Films always render at quality 0. Not yet measured: GPU time at Auto in live playback, OBS capture, long soak. The
+costs to watch: fill (soma billboards are 3.2× the soma, terminal billboards 6 × 3 bell radii; blurred ribbons widen up
+to 36 px; up close the fragment work of the filament web) and, in large projects, the CPU update (the per-frame layout
+signature walks every link; spike heads and synapse flares evaluate each axon's curve on the CPU).
 
 ## Selection and compatibility
 

@@ -7,7 +7,7 @@
 //        [--tune '{"atmosphere.fog":0.4}'] (tuned values, as a preset or the Visual Studio would apply them)
 //   --dataset   a receiver data directory under results/datasets/ (or a path): lumen, excalidraw, self, lumen-long, …
 //   --at        moments as fractions of the recorded performance (1 = its end: the mature project)
-//   --events    stills around real recorded intents: 1 s and 3.5 s after the first validation.failed,
+//   --events    stills around real recorded intents: 1 s and 3.5 s (--after, seconds) after the first validation.failed,
 //               validation.recovered / milestone.achieved, subsystem.created and repository.checkpoint found
 //   --touch     stills during agents' touches: 0.5 s and 1.4 s after the first recorded edit of a file, and of a read
 //   --idle      seconds after the last recorded event (no events added: the world's honest idle life)
@@ -26,6 +26,7 @@ const [W,H]=arg('size','1920x1080').split('x').map(Number),LABELS=arg('labels','
 const SRC=fs.existsSync(DATASET)?path.resolve(DATASET):path.join(__dirname,'..','results','datasets',DATASET);
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','lab')));
 const STRIP=arg('strip',null)?.split('x').map(Number)||null;
+const AFTER=(arg('after','1,3.5')||'').split(',').filter(Boolean).map(x=>Number(x)*1000);
 const ffmpeg=require('ffmpeg-static'),cp=require('node:child_process');
 const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==null?`-v${VARIANT}`:''}`);
 (async()=>{
@@ -50,7 +51,7 @@ const TAG=arg('tag',`${path.basename(SRC)}-${FAMILY||'generated'}${VARIANT!==nul
       if(has('events')){
         for(const type of ['validation.failed','validation.recovered','milestone.achieved','subsystem.created','repository.checkpoint']){
           const i=all.find(x=>x.type===type);if(!i)continue;
-          for(const d of [1000,3500])moments.push({name:`${type.replace(/\./g,'-')}+${d/1000}s`,t:i.ts+d});
+          for(const d of AFTER)moments.push({name:`${type.replace(/\./g,'-')}+${d/1000}s`,t:i.ts+d});
         }
       }
       for(const s of (arg('idle','')||'').split(',').filter(Boolean))moments.push({name:`idle${s}s`,t:info.end+Number(s)*1000});
