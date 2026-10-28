@@ -59,7 +59,8 @@ Not done. When you run it:
 5. Stage / OBS labels stay on **cinematic** or **stream**. Confirm no folder name, path or prompt is drawn.
 
 A meeting of two catalogued providers on the same file or district inside 60 s is `agent.collision` (an intent and a
-derived cue). Last-writer still attributes the edit. Worlds express the collision; they never invent one.
+derived cue that adds no progress, since interpretation 9). Last-writer still attributes the edit. Worlds express the
+collision; they never invent one.
 
 ## 4. Morning: Last night and a film
 

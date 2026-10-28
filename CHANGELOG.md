@@ -14,6 +14,14 @@
   **Compatibility:** the receiver still answers the 0.7.1 form (`?nonce=` without `v`) for an extension installed
   before. A receiver started before this change has no v2 proof: restart it, or the updated hooks and extension hold
   their events until you do.
+- **Interpretation 9 (projects rebuild once):** the `agent.collision` cue now weighs 0, like every other agent cue. In
+  8 it weighed its magnitude (0.4–0.6) and fed progress, energy and the chapter, so two agents on the same files raised
+  an existing project's chapter on rebuild; now a two-agent journal has exactly the progress and chapter of the same
+  journal with one provider. Collisions count only catalogued providers (Claude, Cursor, Codex, Grok, Qwen, Kimi):
+  `unspecified`, `external-agent` and other ids still attribute their edits but never make a meeting. The catalog
+  lookup ignores Object members (`constructor`, `__proto__`, …). On the first start each project's derived files are
+  rebuilt from its journal (the journal is not rewritten); the collision intent, its magnitude and what worlds and the
+  score play for it are unchanged.
 
 ## 0.7.1 — 2026-10-28
 

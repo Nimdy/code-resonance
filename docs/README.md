@@ -62,7 +62,7 @@ The milestones were developed as a stack of eleven pull requests, integrated int
 ([integration manifest](history/integration-manifest.md)). The documents call them by phase numbers that are not
 consistent, so the pull request is the key here. 0.7.1 (this tree) is the CAST campaign after that stack, plus pairing
 proof, ecology CI, and highlight/label hardening:
-[campaign-0.7.md](campaign-0.7.md). Interpretation 8 is independent of the product version.
+[campaign-0.7.md](campaign-0.7.md). Interpretation 9 is independent of the product version.
 
 | PR | Milestone | Qualification | Changelog | Evidence in the repository |
 |---|---|---|---|---|

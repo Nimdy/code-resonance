@@ -24,3 +24,15 @@ test('Engine and player catalogs match on id, seat, display and chip',async()=>{
   assert.deepEqual(fields(unknown),fields(pub.presence('unknown-vendor')));
   assert.equal(engine.presence('claude-code').unknown,undefined);
 });
+test('Object members are not providers: the catalog is looked up by own keys only',async()=>{
+  const pub=await import('../public/providers.js');
+  for(const cat of [engine,pub]){
+    for(const id of ['constructor','__proto__','toString','hasOwnProperty','valueOf']){
+      const p=cat.presence(id);
+      assert.equal(typeof p,'object');assert.equal(p.id,id);assert.equal(p.unknown,true);assert(cat.UNKNOWN_SEATS.includes(p.seat),id);
+      assert.equal(cat.catalogued(id),false,id);
+    }
+    for(const id of Object.keys(SEATS))assert.equal(cat.catalogued(id),true,id);
+    assert.equal(cat.catalogued(undefined),false);assert.equal(cat.catalogued('unspecified'),false);
+  }
+});
