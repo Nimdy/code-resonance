@@ -113,13 +113,15 @@ function packParameters(p,snap){
 function catalogView(snap){
   const families={},packFamilies={},looks={};
   for(const [id,f] of Object.entries(catalog.FAMILIES))families[id]={name:f.name,builtin:true,parameters:recipes.tunable({family:id}),effects:[...f.effects],unlocks:[...f.unlocks]};
+  // Preview families: built in, chosen only explicitly (never by the scoring), listed apart from the stable three.
+  const previews={};for(const [id,f] of Object.entries(catalog.PREVIEWS))previews[id]={name:f.name,builtin:true,preview:true,parameters:recipes.tunable({family:id}),effects:[...f.effects],unlocks:[...f.unlocks]};
   for(const p of snap.packs){
     if(!p.ok||!p.compatible)continue;
     if(p.kind==='world'&&p.family)packFamilies[p.id]={name:p.family.name,parameters:packParameters(p,snap)};
     // A creation is applied as its composition (Visual Packs, Artist Studio), not chosen as a look.
     if(p.overlay&&!p.overlay.composition)looks[p.id]={base:p.overlay.base,kind:p.kind,uniforms:p.kind==='shader'?packParameters(p,snap):{}};
   }
-  return {version:catalog.CATALOG_VERSION,families,packFamilies,looks};
+  return {version:catalog.CATALOG_VERSION,families,previews,packFamilies,looks};
 }
 // What a (candidate) recipe needs to run: built in, a world pack, or a shader look; approved and present or not.
 function runtimeOf(r,snap){
