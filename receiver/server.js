@@ -21,13 +21,14 @@ const Composition=require('../public/composition.js');
 const recipes=require('../engine/recipe');
 const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
+const providers=require('../engine/providers');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
 const VERSION=require('../package.json').version;
 const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
 const PUBLIC=path.join(REPO,'public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
-  ['/construct.js','construct.js'],['/recording.js','recording.js'],['/composition.js','composition.js'],['/composition-text.js','composition-text.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
+  ['/providers.js','providers.js'],['/construct.js','construct.js'],['/recording.js','recording.js'],['/composition.js','composition.js'],['/composition-text.js','composition-text.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 // The Control Center's modules: one optional folder level, lowercase names (the pattern alone keeps requests inside public/ui).
 const UI_FILE=/^\/ui\/(?:[a-z0-9-]+\/)?[a-z0-9-]+\.(?:js|css|svg)$/;
 // Windows opens a device for these names (with any extension, before Windows 11): never a file the receiver serves.
@@ -381,7 +382,8 @@ function createService(options={}) {
         settings,openSettingsUri:`vscode://${EXTENSION.publisher}.${EXTENSION.name}/settings`},
       claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:claudeHooks.adapter}:{}),
         command:'npm run hooks:claude -- /path/to/project'},
-      generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'}};
+      generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'},
+      providers:Object.values(providers.PROVIDERS).map(p=>({id:p.id,display:p.display,chip:p.chip,seat:p.seat,adapter:p.id==='claude-code'?'first-party':'generic'}))};
   }
   async function exportProject(res,id,entry){
     const p=JSON.parse(entry.json);
@@ -404,8 +406,8 @@ function createService(options={}) {
       const pathname=u.pathname;
       // World modules: /worlds/<name>.js and the digital-life modules /worlds/life/<name>.js (one known subfolder, no other path).
       const worldFile=/^\/worlds\/(?:life\/)?[a-z0-9-]+\.js$/.test(pathname)&&!DEVICE.test(pathname)?pathname.slice(1):null;
-      // The pack frame has an opaque origin ("null"): it may fetch the public world modules and three.js, nothing else.
-      const frameAsset=req.method==='GET'&&req.headers.origin==='null'&&(worldFile||pathname==='/vendor/three.module.min.js');
+      // The pack frame has an opaque origin ("null"): it may fetch the public world modules, the CAST catalog, and three.js, nothing else.
+      const frameAsset=req.method==='GET'&&req.headers.origin==='null'&&(worldFile||pathname==='/vendor/three.module.min.js'||pathname==='/providers.js');
       if(req.headers.origin&&!expectedOrigins.includes(req.headers.origin)&&!frameAsset){response(res,403,{error:'Cross-origin access forbidden'});return;}
       if(req.method==='POST'&&ADMIN.has(pathname)){const v=control.verify(req,expectedOrigins);if(!v.ok){response(res,v.status,{error:v.error,code:v.code});return;}}
       const uiFile=UI_FILE.test(pathname)&&!DEVICE.test(pathname)?pathname.slice(1):null;
@@ -423,7 +425,7 @@ function createService(options={}) {
       if(req.method==='GET'&&pathname==='/pack-frame.html'){
         // CSP source lists cannot name IPv6 literals: the frame works when the player is opened on localhost or 127.0.0.1.
         // `sandbox allow-scripts` in the policy too: the page has an opaque origin even if opened on its own.
-        const named=expectedOrigins.filter(o=>!o.includes('[')),scripts=named.flatMap(o=>[`${o}/worlds/`,`${o}/vendor/`]).join(' ');
+        const named=expectedOrigins.filter(o=>!o.includes('[')),scripts=named.flatMap(o=>[`${o}/worlds/`,`${o}/vendor/`,`${o}/providers.js`]).join(' ');
         res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
           'Permissions-Policy':FRAME_PERMISSIONS,'Cross-Origin-Resource-Policy':'same-origin',
           'Content-Security-Policy':`default-src 'none'; script-src ${scripts} blob:; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; worker-src blob:; manifest-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors ${named.join(' ')}; sandbox allow-scripts`});

@@ -38,6 +38,24 @@ test('The director never shows success for a failure, and the same intents alway
   assert.deepEqual(run(),['stellar-storm','calm-pulse']);assert.deepEqual(run(),run());
   const bio=createDirector({recipe:biosphere});
   assert.equal(bio.process(intent('validation.failed',T0,{evidence:'verified'})).effect,'blight','each family has its own vocabulary for the same intent');
+  assert.equal(stellar.genome.effects['agent.collision'],undefined);
+  assert.equal(createDirector({recipe:stellar}).process(intent('agent.collision',T0,{tier:2})).effect,'flare-bridge');
+  assert.equal(createDirector({recipe:biosphere}).process(intent('agent.collision',T0,{tier:2})).effect,'mycelium-bridge');
+  const cathedral=recipe.generate({projectId:'x',graph:{nodes:[],edges:[]},stats:{}},{family:'machine-cathedral',now:0});
+  assert.equal(createDirector({recipe:cathedral}).process(intent('agent.collision',T0,{tier:2})).effect,'lock-mechanism');
+});
+test('Cathedral collision callout uses catalog names and does not throw',async()=>{
+  const {THREE}=await import('../public/worlds/core.js');
+  const {createFamily}=await load('cathedral');
+  const {createModel}=await load('model');
+  const r=recipe.generate({projectId:'x',graph:{nodes:[],edges:[]},stats:{}},{family:'machine-cathedral',now:0});
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,16/9,.1,4000),model=createModel();
+  const world=createFamily({scene,camera,model,recipe:r,speed:()=>1,name:id=>id,director:{lasting:()=>[],attentionAt:()=>null},pipeline:{size:[64,64]}});
+  let d;
+  try{d=world.describe({intent:'agent.collision',detail:{providers:['claude-code','cursor']}});}
+  finally{world.dispose();}
+  assert.equal(d.text,'Two agents meet in the nave');
+  assert.equal(d.sub,'Claude · Cursor');
 });
 test('Spectacle is rare: milestones spend tokens, rare effects need a long gap, routine bursts coalesce',async()=>{
   const {createDirector}=await load('director');const d=createDirector({recipe:stellar});
@@ -71,7 +89,13 @@ test('Agent presences follow observed lifecycles and never linger or claim work 
   assert.equal(a.presence('A',T0+2000+200000).display,'unknown','three silent minutes in a tool: status unknown, not working');
   st(T0+5000,'waiting');assert.equal(a.presence('A',T0+6000).label,'waiting for the next prompt');assert.equal(a.presence('A',T0+5000+130000).display,'dormant');
   st(T0+9000,'disconnected');assert(a.presence('A',T0+10000).alpha<1);assert.equal(a.presence('A',T0+13000),null,'a disconnected agent departs');
-  assert.equal(a.name(reading),'Agent 1');
+  assert.equal(a.name(reading),'Claude');
+  a.record({type:'agent.state',ts:T0+400,subject:{agentId:'B',voice:0},detail:{state:'connected',provider:'claude-code',subagent:true}});
+  assert.equal(a.name(a.presence('B',T0+500)),'Claude · subagent');
+  const view=await import('../public/worlds/view.js');
+  const packed=view.intent({type:'agent.state',id:'p:agent.state:0',ts:T0,subject:{agentId:'C',voice:1},detail:{state:'connected',provider:'claude-code'}});
+  const chips=createAgents();chips.record(packed);
+  assert.equal(chips.name(chips.presence('C',T0+1)),'Claude');
   // Labels are categories: nothing an agent wrote, read or ran appears in them.
   for(const p of [reading,a.presence('A',T0+6000)])assert(!/[\/\\.]/.test(p.label));
 });

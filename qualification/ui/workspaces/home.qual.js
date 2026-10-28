@@ -94,14 +94,14 @@ const firstId=sha('code-resonance-home-qual/first-project');
       const ev1=await json(env,`/api/evidence?id=${lumen}`);let s=await statusOf(lumen);
       check('lumen: "Capture stopped at …" from its evidence (state stopped)',ev1.editor.capture.state==='stopped'&&s.includes('Capture stopped at')&&!s.includes('capture running'),s.slice(0,140));
       check('lumen: old events are shown as idle, never as running',s.includes('Project idle')&&!/Events received just now/.test(s));
-      check('lumen: Claude Code activity is reported as observed',s.includes('Agent activity observed: Claude Code'));
+      check('lumen: Claude activity is reported as observed',s.includes('Agent activity observed: Claude')&&!s.includes('Claude Code'));
       check('lumen: its extension did not report settings, and Home says so',ev1.editor.reported===null&&s.includes('does not report its settings'));
       // sample: started by the 0.5 extension; running only while editor activity is under 2 minutes old.
       const ev2=await json(env,`/api/evidence?id=${sample}`);s=await statusOf(sample);
       const fresh=Date.now()-ev2.editor.lastAt<120000;
       check('sample: capture state matches the evidence (running only with activity in the last 2 min)',fresh?s.includes('VS Code capture running'):s.includes('no activity since')&&s.includes('the extension does not report closing'),`fresh=${fresh}; ${s.slice(0,160)}`);
       check('sample: extension 0.5.0 reported its settings',s.includes(`extension ${ev2.editor.reported.extensionVersion} reported its settings`));
-      check('sample: Claude Code observed',s.includes('Claude Code'));
+      check('sample: Claude observed',s.includes('Claude')&&!s.includes('Claude Code'));
       check('sample: the private name is labelled as private',(await page.textContent('.home-private')).includes('Private workspace name'));
       check('sample: no public title is stated honestly',(await page.textContent('#homePublicTitle')).includes('No public title — the Stage shows a generic name'));
       await shot(page,'populated-1440x900');

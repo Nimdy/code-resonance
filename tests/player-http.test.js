@@ -8,7 +8,7 @@ test('Standalone assets, OBS mode, derived performance API and privacy boundary'
  const directory=tempDir(t,'resonance-player-');
  const service=await startService(t,{port:0,dataDir:directory,sortIntervalMs:600000});
  const url=`http://127.0.0.1:${service.port}`;
- const requests=await Promise.all(['/', '/app.js','/music.js','/score.js','/style.css','/?overlay=1','/recording.js'].map(p=>fetch(url+p)));
+ const requests=await Promise.all(['/', '/app.js','/music.js','/score.js','/style.css','/?overlay=1','/recording.js','/providers.js'].map(p=>fetch(url+p)));
  for(const r of requests)assert.equal(r.status,200);
  // OBS applies a Browser Source's custom CSS inline: allowed in the OBS view only; scripts stay 'self' everywhere.
  const csp=r=>r.headers.get('content-security-policy');

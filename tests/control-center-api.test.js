@@ -335,6 +335,10 @@ test('Capture evidence: the extension\'s reported settings and capture state, ag
   assert.equal(integrations.vscode.projects.find(p=>p.projectId===projectId).name,NAME);
   assert.equal(integrations.claude.projects.find(p=>p.projectId===projectId).events,5);
   assert.deepEqual(integrations.claude.events,EVENTS);assert.equal(integrations.claude.adapter,undefined,'adapter path: capability only');
+  assert.deepEqual(integrations.providers.map(p=>p.id),['claude-code','cursor','codex','grok','qwen','kimi']);
+  assert.equal(integrations.providers[0].adapter,'first-party');
+  assert(integrations.providers.slice(1).every(p=>p.adapter==='generic'));
+  assert.equal(integrations.providers[0].display,'Claude');assert.equal(integrations.providers[0].seat,0);
   // The demonstration (scripts/demo.js: a demo- session) sends workspace events, but no editor was involved.
   const demo=sha('control-center-demo');
   await post([ev('workspace.started',{projectId:demo,sessionId:'demo-1700000000000',name:'Demo',meta:{source:'demonstration'}}),ev('workspace.stopped',{projectId:demo,sessionId:'demo-1700000000000'})]);

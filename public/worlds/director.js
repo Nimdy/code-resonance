@@ -18,7 +18,7 @@
 export const TIERS=['micro','routine','structural','milestone','rare'];
 // The intents worlds express as effects (the other canonical intents are texture: worlds may observe them directly).
 export const EFFECT_TYPES=['subsystem.created','module.created','structure.created','structure.removed','subsystem.connected','validation.failed',
-  'validation.passed','validation.recovered','refactor.validated','milestone.achieved','repository.checkpoint','world.expanded'];
+  'validation.passed','validation.recovered','refactor.validated','milestone.achieved','repository.checkpoint','world.expanded','agent.collision'];
 // Lasting transformations: verified structural milestones a world keeps (blooms, crowns, illuminated spires).
 export const LASTING_TYPES=['milestone.achieved','refactor.validated'];
 const EFFECT=new Set(EFFECT_TYPES),LASTING=new Set(LASTING_TYPES);
@@ -36,6 +36,8 @@ export function createDirector({recipe,intensity=1}={}){
   function reset(){s={tokens:MAX_TOKENS,tokenClock:null,lastRare:-Infinity,last:new Map(),recent:[],unlocks:[],commands:[],lasting:new Map(),attention:null};}
   reset();
   const scaled=c=>{c.scale=Math.min(1.6,c.base*scale);return c;};
+  // Stored recipes have no agent.collision key; the family's integration look stands in until a pack names one.
+  function look(type){return vocabulary[type]||(type==='agent.collision'?vocabulary['subsystem.connected']:null)||null;}
   function regen(ts){if(s.tokenClock===null)s.tokenClock=ts;const gained=Math.floor((ts-s.tokenClock)/TOKEN_MS);if(gained>0){s.tokens=Math.min(MAX_TOKENS,s.tokens+gained);s.tokenClock+=gained*TOKEN_MS;}if(s.tokens>=MAX_TOKENS)s.tokenClock=ts;}
   function trim(ts){
     while(s.recent.length&&s.recent[0].ts<ts-RECENT_MS)s.recent.shift();
@@ -56,7 +58,7 @@ export function createDirector({recipe,intensity=1}={}){
     if(COOLDOWN_MS[tier]&&prev&&ts-prev.ts<COOLDOWN_MS[tier])return null;
     if(tier===4){if(s.tokens>=3&&ts-s.lastRare>=RARE_GAP_MS){s.tokens-=3;s.lastRare=ts;}else tier=3;}
     if(tier===3){if(s.tokens>=1)s.tokens-=1;else tier=2;}
-    const cmd=scaled({effect:vocabulary[intent.type]||null,intent:intent.type,id:intent.id,tier,requestedTier:intent.tier,at:ts,magnitude:intent.magnitude,
+    const cmd=scaled({effect:look(intent.type),intent:intent.type,id:intent.id,tier,requestedTier:intent.tier,at:ts,magnitude:intent.magnitude,
       base:(.35+.65*intent.magnitude)*(tier>=3?1.15:1),scale:0,duration:DURATION[tier],subject:intent.subject||{},detail:intent.detail||{},evidence:intent.evidence,count:1});
     s.last.delete(key);s.last.set(key,{ts,cmd});
     s.commands.push(cmd);if(tier>=2)s.attention=cmd;
@@ -77,8 +79,8 @@ export function createDirector({recipe,intensity=1}={}){
     const a=s.attention;return a&&a.at<=t&&a.tier>=minTier?a:null;}
   // The vocabulary (and unlock names) of the world now drawing; history keeps its decisions.
   function setRecipe(r){vocabulary=r?.genome?.effects||{};unlockNames=r?.genome?.ambient?.unlocks||[];
-    for(const c of s.commands)c.effect=vocabulary[c.intent]||null;for(const l of s.lasting.values())l.effect=vocabulary[l.type]||null;
-    if(s.attention)s.attention.effect=vocabulary[s.attention.intent]||null;}
+    for(const c of s.commands)c.effect=look(c.intent);for(const l of s.lasting.values())l.effect=look(l.type);
+    if(s.attention)s.attention.effect=look(s.attention.intent);}
   setRecipe(recipe);
   return {process,activityAt,phaseAt,unlockedAt,attentionAt,setRecipe,reset,
     get commands(){return s.commands;},
@@ -89,8 +91,8 @@ export function createDirector({recipe,intensity=1}={}){
     get tokens(){return s.tokens;},
     // Exact copies of the fold state (shared references preserved), for checkpoints.
     snapshot(){return structuredClone(s);},
-    restore(snap){s=structuredClone(snap);for(const c of s.commands)c.effect=vocabulary[c.intent]||null,scaled(c);
-      for(const l of s.lasting.values())l.effect=vocabulary[l.type]||null;if(s.attention){s.attention.effect=vocabulary[s.attention.intent]||null;scaled(s.attention);}},
+    restore(snap){s=structuredClone(snap);for(const c of s.commands)c.effect=look(c.intent),scaled(c);
+      for(const l of s.lasting.values())l.effect=look(l.type);if(s.attention){s.attention.effect=look(s.attention.intent);scaled(s.attention);}},
     stats(){return {commands:s.commands.length,lasting:s.lasting.size,recent:s.recent.length,unlocks:s.unlocks.length,keys:s.last.size};}
   };
 }

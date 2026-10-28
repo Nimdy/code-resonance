@@ -11,7 +11,7 @@ test('check: finds every tracked JavaScript file under its roots, so a new file 
   assert.deepEqual(tracked.filter(f=>!listed.has(f)),[]);
 });
 test('check: the browser modules are checked as ES modules, the classic scripts and what Node requires as scripts',()=>{
-  for(const f of ['public/construct.js','public/ui/main.js','public/worlds/frame.js','public/worlds/life/sim.js','packs/examples/cymatic-field/world.js','packs/template/world/world.js'])assert(isModule(f),f);
+  for(const f of ['public/construct.js','public/providers.js','public/ui/main.js','public/worlds/frame.js','public/worlds/life/sim.js','packs/examples/cymatic-field/world.js','packs/template/world/world.js'])assert(isModule(f),f);
   for(const f of ['public/app.js','public/score.js','public/music.js','public/recording.js','public/composition.js','receiver/server.js','extension/extension.js','scripts/check.js'])assert(!isModule(f),f);
 });
 test('check: an import in a script fails as it would in the browser; a syntax error fails in either mode',t=>{

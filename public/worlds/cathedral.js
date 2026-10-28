@@ -44,6 +44,7 @@ import {KINDS,ARCH,layoutOptions,precincts,towerPlans,linkPlans,symTotal} from '
 import {createCathedralGrammar,JOB as LIFE_JOB} from './life/cathedral.js';
 import {CH as LIFE_CH} from './life/sim.js';
 import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {presence as catalog} from '../providers.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 // Storey proportions per symbol kind (KINDS) and architectures (ARCH): cathedral-layout.js.
 // Facade looks (shader): 0 lancet, 1 paired lancets, 2 stained glass, 3 tracery screen, 4 plinth, 5 roof spire,
@@ -1241,6 +1242,7 @@ export function createFamily(ctx){
       case 'milestone.achieved':{const k=(d.kinds||[]).map(x=>MILESTONE[x]||x);return {text:`${({'window-scan':'A window scan',restore:'Restoration',reassemble:'Reassembly'})[c.effect]||'Illumination · rose windows ignite'} · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · '),bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'tower')} set in stone`:'Committed · the work is set in stone',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The cathedral grows · chapter ${d.chapter}`,sub:'accumulated structure',position:(orreryAt||centre).clone().setY(2)};
+      case 'agent.collision':return {text:'Two agents meet in the nave',sub:(d.providers||[]).map(id=>catalog(id).display).join(' · '),position:pos};
       default:return null;}}
   function agentPosition(id){return agentPos.get(id)||null;}
   function agentColor(a){return '#'+AGENT_COLORS[a.voice%8].getHexString();}

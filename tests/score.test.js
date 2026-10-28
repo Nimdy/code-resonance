@@ -56,12 +56,17 @@ test('Early chapters develop instead of looping one bar',()=>{
 });
 test('Engineering events become bounded figures; agents keep distinct voices',()=>{
   const base={seed:9,chord:3,style:'ambient'};
-  for(const type of ['symbol.created','dependency.added','validation.test.passed','validation.test.failed','milestone.refactor.validated','repository.commit.observed','agent.file.modified']){
-    const notes=accentFigure({id:type,type,weight:3,detail:{symbolType:'ui.component',voice:2}},base);
+  for(const type of ['symbol.created','dependency.added','validation.test.passed','validation.test.failed','milestone.refactor.validated','repository.commit.observed','agent.file.modified','agent.collision']){
+    const notes=accentFigure({id:type,type,weight:3,detail:{symbolType:'ui.component',voice:2,voices:[0,1]}},base);
     assert(notes.length>0&&notes.length<=5,type);
     for(const n of notes){assert(n.midi>=25&&n.midi<=105);assert(n.velocity>=0&&n.velocity<=1);assert(n.offset>=0&&n.offset<16);}
   }
   const a=accentFigure({id:'x',type:'agent.file.modified',detail:{voice:0}},base)[0],b=accentFigure({id:'x',type:'agent.file.modified',detail:{voice:1}},base)[0];
   assert.notEqual(a.voice,b.voice);assert.notEqual(a.pan,b.pan);
   assert.deepEqual(accentFigure({id:'q',type:'editor.change.observed',detail:{}},base),[]);
+  const meet=accentFigure({id:'c',type:'agent.collision',detail:{voices:[0,1],providers:['claude-code','cursor']}},base);
+  assert.equal(meet.length,4);assert.equal(meet[0].priority,4);
+  assert.deepEqual([...new Set(meet.map(n=>n.voice))].sort(),[0,1]);
+  assert(meet.every(n=>n.instrument==='agent'));
+  assert.notEqual(meet[0].midi,meet[2].midi,'opens dissonant then resolves');
 });

@@ -51,7 +51,7 @@ test('The pack frame is served with a policy that allows no connection and only 
   const res=await fetch(`${base}/pack-frame.html`);const csp=res.headers.get('content-security-policy');
   assert.equal(res.status,200);
   for(const rule of ["default-src 'none'","connect-src 'none'","worker-src blob:","frame-src 'none'","form-action 'none'","object-src 'none'","sandbox allow-scripts","frame-ancestors "])assert(csp.includes(rule),rule);
-  assert.match(csp,/script-src http:\/\/localhost:\d+\/worlds\/ http:\/\/localhost:\d+\/vendor\/ http:\/\/127\.0\.0\.1:\d+\/worlds\/ http:\/\/127\.0\.0\.1:\d+\/vendor\/ blob:;/);
+  assert.match(csp,/script-src http:\/\/localhost:\d+\/worlds\/ http:\/\/localhost:\d+\/vendor\/ http:\/\/localhost:\d+\/providers\.js http:\/\/127\.0\.0\.1:\d+\/worlds\/ http:\/\/127\.0\.0\.1:\d+\/vendor\/ http:\/\/127\.0\.0\.1:\d+\/providers\.js blob:;/);
   assert.match(csp,/frame-ancestors http:\/\/localhost:\d+ http:\/\/127\.0\.0\.1:\d+; sandbox allow-scripts$/);
   assert.match(res.headers.get('permissions-policy'),/camera=\(\).*microphone=\(\)/);
   assert.match(await res.text(),/\/worlds\/frame\.js/);
@@ -59,6 +59,7 @@ test('The pack frame is served with a policy that allows no connection and only 
   const nul={Origin:'null'};
   const mod=await fetch(`${base}/worlds/host.js`,{headers:nul});assert.equal(mod.status,200);assert.equal(mod.headers.get('access-control-allow-origin'),'*');
   assert.equal((await fetch(`${base}/vendor/three.module.min.js`,{headers:nul})).status,200);
+  assert.equal((await fetch(`${base}/providers.js`,{headers:nul})).status,200);
   for(const p of ['/api/projects','/api/packs','/','/app.js','/api/packs/file?id=halcyon.cymatic-field&path=world.js'])assert.equal((await fetch(base+p,{headers:nul})).status,403,p);
   assert.equal((await fetch(`${base}/api/packs/trust`,{method:'POST',headers:{...nul,'Content-Type':'application/json'},body:'{}'})).status,403);
   assert.equal((await fetch(`${base}/worlds/host.js`)).headers.get('access-control-allow-origin'),null,'same-origin requests get no CORS header');

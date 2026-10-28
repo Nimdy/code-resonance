@@ -7,8 +7,9 @@
 //
 // A fold over intents in time order with bounded memory: each agent keeps its last ten minutes of events plus a
 // summary of older ones (arrival, last state, last file). An agent that has departed leaves the fold; the last 512
-// departed agents keep their number, so a session that returns after a long silence is still "Agent 3", and numbers
+// departed agents keep their number, so a session that returns after a long silence keeps its identity, and numbers
 // are never reused. Queries are for times at or after the last recorded intent, as playback, seeks and films ask.
+import {presence as catalog} from '../providers.js';
 const UNKNOWN_MS=180000,DORMANT_MS=120000,DEPART_MS=3500,COMPLETE_MS=5000,SILENT_MS=1800000,KEEP_MS=600000,RETIRED_MAX=512;
 const LABEL={connected:'connected',processing:'working on a request',thinking:'reasoning (visible)',waiting:'waiting for the next prompt',
   completed:'finished',disconnected:'disconnected',unknown:'status unknown',dormant:'idle'};
@@ -48,7 +49,7 @@ export function createAgents(){
   function list(t){const out=[];for(const a of s.agents.values()){const p=presence(a,t);if(p)out.push(p);}return out;}
   // Recent tool activity of an agent (for tails, beams): its observed events between t-ms and t (ms <= ten minutes).
   function trail(id,t,ms){const a=s.agents.get(id);return a?a.events.filter(x=>x.ts<=t&&x.ts>t-ms):[];}
-  function name(p){return `Agent ${p.number}${p.subagent?' · subagent':''}`;}
+  function name(p){const chip=catalog(p.provider).chip;return p.subagent?`${chip} · subagent`:chip;}
   return {record,list,presence:(id,t)=>{const a=s.agents.get(id);return a?presence(a,t):null;},trail,name,reset,
     get agents(){return s.agents;},
     snapshot(){return structuredClone(s);},restore(snap){s=structuredClone(snap);},
