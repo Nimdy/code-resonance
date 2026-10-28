@@ -17,7 +17,7 @@ const DATA=path.resolve(flag('data')||process.env.RESONANCE_DATA||path.join(os.h
   const port=Number(flag('port')||process.env.RESONANCE_PORT||auth.port||4174);
   try{await proof.verifyServer(port,auth.token);}
   catch(e){console.error(e.message.includes('did not answer')?`The receiver does not answer on http://127.0.0.1:${port}: start it (npm start), then run this again.`:e.message);process.exitCode=1;return;}
-  let r;try{r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${auth.token}`},signal:AbortSignal.timeout(3000)});}
+  let r;try{r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',redirect:'error',headers:{Authorization:`Bearer ${auth.token}`},signal:AbortSignal.timeout(3000)});}
   catch{console.error(`The receiver does not answer on http://127.0.0.1:${port}: start it (npm start), then run this again.`);process.exitCode=1;return;}
   if(!r.ok){console.error(`The receiver refused (HTTP ${r.status}): is it a receiver from before 0.5, or another program on port ${port}?`);process.exitCode=1;return;}
   const {code}=await r.json();

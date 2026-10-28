@@ -6,13 +6,14 @@ import {h,text,clear,button,pill,callout,emptyState,kv,toast,popover,menuItem,st
 import {icon} from '../icons.js';
 import {ago,clockTime,dateTime,duration,count,projectName,STYLE_NAMES,WORLD_NAMES,LABEL_NAMES} from '../format.js';
 import {PROFILE_KEYS,scoreOf} from '../music-profile.js';
-import {presence} from '../../providers.js';
+import {privateName} from '../../providers.js';
 // ---- Capture state, honestly (shared with Home) --------------------------------------------------------------------
 // The extension announces capture start and stop, but not VS Code closing: "started" is only trusted while editor
 // activity keeps arriving. Historical events are never proof that capture runs now.
 export const LIVE_MS=120000;
 export const when=ts=>!Number.isFinite(ts)||ts<=0?'—':new Date(ts).toDateString()===new Date().toDateString()?clockTime(ts):dateTime(ts);
-export const providerName=p=>presence(p).display;
+// The Control Center is private: it names an uncatalogued agent by the id it reported. Public surfaces use presence().
+export const providerName=privateName;
 // ev: the compact evidence of /api/projects; full: the /api/evidence document when loaded (adds start/stop times).
 export function capture(ev,full=null,now=Date.now()){
   if(full?.building)full=null;

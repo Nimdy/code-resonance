@@ -13,6 +13,8 @@ const DEMO_ID=sha('CODE RESONANCE — FICTIONAL DEMO');
 const DEFAULT_OUT=path.join(REPO,'qualification','results','films','last-night.webm');
 const TITLE_MSG='This night has no public title. Set one in Visual Studio, or pass --allow-untitled.';
 const CI_HINT='cd qualification && npm ci';
+const GPUS=['auto','amd','nvidia','off'];
+const GPU_MSG=`--gpu takes ${GPUS.join(', ')} (or nothing, which is auto).`;
 function flag(argv,k){const i=argv.indexOf(`--${k}`);return i<0?undefined:argv[i+1];}
 function has(argv,k){return argv.includes(`--${k}`);}
 function gpuArg(argv){
@@ -66,14 +68,18 @@ function readWindows(file,fsApi){
   }
   return windows;
 }
+// The renderer holds a copy of the data directory until it exits: a signal to this wrapper is passed on, and the wrapper
+// waits for the renderer to remove its copy. Ctrl-C reaches both; the renderer ignores the second signal.
 function runChild(spawnFn,cmd,args,opts){
   const child=spawnFn(cmd,args,opts);
   if(typeof child==='number')return Promise.resolve(child);
   if(child&&typeof child.then==='function')return child;
+  const forward=signal=>{try{child.kill(signal);}catch{}};
+  for(const s of ['SIGINT','SIGTERM','SIGHUP'])process.on(s,forward);
   return new Promise((resolve,reject)=>{
     child.on('error',reject);
-    child.on('close',c=>resolve(c??1));
-  });
+    child.on('close',(c,signal)=>resolve(c??(signal?128+(os.constants.signals[signal]||1):1)));
+  }).finally(()=>{for(const s of ['SIGINT','SIGTERM','SIGHUP'])process.off(s,forward);});
 }
 async function main(argv,opts={}){
   const fsApi=opts.fs||fs;
@@ -87,6 +93,8 @@ async function main(argv,opts={}){
   if(!exists(path.join(qualDir,'node_modules','playwright-core'))||!exists(path.join(qualDir,'node_modules','ffmpeg-static'))){
     err(CI_HINT);return 1;
   }
+  const asked=gpuArg(argv);
+  if(asked.set&&!GPUS.includes(asked.value)){err(GPU_MSG);return 1;}
   const projects=listProjects(dataDir,fsApi);
   let projectId=flag(argv,'project');
   if(projectId){
@@ -117,7 +125,6 @@ async function main(argv,opts={}){
   const labels=flag(argv,'labels')||'cinematic';
   if(!['cinematic','stream','explorer','off'].includes(labels)){err('Invalid --labels.');return 1;}
   const out=path.resolve(flag(argv,'out')||DEFAULT_OUT);
-  const asked=gpuArg(argv);
   let gpu=null;
   if(asked.set){
     if(asked.value==='off')gpu=null;
@@ -130,9 +137,10 @@ async function main(argv,opts={}){
   const filmJs=path.join(qualDir,'visual','film.js');
   const args=[filmJs,'--data',dataDir,'--project',projectId,'--copy','--labels',labels,
     '--speed',String(speed),'--from',String(from),'--to',String(to),'--out',out];
-  if(gpu)args.push('--gpu',gpu);
+  // A GPU this wrapper found itself (not one --gpu asked for): a browser that cannot use it renders in software.
+  if(gpu)args.push('--gpu',gpu,...(asked.set?[]:['--gpu-fallback']));
   const code=await runChild(spawnFn,process.execPath,args,{stdio:'inherit'});
   return code||0;
 }
 if(require.main===module)main(process.argv.slice(2)).then(c=>{if(c)process.exitCode=c;},e=>{console.error(e);process.exitCode=1;});
-module.exports={main,DEFAULT_OUT,TITLE_MSG,CI_HINT,gpuLooksPresent};
+module.exports={main,DEFAULT_OUT,TITLE_MSG,CI_HINT,GPU_MSG,gpuLooksPresent,runChild};

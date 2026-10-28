@@ -191,6 +191,21 @@ test('Codex hook installer is idempotent and its unmerge is the inverse',()=>{
   assert(leftover.hooks.PostToolUse.some(g=>g.matcher==='apply_patch|Edit|Write'));
   assert.equal(mergeCodex({hooks:{PreToolUse:[{hooks:[{type:'command',command:codexCommand,timeout:5}]}]}}).hooks.PreToolUse,undefined);
 });
+test('Codex installer removes its handler from a group it shares with the user\'s own hook',()=>{
+  const ours={type:'command',command:codexCommand,timeout:5},mine={type:'command',command:'my-own-hook'};
+  // Removal: the group survives with the user's hook only, and nothing of ours is left in any event.
+  const shared={model:'gpt',hooks:{SessionStart:[{hooks:[mine,ours]}],Stop:[{matcher:'x',hooks:[ours,mine]},{hooks:[mine]}]}};
+  assert.deepEqual(unmergeCodex(shared),{model:'gpt',hooks:{SessionStart:[{hooks:[mine]}],Stop:[{matcher:'x',hooks:[mine]},{hooks:[mine]}]}});
+  const installed=mergeCodex({hooks:{SessionStart:[{hooks:[mine]}]}});
+  installed.hooks.SessionStart[0].hooks.push(ours);installed.hooks.SessionStart.pop();
+  const removed=unmergeCodex(installed);
+  assert(!Object.values(removed.hooks||{}).flat().some(g=>(g.hooks||[]).some(h=>h.command===codexCommand)),JSON.stringify(removed));
+  // Install: an event we never install (it can deny) loses our handler even when it shares a group with the user's.
+  const deny=mergeCodex({hooks:{PreToolUse:[{hooks:[{type:'command',command:'allow.sh'},ours]}],PermissionRequest:[{matcher:'*',hooks:[ours,mine]}]}});
+  assert.deepEqual(deny.hooks.PreToolUse,[{hooks:[{type:'command',command:'allow.sh'}]}]);
+  assert.deepEqual(deny.hooks.PermissionRequest,[{matcher:'*',hooks:[mine]}]);
+  assert.deepEqual(unmergeCodex(deny),{hooks:{PreToolUse:[{hooks:[{type:'command',command:'allow.sh'}]}],PermissionRequest:[{matcher:'*',hooks:[mine]}]}});
+});
 test('Codex adapter prints nothing, exits 0, and never emits a deny',()=>{
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'cr-codex-cli-'));const data=fs.mkdtempSync(path.join(os.tmpdir(),'cr-codex-data-'));
   fs.mkdirSync(path.join(root,'.git'));
@@ -234,4 +249,55 @@ test('Cursor adapter prints nothing, exits 0, and never emits a deny',()=>{
     assert.equal(r.status,0);assert.equal(r.stdout,'');
     assert(!r.stdout.includes('deny'));assert(!r.stdout.includes('"continue":false'));assert(!r.stderr.includes('deny'));
   }finally{fs.rmSync(root,{recursive:true,force:true});fs.rmSync(data,{recursive:true,force:true});}
+});
+// Every program that sends the token proves the occupant first: a process that only looks like a receiver gets no
+// Authorization, the hooks spool (silently, exit 0) as when the receiver is down, and the CLIs fail as they do then.
+function runNode(file,args,{input='',env}={}){
+  return new Promise(resolve=>{
+    const child=cp.spawn(process.execPath,[file,...args],{env,stdio:['pipe','pipe','pipe']});
+    let stdout='',stderr='';child.stdout.on('data',d=>stdout+=d);child.stderr.on('data',d=>stderr+=d);
+    child.on('close',code=>resolve({code,stdout,stderr}));child.stdin.end(input);
+  });
+}
+test('Hooks and CLIs send the token only to an occupant that proves it holds it',async t=>{
+  const http=require('node:http');
+  const {tempDir,startService}=require('./helpers');
+  const {sha}=require('../receiver/protocol');
+  const seen=[];
+  const fake=http.createServer((req,res)=>{
+    seen.push({url:req.url,auth:req.headers.authorization||null});
+    if(req.url.startsWith('/health')||req.url.startsWith('/v1/challenge')){res.writeHead(200,{'Content-Type':'application/json'});
+      res.end(JSON.stringify(req.url.startsWith('/health')?{ok:true,version:'0.7.1',windowMs:5000,graceMs:1500}:{ok:true,v:2,proof:'0'.repeat(64)}));return;}
+    res.writeHead(202,{'Content-Type':'application/json'});res.end('{"accepted":1}');
+  });
+  t.after(()=>new Promise(r=>fake.close(()=>r())));
+  await new Promise(r=>fake.listen(0,'127.0.0.1',r));
+  const fakePort=fake.address().port;
+  const root=tempDir(t,'cr-hook-proof-root-'),data=tempDir(t,'cr-hook-proof-data-');fs.mkdirSync(path.join(root,'.git'));
+  fs.writeFileSync(path.join(data,'receiver-auth.json'),JSON.stringify({version:1,token:'e'.repeat(64),port:fakePort,pairing:'f'.repeat(64)}),{mode:0o600});
+  const {RESONANCE_PORT,RESONANCE_DATA,...base}=process.env;
+  const env=port=>({...base,RESONANCE_DATA:data,RESONANCE_PORT:String(port)});
+  const hooks=[['claude-code.js',{hook_event_name:'Stop',session_id:'proof-c',cwd:root}],['cursor.js',{hook_event_name:'stop',conversation_id:'proof-u',status:'completed',loop_count:0,cwd:root}],
+    ['codex.js',{hook_event_name:'Stop',session_id:'proof-x',cwd:root,stop_hook_active:false}]];
+  const spooled=()=>{try{return fs.readdirSync(path.join(data,'spool')).filter(n=>n.endsWith('.json')).length;}catch{return 0;}};
+  for(const [i,[file,payload]] of hooks.entries()){
+    const r=await runNode(path.join(__dirname,'..','scripts','hooks',file),[],{input:JSON.stringify(payload),env:env(fakePort)});
+    assert.equal(r.code,0,file);assert.equal(r.stdout,'',file);
+    assert.equal(spooled(),i+1,`${file} spools instead of sending`);
+  }
+  const ev=await runNode(path.join(__dirname,'..','scripts','event.js'),['--kind','agent.prompt.submitted','--data',data,'--port',String(fakePort),'--root',root],{env:env(fakePort)});
+  assert.equal(ev.code,1);assert.match(ev.stderr,/did not prove/);
+  const demo=await runNode(path.join(__dirname,'..','scripts','demo.js'),['--fast'],{env:env(fakePort)});
+  assert.equal(demo.code,1);assert.match(demo.stderr,/did not prove/);
+  assert(seen.length>=5);
+  assert(seen.every(x=>x.auth===null),JSON.stringify(seen));
+  assert(!seen.some(x=>x.url.startsWith('/v1/events')||x.url.startsWith('/v1/flush')));
+  // A real receiver on the data directory: the next invocation proves it, then delivers the spool and its own events.
+  const svc=await startService(t,{port:0,dataDir:data,sortIntervalMs:600000,quiet:true});
+  const r=await runNode(path.join(__dirname,'..','scripts','hooks','claude-code.js'),[],{input:JSON.stringify({hook_event_name:'Stop',session_id:'proof-c2',cwd:root}),env:env(svc.port)});
+  assert.equal(r.code,0);assert.equal(r.stdout,'');assert.equal(spooled(),0);
+  await svc.flush();
+  const {projectIdForRoot,findProjectRoot}=require('../sdk/project-id');
+  const journal=fs.readFileSync(path.join(data,'projects',sha(projectIdForRoot(findProjectRoot(root))),'events.jsonl'),'utf8');
+  for(const s of ['claude-code-proof-c','cursor-proof-u','codex-proof-x','claude-code-proof-c2'])assert(journal.includes(s),s);
 });

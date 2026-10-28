@@ -4,11 +4,12 @@ const {analyze,diff} = require('./semantic');
 const {languageOf} = require('./languages');
 const {makeIntent,activityOf,nextAgentState} = require('./intents');
 const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
-const {presence} = require('./providers');
+const {presence,catalogued} = require('./providers');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
 // v7: canonical performance intents, agent lifecycle, language adapters (Python), module language categories.
 // v8: CAST seats from the provider catalog; writer rings; agent.collision when two providers share a file or district.
-const INTERPRETATION_VERSION=8;
+// v9: agent.collision only between catalogued providers, and its cue adds no progress (weight 0, like every agent cue).
+const INTERPRETATION_VERSION=9;
 const RENAME_WINDOW_MS=60000;
 const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const SNAPSHOT_CREDIT_CAP=6;
@@ -108,6 +109,9 @@ function rememberWriter(state,file,agent,ts){
   setRing(state.agentGroups,gk,pruneRing([...(state.agentGroups[gk]||[]),{...rec,file}],ts));
 }
 function providerIds(ring){const out=[];for(const x of ring)if(x.provider&&!out.includes(x.provider))out.push(x.provider);return out.sort();}
+// Collisions are between catalogued providers (engine/providers.js): 'unspecified', 'external-agent' or any other
+// uncatalogued id still attributes its edits, but is not a second provider.
+function castOf(ring){return (ring||[]).filter(x=>catalogued(x.provider));}
 function lastWriter(ring){let best=null;for(const x of ring)if(!best||x.ts>=best.ts)best=x;return best;}
 function noteCollision(state,key,ts){
   if(!state.collisionAt)state.collisionAt={};
@@ -192,10 +196,10 @@ function apply(state,event) {
   }
   function emitCollision(file,fileRing){
     if(!file)return;
-    let scope,ring=fileRing||[];
+    let scope,ring=castOf(fileRing);
     if(providerIds(ring).length>=2)scope='file';
     else{
-      ring=groupWritersOf(state,file,event.ts);
+      ring=castOf(groupWritersOf(state,file,event.ts));
       const files=new Set(ring.map(x=>x.file).filter(Boolean));
       if(providerIds(ring).length<2||files.size<2)return;
       scope='subsystem';
@@ -206,7 +210,8 @@ function apply(state,event) {
     const fileId=moduleId(state,file),groupId=pid(state,'g',groupKey(file));
     const magnitude=0.4+0.2*Math.min(1,providers.length-2);
     intent('agent.collision',{tier:2,magnitude,evidence:'derived',subject:{fileId,groupId},detail:{providers,scope}});
-    c('agent.collision','observed',magnitude,{fileId,voices:providers.map(p=>presence(p).seat),providers});
+    // An expression, not progress: like every agent cue it weighs nothing, so two agents never raise the chapter.
+    c('agent.collision','observed',0,{fileId,voices:providers.map(p=>presence(p).seat),providers});
   }
   expireDeleted(state,event.ts);
   switch(event.kind) {
