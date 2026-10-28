@@ -71,7 +71,8 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
   // A frame's look: one colour per district (by its persisted order), the core district in stone, tests in the valid colour.
   function look(o){
     const pal=paletteOf(o.recipe),haze=mix(pal.haze,SECTION_TINT[o.section]||SECTION_TINT.home,.16);
-    const ramp=[pal.primary,pal.secondary,pal.accent,mix(pal.primary,pal.secondary,.5),mix(pal.secondary,pal.accent,.5),mix(pal.accent,pal.primary,.5)].map(c=>calm(mix(c,pal.deep,.18),.28));
+    const ramp=[pal.primary,pal.secondary,pal.accent,mix(pal.primary,pal.secondary,.5),mix(pal.secondary,pal.accent,.5),mix(pal.accent,pal.primary,.5),
+      mix(pal.primary,pal.highlight,.4),mix(pal.secondary,pal.highlight,.4),mix(pal.accent,pal.highlight,.4)].map(c=>calm(mix(c,pal.deep,.18),.28));
     const colour=(g)=>g?.core?mix(pal.highlight,pal.deep,.4):g?.test?mix(pal.valid,pal.deep,.25):ramp[(Number.isFinite(g?.order)?g.order:0)%ramp.length];
     return {pal,haze,colour};
   }
