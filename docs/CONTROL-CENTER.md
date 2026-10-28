@@ -26,7 +26,7 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 ## One engine, many views
 
 `public/app.js` is the performance engine: the performance clock, scheduling, the worlds (built-in families, the
-Construct, the 2D stages, isolated packs), the music (`music.js`/`score.js`), replay, recording (`recording.js`) and
+Construct, Monolith, isolated packs), the music (`music.js`/`score.js`), replay, recording (`recording.js`) and
 the audio export. It renders no controls and exposes `window.ResonancePlayer` (commands and change notifications).
 The interface (`public/ui/`) drives it: `main.js` (shell, routing), `store.js` (receiver state), `dom.js` (controls),
 `workspaces/*.js` (one module per workspace, loaded on first visit).
@@ -36,6 +36,26 @@ marks a slot (`data-stage-slot`); the shell positions the stage layer over the s
 document, so a running pack frame is never reloaded, and there is never a second renderer, scheduler or clock in a
 window. While no view shows the stage and nothing records it, drawing pauses (the clock, schedule and music continue,
 and a pack's watchdog is told it is paused, not slow).
+
+## Hover details
+
+![The hover card on the Stage: a subsystem in Stellar Forge, its state and Claude editing there](control-center/hover-card.jpg)
+
+Wherever a view shows the living world (the Stage, Home's live preview, the Visual and Artist Studios, Record &
+Broadcast), resting the pointer on it shows a small card beside the pointer (`public/ui/hover.js`). First the world's
+own words for what is there (`pick` and `inspect`: a branch, a world, a tower, a subsystem), then what the player knows
+there at that moment (`host.js` `hoverFacts`): agents at work there, or that used a tool there in the last ten minutes,
+with their CAST name, activity and how long ago; the newest test verdict and edit; a subsystem's file count and states.
+Times are performance times (in a replay, as of the playhead).
+
+It picks at most ten times a second (the latest position wins; an answer that arrives after a newer pick is dropped),
+keeps clear of the Stage's bars and cards, and hides when the pointer leaves the world, on any key, while scrolling,
+under a dialog or menu, while the Stage rests, and for touch input. It never takes focus or a key. It is page markup over
+the stage, never drawn into it, so recordings and films never contain it; the OBS view has no interface (the engine's
+`peek` answers nothing there), and with the information mode Stream or Off the card does not show. It shows generated
+subsystem names and catalog names only, never a path or a file name. In Explorer a click still selects (the world's
+callout, the Stage's card) and draws the camera a little toward the selection. A pack's frame takes no pointer input:
+its world is picked through the player.
 
 A second Stage on another monitor is another window of the same application (`/?project=<id>#/stage`); it has its own
 engine, as every window must, and shares the receiver's state.
@@ -57,7 +77,9 @@ engine, as every window must, and shares the receiver's state.
 Every receiver document has a schema and a `revision`, is validated on write and on read, and is written atomically.
 Project settings never leak into other projects: a project's `preferences.json` only holds the values chosen for it
 (`null` inherits the global value). The effective configuration a window plays is resolved in `store.js`:
-URL pins (OBS bookmarks) › project preference › global setting › built-in default.
+URL pins (OBS bookmarks) › project preference › global setting › built-in default. The worlds are the living world,
+the Construct and Monolith (`city`); a pin, setting or preference that names Nexus or Nebula, retired after 0.7.1,
+reads as Monolith, and the receiver refuses a new write of either ([WORLDS.md](WORLDS.md#classic-stages)).
 
 The player before 0.5 kept its choices in the browser's `localStorage`; on first start they move once to the receiver
 (quality stays on the device).
@@ -108,5 +130,7 @@ See [SECURITY.md](../SECURITY.md) and [packs/security.md](packs/security.md).
 - Recordings are saved by the browser to its downloads folder; Code Resonance keeps no video library.
 - Agent chips on the Stage use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), never vendor marks. A
   meeting of two providers is `agent.collision` only when the journal justifies it.
+- The hover card says what was observed there and when (an agent's tool use, a test run's verdict, an edit); a test
+  verdict is about the files the run covered, never a claim that the code is correct.
 - **Last night** is a replay of a scored highlight; **Record** is live; a **film** (`npm run film`) is the publish path.
   None of them draws source, paths, prompts or folder names.

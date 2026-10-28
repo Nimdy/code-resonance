@@ -4,16 +4,20 @@ const path=require('node:path');
 const os=require('node:os');
 const http=require('node:http');
 const crypto=require('node:crypto');
+const {verifyServer}=require('./proof');
 
 // The extension never awaits this class from an editor change event.
 // Disk batches are written asynchronously, then acknowledged by the receiver.
 // Retryable failures (offline, 5xx, auth not yet available) keep batches queued in order. A batch the receiver
 // permanently rejects (4xx) is moved to rejected/ so one bad event can never stall all later capture.
+// The token goes only to an occupant that proved it holds it (./proof.js), once per receiver connection: the proof is
+// kept for this port and token until a delivery fails or either changes. An occupant that does not prove it holds the
+// token gets nothing: the batches stay queued, as when the receiver is down.
 const RETRYABLE=new Set([401,403,408,425,429]);
 const KEEP_REJECTED=50;
 class DurableOutbox {
-  constructor({directory,port,authFile=path.join(os.homedir(),'.code-resonance','receiver-auth.json'),onStatus=()=>{},maxBytes=256*1024*1024}){
-    this.directory=directory;this.port=port;this.authFile=authFile;this.onStatus=onStatus;this.maxBytes=maxBytes;
+  constructor({directory,port,authFile=path.join(os.homedir(),'.code-resonance','receiver-auth.json'),onStatus=()=>{},maxBytes=256*1024*1024,verify=verifyServer}){
+    this.directory=directory;this.port=port;this.authFile=authFile;this.onStatus=onStatus;this.maxBytes=maxBytes;this.verify=verify;this.verified=null;
     this.buffer=[];this.writing=Promise.resolve();this.delivering=null;this.serial=0;this.closed=false;
     this.timer=null;this.networkTimer=null;this.queuedBytes=0;this.online=false;this.onlineWaiters=[];
   }
@@ -22,7 +26,7 @@ class DurableOutbox {
     await fs.mkdir(this.directory,{recursive:true,mode:0o700});
     for(const name of await fs.readdir(this.directory).catch(()=>[]))if(name.endsWith('.json'))this.queuedBytes+=(await fs.stat(path.join(this.directory,name)).catch(()=>({size:0}))).size;
     this.timer=setInterval(()=>this.persist().catch(e=>this.onStatus('disk-error',e.message)),500);
-    this.networkTimer=setInterval(()=>this.deliver().catch(e=>this.onStatus('offline',e.message)),2000);
+    this.networkTimer=setInterval(()=>this.deliver().catch(e=>this.onStatus(e.status||'offline',e.message)),2000);
     this.timer.unref?.();this.networkTimer.unref?.();
     void this.deliver().catch(()=>{});
   }
@@ -70,14 +74,21 @@ class DurableOutbox {
     if(typeof auth.token!=='string'||auth.token.length<40)throw new Error('Receiver authentication missing');
     const names=(await fs.readdir(this.directory)).filter(n=>n.endsWith('.json')).sort();
     let rejected=0;
+    const occupant={port:this.port,token:auth.token};
+    if(names.length&&!(this.verified&&this.verified.port===occupant.port&&this.verified.token===occupant.token)){
+      this.verified=null;
+      try{await this.verify(occupant.port,occupant.token,5000);}
+      catch(e){if(e.code!=='challenge-unreachable')e.status='unverified';throw e;}
+      this.verified=occupant;
+    }
     for(const name of names.slice(0,80)){
       const file=path.join(this.directory,name);
       const body=await fs.readFile(file);
-      const result=await this.post(body,auth.token);
+      const result=await this.post(body,auth.token,occupant.port).catch(e=>{this.verified=null;throw e;});
       if(result.statusCode>=400&&result.statusCode<500&&!RETRYABLE.has(result.statusCode)){
         await this.quarantine(name,result);rejected++;continue;
       }
-      if(result.statusCode!==202)throw new Error(`Receiver returned HTTP ${result.statusCode}`);
+      if(result.statusCode!==202){this.verified=null;throw new Error(`Receiver returned HTTP ${result.statusCode}`);}
       await fs.unlink(file);this.queuedBytes=Math.max(0,this.queuedBytes-body.length);
     }
     this.online=true;for(const resolve of this.onlineWaiters.splice(0))resolve();
@@ -93,9 +104,9 @@ class DurableOutbox {
     const kept=(await fs.readdir(dir)).filter(n=>n.endsWith('.json')).sort();
     for(const old of kept.slice(0,Math.max(0,kept.length-KEEP_REJECTED))){await fs.rm(path.join(dir,old),{force:true});await fs.rm(path.join(dir,old+'.reason'),{force:true});}
   }
-  post(body,token){
+  post(body,token,port=this.port){
     return new Promise((resolve,reject)=>{
-      const req=http.request({hostname:'127.0.0.1',port:this.port,method:'POST',path:'/v1/events',
+      const req=http.request({hostname:'127.0.0.1',port,method:'POST',path:'/v1/events',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,'Content-Length':body.length},timeout:5000},res=>{
           let data='';res.on('data',c=>data+=c.toString().slice(0,1000));res.on('end',()=>resolve({statusCode:res.statusCode,body:data}));
         });
@@ -107,7 +118,7 @@ class DurableOutbox {
     this.closed=true;clearInterval(this.timer);clearInterval(this.networkTimer);
     await this.persist();
     await this.delivering?.catch(()=>{});
-    await this.deliver().catch(e=>this.onStatus('offline',e.message));
+    await this.deliver().catch(e=>this.onStatus(e.status||'offline',e.message));
   }
 }
 module.exports={DurableOutbox};

@@ -115,6 +115,7 @@ test('Two providers on one file emit one collision; two Claude subagents do not'
   assert.equal(intents[0].tier,2);assert.equal(intents[0].evidence,'derived');assert.equal(intents[0].magnitude,0.4);
   assert.deepEqual(intents[0].detail,{providers:['claude-code','cursor'],scope:'file'});
   assert.equal(uniqueCues[0].category,'observed');
+  assert.equal(uniqueCues[0].weight,0,'a collision is an expression, never progress');
   assert.deepEqual(uniqueCues[0].detail.providers,['claude-code','cursor']);
   assert.deepEqual(uniqueCues[0].detail.voices,[0,1]);
   const json=JSON.stringify({intents,cues:uniqueCues,subject:intents[0].subject});
@@ -154,8 +155,21 @@ test('Two providers on different files in one district emit one subsystem collis
   assert.equal(sibling.length,1);
   assert.equal(sibling[0].detail.scope,'subsystem','a later sibling write is a distinct district meeting');
 });
-test('Interpretation v8 is current; two apply() runs of a collision journal match',()=>{
-  assert.equal(INTERPRETATION_VERSION,8);
+test('Only catalogued providers collide: unspecified, external-agent, a demo or an Object member never count',()=>{
+  for(const other of [undefined,'external-agent','unspecified','demo (fictional)','constructor','__proto__','toString']){
+    const s=newState(projectId);s.salt='cast-salt';
+    apply(s,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+    apply(s,e('agent.tool.completed',{file:'src/a.ts',meta:{...(other===undefined?{}:{provider:other}),agent:'B',tool:'Edit'}}));
+    apply(s,e('agent.tool.completed',{file:'src/b.ts',meta:{...(other===undefined?{}:{provider:other}),agent:'B',tool:'Edit'}}));
+    apply(s,e('document.snapshot',{file:'src/a.ts',content:'export function a(){}',meta:{reason:'edit'}}));
+    assert.equal(drainIntents(s).filter(i=>i.type==='agent.collision').length,0,String(other));
+    assert.equal(s.timeline.filter(c=>c.type==='agent.collision').length,0,String(other));
+    const last=s.timeline.filter(c=>c.detail?.attribution==='correlated');
+    assert(last.length&&last.every(c=>c.detail.agentId!==Object.values(s.agents).find(a=>a.provider==='claude-code').id),`${other}: the last writer still attributes`);
+  }
+});
+test('Interpretation v9 is current; two apply() runs of a collision journal match',()=>{
+  assert.equal(INTERPRETATION_VERSION,9);
   function run(){
     let n=0;const ev=(kind,extras={})=>({v:1,kind,id:`det-event-${++n}`,ts:1741100000000+n*1000,projectId,sessionId:'session1',origin:'test',...extras});
     const state=newState(projectId);state.salt='det-salt';state.createdAt=0;
@@ -188,37 +202,49 @@ test('Project name labels the local project list but never enters the recorded p
   apply(state,e('workspace.started',{}));
   assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
 });
-test('Rebuild v7 to v8 from a journal is byte-stable on the second run',async t=>{
+test('Rebuild v8 to v9 from a journal is byte-stable; two providers on the same files keep the progress and chapter of one',async t=>{
   const fs=require('node:fs/promises'),path=require('node:path');
   const {tempDir,startService}=require('./helpers');
   const dir=tempDir(t,'cr-cast-rebuild-');
-  const id=sha('cast-rebuild');
+  const id=sha('cast-rebuild'),solo=sha('cast-rebuild-solo');
   async function start(){
     const service=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000,windowMs:300,graceMs:50,quiet:true});
     const url=`http://127.0.0.1:${service.port}`;
     const auth={Authorization:`Bearer ${service.token}`};
     return {service,
       post:async events=>{const r=await fetch(url+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json',...auth},body:JSON.stringify({events})});assert.equal(r.status,202);},
-      flush:async()=>(await fetch(url+`/v1/flush?id=${id}`,{method:'POST',headers:auth})).json(),
-      rebuild:async()=>(await fetch(url+`/v1/rebuild?id=${id}`,{method:'POST',headers:auth})).json()};
+      flush:async p=>(await fetch(url+`/v1/flush?id=${p}`,{method:'POST',headers:auth})).json(),
+      rebuild:async p=>(await fetch(url+`/v1/rebuild?id=${p}`,{method:'POST',headers:auth})).json()};
   }
-  let n=0;const ev=(kind,extra)=>({v:1,id:`cast-rb-${++n}`,ts:1760000000000+n*1000,kind,projectId:id,sessionId:'s',origin:'test',...extra});
+  // Thirty files, each edited by Claude and then by a second agent: Cursor in one journal, another Claude session in
+  // the other. In v8 each meeting added its magnitude (0.4) to the progress: 37.1 against 25.1, chapter 3 against 2.
+  const journal=(p,second)=>{let n=0;const out=[];const ev=(kind,extra)=>({v:1,id:`${p.slice(0,8)}-rb-${++n}`,ts:1760000000000+n*1000,kind,projectId:p,sessionId:'s',origin:'test',...extra});
+    for(let k=0;k<30;k++){const file=`src/lib/m${k}.ts`;
+      out.push(ev('agent.tool.completed',{file,meta:{provider:'claude-code',agent:'A',tool:'Edit'}}),ev('agent.tool.completed',{file,meta:{provider:second,agent:'B',tool:'Edit'}}),
+        ev('document.snapshot',{file,content:`export function m${k}(){return ${k}}`,meta:{reason:'edit'}}));
+      n+=61;}
+    return out;};
   let s=await start();
-  await s.post([ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}})]);
-  await s.post([ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}})]);
-  await s.post([ev('document.snapshot',{file:'src/a.ts',content:'export function a(){return 1}',meta:{reason:'edit'}})]);
-  await s.flush();
+  for(const [p,second] of [[id,'cursor'],[solo,'claude-code']]){await s.post(journal(p,second));await s.flush(p);}
   const perf=path.join(dir,'projects',sha(id),'performance.jsonl');
   const live=await fs.readFile(perf,'utf8');
   assert.match(live,/agent\.collision/);
+  const cues=live.split('\n').filter(Boolean).flatMap(l=>JSON.parse(l).cues).filter(c=>c.type==='agent.collision');
+  assert(cues.length>=30,`${cues.length} collision cues`);assert(cues.every(c=>c.weight===0));
   await s.service.stop();
+  const read=async p=>JSON.parse(await fs.readFile(path.join(dir,'projects',sha(p),'state.json'),'utf8'));
+  const state=await read(id),alone=await read(solo);
+  assert.equal(state.interpretationVersion,9);
+  assert.equal(Object.values(alone.agents).length,2,'two Claude sessions');
+  assert.equal(state.performance.progress,alone.performance.progress);
+  assert.equal(state.performance.chapter,alone.performance.chapter);
+  assert.equal(state.performance.chapter,2);
   const stateFile=path.join(dir,'projects',sha(id),'state.json');
-  const state=JSON.parse(await fs.readFile(stateFile,'utf8'));
-  assert.equal(state.interpretationVersion,8);
-  state.interpretationVersion=7;await fs.writeFile(stateFile,JSON.stringify(state));
+  state.interpretationVersion=8;await fs.writeFile(stateFile,JSON.stringify(state));
   await fs.rm(perf,{force:true});
-  s=await start();await s.flush();
+  s=await start();await s.flush(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
-  await s.rebuild();
+  assert.equal((await read(id)).interpretationVersion,9);
+  await s.rebuild(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
 });

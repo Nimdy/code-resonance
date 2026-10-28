@@ -251,14 +251,16 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     await shot(A,'life-1440');
     await B.close();B=null;
     // ---- Classic stages: preview locally, save as the project's stage ------------------------------------------------
-    await tab(A,'classic');await card(A,'nexus');
-    await A.waitForFunction(()=>window.ResonancePlayer.state.world==='nexus',null,{timeout:10000});
+    await tab(A,'classic');await A.waitForSelector('.vs-card[data-card="construct"]',{timeout:10000});
+    check('the classic stages are the Construct and Monolith (Nexus and Nebula are retired)',(await A.$$eval('.vs-card[data-card]',els=>els.map(e=>e.dataset.card))).join()==='construct,city');
+    await card(A,'city');
+    await A.waitForFunction(()=>window.ResonancePlayer.state.world==='city',null,{timeout:10000});
     let prefs=await get(`/api/preferences?id=${id}`);
     check('a classic stage previews in this window only',prefs.world===null&&(await badge(A))==='Preview · not saved');
     await A.click('#vsCancel');await A.waitForFunction(()=>window.ResonancePlayer.state.world==='living',null,{timeout:10000});
     check('Cancel returns to the saved stage',true);
-    await card(A,'nexus');await A.click('#vsApply');
-    prefs=await until(async()=>{const p=await get(`/api/preferences?id=${id}`);return p.world==='nexus'&&p;},10000);
+    await card(A,'city');await A.click('#vsApply');
+    prefs=await until(async()=>{const p=await get(`/api/preferences?id=${id}`);return p.world==='city'&&p;},10000);
     check('Apply saves the classic stage for the project',!!prefs);
     await tab(A,'living');await card(A,'machine-cathedral');await previewing(A);
     check('a family preview switches this window to the living world and says so',await until(async()=>await state(A,()=>window.ResonancePlayer.state.world)==='living'&&/Living world shown for the preview/.test(await A.textContent('.vs-badge')),10000));

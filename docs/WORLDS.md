@@ -120,7 +120,7 @@ down a stop per depth band into the haze (`public/worlds/biosphere.js`, `biosphe
 | Moment | Image |
 |---|---|
 | Idle | One current sways everything; the light breathes over 2, 4 or 8 bars; a soft swell of the water's own colour circulates through the tissue; light shafts migrate with motes inside; far giants stand in the haze |
-| Edit | A narrow, bright pulse climbs that file's branch and lights its photophores |
+| Edit | A narrow, bright pulse climbs that file's branch and lights its photophores; an agent's edit (its touch) flares the branch in the agent's colour, the pulse runs on into the crown and a ring of light opens at the tip (a read: a dimmer ring gathering in) |
 | Structure created / removed | The crown grows outward along its paths, growth front leading / it folds back and drops dull flecks |
 | Subsystem created | A seed glows at the root and the organism grows from about 8 % over 5 s; spores burst; the camera turns until the newborn is not hidden |
 | Subsystem connected | A dim rhizome cord grows along the floor between the two roots, a bright head travelling it once |
@@ -128,7 +128,7 @@ down a stop per depth band into the haze (`public/worlds/biosphere.js`, `biosphe
 | Failure | Blight on the failing branches only: they drain to rust and black, sag and curl; a few dull embers fall; the grade desaturates and the shafts dim |
 | Recovery | The flood climbs only the repaired branches and leaves fresh growth in the species' own grammar |
 | Milestone (lasting) | A phyllotactic flower: 144 florets on Vogel's spiral, petals placed by the golden angle, the spiral repeated at every petal tip; refactors grow crystals bearing crystals; blooms accumulate and are never dropped |
-| Agents | Firefly swarms or pollinators at the exact branch they read or edit; waiting presences low at the edge |
+| Agents | Firefly swarms or pollinators at the exact branch they read or edit, staying a few seconds after each touch, brighter and a little larger while they work; waiting presences low at the edge |
 | Mature history | Girth, buttress roots and moss grow, blooms accumulate, the light warms |
 
 ### Stellar Forge
@@ -146,7 +146,7 @@ replaces the background keeps the galaxy.
 | Moment | Image |
 |---|---|
 | Idle | Gas streams and lanes shear, star clouds evolve, the galaxy rotates, a slow lateral dolly; coronae breathe on the bars and the light breathes very slightly with the beat; nothing twinkles |
-| Edit | Rim glow on the planet, its orbit arc lights, its dependency threads show briefly |
+| Edit | Rim glow on the planet, its orbit arc lights, its dependency threads show briefly; an agent's edit flares the world in the comet's colour with a ring of light and a brief streak from the comet (a read: dimmer, the streak toward the comet) |
 | Structure created / removed | Accretion sparks spiral in / a grey ablation stream blows away |
 | Subsystem created | A dark globule collapses in the disc, the star ignites and blows it open, a light echo crosses the disc |
 | Subsystem connected | A surge of light along the tidal stream between the two systems; both stars flare |
@@ -154,7 +154,7 @@ replaces the background keeps the galaxy.
 | Failure | The worst-hit star dims and erupts on one limb; dark dust pillars with crimson rims rise around each strained system; at most 10 % global darkening |
 | Recovery | The pillars thin and dissolve; a serene glow lights the gas |
 | Milestone (lasting) | A hard point-spread spike, then a light echo racing out across the dust lanes; it leaves a limb-brightened remnant shell in the disc, centred on the star that earned it (rose with a teal inner edge for a milestone, violet for a refactor), which grows and gains an inner shell with repetition |
-| Agents | Comets with a tapered ion tail and a work stream to the planet being edited, following the observed lifecycle |
+| Agents | Comets with a tapered ion tail and a work stream to the planet being edited, following the observed lifecycle; brighter while they work |
 | Mature history | More stars and gas, up to six tidal streams, accumulated remnant shells, asteroid belts and the unlock layers |
 
 ### Machine Cathedral
@@ -167,7 +167,7 @@ mirror canals), files are towers whose storeys are their symbols; the largest la
 | Moment | Image |
 |---|---|
 | Idle | Cloud crosses the moon every 20–30 s and the rays and glitter dim and return; mist drifts past the tower bases; windows breathe with a slow candle flicker; the orrery precesses; a carillon peal climbs the great spire every 16 bars |
-| Edit | That tower's windows warm; the edited storey flares |
+| Edit | That tower's windows warm; the edited storey flares; an agent's edit lights its windows in a quick cascade from the foot to the crown in the servitor's colour, with a glint at the top and a halo ring opening toward the view (a read: a gentler cascade, no halo) |
 | Structure created / removed | A storey slides down and turns into place with a spark ring / it lifts, folds away and drops grey dust |
 | Subsystem created | A light runs once around the foundation, the kerb rises bay by bay, then the nave |
 | Subsystem connected | A light cable extends between the tower tops; a clamp ring closes at each end |
@@ -175,7 +175,7 @@ mirror canals), files are towers whose storeys are their symbols; the largest la
 | Failure | A tremor; narrow white-hot cracks with a dim red bleed; windows gutter and die storey by storey from the top; the precinct turns grey-blue. Never gold |
 | Recovery | Warm light climbs the covered towers, a warm beam rises through the great spire, the orrery realigns |
 | Milestone (lasting) | The camera pushes in on the crowned spire, the lattice is gilded from the foot up, a halo ring blooms out and a gold wave crosses the water; tilted halo rings, lit tracery lanterns and gable roses stay |
-| Agents | A servitor (a lantern inside two brass rings) circling the tower it works on and lighting its facade; parked low at the precinct's edge while waiting |
+| Agents | A servitor (a lantern inside two brass rings) circling the tower it works on and lighting its facade, staying a few seconds after each touch, its lantern brighter while it works; parked low at the precinct's edge while waiting |
 | Mature history | Islands between mirror canals; three to five grand openwork spires; a low carpet of roofs for the smaller modules of large precincts |
 
 ### Synaptic Storm (preview)
@@ -197,6 +197,49 @@ world, also in the Music Studio) on Machine Cathedral, and `music.beatPulse` (*B
 `secondary.blossomScale` (*Blossom scale*) on Fractal Biosphere. They stay in the catalogue because saved recipes and
 packs set them and are validated against it; making them work now would change the approved look of those worlds.
 
+## Classic stages
+
+Two fixed stages without World DNA stay beside the living worlds (Visual Studio › Classic stages, the Stage's world
+buttons, Settings › Default world). They draw the same public graph and follow the same performance clock.
+
+- **The Construct** (WebGL2 through three.js, `public/construct.js`): the first architectural model, kept unchanged
+  ([CONSTRUCT.md](CONSTRUCT.md)).
+- **Monolith** (Canvas 2D, `public/worlds/monolith.js`): the project's site plan drawn flat, as an architectural
+  elevation. It is the lightweight stage, the one offered to a machine too slow for the living world, and the last
+  fallback (a living world that cannot start falls back to the Construct, the Construct to Monolith; without WebGL2
+  neither WebGL world starts).
+
+| | |
+|---|---|
+| ![Monolith on a 450-file project](worlds/monolith-excalidraw.jpg) | ![Monolith during a replay](worlds/monolith-replay.jpg) |
+| A 450-file project: nine districts in the project's palette, dependencies as arcs below the ground line. | During a replay: an edited file's tower lit, an agent's mark over its file, a commit sweeping the ground line. |
+
+| What you see in Monolith | What it means |
+|---|---|
+| A tower standing on the floor | A file, on its persisted plot (`engine/layout.js`, the Construct's site plan seen from the front): plots never move, so the skyline grows without reshuffling; rows further back stand higher and paler |
+| Storeys; a mast on top | Its symbols, up to 16; the mast says there are more |
+| A low plinth | A file without code symbols |
+| A colour | Its district (subsystem), from the project's palette; the core district is stone, tests take the valid colour |
+| Outline only / solid / lit windows / warning colour | Draft / committed / validated / stressed, as the data says; a test file is an open frame |
+| Arcs hanging below the ground line | Dependencies, brighter between districts |
+| Windows warming and a light climbing a tower | That file just changed |
+| A small diamond over a tower | An agent's last file (CAST colour; correlated provenance only) |
+| A light sweeping the ground line / the line turning red | A commit or a verified moment / a failing test or build |
+
+The only words are public ones (`public/worlds/labels.js`): the public title, or "Code Resonance"; counts of files,
+symbols and links; each district's alias, or its generated name, with its role; and one line of key. Information mode
+*Off* draws no text. Motion happens at the cues' own times, in viewer time; with reduced motion (Settings › Interface,
+or the system's preference) nothing rises, climbs or sweeps. A frame is a function of the graph, the recipe and the
+clock, and an unchanged frame is copied from a cached layer (`tests/monolith.test.js`). Measured in headless Chromium
+with software rendering at 1280×720 on copies of the qualification datasets: 60 fps, and while nothing happens no
+redraw in 180 frames and about 18 ms of script and 33 ms of main-thread work per second for 450 files (the 0.7.1
+Monolith: 164 and 238 ms). A candidate for artistic review, not an accepted design.
+
+**Nexus and Nebula**, two more 2D stages, were retired after 0.7.1. Nothing that names one breaks: a setting or a
+project preference that says `nexus` or `nebula` still loads (the receiver reads it as Monolith and never rewrites the
+file for reading it; the document's next write stores Monolith), and a URL pin `?world=nexus` or `?world=nebula`, such
+as an OBS bookmark, shows Monolith. A new write that asks for a retired world is refused like any unknown world.
+
 ## Semantic fidelity
 
 Intents are emitted by the reducer next to the facts that justify them and recorded with the timeline.
@@ -214,7 +257,7 @@ Intents are emitted by the reducer next to the facts that justify them and recor
 | `milestone.achieved` | 3, rarely 4 | verified | a passing run plus a structural reason (first validation, integration validated, recovery, refactor); tier 4 needs several together |
 | `repository.checkpoint` | 2 | observed | a commit, magnitude from structure since the last commit |
 | `agent.state` | 0 | observed | hook-reported lifecycle and tool activity |
-| `agent.collision` | 2 | derived | two catalogued providers share a file or district inside 60 s (interpretation 8; last-writer still attributes the edit) |
+| `agent.collision` | 2 | derived | two catalogued providers share a file or district inside 60 s (interpretation 8; since 9 only catalogued providers count and its cue adds no progress; last-writer still attributes the edit) |
 | `world.expanded` | 2 | derived | accumulated structure reaches a new chapter (growth, not completion) |
 
 Rules that keep the worlds honest: a failure never produces a success effect; no agent message, visible thinking or
@@ -255,8 +298,9 @@ minutes without any observation; the last 512 departed agents keep their numbers
 
 Agents are a CAST in the project's world: a catalog name, a stable orchestra seat, a voice. The catalog
 (`engine/providers.js`, player copy `public/providers.js`) is Claude, Cursor, Codex, Grok, Qwen, Kimi on seats 0–5;
-unknown ids hash into seats 6–7. Stage chips show those catalog names, never vendor art styles. Worlds draw them as
-that family's presence (fireflies, comets, servitors).
+unknown ids hash into seats 6–7. Stage chips and callouts show those catalog names, never vendor art styles; any other
+id an agent reports is shown as "Agent" (only the Control Center names it), and packs receive catalog ids only. Worlds
+draw them as that family's presence (fireflies, comets, servitors).
 
 Presences follow observed lifecycles only (`engine/intents.js`, `public/worlds/agents.js`): connected, working on a
 request (prompt submitted, no response yet), using a tool (reading, searching, editing, running, testing, building,
@@ -264,13 +308,28 @@ checking, researching, delegating), reasoning (only when the provider exposed it
 waiting for the next prompt, finished (subagents), disconnected. After three silent minutes a busy agent reads
 "status unknown" and dims; a waiting agent goes dormant after two; a disconnected agent departs. The Claude Code hook
 now names the file a `Read` looks at, so reading is visible; only edits attribute later changes to an agent.
-`agent.collision` (interpretation 8) is an intent plus a derived cue when two providers share a file or district inside
-60 s; last-writer still attributes. Worlds express it; they never invent one.
+`agent.collision` (interpretation 8) is an intent plus a derived cue when two catalogued providers (Claude, Cursor, Codex,
+Grok, Qwen, Kimi) share a file or district inside 60 s; an unspecified or uncatalogued agent is not a second provider.
+Since interpretation 9 its cue weighs nothing, like every agent cue: two agents never raise the progress or the chapter.
+Last-writer still attributes. Worlds express it; they never invent one.
+
+![An agent's edit touch in the Fractal Biosphere on a 450-file project: a ring opens at the edited branch beside Claude's label](worlds/agent-touch-biosphere.jpg)
+
+**Touches** (`public/worlds/touch.js`). An edit's tool event lasts a few milliseconds in the hooks (the tool starts, it
+completes), too short for a presence to be seen reaching the file. Each tool event that names a file (editing; reading
+and searching more gently) is therefore a *touch* of that file for 3.2 s of view time, drawn by each flagship world in
+its own grammar (the Edit rows above), and the presence visits the file it touched for a few seconds. A file is touched
+again only after 2.4 s of view time (an edit soon after a read of it still shows as an edit); at most four touches
+show at once. Touches are a pure function of the presences' recorded events and the frame's time (durations in view
+seconds, so a replay at 8× keeps their length), so replays, seeks and films show the same ones; they are presentation
+only (never an input to the director, the recipe or digital life) and follow the recipe's agent prominence. Packs get
+the presences through the SDK and draw what they choose.
 
 ## Labels and privacy
 
 Modes: **cinematic** (title card, callouts for structural events and above, milestone banners, agent chips when
-their activity changes), **explorer** (subsystem labels always, click to inspect a structure), **stream** (a lower
+their activity changes), **explorer** (subsystem labels always, click to inspect a structure; the camera eases a little
+toward it), **stream** (a lower
 third: public title and family, current event, agent status, validation status), **off**. Text comes only from roles,
 counts, states, activity categories, CAST catalog names, generated names (pronounceable, derived from salted ids,
 filtered against crude words), user aliases and the **public title**, which exists only when the user sets it in the
@@ -278,7 +337,9 @@ Visual Studio; without it the title card shows the family name and the lower thi
 **Propose public names** fills aliases from each subsystem's role plus a generated name (`Craft - Vauos`) and writes
 only on Accept; the hyphen is required because aliases reject a middle-dot. The project folder name is never an input
 (`public/worlds/labels.js`, unit-tested). No path, file name, prompt or source identifier is ever drawn (checked in
-qualification).
+qualification). In the Control Center's interactive views, hovering the world shows a card with the world's words and
+what the player knows there (agents, the newest test verdict and edit, counts): page markup, never drawn into the
+stage, absent in the OBS view and with Stream or Off ([CONTROL-CENTER.md](CONTROL-CENTER.md#hover-details)).
 
 ## Music
 

@@ -181,6 +181,12 @@ Home shows **Last night** under the live world once a real (not demo) project ha
 score: a sped-up replay of one highlight (failure and recovery, a meeting of agents, a structure). Default **4×**;
 **16×** when the scored window is long. Play it there; the player does not need Playwright.
 
+The highlight is chosen from the **last 24 hours of the project's own recording** (measured back from its last
+recorded window, not from the clock): a project you last worked on a week ago shows that last day. Only if nothing in
+those 24 hours scores is the whole history considered. A recording of a day or less is scored as a whole. Home asks the
+receiver at most once every 30 seconds per project, and again only after that project's recorded performance has grown,
+so a night appears or changes within about half a minute of the performance that earns it.
+
 **Record** is live: what the stage shows now, as it plays. A **film** is the publish object: the same highlight, frame by
 frame, for a README hero. It needs a public title (Visual Studio). Play still works without one. From the repository:
 
@@ -189,8 +195,9 @@ npm run film -- --project <id>
 ```
 
 That always `--copy`s the data directory, picks the same window Home plays, defaults to cinematic labels, and writes
-`qualification/results/films/last-night.webm`. It uses the GPU when one is present. Pin an adapter with `--gpu nvidia`
-or `--gpu amd`; `--gpu off` is software. First time:
+`qualification/results/films/last-night.webm`. It uses the GPU when one is present; if the browser cannot use the GPU
+it found, it says so and renders in software (slower). Pin an adapter with `--gpu nvidia` or `--gpu amd` (then a
+missing GPU is an error); `--gpu off` is software. Ctrl-C stops it and removes its temporary copy. First time:
 `cd qualification && npm ci`. Films never show folder names, paths or prompts. The overnight CAST checklist:
 [campaign-0.7.md](campaign-0.7.md).
 

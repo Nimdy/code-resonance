@@ -14,6 +14,87 @@
   part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
   (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
   digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
+- **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
+  preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
+  there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,
+  the newest test verdict and edit, a subsystem's file count and states). At most ten picks a second; it keeps clear
+  of the Stage's controls and hides on leaving, any key, scrolling, dialogs, a resting Stage, touch input and the
+  information modes Stream and Off. It is page markup over the stage, never drawn into it: recordings, films and the
+  OBS view never contain it. Catalog and generated names only.
+- **Agent touches:** each edit an agent makes now shows in the flagship worlds for a few seconds (an edit's tool event
+  lasts milliseconds, so the presences never visibly reached the file). Fractal Biosphere: the branch flares in the
+  agent's colour, a pulse runs up it into the crown and a ring opens at its tip; Stellar Forge: the world flares with a
+  ring, its orbit lights and a streak runs from the comet; Machine Cathedral: the tower's windows light in a quick
+  cascade, a glint and a halo ring at the top. Reads and searches are gentler. Rate-limited per file, at most four at
+  once, a pure function of the recorded presences (replays, seeks and films show the same), presentation only (never
+  the director, the recipe or digital life). Swarms and servitors visit the file they just touched and burn brighter
+  while they work; comets brighten.
+- **Explorer:** clicking a structure also draws the camera a little toward it (the world's own goal, the same rig).
+- **Packs:** the pack frame takes no pointer input; explorer clicks and the hover reach a pack's world through the
+  player (`pick`, `peek`). A pick no longer counts as a frame in flight (it held back renders and could trip the
+  watchdog).
+- **Render lab:** `--touch` renders stills during the first recorded edit and read (`qualification/visual/lab.js`).
+- **Stellar Forge:** "0 dependencies" (it said "dependencys").
+- **Worlds:** the choices are now Living world, The Construct and Monolith. Nexus and Nebula, two Canvas 2D stages,
+  are retired. A setting or project preference that names one still loads as Monolith (the receiver never rewrites a
+  file for reading it; the document's next write stores Monolith), and a URL pin `?world=nexus` or `?world=nebula`
+  (an OBS bookmark) shows Monolith. A new write that asks for a retired world is refused (400, `stage.world` or
+  `world`). Recipes and packs are unaffected.
+- **Monolith** is redrawn as a flat architectural elevation of the site plan (`public/worlds/monolith.js`): files are
+  towers on their persisted plots, storeys their symbols, districts in the project's palette, dependencies as arcs
+  below the ground line, with a public title, counts and a district legend. Motion is calm and follows the cues;
+  reduced motion stills it. An unchanged frame is copied from a cached layer: on a 450-file project in headless
+  Chromium with software rendering, 18 ms of script per second while idle (0.7.1's Monolith: 164 ms).
+- **Generated subsystem names** (`generatedName`) move from `host.js` to `labels.js`, unchanged, so the 2D world can
+  use them without three.js.
+- **Token proof for every client, bound to the port:** the extension's capture outbox, the Claude Code, Cursor and Codex
+  hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`; in 0.7.1 only
+  `npm run up`, `npm run pair` and the extension's pairing link did. The proof is now
+  `GET /v1/challenge?nonce=&v=2` → HMAC-SHA256(token, `cr-challenge-v2|<port>|<nonce>`) for the port the request arrived
+  on, and no client follows a redirect, so a process on one port can no longer pass by redirecting to, or relaying, a
+  real receiver on another port. The outbox verifies once per receiver connection (again after a failed delivery or a
+  changed port); the hooks and CLIs once per run. An unverified occupant gets nothing: hooks spool and exit 0, the
+  outbox keeps its batches (status *queued (receiver not verified)*), the CLIs exit with an error. One client
+  implementation, `extension/proof.js` (now in the VSIX), re-exported by `receiver/proof.js`.
+  **Compatibility:** the receiver still answers the 0.7.1 form (`?nonce=` without `v`) for an extension installed
+  before. A receiver started before this change has no v2 proof: restart it. Until you do, the updated hooks spool and
+  the extension queues their events, and `scripts/event.js`, `npm run demo`, `npm run up` and `npm run pair` refuse.
+- **Interpretation 9 (projects rebuild once):** the `agent.collision` cue now weighs 0, like every other agent cue. In
+  8 it weighed its magnitude (0.4–0.6) and fed progress, energy and the chapter, so two agents on the same files raised
+  an existing project's chapter on rebuild; now a two-agent journal has exactly the progress and chapter of the same
+  journal with one provider. Collisions count only catalogued providers (Claude, Cursor, Codex, Grok, Qwen, Kimi):
+  `unspecified`, `external-agent` and other ids still attribute their edits but never make a meeting. The catalog
+  lookup ignores Object members (`constructor`, `__proto__`, …). On the first start each project's derived files are
+  rebuilt from its journal (the journal is not rewritten). The collision intent and its magnitude are unchanged, so the
+  living worlds' meeting and the score's accent figure are as before; a window with a meeting now has slightly lower
+  energy and growth (they summed cue weights), and the Canvas 2D stages pulse it at their base speed.
+- **Public agent names:** an agent whose provider id is not in the catalog is "Agent" on Stage chips, in collision
+  callouts (Biosphere, Stellar Forge, Machine Cathedral) and in Home's Last night cast, instead of its title-cased id
+  (`external-agent`, a client's name passed with `--provider`). The Control Center's own lists still name the id.
+  Visual packs receive a provider only as a catalog id (it was any lower-case slug).
+- **Highlights cannot stall the receiver:** the picker (`engine/highlight.js`, `GET /api/highlight`, `npm run film`)
+  scored every candidate window by scanning it; a failure recovered more than 24 minutes later made every intent of the
+  red period a candidate, so the cost grew with the square of the history, on the receiver's main thread (measured:
+  5.0 s for 50,000 intents with a 6.8-hour red period). It now scores the same candidates with one sliding pass per
+  kind: the same night takes 48 ms, a million intents 0.5 s, a million with 200 failures, a six-hour red period and
+  40,000 anchors about a second. The choice is unchanged: the tests compare it with the 0.7.1 picker on the existing
+  fixtures and 600 seeded random nights.
+- **Last night is the last day:** the highlight is chosen from the last 24 hours of the project's own recording
+  (measured from its last window), and from the whole history only if nothing there scores; the receiver then parses
+  only those windows. Home asks for it at most once per 30 s per project, and again only after the project's recorded
+  performance grew (it asked on every project update while there was none, and never refreshed one it had).
+- **`npm run film` ends cleanly:** a failure after the temporary receiver started (a software renderer where a GPU was
+  asked for, a refused look or tune, a browser that would not launch, a failed frame) left it and the ffmpeg encoder
+  running, so the command never returned; now every failure stops them. The temporary copy of the data directory
+  (with `receiver-auth.json`) was removed only on a normal exit; now also on Ctrl-C, SIGTERM and SIGHUP, and the wrapper
+  passes a signal on to the renderer and waits for it. A GPU the wrapper detected itself (no `--gpu`) that the browser
+  cannot use now falls back to software with a message instead of failing; `--gpu auto|amd|nvidia` still insists.
+  `--gpu` accepts only `auto`, `amd`, `nvidia` or `off`.
+- **Hook installers:** removing the Codex adapter from the Control Center (or merging it again) left its handler in
+  place when it shared a group with one of your own hooks (the group count did not change, so the event looked
+  untouched); it is now removed and your hook stays. The Connections plan and apply for Claude Code, Cursor and Codex
+  refuse your home directory and anything that resolves to it: `~/.claude`, `~/.cursor/hooks.json` and
+  `~/.codex/hooks.json` are user-level and run in every workspace. A project folder inside the home directory is fine.
 
 ## 0.7.1 — 2026-10-28
 

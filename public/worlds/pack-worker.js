@@ -61,6 +61,7 @@ function handle(m){
     case 'quality':host.setQuality(m.level,m.adapt);break;
     case 'resize':host.resize(m.w,m.h,m.dpr);break;
     case 'pick':send({type:'picked',id:m.id,result:host.pick(m.x,m.y)});break;
+    case 'peek':send({type:'picked',id:m.id,result:host.peek(m.x,m.y)});break;
     case 'render':{
       // A newer live render already waiting makes this one obsolete: skip it (presentation only, never events).
       if(m.mode==='live'&&queue.some(x=>x.type==='render'&&x.mode==='live')){skipped++;send({type:'rendered',id:m.id,skipped:true,queue:queue.length});break;}

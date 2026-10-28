@@ -181,6 +181,10 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
   let dir;try{dir=await fs.realpath(projectPath);}catch{throw coded('invalid','projectPath does not exist',{key:'projectPath'});}
   if(!(await fs.stat(dir)).isDirectory())throw coded('invalid','projectPath is not a directory',{key:'projectPath'});
   if(path.parse(dir).root===dir)throw coded('invalid','projectPath cannot be the root of a file system',{key:'projectPath'});
+  // The home directory is not a project: its .claude, .cursor and .codex hold the user-level settings and hooks, which
+  // run in every workspace. Compared after resolving both, so a link to it or a path that ends there is refused too.
+  const home=await fs.realpath(os.homedir()).catch(()=>path.resolve(os.homedir()));
+  if(path.relative(home,dir)==='')throw coded('invalid','projectPath cannot be your home directory: hooks there apply to every workspace, so choose the project folder',{key:'projectPath'});
   const data=await fs.realpath(dataDir).catch(()=>dataDir),rel=path.relative(data,dir);
   if(!rel||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel)))throw coded('invalid','projectPath cannot be inside the receiver\'s data directory',{key:'projectPath'});
   const file=path.join(dir,folder,name);
@@ -575,11 +579,14 @@ function createService(options={}) {
         response(res,200,pack);return;
       }
       if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
-      // Occupant proves it holds the ingestion token without the client sending Authorization: HMAC-SHA256(token, nonce).
+      // Occupant proves it holds the ingestion token without the client sending Authorization. v=2 binds the HMAC to the
+      // port this connection arrived on (receiver/proof.js); without v, the 0.7.1 form for extensions installed before.
       if(req.method==='GET'&&pathname==='/v1/challenge'){
-        const n=u.searchParams.get('nonce')||'';
+        const n=u.searchParams.get('nonce')||'',v=u.searchParams.get('v');
         if(!proof.validNonce(n)){response(res,400,{error:'Expected nonce=32 hex'});return;}
-        response(res,200,{ok:true,proof:proof.proofOf(token,n)});return;
+        if(v===null){response(res,200,{ok:true,proof:proof.proofOf(token,n)});return;}
+        if(v!=='2'){response(res,400,{error:'Expected v=2'});return;}
+        response(res,200,{ok:true,v:2,proof:proof.proofV2(token,req.socket.localPort,n)});return;
       }
       if(req.method==='GET'&&pathname==='/api/projects'){
         // The private project name is listed here (the Control Center's project list), never on the stage.
@@ -642,19 +649,22 @@ function createService(options={}) {
         if(hit&&hit.key===key){response(res,200,hit.view);return;}
         // The file on disk is the source of truth: a test (or a rebuild) can replace it without the worker noticing.
         timelines.delete(id);
-        const windows=[];
-        if(st){
-          let after=-1;
-          for(;;){
-            const {entries,total}=await readTimeline(id,after,2000);
+        const index=st?await timelineIndex(id):[];
+        let start=Infinity,end=-Infinity;for(const x of index){if(x.start<start)start=x.start;if(x.end>end)end=x.end;}
+        // Last night reads the windows of the recording's last 24 hours first, and the whole history only when nothing
+        // there scores (engine/highlight.js, as npm run film decides from the whole file).
+        const windowsSince=async since=>{
+          const windows=[];const first=since>-Infinity?index.find(x=>x.end>=since):index[0];if(!first)return windows;
+          for(let after=first.seq-1;;){
+            const {entries}=await readTimeline(id,after,2000);
             if(!entries.length)break;
             // Graphs and cues are unused by the picker; a long session is large.
             for(const x of entries)windows.push({start:x.start,end:x.end,intents:x.intents});
             after=entries.at(-1).seq;
-            if(windows.length>=total)break;
           }
-        }
-        const view=highlight.publicView(id,highlight.fromWindows(windows));
+          return windows;
+        };
+        const view=highlight.publicView(id,await highlight.lastNight({start,end,windowsSince}));
         highlightCache.set(id,{key,view});
         response(res,200,view);return;
       }

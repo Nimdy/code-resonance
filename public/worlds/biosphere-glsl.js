@@ -18,6 +18,7 @@ uniform vec4 uOrg[MAXO],uOrgC[MAXO],uOrgS[MAXO],uOrgB[MAXO];uniform vec3 uPal[6]
 uniform vec4 uBL[8],uBLC[8];
 uniform vec3 uFogC,uFogLit,uLightDir,uBody;
 uniform vec4 uWave[8],uWaveC[8];
+uniform vec4 uTouch[4],uTouchC[4];
 uniform sampler2D uState;
 // The current: a travelling wave along one direction plus a slow cross swell; bending grows with the path distance from
 // the root (flexible tips, stiff trunks), with the organism's size and its species' flexibility, so every connected
@@ -59,6 +60,15 @@ vec3 waves(float org,float dist,float blight,float repaired){vec3 a=vec3(0.);for
   // An upward wave leaves the light behind it for a moment (a flood, not a ring).
   float wake=w.w>0.?smoothstep(front,front-uWaveC[i].w*3.,dist)*.2*step(dist,front)*(w.w>1.5?repaired:1.):0.;
   a+=uWaveC[i].rgb*(band+wake)*k*smoothstep(9.,5.,age)*smoothstep(0.,.4,age);}return a;}
+// An agent's touch on a file (touch.js, biosphere.js): a pulse in the agent's colour runs up the file's branch, past its
+// tip into its crown, lighting the photophores on its way; the branch flares behind it and fades over three seconds.
+// uTouch: module, start, strength, the branch's base distance; uTouchC: colour, its tip distance (at rest, scaled here).
+vec3 touchAt(float m,float dist,float S){vec3 a=vec3(0.);if(m<-.5)return a;
+  for(int i=0;i<4;i++){vec4 T=uTouch[i];if(T.z<=0.||abs(T.x-m)>.5)continue;float age=(uT-T.y)/uSpeed;if(age<0.||age>3.2)continue;
+    float b=T.w*S,L=max(.4,uTouchC[i].w*S-b),front=b+L*1.3*smoothstep(0.,.9,age);
+    float band=exp(-sq((dist-front)/max(.22,L*.14)))*(1.-smoothstep(1.,1.6,age));float env=smoothstep(0.,.15,age)*pw(1.-age/3.2,1.6);
+    a+=uTouchC[i].rgb*T.z*(band*2.6+env*.8*step(dist,front+.3));}
+  return a;}
 // Nutrient circulation: ambient life from the roots to the tips (never growth). A wide, soft swell in the water's own
 // colour (never the organism's hue, never a sharp front: the event pulses are narrow, bright and coloured).
 float nutrient(float dist,float org){float p=fract(dist*.07-uV*.045*uFlow+org*.37);return smoothstep(0.,.3,p)*smoothstep(.75,.3,p);}
@@ -96,7 +106,7 @@ void main(){
   if(uOrgS[int(org)].x>.5&&uOrgS[int(org)].x<1.5){float a=atan(cs.y,cs.x);a=floor(a/1.0472+.5)*1.0472;cs=vec2(cos(a),sin(a));}
   vec3 n=N*cs.x+B*cs.y;
   vec3 w=C+n*r;vW=w;vN=normalize(n-T*clamp(drds,-6.,6.));vLook=vec4(lk.xy,bl,lk.w);vInfo=vec4(org,tip,dist,iM.w);vCS=position.xz;vProf=vec3(iT.w,t,iM.x<-1.5?-iM.x-2.:-1.);vMat=max(0.,o.w-1.);
-  vWave=waves(org,dist,bl,pu.w>-1e4?1.:0.);float pa=(uT-pu.x)/uSpeed;float front=pu.z+pa*5.5;vPol=vec2(0.,iM.z);
+  vWave=waves(org,dist,bl,pu.w>-1e4?1.:0.)+touchAt(iM.x,dist,S);float pa=(uT-pu.x)/uSpeed;float front=pu.z+pa*5.5;vPol=vec2(0.,iM.z);
   vPulse=(pa>0.&&pa<5.&&pu.y<1.5?exp(-sq((dist-front)*1.3))*smoothstep(5.,3.,pa)*(pu.y>.5?.4:1.):0.)+st.w*(.55+.45*sin(uV*3.+dist*2.));
   vFront=grow<1.?pw(position.y,3.)*(1.-grow*.6):0.;vFront+=uOrgS[int(org)].z*.5;vHeal=healOf(pu);vFar=0.;vThin=1.;
   gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`;
@@ -134,7 +144,7 @@ void main(){
   float rw=aO.w*tD.w*fr*tA.w*S*(1.-gone*.6)*(.4+.6*smoothstep(0.,1.,grow));vec4 mv=viewMatrix*vec4(Cw,1.);float pxw=-mv.z/(projectionMatrix[1][1]*uRes.y*.5);float rr=bud>.5?max(rw,pxw*.9*fr):max(rw,pxw*.5*lod);
   vec3 w=Cw+off*rr;vW=w;vN=off;vLook=vec4(lk.xy,bl,lk.w);vInfo=vec4(far>.5?0.:org,tip,dist,tM.z);vCS=vec2(cos(aA),sin(aA));
   vProf=vec3(0.,lvl,colour>.5?colour:-1.);vMat=0.;vThin=bud>.5?1.:clamp(rw/max(1e-5,rr),.2,1.);vFar=far;vPol=vec2(bud,lvl);
-  vWave=far>.5?vec3(0.):waves(org,dist,bl,pu.w>-1e4?1.:0.);float pa=(uT-pu.x)/uSpeed;float front=pu.z+pa*5.5;
+  vWave=far>.5?vec3(0.):waves(org,dist,bl,pu.w>-1e4?1.:0.)+touchAt(tM.x,dist,S);float pa=(uT-pu.x)/uSpeed;float front=pu.z+pa*5.5;
   vPulse=far>.5?0.:(pa>0.&&pa<5.&&pu.y<1.5?exp(-sq((dist-front)*1.3))*smoothstep(5.,3.,pa)*(pu.y>.5?.4:1.):0.)+st.w*(.55+.45*sin(uV*3.+dist*2.));
   vFront=grow<1.?exp(-sq((aP.x-g)*7.))*(1.-grow*.5):0.;vFront+=far>.5?0.:uOrgS[int(org)].z*.5;vHeal=far>.5?0.:healOf(pu);
   gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`;
@@ -228,7 +238,7 @@ void main(){
   else p+=side*position.x*width;
   vW=p;vUv=vec2(position.x+.5,y);
   float ci=lM.w;vec3 kc=ci<.5?uOrgC[int(lM.y)].rgb:uPal[int(ci)];vC=kc;vLook=vec4(lk.xy,bl,lk.w);vI=vec4(shape,lM.z,lM.y,st.w);
-  vA=smoothstep(0.,.35,age)*(1.-gone)*(shape>5.5?open:1.);vWave=waves(lM.y,d2,bl,pu.w>-1e4?1.:0.);
+  vA=smoothstep(0.,.35,age)*(1.-gone)*(shape>5.5?open:1.);vWave=waves(lM.y,d2,bl,pu.w>-1e4?1.:0.)+touchAt(lM.x,d2,S);
   gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`;
 export const LEAF_FS=`${COMMON}
 varying vec2 vUv;varying vec3 vC,vW,vWave;varying vec4 vLook,vI;varying float vA;
@@ -269,7 +279,7 @@ void main(){
   vec4 lk=lookAt(st);float bl=blightOf(lk,pu);
   float ci=gM.w;vec3 kc=ci<.5?uOrgC[int(gM.y)].rgb:uPal[int(ci)];vec3 hue=mix(distHue(satc(kc),p),vec3(.4,.14,.05),bl*.9);
   float pulse=nutrient(gP.w*S,gM.y);float breath=1.+uBreath*1.4*sin(uV*.8+gM.z*40.);
-  vec3 wv=waves(gM.y,gP.w*S,bl,pu.w>-1e4?1.:0.);
+  vec3 wv=waves(gM.y,gP.w*S,bl,pu.w>-1e4?1.:0.)+touchAt(gM.x,gP.w*S,S);
   float halo=step(5.5,gG.y)*step(gG.y,6.5),seed=step(6.5,gG.y)*step(gG.y,7.5),floret=step(8.5,gG.y);
   float B=gM.x<-1.5?1.:uOrgB[int(gM.y)].x;
   vC=hue*(.5+.25*pulse)*mix(uLum*B,min(uLum,1.1)*.4*B,halo)*lk.x*breath+(wv*1.2+hue*st.w*1.2)*(1.-halo*.9);

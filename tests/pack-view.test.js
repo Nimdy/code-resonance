@@ -31,6 +31,10 @@ test('Cues lose project, session, tool and any unknown detail; intents get opaqu
     subject:{agentId:'a1b2c3d4e5',voice:1,fileId:'1db0005537a90f',prompt:'raw source text'},detail:{state:'tool',activity:'editing',provider:'claude-code',thought:'password=hunter2',file:'src/secret/keys.ts'}}));
   assert.match(i.id,/^[0-9a-f]{16}$/);assert.notEqual(i.id,'session-1234-abcd:agent.state:0');
   assert.deepEqual(i.subject,{fileId:'1db0005537a90f',agentId:'a1b2c3d4e5',voice:1});assert.deepEqual(i.detail,{state:'tool',activity:'editing',provider:'claude-code'});
+  // A provider reaches a pack only as a catalog id: a slug an agent reported (a client's name) is dropped.
+  const slug=clean(v.intent({v:1,id:'e:agent.state:9',type:'agent.state',ts:5,subject:{agentId:'a1b2c3d4e5',voice:6},detail:{state:'tool',activity:'editing',provider:'acme-client-portal'}}));
+  assert.deepEqual(slug.detail,{state:'tool',activity:'editing'});
+  for(const p of ['external-agent','unspecified','constructor','__proto__'])assert.equal(v.intent({id:'e:agent.state:8',type:'agent.state',ts:5,detail:{state:'tool',provider:p}}).detail.provider,undefined,p);
   // The same id always maps to the same opaque id (deduplication across priming and playback still works).
   assert.equal(v.intent({id:'x:milestone.achieved:0',type:'milestone.achieved',ts:1}).id,v.intent({id:'x:milestone.achieved:0',type:'milestone.achieved',ts:2}).id);
   const m=clean(v.intent({id:'e:milestone.achieved:0',type:'milestone.achieved',ts:1,tier:3,detail:{kinds:['integration-validated','src/secret/keys.ts','raw source text']}}));
@@ -45,6 +49,7 @@ test('Collision providers and seats survive; planted paths and out-of-range voic
     detail:{providers:['claude-code','cursor','src/secret/keys.ts','sk-ant-SECRET'],scope:'file',file:'src/secret/keys.ts',path:'/home/someone'}}));
   assert.deepEqual(i.detail,{providers:['claude-code','cursor'],scope:'file'});
   assert.deepEqual(i.subject,{fileId:'1db0005537a90f',groupId:'80f461e0771437'});
+  assert.deepEqual(clean(v.intent({id:'e:agent.collision:2',type:'agent.collision',ts:1,detail:{providers:['claude-code','acme-client-portal','external-agent']}})).detail.providers,['claude-code']);
   const c=clean(v.cue({type:'agent.collision',ts:1,weight:.4,category:'observed',
     detail:{fileId:'1db0005537a90f',voices:[0,1,99,-1],providers:['claude-code','cursor','src/secret/keys.ts'],file:'src/secret/keys.ts'}}));
   assert.deepEqual(c.detail.voices,[0,1]);
@@ -58,6 +63,7 @@ test('Collision providers and seats survive; planted paths and out-of-range voic
   assert.equal(planted.detail.provider,undefined);
   const cueProv=clean(v.cue({type:'agent.tool.completed',ts:1,detail:{provider:'claude-code',file:'src/secret/keys.ts'}}));
   assert.equal(cueProv.detail.provider,'claude-code');
+  assert.equal(clean(v.cue({type:'agent.tool.completed',ts:1,detail:{provider:'acme-client-portal'}})).detail.provider,undefined);
 });
 test('Recipes keep the genome, traits, settings and only the public strings the user approved',async()=>{
   const v=await load();

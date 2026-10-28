@@ -64,7 +64,7 @@ const CHUNK=300,EXCERPTS=[60,600,1200,1740];
     }
     // Visual evolution: seek the replay across the session and compose a contact sheet.
     const stage=await browser.newPage({viewport:{width:1920,height:1080}});
-    await stage.goto(`${url}/?project=${projectId}&world=nexus`);
+    await stage.goto(`${url}/?project=${projectId}&world=city`);
     await stage.waitForFunction(()=>document.getElementById('connection').textContent==='SESSION CONNECTED',null,{timeout:15000});
     await stage.click('#replayBtn');
     await stage.waitForFunction(()=>Number(document.getElementById('eventCount').textContent)>0,null,{timeout:20000});
@@ -76,7 +76,7 @@ const CHUNK=300,EXCERPTS=[60,600,1200,1740];
     }
     const sheet=await browser.newPage({viewport:{width:1800,height:1050}});
     await sheet.setContent(`<body style="margin:0;background:#05070d;display:grid;grid-template-columns:repeat(3,600px);gap:0">${shots.map(s=>`<div style="position:relative"><img style="width:600px;height:350px;object-fit:cover;display:block" src="data:image/png;base64,${s.image}"><span style="position:absolute;left:10px;top:8px;color:#9fdcf0;font:12px monospace">${Math.round(s.pos/1000*duration/60)} min · chapter ${s.chapter}</span></div>`).join('')}</body>`);
-    await sheet.screenshot({path:path.join(OUT,'contact-sheet-nexus.png')});
+    await sheet.screenshot({path:path.join(OUT,'contact-sheet-city.png')});
   }finally{await browser.close();await svc.stop();}
   if(STYLES.length)fs.writeFileSync(path.join(OUT,'session-qualification.json'),JSON.stringify(report,null,2));
   console.log('chapters every 3 minutes:',report.chapters.join(' '));

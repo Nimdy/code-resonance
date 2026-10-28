@@ -15,6 +15,7 @@ const http=require('node:http');
 const crypto=require('node:crypto');
 const {projectIdForRoot,findProjectRoot}=require('../../sdk/project-id');
 const {isFileEligible,classifyCommand}=require('../../extension/filters');
+const {verifyServer}=require('../../receiver/proof');
 const DATA=process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance');
 const PROVIDER='claude-code';
 const FILE_TOOLS=new Set(['Edit','Write','MultiEdit','NotebookEdit']);
@@ -88,11 +89,14 @@ async function deliver(events){
   const pending=[];
   try{for(const name of fs.readdirSync(spool).filter(n=>n.endsWith('.json')).sort().slice(0,20))pending.push({name,events:JSON.parse(fs.readFileSync(path.join(spool,name),'utf8'))});}catch{}
   const port=Number(process.env.RESONANCE_PORT||auth?.port||4174);
+  // The token goes only to an occupant that proves it holds it (one loopback GET); otherwise events spool as when the
+  // receiver is down.
+  const proven=!!auth&&(pending.length>0||events.length>0)&&await verifyServer(port,auth.token,1500).then(()=>true,()=>false);
   for(const item of pending){
-    try{if(!auth)throw Error('no receiver');await post(port,auth.token,item.events);fs.rmSync(path.join(spool,item.name),{force:true});}catch{break;}
+    try{if(!proven)throw Error('no receiver');await post(port,auth.token,item.events);fs.rmSync(path.join(spool,item.name),{force:true});}catch{break;}
   }
   if(!events.length)return;
-  try{if(!auth)throw Error('no receiver');await post(port,auth.token,events);}
+  try{if(!proven)throw Error('no receiver');await post(port,auth.token,events);}
   catch{
     fs.mkdirSync(spool,{recursive:true,mode:0o700});
     const names=fs.readdirSync(spool).filter(n=>n.endsWith('.json'));
