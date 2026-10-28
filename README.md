@@ -88,19 +88,18 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 ## Quick start
 
 ```bash
-npm start
+npm run up
 ```
 
-The receiver listens on `http://127.0.0.1:4174` and keeps its data in `~/.code-resonance` (`RESONANCE_DATA` and
-`RESONANCE_PORT` change them). It prints a **pairing link**, `http://127.0.0.1:4174/#pair=…`: open it in the browser
-you use for Code Resonance. It opens the **Creative Control Center** and pairs that browser once, so it may change
-settings, identities, music, packs and integrations. The link works once, within 15 minutes; `npm run pair` prints a
-new one, and VS Code's *Open Code Stage* opens one directly. An unpaired browser still shows everything, plays and
-records, but changes nothing.
+About a minute to a visible world. Starts the receiver on `http://127.0.0.1:4174` (or reuses one already there; refuses
+any other occupant of the port), prints a **pairing link** `http://127.0.0.1:4174/#pair=…` and opens it, builds
+`code-resonance-0.6.0.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
+have no real project yet. Data stays in `~/.code-resonance` (`RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port`
+change them). `Ctrl+C` stops a receiver this command started. The link works once, within 15 minutes; `npm run pair`
+prints a new one. An unpaired browser still shows everything, plays and records, but changes nothing.
 
-Click **Enable sound** (browsers need a gesture before audio). With no project yet, Home shows a short setup guide;
-`npm run demo` posts a clearly labelled fictional session. `npm run doctor` checks the setup and says what to fix.
-Step by step, with troubleshooting: [Getting started](docs/FIRST-RUN.md).
+Then: a trusted workspace, **CR** in the status bar, accept local capture, **Enable sound**. `npm run doctor` checks
+the setup. Step by step, with the manual `npm start` fallback and troubleshooting: [Getting started](docs/FIRST-RUN.md).
 
 ## The VS Code extension
 

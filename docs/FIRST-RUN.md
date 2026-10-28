@@ -1,59 +1,78 @@
 # Getting started
 
-From nothing to a project you can watch, hear, record and stream, then make it your own. About ten minutes.
+From nothing to a project you can watch, hear, record and stream, then make it your own. About a minute to a visible
+world; choosing a look, recording and streaming follow when you want them.
 
-## 1. Start the receiver
+## About 60 seconds
 
 Node.js 20 or later, in the Code Resonance folder (it has no dependencies to install). For the Control Center: a
 Chromium-based browser (Chrome or Edge: recording needs one, and other browsers have not been tested) with WebGL2 for
 the living worlds. For capture: VS Code 1.99 or later.
 
 ```bash
-npm start
+npm run up
 ```
 
-It listens on `http://127.0.0.1:4174` (loopback only) and keeps its data in `~/.code-resonance` (`RESONANCE_DATA` and
-`RESONANCE_PORT` change both). Check it at any time:
+That one command, on loopback only:
+
+1. Checks Node.js 20+.
+2. Starts the receiver on `http://127.0.0.1:4174` (data in `~/.code-resonance`), or **reuses** a Code Resonance receiver
+   already there. If any other program holds the port, it **refuses**: it does not write a token, mint a pairing link, or
+   open a browser. Free the port and run it again. `RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port` change the
+   directory and port.
+3. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and opens it unless you pass
+   `--no-open`.
+4. Builds `code-resonance-0.6.0.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
+   `--no-install`.
+5. If you have no real project yet, posts a fictional session labelled *Demonstration (fictional)* unless you pass
+   `--no-demo`. It does not add a demonstration on top of a real project.
+
+`Ctrl+C` stops a receiver this command started. A receiver it reused is left running.
+
+Then, still yours: open a **trusted workspace**, click **CR** in the status bar (or **CODE RESONANCE: Start Code
+Performance**) and accept local capture. Click **Enable sound** (browsers need a click before audio). For WSL or remote
+workspaces see [WSL.md](WSL.md).
+
+```bash
+node scripts/up.js [--data <dir>] [--port <port>] [--no-demo] [--no-install] [--no-open]
+```
+
+Check the setup at any time (read-only: Node, the receiver, its token, projects, visual packs waiting for approval, and
+inside WSL2 how to reach the player from Windows):
 
 ```bash
 npm run doctor
 ```
 
-The doctor is read-only: it reports Node, the receiver, its token, the projects received, visual packs waiting for
-approval and, inside WSL2, how to reach the player from Windows.
+`npm run pair` prints a new pairing link whenever you need one. A browser opened on `http://127.0.0.1:4174/` without
+the link can watch, play and record, and says **View only · Pair this browser**.
 
-## 2. Open the Control Center
+Optional: let Claude Code join as its own voice, `npm run hooks:claude -- /path/to/project`. Connections shows what the
+receiver has actually observed (VS Code capture, the settings the extension reported, Claude Code activity) and can add
+or remove the Claude Code hooks after showing the exact change to `<project>/.claude/settings.local.json`.
 
-`npm start` prints a **pairing link**: `http://127.0.0.1:4174/#pair=…` (single use, 15 minutes). Open it in the browser you use for Code
-Resonance. It opens the **Control Center** (Home) and pairs that browser once, so it may change settings, visual
-identities, music, packs and integrations. `npm run pair` prints a new link whenever you need one. A browser opened
-on `http://127.0.0.1:4174/` without the link can watch, play and record, and says **View only · Pair this browser**.
+## Manual fallback
 
-Click **Enable sound** (browsers need a click before audio). With no project yet, Home shows a short setup guide that
-follows what has really happened (receiver, VS Code, first project, sound, Stage); `npm run demo` in a second terminal
-posts a fictional session, always labelled *Demonstration (fictional)*.
+If you prefer to run each step yourself (about ten minutes), or `code` was not on PATH:
 
-## 3. Connect VS Code
+```bash
+npm start
+```
+
+It listens on `http://127.0.0.1:4174` (loopback only) and prints a pairing link. Open that link in the browser you use
+for Code Resonance. In a second terminal:
 
 ```bash
 npm run package:vsix
 code --install-extension code-resonance-0.6.0.vsix
 ```
 
-Open a trusted workspace, click **CR** in the status bar (or **CODE RESONANCE: Start Code Performance**) and accept
-local capture. The project appears in the project switcher at the top of the Control Center within seconds; the
-performance runs about 10 s behind your work (interpretation needs a little hindsight). Capture resumes when VS Code
-restarts until you stop it from the same menu. For WSL or remote workspaces see [WSL.md](WSL.md).
+Open a trusted workspace, click **CR** and accept local capture. With no project yet, `npm run demo` in a second
+terminal posts a labelled fictional session. The project appears in the project switcher at the top of the Control
+Center within seconds; the performance runs about 10 s behind your work (interpretation needs a little hindsight).
+Capture resumes when VS Code restarts until you stop it from the same menu.
 
-Optional: let Claude Code join as its own voice, `npm run hooks:claude -- /path/to/project`.
-
-Connections shows what the receiver has actually observed: whether VS Code capture is running (from its capture
-start and recent activity; VS Code does not report closing, so a quiet session is shown as unknown), the capture
-settings the extension reported (0.5 and later), and Claude Code activity. Those settings are changed in VS Code; the
-page links there. The Claude Code hooks can also be added or removed from Connections: it shows the exact change to
-`<project>/.claude/settings.local.json` before writing it.
-
-## 4. Choose how it looks and sounds
+## Choose how it looks and sounds
 
 **Visual Studio** shows the project's identity (its Visual Recipe) and the worlds it can take: choose a world, see it
 on the stage as a preview (*Preview · not saved*), customise its parameters (spectacle, motion, information on the
@@ -79,7 +98,7 @@ quality when frames are slow and climbs back); *High*, *Medium · no MSAA*, *Low
 **Allow this code**. If one misbehaves (an error, no answer for 6 s, too slow, a lost GPU context) it is stopped, the
 reason is shown, and the identity continues without it; **Retry** runs it again. Nothing restarts on its own.
 
-## 5. Create a composition
+## Create a composition
 
 The **Artist Studio** (Home › *Create a composition*, or `#/artist`) builds an original look from procedural layers
 (fractals, particle populations, ribbons and flow, structures, atmospheres, lights) over one of the flagship worlds or a
@@ -96,14 +115,14 @@ from one of the starters, from a world, or from the blank composition.
 
 Everything about layers, mappings and limits: [ARTIST-STUDIO.md](ARTIST-STUDIO.md).
 
-## 6. The Performance Stage
+## The Performance Stage
 
 **Stage** (top bar, rail, or **F** anywhere) shows the world alone. Controls appear when you move the pointer and fade
 after a moment: live or replay, play and scrub, speed, information (Cinematic, Explorer — click the world to inspect it
 —, Stream, Off), world, quality, sound, record, full screen (**F**), and a button to open the Stage in a new window for
 a second monitor. The Stage shows the project's public title only, never its folder name.
 
-## 7. Record
+## Record
 
 **Record** (top bar, Stage, or **Record & Broadcast**) records what the stage shows (the world and its labels, for every
 world and every kind of pack) together with the music, to a WebM file, until you stop it. Profiles: **720p** (the
@@ -120,7 +139,7 @@ The recording contains the stage only: no source, file names, paths, prompts, co
 **Record & Broadcast** also renders up to ten minutes of the recorded performance to WAV, offline and deterministic, and
 exports the derived performance data as JSON.
 
-## 8. Stream with OBS
+## Stream with OBS
 
 **Record & Broadcast › OBS** builds the overlay URL (`?overlay=1&sound=1&project=<id>`) with its options and the Browser
 Source settings: 1920×1080 and **Control audio via OBS** ticked. Acceptance procedure and what has been verified:
@@ -134,7 +153,7 @@ finish and its digital life, then Apply. *Reset customisations* returns to the g
 **How do I tune the music?** In the Music Studio: style, tempo, the composed score's character and balance, for this
 project or as the default for every project, heard from the next bar. [MUSIC.md](MUSIC.md) explains each control.
 
-**How do I create an original composition?** In the Artist Studio (section 5): layers over a world or the blank
+**How do I create an original composition?** In the Artist Studio: layers over a world or the blank
 canvas, and what each one reacts to.
 
 **How do I save or restore versions?** **Save** in the Artist Studio keeps the last five versions of a composition;
@@ -157,7 +176,9 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| The page does not load | receiver not running, or another port | `npm run doctor`; start it with `npm start` |
+| The page does not load | receiver not running, or another port | `npm run doctor`; start it with `npm run up` or `npm start` |
+| `npm run up` refuses the port | another program (not Code Resonance) is on 4174 | free `RESONANCE_PORT` (default 4174) and run it again |
+| `npm run up` refuses leftover on the port | a Code Resonance receiver answers, but `--data` has no `receiver-auth.json` (another data directory, or a leftover process) | pass the matching `--data` / `RESONANCE_DATA`, or free the port |
 | No project appears | capture not started, or the extension cannot reach the receiver | CR status-bar item → Start; `npm run doctor` shows the port the receiver uses; the extension's port setting is `resonance.receiverPort` |
 | Events arrive late | by design: interpretation runs ~10 s behind the work | wait; the replay has everything |
 | No sound | the browser needs a click; or the tab is muted | **Enable sound**; check the tab's audio |
@@ -171,7 +192,7 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | *… files changed after approval* | an installed pack's files were modified | import it again in Visual Packs (or `node scripts/pack.js install <folder>`) and approve again |
 | Black or frozen world | no WebGL2 (the player falls back), or a GPU driver problem | try another browser; set Quality to Low |
 | Windows cannot open the application of a receiver in WSL | localhost forwarding off | [WSL.md](WSL.md) |
-| *View only · Pair this browser* / changes are refused | this browser is not paired | open the link `npm run pair` prints (once per browser) |
+| *View only · Pair this browser* / changes are refused | this browser is not paired | open the link `npm run pair` (or `npm run up`) prints (once per browser) |
 | In OBS the Construct shows instead of the living world | OBS's browser has no WebGL (typically no usable GPU with hardware acceleration on) | OBS → Settings → Advanced → turn off *Browser Source Hardware Acceleration*, restart OBS |
 
 Your data stays in `~/.code-resonance`; nothing leaves the machine. Never share that folder or its token. Where
