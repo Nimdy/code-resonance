@@ -59,8 +59,8 @@ Connections shows what the receiver has actually observed (VS Code capture, the 
 Code, Cursor and Codex activity) and can add or remove each adapter after showing the exact change. Cursor is
 observe-only after-hooks (never `subagentStart`). Codex is observe-only (never `PreToolUse` / `PermissionRequest`;
 paths only from patch headers). Stage chips show catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor
-art. One overnight CAST session, a morning reel, a README hero and a later OBS night:
-[campaign-0.7.md](campaign-0.7.md) (none of those has been run yet).
+art. Overnight CAST and a public OBS night: [campaign-0.7.md](campaign-0.7.md). The README hero is a 70-second CAST
+session of Pulse.
 
 ## Manual fallback
 

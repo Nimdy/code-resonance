@@ -1,8 +1,26 @@
 # Media
 
-The demo reel, its looping preview and the gallery stills. They were cut on 2026-10-27 from the Phase 11 review films:
-real renders of the player on an AMD integrated GPU (WSL2), playing the recorded `lumen` session, a real VS Code
-session with six AI agents. No event was added or removed. The films themselves are local and not committed
+## CAST film (0.7.0 README hero)
+
+Cut on 2026-10-28 from `qualification/results/films/last-night.webm` (gitignored): a 70 s AMD render of **Pulse**, a
+real project (Stellar Forge, public title set, cinematic labels, composed score). Claude ran as a live CLI session with
+the observe-only adapter. Cursor and Codex events were posted through their observe-only adapters in the same wall-clock
+window (those GUIs are not runnable from this WSL host).
+
+| File | What it is |
+|---|---|
+| `code-resonance-cast.mp4` | 70 s reel (1280×720, H.264 + AAC) of Pulse. CAST chips, a Codex · Cursor collision (*Two agents meet in orbit*), a failing suite recovering |
+| `preview-cast.webp` | An 8 s loop (900×506) from the collision window; the README hero |
+| `cast-collision.jpg` | Cursor editing; collision callout Codex · Cursor |
+| `cast-claude.jpg` | Claude working on a request; collision caption |
+| `cast-recovery.jpg` | Recovery banner: the tests pass again |
+
+Catalog names only. No project folder, path, prompt or command text.
+
+## Worlds tour (Phase 11)
+
+Cut on 2026-10-27 from the Phase 11 review films: real renders of the player on an AMD integrated GPU (WSL2), playing
+the recorded `lumen` session. No event was added or removed. The films themselves are local and not committed
 (`qualification/results/films/phase11/`).
 
 | File | What it is |

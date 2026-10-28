@@ -7,8 +7,8 @@ catalog, `agent.collision` when two providers share a file or district inside 60
 version. The last tagged public floor remains `v0.6.0`. The VS Code extension is 0.7.0 (`code-resonance-0.7.0.vsix`).
 
 This version is the CAST campaign stack: first-run, the CAST catalog, Cursor and Codex observe-only adapters, Home Last
-night and the publish film path, and the operator runbook. None of the overnight session, the morning reel, a new README
-hero or a public OBS night has been run yet. [docs/campaign-0.7.md](docs/campaign-0.7.md).
+night and the publish film path, and the operator runbook. The README hero is a 70-second CAST session of Pulse.
+Overnight CAST and a public OBS night remain. [docs/campaign-0.7.md](docs/campaign-0.7.md).
 
 ### First run (`npm run up`)
 
@@ -52,8 +52,9 @@ interpretation version, not the product version.
 
 ### Campaign runbook
 
-- Operator checklist for one overnight CAST session, a morning reel, a 60–90 s README hero from that night, and a later
-  public OBS night. Future tense. The existing 70 s demo reel stays the README hero until a night is run.
+- Operator checklist for one overnight CAST session, a morning reel, a 60–90 s README hero, and a later public OBS
+  night. The README hero is the 70 s Pulse CAST film (`docs/media/code-resonance-cast.mp4`). Overnight CAST and a public
+  OBS night remain.
 
 ## 0.6.0 — 2026-10-27
 

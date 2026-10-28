@@ -8,8 +8,8 @@ receiver prints, and what has and has not been verified. Setting it up for the f
 Product version **0.7.0**. The last tagged public floor is **0.6.0** (`v0.6.0`). For private use on your own machine; it
 is not stable and has no installer; it runs from this repository. The product version is separate from the versions of
 the data formats, the score, the Visual Recipe generator, the interpretation (8) and the Visual Pack SDK
-([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)). One overnight CAST session, a morning reel, a
-README hero and a later OBS night: [campaign-0.7.md](campaign-0.7.md) (none of those has been run yet).
+([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)). Overnight CAST and a public OBS night:
+[campaign-0.7.md](campaign-0.7.md). The README hero is a 70-second CAST session of Pulse.
 
 ## Supported environments (what was actually tested)
 

@@ -8,7 +8,7 @@ quick start: the [README](../README.md).
 | You want to | Read |
 |---|---|
 | Install it, pair a browser, capture, hear, record, stream; fix a setup problem | [Getting started](FIRST-RUN.md) |
-| Run one overnight CAST session, a morning reel, a README hero, a later OBS night (not done yet) | [0.7.0 campaign](campaign-0.7.md) |
+| Run one overnight CAST session and a later OBS night (README hero is the 70 s Pulse CAST film) | [0.7.0 campaign](campaign-0.7.md) |
 | Know where data lives, back up, update, roll back, read diagnostics; what is supported and what is not | [Operations](OPERATIONS.md) |
 | Understand the architecture, the versions, the HTTP API; extend it; run focused checks | [Developer guide](../ARCHITECTURE.md) |
 | Compose your own look | [Artist Studio](ARTIST-STUDIO.md) |

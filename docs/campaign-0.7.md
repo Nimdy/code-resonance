@@ -1,10 +1,11 @@
 # 0.7.0 campaign
 
 Operator runbook: one overnight CAST session, a morning reel, a README hero from that night, and a later public OBS
-night. **None of those has been run yet.** This page is the checklist, not a report.
+night. The README hero is a 70-second CAST session of Pulse ([docs/media](media/README.md)). Overnight CAST and a
+public OBS night remain.
 
-Product **0.7.0**. The last tagged public floor is **0.6.0** (`v0.6.0` on `main`). Interpretation **8** (CAST seats and
-`agent.collision`) is independent of the product version: [ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility).
+Product **0.7.0**, tagged `v0.7.0` on `main`. Interpretation **8** (CAST seats and `agent.collision`) is independent of
+the product version: [ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility).
 
 Agents are a CAST (name, seat, voice) in the project's world. Stage chips show catalog names: Claude, Cursor, Codex,
 Grok, Qwen, Kimi. No vendor art styles.
@@ -17,9 +18,8 @@ alias you accept). Check every frame you publish against that floor: [SECURITY.m
 
 ## 1. The public floor
 
-- Treat **0.6.0** as the public floor: it is already tagged `v0.6.0` on `main`.
-- This tree is **0.7.0** (`package.json`, `extension/package.json`, VSIX `code-resonance-0.7.0.vsix`). Do not tell
-  anyone a `v0.7.0` tag exists until you create it.
+- Treat **0.6.0** as the previous tagged floor: `v0.6.0` on `main`.
+- This tree is **0.7.0**, tagged `v0.7.0` (`package.json`, `extension/package.json`, VSIX `code-resonance-0.7.0.vsix`).
 - First run on this machine: [FIRST-RUN.md](FIRST-RUN.md).
 
 ```bash
@@ -89,16 +89,18 @@ publish object: the same highlight, frame by frame. [FIRST-RUN.md](FIRST-RUN.md#
 
 ## 5. A README hero from that night
 
-Not done. The README still uses the existing 70-second demo reel ([docs/media](media/README.md)). Do not replace that
-hero with a placeholder or pretend an overnight CAST film already exists.
+Done as a 70-second CAST session of Pulse, public title set, AMD film, cinematic labels. The README hero is
+`docs/media/preview-cast.webp` → `docs/media/code-resonance-cast.mp4`, with collision / Claude / Recovery stills.
+Privacy floor checked on stills and the title card: catalog names, no path, prompt or folder. Claude was a live CLI
+session; Cursor and Codex arrived through their observe-only adapters in the same wall-clock window.
 
-When the night in §3 has been run and §4 has a titled film:
+This is the publish object for 0.7.0. It is a 70-second session. A later overnight night can replace it the same way:
 
 1. Cut 60–90 s from `qualification/results/films/last-night.webm` (or re-render a tighter `--from`/`--to`).
 2. Watch it once for the privacy floor: no source, paths, prompts, folder names.
-3. Only then put it on the README in place of, or beside, the current demo. Keep catalog names; no vendor art.
+3. Put it on the README in place of this hero. Keep catalog names; no vendor art.
 
-Until then the runbook pointer on the README is the campaign story.
+The Phase 11 worlds-tour reel stays in [docs/media](media/README.md) as `code-resonance-demo.mp4`.
 
 ## 6. A public OBS night later
 

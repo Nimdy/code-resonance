@@ -8,13 +8,19 @@ interprets it in the background. The player draws each project as a generative w
 develops as the software does: structure grows, failures bring tension, fixes resolve it, verified milestones leave
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
-[![The Fractal Biosphere, the Stellar Forge, the Machine Cathedral and an Artist Studio composition, playing a recorded development session](docs/media/preview.webp)](docs/media/code-resonance-demo.mp4)
+[![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
-*An 8-second loop; click it for the 70-second demo reel (MP4). Both are real renders of the player on an AMD integrated
-GPU (WSL2), playing a recorded VS Code session in which six AI agents helped build an app; no event was added or
-removed. The reel's soundtrack is an excerpt of Film 1's composed score: one continuous passage of the music Code
-Resonance composed for that session (Ambient), laid under every part, not music made for the video. What each clip
-shows and where it comes from: [docs/media/README.md](docs/media/README.md).*
+*An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered on an AMD GPU (WSL2)
+in Stellar Forge with its composed score. Claude, Cursor and Codex appear as CAST; a meeting is labelled “Two agents
+meet in orbit”. Catalog names only: no path, prompt or folder. How it was cut:
+[docs/media/README.md](docs/media/README.md).*
+
+| | | |
+|---|---|---|
+| ![Two agents meet in orbit](docs/media/cast-collision.jpg) | ![Claude working on a request](docs/media/cast-claude.jpg) | ![Recovery: the tests pass again](docs/media/cast-recovery.jpg) |
+| **Collision.** Codex and Cursor meet in orbit; Cursor is editing. | **Claude** working on a request, as a CAST presence in the galaxy. | **Recovery.** A failing suite passing again is a milestone the world keeps. |
+
+The three flagship worlds, finishes, music influence and the Artist Studio, from an earlier recorded session:
 
 | | | |
 |---|---|---|
@@ -104,10 +110,9 @@ prints a new one. An unpaired browser still shows everything, plays and records,
 Then: a trusted workspace, **CR** in the status bar, accept local capture, **Enable sound**. `npm run doctor` checks
 the setup. Step by step, with the manual `npm start` fallback and troubleshooting: [Getting started](docs/FIRST-RUN.md).
 
-**0.7.0 campaign.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a
-sped-up highlight). `npm run film` renders that same window once a public title is set. The reel above is the existing
-70-second demo, not an overnight CAST film. One overnight session, a morning reel, a 60–90 s README hero from that
-night, and a later public OBS night: [docs/campaign-0.7.md](docs/campaign-0.7.md). None of that has been run yet.
+**0.7.0.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a sped-up
+highlight). `npm run film` renders that same window once a public title is set. The reel above is a 70-second CAST
+session of Pulse. Overnight CAST and a public OBS night: [docs/campaign-0.7.md](docs/campaign-0.7.md).
 
 ## The VS Code extension
 
