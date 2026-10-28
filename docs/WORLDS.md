@@ -257,6 +257,8 @@ now names the file a `Read` looks at, so reading is visible; only edits attribut
 `agent.collision` (interpretation 8) is an intent plus a derived cue when two providers share a file or district inside
 60 s; last-writer still attributes. Worlds express it; they never invent one.
 
+![An agent's edit touch in the Fractal Biosphere on a 450-file project: a ring opens at the edited branch beside Claude's label](worlds/agent-touch-biosphere.jpg)
+
 **Touches** (`public/worlds/touch.js`). An edit's tool event lasts a few milliseconds in the hooks (the tool starts, it
 completes), too short for a presence to be seen reaching the file. Each tool event that names a file (editing; reading
 and searching more gently) is therefore a *touch* of that file for 3.2 s of view time, drawn by each flagship world in

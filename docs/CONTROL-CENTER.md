@@ -39,6 +39,8 @@ and a pack's watchdog is told it is paused, not slow).
 
 ## Hover details
 
+![The hover card on the Stage: a subsystem in Stellar Forge, its state and Claude editing there](control-center/hover-card.jpg)
+
 Wherever a view shows the living world (the Stage, Home's live preview, the Visual and Artist Studios, Record &
 Broadcast), resting the pointer on it shows a small card beside the pointer (`public/ui/hover.js`). First the world's
 own words for what is there (`pick` and `inspect`: a branch, a world, a tower, a subsystem), then what the player knows
