@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
+  preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
+  there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,
+  the newest test verdict and edit, a subsystem's file count and states). At most ten picks a second; it keeps clear
+  of the Stage's controls and hides on leaving, any key, scrolling, dialogs, a resting Stage, touch input and the
+  information modes Stream and Off. It is page markup over the stage, never drawn into it: recordings, films and the
+  OBS view never contain it. Catalog and generated names only.
+- **Agent touches:** each edit an agent makes now shows in the flagship worlds for a few seconds (an edit's tool event
+  lasts milliseconds, so the presences never visibly reached the file). Fractal Biosphere: the branch flares in the
+  agent's colour, a pulse runs up it into the crown and a ring opens at its tip; Stellar Forge: the world flares with a
+  ring, its orbit lights and a streak runs from the comet; Machine Cathedral: the tower's windows light in a quick
+  cascade, a glint and a halo ring at the top. Reads and searches are gentler. Rate-limited per file, at most four at
+  once, a pure function of the recorded presences (replays, seeks and films show the same), presentation only (never
+  the director, the recipe or digital life). Swarms and servitors visit the file they just touched and burn brighter
+  while they work; comets brighten.
+- **Explorer:** clicking a structure also draws the camera a little toward it (the world's own goal, the same rig).
+- **Packs:** the pack frame takes no pointer input; explorer clicks and the hover reach a pack's world through the
+  player (`pick`, `peek`). A pick no longer counts as a frame in flight (it held back renders and could trip the
+  watchdog).
+- **Render lab:** `--touch` renders stills during the first recorded edit and read (`qualification/visual/lab.js`).
+- **Stellar Forge:** "0 dependencies" (it said "dependencys").
+
 ## 0.7.1 — 2026-10-28
 
 Product 0.7.1, for private use on your own machine; not stable. Interpretation **8** is unchanged. The last published

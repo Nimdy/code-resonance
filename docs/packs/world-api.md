@@ -36,7 +36,7 @@ interface; read them for complete examples of instancing, shaders, labels and la
 | `agentColor(agent)` | | for agent chips | a CSS colour |
 | `subsystemLabels(frame)` | | explorer mode | `[{position, text, sub}]` |
 | `status(frame)` | | stream mode lower third | a short string |
-| `pick(x, y, camera, frame)` / `inspect(id, frame)` | | explorer mode clicks | an id; then `{position, text, sub}` |
+| `pick(x, y, camera, frame)` / `inspect(id, frame)` | | explorer clicks; the Control Center's hover card (up to ten times a second) | an id; then `{position, text, sub}` (generic words and `sdk.name(id)` only; keep them cheap). The pack frame takes no pointer input: the player asks your worker |
 | `onPrime(t, tsec)` | | after a seek | clear transient effects; rebuild lasting state from `sdk.director.lasting()` |
 | `onDelta(delta, start, end)` / `onCue(cue, t)` | | as the timeline plays | rarely needed: `sdk.model` already applies them |
 | `stats()` | | by the player and the tests | a flat object of counts |
