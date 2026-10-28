@@ -234,6 +234,7 @@
 .ws-visual .vs-input-row .input{flex:1;min-width:0}
 .ws-visual .vs-aliases{display:grid;gap:0}
 .ws-visual .vs-aliases>p{margin-bottom:6px}
+.ws-visual .vs-alias-propose{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
 .ws-visual .vs-alias{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
 .ws-visual .vs-alias-head{display:flex;gap:8px;align-items:baseline;min-width:0}
 .ws-visual .vs-alias-head strong{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

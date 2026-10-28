@@ -22,6 +22,7 @@ const recipes=require('../engine/recipe');
 const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
 const providers=require('../engine/providers');
+const highlight=require('../engine/highlight');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
 const cursorHooks=require('../scripts/hooks/install-cursor');
 const VERSION=require('../package.json').version;
@@ -606,6 +607,17 @@ function createService(options={}) {
         // fields=intents: only each window's sequence number and intents, so a client can read a long history cheaply.
         const view=u.searchParams.get('fields')==='intents'?entries.map(x=>x.intents?.length?{seq:x.seq,intents:x.intents}:{seq:x.seq}):entries;
         response(res,200,{schema:'code-resonance.timeline.v1',projectId:id,total,entries:view});return;
+      }
+      if(req.method==='GET'&&pathname==='/api/highlight'){
+        if(!validId(id)||!await projectExists(id)){response(res,404,{error:'Project not found'});return;}
+        const windows=[];let after=-1;
+        for(;;){
+          const {entries,total}=await readTimeline(id,after,2000);
+          if(!entries.length)break;
+          windows.push(...entries);after=entries.at(-1).seq;
+          if(windows.length>=total)break;
+        }
+        response(res,200,highlight.publicView(id,highlight.fromWindows(windows)));return;
       }
       if(req.method==='GET'&&pathname==='/v1/performance/frames'){
         if(!await projection(id)){response(res,404,{error:'Project not found'});return;}

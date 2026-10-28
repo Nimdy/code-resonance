@@ -4,6 +4,8 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const recipe=require('../engine/recipe');
+const {sha}=require('../receiver/protocol');
+const {tempDir,startService}=require('./helpers');
 const load=()=>import('../public/worlds/labels.js');
 const FOLDER='acme-secret-client-portal';
 const T0=1750000000000;
@@ -57,4 +59,30 @@ test('Resolving a stored recipe never adopts the folder name, and the world host
   const app=fs.readFileSync(path.join(__dirname,'../public/app.js'),'utf8');
   const call=app.slice(app.indexOf('createWorld('),app.indexOf('createWorld(')+400);
   assert(!/name/.test(call.split(');')[0]),'the player passes no project name to the world');
+});
+test('GET /api/highlight never includes the project folder name or a file path',async t=>{
+  const dir=tempDir(t,'cr-hl-priv-');
+  const projectId=sha('highlight-privacy');
+  const pdir=path.join(dir,'projects',sha(projectId));
+  fs.mkdirSync(pdir,{recursive:true});
+  fs.writeFileSync(path.join(pdir,'id'),projectId);
+  const T0=1700000000000;
+  const I=(type,dt,extra={})=>({v:1,id:`p:${type}:${dt}`,type,ts:T0+dt,tier:2,magnitude:.5,evidence:'observed',subject:{},detail:{},...extra,type,ts:T0+dt});
+  const intents=[
+    I('agent.state',200000,{tier:0,detail:{provider:'claude-code'}}),
+    I('agent.state',210000,{tier:0,detail:{provider:'cursor'}}),
+    I('structure.created',220000,{tier:2,subject:{fileId:'f1'},detail:{path:`src/${FOLDER}/hidden.ts`}}),
+    I('validation.failed',230000,{detail:{category:'test'}}),
+    I('validation.recovered',250000,{detail:{category:'test'}})
+  ];
+  fs.writeFileSync(path.join(pdir,'performance.jsonl'),JSON.stringify({seq:0,start:T0,end:T0+1_200_000,intents,name:FOLDER})+'\n');
+  const svc=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000});
+  const r=await fetch(`http://127.0.0.1:${svc.port}/api/highlight?id=${projectId}`);
+  assert.equal(r.status,200);
+  const text=await r.text();
+  assert(!text.toLowerCase().includes(FOLDER),text);
+  assert(!/acme|portal|hidden\.ts|src\//i.test(text),text);
+  const doc=JSON.parse(text);
+  assert.equal(doc.schema,'code-resonance.highlight.v1');
+  assert.equal(doc.projectId,projectId);
 });

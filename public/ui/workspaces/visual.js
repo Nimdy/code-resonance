@@ -12,6 +12,7 @@
 import {h,text,clear,button,field,select,segmented,slider,parameterControl,humanize,formatParam,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
 import {WORLD_NAMES,LABEL_NAMES,LABEL_DOCS,QUALITY_NAMES,publicName,count} from '../format.js';
+import {roleOf} from '../../worlds/model.js';
 // Each built-in family with the reason to choose it: what the code becomes, and what its moments look like.
 const FAMILIES=[
   {id:'fractal-biosphere',name:'Fractal Biosphere',line:'A recursive undersea forest grown from the code',
@@ -94,6 +95,7 @@ const WORLD_ABERRATION={'stellar-forge':.0022};
 const ABERRATION_UNIT=.004;
 const NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u;
 const NAME_RULE='Up to 40 letters, digits, spaces and . , \' & ( ) -';
+const ROLE_WORD={tests:'Proof',core:'Heart',interface:'Surface',services:'Gateway',model:'Form',logic:'Craft'};
 // Rendered thumbnails, kept across visits: one per (project, saved revision, family).
 const THUMBS=new Map();
 const enc=encodeURIComponent;
@@ -108,7 +110,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   // ---- State --------------------------------------------------------------------------------------------------------
   let projectId='',saved=null,savedSpec=null,loadError='';
   let draft=emptyDraft(),lastGood=emptyDraft(),baseRevision=null,candidate=null,candidateSpec=null,runtime=null,previewError=null,previewSeq=0,previewTimer=null,busy=false;
-  let presetPreview=null,wantedRoute=params?.length?params:null,nameOf=null,thumbRun=0;
+  let presetPreview=null,wantedRoute=params?.length?params:null,nameOf=null,thumbRun=0,proposing=false,proposed=null;
   const presetErrors=new Map();
   // Subsystem names come from the same generator the worlds use (loaded with the world host, already cached by the engine).
   import('/worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
@@ -284,7 +286,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function resetProject(){
     const id=S.state.selected||'';if(id===projectId)return;
     if(pending()&&projectId){toast('The preview was discarded: another project was selected. Nothing was saved.','info');draft=emptyDraft();applyLocalStage(true);}
-    projectId=id;saved=null;savedSpec=null;loadError='';draft=emptyDraft();lastGood=emptyDraft();candidate=null;candidateSpec=null;runtime=null;previewError=null;presetPreview=null;presetErrors.clear();
+    projectId=id;saved=null;savedSpec=null;loadError='';draft=emptyDraft();lastGood=emptyDraft();candidate=null;candidateSpec=null;runtime=null;previewError=null;presetPreview=null;presetErrors.clear();proposing=false;proposed=null;
     clearTimeout(previewTimer);previewTimer=null;previewSeq++;thumbRun++;
     buildInspector();renderAll();
     if(id)void loadSaved();
@@ -495,6 +497,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     catch(e){text(titleError,e.message);}
   }
   async function saveAlias(id,input,err){
+    if(proposing)return;
     const v=input.value.trim();
     if(v&&!NAME.test(v)){input.setAttribute('aria-invalid','true');text(err,NAME_RULE);input.focus();return;}
     try{const next=await P.recipeAction({type:'alias',id,name:v||null});delete input.dataset.dirty;await afterDirectSave(next);
@@ -503,6 +506,33 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       toast(v?`Subsystem named “${v}”.`:'Name cleared: the generated name is used again.','ok');}
     catch(e){text(err,e.message);}
   }
+  function proposeNames(groups){
+    const byRole=new Map();
+    for(const g of groups){const role=roleOf(g);if(!byRole.has(role))byRole.set(role,[]);byRole.get(role).push(g);}
+    const next=new Map();
+    for(const [role,list] of byRole){
+      list.sort((a,b)=>(b.modules||0)-(a.modules||0)||(a.id<b.id?-1:a.id>b.id?1:0));
+      const word=ROLE_WORD[role]||'Craft';
+      list.forEach((g,i)=>next.set(g.id,i===0?word:`${word} - ${nameOf?nameOf(g.id):g.id.slice(0,6)}`));
+    }
+    proposed=next;proposing=true;renderAliases(true);
+  }
+  async function acceptProposed(){
+    const actions=[];
+    for(const input of aliasBox.querySelectorAll('input[data-alias]')){
+      const name=input.value.trim();if(!name)continue;
+      if(!NAME.test(name)){input.setAttribute('aria-invalid','true');input.focus();toast(NAME_RULE,'error');return;}
+      actions.push({type:'alias',id:input.dataset.alias,name});
+    }
+    if(!actions.length){proposing=false;renderAliases(true);return;}
+    try{
+      let next=null;
+      for(let i=0;i<actions.length;i+=16)next=await P.recipeAction(actions.slice(i,i+16));
+      proposing=false;proposed=null;if(next)await afterDirectSave(next);else renderAliases(true);
+      toast('Public names saved.','ok');
+    }catch(e){toast(`Not saved: ${e.message}`,'error');}
+  }
+  function cancelProposed(){proposing=false;proposed=null;renderAliases(true);}
   // ---- Presets ------------------------------------------------------------------------------------------------------
   function savePresetDialog(){
     if(!saved)return;
@@ -760,24 +790,31 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderAliases(force=false){
     if(!saved)return;
     const model=P.state.model,groups=model&&model.projectId===projectId?(model.graph?.nodes||[]).filter(n=>n.type==='group'&&/^[a-f0-9]{14}$/.test(n.id)).sort((a,b)=>(a.order??0)-(b.order??0)):null;
-    const sig=groups?`${groups.map(g=>`${g.id}:${g.modules}`).join(',')}|${JSON.stringify(saved.aliases||{})}|${!!nameOf}`:'none';
+    const sig=groups?`${groups.map(g=>`${g.id}:${g.modules}`).join(',')}|${JSON.stringify(saved.aliases||{})}|${!!nameOf}|${proposing}`:'none';
     if(sig===aliasSig&&!force)return;
     if(aliasBox.contains(document.activeElement)&&!force)return;
     aliasSig=sig;clear(aliasBox);
     if(!groups){aliasBox.append(h('p',{class:'small faint',text:'Loading the project structure…'}));return;}
     if(!groups.length){aliasBox.append(h('p',{class:'small faint',text:'No subsystems yet: they appear as the project grows.'}));return;}
     aliasBox.append(h('p',{class:'small faint',text:'Each subsystem has a generated name that reveals nothing about the code. A name you give replaces it in the labels.'}));
+    aliasBox.append(h('div',{class:'vs-alias-propose'},
+      proposing
+        ?[button({label:'Accept',kind:'primary',size:'sm',onClick:()=>acceptProposed(),attrs:{id:'vsAliasAccept'}}),
+          button({label:'Cancel',kind:'ghost',size:'sm',onClick:()=>cancelProposed(),attrs:{id:'vsAliasCancel'}})]
+        :button({label:'Propose public names',kind:'ghost',size:'sm',disabled:!nameOf,title:'Fills the names from each subsystem’s role. Nothing is saved until Accept.',
+          onClick:()=>proposeNames(groups),attrs:{id:'vsAliasPropose'}})));
     for(const g of groups){
-      const gen=nameOf?nameOf(g.id):'…',alias=saved.aliases?.[g.id]||'';
-      const input=h('input',{class:'input',type:'text',maxlength:40,value:alias,placeholder:gen,autocomplete:'off',spellcheck:'false','aria-label':`Name for ${gen}`,dataset:{alias:g.id}});
+      const gen=nameOf?nameOf(g.id):'…',alias=saved.aliases?.[g.id]||'',shown=proposed?.get(g.id)??(proposing?'':alias);
+      const input=h('input',{class:'input',type:'text',maxlength:40,value:shown,placeholder:gen,autocomplete:'off',spellcheck:'false','aria-label':`Name for ${gen}`,dataset:{alias:g.id}});
       const err=h('div',{class:'vs-error small',role:'alert'});
+      if(proposed?.has(g.id))input.dataset.dirty='1';
       input.addEventListener('input',()=>{input.dataset.dirty='1';const v=input.value.trim();input.setAttribute('aria-invalid',String(!!v&&!NAME.test(v)));text(err,v&&!NAME.test(v)?NAME_RULE:'');});
-      input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void saveAlias(g.id,input,err);}else if(e.key==='Escape'&&input.dataset.dirty){e.preventDefault();input.value=alias;delete input.dataset.dirty;text(err,'');}});
+      input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(proposing)void acceptProposed();else void saveAlias(g.id,input,err);}else if(e.key==='Escape'){e.preventDefault();if(proposing)cancelProposed();else if(input.dataset.dirty){input.value=alias;delete input.dataset.dirty;text(err,'');}}});
       aliasBox.append(h('div',{class:'vs-alias'},
-        h('div',{class:'vs-alias-head'},h('strong',{text:alias||gen}),alias?h('span',{class:'tiny faint',text:`generated: ${gen}`}):null,h('span',{class:'grow'}),
+        h('div',{class:'vs-alias-head'},h('strong',{text:shown||alias||gen}),alias?h('span',{class:'tiny faint',text:`generated: ${gen}`}):null,h('span',{class:'grow'}),
           h('span',{class:'tiny faint num',text:`${count(g.modules||0,'module')}${g.test?' · tests':''}`})),
-        h('div',{class:'field-row vs-input-row'},input,button({icon:'check',size:'sm',attrs:{'aria-label':`Save the name of ${gen}`},title:'Save the name',onClick:()=>saveAlias(g.id,input,err)}),
-          button({icon:'close',size:'sm',kind:'ghost',disabled:!alias,attrs:{'aria-label':`Clear the name of ${gen}`},title:'Use the generated name again',onClick:()=>{input.value='';return saveAlias(g.id,input,err);}})),err));
+        h('div',{class:'field-row vs-input-row'},input,proposing?null:button({icon:'check',size:'sm',attrs:{'aria-label':`Save the name of ${gen}`},title:'Save the name',onClick:()=>saveAlias(g.id,input,err)}),
+          proposing?null:button({icon:'close',size:'sm',kind:'ghost',disabled:!alias,attrs:{'aria-label':`Clear the name of ${gen}`},title:'Use the generated name again',onClick:()=>{input.value='';return saveAlias(g.id,input,err);}})),err));
     }
   }
   function renderQuality(){quality.set(P.state.quality);}

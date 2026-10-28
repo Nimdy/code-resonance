@@ -32,8 +32,16 @@
 /* The guide after a first project: below both columns, at the full width (its demo column widens with it). */
 .ws-home .home-grid>.home-guide-bottom{grid-column:1 / -1}
 /* ---- The live world: 16:9, as wide as the column, never taller than the window leaves room for ---- */
-.ws-home .home-hero{width:min(100%,var(--hero-max));min-width:min(100%,520px)}
+.ws-home .home-hero{width:min(100%,var(--hero-max));min-width:min(100%,520px);display:grid;gap:12px}
 .ws-home .home-slot{width:100%;aspect-ratio:16/9;border-radius:var(--r-4);box-shadow:0 0 0 1px var(--line-2) inset,0 18px 48px rgba(0,0,0,.45)}
+.ws-home .home-night{padding:14px 18px 16px;display:grid;gap:10px}
+.ws-home .home-night[hidden]{display:none}
+.ws-home .home-night-head{display:flex;align-items:flex-start;gap:10px}
+.ws-home .home-night-head .grow{display:grid;gap:2px;min-width:0}
+.ws-home .home-night-title{font-size:15px}
+.ws-home .home-night-cast{display:flex;flex-wrap:wrap;gap:6px}
+.ws-home .home-night-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ws-home .home-night-actions .copy{flex:1 1 220px;min-width:0}
 .stage-chrome .home-chrome{position:absolute;inset:0}
 /* A first run with the guide hidden: the way to connect, on the same surface as the guide it replaces. */
 .ws-home .home-first{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3)}

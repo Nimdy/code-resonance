@@ -94,3 +94,6 @@ The first marker method (white flash, 2 kHz click found by band energy) could pa
 - A label that follows a moving object near the frame's edge can be cut by it (as on screen; the layout is the
   world's).
 - On machines without a capable GPU the built-in worlds render slowly and recordings stutter (the player warns).
+- **Record** is live (MediaRecorder). **Home Last night** is a sped-up replay of a scored highlight; Playwright is not
+  involved. **`npm run film`** is the publish path: the same window, frame-exact, title-gated, always `--copy`. See
+  [FIRST-RUN.md](FIRST-RUN.md#last-night).
