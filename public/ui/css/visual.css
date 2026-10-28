@@ -69,7 +69,7 @@
 .ws-visual .vs-match svg{width:12px;height:12px}
 /* The tile's icon and caption are centred together in the part of the card above its name, under the chips. */
 .ws-visual .vs-thumb-tile{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:28px 0 56px;background:radial-gradient(ellipse at 50% 40%,#0f1828,#05070b 72%);color:var(--text-4)}
-.ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
+.ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.preview{color:rgba(255,190,110,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
 .ws-visual .vs-thumb-tile svg{width:26px;height:26px;flex:none}
 /* A short strip (1280 x 720) keeps only the icon: the caption would meet the name (the card's label says what choosing
    it does, its pills say why it cannot run). */

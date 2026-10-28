@@ -21,6 +21,11 @@ const FAMILIES=[
     why:'Scale and gravity: modules orbit their hubs, agents cross as comets, failures are storms over the affected worlds, milestones are novae that leave remnants. For large projects of many modules.'},
   {id:'machine-cathedral',name:'Machine Cathedral',line:'Needle spires on still water under a moon',
     why:'Order and craft: subsystems are towers, live work lights their windows, links are bridges of light, failures crack the stone and recovery seals it. For tested, engineered code.'}];
+// Preview families: built in, chosen only here (never generated from the code), still being designed. No thumbnail is
+// rendered for them and the Artist Studio does not compose over them yet.
+const PREVIEW_FAMILIES=[
+  {id:'synaptic-storm',name:'Synaptic Storm (preview)',line:'A living neural network wired by the real dependencies',
+    why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. A preview: still changing, never chosen automatically.'}];
 // Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
 // a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[
@@ -116,7 +121,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   import('/worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
   const shown=()=>candidate||saved;
   const shownSpec=()=>candidate?candidateSpec:savedSpec?.tunable||null;
-  const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
+  const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||PREVIEW_FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
   const packOf=id=>P.state.packs.find(p=>p.id===id)||null;
   const savedWorld=()=>S.effective().world;
   const hasIdentity=d=>d.identity.length>0;
@@ -585,7 +590,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderIdentity(){
     const s=shown();if(!s)return;clear(identityBox);
     const state=s.locked?['Locked','ok','Kept as it is: never re-derived from the code']:s.founded?['Permanent','plain','Founded: the project is large enough that this identity is never re-derived']:['Provisional','warn','Re-derived from the code until the project has 6 modules'];
-    const why=FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
+    const why=FAMILIES.find(f=>f.id===s.family)?.why||PREVIEW_FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
     text(whyBox,why);whyBox.title=why;whyBox.hidden=!why;
     const tuned=s.tuning?.values?Object.keys(s.tuning.values).length:0;
     // The family, its source and the revision are in the inspector's heading; this says what can still change it: the
@@ -864,6 +869,12 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       cards.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
         match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
+    }
+    for(const f of PREVIEW_FAMILIES){
+      const isSaved=s.family===f.id,prev=previewFam===f.id;
+      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:tile('visual','Preview on the stage','preview'),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
+        onChoose:()=>chooseFamily(f.id),choose:'Preview',
+        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('Preview','warn',{title:'A world still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
     }
     for(const p of P.state.packs.filter(x=>x.kind==='world')){
       const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
