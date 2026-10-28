@@ -11,11 +11,12 @@ and how to check a change without touching your own data.
 ```text
 extension/      VS Code extension: capture, durable outbox, shared path and command rules (packaged as the VSIX)
 receiver/       loopback HTTP API, journal + content blobs, configuration documents, compositions, pack import, pairing
-engine/         interpretation: AST analysis (languages/), the reducer, canonical intents, windowing worker,
-                Visual Recipes (recipe.js), the parameter catalogue, pack validation
+engine/         interpretation: AST analysis (languages/), the reducer, canonical intents, CAST catalog (providers.js),
+                windowing worker, Visual Recipes (recipe.js), the parameter catalogue, pack validation
 public/         the player, served by the receiver:
   app.js          the engine: performance clock, scheduling, worlds, replay, recording, exports (window.ResonancePlayer)
   score.js        the score (composition): v2 classic and v3 composed, pure and deterministic
+  providers.js    CAST catalog (player copy of engine/providers.js)
   music.js        the Web Audio performer and offline renderer
   recording.js    live WebM recording
   composition.js  the Artist Studio's data model (allowlists, limits, validation); composition-text.js its words
@@ -136,7 +137,7 @@ made with, and older versions stay in the code.
 | What | Current | Defined in | Rule |
 |---|---|---|---|
 | Product | 0.6.0 (tag `v0.6.0`) | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes |
-| Interpretation | 7 | `engine/reducer.js` `INTERPRETATION_VERSION` | A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added |
+| Interpretation | 8 | `engine/reducer.js` `INTERPRETATION_VERSION` | A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
 | Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |
 | Renderer | 1 | `engine/recipe.js` `RENDERER_VERSION` | The world renderers a genome is written for |

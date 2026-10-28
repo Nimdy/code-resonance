@@ -12,10 +12,10 @@ const world={
   describe:c=>({text:'A new star ignites',sub:'subsystem',banner:c.tier>=3?'Integration validated':null,bannerSub:'verified',position:{x:0,y:0,z:0}}),
   agentPosition:()=>({x:0,y:0,z:0}),agentColor:()=>'#fff',subsystemLabels:()=>[{position:{x:0,y:0,z:0},text:'Vauos',sub:'logic'}],status:()=>'2 validated'
 };
-function frame(r,mode,t=T0+2000){
-  return {mode,recipe:r,info:{t,phase:'active',agents:[{id:'a',number:1,label:'editing',busy:true,alpha:1,arrived:T0,since:100,display:'tool'}]},
+function frame(r,mode,t=T0+2000,agentName=a=>'Claude'){
+  return {mode,recipe:r,info:{t,phase:'active',agents:[{id:'a',number:1,provider:'claude-code',label:'editing',busy:true,alpha:1,arrived:T0,since:100,display:'tool'}]},
     commands:[{at:T0+1500,tier:3,subject:{fileId:'f1'}},{at:T0+1800,tier:2,subject:{groupId:'g1'}}],
-    agentName:a=>`Agent ${a.number}`,world,toScreen:()=>({x:600,y:400,visible:true}),size:[1920,1080],origin:T0};
+    agentName,world,toScreen:()=>({x:600,y:400,visible:true}),size:[1920,1080],origin:T0};
 }
 test('No label in any mode contains the project folder name; without a public title the text is generic',async()=>{
   const {composeLabels,labelStrings,LABEL_MODES,titleCard,lowerThirdTitle}=await load();
@@ -32,6 +32,9 @@ test('No label in any mode contains the project folder name; without a public ti
   assert.equal(stream.find(x=>x.kind==='lower-third').text,'Code Resonance · Stellar Forge');
   const cinematic=composeLabels(frame(r,'cinematic'));
   assert.equal(cinematic.find(x=>x.kind==='title').text,'Stellar Forge');
+  const chips=labelStrings(composeLabels(frame(r,'explorer'))).join(' | ');
+  assert.match(chips,/Claude/);
+  assert(!/Agent 1/.test(chips));
 });
 test('An explicitly approved public title is the only project name the Stage shows',async()=>{
   const {composeLabels,labelStrings}=await load();

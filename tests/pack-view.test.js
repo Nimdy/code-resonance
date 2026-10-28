@@ -38,6 +38,20 @@ test('Cues lose project, session, tool and any unknown detail; intents get opaqu
   const e=v.primeEntry({seq:3,intents:[{id:'q:module.created:0',type:'module.created',ts:9},{id:'q:module.created:1',type:'module.created',ts:9}]});
   assert.deepEqual(e.intents.map(x=>x.ord),[3*65536,3*65536+1]);
 });
+test('Collision providers and seats survive; planted paths and out-of-range voices drop',async()=>{
+  const v=await load();
+  const i=clean(v.intent({v:1,id:'e:agent.collision:0',type:'agent.collision',ts:1,tier:2,magnitude:.4,evidence:'derived',
+    subject:{fileId:'1db0005537a90f',groupId:'80f461e0771437',file:'src/secret/keys.ts'},
+    detail:{providers:['claude-code','cursor','src/secret/keys.ts','sk-ant-SECRET'],scope:'file',file:'src/secret/keys.ts',path:'/home/someone'}}));
+  assert.deepEqual(i.detail,{providers:['claude-code','cursor'],scope:'file'});
+  assert.deepEqual(i.subject,{fileId:'1db0005537a90f',groupId:'80f461e0771437'});
+  const c=clean(v.cue({type:'agent.collision',ts:1,weight:.4,category:'observed',
+    detail:{fileId:'1db0005537a90f',voices:[0,1,99,-1],providers:['claude-code','cursor','src/secret/keys.ts'],file:'src/secret/keys.ts'}}));
+  assert.deepEqual(c.detail.voices,[0,1]);
+  assert.deepEqual(c.detail.providers,['claude-code','cursor']);
+  assert.equal(c.detail.file,undefined);
+  assert.equal(v.intent({id:'e:agent.collision:1',type:'agent.collision',ts:1,detail:{scope:'secret',providers:['Claude']}}).detail.scope,undefined);
+});
 test('Recipes keep the genome, traits, settings and only the public strings the user approved',async()=>{
   const v=await load();
   const project={projectId:'p-view-000000001',name:'acme-client-portal',graph:{nodes:[],edges:[]},stats:{}};

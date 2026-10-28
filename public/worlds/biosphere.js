@@ -26,6 +26,7 @@ import {COMMON,MAXO,SEG_VS,SEG_FS,CROWN_VS,LEAF_VS,LEAF_FS,GLOW_VS,GLOW_FS,SHAFT
 import {biosphereGrammar,POLLINATOR,SPORE,PLANKTON,DRIFTER} from './life/biosphere.js';
 import {MODE} from './life/sim.js';
 import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {presence} from '../providers.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 const secs=(t,epoch)=>Number.isFinite(t)?(t-epoch)/1000:(t>0?1e6:-1e5);
 const num=(x,d)=>Number.isFinite(x)?x:d;
@@ -863,6 +864,7 @@ export function createFamily(ctx){
         return {text:`A fractal bloom opens · ${k.join(' + ')}`,sub:'verified by a passing test run',position:pos,banner:k.join(' · ')||'Milestone',bannerSub:'a fractal bloom opens · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · spores rise from ${branches(n)}`:'Committed · the growth is set',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The ecosystem deepens · chapter ${d.chapter}`,sub:'accumulated structure',position:centre.clone().setY(canopyH*.6)};
+      case 'agent.collision':return {text:'Two agents meet among the growth',sub:(d.providers||[]).map(id=>presence(id).display).join(' · '),position:pos};
       default:return null;}}
   // The chip of a presence stays inside the safe frame (the swarm itself stays at the branch it works on).
   const chipP=new THREE.Vector3();

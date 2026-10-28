@@ -7,11 +7,11 @@
 const CATALOG_VERSION='1.0';
 // Intents worlds express as effects (public/worlds/director.js EFFECT_TYPES; a test keeps the two equal).
 const EFFECT_TYPES=['subsystem.created','module.created','structure.created','structure.removed','subsystem.connected','validation.failed',
-  'validation.passed','validation.recovered','refactor.validated','milestone.achieved','repository.checkpoint','world.expanded'];
+  'validation.passed','validation.recovered','refactor.validated','milestone.achieved','repository.checkpoint','world.expanded','agent.collision'];
 // Polarity of each effect intent. A pack may express an intent with another effect of the same class only: a failure
 // never looks like success, a removal never looks like growth.
 const EFFECT_CLASS={'subsystem.created':'growth','module.created':'growth','structure.created':'growth','subsystem.connected':'growth','repository.checkpoint':'growth',
-  'world.expanded':'growth','structure.removed':'removal','validation.failed':'failure','validation.passed':'success','validation.recovered':'success',
+  'world.expanded':'growth','agent.collision':'growth','structure.removed':'removal','validation.failed':'failure','validation.passed':'success','validation.recovered':'success',
   'refactor.validated':'success','milestone.achieved':'success'};
 const n=(min,max,doc)=>({type:'number',min,max,doc});
 const i=(min,max,doc)=>({type:'integer',min,max,doc});

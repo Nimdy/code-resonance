@@ -4,9 +4,11 @@ const {analyze,diff} = require('./semantic');
 const {languageOf} = require('./languages');
 const {makeIntent,activityOf,nextAgentState} = require('./intents');
 const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
+const {presence} = require('./providers');
 // Bump whenever interpretation of the same journal would change; derived state is then rebuilt from the journal.
 // v7: canonical performance intents, agent lifecycle, language adapters (Python), module language categories.
-const INTERPRETATION_VERSION=7;
+// v8: CAST seats from the provider catalog; writer rings; agent.collision when two providers share a file or district.
+const INTERPRETATION_VERSION=8;
 const RENAME_WINDOW_MS=60000;
 const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const SNAPSHOT_CREDIT_CAP=6;
@@ -29,7 +31,7 @@ function newState(projectId) {
     performance:{identity:{scale:['D','E','F#','G','A','B','C#'][seed%7],motif:[seed%7,(seed>>>3)%7,(seed>>>9)%7,(seed>>>15)%7]},
       progress:0,tension:0,energy:0,chapter:1,version:0},
     validation:{},pending:{structure:0,removedSymbols:0,removedLines:0,sinceCommit:0,files:{},crossLinks:0,crossFiles:{}},connections:{},intents:[],
-    diagnostics:{},agents:{},agentFiles:{},
+    diagnostics:{},agents:{},agentFiles:{},agentGroups:{},collisionAt:{},
     // Construct: stable identities (survive renames), site plan, tier order and material state per module.
     salt:'',identity:{},layout:newLayout(),slots:{},moduleState:{},recentlyDeleted:[],
     timeline:[],frames:[],replayGraphs:[],sessions:{}
@@ -81,11 +83,41 @@ function transferIdentity(state,from,to){
   state.recentlyDeleted=(state.recentlyDeleted||[]).filter(d=>d.origin!==origin);
 }
 function agentFor(state,event){
-  const provider=String(event.meta?.provider||'unspecified').slice(0,40);
+  const p=presence(event.meta?.provider),provider=p.id;
   const id=sha(`${provider}/${event.meta?.agent||event.sessionId||''}`).slice(0,10);
-  if(!state.agents[id]){state.agents[id]={id,provider,voice:Object.keys(state.agents).length%AGENT_VOICES,first:event.ts,last:event.ts,events:0};state.stats.agents=Object.keys(state.agents).length;}
+  if(!state.agents[id]){state.agents[id]={id,provider,voice:p.seat,first:event.ts,last:event.ts,events:0};state.stats.agents=Object.keys(state.agents).length;}
   const a=state.agents[id];a.last=Math.max(a.last,event.ts);a.events++;
   return a;
+}
+function pruneRing(ring,now){
+  if(!Array.isArray(ring))return ring&&ring.agentId?[ring]:[];
+  return ring.filter(x=>now-x.ts>=0&&now-x.ts<=AGENT_ATTRIBUTION_MS);
+}
+function setRing(map,key,ring){if(!map)return;if(ring.length)map[key]=ring;else delete map[key];}
+function writersOf(state,file,now){
+  if(!state.agentFiles)state.agentFiles={};
+  const ring=pruneRing(state.agentFiles[file],now);setRing(state.agentFiles,file,ring);return ring;
+}
+function groupWritersOf(state,file,now){
+  if(!state.agentGroups)state.agentGroups={};
+  const gk=groupKey(file),ring=pruneRing(state.agentGroups[gk],now);setRing(state.agentGroups,gk,ring);return ring;
+}
+function rememberWriter(state,file,agent,ts){
+  if(!state.agentFiles)state.agentFiles={};if(!state.agentGroups)state.agentGroups={};
+  const rec={agentId:agent.id,provider:agent.provider,ts};
+  setRing(state.agentFiles,file,pruneRing([...(state.agentFiles[file]||[]),rec],ts));
+  const gk=groupKey(file);
+  setRing(state.agentGroups,gk,pruneRing([...(state.agentGroups[gk]||[]),{...rec,file}],ts));
+}
+function providerIds(ring){const out=[];for(const x of ring)if(x.provider&&!out.includes(x.provider))out.push(x.provider);return out.sort();}
+function lastWriter(ring){let best=null;for(const x of ring)if(!best||x.ts>=best.ts)best=x;return best;}
+function noteCollision(state,key,ts){
+  if(!state.collisionAt)state.collisionAt={};
+  const prev=state.collisionAt[key];
+  if(Number.isFinite(prev)&&ts-prev>=0&&ts-prev<=AGENT_ATTRIBUTION_MS)return false;
+  state.collisionAt[key]=ts;
+  for(const [k,t] of Object.entries(state.collisionAt))if(!Number.isFinite(t)||ts-t>AGENT_ATTRIBUTION_MS||t>ts)delete state.collisionAt[k];
+  return true;
 }
 function computeTension(state){
   const v=state.validation;
@@ -160,6 +192,25 @@ function apply(state,event) {
     }
     state.validation[category]='pass';c(`validation.${category}.passed`,'observed',weight,{fileIds:category==='test'?covered:[]});return true;
   }
+  function emitCollision(file,fileRing,preferred){
+    if(!file)return;
+    const fileProviders=providerIds(fileRing||[]);
+    let scope=preferred,ring=fileRing||[];
+    if(fileProviders.length>=2)scope='file';
+    else{
+      ring=groupWritersOf(state,file,event.ts);
+      const files=new Set(ring.map(x=>x.file).filter(Boolean));
+      if(providerIds(ring).length<2||files.size<2)return;
+      scope='subsystem';
+    }
+    const providers=providerIds(ring);if(providers.length<2)return;
+    const key=`${scope}:${scope==='file'?file:groupKey(file)}:${providers.join(',')}`;
+    if(!noteCollision(state,key,event.ts))return;
+    const fileId=moduleId(state,file),groupId=pid(state,'g',groupKey(file));
+    const magnitude=0.4+0.2*Math.min(1,providers.length-2);
+    intent('agent.collision',{tier:2,magnitude,evidence:'derived',subject:{fileId,groupId},detail:{providers,scope}});
+    c('agent.collision','observed',magnitude,{fileId,voices:providers.map(p=>presence(p).seat),providers});
+  }
   expireDeleted(state,event.ts);
   switch(event.kind) {
     case 'project.baseline':state.stats.baselines++;c('project.baseline','observed',0,{count:event.meta?.count||0,truncated:!!event.meta?.truncated});break;
@@ -187,8 +238,9 @@ function apply(state,event) {
       state.stats.symbols=Object.values(state.docs).reduce((n,d)=>n+d.analysis.symbols.filter(meaningful).length,0);
       state.stats.imports=Object.values(state.docs).reduce((n,d)=>n+d.analysis.imports.length,0);
       if(isBaseline){if(!state.moduleState[mid])state.moduleState[mid]='committed';c('document.baseline.indexed','observed',0,{symbols:analysis.symbols.length,imports:analysis.imports.length,parseErrors:analysis.errors});break;}
-      const recent=state.agentFiles[file];
-      const attribution=recent&&event.ts-recent.ts>=0&&event.ts-recent.ts<=AGENT_ATTRIBUTION_MS?{agentId:recent.agentId,voice:state.agents[recent.agentId]?.voice??0,attribution:'correlated'}:{};
+      const ring=writersOf(state,file,event.ts);
+      const recent=lastWriter(ring);
+      const attribution=recent?{agentId:recent.agentId,voice:state.agents[recent.agentId]?.voice??presence(recent.provider).seat,attribution:'correlated'}:{};
       const fileId=mid;
       const group=pid(state,'g',groupKey(file));const links=[];
       const changes=[];let raw=0;const created={},counts={created:0,modified:0,removed:0};
@@ -240,6 +292,7 @@ function apply(state,event) {
         state.moduleState[mid]=state.moduleState[mid]==='stressed'?'stressed':'draft';}
       else if(!before)state.moduleState[mid]='draft';
       if(before)state.pending.removedLines+=Math.max(0,(before.analysis.lines||0)-(analysis.lines||0));
+      emitCollision(file,ring,'file');
       break;
     }
     case 'document.change': case 'document.edits': {
@@ -310,7 +363,10 @@ function apply(state,event) {
       state.stats.agentEvents++;
       const agent=agentFor(state,event);
       const tool=typeof event.meta?.tool==='string'?event.meta.tool:'';
-      if(event.file&&(event.kind==='agent.file.modified'||(event.kind==='agent.tool.completed'&&!READ_ONLY_TOOLS.has(tool))))state.agentFiles[event.file]={agentId:agent.id,ts:event.ts};
+      if(event.file&&(event.kind==='agent.file.modified'||(event.kind==='agent.tool.completed'&&!READ_ONLY_TOOLS.has(tool)))){
+        rememberWriter(state,event.file,agent,event.ts);
+        emitCollision(event.file,writersOf(state,event.file,event.ts),'file');
+      }
       // Lifecycle from hook-reported events only; what an agent is doing is a tool category, never its arguments.
       const before={state:agent.state||null,activity:agent.activity||null};
       agent.state=nextAgentState(event.kind,agent.state);

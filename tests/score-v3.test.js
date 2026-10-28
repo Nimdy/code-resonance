@@ -79,6 +79,13 @@ test('Expression is pure, matches the bar it describes, and the conductor reacts
   assert.equal(S.milestoneOf({milestones:['validation.test.failed']}),false);
   assert.equal(S.milestoneOf({milestones:['validation.test.passed']}),true);
 });
+test('Agent collision is an additive figure and does not change existing identity bars',()=>{
+  const notes=S.accentFigure({id:'c',type:'agent.collision',detail:{voices:[3,1],providers:['grok','cursor']}},{seed:9,chord:3,style:'ambient'});
+  assert.equal(notes.length,4);
+  assert.deepEqual([...new Set(notes.map(n=>n.voice))].sort(),[1,3]);
+  assert(notes.every(n=>n.instrument==='agent'&&n.priority===4));
+  assert.deepEqual(S.createBar({seed:9,barIndex:3,chapter:4}),S.createBar({seed:9,barIndex:3,chapter:4,scoreVersion:2}));
+});
 test('A held chord is held: the harmony sounds through every bar of a slow interlude (no seconds of silence inside a chord)',()=>{
   for(const style of S.STYLES)for(let b=0;b<S.ARC_BARS*2;b++){const p=S.planAt(4242,b,.5);if(p.role!=='interlude'||p.barInPassage!==0)continue;
     const tempo=S.createIdentity(4242).tempo[style],bar=60/(tempo*4)*16;let covered=0;

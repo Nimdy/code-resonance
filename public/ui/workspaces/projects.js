@@ -6,12 +6,13 @@ import {h,text,clear,button,pill,callout,emptyState,kv,toast,popover,menuItem,st
 import {icon} from '../icons.js';
 import {ago,clockTime,dateTime,duration,count,projectName,STYLE_NAMES,WORLD_NAMES,LABEL_NAMES} from '../format.js';
 import {PROFILE_KEYS,scoreOf} from '../music-profile.js';
+import {presence} from '../../providers.js';
 // ---- Capture state, honestly (shared with Home) --------------------------------------------------------------------
 // The extension announces capture start and stop, but not VS Code closing: "started" is only trusted while editor
 // activity keeps arriving. Historical events are never proof that capture runs now.
 export const LIVE_MS=120000;
 export const when=ts=>!Number.isFinite(ts)||ts<=0?'—':new Date(ts).toDateString()===new Date().toDateString()?clockTime(ts):dateTime(ts);
-export const providerName=p=>p==='claude-code'?'Claude Code':String(p||'Unknown agent').replace(/(^|[-_ ])([a-z])/g,(m,s,c)=>(s?' ':'')+c.toUpperCase());
+export const providerName=p=>presence(p).display;
 // ev: the compact evidence of /api/projects; full: the /api/evidence document when loaded (adds start/stop times).
 export function capture(ev,full=null,now=Date.now()){
   if(full?.building)full=null;
@@ -66,6 +67,7 @@ function meaning(i){
     case 'repository.checkpoint':return 'Commit observed';
     case 'world.expanded':return `Chapter ${d.chapter??'?'} began`;
     case 'agent.state':return `${providerName(d.provider)} · ${d.state||'active'}${d.activity?` (${d.activity})`:''}`;
+    case 'agent.collision':return `${(d.providers||[]).map(providerName).join(' · ')} · collision`;
     default:return i.type.replace(/\./g,' ').replace(/^./,c=>c.toUpperCase());
   }
 }
@@ -440,7 +442,7 @@ function drawTimeline(host,sessions,intents,{name,onPick,legend}){
   // Sessions as bands (overlapping sessions stack their translucency).
   for(const s of sessions){const a=xOf(s.start),b=xOf(s.end);lanes.sessions.append(h('i',{class:'tl-band',ref:el=>{el.style.left=pct(a);el.style.width=pct(Math.max(.003,b-a));}}));}
   // Dense lanes are binned: the brightness of a bin is its share of the busiest bin.
-  for(const [lane,test] of [['structure',i=>STRUCTURE.has(i.type)],['agents',i=>i.type==='agent.state']]){
+  for(const [lane,test] of [['structure',i=>STRUCTURE.has(i.type)],['agents',i=>i.type==='agent.state'||i.type==='agent.collision']]){
     const bins=new Array(BINS).fill(0);for(const i of intents)if(test(i))bins[Math.min(BINS-1,Math.floor(xOf(i.ts)*BINS))]++;
     const max=Math.max(1,...bins);bins.forEach((n,b)=>{if(n)lanes[lane].append(h('i',{class:'tl-bin',ref:el=>{el.style.left=pct(b/BINS);el.style.width=pct(1/BINS);el.style.opacity=String(.25+.75*n/max);}}));});
   }

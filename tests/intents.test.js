@@ -1,5 +1,5 @@
 'use strict';
-// Interpretation v7: canonical performance intents and the agent lifecycle. Worlds express intents; they never
+// Interpretation v8: canonical performance intents, CAST seats, and agent.collision. Worlds express intents; they never
 // decide whether something happened, so these rules are the honesty boundary of every visual effect.
 const test=require('node:test'),assert=require('node:assert/strict');
 const {newState,apply,closeBatch,drainIntents}=require('../engine/reducer');
@@ -111,4 +111,21 @@ test('Intents carry salted ids only, and a chapter change enlarges the world wit
   assert(!/src\/|feature|mod\d|Screen|Model/.test(json),'no paths or identifiers');
   const grown=all.find(i=>i.type==='world.expanded');
   assert(grown);assert.equal(grown.evidence,'derived');assert(grown.tier<3);
+});
+
+test('Two providers on one file emit one collision intent; two Claude subagents do not',()=>{
+  const s=fresh();
+  const collisions=run(s,[agent('agent.tool.completed',{tool:'Edit'},{file:'src/lib/a.ts'}),
+    e('agent.tool.completed',{origin:'hook',file:'src/lib/a.ts',meta:{provider:'cursor',source:'generic',agent:'cursor-1',tool:'Edit'}})]).filter(i=>i.type==='agent.collision');
+  assert.equal(collisions.length,1);
+  assert.equal(collisions[0].evidence,'derived');assert.equal(collisions[0].tier,2);
+  assert.deepEqual(collisions[0].detail.providers,['claude-code','cursor']);
+  assert.equal(collisions[0].detail.scope,'file');
+  const json=JSON.stringify(collisions);
+  assert(!/src\/|lib\/|a\.ts/.test(json),'collision intent has no paths');
+  assert.equal(run(s,[e('document.snapshot',{file:'src/lib/a.ts',content:'export function a(){return 1}',meta:{reason:'edit'}})]).filter(i=>i.type==='agent.collision').length,0,'tool then snapshot is one collision');
+
+  const same=fresh();
+  assert.equal(run(same,[agent('agent.tool.completed',{tool:'Edit',agent:'session-a'},{file:'src/lib/a.ts'}),
+    agent('agent.tool.completed',{tool:'Write',agent:'session-b'},{file:'src/lib/a.ts'})]).filter(i=>i.type==='agent.collision').length,0);
 });

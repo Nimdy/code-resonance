@@ -48,6 +48,7 @@ import {layoutConfig,createLayout} from './stellar-layout.js';
 import {createStellarGrammar,createMatterMap,RN as LIFE_RN,NUCLEUS_KIND} from './life/stellar.js';
 import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {u01} from './life/sim.js';
+import {presence} from '../providers.js';
 const MAX_SYS=48,MAPR=1.35;
 // Stellar temperatures by role (blackbody-like tints).
 const ROLE_COLOR={interface:'#8fb8ff',services:'#ffc65a',model:'#ff9050',logic:'#ffe09a',tests:'#c09cff',core:'#ffdcae'};
@@ -1447,6 +1448,7 @@ export function createFamily(ctx){
       case 'milestone.achieved':{const k=milestoneWords(c);return {text:`${({aurora:'Aurora','calm-pulse':'Calm pulse','accretion-collapse':'Collapse'})[c.effect]||'Nova'} · ${k}`,sub:'verified by a passing test run · a remnant remains',position:pos,banner:k,bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'world')} set in orbit`:'Committed · the work is set in place',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The galaxy grows · chapter ${d.chapter}`,sub:'accumulated structure',position:new THREE.Vector3()};
+      case 'agent.collision':return {text:'Two agents meet in orbit',sub:(d.providers||[]).map(id=>presence(id).display).join(' · '),position:pos};
       default:return null;}}
   function agentPosition(id){return agentState.get(id)?.pos||null;}
   function agentColor(a){return '#'+AGENT_COLORS[a.voice%8].getHexString();}

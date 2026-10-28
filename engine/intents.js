@@ -15,7 +15,7 @@ const TYPES=new Set([
   'module.created','module.removed','module.renamed','subsystem.created','subsystem.connected',
   'structure.created','structure.modified','structure.removed','structure.linked',
   'validation.failed','validation.passed','validation.recovered','refactor.validated','milestone.achieved',
-  'repository.checkpoint','agent.state','world.expanded'
+  'repository.checkpoint','agent.state','agent.collision','world.expanded'
 ]);
 const EVIDENCE=new Set(['observed','derived','inferred','verified']);
 const round=x=>Math.round(Math.max(0,Math.min(1,x))*1000)/1000;

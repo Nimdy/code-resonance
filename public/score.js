@@ -195,7 +195,8 @@
   const FIGURES={
     'symbol.created':{priority:2},'dependency.added':{priority:1},'validation.test.passed':{priority:4},'validation.test.failed':{priority:4},
     'validation.build.passed':{priority:3},'validation.build.failed':{priority:3},'milestone.refactor.validated':{priority:5},
-    'repository.commit.observed':{priority:4},'agent.tool.completed':{priority:1},'agent.file.modified':{priority:2},'agent.prompt.submitted':{priority:1}
+    'repository.commit.observed':{priority:4},'agent.tool.completed':{priority:1},'agent.file.modified':{priority:2},'agent.prompt.submitted':{priority:1},
+    'agent.collision':{priority:4}
   };
   function accentFigure(cue,{seed=0,chord=0,style='ambient'}={}){
     const figure=FIGURES[cue.type];if(!figure)return [];
@@ -220,6 +221,13 @@
       case 'repository.commit.observed':return [out(0,'riser',60,.08,2),out(8,'chime',n(0,2),.14,2),out(8,'chime',n(4,1),.1,2)];
       case 'agent.file.modified':return [out(0,'agent',n(tones[(voice||0)%3]+(voice||0)%2*7,1),.12,.5,agent)];
       case 'agent.tool.completed':case 'agent.prompt.submitted':return [out(0,'agent',n(tones[0]+7*((voice||0)%2),1),.06,.25,agent)];
+      case 'agent.collision':{
+        const vs=(Array.isArray(d.voices)?d.voices:[]).filter(v=>Number.isInteger(v));
+        const v0=vs[0]??0,v1=vs[1]??(v0^1);
+        const of=v=>({voice:v,pan:[-.6,.6,-.3,.3,-.8,.8,0,-.45][v%8]});
+        return [out(0,'agent',n(tones[0],1)+1,.14,.4,of(v0)),out(0,'agent',n(tones[1],1),.12,.4,of(v1)),
+          out(4,'agent',n(tones[0],1),.13,.8,of(v0)),out(4,'agent',n(tones[2],1),.12,.8,of(v1))];
+      }
       default:return [];
     }
   }

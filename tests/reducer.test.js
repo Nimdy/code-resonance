@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test');const assert=require('node:assert/strict');
-const {newState,apply,closeBatch,publicProjection}=require('../engine/reducer');
+const {newState,apply,closeBatch,publicProjection,drainIntents,INTERPRETATION_VERSION}=require('../engine/reducer');
 const {sha,validateEvent,safeRelative}=require('../receiver/protocol');
 const {toPerformanceIntent}=require('../sdk/performance');
 const projectId=sha('test-project');let seq=0;
@@ -89,16 +89,62 @@ test('Tension reflects current state: open errors and failing validations, not a
   apply(state,e('terminal.command.finished',{meta:{category:'build',exitCode:2}}));
   assert(state.performance.tension>=0.4);
 });
-test('Agents get stable distinct voices; file changes are attributed only when correlated with that agent',()=>{
+test('Agents get stable catalog seats; file changes are attributed only when correlated with that agent',()=>{
   const state=newState(projectId);
   apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'session-A',tool:'Edit'}}));
   apply(state,e('agent.tool.completed',{file:'src/b.ts',meta:{provider:'claude-code',agent:'session-B',tool:'Write'}}));
   const a=apply(state,e('document.snapshot',{file:'src/a.ts',content:'export function fromAgentA(){}',meta:{reason:'external'}}));
   const human=apply(state,e('document.snapshot',{file:'src/c.ts',content:'export function byUnknown(){}',meta:{reason:'edit'}}));
-  const voices=Object.values(state.agents).map(x=>x.voice).sort();
-  assert.deepEqual(voices,[0,1]);
-  assert(a.some(c=>c.type==='symbol.created'&&c.detail.attribution==='correlated'&&c.detail.agentId===Object.values(state.agents)[0].id));
+  const agents=Object.values(state.agents);
+  assert.equal(agents.length,2);
+  assert.notEqual(agents[0].id,agents[1].id);
+  assert.deepEqual(agents.map(x=>x.voice).sort(),[0,0],'subagents of one provider share the catalog seat');
+  assert(a.some(c=>c.type==='symbol.created'&&c.detail.attribution==='correlated'&&c.detail.agentId===agents[0].id));
   assert(human.every(c=>!c.detail.agentId));
+});
+test('Two providers on one file emit one collision; two Claude subagents do not',()=>{
+  const collide=newState(projectId);collide.salt='cast-salt';
+  apply(collide,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'session-A',tool:'Edit'}}));
+  const second=apply(collide,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'cursor',agent:'session-B',tool:'Edit'}}));
+  apply(collide,e('document.snapshot',{file:'src/a.ts',content:'export function fromBoth(){}',meta:{reason:'edit'}}));
+  const intents=drainIntents(collide).filter(i=>i.type==='agent.collision');
+  const cues=[...second,...collide.timeline].filter(c=>c.type==='agent.collision');
+  const uniqueCues=[...new Map(cues.map(c=>[c.id,c])).values()];
+  assert.equal(intents.length,1);
+  assert.equal(uniqueCues.length,1);
+  assert.equal(intents[0].tier,2);assert.equal(intents[0].evidence,'derived');assert.equal(intents[0].magnitude,0.4);
+  assert.deepEqual(intents[0].detail,{providers:['claude-code','cursor'],scope:'file'});
+  assert.equal(uniqueCues[0].category,'observed');
+  assert.deepEqual(uniqueCues[0].detail.providers,['claude-code','cursor']);
+  assert.deepEqual(uniqueCues[0].detail.voices,[0,1]);
+  const json=JSON.stringify({intents,cues:uniqueCues,subject:intents[0].subject});
+  assert(!/src\/|a\.ts/.test(json),'collision JSON has no paths');
+  const cursor=Object.values(collide.agents).find(a=>a.provider==='cursor');
+  const snap=collide.timeline.filter(c=>c.detail?.attribution==='correlated'&&c.detail?.agentId);
+  assert(snap.some(c=>c.detail.agentId===cursor.id),'last writer still attributes the snapshot');
+
+  const same=newState(projectId);same.salt='cast-salt';
+  apply(same,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'sub-A',tool:'Edit'}}));
+  apply(same,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'sub-B',tool:'Write'}}));
+  apply(same,e('document.snapshot',{file:'src/a.ts',content:'export function fromClaude(){}',meta:{reason:'edit'}}));
+  assert.equal(drainIntents(same).filter(i=>i.type==='agent.collision').length,0);
+  assert.equal(same.timeline.filter(c=>c.type==='agent.collision').length,0);
+  const voices=Object.values(same.agents).map(x=>x.voice);
+  assert.deepEqual(voices,[0,0]);
+  assert.equal(new Set(Object.values(same.agents).map(x=>x.id)).size,2);
+});
+test('Interpretation v8 is current; two apply() runs of a collision journal match',()=>{
+  assert.equal(INTERPRETATION_VERSION,8);
+  function run(){
+    let n=0;const ev=(kind,extras={})=>({v:1,kind,id:`det-event-${++n}`,ts:1741100000000+n*1000,projectId,sessionId:'session1',origin:'test',...extras});
+    const state=newState(projectId);state.salt='det-salt';state.createdAt=0;
+    apply(state,ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+    apply(state,ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}}));
+    apply(state,ev('document.snapshot',{file:'src/a.ts',content:'export function x(){}',meta:{reason:'edit'}}));
+    return {intents:drainIntents(state).filter(i=>i.type==='agent.collision'),cues:state.timeline.filter(c=>c.type==='agent.collision')};
+  }
+  assert.deepEqual(run(),run());
+  assert.equal(run().intents.length,1);
 });
 test('Public graph shows every module and fills its budget with the most meaningful symbols first',()=>{
   const state=newState(projectId);
@@ -120,4 +166,38 @@ test('Project name labels the local project list but never enters the recorded p
   assert(!JSON.stringify(frame).includes('my-app')&&!JSON.stringify(cues).includes('my-app'));
   apply(state,e('workspace.started',{}));
   assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
+});
+test('Rebuild v7 to v8 from a journal is byte-stable on the second run',async t=>{
+  const fs=require('node:fs/promises'),path=require('node:path');
+  const {tempDir,startService}=require('./helpers');
+  const dir=tempDir(t,'cr-cast-rebuild-');
+  const id=sha('cast-rebuild');
+  async function start(){
+    const service=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000,windowMs:300,graceMs:50,quiet:true});
+    const url=`http://127.0.0.1:${service.port}`;
+    const auth={Authorization:`Bearer ${service.token}`};
+    return {service,
+      post:async events=>{const r=await fetch(url+'/v1/events',{method:'POST',headers:{'Content-Type':'application/json',...auth},body:JSON.stringify({events})});assert.equal(r.status,202);},
+      flush:async()=>(await fetch(url+`/v1/flush?id=${id}`,{method:'POST',headers:auth})).json(),
+      rebuild:async()=>(await fetch(url+`/v1/rebuild?id=${id}`,{method:'POST',headers:auth})).json()};
+  }
+  let n=0;const ev=(kind,extra)=>({v:1,id:`cast-rb-${++n}`,ts:1760000000000+n*1000,kind,projectId:id,sessionId:'s',origin:'test',...extra});
+  let s=await start();
+  await s.post([ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}})]);
+  await s.post([ev('agent.tool.completed',{file:'src/a.ts',meta:{provider:'cursor',agent:'B',tool:'Edit'}})]);
+  await s.post([ev('document.snapshot',{file:'src/a.ts',content:'export function a(){return 1}',meta:{reason:'edit'}})]);
+  await s.flush();
+  const perf=path.join(dir,'projects',sha(id),'performance.jsonl');
+  const live=await fs.readFile(perf,'utf8');
+  assert.match(live,/agent\.collision/);
+  await s.service.stop();
+  const stateFile=path.join(dir,'projects',sha(id),'state.json');
+  const state=JSON.parse(await fs.readFile(stateFile,'utf8'));
+  assert.equal(state.interpretationVersion,8);
+  state.interpretationVersion=7;await fs.writeFile(stateFile,JSON.stringify(state));
+  await fs.rm(perf,{force:true});
+  s=await start();await s.flush();
+  assert.equal(await fs.readFile(perf,'utf8'),live);
+  await s.rebuild();
+  assert.equal(await fs.readFile(perf,'utf8'),live);
 });

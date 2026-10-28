@@ -38,6 +38,9 @@ test('The director never shows success for a failure, and the same intents alway
   assert.deepEqual(run(),['stellar-storm','calm-pulse']);assert.deepEqual(run(),run());
   const bio=createDirector({recipe:biosphere});
   assert.equal(bio.process(intent('validation.failed',T0,{evidence:'verified'})).effect,'blight','each family has its own vocabulary for the same intent');
+  assert.equal(stellar.genome.effects['agent.collision'],undefined);
+  assert.equal(createDirector({recipe:stellar}).process(intent('agent.collision',T0,{tier:2})).effect,'flare-bridge');
+  assert.equal(createDirector({recipe:biosphere}).process(intent('agent.collision',T0,{tier:2})).effect,'mycelium-bridge');
 });
 test('Spectacle is rare: milestones spend tokens, rare effects need a long gap, routine bursts coalesce',async()=>{
   const {createDirector}=await load('director');const d=createDirector({recipe:stellar});
@@ -71,7 +74,9 @@ test('Agent presences follow observed lifecycles and never linger or claim work 
   assert.equal(a.presence('A',T0+2000+200000).display,'unknown','three silent minutes in a tool: status unknown, not working');
   st(T0+5000,'waiting');assert.equal(a.presence('A',T0+6000).label,'waiting for the next prompt');assert.equal(a.presence('A',T0+5000+130000).display,'dormant');
   st(T0+9000,'disconnected');assert(a.presence('A',T0+10000).alpha<1);assert.equal(a.presence('A',T0+13000),null,'a disconnected agent departs');
-  assert.equal(a.name(reading),'Agent 1');
+  assert.equal(a.name(reading),'Claude');
+  a.record({type:'agent.state',ts:T0+400,subject:{agentId:'B',voice:0},detail:{state:'connected',provider:'claude-code',subagent:true}});
+  assert.equal(a.name(a.presence('B',T0+500)),'Claude · subagent');
   // Labels are categories: nothing an agent wrote, read or ran appears in them.
   for(const p of [reading,a.presence('A',T0+6000)])assert(!/[\/\\.]/.test(p.label));
 });

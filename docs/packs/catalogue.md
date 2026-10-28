@@ -290,3 +290,4 @@ An intent may only be expressed by an effect of the same class: a failure never 
 | `milestone.achieved` | success |
 | `repository.checkpoint` | growth |
 | `world.expanded` | growth |
+| `agent.collision` | growth |

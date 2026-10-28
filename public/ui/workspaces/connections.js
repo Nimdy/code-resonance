@@ -8,6 +8,7 @@ import {h,button,segmented,section,disclosure,pill,callout,copyable,toast,styles
 import {icon} from '../icons.js';
 import {ago,dateTime,duration,count,projectName} from '../format.js';
 import {openDoc} from '../markdown.js';
+import {presence} from '../../providers.js';
 // The extension does not report VS Code closing: a started capture counts as running only while editor events keep
 // arriving (within two minutes, the product's rule); after that it is "started, but quiet", which is unknown, not live.
 const RUNNING_MS=120000,STATUS_MS=15000,TICK_MS=10000;
@@ -397,13 +398,15 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     rebuild(agentsObserved,
       list.length?h('div',{class:'conn-list',id:'connProviders'},...list.map(o=>h('div',{class:'conn-list-row',dataset:{provider:o.name}},
           h('span',{class:['dot',o.lastAt&&now-o.lastAt<RUNNING_MS&&!o.demo?'ok':'']}),
-          h('span',{class:'grow stack'},h('strong',{class:'ellipsis',text:o.name}),h('span',{class:'faint tiny ellipsis',text:o.projects.join(', ')})),
+          h('span',{class:'grow stack'},h('strong',{class:'ellipsis',text:presence(o.name).display}),h('span',{class:'faint tiny ellipsis',text:o.projects.join(', ')})),
           o.demo?pill('Demonstration (fictional)','warn'):null,h('span',{class:'faint small num',text:`${count(o.events,'event')} · ${ago(o.lastAt,now)}`}))))
         :h('p',{class:'muted small',id:'connProviders',text:'No events observed from other agents.'}));
     if(agentsInfo.firstChild||!integ)return;
     const g=integ.generic;
+    const cast=(integ.providers||[]).map(p=>p.display).filter(Boolean);
     agentsFacts.append(h('ul',{class:'conn-bullets'},
       h('li',{},h('code',{text:'--provider'}),' names the agent here; a provider appears in this list once its events arrive.'),
+      cast.length?h('li',{text:`CAST: ${cast.join(' · ')}.`}):null,
       h('li',{},'With ',h('code',{text:'--text'}),' or ',h('code',{text:'--stdin'}),' only the length and a fingerprint are sent, unless ',h('code',{text:'--include-text'}),' is given.'),
       h('li',{text:'Events are sent with the receiver’s token, which the CLI reads from receiver-auth.json in the data folder. The token is never shown here.'})));
     agentsInfo.append(guidePanel('agent','Report what an agent does',

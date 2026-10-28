@@ -11,7 +11,7 @@ const ROOTS=['public','engine','receiver','extension','scripts','sdk','packs/exa
 const skip=(name,rel)=>name==='node_modules'||name.startsWith('.')||rel==='public/vendor';
 // What the browser loads as ES modules (public/worlds also says so in its package.json). The rest are scripts: the
 // classic browser scripts (app, score, music, recording), the UMD composition files and everything Node requires.
-const MODULES=['public/construct.js','public/ui/','public/worlds/','packs/'];
+const MODULES=['public/construct.js','public/providers.js','public/ui/','public/worlds/','packs/'];
 const isModule=f=>f.endsWith('.mjs')||!f.endsWith('.cjs')&&MODULES.some(m=>m.endsWith('/')?f.startsWith(m):f===m);
 // Node 22 quietly reads a script that has import or export as a module; the browser would not, so neither does this.
 const NO_DETECT=process.allowedNodeEnvironmentFlags.has('--no-experimental-detect-module')?['--no-experimental-detect-module']:[];
