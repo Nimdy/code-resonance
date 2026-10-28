@@ -3,8 +3,8 @@
 ## Unreleased
 
 - **Token proof for every client, bound to the port:** the extension's capture outbox, the Claude Code, Cursor and Codex
-  hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`, as `npm run
-  up`, `npm run pair` and the extension's pairing link already did (in 0.7.1 only those three did). The proof is now
+  hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`; in 0.7.1 only
+  `npm run up`, `npm run pair` and the extension's pairing link did. The proof is now
   `GET /v1/challenge?nonce=&v=2` → HMAC-SHA256(token, `cr-challenge-v2|<port>|<nonce>`) for the port the request arrived
   on, and no client follows a redirect, so a process on one port can no longer pass by redirecting to, or relaying, a
   real receiver on another port. The outbox verifies once per receiver connection (again after a failed delivery or a
@@ -12,16 +12,17 @@
   outbox keeps its batches (status *queued (receiver not verified)*), the CLIs exit with an error. One client
   implementation, `extension/proof.js` (now in the VSIX), re-exported by `receiver/proof.js`.
   **Compatibility:** the receiver still answers the 0.7.1 form (`?nonce=` without `v`) for an extension installed
-  before. A receiver started before this change has no v2 proof: restart it, or the updated hooks and extension hold
-  their events until you do.
+  before. A receiver started before this change has no v2 proof: restart it. Until you do, the updated hooks spool and
+  the extension queues their events, and `scripts/event.js`, `npm run demo`, `npm run up` and `npm run pair` refuse.
 - **Interpretation 9 (projects rebuild once):** the `agent.collision` cue now weighs 0, like every other agent cue. In
   8 it weighed its magnitude (0.4–0.6) and fed progress, energy and the chapter, so two agents on the same files raised
   an existing project's chapter on rebuild; now a two-agent journal has exactly the progress and chapter of the same
   journal with one provider. Collisions count only catalogued providers (Claude, Cursor, Codex, Grok, Qwen, Kimi):
   `unspecified`, `external-agent` and other ids still attribute their edits but never make a meeting. The catalog
   lookup ignores Object members (`constructor`, `__proto__`, …). On the first start each project's derived files are
-  rebuilt from its journal (the journal is not rewritten); the collision intent, its magnitude and what worlds and the
-  score play for it are unchanged.
+  rebuilt from its journal (the journal is not rewritten). The collision intent and its magnitude are unchanged, so the
+  living worlds' meeting and the score's accent figure are as before; a window with a meeting now has slightly lower
+  energy and growth (they summed cue weights), and the Canvas 2D stages pulse it at their base speed.
 - **Public agent names:** an agent whose provider id is not in the catalog is "Agent" on Stage chips, in collision
   callouts (Biosphere, Stellar Forge, Machine Cathedral) and in Home's Last night cast, instead of its title-cased id
   (`external-agent`, a client's name passed with `--provider`). The Control Center's own lists still name the id.
