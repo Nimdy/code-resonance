@@ -23,7 +23,7 @@ function relativeFile(root,file){
   const rel=path.relative(root,path.resolve(root,file)).replace(/\\/g,'/');
   return isFileEligible(rel,{includeHidden:true})?rel:undefined;
 }
-// Paths only: unified-diff a/ b/ headers, Codex *** File headers, path lists. Never hunk bodies or +/- lines.
+// Paths only: unified-diff a/ b/ headers and Codex *** File headers. Never hunk bodies or +/- lines.
 function patchPaths(text,root){
   if(!isStr(text)||!text)return [];
   const files=[];
@@ -44,21 +44,8 @@ function patchPaths(text,root){
   return files.slice(0,40);
 }
 function patchText(toolInput,raw){
-  // Empty raw is the documented object shape; the patch lives on command (never treat '' as the patch).
-  if(isStr(raw)&&raw)return raw;
-  if(isStr(toolInput)&&toolInput)return toolInput;
-  if(!isPlain(toolInput))return '';
-  for(const k of ['command','input','patch'])if(isStr(toolInput[k])&&toolInput[k])return toolInput[k];
-  return '';
-}
-function listedPaths(toolInput,root){
-  if(!isPlain(toolInput))return [];
-  const files=[];
-  const add=p=>{const file=relativeFile(root,p);if(file&&!files.includes(file))files.push(file);};
-  if(isStr(toolInput.file_path))add(toolInput.file_path);
-  if(isStr(toolInput.path))add(toolInput.path);
-  if(Array.isArray(toolInput.paths))for(const p of toolInput.paths)if(isStr(p))add(p);
-  return files;
+  if(isStr(raw))return raw;
+  return isStr(toolInput.command)?toolInput.command:'';
 }
 function exitCodeOf(response){
   if(typeof response==='number'&&Number.isFinite(response))return response;
@@ -103,8 +90,7 @@ function translate(input,now=Date.now()){
         return [base('agent.tool.completed',{tool:'Bash',category,result,...(typeof exitCode==='number'?{exitCode}:{})})];
       }
       if(PATCH_TOOLS.has(toolName)){
-        const files=[...listedPaths(toolInput,root)];
-        for(const p of patchPaths(patchText(toolInput,isStr(input.tool_input)?input.tool_input:''),root))if(!files.includes(p))files.push(p);
+        const files=patchPaths(patchText(toolInput,isStr(input.tool_input)?input.tool_input:undefined),root);
         const out=[base('agent.tool.completed',{tool:'apply_patch',result:'succeeded'},files[0]?{file:files[0]}:{})];
         for(const file of files)out.push(base('agent.file.modified',{tool:'apply_patch'},{file}));
         return out;
