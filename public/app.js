@@ -493,7 +493,7 @@
     return constructLoading;
   }
   // ---- The living world: the project's Visual Recipe rendered by public/worlds (WebGL2) --------------------------------
-  function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);bindWorldCanvas(next);return next;}
+  function freshWorldCanvas(){const old=$('world'),next=old.cloneNode(false);old.replaceWith(next);return next;}
   function disposeLiving(){if(living){living.dispose();living=null;freshWorldCanvas();}livingFailed=false;livingFor='';recipe=null;changed('world','recipe');}
   async function loadPacks(){
     // A receiver that cannot be reached (restarting, or stopped) says nothing about the packs: keep what was known and
@@ -637,12 +637,17 @@
     if(runtimeOf(before)!==runtimeOf(shown)||living.remote||(!previewRecipe&&recipe?.unavailable)){disposeLiving();if(selectedWorld==='living')await ensureLiving();}
     else{await living.setRecipe(shown);changed('preview');}
   }
-  // Explorer clicks, in the world's own coordinates (letterboxed while recording at a fixed size).
+  // A point of the page in the living world's own coordinates (letterboxed while recording at a fixed size), or null
+  // outside the picture. A pack's frame takes no pointer input: its world is picked from here too.
+  function worldPoint(clientX,clientY){
+    const el=living?.remote?living.frame:$('world'),r=el?.getBoundingClientRect();if(!r||!r.width||!r.height)return null;
+    let x=clientX-r.left,y=clientY-r.top,w=r.width,h=r.height;
+    if(recordFrame){const k=Math.min(r.width/recordFrame.w,r.height/recordFrame.h),ox=(r.width-recordFrame.w*k)/2,oy=(r.height-recordFrame.h*k)/2;x=(x-ox)/k;y=(y-oy)/k;w=recordFrame.w;h=recordFrame.h;}
+    return x>=0&&y>=0&&x<=w&&y<=h?{x,y}:null;}
+  // Explorer clicks select a structure (the world's callout, the Stage's card).
   let picked=null;
-  function bindWorldCanvas(el){el.addEventListener('click',async e=>{if(!living||labelMode!=='explorer')return;const r=el.getBoundingClientRect();
-    let x=e.clientX-r.left,y=e.clientY-r.top;
-    if(recordFrame){const k=Math.min(r.width/recordFrame.w,r.height/recordFrame.h),ox=(r.width-recordFrame.w*k)/2,oy=(r.height-recordFrame.h*k)/2;x=(x-ox)/k;y=(y-oy)/k;}
-    picked=await living.pick(x,y);changed('picked');});}
+  function bindWorldClicks(el){el.addEventListener('click',async e=>{if(!living||labelMode!=='explorer'||selectedWorld!=='living')return;const p=worldPoint(e.clientX,e.clientY);if(!p)return;
+    picked=await living.pick(p.x,p.y);changed('picked');});}
   // Plain-language narration of meaningful changes, so the performance reads without knowing code.
   let captionTimer=null;
   function showCaption(text){
@@ -970,6 +975,9 @@
     setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;windowUntil=null;seek(ts);},
     seekFraction(f){const h=history();if(mode!=='replay'||!replay)return;playback=false;windowUntil=null;seek(h.start+(h.end-h.start)*clamp(Number(f)||0));},setSpeed,playWindow,
     setVisible(v){visible=!!v;},
+    // What is under a point of the page (viewport coordinates) on the living world, for the Control Center's hover card:
+    // the world's own words and what the player knows there now, or null. It selects nothing and draws nothing.
+    async peek(clientX,clientY){if(FILM||overlay||selectedWorld!=='living'||!living?.peek)return null;const p=worldPoint(clientX,clientY);return p?living.peek(p.x,p.y):null;},
     // heldElsewhere(): whether another window of this browser holds the recorder lock (null: no Web Locks here), the
     // evidence behind a "recording in another window" announcement (a crashed window never says it stopped).
     record:{toggle:toggleRecord,setSize:setRecordSize,get active(){return recording.active;},get lockPolicy(){return recordLockPolicy||(navigator.locks?.request?'web-locks':'announcements');},
@@ -1056,7 +1064,7 @@
     if(selected)pollProject();
     requestAnimationFrame(paint);
     if(selectedWorld==='construct')void ensureConstruct();
-    bindWorldCanvas($('world'));
+    bindWorldClicks($('world').parentElement);
     // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
     if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
   }

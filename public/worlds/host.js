@@ -1,6 +1,7 @@
 // World host: runs a family world (Stellar Forge, Fractal Biosphere, Machine Cathedral, or a visual pack's world) for
 // the player with the same contract as the Construct (reset / applyDelta / cue / setMood / render / resize / stats),
-// plus intents, priming after a seek, recipes, label modes and picking. One host per canvas; switching worlds disposes
+// plus intents, priming after a seek, recipes, label modes, picking and peeking (what is under a point, for the Control
+// Center's hover card: it never selects and never draws). One host per canvas; switching worlds disposes
 // every GPU resource. Visual packs run in this same host inside the isolated pack frame (frame.js): `families` brings a
 // pack's world module (World API, see sdk.js), `extension` a shader pack's background, post passes and effects.
 import {THREE,BACKGROUND_VS,createPipeline,createCameraRig,createOverlay,hash,rng} from './core.js';
@@ -75,6 +76,24 @@ export function withTechnique(g,t,palette=null){
   if(Array.isArray(t.tint))g.tint=(g.tint?g.tint.clone():new THREE.Vector3(1,1,1)).multiply(new THREE.Vector3(...t.tint));
   if(Array.isArray(t.lift))g.lift=(g.lift?g.lift.clone():new THREE.Vector3()).add(new THREE.Vector3(...t.lift));
   return g;
+}
+// ---- Hover facts: what the player knows about a picked structure at a frame, from the model and the presences (counts,
+// states, the newest test verdict and edit, catalog names and activity categories: never a path or a name from the code).
+// For the Control Center's hover card, which adds them to the world's own words (inspect).
+export function hoverFacts({model,agents,agentColor=null},id,i){
+  const m=model.modules.get(id),d=m?null:model.districts.get(id)||model.districts.get(String(id).slice(String(id).indexOf(':')+1));
+  if(!m&&!d)return {};
+  const members=m?[m]:d.members.map(x=>model.modules.get(x)).filter(x=>x&&model.alive(x,i.t)&&(x.removed===null||x.removed>i.t));
+  const ids=new Set(members.map(x=>x.id)),states={};let check=null,edit=null;
+  for(const x of members){const st=model.stateAt(x,i.t);states[st]=(states[st]||0)+1;
+    for(let k=x.states.length-1;k>=0;k--){const e=x.states[k];if(e.at>i.t||(e.state!=='validated'&&e.state!=='stressed'))continue;if(!check||e.at>check.at)check={state:e.state,at:e.at};break;}
+    for(const [by,at] of [['agent',x.lastAgent],['person',x.lastHuman]])if(Number.isFinite(at)&&at<=i.t&&(!edit||at>edit.at))edit={by,at};}
+  // Agents at work here now, or that used a tool here in the last ten minutes (an edit's tool lasts a moment).
+  const here=[];for(const a of i.agents){if(here.length>=3)break;const now=a.display==='tool'&&ids.has(a.fileId);let last=null;
+    if(!now)for(const e of agents.trail(a.id,i.t,600000))if(e.state==='tool'&&e.fileId&&ids.has(e.fileId)&&(!last||e.ts>last.ts))last=e;
+    if(now||last)here.push({name:agents.name(a),label:now?a.label:last.activity||'using a tool',color:agentColor?.(a)||null,working:now,ago:now?null:i.t-last.ts});}
+  return {kind:m?'module':'subsystem',modules:m?null:members.length,symbols:m?model.symbolsAt(m,i.t):null,states,agents:here,
+    check:check&&{state:check.state,ago:i.t-check.at},edit:edit&&{by:edit.by,ago:i.t-edit.at}};
 }
 // Public labels never receive the project folder name: titles come only from the recipe's approved public title.
 export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',quality=0,adaptive=true,level:startLevel=null,families={},extension=null,assets={}}={}){
@@ -184,6 +203,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   // hidden meanwhile: never a stale population shown as if it were this moment's).
   function drawRestoring(g,w,h,p){const k=w/1920;g.save();g.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g.textAlign='right';g.fillStyle='rgba(232,238,248,.78)';
     g.shadowColor='rgba(0,0,0,.8)';g.shadowBlur=8*k;g.fillText(`Restoring the ecosystem for this moment · ${Math.round(p*100)} %`,w-40*k,h-40*k);g.restore();}
+  // Explorer: a selected structure draws the view a little toward it (the world's own goal, eased by the same rig).
+  const EXPLORE_PULL=.35;
   // ---- Frame ----------------------------------------------------------------------------------------------------
   const inverse=new THREE.Matrix4();
   function updateExtension(i){
@@ -207,7 +228,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     if(lifeDriver)info.life=lifeDriver.update(info,{budgetMs:film?Infinity:6});
     world.update(info);
     if((current.composition??null)!==layersFor){layersBroken=null;void syncLayers();}
-    const goal=world.cameraGoal(info);
+    let goal=world.cameraGoal(info);
+    if(selected&&mode==='explorer'){const s=world.inspect?.(selected,info);if(s?.position&&goal?.target)goal={...goal,target:goal.target.clone().lerp(s.position,EXPLORE_PULL)};}
     // A composition's global mappings bend the world's own camera goal within bounds; its layers follow the camera.
     if(layers)layers.camera(goal,info);
     rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
@@ -281,6 +303,9 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     // Auto's state for the player: the level, the measured frame rate, and whether no level makes WebGL usable here.
     performance(){return {level,fps:governor.fps===null?null:+governor.fps.toFixed(1),degraded:governor.degraded,changes:governor.changes,adaptive:governor.adaptive};},
     pick(x,y){if(!world.pick)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info);selected=id;return id?world.inspect?.(id,info):null;},
+    // What is under a point (the hover card): the world's words for it and the facts above; it selects nothing.
+    peek(x,y){if(!world.pick||!info)return null;const id=world.pick(x/size[0]*2-1,-(y/size[1])*2+1,camera,info),s=id?world.inspect?.(id,info):null;
+      return s?{id,text:String(s.text||''),sub:String(s.sub||''),...hoverFacts({model,agents,agentColor:a=>world.agentColor?.(a)},id,info)}:null;},
     render,drawOverlay,
     // Every string currently on screen (qualification: the privacy boundary covers labels too).
     labels(){return labelStrings(lastLabels);},

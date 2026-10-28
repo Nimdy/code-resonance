@@ -9,11 +9,11 @@ const send=(message,transfer=[])=>window.parent.postMessage(message,'*',transfer
 for(const k of ['RTCPeerConnection','webkitRTCPeerConnection','RTCDataChannel','RTCSessionDescription','RTCIceCandidate','RTCRtpSender','RTCRtpReceiver']){
   try{delete window[k];Object.defineProperty(window,k,{value:undefined,writable:false,configurable:false});}catch{}}
 const canvas=document.getElementById('world'),overlay=document.getElementById('overlay');
-let worker=null,mode='cinematic',size=null;
+let worker=null;
 const fail=(message,kind='exception')=>send({type:'error',kind,message:String(message||'error').slice(0,300)});
 window.addEventListener('error',e=>fail(e.message));
 // Messages the player may send, and what the worker may answer.
-const TO_WORKER=new Set(['init','reset','delta','cue','intent','prime','mood','speed','epoch','recipe','labels','quality','resize','render','pick','dispose']);
+const TO_WORKER=new Set(['init','reset','delta','cue','intent','prime','mood','speed','epoch','recipe','labels','quality','resize','render','pick','peek','dispose']);
 const TO_PLAYER=new Set(['ready','loaded','rendered','stats','picked','error']);
 const FLOOD=1000;
 function start(){
@@ -38,13 +38,10 @@ window.addEventListener('message',e=>{
   if(m.type==='init'){
     // The canvases move to the worker once; it renders into them from then on.
     const world=canvas.transferControlToOffscreen(),labels=overlay.transferControlToOffscreen();
-    mode=m.labels;worker.postMessage({...m,canvas:world,overlay:labels},[world,labels]);return;
+    worker.postMessage({...m,canvas:world,overlay:labels},[world,labels]);return;
   }
-  if(m.type==='labels')mode=m.mode;if(m.type==='resize')size={w:m.w,h:m.h};
   worker?.postMessage(m);
 });
-// Explorer mode: clicks select a structure inside the worker (labels are drawn there too).
-// The world may have another aspect ratio than the frame (recording at a fixed size): clicks map into its letterbox.
-canvas.addEventListener('click',e=>{if(!worker||mode!=='explorer')return;const r=canvas.getBoundingClientRect(),w=size?.w||r.width,h=size?.h||r.height,k=Math.min(r.width/w,r.height/h);
-  worker.postMessage({type:'pick',id:-1,x:(e.clientX-r.left-(r.width-w*k)/2)/k,y:(e.clientY-r.top-(r.height-h*k)/2)/k});});
+// The frame takes no pointer input: explorer clicks and the Control Center's hover reach the worker from the player
+// ('pick', 'peek'), in the world's own coordinates, as they do for the built-in worlds.
 start();

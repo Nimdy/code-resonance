@@ -8,6 +8,7 @@ import {h,clear,text,button,popover,menuItem,toast,modal,copyable} from './dom.j
 import {icon} from './icons.js';
 import * as store from './store.js';
 import {ago,timecode,projectName,stageWorldName} from './format.js';
+import {mountHover} from './hover.js';
 const P=store.player;
 const params=new URLSearchParams(location.search);
 const host=document.getElementById('stageHost'),chrome=document.getElementById('stageChrome'),root=document.getElementById('app');
@@ -181,6 +182,8 @@ async function boot(){
     return;
   }
   root.append(nav,topbar,workspace);root.hidden=false;
+  // What is under the pointer on the living world, wherever a view shows the stage (DOM, never part of a recording).
+  mountHover({player:P,host,chrome});
   store.on(t=>{updateShell(t);if(t.has('notice'))showNotices();});
   updateShell(null);
   addEventListener('hashchange',render);

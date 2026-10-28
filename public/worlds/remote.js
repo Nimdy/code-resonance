@@ -23,6 +23,18 @@ function cleanStats(s,depth=0){
     else if(v===null)out[k]=null;else if(Array.isArray(v))out[k]=v.filter(x=>typeof x==='number').slice(0,64);else if(depth<1)out[k]=cleanStats(v,depth+1);}
   return out;
 }
+// What a pack's worker says is under a point (pick, peek): short text, counts and catalog-style facts, nothing else.
+const str=(x,n)=>typeof x==='string'?x.slice(0,n):'',count=x=>Number.isFinite(x)&&x>=0?Math.min(1e6,Math.round(x)):null;
+export function cleanPicked(r){
+  if(!r||typeof r!=='object')return null;const out={text:str(r.text,200),sub:str(r.sub,200)};
+  if(r.kind==='module'||r.kind==='subsystem')out.kind=r.kind;
+  for(const k of ['modules','symbols'])if(count(r[k])!==null)out[k]=count(r[k]);
+  if(r.states&&typeof r.states==='object'){out.states={};for(const s of ['draft','committed','validated','stressed'])if(count(r.states[s]))out.states[s]=count(r.states[s]);}
+  if(Array.isArray(r.agents))out.agents=r.agents.slice(0,3).filter(a=>a&&typeof a==='object').map(a=>({name:str(a.name,40),label:str(a.label,60),color:/^#[0-9a-f]{6}$/i.test(a.color)?a.color:null,working:a.working===true,ago:count(a.ago)}));
+  if(r.check&&count(r.check.ago)!==null)out.check={state:r.check.state==='stressed'?'stressed':'validated',ago:count(r.check.ago)};
+  if(r.edit&&count(r.edit.ago)!==null)out.edit={by:r.edit.by==='agent'?'agent':'person',ago:count(r.edit.ago)};
+  return out;
+}
 export async function createRemoteWorld(container,{pack,files,recipe,film=false,speed=1,labels='cinematic',quality=0,adaptive=true,epoch=null,timeout=30000}){
   const frame=document.createElement('iframe');
   frame.className='pack-frame';frame.title=`Visual pack: ${pack.name}`;
@@ -60,7 +72,7 @@ export async function createRemoteWorld(container,{pack,files,recipe,film=false,
       else if(bitmap){if(onFrame&&!failed)onFrame(bitmap);else bitmap.close();}
     }
     else if(m.type==='stats')last={stats:cleanStats(m.stats),labels:Array.isArray(m.labels)?m.labels.filter(x=>typeof x==='string').map(x=>x.slice(0,200)).slice(0,128):[]};
-    else if(m.type==='picked'){const w=waiting.get(m.id);if(w){waiting.delete(m.id);w.resolve(m.result&&typeof m.result==='object'?{text:String(m.result.text||'').slice(0,200),sub:String(m.result.sub||'').slice(0,200)}:null);}}
+    else if(m.type==='picked'){const w=waiting.get(m.id);if(w){waiting.delete(m.id);w.resolve(cleanPicked(m.result));}}
     else if(m.type==='error')stop(String(m.message||'error'),['context-lost','exception','flooding'].includes(m.kind)?m.kind:'exception');
   }
   window.addEventListener('message',onMessage);
@@ -81,6 +93,10 @@ export async function createRemoteWorld(container,{pack,files,recipe,film=false,
     once.set(type,m=>{clearTimeout(timer);resolve(m);});errorListeners.push(message=>{clearTimeout(timer);reject(new Error(message));});});
   const request=(message,limit)=>{const id=nextId++;return new Promise((resolve,reject)=>{waiting.set(id,{resolve,reject});inFlight.set(id,performance.now());transport.sent++;post({...message,id});
     setTimeout(()=>{if(waiting.delete(id)){inFlight.delete(id);reject(new Error(`Visual pack ${pack.id} did not answer within ${limit/1000} s`));}},limit);});};
+  // A question that is not a frame (an explorer click's pick, the hover's peek): answered in order, never counted as a
+  // frame in flight (it would hold back the next render and, unanswered as a frame, look like a hang to the watchdog).
+  const ask=(message,limit)=>{const id=nextId++;return new Promise((resolve,reject)=>{waiting.set(id,{resolve,reject});post({...message,id});
+    setTimeout(()=>{if(waiting.delete(id))reject(new Error(`Visual pack ${pack.id} did not answer within ${limit/1000} s`));},limit);});};
   function dispose(){
     if(disposed)return;post({type:'dispose'});disposed=true;clearInterval(watchdog);
     window.removeEventListener('message',onMessage);document.removeEventListener('visibilitychange',onVisibility);
@@ -109,7 +125,8 @@ export async function createRemoteWorld(container,{pack,files,recipe,film=false,
     async setRecipe(r){current=r;tell({type:'recipe',recipe:view.recipe(r)});},
     setLabels(mode){tell({type:'labels',mode});},
     setQuality(level,adapt){tell({type:'quality',level,adapt});},
-    pick(x,y){return request({type:'pick',x,y},5000).catch(()=>null);},
+    pick(x,y){return failed||disposed?Promise.resolve(null):ask({type:'pick',x,y},5000).catch(()=>null);},
+    peek(x,y){return failed||disposed?Promise.resolve(null):ask({type:'peek',x,y},2000).catch(()=>null);},
     // Live presentation: skipped (counted) when MAX_IN_FLIGHT frames are already outstanding. With a recording sink set
     // (record), each acknowledgement brings the composited bitmap to it.
     render(t,dt,{phase=0}={}){

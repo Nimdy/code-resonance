@@ -1448,7 +1448,7 @@ export function createFamily(ctx){
     if(s.groupId&&starOf(s.groupId))return sys.get(s.groupId).pos.clone();
     const w=worstSystem(s.fileIds);return w?w.pos.clone():new THREE.Vector3();}
   // ---- Words -------------------------------------------------------------------------------------------------------
-  const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+  const plural=(n,w)=>`${n} ${n===1?w:w.endsWith('y')?`${w.slice(0,-1)}ie`:w}${n===1?'':'s'}`;
   const groupName=id=>{const s=sys.get(id);return s?`${ctx.name(id)} · ${s.role}`:ctx.name(id);};
   const MILESTONE={'first-validation':'First validation','integration-validated':'Integration validated','recovery':'Recovery','refactor':'Refactor validated'};
   const milestoneWords=c=>(c.detail?.kinds||[]).map(x=>MILESTONE[x]||x).join(' · ');
