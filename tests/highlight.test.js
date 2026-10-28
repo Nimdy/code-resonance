@@ -65,6 +65,53 @@ test('GET /api/highlight shares the picker, 404s a missing project, and never na
   const quiet=await (await fetch(`${url}/api/highlight?id=${projectId}`)).json();
   assert.equal(quiet.from,null);assert.equal(quiet.score,null);
 });
+// Thirty hours of recording: a strong night at hour 1, a modest structure at hour 29.
+const HOUR=3_600_000;
+function thirtyHours({recent=true}={}){
+  const strong=CLUSTER.map(i=>({...i,id:`old:${i.id}`,ts:i.ts+HOUR}));
+  const late=recent?[I('agent.state',29*HOUR,{tier:0,detail:{provider:'claude-code'}}),I('agent.state',29*HOUR+5000,{tier:0,detail:{provider:'cursor'}}),
+    I('structure.created',29*HOUR+10000,{tier:2})]:[I('agent.state',29*HOUR,{tier:0,detail:{provider:'claude-code'}})];
+  return [{seq:0,start:T0,end:T0+2*HOUR,intents:strong},{seq:1,start:T0+2*HOUR,end:T0+28*HOUR,intents:[]},{seq:2,start:T0+28*HOUR,end:T0+30*HOUR,intents:late}];
+}
+test('Last night prefers the last 24 hours of the recording and falls back to the whole history only if nothing there scores',async()=>{
+  const recent=highlight.fromWindows(thirtyHours());
+  assert(recent.from>=T0+6*HOUR,'the window lies in the last 24 hours');
+  assert.deepEqual(recent.reasons,['providers>=2','structure.created']);
+  const whole=highlight.fromWindows(thirtyHours({recent:false}));
+  assert.deepEqual({from:whole.from-HOUR,to:whole.to-HOUR,speed:whole.speed,score:whole.score},{from:PINNED.from,to:PINNED.to,speed:PINNED.speed,score:PINNED.score});
+  // A recording of up to 24 hours is scored as one, exactly as before.
+  const day=[{seq:0,start:T0,end:T0+1_200_000,intents:CLUSTER}];
+  assert.deepEqual(highlight.fromWindows(day),highlight.pick(CLUSTER,T0,T0+1_200_000));
+  for(const windows of [thirtyHours(),thirtyHours({recent:false})]){
+    let start=Infinity,end=-Infinity;for(const w of windows){start=Math.min(start,w.start);end=Math.max(end,w.end);}
+    const asked=[];
+    const lazy=await highlight.lastNight({start,end,windowsSince:async since=>{asked.push(since);return windows.filter(w=>w.end>=since);}});
+    assert.deepEqual(lazy,highlight.fromWindows(windows));
+    assert.equal(asked[0],end-highlight.RECENT_MS);
+    assert.equal(asked.length,lazy.from>=T0+6*HOUR?1:2,'the whole history is read only for the fallback');
+  }
+});
+test('GET /api/highlight reads only the last 24 hours when they score, and agrees with the film\'s choice',async t=>{
+  const dir=tempDir(t,'cr-hl-day-');
+  const projectId=sha('highlight-day');
+  const pdir=path.join(dir,'projects',sha(projectId));
+  fs.mkdirSync(pdir,{recursive:true});
+  fs.writeFileSync(path.join(pdir,'id'),projectId);
+  const svc=await startService(t,{port:0,dataDir:dir,sortIntervalMs:600000});
+  const get=async()=>(await fetch(`http://127.0.0.1:${svc.port}/api/highlight?id=${projectId}`)).json();
+  const write=(windows,broken=false)=>fs.writeFileSync(path.join(pdir,'performance.jsonl'),windows.map((w,k)=>k===0&&broken?`{"seq":0,"start":${w.start},"end":${w.end},"intents":[BROKEN`:JSON.stringify(w)).join('\n')+'\n');
+  const film=windows=>highlight.publicView(projectId,highlight.fromWindows(windows));
+  write(thirtyHours());
+  assert.deepEqual(await get(),film(thirtyHours()));
+  // The oldest window cannot even be parsed: the answer is the same, because it was never read.
+  write(thirtyHours(),true);
+  const recent=await get();
+  assert.deepEqual(recent,film(thirtyHours()));assert.deepEqual(recent.reasons,['providers>=2','structure.created']);
+  write(thirtyHours({recent:false}));
+  const fallback=await get();
+  assert.deepEqual(fallback,film(thirtyHours({recent:false})));
+  assert.equal(fallback.score,PINNED.score);
+});
 test('GET /api/highlight on a project with no recording returns the empty shape',async t=>{
   const dir=tempDir(t,'cr-hl-empty-');
   const projectId=sha('highlight-empty');

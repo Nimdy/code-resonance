@@ -227,7 +227,7 @@ export default {mount(view,ctx){
     'validation.failed+recovered':'failure and recovery','providers>=2':'two agents','structure.created':'a new structure',
     'subsystem.connected':'subsystems joined','agent.collision':'a meeting of agents','milestone.achieved':'a milestone',
     'refactor.validated':'a refactor proved','repository.checkpoint':'a checkpoint'};
-  let nightSeq=0,nightCache=null,nightId='';
+  let nightCache=null,nightId='';
   function renderNight(pr,hl){
     if(!pr||isDemo(pr)||!hl||hl.from==null){night.hidden=true;night.replaceChildren();return;}
     const r=P.state.project===pr.id&&P.state.recipe?P.state.recipe:pr.recipe,titled=!!r?.title;
@@ -250,17 +250,25 @@ export default {mount(view,ctx){
         P.state.mode==='replay'?button({label:'Live',kind:'ghost',size:'sm',title:'Return the slot to the live world',onClick:()=>P.setMode('live'),attrs:fk('night-live')}):null,
         titled?copyable(`npm run film -- --project ${pr.id}`):button({label:'Set a public title to publish',kind:'outline',size:'sm',onClick:()=>navigate('visual'),attrs:fk('night-publish')}))]);
   }
+  // The receiver is asked at most once per NIGHT_MS per project, and again only once that project's recorded performance
+  // has grown (its frames); in between, the last answer (or none) is shown. A grown project waits out the rest.
+  const NIGHT_MS=30000,nights=new Map();let nightTimer=null;
+  const recorded=pr=>Number.isFinite(pr.frames)?pr.frames:pr.updatedAt||0;
   async function loadNight(){
-    const pr=S.project(),seq=++nightSeq;
+    const pr=S.project();clearTimeout(nightTimer);nightTimer=null;
     if(!pr||isDemo(pr)){nightCache=null;nightId='';night.hidden=true;night.replaceChildren();return;}
-    if(nightId===pr.id&&nightCache&&nightCache.from!=null){renderNight(pr,nightCache);return;}
-    try{
-      const doc=await S.get(`/api/highlight?id=${encodeURIComponent(pr.id)}`);
-      if(seq!==nightSeq)return;
-      nightId=pr.id;
-      if(doc&&doc.from!=null){nightCache=doc;renderNight(pr,doc);}
-      else{nightCache=null;renderNight(pr,null);}
-    }catch{if(seq!==nightSeq)return;nightCache=null;night.hidden=true;night.replaceChildren();}
+    const known=nights.get(pr.id),size=recorded(pr),now=Date.now();
+    if(known&&(known.size===size||now-known.at<NIGHT_MS)){
+      if(known.size!==size)nightTimer=setTimeout(()=>void loadNight(),NIGHT_MS-(now-known.at));
+      if(!known.pending){nightId=pr.id;nightCache=known.doc;renderNight(pr,known.doc);}
+      return;
+    }
+    const ask={at:now,size,doc:known?.doc??null,pending:true};nights.set(pr.id,ask);
+    try{const doc=await S.get(`/api/highlight?id=${encodeURIComponent(pr.id)}`);ask.doc=doc&&doc.from!=null?doc:null;}catch{}
+    ask.pending=false;
+    // Shown only while that project is still the one on Home.
+    const cur=S.project();if(cur?.id!==pr.id)return;
+    nightId=pr.id;nightCache=ask.doc;renderNight(cur,ask.doc);
   }
   // ---- Updates ---------------------------------------------------------------------------------------------------
   function layout(){
@@ -290,7 +298,7 @@ export default {mount(view,ctx){
   // Relative times ("2 min ago") and the 2-minute capture window age without any event arriving.
   const tick=setInterval(()=>{renderProject();renderRecent();},15000);
   return {unmount(){
-    for(const f of offs)f();clearInterval(tick);overlay.remove();
+    for(const f of offs)f();clearInterval(tick);clearTimeout(nightTimer);overlay.remove();
     if(P.state.mode==='replay')P.setMode('live');
     // Leaving Home for the Stage (rail, F, top bar) completes the guide's last step on this device.
     if(location.hash.startsWith('#/stage'))S.setUi({stageOpened:true});

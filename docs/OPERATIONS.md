@@ -87,7 +87,8 @@ Center, which also shows a paired browser this receiver's data directory.
 
 - **Record**, the **Audio** (WAV) and **Performance data** (JSON) exports and an Artist Studio **Export** (zip) are
   saved by the browser to its downloads folder. Code Resonance keeps no copy and no library.
-- **Home Last night** is a sped-up replay of a scored highlight window (default 4×; 16× when the window is long). It is
+- **Home Last night** is a sped-up replay of a scored highlight window (default 4×; 16× when the window is long),
+  chosen from the last 24 hours of the project's recording (the whole history only if nothing there scores). It is
   not a film and does not use Playwright.
 - **Films** (`npm run film`, a wrapper around `qualification/visual/film.js`) need a public title, always pass `--copy`
   (so `~/.code-resonance` is not changed), default to cinematic labels, and write

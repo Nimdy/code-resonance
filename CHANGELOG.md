@@ -26,6 +26,17 @@
   callouts (Biosphere, Stellar Forge, Machine Cathedral) and in Home's Last night cast, instead of its title-cased id
   (`external-agent`, a client's name passed with `--provider`). The Control Center's own lists still name the id.
   Visual packs receive a provider only as a catalog id (it was any lower-case slug).
+- **Highlights cannot stall the receiver:** the picker (`engine/highlight.js`, `GET /api/highlight`, `npm run film`)
+  scored every candidate window by scanning it; a failure recovered more than 24 minutes later made every intent of the
+  red period a candidate, so the cost grew with the square of the history, on the receiver's main thread (measured:
+  5.0 s for 50,000 intents with a 6.8-hour red period). It now scores the same candidates with one sliding pass per
+  kind: the same night takes 48 ms, a million intents 0.5 s, a million with 200 failures, a six-hour red period and
+  40,000 anchors about a second. The choice is unchanged: the tests compare it with the 0.7.1 picker on the existing
+  fixtures and 600 seeded random nights.
+- **Last night is the last day:** the highlight is chosen from the last 24 hours of the project's own recording
+  (measured from its last window), and from the whole history only if nothing there scores; the receiver then parses
+  only those windows. Home asks for it at most once per 30 s per project, and again only after the project's recorded
+  performance grew (it asked on every project update while there was none, and never refreshed one it had).
 
 ## 0.7.1 — 2026-10-28
 

@@ -643,19 +643,22 @@ function createService(options={}) {
         if(hit&&hit.key===key){response(res,200,hit.view);return;}
         // The file on disk is the source of truth: a test (or a rebuild) can replace it without the worker noticing.
         timelines.delete(id);
-        const windows=[];
-        if(st){
-          let after=-1;
-          for(;;){
-            const {entries,total}=await readTimeline(id,after,2000);
+        const index=st?await timelineIndex(id):[];
+        let start=Infinity,end=-Infinity;for(const x of index){if(x.start<start)start=x.start;if(x.end>end)end=x.end;}
+        // Last night reads the windows of the recording's last 24 hours first, and the whole history only when nothing
+        // there scores (engine/highlight.js, as npm run film decides from the whole file).
+        const windowsSince=async since=>{
+          const windows=[];const first=since>-Infinity?index.find(x=>x.end>=since):index[0];if(!first)return windows;
+          for(let after=first.seq-1;;){
+            const {entries}=await readTimeline(id,after,2000);
             if(!entries.length)break;
             // Graphs and cues are unused by the picker; a long session is large.
             for(const x of entries)windows.push({start:x.start,end:x.end,intents:x.intents});
             after=entries.at(-1).seq;
-            if(windows.length>=total)break;
           }
-        }
-        const view=highlight.publicView(id,highlight.fromWindows(windows));
+          return windows;
+        };
+        const view=highlight.publicView(id,await highlight.lastNight({start,end,windowsSince}));
         highlightCache.set(id,{key,view});
         response(res,200,view);return;
       }
