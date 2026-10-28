@@ -1,8 +1,8 @@
 // Connections: what is actually connected to this receiver, in plain words. Every state shown is something the receiver
 // observed and when (GET /api/status, the evidence documents of /api/evidence, GET /api/integrations); what cannot be
 // known is said to be unknown. VS Code owns its settings: this view shows the values the extension *reported* and how
-// to change them in VS Code, never a control that looks like it changes VS Code. Claude Code hooks are written only after
-// the exact change to the file was shown and accepted, and only if the file is still the one that was shown.
+// to change them in VS Code, never a control that looks like it changes VS Code. Claude Code and Cursor hooks are written
+// only after the exact change to the file was shown and accepted, and only if the file is still the one that was shown.
 // Project ids never appear as text (they look like secrets and mean nothing to people): names or short labels only.
 import {h,button,segmented,section,disclosure,pill,callout,copyable,toast,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
@@ -117,6 +117,9 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // What gets installed (the events and the command) belongs with the form that installs it.
   const claudeInfo=h('div',{class:'conn-fixed conn-claude-info'});
   const claudeSetup=h('div',{class:'conn-guide conn-claude-setup'});
+  const cursorObserved=h('div',{class:'conn-observed'});
+  const cursorInfo=h('div',{class:'conn-fixed conn-cursor-info'});
+  const cursorSetup=h('div',{class:'conn-guide conn-cursor-setup'});
   const agentsObserved=h('div',{class:'conn-observed'});
   const agentsFacts=h('div',{class:'conn-fixed conn-agents-facts'});
   const agentsInfo=h('div',{class:'conn-agents-info'});
@@ -133,9 +136,10 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // A guidance panel: a title, then steps or commands to copy.
   const guidePanel=(ic,title,...body)=>h('div',{class:'conn-guide'},h('div',{class:'conn-guide-head'},icon(ic),h('strong',{text:title})),...body);
   const claude=claudeFlow();
+  const cursor=cursorFlow();
   view.append(h('div',{class:'page ws-connections'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Capture and sources'}),h('h1',{class:'title-l',text:'Connections'}),
-      h('p',{class:'muted measure',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and Claude Code hooks change only after you review and write them.'})),
+      h('p',{class:'muted measure',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and Claude Code or Cursor hooks change only after you review and write them.'})),
       h('div',{class:'actions'},refreshBtn)),
     strip,
     sec('receiver','Local receiver','The program on this computer that receives, analyses and stores captures',pair(receiverBody,troubleshooting())),
@@ -150,6 +154,9 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     sec('claude','Claude Code','Lifecycle hooks, installed per project with your review',
       h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed activity, per project',claudeObserved),col('fixed','What the hooks send',claudeInfo)),
         col('guide','Add or remove the hooks',h('div',{class:'conn-guide-stack'},claude.el,claudeSetup))),claude.result),
+    sec('cursor','Cursor','Observe-only after-hooks, installed per project with your review',
+      h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed activity, per project',cursorObserved),col('fixed','What the hooks send',cursorInfo)),
+        col('guide','Add or remove the hooks',h('div',{class:'conn-guide-stack'},cursor.el,cursorSetup))),cursor.result),
     sec('agents','Other agents','Any tool can send events through the generic endpoint',
       h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed providers',agentsObserved),col('fixed','What an agent’s events carry',agentsFacts)),
         col('guide','Send events',agentsInfo))),
@@ -383,12 +390,92 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       disclosure({summary:'Or use the command line'},h('p',{class:'faint small',text:'In the Code Resonance folder. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
     return {el,result,updateCli};
   }
+  // ---- Cursor -----------------------------------------------------------------------------------------------------
+  function renderCursor(){
+    const c=integ?.cursor,now=Date.now();
+    if(!c){rebuild(cursorObserved,h('p',{class:'faint small',text:integError?`Not available (${integError}).`:'Loading…'}));rebuild(cursorInfo);rebuild(cursorSetup);return;}
+    rebuild(cursorObserved,
+      c.projects.length?h('div',{class:'conn-list',id:'connCursorProjects'},...c.projects.slice().sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(p=>h('div',{class:'conn-list-row',dataset:{project:p.projectId}},
+          h('span',{class:['dot',p.lastAt&&now-p.lastAt<RUNNING_MS?'ok':'']}),h('span',{class:'grow ellipsis',text:projectName({id:p.projectId,name:p.name})}),
+          h('span',{class:'faint small num',text:`${count(p.events,'event')} · ${ago(p.lastAt,now)}`}))))
+        :h('p',{class:'muted small',id:'connCursorProjects',text:'No Cursor events observed.'}));
+    if(cursorInfo.firstChild)return;
+    cursorInfo.append(
+      h('div',{class:'conn-capture'},
+        h('div',{},h('div',{class:'conn-capture-head'},icon('check'),h('strong',{text:'Sent to this receiver'})),h('ul',{class:'conn-bullets'},...c.captured.map(x=>h('li',{text:x})))),
+        h('div',{},h('div',{class:'conn-capture-head'},icon('lock'),h('strong',{text:'Never sent'})),h('ul',{class:'conn-bullets'},...c.excluded.map(x=>h('li',{text:x}))))),
+      h('p',{class:'faint small',text:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Prove these hooks only in a trusted workspace.'}));
+    cursorSetup.append(h('div',{class:'conn-guide-head'},icon('sliders'),h('strong',{text:'What gets installed'})),
+      h('div',{class:'conn-hook-events'},h('span',{class:'faint small',text:'Hook events used'}),h('div',{class:'conn-chips'},...c.events.map(e=>h('code',{text:e})))),
+      ...(c.adapter?[h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Each hook runs'}),h('code',{class:'conn-adapter conn-cmd'},...words(`node ${JSON.stringify(c.adapter)}`,true)))]:[]));
+  }
+  function cursorFlow(){
+    let plan=null;
+    const input=h('input',{class:'input mono',id:'connCursorPath',type:'text',spellcheck:'false',autocomplete:'off',placeholder:'/home/you/projects/my-app','aria-describedby':'connCursorPathHelp'});
+    if(S.state.ui.connectionsCursorPath!==undefined)S.setUi({connectionsCursorPath:undefined});
+    const err=h('div',{class:'conn-error',id:'connCursorPathError',role:'alert'});
+    const action=segmented({label:'Change to make',id:'connCursorAction',options:[{value:'install',label:'Add the hooks'},{value:'remove',label:'Remove the hooks'}],value:'install',onChange:()=>reset()});
+    const show=button({label:'Show the change',kind:'primary',id:'connCursorShow',type:'submit'});
+    const cli=command('');
+    const result=h('div',{class:'conn-plan',id:'connCursorPlan','aria-live':'polite'});
+    const form=h('form',{class:'conn-form',noValidate:true,onSubmit:e=>{e.preventDefault();void busyShow();}},
+      h('label',{class:'field-label',for:'connCursorPath',text:'Project folder (absolute path)'}),
+      input,err,h('div',{class:'conn-form-row'},action,show),
+      h('p',{class:'faint small',id:'connCursorPathHelp',text:'Only <folder>/.cursor/hooks.json changes (personal, not committed), and in it only this adapter’s hook entries. Everything else in the file stays as it is. Cursor runs project hooks only in a trusted workspace.'}));
+    input.addEventListener('input',()=>{err.replaceChildren();input.removeAttribute('aria-invalid');updateCli();if(plan)reset();});
+    function updateCli(){const t=integ?.cursor?.command||'npm run hooks:cursor -- /path/to/project',p=input.value.trim();cli.set(p?t.replace('/path/to/project',quote(p)):t);}
+    function reset(){plan=null;result.replaceChildren();}
+    function busyShow(){const p=planFor(input.value.trim(),action.value);show.disabled=true;show.setAttribute('aria-busy','true');
+      return p.finally(()=>{show.disabled=false;show.removeAttribute('aria-busy');});}
+    async function planFor(projectPath,act){
+      err.replaceChildren();input.removeAttribute('aria-invalid');
+      if(!projectPath){fieldError('Enter the folder Cursor runs in.');return;}
+      if(!/^(\/|[A-Za-z]:[\\/]|\\\\)/.test(projectPath)){fieldError('Enter an absolute path, for example /home/you/projects/my-app or C:\\Users\\you\\my-app.');return;}
+      try{plan={...await P.api.post('/api/integrations/cursor/plan',{projectPath,action:act}),projectPath,action:act};renderPlan();}
+      catch(e){plan=null;result.replaceChildren();
+        if(e.code==='invalid'&&e.data?.key==='projectPath')fieldError(sentence(e.message.replace(/^projectPath\b/,'This folder')));
+        else result.append(callout({kind:'danger',icon:'warn',title:'The change could not be prepared',body:sentence(e.message)}));}
+    }
+    function fieldError(m){input.setAttribute('aria-invalid','true');err.replaceChildren(icon('warn'),h('span',{text:m}));input.focus();}
+    function renderPlan(){
+      const ops=lineDiff(plan.current,plan.next),added=ops.filter(o=>o.t==='+').length,removed=ops.filter(o=>o.t==='-').length;
+      const head=h('div',{class:'conn-plan-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:plan.exists?'File':'New file'}),h('code',{class:'conn-file',id:'connCursorFile',text:plan.file})),
+        plan.changed?h('span',{class:'num small'},h('span',{class:'ok',text:`+${added}`}),' ',h('span',{class:'danger',text:`−${removed}`})):null);
+      if(!plan.changed){result.replaceChildren(head,callout({icon:'check',body:plan.action==='install'?'The Code Resonance hooks are already in this file: nothing to add.':'This file has no Code Resonance hooks: nothing to remove.'}));return;}
+      const write=button({label:'Write this change',kind:'primary',id:'connCursorWrite',onClick:()=>apply()});
+      const cancel=button({label:'Cancel',kind:'ghost',onClick:()=>{reset();input.focus();}});
+      rebuild(result,head,
+        plan.current&&/\r\n/.test(plan.current)?callout({kind:'warn',icon:'warn',body:'The file uses Windows line endings; it will be written with Unix line endings, so every line changes.'}):null,
+        diffView(ops,`Change to ${plan.file}: ${added} lines added, ${removed} removed`),
+        disclosure({summary:'The whole file after the change'},h('pre',{class:'conn-pre'},h('code',{text:plan.next}))),
+        h('div',{class:'conn-plan-actions'},write,cancel,h('span',{class:'faint small',text:'Written only if the file is still exactly what is shown.'})));
+      requestAnimationFrame(()=>write.focus({preventScroll:false}));
+    }
+    async function apply(){
+      const p=plan;if(!p)return;
+      try{const r=await P.api.post('/api/integrations/cursor/apply',{projectPath:p.projectPath,action:p.action,expectHash:p.currentHash});plan=null;
+        result.replaceChildren(callout({kind:'accent',icon:'check',title:r.written?(p.action==='install'?'Hooks added':'Hooks removed'):'Nothing was written',
+          body:r.written?h('div',{},h('div',{},'Written to ',h('code',{text:r.file}),'.'),h('div',{text:p.action==='install'?'Start a new Cursor session in that trusted workspace: its events then appear under Observed activity.':'Cursor sessions started in that folder from now on no longer send events here.'}))
+            :'The file already matched; it was left untouched.'}));
+        result.querySelector('.callout')?.setAttribute('id','connCursorResult');
+      }catch(e){
+        if(e.code==='changed'){const again=button({label:'Show the change again',kind:'primary',id:'connCursorAgain',onClick:()=>planFor(p.projectPath,p.action)});
+          result.replaceChildren(callout({kind:'warn',icon:'warn',title:'The file changed meanwhile',body:'Nothing was written. Review the change against the file as it is now.',actions:[again]}));plan=null;again.focus();}
+        else toast(`The change was not written: ${sentence(e.message)}`,'error');
+      }
+    }
+    updateCli();
+    const el=h('div',{class:'conn-guide conn-flow'},h('div',{class:'conn-flow-head'},h('div',{class:'conn-guide-head'},icon('terminal'),h('strong',{text:'Install or remove the hooks'})),h('span',{class:'faint small',text:'Shows the exact change first; writes nothing until you accept it.'})),
+      form,
+      disclosure({summary:'Or use the command line'},h('p',{class:'faint small',text:'In the Code Resonance folder. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
+    return {el,result,updateCli};
+  }
   const sentence=m=>{const s=String(m||'Unknown error');return s.charAt(0).toUpperCase()+s.slice(1)+(/[.!?]$/.test(s)?'':'.');};
   // ---- Other agents -----------------------------------------------------------------------------------------------
   function providers(){
     const out=new Map();
     for(const p of S.state.projects){const ev=evidenceOf(p.id);if(!ev||ev.building)continue;
-      for(const [name,a] of Object.entries(ev.agents||{})){if(name==='claude-code')continue;
+      for(const [name,a] of Object.entries(ev.agents||{})){if(name==='claude-code'||name==='cursor')continue;
         const o=out.get(name)||{name,events:0,lastAt:0,projects:[],demo:false};o.events+=a.events;o.lastAt=Math.max(o.lastAt,a.lastAt||0);o.projects.push(projectName(p));
         o.demo=o.demo||ev.demonstration||a.source==='demonstration';out.set(name,o);}}
     return [...out.values()].sort((a,b)=>b.lastAt-a.lastAt);
@@ -433,7 +520,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const real=S.state.projects.filter(p=>{const ev=evidenceOf(p.id);return !(ev?.demonstration||p.evidence?.demonstration);});
     const states=real.map(p=>editorState(evidenceOf(p.id),now).key);
     const running=states.filter(k=>k==='running').length,quiet=states.filter(k=>k==='quiet').length,seen=real.some(p=>evidenceOf(p.id)?.editor?.capture?.state);
-    const cl=(integ?.claude?.projects||[]),clLast=Math.max(0,...cl.map(p=>p.lastAt||0)),prov=providers().filter(o=>!o.demo),provLast=Math.max(0,...prov.map(o=>o.lastAt||0));
+    const cl=(integ?.claude?.projects||[]),clLast=Math.max(0,...cl.map(p=>p.lastAt||0)),cu=(integ?.cursor?.projects||[]),cuLast=Math.max(0,...cu.map(p=>p.lastAt||0)),prov=providers().filter(o=>!o.demo),provLast=Math.max(0,...prov.map(o=>o.lastAt||0));
     const seg=(id,label,ic,state,line,sub)=>h('button',{type:'button',class:['conn-seg',state],dataset:{key:`seg:${id}`,seg:id},onClick:()=>jump(id)},
       h('span',{class:'conn-seg-label'},icon(ic),h('span',{class:'eyebrow',text:label})),h('span',{class:'conn-seg-line'},h('span',{class:['dot',state==='on'?'ok':state==='warn'?'warn':state==='off-danger'?'danger':'']}),h('strong',{text:line})),
       h('span',{class:'faint tiny ellipsis',text:sub}));
@@ -442,6 +529,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       seg('vscode','VS Code','code',running?'on':quiet?'warn':'idle',running?`${count(running,'capture')} running`:quiet?'Started, but quiet':seen?'No capture running':'No capture observed',
         `${count(real.length,'project')}${quiet&&running?` · ${quiet} quiet`:''}`),
       seg('claude','Claude Code','terminal',clLast&&now-clLast<RUNNING_MS?'on':'idle',cl.length?`Events ${ago(clLast,now)}`:'No events observed',cl.length?`in ${count(cl.length,'project')}`:'hooks not seen yet'),
+      seg('cursor','Cursor','terminal',cuLast&&now-cuLast<RUNNING_MS?'on':'idle',cu.length?`Events ${ago(cuLast,now)}`:'No events observed',cu.length?`in ${count(cu.length,'project')}`:'hooks not seen yet'),
       seg('agents','Other agents','agent',provLast&&now-provLast<RUNNING_MS?'on':'idle',prov.length?count(prov.length,'provider'):'No events observed',prov.length?`last ${ago(provLast,now)}`:'generic endpoint ready'));
   }
   function jump(id){const s=document.getElementById(`conn-${id}`);if(!s)return;s.scrollIntoView({block:'start',behavior:reducedMotion()?'auto':'smooth'});heads[id]?.focus({preventScroll:true});}
@@ -450,7 +538,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     // With the capability the response also names the adapter's path (shown as the hook command).
     try{integ=await P.api.request('GET','/api/integrations');integError=null;}
     catch{try{integ=await S.get('/api/integrations');integError=null;}catch(e){integError=e.message;}}
-    claude.updateCli();renderVsGuide();renderClaude();renderAgents();renderEditors();renderStrip();
+    claude.updateCli();cursor.updateCli();renderVsGuide();renderClaude();renderCursor();renderAgents();renderEditors();renderStrip();
   }
   const pending=new Map();
   function later(key,fn,ms){if(pending.has(key))return;const t=setTimeout(()=>{pending.delete(key);timers.delete(t);fn();},ms);pending.set(key,t);timers.add(t);}
@@ -473,8 +561,8 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   }));
   const statusTimer=setInterval(()=>{if(!document.hidden)void loadStatus();},STATUS_MS);
   // Relative times ("2 min ago") and the running/quiet boundary move with the clock, not only with new data.
-  const tick=setInterval(()=>{if(document.hidden)return;renderReceiver();renderEditors();renderClaude();renderAgents();renderStrip();},TICK_MS);
-  renderReceiver();renderEditors();renderVsGuide();renderClaude();renderAgents();renderStrip();
+  const tick=setInterval(()=>{if(document.hidden)return;renderReceiver();renderEditors();renderClaude();renderCursor();renderAgents();renderStrip();},TICK_MS);
+  renderReceiver();renderEditors();renderVsGuide();renderClaude();renderCursor();renderAgents();renderStrip();
   void loadStatus();void loadIntegrations();syncEvidence();
   return {
     route(next){focus=next?.[0]||'';renderEditors();},

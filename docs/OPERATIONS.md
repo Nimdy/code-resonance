@@ -34,7 +34,8 @@ procedure to check it. The measurements behind each mark are in [QUALIFICATION.m
 - **Listening and viewing:** the owner has reviewed the application, its worlds, the digital-life films and the
   creative direction. No one else has, and whether the music stays pleasant through hours of work is not established.
 - **Interpretation:** TypeScript and JavaScript are analysed in depth, Python and manifests partly, other languages
-  at file level. AI agents other than Claude Code can report only through `scripts/event.js`.
+  at file level. AI agents other than Claude Code and Cursor can report only through `scripts/event.js`.
+- **Cursor hooks:** prove only in a trusted workspace; CI does not run Cursor.
 - **Labels at the edge:** a label that follows a moving object can be cut by the frame's edge, on screen and in
   recordings.
 - **Three catalogued values have no visible effect on one world each:** *Reactivity* (`music.reactivity`) on Machine
@@ -69,7 +70,7 @@ Everything is on the computer that runs the receiver, in its data directory: `~/
 
 The VS Code extension always reads the token from `~/.code-resonance/receiver-auth.json`, so a receiver started with
 another data directory receives nothing from it. Another directory suits the demonstration, tests and the qualification
-(`RESONANCE_DATA` applies to `npm run demo`, `doctor`, `pair`, `scripts/pack.js` and the Claude Code hooks too).
+(`RESONANCE_DATA` applies to `npm run demo`, `doctor`, `pair`, `scripts/pack.js` and the Claude Code and Cursor hooks too).
 
 Outside it: the VS Code extension's outbox (events waiting for the receiver) in VS Code's global storage
 (`…/globalStorage/zerobandwidth.code-resonance/outbox`); each browser keeps its pairing key, the active project and a

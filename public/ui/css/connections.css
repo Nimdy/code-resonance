@@ -37,7 +37,7 @@
 .ws-connections .conn-col:has(>.conn-fixed:empty){display:none}
 /* Fixed facts (policy): a solid quiet surface, neither evidence nor instructions */
 .ws-connections .conn-fixed{container:conn-fixed/inline-size;display:grid;gap:14px;align-content:start;padding:16px 18px;border-radius:var(--r-3);background:var(--bg-2);border:1px solid var(--line);min-width:0}
-.ws-connections .conn-fixed:empty,.ws-connections .conn-claude-setup:empty{display:none}
+.ws-connections .conn-fixed:empty,.ws-connections .conn-claude-setup:empty,.ws-connections .conn-cursor-setup:empty{display:none}
 .ws-connections .conn-fixed>p{max-width:var(--measure);line-height:1.5}
 .ws-connections .conn-adapter{justify-self:start;max-width:100%}
 .ws-connections .conn-col{display:grid;gap:10px;align-content:start;min-width:0}

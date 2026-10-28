@@ -22,7 +22,7 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - The receiver binds to loopback by default and refuses other interfaces unless `RESONANCE_ALLOW_REMOTE=1`. Requests need a localhost `Host` header; cross-origin requests are refused (DNS-rebinding protection).
 - Ingestion (`/v1/*`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time.
 - **Administrative changes** (settings, project preferences, presets, recipes, Artist Studio compositions, pack
-  import/install/approval/removal, the Claude Code hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
+  import/install/approval/removal, the Claude Code and Cursor hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
   request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
   whatever headers it forges), with the page's own Origin and fetch metadata, that presents the receiver's **pairing
   key** (also in `receiver-auth.json`, so only your account can read it). A browser receives the key once, in the
@@ -47,12 +47,17 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - **Claude Code hooks from the Control Center** write only `<project>/.claude/settings.local.json`, only the adapter's
   hook entries, after showing you the exact before/after, and only if the file did not change meanwhile; links
   (`.claude` or the file itself), network paths and folders inside the data directory are refused.
+- **Cursor hooks from the Control Center** write only `<project>/.cursor/hooks.json`, only the adapter's observe-only
+  after-hook entries, after the same review; links (`.cursor` or the file itself), network paths and folders inside
+  the data directory are refused. Prove them only in a **trusted workspace**. The adapter never persists edit hunks
+  (`old_string` / `new_string`), command lines or command output.
 - **Capture evidence** (Connections) is derived from the journal: session times, the extension's *reported* capture
   settings (values only, no paths), agent providers. VS Code settings are never changed by the receiver.
 - Read endpoints return only derived data: hashed module, folder-group and symbol ids, symbol types, cue types, counts, controls and plot coordinates. Since interpretation v5 the ids are salted with a per-project secret kept in the receiver's data (`projects/<hash>/salt`, never published), so an exported or displayed id cannot be matched against a guessed path such as `src/index.ts`. Tests check that typed text, file paths and secrets planted in source never appear in any public endpoint or in the page.
 - Paths with traversal, absolute paths, excluded directories (`node_modules`, `.git`, `dist`, …) and secret-like names (`.env*`, keys, credentials, `*.pem`, …) are rejected by both extension and receiver, which share one rule set. Dot-paths are excluded unless `resonance.includeHidden` is on. Filtering is not proof that content is clean: **do not capture repositories you have not reviewed.**
 - HTTP responses send `no-store` and `nosniff`; the player uses a self-only CSP and no CDNs.
 - The Claude Code adapter never writes to stdout and always exits 0, so it cannot alter Claude's decisions. It is installed per project in `.claude/settings.local.json`, which is not committed.
+- The Cursor adapter is observe-only: after-hooks only, never writes to stdout and always exits 0, so it cannot deny, block or alter Cursor. It is installed per project in `.cursor/hooks.json`, which is not committed. Cursor runs project hooks only in a trusted workspace.
 - No analytics, telemetry, accounts, cloud APIs or remote model calls.
 - **Visual packs.** Declarative packs are validated data. Packs with code (GLSL, JavaScript) are installed unapproved, run only after you approve their exact files (approval bound to a content digest), are served to the player as inert text, and execute only in a dedicated worker inside an isolated frame (`sandbox="allow-scripts"`, opaque origin, `connect-src 'none'`, no frames or popups; the worker has no DOM, cannot navigate and has no WebRTC) fed with a whitelisted, privacy-safe performance view. Frames are acknowledged and bounded; a pack that throws, stops answering, is far too slow, loses its GPU context, floods messages, navigates, is revoked or whose files change is stopped. Browsers cannot fully sandbox GPU shaders (hangs, driver crashes, timing side channels), and an approved pack can still waste CPU, memory or GPU time until it is stopped: approve only packs you trust. Details: [docs/packs/security.md](docs/packs/security.md).
 - **Artist Studio compositions** are data, never evaluated: every save, import and recipe that carries one is validated
