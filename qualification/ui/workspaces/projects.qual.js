@@ -100,7 +100,7 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     // Agents and validation outcomes from the projection.
     const agentsText=await page.textContent('.proj-agents-panel');
     check('header: no stray text among the actions',!(await page.textContent('.proj-detail-head')).includes('null'));
-    check('agents: providers observed through hooks, with no claim about reasoning',agentsText.includes('Claude Code')&&agentsText.includes('never sees an agent’s hidden reasoning')&&agentsText.includes(`${model.agents.length} agent sessions`));
+    check('agents: providers observed through hooks, with no claim about reasoning',agentsText.includes('Claude')&&!agentsText.includes('Claude Code')&&agentsText.includes('never sees an agent’s hidden reasoning')&&agentsText.includes(`${model.agents.length} agent sessions`));
     const cues=model.timeline.filter(c=>/^(validation|milestone)\./.test(c.type)&&(c.type!=='validation.diagnostics'||c.detail?.errors||c.detail?.warnings));
     check('validation outcomes: the last ones from the projection, newest first',(await page.$$('.proj-outcomes .list-row')).length===Math.min(10,cues.length),`${cues.length} cues`);
     await shot(page,'detail-1440x900');
