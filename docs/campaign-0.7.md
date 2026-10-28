@@ -80,8 +80,9 @@ npm run film -- --project <id>
 ```
 
 That always `--copy`s the data directory (so `~/.code-resonance` is not changed), picks the same window Home plays,
-defaults to cinematic labels, and writes `qualification/results/films/last-night.webm` (never commit it). Prefer
-`--gpu amd` on the development machine. `--allow-untitled` exists for private checks; a README hero needs a title.
+defaults to cinematic labels, and writes `qualification/results/films/last-night.webm` (never commit it). Uses the GPU
+when one is present (`--gpu nvidia` / `--gpu amd` pins an adapter). `--allow-untitled` exists for private checks; a
+README hero needs a title.
 
 **Record** is live (what the stage shows now). **Last night** is a replay of a scored highlight. A **film** is the
 publish object: the same highlight, frame by frame. [FIRST-RUN.md](FIRST-RUN.md#last-night),
@@ -89,7 +90,7 @@ publish object: the same highlight, frame by frame. [FIRST-RUN.md](FIRST-RUN.md#
 
 ## 5. A README hero from that night
 
-Done as a 70-second CAST session of Pulse, public title set, AMD film, cinematic labels. The README hero is
+Done as a 70-second CAST session of Pulse, public title set, GPU film, cinematic labels. The README hero is
 `docs/media/preview-cast.webp` → `docs/media/code-resonance-cast.mp4`, with collision / Claude / Recovery stills.
 Privacy floor checked on stills and the title card: catalog names, no path, prompt or folder. Claude was a live CLI
 session; Cursor and Codex arrived through their observe-only adapters in the same wall-clock window.

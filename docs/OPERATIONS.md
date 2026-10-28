@@ -15,7 +15,7 @@ the data formats, the score, the Visual Recipe generator, the interpretation (8)
 
 | Environment | Receiver, tests | Extension in VS Code | Control Center, worlds | Recording | OBS |
 |---|---|---|---|---|---|
-| Linux / WSL2 (Ubuntu 24.04), AMD integrated GPU through WSL2 | ✓ | ✓ (VS Code 1.143, Xvfb) | ✓ (flagship worlds at 1920×1080: about 42–58 fps at Auto quality) | ✓ 720p at 30 fps, qualified with the worlds of PR #6; since then checked as working (picture and sound). 1080p not qualified for the built-in worlds | not run |
+| Linux / WSL2 (Ubuntu 24.04), hardware GPU | ✓ | ✓ (VS Code 1.143, Xvfb) | ✓ (flagship worlds at 1920×1080: about 42–58 fps at Auto quality) | ✓ 720p at 30 fps, qualified with the worlds of PR #6; since then checked as working (picture and sound). 1080p not qualified for the built-in worlds | not run |
 | Linux, software rendering (GitHub's runners) | ✓ | ✓ | functional; the built-in worlds are slow | functional only, at the stage's size | ✓ OBS 32.2, no GPU |
 | Windows (GitHub's runners, no GPU) | ✓ | ✓ (VS Code 1.143.1) | functional (the Stage in Chromium) | functional only | not run |
 | Windows or macOS desktop with a GPU | not tested | not tested | not tested | not tested | not tested |
@@ -92,8 +92,9 @@ Center, which also shows a paired browser this receiver's data directory.
 - **Films** (`npm run film`, a wrapper around `qualification/visual/film.js`) need a public title, always pass `--copy`
   (so `~/.code-resonance` is not changed), default to cinematic labels, and write
   `qualification/results/films/last-night.webm` unless `--out` says otherwise (never committed), each with the recipe it
-  used next to it. Prefer `--gpu amd` on the development machine. Direct `qualification/visual/film.js` still defaults
-  to `qualification/results/visual/`. First time: `cd qualification && npm ci`.
+  used next to it. Uses the GPU when one is present (`--gpu nvidia` / `--gpu amd` pins an adapter; `--gpu off` is
+  software). Direct `qualification/visual/film.js` still defaults to `qualification/results/visual/`. First time:
+  `cd qualification && npm ci`.
 - **Record** is live (what the stage shows now, held in the browser's memory). If you run an overnight CAST session,
   capture lives in the journal; use OBS if you want a live picture of the stage for hours. Last night and `npm run film`
   read the recorded performance, not a WebM from Record.

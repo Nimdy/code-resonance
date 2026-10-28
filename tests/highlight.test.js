@@ -118,20 +118,39 @@ test('film wrapper passes --gpu amd when the probe says so, and omits it for --g
   await film.main(['--data',dir,'--project',projectId,'--gpu','off'],{...tools(calls,[]),probe:()=>true});
   assert(!calls[0].args.includes('--gpu'));
 });
-test('film wrapper does not treat /dev/dri alone as AMD; amdgpu does',async t=>{
+test('film wrapper pins nvidia, auto, and a bare --gpu; /dev/dri alone is not a GPU',async t=>{
   const {dir,projectId}=plantFilm(t,{title:'Night Build'});
   const wrap=(extra)=>({
     existsSync(p){if(extra.existsSync){const v=extra.existsSync(p);if(v!==undefined)return v;}return fs.existsSync(p);},
     readdirSync(p,opts){if(extra.readdirSync){const v=extra.readdirSync(p,opts);if(v!==undefined)return v;}return fs.readdirSync(p,opts);},
     readFileSync:(...a)=>fs.readFileSync(...a)
   });
-  const run=async(fsApi,calls)=>film.main(['--data',dir,'--project',projectId],{
+  const run=async(argv,fsApi,calls)=>film.main(['--data',dir,'--project',projectId,...argv],{
     exists:p=>/playwright-core$|ffmpeg-static$/.test(p),fs:fsApi,spawn:(cmd,args)=>{calls.push(args);return 0;},log(){},err(){}});
+  const none=wrap({
+    existsSync(p){if(p==='/dev/dxg'||p==='/sys/module/amdgpu'||p==='/sys/module/nvidia')return false;},
+    readdirSync(p){if(p==='/sys/class/drm')return [];}
+  });
+  const nvidia=[];
+  await run([],wrap({existsSync:p=>p==='/sys/module/nvidia'?true:p==='/dev/dxg'?false:p==='/sys/module/amdgpu'?false:undefined}),nvidia);
+  assert.equal(nvidia[0][nvidia[0].indexOf('--gpu')+1],'nvidia');
+  const dxg=[];
+  await run([],wrap({existsSync:p=>p==='/dev/dxg'?true:p==='/sys/module/amdgpu'?false:p==='/sys/module/nvidia'?false:/libcuda|libnvidia-ml/.test(p)?false:undefined}),dxg);
+  assert.equal(dxg[0][dxg[0].indexOf('--gpu')+1],'auto');
+  const dxgCuda=[];
+  await run([],wrap({existsSync:p=>p==='/dev/dxg'?true:p==='/usr/lib/wsl/lib/libcuda.so.1'?true:p==='/sys/module/amdgpu'?false:p==='/sys/module/nvidia'?false:undefined}),dxgCuda);
+  assert.equal(dxgCuda[0][dxgCuda[0].indexOf('--gpu')+1],'nvidia');
+  const pin=[];
+  await run(['--gpu','nvidia'],none,pin);
+  assert.equal(pin[0][pin[0].indexOf('--gpu')+1],'nvidia');
+  const bare=[];
+  await run(['--gpu'],none,bare);
+  assert.equal(bare[0][bare[0].indexOf('--gpu')+1],'auto');
   const dri=[];
-  await run(wrap({existsSync:p=>p==='/dev/dri'?true:p==='/sys/module/amdgpu'?false:undefined,readdirSync:p=>p==='/sys/class/drm'?[]:undefined}),dri);
+  await run([],wrap({existsSync:p=>p==='/dev/dri'?true:p==='/sys/module/amdgpu'?false:p==='/dev/dxg'?false:p==='/sys/module/nvidia'?false:undefined,readdirSync:p=>p==='/sys/class/drm'?[]:undefined}),dri);
   assert(!dri[0].includes('--gpu'));
   const amd=[];
-  await run(wrap({existsSync:p=>p==='/sys/module/amdgpu'?true:p==='/dev/dri'?false:undefined}),amd);
+  await run([],wrap({existsSync:p=>p==='/sys/module/amdgpu'?true:p==='/dev/dxg'?false:undefined}),amd);
   assert.equal(amd[0][amd[0].indexOf('--gpu')+1],'amd');
 });
 test('Home play does not require Playwright; product stays dependency-free; film script is wired',()=>{

@@ -6,7 +6,7 @@
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
 //        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
 //        [--note "text shown on every frame"] [--pack <dir> (install and approve a visual pack in --data first)]
-//        [--look <pack id> (apply a declarative or shader pack)] [--gpu amd (render on the AMD integrated GPU, never NVIDIA)]
+//        [--look <pack id> (apply a declarative or shader pack)] [--gpu auto|amd|nvidia (hardware GPU; omit for SwiftShader)]
 //        [--tune '{"life.enabled":false}' (tuned genome values, as the Visual Studio applies them)]
 //        [--copy (render from a temporary copy of --data: the data directory's recipes are never changed)]
 //        [--music '{"mood":.7,"space":.8,"mix":{"perc":0}}' (the composed score's performance profile; absent = as composed)]
@@ -45,9 +45,14 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   if(arg('look')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'pack',pack:arg('look')}});if(!r.ok)throw new Error(`look: ${await r.text()}`);}
   if(arg('family')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'family',family:arg('family')}});if(!r.ok)throw new Error(`family: ${await r.text()}`);}
   if(arg('tune')){const r=await adminPost(svc,`/api/recipe?id=${arg('project')}`,{action:{type:'tune',values:JSON.parse(arg('tune'))}});if(!r.ok)throw new Error(`tune: ${await r.text()}`);}
-  const browser=await launch(arg('gpu',null));
+  const gpu=arg('gpu',null);
+  const browser=await launch(gpu);
   const renderer=await rendererOf(browser);console.log(`renderer ${renderer}`);
-  if(arg('gpu')==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}
+  if(gpu&&gpu!=='off'){
+    if(/SwiftShader|llvmpipe|softpipe/i.test(renderer)){await browser.close();throw new Error(`Requested the GPU but got ${renderer}`);}
+    if(gpu==='amd'&&!/AMD|Radeon/i.test(renderer)){await browser.close();throw new Error(`Requested the AMD GPU but got ${renderer}`);}
+    if(gpu==='nvidia'&&!/NVIDIA|GeForce|Quadro|RTX|GTX/i.test(renderer)){await browser.close();throw new Error(`Requested the NVIDIA GPU but got ${renderer}`);}
+  }
   const started=Date.now();
   try{
     const page=await browser.newPage({viewport:{width,height}});

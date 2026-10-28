@@ -165,7 +165,8 @@ npm run film -- --project <id>
 ```
 
 That always `--copy`s the data directory, picks the same window Home plays, defaults to cinematic labels, and writes
-`qualification/results/films/last-night.webm`. Prefer `--gpu amd` on the development machine. First time:
+`qualification/results/films/last-night.webm`. It uses the GPU when one is present. Pin an adapter with `--gpu nvidia`
+or `--gpu amd`; `--gpu off` is software. First time:
 `cd qualification && npm ci`. Films never show folder names, paths or prompts. The overnight CAST checklist:
 [campaign-0.7.md](campaign-0.7.md).
 

@@ -15,10 +15,31 @@ const TITLE_MSG='This night has no public title. Set one in Visual Studio, or pa
 const CI_HINT='cd qualification && npm ci';
 function flag(argv,k){const i=argv.indexOf(`--${k}`);return i<0?undefined:argv[i+1];}
 function has(argv,k){return argv.includes(`--${k}`);}
-function amdLooksPresent(fsApi){
-  try{if(fsApi.existsSync('/sys/module/amdgpu'))return true;}catch{}
-  try{const drm=fsApi.readdirSync('/sys/class/drm');if(drm.some(n=>n!=='version'&&/amdgpu/i.test(n)))return true;}catch{}
+function gpuArg(argv){
+  const i=argv.indexOf('--gpu');
+  if(i<0)return {set:false,value:undefined};
+  const v=argv[i+1];
+  if(v==null||String(v).startsWith('--'))return {set:true,value:'auto'};
+  return {set:true,value:v};
+}
+function wslNvidiaUserspace(fsApi){
+  for(const p of ['/usr/lib/wsl/lib/libcuda.so','/usr/lib/wsl/lib/libcuda.so.1','/usr/lib/wsl/lib/libnvidia-ml.so.1']){
+    try{if(fsApi.existsSync(p))return true;}catch{}
+  }
   return false;
+}
+function gpuLooksPresent(fsApi){
+  try{
+    if(fsApi.existsSync('/dev/dxg'))return wslNvidiaUserspace(fsApi)?'nvidia':'auto';
+  }catch{}
+  try{if(fsApi.existsSync('/sys/module/amdgpu'))return 'amd';}catch{}
+  try{if(fsApi.existsSync('/sys/module/nvidia'))return 'nvidia';}catch{}
+  try{
+    const drm=fsApi.readdirSync('/sys/class/drm');
+    if(drm.some(n=>n!=='version'&&/amdgpu/i.test(n)))return 'amd';
+    if(drm.some(n=>n!=='version'&&/nvidia/i.test(n)))return 'nvidia';
+  }catch{}
+  return null;
 }
 function listProjects(dataDir,fsApi){
   const base=path.join(dataDir,'projects');let dir=[];
@@ -60,7 +81,7 @@ async function main(argv,opts={}){
   const log=opts.log||console.log;
   const err=opts.err||console.error;
   const exists=opts.exists||(p=>fsApi.existsSync(p));
-  const probe=opts.probe||(()=>amdLooksPresent(fsApi));
+  const probe=opts.probe||(()=>gpuLooksPresent(fsApi));
   const qualDir=opts.qualDir||path.join(REPO,'qualification');
   const dataDir=path.resolve(flag(argv,'data')||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
   if(!exists(path.join(qualDir,'node_modules','playwright-core'))||!exists(path.join(qualDir,'node_modules','ffmpeg-static'))){
@@ -96,12 +117,16 @@ async function main(argv,opts={}){
   const labels=flag(argv,'labels')||'cinematic';
   if(!['cinematic','stream','explorer','off'].includes(labels)){err('Invalid --labels.');return 1;}
   const out=path.resolve(flag(argv,'out')||DEFAULT_OUT);
-  const gpuFlag=flag(argv,'gpu');
+  const asked=gpuArg(argv);
   let gpu=null;
-  if(gpuFlag==='off')gpu=null;
-  else if(gpuFlag==='amd')gpu='amd';
-  else if(gpuFlag)gpu=gpuFlag;
-  else if(probe())gpu='amd';
+  if(asked.set){
+    if(asked.value==='off')gpu=null;
+    else gpu=asked.value;
+  }else{
+    const found=probe();
+    if(found===true)gpu='amd';
+    else if(found)gpu=found;
+  }
   const filmJs=path.join(qualDir,'visual','film.js');
   const args=[filmJs,'--data',dataDir,'--project',projectId,'--copy','--labels',labels,
     '--speed',String(speed),'--from',String(from),'--to',String(to),'--out',out];
@@ -110,4 +135,4 @@ async function main(argv,opts={}){
   return code||0;
 }
 if(require.main===module)main(process.argv.slice(2)).then(c=>{if(c)process.exitCode=c;},e=>{console.error(e);process.exitCode=1;});
-module.exports={main,DEFAULT_OUT,TITLE_MSG,CI_HINT};
+module.exports={main,DEFAULT_OUT,TITLE_MSG,CI_HINT,gpuLooksPresent};

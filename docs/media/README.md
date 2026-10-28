@@ -2,9 +2,9 @@
 
 ## CAST film (0.7.0 README hero)
 
-Cut on 2026-10-28 from `qualification/results/films/last-night.webm` (gitignored): a 70 s AMD render of **Pulse**, a
-real project (Stellar Forge, public title set, cinematic labels, composed score). Claude ran as a live CLI session with
-the observe-only adapter. Cursor and Codex events were posted through their observe-only adapters in the same wall-clock
+Cut on 2026-10-28 from `qualification/results/films/last-night.webm` (gitignored): a 70 s render of **Pulse**, a real
+project (Stellar Forge, public title set, cinematic labels, composed score). Claude ran as a live CLI session with the
+observe-only adapter. Cursor and Codex events were posted through their observe-only adapters in the same wall-clock
 window (those GUIs are not runnable from this WSL host).
 
 | File | What it is |
@@ -19,9 +19,8 @@ Catalog names only. No project folder, path, prompt or command text.
 
 ## Worlds tour (Phase 11)
 
-Cut on 2026-10-27 from the Phase 11 review films: real renders of the player on an AMD integrated GPU (WSL2), playing
-the recorded `lumen` session. No event was added or removed. The films themselves are local and not committed
-(`qualification/results/films/phase11/`).
+Cut on 2026-10-27 from the Phase 11 review films: real renders of the player, playing the recorded `lumen` session. No
+event was added or removed. The films themselves are local and not committed (`qualification/results/films/phase11/`).
 
 | File | What it is |
 |---|---|

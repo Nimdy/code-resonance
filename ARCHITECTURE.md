@@ -283,7 +283,8 @@ node ui/world-shots.js [--gpu amd]                    # the flagship worlds on t
 ```
 
 The screenshot scripts overwrite the committed sets in `docs/`, which are historical evidence: give `--out` (where
-offered) or restore the files afterwards. `--gpu amd` renders on the AMD integrated GPU of the development machine.
+offered) or restore the files afterwards. `--gpu auto|amd|nvidia` renders on a hardware GPU (WSL D3D12 or native ANGLE);
+`--gpu amd` / `--gpu nvidia` pin an adapter. Omit it for SwiftShader.
 
 **In CI.** Required on every push: `npm run check`, `npm test`, the VSIX and the platform smoke test on Linux
 (`validation`), and on native Windows for pull requests and `main`. Required on every pull request (`qualification`,

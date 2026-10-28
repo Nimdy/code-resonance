@@ -46,7 +46,8 @@ interpretation version, not the product version.
   of that window (default 4×; 16× when the scored window is long). Playwright is not involved.
 - `npm run film` is the publish path: always `--copy`, default cinematic labels, title-gated, default out
   `qualification/results/films/last-night.webm` (never committed). Play still works without a public title; a film does
-  not (unless `--allow-untitled`).
+  not (unless `--allow-untitled`). Uses a hardware GPU when one is present (`--gpu auto|amd|nvidia`; `--gpu off` is
+  software).
 - Visual Studio **Propose public names** fills aliases from role plus `generatedName` (`Craft - Vauos`); writes only on
   Accept. The hyphen is required because aliases reject a middle-dot.
 

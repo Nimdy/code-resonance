@@ -1,6 +1,6 @@
 'use strict';
 // Shared browser harness for the visual qualifications: a receiver on a dataset, a headless Chromium (SwiftShader by
-// default, or the AMD integrated GPU under WSL2), the film page and frame-exact rendering.
+// default, or a hardware GPU), the film page and frame-exact rendering.
 const path=require('node:path');
 const fs=require('node:fs');
 const crypto=require('node:crypto');
@@ -8,7 +8,9 @@ const {chromium}=require('playwright-core');
 const REPO=path.resolve(__dirname,'../..');
 const {createService}=require(path.join(REPO,'receiver/server'));
 const projectOf=dir=>fs.readFileSync(path.join(dir,'projects',fs.readdirSync(path.join(dir,'projects'))[0],'id'),'utf8');
-// The NVIDIA GPU is never used: callers abort when the renderer string is not the requested adapter.
+// Headless Chromium defaults to SwiftShader (CPU). `--gpu` turns on hardware: `amd` / `nvidia` pin a WSL D3D12
+// adapter; `auto` uses D3D12 on WSL (`/dev/dxg`) or ANGLE on native Linux. Callers abort if the renderer string is
+// SwiftShader when a GPU was requested, or if a pinned adapter does not match.
 // Audio may start without a user gesture (recordings and the audio qualification need the music running).
 const AUTOPLAY='--autoplay-policy=no-user-gesture-required';
 // Chromium's own audio output, never the machine's sound server: the tests measure the recorded stream, and a host
@@ -18,10 +20,20 @@ const {PULSE_SERVER,...BASE_ENV}=process.env;
 // for the interface suites; added to every player and film page unless the page asks for a quality itself.
 const CI_QUALITY=['0','1','2','3'].includes(process.env.CR_QUALITY)?process.env.CR_QUALITY:null;
 const withQuality=query=>CI_QUALITY&&!/[?&]quality=/.test(query)?`${query}&quality=${CI_QUALITY}`:query;
+const GPU_ARGS=['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu',AUTOPLAY];
+function wslGpuEnv(adapter){
+  const env={...BASE_ENV,GALLIUM_DRIVER:'d3d12',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')};
+  if(adapter)env.MESA_D3D12_DEFAULT_ADAPTER_NAME=adapter;
+  return env;
+}
+function wslDxg(){try{return fs.existsSync('/dev/dxg');}catch{return false;}}
 function launch(gpu=null){
-  if(gpu==='amd')return chromium.launch({args:['--ignore-gpu-blocklist','--use-gl=angle','--use-angle=gl','--enable-gpu',AUTOPLAY],
-    env:{...BASE_ENV,GALLIUM_DRIVER:'d3d12',MESA_D3D12_DEFAULT_ADAPTER_NAME:'AMD',LD_LIBRARY_PATH:['/usr/lib/wsl/lib',process.env.LD_LIBRARY_PATH].filter(Boolean).join(':')}});
-  return chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist',AUTOPLAY],env:BASE_ENV});
+  if(!gpu||gpu==='off')return chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist',AUTOPLAY],env:BASE_ENV});
+  if(wslDxg()){
+    const pin=gpu==='amd'?'AMD':gpu==='nvidia'?'NVIDIA':null;
+    return chromium.launch({args:GPU_ARGS,env:wslGpuEnv(pin)});
+  }
+  return chromium.launch({args:['--ignore-gpu-blocklist','--enable-gpu','--use-gl=angle',AUTOPLAY],env:BASE_ENV});
 }
 async function rendererOf(browser){const probe=await browser.newPage();await probe.goto('about:blank');
   const r=await probe.evaluate(()=>{const gl=document.createElement('canvas').getContext('webgl2'),d=gl&&gl.getExtension('WEBGL_debug_renderer_info');return gl?gl.getParameter(d?d.UNMASKED_RENDERER_WEBGL:gl.RENDERER):'none';});

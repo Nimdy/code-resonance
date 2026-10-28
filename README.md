@@ -10,8 +10,8 @@ something lasting. Everything runs locally, with no account, cloud service, mode
 
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
-*An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered on an AMD GPU (WSL2)
-in Stellar Forge with its composed score. Claude, Cursor and Codex appear as CAST; a meeting is labelled “Two agents
+*An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered by the player in
+Stellar Forge with its composed score. Claude, Cursor and Codex appear as CAST; a meeting is labelled “Two agents
 meet in orbit”. Catalog names only: no path, prompt or folder. How it was cut:
 [docs/media/README.md](docs/media/README.md).*
 
@@ -202,9 +202,10 @@ second window for another monitor.
 
 ## Supported environments and limitations
 
-**Verified:** Linux and WSL2 with an AMD integrated GPU (the receiver, the extension in a real VS Code 1.143, the
-Control Center and the worlds, 720p recording), and GitHub's Linux and Windows runners without a GPU (the receiver and
-its tests, the extension, the Stage in Chromium, OBS Studio 32.2 on Linux).
+**Verified:** Linux and WSL2 with a GPU (the receiver, the extension in a real VS Code 1.143, the Control Center and
+the worlds, 720p recording), and GitHub's Linux and Windows runners without a GPU (the receiver and its tests, the
+extension, the Stage in Chromium, OBS Studio 32.2 on Linux). The Stage uses the browser's GPU. Headless films use it
+too (`npm run film`; `--gpu nvidia` or `--gpu amd` pins an adapter; `--gpu off` is software).
 
 **Not verified:** macOS; Windows or macOS desktops with a GPU; OBS on Windows or macOS; Firefox and Safari; multi-hour
 sessions with the final code; listening and viewing by anyone other than the owner.
