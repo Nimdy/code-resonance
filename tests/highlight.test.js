@@ -137,7 +137,7 @@ test('film wrapper does not treat /dev/dri alone as AMD; amdgpu does',async t=>{
 test('Home play does not require Playwright; product stays dependency-free; film script is wired',()=>{
   const root=path.join(__dirname,'..');
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-  assert.equal(pkg.version,'0.6.0');
+  assert.equal(pkg.version,'0.7.0');
   assert.equal(pkg.scripts.film,'node scripts/film.js');
   assert.equal(pkg.dependencies,undefined);
   const app=fs.readFileSync(path.join(root,'public/app.js'),'utf8');

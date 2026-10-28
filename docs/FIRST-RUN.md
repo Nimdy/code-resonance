@@ -22,7 +22,7 @@ That one command, on loopback only:
    directory and port.
 3. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and opens it unless you pass
    `--no-open`.
-4. Builds `code-resonance-0.6.0.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
+4. Builds `code-resonance-0.7.0.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
    `--no-install`.
 5. If you have no real project yet, posts a fictional session labelled *Demonstration (fictional)* unless you pass
    `--no-demo`. It does not add a demonstration on top of a real project.
@@ -47,9 +47,20 @@ npm run doctor
 `npm run pair` prints a new pairing link whenever you need one. A browser opened on `http://127.0.0.1:4174/` without
 the link can watch, play and record, and says **View only · Pair this browser**.
 
-Optional: let Claude Code join as its own voice, `npm run hooks:claude -- /path/to/project`. Connections shows what the
-receiver has actually observed (VS Code capture, the settings the extension reported, Claude Code activity) and can add
-or remove the Claude Code hooks after showing the exact change to `<project>/.claude/settings.local.json`.
+Optional: let agents join as a CAST (name, seat, voice) in the project's world. In a **trusted workspace**:
+
+```bash
+npm run hooks:claude -- /path/to/project
+npm run hooks:cursor -- /path/to/project
+npm run hooks:codex -- /path/to/project
+```
+
+Connections shows what the receiver has actually observed (VS Code capture, the settings the extension reported, Claude
+Code, Cursor and Codex activity) and can add or remove each adapter after showing the exact change. Cursor is
+observe-only after-hooks (never `subagentStart`). Codex is observe-only (never `PreToolUse` / `PermissionRequest`;
+paths only from patch headers). Stage chips show catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor
+art. One overnight CAST session, a morning reel, a README hero and a later OBS night:
+[campaign-0.7.md](campaign-0.7.md) (none of those has been run yet).
 
 ## Manual fallback
 
@@ -64,7 +75,7 @@ for Code Resonance. In a second terminal:
 
 ```bash
 npm run package:vsix
-code --install-extension code-resonance-0.6.0.vsix
+code --install-extension code-resonance-0.7.0.vsix
 ```
 
 Open a trusted workspace, click **CR** and accept local capture. With no project yet, `npm run demo` in a second
@@ -77,8 +88,9 @@ Capture resumes when VS Code restarts until you stop it from the same menu.
 **Visual Studio** shows the project's identity (its Visual Recipe) and the worlds it can take: choose a world, see it
 on the stage as a preview (*Preview · not saved*), customise its parameters (spectacle, motion, information on the
 stage, the public title, subsystem names, and every genome parameter of the family or pack), then **Apply** — or
-**Cancel**, and nothing changed. Customising locks the identity; *Reset customisations* returns to the generated
-values. Visual presets save a look you want to reuse on other projects. The same page chooses the **finish** (Clean,
+**Cancel**, and nothing changed. **Propose public names** fills subsystem aliases from each role plus a generated name
+(`Craft - Vauos`; a hyphen, because aliases reject a middle-dot) and writes nothing until **Accept**. Customising locks
+the identity; *Reset customisations* returns to the generated values. Visual presets save a look you want to reuse on other projects. The same page chooses the **finish** (Clean,
 Cinematic, Dreamlike; Classic is the look from before finishes) and, under *Digital life*, the inhabitants and how much
 the music moves them (**Music influence** 0, 1 or 2). A project made before these existed says *Made before Phase 11*
 and keeps its look until you choose *Use the Phase 11 finish* (and ecology, where it has digital life).
@@ -142,8 +154,8 @@ exports the derived performance data as JSON.
 ## Last night
 
 Home shows **Last night** under the live world once a real (not demo) project has a recorded performance long enough to
-score: a sped-up replay of one highlight (failure and recovery, a meeting of agents, a structure). Play it there; the
-player does not need Playwright.
+score: a sped-up replay of one highlight (failure and recovery, a meeting of agents, a structure). Default **4×**;
+**16×** when the scored window is long. Play it there; the player does not need Playwright.
 
 **Record** is live: what the stage shows now, as it plays. A **film** is the publish object: the same highlight, frame by
 frame, for a README hero. It needs a public title (Visual Studio). Play still works without one. From the repository:
@@ -152,9 +164,10 @@ frame, for a README hero. It needs a public title (Visual Studio). Play still wo
 npm run film -- --project <id>
 ```
 
-That always `--copy`s the data directory, picks the same window Home plays, and writes
-`qualification/results/films/last-night.webm`. First time: `cd qualification && npm ci`. Films never show folder names,
-paths or prompts.
+That always `--copy`s the data directory, picks the same window Home plays, defaults to cinematic labels, and writes
+`qualification/results/films/last-night.webm`. Prefer `--gpu amd` on the development machine. First time:
+`cd qualification && npm ci`. Films never show folder names, paths or prompts. The overnight CAST checklist:
+[campaign-0.7.md](campaign-0.7.md).
 
 ## Stream with OBS
 
@@ -206,6 +219,7 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | Last night is missing | the recording is short, a demo, or nothing scored | keep capturing; it appears once a real project has a highlight |
 | `npm run film` refuses | no public title | set one in Visual Studio, or pass `--allow-untitled` |
 | `npm run film` prints `cd qualification && npm ci` | Playwright stays in qualification/, not the product | run that command once |
+| Cursor or Codex hooks silent | workspace not trusted, or a permission hook expected | prove only in a trusted workspace; Cursor never uses `subagentStart`; Codex never uses `PreToolUse` / `PermissionRequest` |
 | *… stopped: the pack stopped answering* | a visual pack hung or was too slow for this machine | lower **Quality**, then **Retry**; or choose another look |
 | *… exceeds its declared budget* | the pack draws more than its author declared | it keeps running; lower Quality if frames are slow |
 | *… contains code and is not approved* | a shader or world pack waits for your approval | **Review** in Visual Packs, or `node scripts/pack.js approve <id>` |

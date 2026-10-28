@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.7.0 — 2026-10-28
+
+Product 0.7.0, for private use on your own machine; not stable. Interpretation **8** (CAST seats from the provider
+catalog, `agent.collision` when two providers share a file or district inside 60 s) is independent of this product
+version. The last tagged public floor remains `v0.6.0`. The VS Code extension is 0.7.0 (`code-resonance-0.7.0.vsix`).
+
+This version is the CAST campaign stack: first-run, the CAST catalog, Cursor and Codex observe-only adapters, Home Last
+night and the publish film path, and the operator runbook. None of the overnight session, the morning reel, a new README
+hero or a public OBS night has been run yet. [docs/campaign-0.7.md](docs/campaign-0.7.md).
+
+### First run (`npm run up`)
+
+- `npm run up` (~60 s): probe 4174, reuse a Code Resonance receiver or start one, refuse a foreign occupant (no token
+  write, no pairing, no browser), print a pairing link, build the VSIX, optionally install and open, post a labelled
+  fictional demonstration only if there is no real project yet.
+
+### CAST catalog (interpretation 8)
+
+Interpretation 8 is named independently of product 0.7.0. Rebuilding derived files from a journal follows the
+interpretation version, not the product version.
+
+- Provider catalog: Claude, Cursor, Codex, Grok, Qwen, Kimi on stable seats 0–5; unknown ids hash into seats 6–7.
+- Stage chips show catalog names. Worlds draw CAST presences in the project's grammar (fireflies, comets, servitors);
+  no vendor art styles.
+- Last-writer still attributes an edit; two providers on the same file or district inside 60 s emit `agent.collision`
+  (an intent plus a derived cue). Worlds express it; they never invent one.
+
+### Cursor observe-only hooks
+
+- Project `.cursor/hooks.json`. After-hooks only. **Never** `subagentStart` (a permission hook: empty stdout denies
+  Task spawn). Prove only in a trusted workspace. Connections: `POST /api/integrations/cursor/{plan,apply}`.
+- Adapter never persists edit hunks, command lines or command output.
+
+### Codex observe-only hooks
+
+- Project `.codex/hooks.json`. **Never** `PreToolUse` or `PermissionRequest` (they can deny). Paths only from patch
+  headers. Prove only when the project `.codex/` layer is trusted. Connections:
+  `POST /api/integrations/codex/{plan,apply}`.
+- `ACTIVITY.apply_patch = editing`. Adapter never persists patch hunks, command lines or tool output.
+
+### Last night and films
+
+- Deterministic highlight picker (`engine/highlight.js`, `GET /api/highlight`): Home **Last night** is a sped-up replay
+  of that window (default 4×; 16× when the scored window is long). Playwright is not involved.
+- `npm run film` is the publish path: always `--copy`, default cinematic labels, title-gated, default out
+  `qualification/results/films/last-night.webm` (never committed). Play still works without a public title; a film does
+  not (unless `--allow-untitled`).
+- Visual Studio **Propose public names** fills aliases from role plus `generatedName` (`Craft - Vauos`); writes only on
+  Accept. The hyphen is required because aliases reject a middle-dot.
+
+### Campaign runbook
+
+- Operator checklist for one overnight CAST session, a morning reel, a 60–90 s README hero from that night, and a later
+  public OBS night. Future tense. The existing 70 s demo reel stays the README hero until a night is run.
+
 ## 0.6.0 — 2026-10-27
 
 The first tagged release, `v0.6.0`: four milestones built on 0.5.0 and the final consolidation, integrated into `main`.

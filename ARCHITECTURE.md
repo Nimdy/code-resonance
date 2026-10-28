@@ -136,8 +136,8 @@ made with, and older versions stay in the code.
 
 | What | Current | Defined in | Rule |
 |---|---|---|---|
-| Product | 0.6.0 (tag `v0.6.0`) | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes |
-| Interpretation | 8 | `engine/reducer.js` `INTERPRETATION_VERSION` | A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s |
+| Product | 0.7.0 | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes. Last tagged floor: `v0.6.0` |
+| Interpretation | 8 | `engine/reducer.js` `INTERPRETATION_VERSION` | Independent of the product version. A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
 | Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |
 | Renderer | 1 | `engine/recipe.js` `RENDERER_VERSION` | The world renderers a genome is written for |
@@ -162,6 +162,7 @@ refused. Reads return derived, privacy-safe data. **Administrative** routes need
 | `GET /api/projects` | Projects, most recent first |
 | `GET /api/project?id=` | Anonymised graph, stats and recent frames (ETag) |
 | `GET /api/timeline?id=&after=&limit=[&fields=intents]` | Recorded performance, paged (`/api/replay` is an alias); `fields=intents` returns only each window's intents |
+| `GET /api/highlight?id=` | Scored highlight window for Home Last night and `npm run film` (from, to, speed, reasons, CAST providers; no folder name) |
 | `GET /v1/performance/frames?id=&after=` | Versioned performance frames (`sdk/performance.js`) |
 | `GET /api/export?id=` | Streamed derived export |
 | `GET /api/recipe?id=[&fallback=1]`, `/api/recipe/tunable?id=`, `/api/catalog` | The Visual Recipe (with its `revision`; `fallback=1` is the identity without packs), what can be tuned, the parameter catalogues |

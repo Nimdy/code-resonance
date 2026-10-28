@@ -8,6 +8,7 @@ quick start: the [README](../README.md).
 | You want to | Read |
 |---|---|
 | Install it, pair a browser, capture, hear, record, stream; fix a setup problem | [Getting started](FIRST-RUN.md) |
+| Run one overnight CAST session, a morning reel, a README hero, a later OBS night (not done yet) | [0.7.0 campaign](campaign-0.7.md) |
 | Know where data lives, back up, update, roll back, read diagnostics; what is supported and what is not | [Operations](OPERATIONS.md) |
 | Understand the architecture, the versions, the HTTP API; extend it; run focused checks | [Developer guide](../ARCHITECTURE.md) |
 | Compose your own look | [Artist Studio](ARTIST-STUDIO.md) |
@@ -18,9 +19,9 @@ quick start: the [README](../README.md).
 
 ## By audience
 
-- **Using it:** [Getting started](FIRST-RUN.md), [Operations](OPERATIONS.md), [the Control Center and the
-  Stage](CONTROL-CENTER.md) (workspaces, where each setting lives), [Recording](RECORDING.md), [OBS](OBS.md),
-  [Windows with WSL2](WSL.md).
+- **Using it:** [Getting started](FIRST-RUN.md), [the 0.7.0 campaign runbook](campaign-0.7.md), [Operations](OPERATIONS.md),
+  [the Control Center and the Stage](CONTROL-CENTER.md) (workspaces, where each setting lives), [Recording](RECORDING.md),
+  [OBS](OBS.md), [Windows with WSL2](WSL.md).
 - **Creating:** [Music](MUSIC.md), [the living worlds](WORLDS.md), [digital life](LIFE.md), [the Artist
   Studio](ARTIST-STUDIO.md), [the Construct](CONSTRUCT.md), and the Visual Pack SDK: [overview](packs/README.md),
   [manifest](packs/manifest.md), [World API](packs/world-api.md), [determinism](packs/determinism.md),
@@ -32,8 +33,8 @@ quick start: the [README](../README.md).
 - **Security:** [the security and privacy model](../SECURITY.md), [visual pack isolation](packs/security.md).
 
 The Control Center opens a subset of these itself (Settings › Documentation and each workspace's guide buttons): Getting
-started, Operations, OBS, Recording, WSL, Security and privacy, Music, Artist Studio and the pack SDK pages. It shows
-them as text without images, and a link to a document it does not serve as plain text.
+started, Operations, the 0.7.0 campaign, OBS, Recording, WSL, Security and privacy, Music, Artist Studio and the pack
+SDK pages. It shows them as text without images, and a link to a document it does not serve as plain text.
 
 ## Creative questions
 
@@ -50,15 +51,17 @@ them as text without images, and a link to a document it does not serve as plain
 
 ## Versions
 
-The product version (0.6.0) is not the version of the interpretation, the score, the Visual Recipe
+The product version (0.7.0) is not the version of the interpretation (8), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
+The last tagged public floor is 0.6.0 (`v0.6.0`).
 
 ## History
 
 The milestones were developed as a stack of eleven pull requests, integrated into `main` at the final consolidation
 ([integration manifest](history/integration-manifest.md)). The documents call them by phase numbers that are not
-consistent, so the pull request is the key here.
+consistent, so the pull request is the key here. 0.7.0 (this tree) is the CAST campaign after that stack:
+[campaign-0.7.md](campaign-0.7.md). Interpretation 8 is independent of the product version.
 
 | PR | Milestone | Qualification | Changelog | Evidence in the repository |
 |---|---|---|---|---|

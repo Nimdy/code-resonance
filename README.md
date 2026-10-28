@@ -43,9 +43,12 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   functions, methods, variables and imports (Python and manifests partly; other languages at file level). Inserting
   lines or re-running green tests earns nothing; removing code counts once a test run validates it; recovering a
   failing suite is a milestone.
-- **Represents AI agents honestly.** Claude Code's hooks report prompts (length and fingerprint only), tool use, files
-  touched, subagents and test runs. A file change is attributed to an agent only when it follows that agent's own tool
-  event; everything else stays `unknown`. Hidden reasoning is never inferred.
+- **Represents AI agents honestly.** Agents are a CAST in the project's world (name, seat, voice): Claude, Cursor,
+  Codex, Grok, Qwen, Kimi on stable seats; unknown providers hash into the remaining seats. Stage chips show catalog
+  names, never vendor art. Claude Code, Cursor and Codex have observe-only adapters. A file change is attributed to an
+  agent only when it follows that agent's own tool event; everything else stays `unknown`. Hidden reasoning is never
+  inferred. Two providers on the same file or district inside 60 s emit `agent.collision` (an intent and a derived cue;
+  last-writer still attributes).
 - **Composes.** Each project has a musical identity (key, mode, progressions, motif, tempo) that never changes. New
   projects play the composed score: long-form arcs, voice-led harmony, phrases built from the motif; failures bring
   tension and verified milestones lift the next passage. Four styles: Ambient, Pulse, Cinematic, Chip. Projects made
@@ -93,7 +96,7 @@ npm run up
 
 About a minute to a visible world. Starts the receiver on `http://127.0.0.1:4174` (or reuses one already there; refuses
 any other occupant of the port), prints a **pairing link** `http://127.0.0.1:4174/#pair=…` and opens it, builds
-`code-resonance-0.6.0.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
+`code-resonance-0.7.0.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
 have no real project yet. Data stays in `~/.code-resonance` (`RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port`
 change them). `Ctrl+C` stops a receiver this command started. The link works once, within 15 minutes; `npm run pair`
 prints a new one. An unpaired browser still shows everything, plays and records, but changes nothing.
@@ -101,16 +104,21 @@ prints a new one. An unpaired browser still shows everything, plays and records,
 Then: a trusted workspace, **CR** in the status bar, accept local capture, **Enable sound**. `npm run doctor` checks
 the setup. Step by step, with the manual `npm start` fallback and troubleshooting: [Getting started](docs/FIRST-RUN.md).
 
+**0.7.0 campaign.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a
+sped-up highlight). `npm run film` renders that same window once a public title is set. The reel above is the existing
+70-second demo, not an overnight CAST film. One overnight session, a morning reel, a 60–90 s README hero from that
+night, and a later public OBS night: [docs/campaign-0.7.md](docs/campaign-0.7.md). None of that has been run yet.
+
 ## The VS Code extension
 
 ```bash
-npm run package:vsix          # writes code-resonance-0.6.0.vsix, with Node only (Windows, Linux, macOS)
+npm run package:vsix          # writes code-resonance-0.7.0.vsix, with Node only (Windows, Linux, macOS)
 ```
 
-It is not on the Marketplace: install the file yourself, with `code --install-extension code-resonance-0.6.0.vsix`
+Install the VSIX yourself, with `code --install-extension code-resonance-0.7.0.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
---install-extension code-resonance-0.6.0.vsix`, then open your project with the same two options.
+--install-extension code-resonance-0.7.0.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
 accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
@@ -120,10 +128,10 @@ when VS Code restarts until you stop it.
 reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback
 ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
 
-**AI agents:** `npm run hooks:claude -- /path/to/your/project` adds Claude Code hooks to
-`<project>/.claude/settings.local.json` (personal, not committed); the Control Center's Connections can add or remove
-them too, after showing the exact change. The adapter never prints and always exits 0, so it cannot change Claude's
-behaviour. Other tools can report through `node scripts/event.js` (see the script for options).
+**AI agents (CAST):** in a trusted workspace, `npm run hooks:claude -- /path/to/your/project` (and `hooks:cursor`,
+`hooks:codex`) add observe-only adapters. Connections can add or remove them after showing the exact change. Cursor
+never installs `subagentStart`; Codex never installs `PreToolUse` / `PermissionRequest`; Codex paths come from patch
+headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
 
 ## The Control Center
 
@@ -132,15 +140,16 @@ view agree ([docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md)).
 
 | Workspace | What you do there |
 |---|---|
-| **Home** | Whether the receiver runs, which project is active, whether capture is really active, what needs attention; create or continue a composition |
+| **Home** | Whether the receiver runs, which project is active, whether capture is really active, what needs attention; **Last night**; create or continue a composition |
 | **Projects** | Projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
-| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code hooks, other agents |
+| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code / Cursor / Codex hooks, CAST, other agents |
 | **Record & Broadcast** | Recording profiles, the OBS browser source, audio and data exports |
 | **Settings** | Global preferences, this device's quality, where everything is stored, diagnostics, documentation |
 
 **Visual Studio.** Choose a world, preview it in this window, customise its parameters, choose a finish (Clean,
-Cinematic, Dreamlike) and how much the music moves its digital life, then apply. Six curated looks and your own
-presets. [docs/WORLDS.md](docs/WORLDS.md), [docs/LIFE.md](docs/LIFE.md).
+Cinematic, Dreamlike) and how much the music moves its digital life, then apply. **Propose public names** fills
+subsystem aliases from each role; nothing is saved until Accept. Six curated looks and your own presets.
+[docs/WORLDS.md](docs/WORLDS.md), [docs/LIFE.md](docs/LIFE.md).
 
 **Music Studio.** The score a project plays (the classic score, or the composed one with a one-click upgrade), its
 style, tempo, texture and volume, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony,
@@ -181,6 +190,8 @@ second window for another monitor.
   The overlay shows only the stage and follows the project's saved choices; it never asks for a capability. OBS Studio
   32 was qualified on Linux in a disposable CI machine; on Windows or macOS, follow the procedure in
   [docs/OBS.md](docs/OBS.md).
+- **Last night** (Home) is a sped-up replay of a scored highlight. **`npm run film`** renders that same window for a
+  README hero (needs a public title, always `--copy`). Neither is Record.
 - **Exports:** up to ten minutes of the recorded performance rendered offline to WAV; the derived timeline as JSON (no
   source, paths or prompts).
 
@@ -195,16 +206,17 @@ sessions with the final code; listening and viewing by anyone other than the own
 
 **Limits:** semantics are deepest for TypeScript and JavaScript. Source snapshots are captured after you start capture
 unless `resonance.captureDocumentContents` is off, and a file that does not match the secret patterns can still contain
-secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through Claude Code's hooks;
-other agents' file writes are seen but attributed `unknown`. A passing test means the command exited 0, not that the
-software is correct. A replay holds only what was captured. The full list, with data locations, backup, updates and
-rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
+secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through Claude Code, Cursor and
+Codex hooks; other agents report through `scripts/event.js` or their file writes are seen but attributed `unknown`. A
+passing test means the command exited 0, not that the software is correct. A replay holds only what was captured. The
+full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Versions
 
-0.6.0 is the product version, released as the tag `v0.6.0`. The score (2 or 3), the Visual Recipe generator (4), digital
-life's ecology (1 or 2), the Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older
-identities as they were: [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
+0.7.0 is the product version. Interpretation 8 (CAST seats, `agent.collision`) is independent of it. 0.6.0 remains the
+last tagged floor (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (4), digital life's ecology (1 or 2), the
+Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older identities as they were:
+[ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
 
 ## Documentation
 

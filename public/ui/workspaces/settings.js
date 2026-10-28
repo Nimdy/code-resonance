@@ -11,7 +11,7 @@ const SECTIONS=[['global','Global','All windows and OBS','globe'],['device','Thi
   ['diagnostics','Diagnostics','What this window sees','cpu'],['about','About','Versions and guides','info']];
 // A path breaks after its separators (never inside a folder name) when it has to wrap.
 const pathCode=p=>{const c=h('code',{class:'set-path'});for(const part of String(p).split(/(?<=[\/\\])/)){c.append(part,h('wbr'));}return c;};
-const ABOUT_DOCS=['FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','SECURITY.md','packs/README.md'];
+const ABOUT_DOCS=['FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','campaign-0.7.md','SECURITY.md','packs/README.md'];
 export default {mount(view,{store:S,player:P,navigate}){
   styles('settings');
   const offs=[];
