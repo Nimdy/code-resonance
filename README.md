@@ -257,3 +257,9 @@ npm run package:vsix   # the VSIX, with Node only
 
 On Windows (PowerShell) the same commands work; if PowerShell blocks npm's `.ps1` shim, use `npm.cmd`. Focused checks,
 the qualification harnesses and what CI runs: [ARCHITECTURE.md](ARCHITECTURE.md#focused-checks).
+
+## License
+
+[MIT](LICENSE). Two third-party components are included and keep their own licences: three.js (MIT) in `public/vendor/`
+and TypeScript (Apache-2.0) in `vendor/`. They and the separately installed qualification tools are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
