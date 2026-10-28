@@ -57,6 +57,26 @@ test('Cathedral collision callout uses catalog names and does not throw',async()
   assert.equal(d.text,'Two agents meet in the nave');
   assert.equal(d.sub,'Claude · Cursor');
 });
+test('An uncatalogued agent is "Agent" on chips and in every family\'s collision callout',async()=>{
+  const {THREE}=await import('../public/worlds/core.js');
+  const {createModel}=await load('model');
+  for(const [file,family] of [['cathedral','machine-cathedral'],['biosphere','biosphere'],['stellar','stellar-forge']]){
+    const {createFamily}=await load(file);
+    const r=recipe.generate({projectId:'x',graph:{nodes:[],edges:[]},stats:{}},{family,now:0});
+    const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,16/9,.1,4000),model=createModel();
+    const world=createFamily({scene,camera,model,recipe:r,speed:()=>1,name:id=>id,director:{lasting:()=>[],attentionAt:()=>null,commands:[]},pipeline:{size:[64,64]},agents:{presence:()=>null}});
+    let d;
+    try{d=world.describe({intent:'agent.collision',detail:{providers:['claude-code','acme-client-portal']}});}
+    finally{world.dispose();}
+    assert.equal(d.sub,'Claude · Agent',file);
+    assert(!/acme|client|portal/i.test(JSON.stringify(d)),file);
+  }
+  const {createAgents}=await load('agents');const a=createAgents();
+  a.record({type:'agent.state',ts:T0,subject:{agentId:'U',voice:6},detail:{state:'connected',provider:'acme-client-portal'}});
+  a.record({type:'agent.state',ts:T0,subject:{agentId:'V',voice:7},detail:{state:'connected',provider:'external-agent',subagent:true}});
+  assert.equal(a.name(a.presence('U',T0+1)),'Agent');
+  assert.equal(a.name(a.presence('V',T0+1)),'Agent · subagent');
+});
 test('Spectacle is rare: milestones spend tokens, rare effects need a long gap, routine bursts coalesce',async()=>{
   const {createDirector}=await load('director');const d=createDirector({recipe:stellar});
   const tiers=[0,1,2,3].map(k=>d.process(intent('milestone.achieved',T0+k*1000,{id:`m${k}`,tier:3,evidence:'verified',subject:{fileIds:[`f${k}`]}})).tier);

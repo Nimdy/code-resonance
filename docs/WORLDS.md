@@ -245,8 +245,9 @@ minutes without any observation; the last 512 departed agents keep their numbers
 
 Agents are a CAST in the project's world: a catalog name, a stable orchestra seat, a voice. The catalog
 (`engine/providers.js`, player copy `public/providers.js`) is Claude, Cursor, Codex, Grok, Qwen, Kimi on seats 0–5;
-unknown ids hash into seats 6–7. Stage chips show those catalog names, never vendor art styles. Worlds draw them as
-that family's presence (fireflies, comets, servitors).
+unknown ids hash into seats 6–7. Stage chips and callouts show those catalog names, never vendor art styles; any other
+id an agent reports is shown as "Agent" (only the Control Center names it), and packs receive catalog ids only. Worlds
+draw them as that family's presence (fireflies, comets, servitors).
 
 Presences follow observed lifecycles only (`engine/intents.js`, `public/worlds/agents.js`): connected, working on a
 request (prompt submitted, no response yet), using a tool (reading, searching, editing, running, testing, building,

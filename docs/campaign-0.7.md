@@ -8,7 +8,7 @@ Product **0.7.0**, tagged `v0.7.0` on `main`. Interpretation **8** (CAST seats a
 the product version: [ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility).
 
 Agents are a CAST (name, seat, voice) in the project's world. Stage chips show catalog names: Claude, Cursor, Codex,
-Grok, Qwen, Kimi. No vendor art styles.
+Grok, Qwen, Kimi; any other agent is "Agent". No vendor art styles.
 
 ## Privacy floor
 

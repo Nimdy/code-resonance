@@ -7,6 +7,7 @@ import {h,text,button,section,pill,callout,emptyState,copyable,toast,styles} fro
 import {icon} from '../icons.js';
 import {ago,projectName,timecode,WORLD_NAMES} from '../format.js';
 import {capture,when,providerName,lastActivity,isDemo,DEMO_LABEL,familyLine,LIVE_MS,START_CMD} from './projects.js';
+import {presence} from '../../providers.js';
 // WebGL2 is checked once per page on a throwaway canvas whose context is released at once.
 let webgl2=null;
 function hasWebgl2(){if(webgl2===null)try{const g=document.createElement('canvas').getContext('webgl2');webgl2=!!g;g?.getExtension('WEBGL_lose_context')?.loseContext();}catch{webgl2=false;}return webgl2;}
@@ -231,12 +232,14 @@ export default {mount(view,ctx){
     if(!pr||isDemo(pr)||!hl||hl.from==null){night.hidden=true;night.replaceChildren();return;}
     const r=P.state.project===pr.id&&P.state.recipe?P.state.recipe:pr.recipe,titled=!!r?.title;
     const reasons=(hl.reasons||[]).map(x=>REASON_WORDS[x]||x).filter(Boolean);
+    const cast=[...new Set((hl.providers||[]).map(p=>presence(p).display))];
     night.hidden=false;
     swap(night,[
       h('div',{class:'home-night-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Last night'}),
         titled?h('strong',{class:'home-night-title',text:`“${r.title}”`}):h('span',{class:'faint small',text:'Set a public title to publish this night'})),
         titled?null:button({label:'Visual Studio',icon:'visual',kind:'ghost',size:'sm',onClick:()=>navigate('visual'),attrs:fk('night-title')})),
-      (hl.providers||[]).length?h('div',{class:'home-night-cast'},...(hl.providers||[]).map(p=>pill(providerName(p),'plain'))):null,
+      // The night is a film's floor: catalog names only, an uncatalogued agent is "Agent".
+      cast.length?h('div',{class:'home-night-cast'},...cast.map(p=>pill(p,'plain'))):null,
       reasons.length?h('p',{class:'faint small home-night-reasons',text:reasons.join(' · ')}):null,
       h('div',{class:'home-night-actions'},
         button({label:'Play last night',icon:'play',kind:'primary',size:'sm',title:'Replay this highlight in the slot',onClick:()=>{

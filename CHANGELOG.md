@@ -22,6 +22,10 @@
   lookup ignores Object members (`constructor`, `__proto__`, …). On the first start each project's derived files are
   rebuilt from its journal (the journal is not rewritten); the collision intent, its magnitude and what worlds and the
   score play for it are unchanged.
+- **Public agent names:** an agent whose provider id is not in the catalog is "Agent" on Stage chips, in collision
+  callouts (Biosphere, Stellar Forge, Machine Cathedral) and in Home's Last night cast, instead of its title-cased id
+  (`external-agent`, a client's name passed with `--provider`). The Control Center's own lists still name the id.
+  Visual packs receive a provider only as a catalog id (it was any lower-case slug).
 
 ## 0.7.1 — 2026-10-28
 
