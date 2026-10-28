@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
+  included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
+  ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
 - **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
   preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
   there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,

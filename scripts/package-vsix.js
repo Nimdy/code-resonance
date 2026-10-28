@@ -17,6 +17,7 @@ function contentTypes(){
   <Default Extension="json" ContentType="application/json" />
   <Default Extension="js" ContentType="application/octet-stream" />
   <Default Extension="md" ContentType="text/markdown" />
+  <Default Extension="txt" ContentType="text/plain" />
 </Types>
 `;
 }
@@ -33,12 +34,14 @@ function vsixManifest(){
       <Property Id="Microsoft.VisualStudio.Code.Engine" Value="${engine}" />
       <Property Id="Microsoft.VisualStudio.Code.ExtensionKind" Value="${escapeXml(manifest.extensionKind.join(','))}" />
     </Properties>
+    <License>extension/LICENSE.txt</License>
   </Metadata>
   <Installation><InstallationTarget Id="Microsoft.VisualStudio.Code" /></Installation>
   <Dependencies />
   <Assets>
     <Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
     <Asset Type="Microsoft.VisualStudio.Services.Content.Details" Path="extension/README.md" Addressable="true" />
+    <Asset Type="Microsoft.VisualStudio.Services.Content.License" Path="extension/LICENSE.txt" Addressable="true" />
   </Assets>
 </PackageManifest>
 `;
@@ -69,7 +72,9 @@ function build(dest=path.join(ROOT,`code-resonance-${manifest.version}.vsix`)){
   const entries=[
     {name:'[Content_Types].xml',data:Buffer.from(contentTypes())},
     {name:'extension.vsixmanifest',data:Buffer.from(vsixManifest())},
-    ...FILES.map(f=>({name:`extension/${f}`,data:fs.readFileSync(path.join(ROOT,'extension',f))}))
+    ...FILES.map(f=>({name:`extension/${f}`,data:fs.readFileSync(path.join(ROOT,'extension',f))})),
+    // The repository's licence travels with the extension, where VS Code shows it.
+    {name:'extension/LICENSE.txt',data:fs.readFileSync(path.join(ROOT,'LICENSE'))}
   ];
   fs.mkdirSync(path.dirname(dest),{recursive:true});
   fs.writeFileSync(dest,zip(entries));
