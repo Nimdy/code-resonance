@@ -1,6 +1,6 @@
 name: qualification
-# Required, on every pull request: real-environment checks in headless Chromium (software rendering: SwiftShader) and
-# a real VS Code extension host under Xvfb.
+# On pull requests that change more than documentation (Markdown, docs/, LICENSE): real-environment checks in headless
+# Chromium (software rendering: SwiftShader) and a real VS Code extension host under Xvfb.
 #   browser   the Stage and the audio engine
 #   packs     each reference visual pack (declarative, shader, world) through the compatibility tests, quick mode
 #   runtime   the pack runtime's robustness (slow, hanging and failing test fixtures; quick mode) and live recording
@@ -16,6 +16,11 @@ name: qualification
 on:
   workflow_dispatch:
   pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
+# A newer push to the same pull request replaces the run in progress.
+concurrency:
+  group: qualification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   browser:
     runs-on: ubuntu-24.04

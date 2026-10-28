@@ -1,8 +1,8 @@
 name: extended-qualification
 # The expensive tier, not required on every push: it costs about 4 runner-hours (Windows minutes count double).
-# Runs when a pull request carries the label `extended-qualification` (every job), or `extended:<job>` for one job (e.g.
-# `extended:obs`, to re-run just that one after a fix); new pushes re-run them while the labels stay. Also weekly on main
-# and by hand on main.
+# Runs when a pull request gets the label `extended-qualification` (every job), or `extended:<job>` for one job (e.g.
+# `extended:obs`, to re-run just that one after a fix). It starts when the label is added: after new pushes, remove
+# the label and add it again. Also weekly on main and by hand on main.
 #   packs-full       each reference pack through the full compatibility tests (90 s idle, determinism, 4 switches, 1080p)
 #   runtime-full     the full robustness suite (context loss, hostile probe and flood, revocation, modified files,
 #                    navigation, hidden tab, film timeout) and live recording (lifecycle, a 3-minute recording)
@@ -15,12 +15,12 @@ name: extended-qualification
 # Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   pull_request:
-    types: [labeled, synchronize, opened, reopened]
+    types: [labeled]
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
-# One run per pull request: a newer push or label replaces the run in progress (several labels added at once would
-# otherwise start one run each).
+# One run per pull request: a newer label replaces the run in progress (several labels added at once would otherwise
+# start one run each).
 concurrency:
   group: extended-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true

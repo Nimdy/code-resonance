@@ -1,12 +1,21 @@
 name: validation
-# Required, on every push and pull request: syntax, the unit and integration suite (npm test), the VSIX package.
+# On pull requests and on pushes to main, one run per commit (a branch push no longer runs it a second time): syntax,
+# the unit and integration suite (npm test), the VSIX package. A change that touches only documentation (Markdown,
+# docs/, LICENSE) runs nothing: `npm test` checks its links locally (tests/docs.test.js).
 # Native Windows runs on pull requests and on main only (Windows runner minutes count double): the same suite plus the
 # platform smoke test (the receiver as a real process, paths with spaces, the token, a restart, the pack CLI and
 # integrity). No test is retried: a failure fails the run.
 # Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
   pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
+# A newer push to the same pull request (or to main) replaces the run in progress.
+concurrency:
+  group: validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   node:
     runs-on: ubuntu-24.04
