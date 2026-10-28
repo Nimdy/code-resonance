@@ -573,11 +573,14 @@ function createService(options={}) {
         response(res,200,pack);return;
       }
       if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
-      // Occupant proves it holds the ingestion token without the client sending Authorization: HMAC-SHA256(token, nonce).
+      // Occupant proves it holds the ingestion token without the client sending Authorization. v=2 binds the HMAC to the
+      // port this connection arrived on (receiver/proof.js); without v, the 0.7.1 form for extensions installed before.
       if(req.method==='GET'&&pathname==='/v1/challenge'){
-        const n=u.searchParams.get('nonce')||'';
+        const n=u.searchParams.get('nonce')||'',v=u.searchParams.get('v');
         if(!proof.validNonce(n)){response(res,400,{error:'Expected nonce=32 hex'});return;}
-        response(res,200,{ok:true,proof:proof.proofOf(token,n)});return;
+        if(v===null){response(res,200,{ok:true,proof:proof.proofOf(token,n)});return;}
+        if(v!=='2'){response(res,400,{error:'Expected v=2'});return;}
+        response(res,200,{ok:true,v:2,proof:proof.proofV2(token,req.socket.localPort,n)});return;
       }
       if(req.method==='GET'&&pathname==='/api/projects'){
         // The private project name is listed here (the Control Center's project list), never on the stage.

@@ -128,7 +128,10 @@ renewed automatically.
 - **Settings › Diagnostics** in the Control Center shows what this window sees (receiver, browser, world, sound,
   recording) and copies it as JSON without tokens, folders, project names or ids.
 - `GET http://127.0.0.1:4174/health` answers `{"ok":true,…}` with the version while the receiver runs.
-- `GET /v1/challenge?nonce=` proves the occupant holds the local token before `npm run up` or `npm run pair` send it.
+- `GET /v1/challenge?nonce=&v=2` proves the occupant holds the local token, for the port asked, before any client sends it
+  (the extension, `npm run up`, `npm run pair`, the agent hooks, `scripts/event.js`, `npm run demo`). A receiver started
+  before this check answers no v2 proof: those clients then hold their events (the hooks in `spool/`, the extension in its
+  outbox) until it is restarted.
 
 ## Updating from an earlier development version
 

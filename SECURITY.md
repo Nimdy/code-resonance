@@ -20,7 +20,8 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 ## Boundaries
 
 - The receiver binds to loopback by default and refuses other interfaces unless `RESONANCE_ALLOW_REMOTE=1`. Requests need a localhost `Host` header; cross-origin requests are refused (DNS-rebinding protection).
-- Ingestion (`/v1/*` except `GET /v1/challenge`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time. `GET /v1/challenge` returns HMAC-SHA256 of that token over a client nonce, never the token itself.
+- Ingestion (`/v1/*` except `GET /v1/challenge`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time. `GET /v1/challenge?nonce=<32 hex>&v=2` returns HMAC-SHA256 of that token over `cr-challenge-v2|<port>|<nonce>`, for the port the request arrived on, never the token itself (without `v=2`, the 0.7.1 form, HMAC-SHA256 over the nonce alone, for extensions installed before; no current client accepts it).
+- **Every program that sends the token proves the receiver first.** The extension's outbox and its *Open Code Stage* pairing, `npm run up`, `npm run pair`, the Claude Code, Cursor and Codex hooks, `scripts/event.js` and `npm run demo` ask the challenge before they send `Authorization`, and send it only if the answer is the HMAC for the port they connected to (one client implementation, `extension/proof.js`; the receiver re-exports it). They never follow a redirect, so a process on one port cannot pass by sending the client to, or relaying the answer of, a real receiver on another port. The outbox verifies once per receiver connection and again after any failed delivery or a changed port; the hooks and the CLIs verify once per run. A process that only mimics `/health` (even with a planted `receiver-auth.json`) never receives `Authorization`: the hooks spool silently and exit 0, the outbox keeps its batches queued (*CR queued (receiver not verified)*), the CLIs exit with an error, as when the receiver is down. **Limit:** the proof holds for the occupant at the moment it answered; a process that takes the port between two deliveries of a running outbox is not detected until a delivery fails.
 - **Administrative changes** (settings, project preferences, presets, recipes, Artist Studio compositions, pack
   import/install/approval/removal, the Claude Code, Cursor and Codex hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
   request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
@@ -28,9 +29,8 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
   key** (also in `receiver-auth.json`, so only your account can read it). A browser receives the key once, in the
   pairing link `npm start` / `npm run pair` prints (or VS Code's *Open Code Stage* opens). The link carries a
   single-use code, valid 15 minutes, which the receiver exchanges for the key once (minting a code needs the ingestion
-  token). `npm run up`, `npm run pair` and the extension ask `GET /v1/challenge?nonce=` first: the occupant must return
-  HMAC-SHA256 of the local token over that nonce before they send the Bearer token. A process that only mimics `/health`
-  does not receive `Authorization`. The key itself never appears in a link, a log or a command line. The browser keeps the key in that origin's
+  token, which goes only to a receiver that answered the challenge above). The key itself never appears in a link, a
+  log or a command line. The browser keeps the key in that origin's
   storage and removes the code from the address bar at once. Without it a browser can watch, play and record but change
   nothing; another program or account on this computer cannot obtain a capability by forging an Origin header. A
   cross-origin page cannot send the custom header without a CORS preflight, which the receiver never answers.

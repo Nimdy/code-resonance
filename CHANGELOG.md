@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Token proof for every client, bound to the port:** the extension's capture outbox, the Claude Code, Cursor and Codex
+  hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`, as `npm run
+  up`, `npm run pair` and the extension's pairing link already did (in 0.7.1 only those three did). The proof is now
+  `GET /v1/challenge?nonce=&v=2` → HMAC-SHA256(token, `cr-challenge-v2|<port>|<nonce>`) for the port the request arrived
+  on, and no client follows a redirect, so a process on one port can no longer pass by redirecting to, or relaying, a
+  real receiver on another port. The outbox verifies once per receiver connection (again after a failed delivery or a
+  changed port); the hooks and CLIs once per run. An unverified occupant gets nothing: hooks spool and exit 0, the
+  outbox keeps its batches (status *queued (receiver not verified)*), the CLIs exit with an error. One client
+  implementation, `extension/proof.js` (now in the VSIX), re-exported by `receiver/proof.js`.
+  **Compatibility:** the receiver still answers the 0.7.1 form (`?nonce=` without `v`) for an extension installed
+  before. A receiver started before this change has no v2 proof: restart it, or the updated hooks and extension hold
+  their events until you do.
+
 ## 0.7.1 — 2026-10-28
 
 Product 0.7.1, for private use on your own machine; not stable. Interpretation **8** is unchanged. The last published

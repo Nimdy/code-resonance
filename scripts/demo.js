@@ -9,6 +9,7 @@ const path=require('node:path');
 const http=require('node:http');
 const crypto=require('node:crypto');
 const {sha}=require('../receiver/protocol');
+const proof=require('../receiver/proof');
 const projectId=sha('CODE RESONANCE — FICTIONAL DEMO');
 const authPath=path.join(process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'),'receiver-auth.json');
 const auth=JSON.parse(fs.readFileSync(authPath,'utf8'));
@@ -59,6 +60,8 @@ function request(method,route,body){return new Promise((resolve,reject)=>{
 });}
 const event=(step,ts)=>({v:1,id:crypto.randomUUID(),ts,kind:step.kind,projectId,sessionId,origin:step.fields.meta?.source==='demonstration'?'hook':'unknown',...step.fields});
 (async()=>{
+  // The token goes only to an occupant that proves it holds it.
+  await proof.verifyServer(port,auth.token);
   console.log(`Open http://127.0.0.1:${port}/?project=${projectId} and click Enable sound. Fictional session: ${Math.round(t)} s${fast?' (fast mode)':''}.`);
   if(fast){
     const base=Date.now()-t*1000;

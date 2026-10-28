@@ -158,7 +158,7 @@ refused. Reads return derived, privacy-safe data. **Administrative** routes need
 | Route | Use |
 |---|---|
 | `GET /health` | Status, version and timing (window, grace, scan interval) |
-| `GET /v1/challenge?nonce=` | Occupant proves it holds the ingestion token: HMAC-SHA256(token, 32-hex nonce). Clients verify before sending `Authorization` |
+| `GET /v1/challenge?nonce=&v=2` | Occupant proves it holds the ingestion token: `{ok, v:2, proof}`, proof = HMAC-SHA256(token, `cr-challenge-v2\|<port>\|<nonce>`) for the port the request arrived on (32-hex nonce). Every client that sends `Authorization` checks it first and never follows a redirect (`extension/proof.js`). Without `v`: HMAC-SHA256(token, nonce), for extensions from 0.7.1 |
 | `GET /api/status`, `/api/evidence?id=`, `/api/integrations` | Receiver health (its data directory only to a capability); what capture was observed per project; integrations |
 | `GET /api/projects` | Projects, most recent first |
 | `GET /api/project?id=` | Anonymised graph, stats and recent frames (ETag) |
