@@ -11,6 +11,7 @@ const {EVENTS}=require('../scripts/hooks/install-claude-code');
 const {EVENTS:CURSOR_EVENTS}=require('../scripts/hooks/install-cursor');
 const {EVENTS:CODEX_EVENTS}=require('../scripts/hooks/install-codex');
 const {tempDir,startService}=require('./helpers');
+const proof=require('../receiver/proof');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 const NAME='secret-project-name',FILE='src/secret-dir/hidden-file.ts';
 const ADMIN=['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
@@ -89,6 +90,12 @@ test('Control sessions are issued only to the receiver\'s own page; every admini
     const r=await fetch(`${base}/api/session`,{method:'POST',...(body===null?{headers:{Origin:base}}:{headers:{'Content-Type':'application/json',Origin:base},body:JSON.stringify({pairing:body})})});
     assert.equal(r.status,403,what);assert.equal((await r.json()).code,'pairing-required',what);}
   // Links carry a single-use code instead of the key: minted for the ingestion token's holder, exchanged once for the key.
+  const nonce=proof.nonce();
+  const ch=await (await fetch(`${base}/v1/challenge?nonce=${nonce}`)).json();
+  assert.equal(ch.ok,true);assert.equal(ch.proof,proof.proofOf(svc.token,nonce));
+  assert(!JSON.stringify(ch).includes(svc.token),'the challenge never returns the token');
+  assert.equal((await fetch(`${base}/v1/challenge`)).status,400);
+  assert.equal((await fetch(`${base}/v1/challenge?nonce=zz`)).status,400);
   assert.equal((await fetch(`${base}/v1/pairing-code`,{method:'POST'})).status,401,'no token, no code');
   const minted=await (await fetch(`${base}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${svc.token}`}})).json();
   assert.match(minted.code,/^[0-9a-f]{32}$/);assert(!minted.url.includes(svc.pairing));assert(minted.url.endsWith(`#pair=${minted.code}`));

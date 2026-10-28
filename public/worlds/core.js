@@ -2,6 +2,7 @@
 // cinematic camera rig, effect resource pools and a 2D overlay for labels. Every animation reads the performance clock
 // passed in by the caller; nothing here reads wall-clock time, so a film renders identically on any machine.
 import * as THREE from '../vendor/three.module.min.js';
+import {clampBox} from './labels.js';
 export {THREE};
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const lerp=(a,b,t)=>a+(b-a)*t;
@@ -228,9 +229,16 @@ export function createOverlay(){
           g.fillStyle=it.color||'#fff';g.beginPath();g.arc(x,y,3*scale,0,Math.PI*2);g.fill();}
         const size=it.kind==='label'?15:it.kind==='chip'?14:17;
         g.font=`${it.kind==='callout'?500:600} ${Math.round(size*scale)}px ${FONT}`;g.textAlign='left';
-        const tx=it.kind==='callout'?lx+24*scale:x+(it.dx??14)*scale,ty=it.kind==='callout'?ly:y+(it.dy??0)*scale;
-        if(it.kind==='chip'){const m=g.measureText(it.text).width;g.fillStyle='rgba(8,10,18,.55)';const r=11*scale;g.beginPath();g.roundRect(tx-8*scale,ty-r,m+16*scale+(it.dot?14*scale:0),r*2,r);g.fill();
-          if(it.dot){g.fillStyle=it.dot;g.beginPath();g.arc(tx,ty,4*scale,0,Math.PI*2);g.fill();}}
+        let tx=it.kind==='callout'?lx+24*scale:x+(it.dx??14)*scale,ty=it.kind==='callout'?ly:y+(it.dy??0)*scale;
+        if(it.kind==='chip'){
+          const m=g.measureText(it.text).width,r=11*scale,boxW=m+16*scale+(it.dot?14*scale:0),boxH=r*2;
+          const c=clampBox(tx-8*scale,ty-r,boxW,boxH,w,h,8*scale);tx=c.x+8*scale;ty=c.y+r;
+          g.fillStyle='rgba(8,10,18,.55)';g.beginPath();g.roundRect(c.x,c.y,boxW,boxH,r);g.fill();
+          if(it.dot){g.fillStyle=it.dot;g.beginPath();g.arc(tx,ty,4*scale,0,Math.PI*2);g.fill();}
+        }else{
+          const m=g.measureText(it.text).width,boxH=(it.sub?28:18)*scale;
+          const c=clampBox(tx,ty-10*scale,m,boxH,w,h,8*scale);tx=c.x;ty=c.y+10*scale;
+        }
         g.shadowColor='rgba(0,0,0,.85)';g.shadowBlur=8*scale;g.fillStyle=it.textColor||'rgba(244,247,252,.95)';g.fillText(it.text,tx+(it.kind==='chip'&&it.dot?12*scale:0),ty);
         if(it.sub){g.font=`500 ${Math.round(12*scale)}px ${FONT}`;g.fillStyle='rgba(210,220,236,.75)';g.fillText(it.sub.toUpperCase(),tx,ty+18*scale);}
         g.shadowBlur=0;

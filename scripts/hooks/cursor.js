@@ -22,6 +22,10 @@ function relativeFile(root,file){
   const rel=path.relative(root,path.resolve(root,file)).replace(/\\/g,'/');
   return isFileEligible(rel,{includeHidden:true})?rel:undefined;
 }
+function exitCodeOf(input){
+  for(const k of ['exit_code','exitCode'])if(typeof input[k]==='number'&&Number.isFinite(input[k]))return input[k];
+  return undefined;
+}
 function matches(event,input){
   if(event==='afterFileEdit')return isStr(input.file_path)&&Array.isArray(input.edits);
   if(event==='afterShellExecution')return isStr(input.command)&&(input.output==null||isStr(input.output))&&(input.duration===undefined||(isNum(input.duration)&&input.duration>=0));
@@ -59,9 +63,11 @@ function translate(input,now=Date.now()){
     }
     case 'afterShellExecution':{
       const toolMeta={tool:'Bash',category:classifyCommand(input.command)};
+      const exitCode=exitCodeOf(input);
+      const outcome=typeof exitCode==='number'?{exitCode,result:exitCode===0?'succeeded':'failed'}:{};
       const out=[];
       if(isNum(input.duration)){const startTs=now-input.duration;if(startTs>=0)out.push(base('agent.tool.started',toolMeta,{},startTs));}
-      out.push(base('agent.tool.completed',{...toolMeta,result:'succeeded'}));
+      out.push(base('agent.tool.completed',{...toolMeta,...outcome}));
       return out;
     }
     case 'stop':return [base('agent.response.completed')];

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 // ~60 s first-run: start or reuse the loopback receiver, print a pairing link, build the VSIX, optionally sideload it,
-// open the player, and show a visible world. Reuses only a Code Resonance /health document; any other occupant is
-// refused — no auth write, no pairing, no browser. The token and pairing key are never printed; the link carries a
-// single-use code. The child must not inherit RESONANCE_ALLOW_REMOTE (loopback only).
+// open the player, and show a visible world. Reuses only a Code Resonance /health document that also proves it holds
+// the local token (GET /v1/challenge); any other occupant is refused — no auth write, no pairing, no browser, no
+// Authorization. The token and pairing key are never printed; the link carries a single-use code. The child must not
+// inherit RESONANCE_ALLOW_REMOTE (loopback only).
 //   node scripts/up.js [--data <dir>] [--port <port>] [--no-demo] [--no-install] [--no-open]
 const fs=require('node:fs');
 const path=require('node:path');
@@ -11,6 +12,7 @@ const os=require('node:os');
 const {spawn,spawnSync}=require('node:child_process');
 const {once}=require('node:events');
 const {build}=require('./package-vsix');
+const proof=require('../receiver/proof');
 const ROOT=path.resolve(__dirname,'..');
 const DEFAULT_PORT=4174;
 const args=process.argv.slice(2);
@@ -83,6 +85,7 @@ async function waitForCr(port, timeoutMs=20000, signal){
   throw new Error(`The receiver did not become ready on http://127.0.0.1:${port} (${last||'no answer'}).`);
 }
 async function mintPairing(port, token){
+  await proof.verifyServer(port, token);
   const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(3000)});
   if(!r.ok) throw new Error(`The receiver refused a pairing code (HTTP ${r.status}): is it a receiver from before 0.5, or another program on port ${port}?`);
   const {code}=await r.json();

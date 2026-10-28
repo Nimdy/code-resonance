@@ -1,10 +1,32 @@
 # Changelog
 
+## 0.7.1 — 2026-10-28
+
+Product 0.7.1, for private use on your own machine; not stable. Interpretation **8** is unchanged. The last published
+GitHub Release before the 0.7 series was `v0.6.0`. This tag is `v0.7.1`. The VS Code extension is 0.7.1
+(`code-resonance-0.7.1.vsix`).
+
+- **Ecology CI:** Biosphere, Stellar Forge and Machine Cathedral each run as their own Node test file so the 120 s
+  suite timeout no longer cancels them on 2-core GitHub runners. Assertions and Cathedral's 20 Hz sampling are
+  unchanged. The global `--test-timeout` is still 120 s.
+- **Pairing proof:** `GET /v1/challenge?nonce=` returns HMAC-SHA256 of the ingestion token over a client nonce.
+  `npm run up`, `npm run pair` and the extension verify that proof before they send `Authorization`. A leftover
+  occupant that only mimics `/health` (even with a planted `receiver-auth.json`) never receives the Bearer token. A
+  receiver from before 0.7.1 has no challenge: restart it.
+- **Agent outcomes:** Claude, Cursor and Codex omit `exitCode` and `result: succeeded` for Bash when the hook payload
+  has no numeric exit. `PostToolUseFailure` still parses `Exit code N`. Edit/patch completion still records success
+  from the after-hook firing.
+- **Highlights:** `inWindow` is a binary search on sorted timestamps. `GET /api/highlight` caches by
+  `performance.jsonl` mtime and size.
+- **Labels:** agent chips and explorer labels stay inside the frame (flip, then omit). Overlay drawing clamps measured
+  boxes.
+
 ## 0.7.0 — 2026-10-28
 
 Product 0.7.0, for private use on your own machine; not stable. Interpretation **8** (CAST seats from the provider
 catalog, `agent.collision` when two providers share a file or district inside 60 s) is independent of this product
-version. The last tagged public floor remains `v0.6.0`. The VS Code extension is 0.7.0 (`code-resonance-0.7.0.vsix`).
+version. The last published GitHub Release at the time was `v0.6.0`. The VS Code extension is 0.7.0
+(`code-resonance-0.7.0.vsix`).
 
 This version is the CAST campaign stack: first-run, the CAST catalog, Cursor and Codex observe-only adapters, Home Last
 night and the publish film path, and the operator runbook. The README hero is a 70-second CAST session of Pulse.

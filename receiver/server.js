@@ -23,6 +23,7 @@ const packs=require('../engine/packs');
 const catalog=require('../engine/catalog');
 const providers=require('../engine/providers');
 const highlight=require('../engine/highlight');
+const proof=require('./proof');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
 const cursorHooks=require('../scripts/hooks/install-cursor');
 const codexHooks=require('../scripts/hooks/install-codex');
@@ -217,7 +218,7 @@ function createService(options={}) {
   const writes=new Map();const checkedJournals=new Set();
   let lastReceivedAt=0,lastProjectionAt=null,workerErrors=0;
   // Derived views are cached in memory, fed by the worker; requests never parse checkpoint files.
-  const projections=new Map();const timelines=new Map();
+  const projections=new Map();const timelines=new Map();const highlightCache=new Map();
   const registry=packs.createRegistry(dataDir);
   const projectDir=id=>path.join(dataDir,'projects',sha(id));
   const control=createControl(),changes=createChanges();
@@ -572,6 +573,12 @@ function createService(options={}) {
         response(res,200,pack);return;
       }
       if(req.method==='GET'&&pathname==='/health'){response(res,200,{ok:true,version:VERSION,sortIntervalMs:intervalMs,windowMs,graceMs});return;}
+      // Occupant proves it holds the ingestion token without the client sending Authorization: HMAC-SHA256(token, nonce).
+      if(req.method==='GET'&&pathname==='/v1/challenge'){
+        const n=u.searchParams.get('nonce')||'';
+        if(!proof.validNonce(n)){response(res,400,{error:'Expected nonce=32 hex'});return;}
+        response(res,200,{ok:true,proof:proof.proofOf(token,n)});return;
+      }
       if(req.method==='GET'&&pathname==='/api/projects'){
         // The private project name is listed here (the Control Center's project list), never on the stage.
         const list=await listProjects();
@@ -626,16 +633,28 @@ function createService(options={}) {
       }
       if(req.method==='GET'&&pathname==='/api/highlight'){
         if(!validId(id)||!await projectExists(id)){response(res,404,{error:'Project not found'});return;}
-        const windows=[];let after=-1;
-        for(;;){
-          const {entries,total}=await readTimeline(id,after,2000);
-          if(!entries.length)break;
-          // Graphs and cues are unused by the picker; a long session is large.
-          for(const x of entries)windows.push({start:x.start,end:x.end,intents:x.intents});
-          after=entries.at(-1).seq;
-          if(windows.length>=total)break;
+        const file=path.join(projectDir(id),'performance.jsonl');
+        let st=null;try{st=await fs.stat(file);}catch(e){if(e.code!=='ENOENT')throw e;}
+        const key=st?`${st.mtimeMs}:${st.size}`:'empty';
+        const hit=highlightCache.get(id);
+        if(hit&&hit.key===key){response(res,200,hit.view);return;}
+        // The file on disk is the source of truth: a test (or a rebuild) can replace it without the worker noticing.
+        timelines.delete(id);
+        const windows=[];
+        if(st){
+          let after=-1;
+          for(;;){
+            const {entries,total}=await readTimeline(id,after,2000);
+            if(!entries.length)break;
+            // Graphs and cues are unused by the picker; a long session is large.
+            for(const x of entries)windows.push({start:x.start,end:x.end,intents:x.intents});
+            after=entries.at(-1).seq;
+            if(windows.length>=total)break;
+          }
         }
-        response(res,200,highlight.publicView(id,highlight.fromWindows(windows)));return;
+        const view=highlight.publicView(id,highlight.fromWindows(windows));
+        highlightCache.set(id,{key,view});
+        response(res,200,view);return;
       }
       if(req.method==='GET'&&pathname==='/v1/performance/frames'){
         if(!await projection(id)){response(res,404,{error:'Project not found'});return;}
@@ -725,7 +744,7 @@ function createService(options={}) {
         if(m.type==='projection'){
           const before=projections.get(m.projectId)?.summary;
           projections.set(m.projectId,{json:m.json,etag:`"${sha(m.json).slice(0,16)}"`,summary:m.summary});lastProjectionAt=Date.now();
-          if(m.reset)timelines.delete(m.projectId);
+          if(m.reset){timelines.delete(m.projectId);highlightCache.delete(m.projectId);}
           const index=timelines.get(m.projectId);if(index)index.push(...m.appended.filter(x=>x.seq>(index.at(-1)?.seq??-1)));
           if(!before||before.name!==m.summary.name||before.chapter!==m.summary.chapter)changes.emit('projects');
         }

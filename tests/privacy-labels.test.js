@@ -38,6 +38,25 @@ test('No label in any mode contains the project folder name; without a public ti
   assert.match(chips,/Claude/);
   assert(!/Agent 1/.test(chips));
 });
+test('chips and explorer labels stay inside the frame or are omitted',async()=>{
+  const {composeLabels,clampBox,fitChip}=await load();
+  const r=recipe.generate(project,{family:'stellar-forge',now:0});
+  const cinematic=composeLabels(frame(r,'cinematic'));
+  for(const it of cinematic.filter(x=>x.kind==='chip')){
+    assert(it.x+it.dx>8&&it.x+it.dx<1920-8,JSON.stringify(it));
+    assert(it.y+it.dy>8&&it.y+it.dy<1080-8,JSON.stringify(it));
+  }
+  const edge=frame(r,'cinematic');edge.toScreen=()=>({x:1910,y:20,visible:true});
+  assert.equal(composeLabels(edge).filter(x=>x.kind==='chip').length,0);
+  const gone=frame(r,'cinematic');gone.toScreen=()=>({x:4000,y:400,visible:true});
+  assert.equal(composeLabels(gone).filter(x=>x.kind==='chip').length,0);
+  const right=fitChip({x:1740,y:400,visible:true},1920,1080,'Claude · editing');
+  assert(right&&right.dx<0,'flip toward the left near the right edge');
+  const box=clampBox(1900,10,200,22,1920,1080,8);
+  assert(box.x+200<=1920-8);assert(box.y>=8);
+  const explorer=frame(r,'explorer');explorer.toScreen=()=>({x:1910,y:1070,visible:true});
+  assert.equal(composeLabels(explorer).filter(x=>x.kind==='label'||x.kind==='chip').length,0);
+});
 test('An explicitly approved public title is the only project name the Stage shows',async()=>{
   const {composeLabels,labelStrings}=await load();
   const r=recipe.update(recipe.generate(project,{family:'machine-cathedral',now:0}),{type:'title',title:'Night Build'},project);

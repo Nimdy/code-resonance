@@ -109,6 +109,39 @@ test('up: refuses a non-CR occupant and does not write auth or mint pairing',asy
   assert(!fs.existsSync(path.join(dir,'receiver-auth.json')));
 });
 
+test('up: a fake CR-health occupant with a planted token never receives Authorization',async t=>{
+  const dir=tempDir(t,'cr-up-fake-'), {env}=trap(t);
+  const seen=[];
+  const {port}=await occupyHttp(t,(req,res)=>{
+    seen.push({url:req.url||'',method:req.method,auth:req.headers.authorization||null});
+    const path=(req.url||'').split('?')[0];
+    if(path==='/health'){crHealth(req,res);return;}
+    if(path==='/v1/challenge'){res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:true,proof:'0'.repeat(64)}));return;}
+    res.writeHead(404);res.end();
+  });
+  fs.writeFileSync(path.join(dir,'receiver-auth.json'),JSON.stringify({version:1,token:'a'.repeat(64),port,pairing:'b'.repeat(64)}));
+  const r=await runUp(['--data',dir,'--port',String(port),...FLAGS],env);
+  assert.equal(r.code,1,r.out);
+  assert.match(r.out,/did not prove|already in use|token/);
+  assert(!PAIR.test(r.out),'no pairing link');
+  assert(!seen.some(x=>x.auth),'no Authorization header');
+  assert(!seen.some(x=>(x.url||'').split('?')[0]==='/v1/pairing-code'),'pairing-code was not called');
+});
+test('up: a fake CR-health occupant without a challenge still never receives Authorization',async t=>{
+  const dir=tempDir(t,'cr-up-fake404-'), {env}=trap(t);
+  const seen=[];
+  const {port}=await occupyHttp(t,(req,res)=>{
+    seen.push({url:req.url||'',method:req.method,auth:req.headers.authorization||null});
+    if((req.url||'').split('?')[0]==='/health'){crHealth(req,res);return;}
+    res.writeHead(404);res.end();
+  });
+  fs.writeFileSync(path.join(dir,'receiver-auth.json'),JSON.stringify({version:1,token:'c'.repeat(64),port,pairing:'d'.repeat(64)}));
+  const r=await runUp(['--data',dir,'--port',String(port),...FLAGS],env);
+  assert.equal(r.code,1,r.out);
+  assert(!PAIR.test(r.out),'no pairing link');
+  assert(!seen.some(x=>x.auth),'no Authorization header');
+  assert(!seen.some(x=>(x.url||'').split('?')[0]==='/v1/pairing-code'),'pairing-code was not called');
+});
 test('up: leftover-on-port (CR health, no auth file) refuses',async t=>{
   const dir=tempDir(t,'cr-up-left-'), {env}=trap(t);
   const {port}=await occupyHttp(t,crHealth);

@@ -30,7 +30,19 @@ function pairRecovered(fail,recovered){
   }
   return null;
 }
-function inWindow(intents,from,to){return intents.filter(i=>i.ts>=from&&i.ts<=to);}
+// intents must already be sorted by ts. Binary search the first index at `from`, then scan until `to`.
+function firstAtOrAfter(intents,t){
+  let lo=0,hi=intents.length;
+  while(lo<hi){const mid=(lo+hi)>>1;if(intents[mid].ts<t)lo=mid+1;else hi=mid;}
+  return lo;
+}
+function inWindow(intents,from,to){
+  const out=[];
+  for(let i=firstAtOrAfter(intents,from);i<intents.length;i++){
+    const x=intents[i];if(x.ts>to)break;out.push(x);
+  }
+  return out;
+}
 function scoreWindow(W){
   let score=0;const reasons=[];
   const has=t=>W.some(i=>i.type===t);
@@ -120,4 +132,4 @@ function publicView(projectId,picked){
   return {schema:SCHEMA,projectId,from:picked.from,to:picked.to,speed:picked.speed,viewMs:picked.viewMs,
     score:picked.score,reasons:picked.reasons,providers:picked.providers};
 }
-module.exports={pick,fromWindows,publicView};
+module.exports={pick,fromWindows,publicView,inWindow};

@@ -59,7 +59,7 @@ test('workspace.started reports the extension version, remote and every capture 
   const started=x.sent.find(e=>e.kind==='workspace.started');assert(started,x.kinds().join(','));
   assert.deepEqual(started.meta,{extensionVersion:VERSION,remote:'wsl',includeHidden:true,captureDocumentContents:true,captureTerminalCommands:true,
     capturePromptText:false,shareProjectName:true,baselineFileLimit:120,receiverPort:4199});
-  assert.equal(VERSION,'0.7.0');assert.equal(started.name,'my-secret-folder');
+  assert.equal(VERSION,'0.7.1');assert.equal(started.name,'my-secret-folder');
   assert.equal(x.outboxes[0].port,4199,'the reported port is the one the capture delivers to');
   const meta=JSON.stringify(started.meta);assert(!meta.includes('my-secret-folder')&&!meta.includes(dir),'no folder name or path in the reported settings');
 });

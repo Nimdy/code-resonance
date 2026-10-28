@@ -5,7 +5,7 @@ receiver prints, and what has and has not been verified. Setting it up for the f
 
 ## Status
 
-Product version **0.7.0**. The last tagged public floor is **0.6.0** (`v0.6.0`). For private use on your own machine; it
+Product version **0.7.1**. The last published GitHub Release before the 0.7 series is **0.6.0** (`v0.6.0`). For private use on your own machine; it
 is not stable and has no installer; it runs from this repository. The product version is separate from the versions of
 the data formats, the score, the Visual Recipe generator, the interpretation (8) and the Visual Pack SDK
 ([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)). Overnight CAST and a public OBS night:
@@ -36,13 +36,13 @@ procedure to check it. The measurements behind each mark are in [QUALIFICATION.m
 - **Listening and viewing:** the owner has reviewed the application, its worlds, the digital-life films and the
   creative direction. No one else has, and whether the music stays pleasant through hours of work is not established.
 - **Interpretation:** TypeScript and JavaScript are analysed in depth, Python and manifests partly, other languages
-  at file level. Interpretation **8** (CAST seats, `agent.collision`) is independent of product 0.7.0. AI agents other
+  at file level. Interpretation **8** (CAST seats, `agent.collision`) is independent of the product version. AI agents other
   than Claude Code, Cursor and Codex can report only through `scripts/event.js`. Stage chips show CAST catalog names
   (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor art.
 - **Cursor hooks:** prove only in a trusted workspace; CI does not run Cursor.
 - **Codex hooks:** prove only in a trusted workspace (project `.codex/` must be trusted); CI does not run Codex. Paths only from patches; `PreToolUse` is not installed.
-- **Labels at the edge:** a label that follows a moving object can be cut by the frame's edge, on screen and in
-  recordings.
+- **Labels at the edge:** agent chips and explorer labels stay inside the frame (they flip, then they are omitted). A
+  callout that cannot sit near its subject becomes a caption.
 - **Three catalogued values have no visible effect on one world each:** *Reactivity* (`music.reactivity`) on Machine
   Cathedral, *Beat pulse* (`music.beatPulse`) and *Blossom scale* (`secondary.blossomScale`) on Fractal Biosphere. The
   Visual Studio and the Music Studio still offer them. They stay in the parameter catalogue so that saved recipes and
@@ -128,6 +128,7 @@ renewed automatically.
 - **Settings › Diagnostics** in the Control Center shows what this window sees (receiver, browser, world, sound,
   recording) and copies it as JSON without tokens, folders, project names or ids.
 - `GET http://127.0.0.1:4174/health` answers `{"ok":true,…}` with the version while the receiver runs.
+- `GET /v1/challenge?nonce=` proves the occupant holds the local token before `npm run up` or `npm run pair` send it.
 
 ## Updating from an earlier development version
 
@@ -141,7 +142,7 @@ On the first start the receiver adapts what it finds, and nothing you made is re
 - A browser's player choices from before 0.5 move to the receiver once.
 - If the interpretation version differs from the one a project was built with, its derived files are rebuilt from the
   journal (the journal itself is never rewritten). Interpretation is **8** (CAST seats and `agent.collision`); that
-  version is independent of product 0.7.0. It was 7 from the living worlds until the CAST catalog.
+  version is independent of the product version. It was 7 from the living worlds until the CAST catalog.
 - **Identities keep their look and sound.** A project's saved identity keeps the classic score (v2), the Classic finish
   and ecology 1 (or no digital life) until you change them: *Use the composed score* in the Music Studio, *Use the
   Phase 11 finish* (and ecology) and the *Digital life* switch in the Visual Studio. Each is an ordinary tuning you

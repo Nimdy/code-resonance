@@ -86,8 +86,8 @@ function translate(input,now=Date.now()){
       if(toolName==='Bash'){
         const category=classifyCommand(isStr(toolInput.command)?toolInput.command:isStr(input.tool_input)?input.tool_input:'');
         const exitCode=exitCodeOf(input.tool_response);
-        const result=typeof exitCode==='number'?(exitCode===0?'succeeded':'failed'):'succeeded';
-        return [base('agent.tool.completed',{tool:'Bash',category,result,...(typeof exitCode==='number'?{exitCode}:{})})];
+        const result=typeof exitCode==='number'?(exitCode===0?'succeeded':'failed'):undefined;
+        return [base('agent.tool.completed',{tool:'Bash',category,...(result?{result}:{}),...(typeof exitCode==='number'?{exitCode}:{})})];
       }
       if(PATCH_TOOLS.has(toolName)){
         const files=patchPaths(patchText(toolInput,isStr(input.tool_input)?input.tool_input:undefined),root);

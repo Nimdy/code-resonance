@@ -246,6 +246,14 @@ async function recordPrompt(){
 // valid minutes, which the page exchanges for the pairing key. The key itself never appears in a link or a command line.
 async function pairingFragment(port){try{
   const a=JSON.parse(await fs.readFile(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));if(!a.token)return '';
+  // Same HMAC as receiver/proof.js; inlined so the VSIX stays self-contained (it does not ship receiver/).
+  const nonce=crypto.randomBytes(16).toString('hex');
+  const ch=await fetch(`http://127.0.0.1:${port}/v1/challenge?nonce=${nonce}`,{signal:AbortSignal.timeout(2000)});
+  if(!ch.ok)return '';
+  const body=await ch.json();
+  const expected=crypto.createHmac('sha256',String(a.token)).update(nonce).digest('hex');
+  const x=Buffer.from(String(body?.proof||'')),y=Buffer.from(expected);
+  if(x.length!==y.length||!crypto.timingSafeEqual(x,y))return '';
   const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${a.token}`},signal:AbortSignal.timeout(2000)});
   if(!r.ok)return '';const {code}=await r.json();return /^[0-9a-f]{32}$/.test(code||'')?`#pair=${code}`:'';}catch{return '';}}
 async function openStage(overlay=false){

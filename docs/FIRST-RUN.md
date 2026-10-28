@@ -22,7 +22,7 @@ That one command, on loopback only:
    directory and port.
 3. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and opens it unless you pass
    `--no-open`.
-4. Builds `code-resonance-0.7.0.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
+4. Builds `code-resonance-0.7.1.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
    `--no-install`.
 5. If you have no real project yet, posts a fictional session labelled *Demonstration (fictional)* unless you pass
    `--no-demo`. It does not add a demonstration on top of a real project.
@@ -75,7 +75,7 @@ for Code Resonance. In a second terminal:
 
 ```bash
 npm run package:vsix
-code --install-extension code-resonance-0.7.0.vsix
+code --install-extension code-resonance-0.7.1.vsix
 ```
 
 Open a trusted workspace, click **CR** and accept local capture. With no project yet, `npm run demo` in a second

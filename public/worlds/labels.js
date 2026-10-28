@@ -13,6 +13,25 @@ export function titleCard(recipe){
   return t?{text:t,sub:`${family} · a generative world from this project's code`}:{text:family,sub:'A generative world from this project\'s code'};
 }
 export function lowerThirdTitle(recipe){return `${publicTitle(recipe)||GENERIC_TITLE} · ${recipe?.familyName||'Living world'}`;}
+// Keep a measured box inside the frame. Overlay drawing uses this after measureText.
+export function clampBox(x,y,boxW,boxH,w,h,pad=8){
+  let tx=x,ty=y;
+  if(tx<pad)tx=pad;if(ty<pad)ty=pad;
+  if(tx+boxW>w-pad)tx=Math.max(pad,w-pad-boxW);
+  if(ty+boxH>h-pad)ty=Math.max(pad,h-pad-boxH);
+  return {x:tx,y:ty};
+}
+// Place a chip next to an agent; flip to the left near the right edge; omit it when it still cannot fit.
+export function fitChip(p,w,h,text){
+  if(!p||!p.visible)return null;
+  const est=Math.min(320,28+String(text||'').length*8);
+  let dx=16,dy=-22;
+  if(p.x+dx+est>w-16)dx=-(est+8);
+  const left=p.x+Math.min(0,dx)-8,right=p.x+Math.max(dx,0)+est;
+  const top=p.y+dy-14,bot=p.y+dy+14;
+  if(left<8||right>w-8||top<8||bot>h-8)return null;
+  return {dx,dy};
+}
 // Every label item for one frame. `world` supplies describe/agentPosition/agentColor/subsystemLabels/inspect/status;
 // `toScreen(position)` maps a world position to the screen ({x,y,visible}).
 export function composeLabels({mode,recipe,info:i,commands,agentName,world,toScreen,size:[w,h],speed=1,origin=null,selected=null}){
@@ -46,11 +65,11 @@ export function composeLabels({mode,recipe,info:i,commands,agentName,world,toScr
     const pos=world.agentPosition?.(a.id,i);if(!pos)continue;
     const changed=(i.t-Math.max(a.arrived,i.t-a.since))/speed;
     if(mode==='cinematic'&&changed>CHIP_MS&&a.display!=='unknown')continue;
-    const p=toScreen(pos);if(!p.visible)continue;
-    out.push({kind:'chip',x:p.x,y:p.y,dx:16,dy:-22,text:`${agentName(a)} · ${a.label}`,dot:world.agentColor?.(a)||'#fff',alpha:a.alpha*(mode==='cinematic'?Math.min(1,(CHIP_MS-changed)/900):1)});
+    const p=toScreen(pos);const text=`${agentName(a)} · ${a.label}`,place=fitChip(p,w,h,text);if(!place)continue;
+    out.push({kind:'chip',x:p.x,y:p.y,dx:place.dx,dy:place.dy,text,dot:world.agentColor?.(a)||'#fff',alpha:a.alpha*(mode==='cinematic'?Math.min(1,(CHIP_MS-changed)/900):1)});
   }
-  if(mode==='explorer')for(const l of world.subsystemLabels?.(i)||[]){const p=toScreen(l.position);if(p.visible)out.push({kind:'label',x:p.x,y:p.y,text:l.text,sub:l.sub,alpha:.9});}
-  if(mode==='explorer'&&selected){const s=world.inspect?.(selected,i);if(s){const p=toScreen(s.position);if(p.visible)out.push({kind:'callout',x:p.x,y:p.y,text:s.text,sub:s.sub,alpha:1,color:'#fff'});}}
+  if(mode==='explorer')for(const l of world.subsystemLabels?.(i)||[]){const p=toScreen(l.position);if(p.visible&&p.x>16&&p.x<w-120&&p.y>16&&p.y<h-24)out.push({kind:'label',x:p.x,y:p.y,text:l.text,sub:l.sub,alpha:.9});}
+  if(mode==='explorer'&&selected){const s=world.inspect?.(selected,i);if(s){const p=toScreen(s.position);if(p&&p.visible&&p.x>40&&p.x<w-260&&p.y>60&&p.y<h-140)out.push({kind:'callout',x:p.x,y:p.y,text:s.text,sub:s.sub,alpha:1,color:'#fff'});}}
   if(mode==='stream'){
     const busy=i.agents.filter(a=>a.busy);
     out.push({kind:'lower-third',text:lowerThirdTitle(recipe),sub:events[0]||(i.phase==='idle'?'Quiet — the world keeps moving':'Building'),

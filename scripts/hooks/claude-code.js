@@ -3,8 +3,9 @@
 // Claude Code hook adapter (https://code.claude.com/docs/en/hooks). Configure it as a `command` hook; it reads the
 // documented hook JSON from stdin and forwards only what Code Resonance needs:
 //  - prompts and assistant messages: length + fingerprint only (text only with RESONANCE_CAPTURE_PROMPT_TEXT=1);
-//  - tool use: tool name, the project-relative file it edits or reads, and for Bash a command *category* and exit code
-//    (a read names its file so the player can show where an agent looks; only edits attribute later changes);
+//  - tool use: tool name, the project-relative file it edits or reads, and for Bash a command *category* and a numeric
+//    exit code when the hook payload includes one (never invented); a read names its file so the player can show where
+//    an agent looks; only edits attribute later changes;
 //  - subagents: their own agent id, so each subagent is a distinct, attributable voice.
 // It never prints to stdout and always exits 0, so it cannot block or alter Claude's behaviour.
 const fs=require('node:fs');
@@ -25,6 +26,12 @@ function relativeFile(root,file){
   return isFileEligible(rel,{includeHidden:true})?rel:undefined;
 }
 function textMeta(text){return typeof text==='string'&&text?{length:text.length,fingerprint:sha(text).slice(0,20)}:{};}
+function numericExit(response){
+  if(typeof response==='number'&&Number.isFinite(response))return response;
+  if(!response||typeof response!=='object'||Array.isArray(response))return undefined;
+  for(const k of ['exit_code','exitCode'])if(typeof response[k]==='number'&&Number.isFinite(response[k]))return response[k];
+  return undefined;
+}
 // Maps one documented hook payload to zero or more Code Resonance events.
 function translate(input,now=Date.now()){
   const root=findProjectRoot(input.cwd||process.cwd());
@@ -47,7 +54,11 @@ function translate(input,now=Date.now()){
     case 'UserPromptSubmit':return [base('agent.prompt.submitted',textMeta(input.prompt),capture&&input.prompt?{text:String(input.prompt)}:{})];
     case 'PreToolUse':return [base('agent.tool.started',toolMeta,withFile)];
     case 'PostToolUse':{
-      const out=[base('agent.tool.completed',{...toolMeta,result:'succeeded',...(tool==='Bash'?{exitCode:0}:{})},withFile)];
+      const exit=numericExit(input.tool_response);
+      const outcome=tool==='Bash'
+        ?(typeof exit==='number'?{exitCode:exit,result:exit===0?'succeeded':'failed'}:{})
+        :{result:'succeeded'};
+      const out=[base('agent.tool.completed',{...toolMeta,...outcome},withFile)];
       if(file)out.push(base('agent.file.modified',{tool},{file}));
       return out;
     }

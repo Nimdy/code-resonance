@@ -59,6 +59,11 @@ test('GET /api/highlight shares the picker, 404s a missing project, and never na
   assert.equal(doc.projectId,projectId);
   assert.deepEqual({from:doc.from,to:doc.to,speed:doc.speed,viewMs:doc.viewMs,score:doc.score},PINNED);
   assert.deepEqual(doc.providers,['claude-code','cursor']);
+  const again=await (await fetch(`${url}/api/highlight?id=${projectId}`)).json();
+  assert.deepEqual({from:again.from,to:again.to,speed:again.speed,viewMs:again.viewMs,score:again.score},PINNED);
+  fs.writeFileSync(path.join(pdir,'performance.jsonl'),JSON.stringify({seq:0,start:T0,end:T0+1_200_000,intents:[I('agent.state',1000,{tier:0,detail:{provider:'claude-code'}})]})+'\n');
+  const quiet=await (await fetch(`${url}/api/highlight?id=${projectId}`)).json();
+  assert.equal(quiet.from,null);assert.equal(quiet.score,null);
 });
 test('GET /api/highlight on a project with no recording returns the empty shape',async t=>{
   const dir=tempDir(t,'cr-hl-empty-');
@@ -156,7 +161,7 @@ test('film wrapper pins nvidia, auto, and a bare --gpu; /dev/dri alone is not a 
 test('Home play does not require Playwright; product stays dependency-free; film script is wired',()=>{
   const root=path.join(__dirname,'..');
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-  assert.equal(pkg.version,'0.7.0');
+  assert.equal(pkg.version,'0.7.1');
   assert.equal(pkg.scripts.film,'node scripts/film.js');
   assert.equal(pkg.dependencies,undefined);
   const app=fs.readFileSync(path.join(root,'public/app.js'),'utf8');

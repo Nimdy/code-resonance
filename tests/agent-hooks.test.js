@@ -30,7 +30,9 @@ test('Claude Code hook payloads become privacy-preserving, valid events',()=>{
     const bash=translate({...common,hook_event_name:'PostToolUseFailure',tool_name:'Bash',tool_input:{command:'npm test -- --token=Sekret_Token_Qx'},error:'Exit code 1\nFAIL'});
     assert.equal(bash[0].meta.category,'test');assert.equal(bash[0].meta.exitCode,1);assert(!JSON.stringify(bash).includes('Sekret_Token_Qx'));
     const ok=translate({...common,hook_event_name:'PostToolUse',tool_name:'Bash',tool_input:{command:'npm test'},tool_response:{stdout:'',stderr:'',interrupted:false}});
-    assert.equal(ok[0].meta.exitCode,0);
+    assert.equal(ok[0].meta.exitCode,undefined);assert.equal(ok[0].meta.result,undefined);
+    const okExit=translate({...common,hook_event_name:'PostToolUse',tool_name:'Bash',tool_input:{command:'npm test'},tool_response:{exitCode:0}});
+    assert.equal(okExit[0].meta.exitCode,0);assert.equal(okExit[0].meta.result,'succeeded');
     const outside=translate({...common,hook_event_name:'PreToolUse',tool_name:'Edit',tool_input:{file_path:'/etc/passwd'}});
     assert.equal(outside[0].file,undefined);
     const sub=translate({...common,agent_id:'agent-9',agent_type:'Explore',hook_event_name:'PreToolUse',tool_name:'Read',tool_input:{}});
@@ -40,7 +42,7 @@ test('Claude Code hook payloads become privacy-preserving, valid events',()=>{
     assert.deepEqual(read.map(e=>e.kind),['agent.tool.completed']);assert.equal(read[0].file,'src/ui/App.tsx');
     const secret=translate({...common,hook_event_name:'PreToolUse',tool_name:'Read',tool_input:{file_path:path.join(root,'.env')}});
     assert.equal(secret[0].file,undefined);
-    for(const e of [...prompt,...write,...bash,...ok,...outside,...sub,...read,...secret])validateEvent(e);
+    for(const e of [...prompt,...write,...bash,...ok,...okExit,...outside,...sub,...read,...secret])validateEvent(e);
     assert.equal(translate({...common,hook_event_name:'Notification'}).length,0);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
@@ -70,6 +72,7 @@ test('Cursor hook payloads become privacy-preserving, valid events',()=>{
     assert.deepEqual(shell.map(e=>e.kind),['agent.tool.started','agent.tool.completed']);
     assert.equal(shell[0].meta.tool,'Bash');assert.equal(shell[0].meta.category,'test');assert.equal(shell[1].meta.category,'test');
     assert.equal(shell[1].ts-shell[0].ts,400);
+    assert.equal(shell[1].meta.exitCode,undefined);assert.equal(shell[1].meta.result,undefined);
     const shellDump=JSON.stringify(shell);
     assert(!shellDump.includes(cmdSecret));assert(!shellDump.includes(outSecret));assert(!shellDump.includes('npm test'));
     const stop=translateCursor({...common,hook_event_name:'stop',status:'completed',loop_count:0});
@@ -77,6 +80,11 @@ test('Cursor hook payloads become privacy-preserving, valid events',()=>{
     assert.equal(translateCursor({...common,hook_event_name:'stop'}).length,0);
     const shellNull=translateCursor({...common,hook_event_name:'afterShellExecution',command:`npm test -- --token=${cmdSecret}`,output:null});
     assert.equal(shellNull[0].kind,'agent.tool.completed');assert.equal(shellNull[0].meta.category,'test');
+    assert.equal(shellNull[0].meta.exitCode,undefined);assert.equal(shellNull[0].meta.result,undefined);
+    const shellExit=translateCursor({...common,hook_event_name:'afterShellExecution',command:'npm test',output:null,exit_code:0});
+    assert.equal(shellExit[0].meta.exitCode,0);assert.equal(shellExit[0].meta.result,'succeeded');
+    const shellFail=translateCursor({...common,hook_event_name:'afterShellExecution',command:'npm test',output:null,exitCode:1});
+    assert.equal(shellFail[0].meta.exitCode,1);assert.equal(shellFail[0].meta.result,'failed');
     assert(!JSON.stringify(shellNull).includes(cmdSecret));
     const sub=translateCursor({...common,hook_event_name:'subagentStart',subagent_id:'agent-9',subagent_type:'explore',task:'read secrets hunter2'});
     assert.equal(sub.length,0);
@@ -91,7 +99,7 @@ test('Cursor hook payloads become privacy-preserving, valid events',()=>{
     assert.deepEqual(secretFile.map(e=>e.kind),['agent.tool.completed']);assert.equal(secretFile[0].file,undefined);
     const outside=translateCursor({...common,hook_event_name:'afterFileEdit',file_path:'/etc/passwd',edits:[{old_string:'x',new_string:'y'}]});
     assert.equal(outside[0].file,undefined);
-    for(const e of [...edit,...shell,...shellNull,...stop,...subStop,...started,...ended,...secretFile,...outside])validateEvent(e);
+    for(const e of [...edit,...shell,...shellNull,...shellExit,...shellFail,...stop,...subStop,...started,...ended,...secretFile,...outside])validateEvent(e);
     assert.equal(translateCursor({...common,hook_event_name:'Notification'}).length,0);
     assert.equal(translateCursor({...common,hook_event_name:'beforeShellExecution',command:'rm -rf /'}).length,0);
     assert.equal(translateCursor({...common,hook_event_name:'beforeSubmitPrompt',prompt:'hunter2'}).length,0);
@@ -130,6 +138,8 @@ test('Codex hook payloads become privacy-preserving, valid events',()=>{
       tool_input:{command:`npm test -- --token=${cmdSecret}`},tool_response:{output:`FAIL ${secret}`,metadata:{exit_code:1}}});
     assert.equal(bash.length,1);assert.equal(bash[0].kind,'agent.tool.completed');
     assert.equal(bash[0].meta.tool,'Bash');assert.equal(bash[0].meta.category,'test');assert.equal(bash[0].meta.exitCode,1);assert.equal(bash[0].meta.result,'failed');
+    const bashUnknown=translateCodex({...common,hook_event_name:'PostToolUse',tool_name:'Bash',tool_input:{command:'npm test'},tool_response:{output:'ok'}});
+    assert.equal(bashUnknown[0].meta.exitCode,undefined);assert.equal(bashUnknown[0].meta.result,undefined);
     const bashDump=JSON.stringify(bash);
     assert(!bashDump.includes(cmdSecret));assert(!bashDump.includes(secret));assert(!bashDump.includes('npm test'));
     const prompt=translateCodex({...common,hook_event_name:'UserPromptSubmit',prompt:'add login with password hunter2'});
@@ -145,7 +155,7 @@ test('Codex hook payloads become privacy-preserving, valid events',()=>{
     assert.equal(started[0].kind,'agent.session.started');assert.equal(ended[0].kind,'agent.session.ended');
     const outside=translateCodex({...common,hook_event_name:'PostToolUse',tool_name:'apply_patch',tool_input:{command:'*** Update File: /etc/passwd\n+x\n'}});
     assert.equal(outside[0].file,undefined);
-    for(const e of [...edit,...uni,...bash,...prompt,...stop,...sub,...subStop,...started,...ended,...outside])validateEvent(e);
+    for(const e of [...edit,...uni,...bash,...bashUnknown,...prompt,...stop,...sub,...subStop,...started,...ended,...outside])validateEvent(e);
     assert.equal(translateCodex({...common,hook_event_name:'Notification'}).length,0);
     assert.equal(translateCodex({...common,hook_event_name:'PreToolUse',tool_name:'Bash',tool_input:{command:'rm -rf /'}}).length,0);
     assert.equal(translateCodex({...common,hook_event_name:'PermissionRequest',tool_name:'Bash',tool_input:{command:'rm -rf /'}}).length,0);

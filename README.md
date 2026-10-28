@@ -102,7 +102,7 @@ npm run up
 
 About a minute to a visible world. Starts the receiver on `http://127.0.0.1:4174` (or reuses one already there; refuses
 any other occupant of the port), prints a **pairing link** `http://127.0.0.1:4174/#pair=…` and opens it, builds
-`code-resonance-0.7.0.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
+`code-resonance-0.7.1.vsix` and installs it when `code` is on PATH, and posts a labelled fictional demonstration if you
 have no real project yet. Data stays in `~/.code-resonance` (`RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port`
 change them). `Ctrl+C` stops a receiver this command started. The link works once, within 15 minutes; `npm run pair`
 prints a new one. An unpaired browser still shows everything, plays and records, but changes nothing.
@@ -110,20 +110,20 @@ prints a new one. An unpaired browser still shows everything, plays and records,
 Then: a trusted workspace, **CR** in the status bar, accept local capture, **Enable sound**. `npm run doctor` checks
 the setup. Step by step, with the manual `npm start` fallback and troubleshooting: [Getting started](docs/FIRST-RUN.md).
 
-**0.7.0.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a sped-up
+**0.7.1.** Agents appear as a CAST (catalog names on chips, no vendor art). Home plays **Last night** (a sped-up
 highlight). `npm run film` renders that same window once a public title is set. The reel above is a 70-second CAST
 session of Pulse. Overnight CAST and a public OBS night: [docs/campaign-0.7.md](docs/campaign-0.7.md).
 
 ## The VS Code extension
 
 ```bash
-npm run package:vsix          # writes code-resonance-0.7.0.vsix, with Node only (Windows, Linux, macOS)
+npm run package:vsix          # writes code-resonance-0.7.1.vsix, with Node only (Windows, Linux, macOS)
 ```
 
-Install the VSIX yourself, with `code --install-extension code-resonance-0.7.0.vsix`
+Install the VSIX yourself, with `code --install-extension code-resonance-0.7.1.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
---install-extension code-resonance-0.7.0.vsix`, then open your project with the same two options.
+--install-extension code-resonance-0.7.1.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
 accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
@@ -219,8 +219,8 @@ full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.m
 
 ## Versions
 
-0.7.0 is the product version. Interpretation 8 (CAST seats, `agent.collision`) is independent of it. 0.6.0 remains the
-last tagged floor (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (4), digital life's ecology (1 or 2), the
+0.7.1 is the product version. Interpretation 8 (CAST seats, `agent.collision`) is independent of it. The last published
+GitHub Release before the 0.7 series was 0.6.0 (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (4), digital life's ecology (1 or 2), the
 Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older identities as they were:
 [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
 

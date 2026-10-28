@@ -51,16 +51,17 @@ SDK pages. It shows them as text without images, and a link to a document it doe
 
 ## Versions
 
-The product version (0.7.0) is not the version of the interpretation (8), the score, the Visual Recipe
+The product version (0.7.1) is not the version of the interpretation (8), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
-The last tagged public floor is 0.6.0 (`v0.6.0`).
+The last published GitHub Release before the 0.7 series is 0.6.0 (`v0.6.0`).
 
 ## History
 
 The milestones were developed as a stack of eleven pull requests, integrated into `main` at the final consolidation
 ([integration manifest](history/integration-manifest.md)). The documents call them by phase numbers that are not
-consistent, so the pull request is the key here. 0.7.0 (this tree) is the CAST campaign after that stack:
+consistent, so the pull request is the key here. 0.7.1 (this tree) is the CAST campaign after that stack, plus pairing
+proof, ecology CI, and highlight/label hardening:
 [campaign-0.7.md](campaign-0.7.md). Interpretation 8 is independent of the product version.
 
 | PR | Milestone | Qualification | Changelog | Evidence in the repository |
