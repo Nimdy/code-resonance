@@ -178,6 +178,16 @@ mirror canals), files are towers whose storeys are their symbols; the largest la
 | Agents | A servitor (a lantern inside two brass rings) circling the tower it works on and lighting its facade; parked low at the precinct's edge while waiting |
 | Mature history | Islands between mirror canals; three to five grand openwork spires; a low carpet of roofs for the smaller modules of large precincts |
 
+### Synaptic Storm (preview)
+
+An immense living neural network: subsystems are clusters of glassy neurons laid out by their real dependencies, files
+their dendrite branches, symbols the boutons, dependencies the axons and tracts between them. Agents are signals in
+their provider's colour and shape, and the neuron whose file an agent edits fires; tests sweep activation waves,
+failures misfire, recovery resynchronises, and a verified milestone can earn a rare synaptic storm. It is a **preview**:
+chosen only explicitly (the Visual Studio, the render lab's `--family`), never by the family scores, with no digital
+life yet; adding it changed no existing identity. Design brief, stills and what remains:
+[worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`, `synaptic-layout.js`).
+
 The Visual Studio shows why to choose each world, offers six curated looks (two per family, built in and read-only,
 previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials
 group above the full parameter groups.

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **Synaptic Storm (preview):** a fourth built-in world family, chosen only explicitly (Visual Studio, marked
+  *Preview*; the render lab's `--family synaptic-storm`). Subsystems are clusters of glassy neurons placed by a force
+  layout over the real dependencies, files are dendrite branches, symbols boutons, dependencies axons; agents travel as
+  signals in their CAST colour and shape and make the neuron of the file they edit fire; tests sweep activation waves,
+  failures misfire and dim their neighbourhood, recovery resynchronises, and a verified milestone with the director's
+  token, at least 4 minutes after the last, earns a synchronous storm. Idle firing sits on the score's beat grid. Never
+  part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
+  (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
+  digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
+
 ## 0.7.1 — 2026-10-28
 
 Product 0.7.1, for private use on your own machine; not stable. Interpretation **8** is unchanged. The last published
