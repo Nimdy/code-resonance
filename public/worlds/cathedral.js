@@ -1086,7 +1086,7 @@ export function createFamily(ctx){
       tmpV.set(tw.pos.x,tw.roofTop+.06,tw.pos.z);if(gl)sprites.add(tmpV,tmpC.copy(c).lerp(warm,.3).multiplyScalar(2.2),gl.a*e,(edit?44:26)+56*gl.a,{world:tw.R*1.2,kind:2});
       sprites.add(tmpV,c,x.env*e*.6,14+22*x.env,{world:tw.R*.6});
       const h=edit?touchRing(x.age,.8,1.5):null;
-      if(h){orientN(.55,camAz(tw.pos.x,tw.pos.z),U,Vv);R.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*.4,tw.pos.z);tmpC.copy(c).multiplyScalar(2.6*e*h.a);ring(R,Math.max(tw.R,far*.012)*(1.3+5*h.r),Math.max(.03,far*.0016),U,Vv,1,1,tmpC);}}
+      if(h){orientN(.55,camAz(tw.pos.x,tw.pos.z),U,Vv);R.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*.4,tw.pos.z);tmpC.copy(c).multiplyScalar(2.6*e*h.a);ring(R,Math.max(tw.R,far*.012)*(1.2+3.6*h.r),Math.max(.03,far*.0016),U,Vv,1,1,tmpC);}}
     sprites.commit();
     ringB.commit(ri);lamps.commit(li);
     // Beams: searchlights (after the searchlights unlock) and the recovery beam.
