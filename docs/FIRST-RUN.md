@@ -139,6 +139,23 @@ The recording contains the stage only: no source, file names, paths, prompts, co
 **Record & Broadcast** also renders up to ten minutes of the recorded performance to WAV, offline and deterministic, and
 exports the derived performance data as JSON.
 
+## Last night
+
+Home shows **Last night** under the live world once a real (not demo) project has a recorded performance long enough to
+score: a sped-up replay of one highlight (failure and recovery, a meeting of agents, a structure). Play it there; the
+player does not need Playwright.
+
+**Record** is live: what the stage shows now, as it plays. A **film** is the publish object: the same highlight, frame by
+frame, for a README hero. It needs a public title (Visual Studio). Play still works without one. From the repository:
+
+```bash
+npm run film -- --project <id>
+```
+
+That always `--copy`s the data directory, picks the same window Home plays, and writes
+`qualification/results/films/last-night.webm`. First time: `cd qualification && npm ci`. Films never show folder names,
+paths or prompts.
+
 ## Stream with OBS
 
 **Record & Broadcast › OBS** builds the overlay URL (`?overlay=1&sound=1&project=<id>`) with its options and the Browser
@@ -186,6 +203,9 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | Record says recording is unavailable | the browser lacks MediaRecorder or canvas capture | use Chrome or Edge |
 | *Apply or cancel the … first* when recording | a Visual Studio or Artist Studio preview is shown in this window | apply it or cancel it, then record |
 | *Recording finished early (the sound stopped …)* | the audio device was disconnected or stopped working | reconnect it, check that you hear the music, record again |
+| Last night is missing | the recording is short, a demo, or nothing scored | keep capturing; it appears once a real project has a highlight |
+| `npm run film` refuses | no public title | set one in Visual Studio, or pass `--allow-untitled` |
+| `npm run film` prints `cd qualification && npm ci` | Playwright stays in qualification/, not the product | run that command once |
 | *… stopped: the pack stopped answering* | a visual pack hung or was too slow for this machine | lower **Quality**, then **Retry**; or choose another look |
 | *… exceeds its declared budget* | the pack draws more than its author declared | it keeps running; lower Quality if frames are slow |
 | *… contains code and is not approved* | a shader or world pack waits for your approval | **Review** in Visual Packs, or `node scripts/pack.js approve <id>` |

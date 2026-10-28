@@ -97,16 +97,16 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   const exportNote=h('p',{class:'field-doc',id:'exportAudioNote'});
   const dataLink=h('a',{class:'btn',id:'exportDataLink',download:''},icon('download'),h('span',{text:'Download JSON'}));
   const filmCmd=copyable('',{label:'Copy'}),filmSetup=copyable('cd qualification && npm ci',{label:'Copy'});
-  let dataDir=null;
+  const filmGate=h('div',{class:'out-film-gate'});
   const kind=(ic,title,what,body,action)=>h('div',{class:'out-kind'},
     h('span',{class:'out-kind-icon'},icon(ic)),h('div',{class:'out-kind-title'},h('strong',{text:title}),h('span',{class:'out-kind-what',text:what})),
     action?h('div',{class:'out-kind-action'},action):null,h('div',{class:'out-kind-body'},...[].concat(body)));
   const kinds=h('div',{class:'out-kinds'},
     kind('wave','Audio','WAV · the music only',exportNote,exportBtn),
     kind('code','Performance data','JSON · the derived history',h('p',{class:'field-doc',text:'Statistics, sessions and every timeline window as the receiver interpreted them, with hashed identities only (no file names, source or prompts). For analysis or archiving; not a video.'}),dataLink),
-    kind('film','Deterministic film','WebM · developer tool',[h('p',{class:'field-doc',text:'Any length, frame by frame at exact performance times, with the music rendered offline: run from the repository.'}),
-      disclosure({summary:'Commands'},h('p',{class:'field-doc',text:'Renders a recorded performance independently of this machine’s speed, with the music muxed by ffmpeg. It runs with its own browser and its own receiver on the data folder: stop the receiver first, or point --data at a copy.'}),
-        h('div',{class:'out-cmds'},filmSetup,filmCmd))]));
+    kind('film','Deterministic film','WebM · publish path',[h('p',{class:'field-doc',text:'The same highlight Home plays, rendered frame by frame with the music offline. Needs a public title. Playwright stays in qualification/; this page cannot render it.'}),
+      filmGate,disclosure({summary:'Setup'},h('p',{class:'field-doc',text:'First time, install the qualification tools. npm run film always --copy, so ~/.code-resonance is not changed.'}),
+        h('div',{class:'out-cmds'},filmSetup))]));
   const exportSection=h('section',{class:'out-export panel','aria-labelledby':'outExportTitle'},
     h('div',{class:'panel-head'},h('span',{class:'out-head-icon'},icon('download')),h('div',{class:'grow'},h('h2',{id:'outExportTitle',text:'Export and replay'}),h('span',{class:'note',text:'Files made from the recorded performance, not from this window'}))),
     h('div',{class:'panel-body flush'},kinds));
@@ -240,10 +240,14 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     text(exportNote,`Up to 10 minutes of the recorded performance, rendered offline (identical on every machine) in the current style, ${STYLE_NAMES[s.sound.options.style]||s.sound.options.style}. ${s.mode==='replay'?'From the replay’s playhead.':'Live: the last 10 minutes; in Replay, from the playhead.'}`);
     if(id){dataLink.href=`/api/export?id=${encodeURIComponent(id)}`;dataLink.removeAttribute('aria-disabled');dataLink.tabIndex=0;}
     else{dataLink.removeAttribute('href');dataLink.setAttribute('aria-disabled','true');dataLink.tabIndex=-1;}
-    filmCmd.set(`node visual/film.js --data ${dataDir?`"${dataDir}"`:'<data folder>'} --project ${id||'<project id>'} --out results/visual/film.webm`);
+    const titled=!!s.recipe?.title;
+    filmCmd.set(`npm run film -- --project ${id||'<project id>'}`);
+    filmGate.replaceChildren(!id?h('p',{class:'field-doc',text:'Choose a project first.'}):
+      titled?h('div',{class:'out-cmds'},filmCmd):
+      callout({kind:'warn',icon:'info',title:'Set a public title to export this film',
+        body:'Play on Home still works without one. A film for a README or OBS hero does not.',
+        actions:[button({label:'Set the public title',size:'sm',onClick:()=>navigate('visual')})]}));
   }
-  // The data folder is only told to a page holding a control capability (this one, on this computer).
-  P.api.request('GET','/api/status').then(st=>{dataDir=st?.dataDir||null;renderExport();}).catch(()=>{});
   // The Stage size card shows the slot's size whatever the chosen profile, so every resize re-renders it.
   const ro=new ResizeObserver(()=>{renderProfiles();renderFacts();});ro.observe(slot);offs.push(()=>ro.disconnect());
   renderProfiles();renderFacts();renderRecording();renderObs();renderExport();
@@ -252,7 +256,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     if(t.has('recording')||t.has('settings')){renderProfiles();renderFacts();}
     if(t.has('sound')||t.has('receiver'))renderFacts();
     if(t.has('world')||t.has('sound')||t.has('recipe')||t.has('selection')||t.has('settings')||t.has('preferences')||t.has('projects'))renderObs();
-    if(t.has('export')||t.has('selection')||t.has('mode')||t.has('sound'))renderExport();
+    if(t.has('export')||t.has('selection')||t.has('mode')||t.has('sound')||t.has('recipe'))renderExport();
   }));
   return {unmount(){for(const f of offs)f();}};
 }};

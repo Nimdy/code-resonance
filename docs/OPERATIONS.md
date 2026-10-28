@@ -82,8 +82,11 @@ Center, which also shows a paired browser this receiver's data directory.
 
 - **Record**, the **Audio** (WAV) and **Performance data** (JSON) exports and an Artist Studio **Export** (zip) are
   saved by the browser to its downloads folder. Code Resonance keeps no copy and no library.
-- **Films** (`qualification/visual/film.js`) are written to `qualification/results/visual/` in your checkout unless
-  `--out` says otherwise (never committed), each with the recipe it used next to it.
+- **Home Last night** is a sped-up replay of a scored highlight window. It is not a film and does not use Playwright.
+- **Films** (`npm run film`, a wrapper around `qualification/visual/film.js`) need a public title, always pass `--copy`
+  (so `~/.code-resonance` is not changed), and write `qualification/results/films/last-night.webm` unless `--out` says
+  otherwise (never committed), each with the recipe it used next to it. Direct `qualification/visual/film.js` still
+  defaults to `qualification/results/visual/`. First time: `cd qualification && npm ci`.
 
 ## Backup
 

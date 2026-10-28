@@ -29,7 +29,8 @@ export default {mount(view,ctx){
   // The stage slot exists from the start (the shell finds it once, at mount); it is only hidden on a first run. Its size
   // follows the column by CSS alone, so a layout change only moves the stage layer over it.
   const slot=h('div',{class:'stage-slot home-slot','data-stage-slot':''});
-  const hero=h('section',{class:'home-hero','aria-label':'Live world'},slot);
+  const night=h('section',{class:'home-night panel',hidden:true,'aria-label':'Last night'});
+  const hero=h('section',{class:'home-hero','aria-label':'Live world'},slot,night);
   const projectEl=h('section',{class:'panel home-project','aria-label':'Active project'});
   const loading=h('p',{class:'faint small',text:'Connecting to the receiver…'});
   // The guide goes under the stage while no real project exists (guideTop: on a first run the stage is hidden, so it
@@ -220,6 +221,44 @@ export default {mount(view,ctx){
     // The guide in the wide column (only the demo so far) makes it far taller than the side: the side then keeps its own height.
     grid.classList.toggle('guide-top',target===guideTop);
   }
+  // ---- Last night: sped-up replay of the scored highlight (Playwright is not involved) ----------------------------
+  const REASON_WORDS={
+    'validation.failed+recovered':'failure and recovery','providers>=2':'two agents','structure.created':'a new structure',
+    'subsystem.connected':'subsystems joined','agent.collision':'a meeting of agents','milestone.achieved':'a milestone',
+    'refactor.validated':'a refactor proved','repository.checkpoint':'a checkpoint'};
+  let nightSeq=0,nightCache=null,nightId='';
+  function renderNight(pr,hl){
+    if(!pr||isDemo(pr)||!hl||hl.from==null){night.hidden=true;night.replaceChildren();return;}
+    const r=P.state.project===pr.id&&P.state.recipe?P.state.recipe:pr.recipe,titled=!!r?.title;
+    const reasons=(hl.reasons||[]).map(x=>REASON_WORDS[x]||x).filter(Boolean);
+    night.hidden=false;
+    swap(night,[
+      h('div',{class:'home-night-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Last night'}),
+        titled?h('strong',{class:'home-night-title',text:`“${r.title}”`}):h('span',{class:'faint small',text:'Set a public title to publish this night'})),
+        titled?null:button({label:'Visual Studio',icon:'visual',kind:'ghost',size:'sm',onClick:()=>navigate('visual'),attrs:fk('night-title')})),
+      (hl.providers||[]).length?h('div',{class:'home-night-cast'},...(hl.providers||[]).map(p=>pill(providerName(p),'plain'))):null,
+      reasons.length?h('p',{class:'faint small home-night-reasons',text:reasons.join(' · ')}):null,
+      h('div',{class:'home-night-actions'},
+        button({label:'Play last night',icon:'play',kind:'primary',size:'sm',title:'Replay this highlight in the slot',onClick:()=>{
+          const go=P.playWindow({from:hl.from,to:hl.to,speed:hl.speed});
+          if(go&&typeof go.then==='function')return go.then(ok=>{if(ok===false)toast('The recorded performance could not be played.','error');},()=>toast('The recorded performance could not be played.','error'));
+          if(go===false)toast('The recorded performance could not be played.','error');
+        },attrs:fk('night-play')}),
+        P.state.mode==='replay'?button({label:'Live',kind:'ghost',size:'sm',title:'Return the slot to the live world',onClick:()=>P.setMode('live'),attrs:fk('night-live')}):null,
+        titled?copyable(`npm run film -- --project ${pr.id}`):button({label:'Set a public title to publish',kind:'outline',size:'sm',onClick:()=>navigate('visual'),attrs:fk('night-publish')}))]);
+  }
+  async function loadNight(){
+    const pr=S.project(),seq=++nightSeq;
+    if(!pr||isDemo(pr)){nightCache=null;nightId='';night.hidden=true;night.replaceChildren();return;}
+    if(nightId===pr.id&&nightCache&&nightCache.from!=null){renderNight(pr,nightCache);return;}
+    try{
+      const doc=await S.get(`/api/highlight?id=${encodeURIComponent(pr.id)}`);
+      if(seq!==nightSeq)return;
+      nightId=pr.id;
+      if(doc&&doc.from!=null){nightCache=doc;renderNight(pr,doc);}
+      else{nightCache=null;renderNight(pr,null);}
+    }catch{if(seq!==nightSeq)return;nightCache=null;night.hidden=true;night.replaceChildren();}
+  }
   // ---- Updates ---------------------------------------------------------------------------------------------------
   function layout(){
     const st=S.state,first=st.projectsLoaded?!st.projects.length:P.state.receiver===false;
@@ -228,7 +267,7 @@ export default {mount(view,ctx){
     hero.hidden=first||!st.projectsLoaded;projectEl.hidden=hero.hidden;recentEl.hidden=first;
     grid.classList.toggle('first-run',first);
   }
-  const all=()=>{layout();renderProject();renderAttention();renderRecent();renderGuide();renderChrome();};
+  const all=()=>{layout();renderProject();renderAttention();renderRecent();renderGuide();renderChrome();void loadNight();};
   all();
   if(!S.state.integrations)void S.loadIntegrations();
   if(!S.state.status)void S.loadStatus();
@@ -241,12 +280,15 @@ export default {mount(view,ctx){
     const has=k=>T[k].some(x=>t.has(x));
     if(has('layout'))layout();
     if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('chrome'))renderChrome();
+    if(t.has('selection')||t.has('projects'))void loadNight();
+    else if((t.has('recipe')||t.has('mode'))&&nightId===S.project()?.id&&nightCache)renderNight(S.project(),nightCache);
     const sup=P.state.recording.supported.ok;if(has('attention')||(t.has('recording')&&sup!==wasSupported)){wasSupported=sup;renderAttention();}
   }));
   // Relative times ("2 min ago") and the 2-minute capture window age without any event arriving.
   const tick=setInterval(()=>{renderProject();renderRecent();},15000);
   return {unmount(){
     for(const f of offs)f();clearInterval(tick);overlay.remove();
+    if(P.state.mode==='replay')P.setMode('live');
     // Leaving Home for the Stage (rail, F, top bar) completes the guide's last step on this device.
     if(location.hash.startsWith('#/stage'))S.setUi({stageOpened:true});
   }};

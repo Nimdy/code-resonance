@@ -61,7 +61,7 @@
     // A link opened in a tab that already shows the application changes only the fragment.
     addEventListener('hashchange',()=>{if(takePairFragment()&&pendingCode)void session().catch(()=>{});});
     return {request,post:(url,body,o)=>request('POST',url,body,o),session,pair,get capability(){return capability;}};})();
-  let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0,speedChoice=4;
+  let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0,speedChoice=4,windowUntil=null;
   let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,receiverOk=null;
   // World coordinates are centred on (0,0); the camera eases to frame the structure as it grows.
   const scene={nodes:new Map(),edges:new Map(),groups:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
@@ -912,11 +912,12 @@
     replayPos+=dt*speedChoice;replayClock=now;
     // Keep a minute of upcoming windows scheduled.
     while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=replayPos+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
+    if(windowUntil!=null&&replayPos>=windowUntil){replayPos=windowUntil;playback=false;windowUntil=null;changed('position');return;}
     if(replayPos>=h.end){replayPos=h.end;playback=false;changed('position');}
   }
   function changeMode(value){
     if(value!=='live'&&value!=='replay')return;
-    mode=value;playback=false;queue.length=0;
+    mode=value;playback=false;queue.length=0;windowUntil=null;
     music.setClock(perfNow,value==='replay'?speedChoice||1:1);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
     changed('mode','position');
     if(value==='replay'){void loadReplay().then(()=>{if(mode!=='replay'||!replay)return;seek(replay.start);});}
@@ -926,6 +927,20 @@
   function pause(){if(!playback)return;replayPos=perfNow();playback=false;changed('position');}
   function setSpeed(k){k=Number(k);if(![1,4,16].includes(k)||k===speedChoice)return;const pos=perfNow();speedChoice=k;
     if(mode==='replay'){music.setClock(perfNow,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());replayPos=pos;replayClock=performance.now();seek(pos);}changed('position');}
+  // Home Last night / a scored window: replay that range at 1|4|16 and pause at `to`. Do not call changeMode (it seeks to start).
+  function playWindow({from,to,speed}={}){
+    speed=Number(speed);from=Number(from);to=Number(to);
+    if(![1,4,16].includes(speed)||!Number.isFinite(from)||!Number.isFinite(to)||!(to>from)||!selected)return false;
+    const id=selected;
+    return (async()=>{
+      if(mode!=='replay'){mode='replay';playback=false;queue.length=0;changed('mode','position');}
+      speedChoice=speed;music.setClock(perfNow,speedChoice);construct?.setSpeed(replaySpeed());living?.setSpeed(replaySpeed());
+      await loadReplay();
+      if(selected!==id||mode!=='replay'||!replay)return false;
+      windowUntil=to;seek(from);playback=true;replayClock=performance.now();changed('position');
+      return true;
+    })();
+  }
   // ---- The engine's interface ---------------------------------------------------------------------------------
   const player={
     WORLDS,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
@@ -952,8 +967,8 @@
     // bar; nothing restarts. They pass through as given (the Control Center resolves them: ui/music-profile.js).
     setMusic(options){music.setOptions(options);changed('sound');},
     toggleSound,
-    setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;seek(ts);},
-    seekFraction(f){const h=history();if(mode!=='replay'||!replay)return;playback=false;seek(h.start+(h.end-h.start)*clamp(Number(f)||0));},setSpeed,
+    setMode:changeMode,play,pause,togglePlay(){return playback?(pause(),false):play();},seek(ts){if(mode!=='replay')return;playback=false;windowUntil=null;seek(ts);},
+    seekFraction(f){const h=history();if(mode!=='replay'||!replay)return;playback=false;windowUntil=null;seek(h.start+(h.end-h.start)*clamp(Number(f)||0));},setSpeed,playWindow,
     setVisible(v){visible=!!v;},
     // heldElsewhere(): whether another window of this browser holds the recorder lock (null: no Web Locks here), the
     // evidence behind a "recording in another window" announcement (a crashed window never says it stopped).

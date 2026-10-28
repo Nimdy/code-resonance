@@ -2,6 +2,7 @@
 // Visual recipes: a persistent, deterministic artistic identity per project, distinct in structure (not just colour),
 // provisional while a project is tiny, permanent once founded or chosen, and editable only from the player's origin.
 const test=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
 const recipe=require('../engine/recipe');
 const {tempDir,startService}=require('./helpers');
 const {sha}=require('../receiver/protocol');
@@ -58,6 +59,21 @@ test('Artist control: choose a family, regenerate, lock, adjust and name; inputs
   assert.throws(()=>recipe.update(r,{type:'overrides',labels:'dashboard'},p));
   // Overrides and names survive a family change.
   assert.equal(recipe.update(r,{type:'family',family:'stellar-forge'},p).aliases['0123456789abcd'],'Recipe Book');
+  assert.throws(()=>recipe.update(r,{type:'propose',names:{'0123456789abcd':'Heart'}},p),'propose is not a recipe action');
+});
+test('Propose public names is client-only; alias still requires an explicit action',()=>{
+  const visual=fs.readFileSync(path.join(__dirname,'../public/ui/workspaces/visual.js'),'utf8');
+  const engine=fs.readFileSync(path.join(__dirname,'../engine/recipe.js'),'utf8');
+  assert.match(visual,/Propose public names/);
+  assert.match(visual,/type:'alias'/);
+  assert.match(visual,/Some names saved/);
+  assert(!/type:\s*['"]propose['"]/.test(visual));
+  assert(!/case ['"]propose['"]/.test(engine));
+  const p=project('propose',{modules:12,ui:4});
+  const r=recipe.generate(p);
+  assert.equal(r.aliases['0123456789abcd'],undefined);
+  const named=recipe.update(r,{type:'alias',id:'0123456789abcd',name:'Heart'},p);
+  assert.equal(named.aliases['0123456789abcd'],'Heart');
 });
 test('The receiver persists the recipe across restarts and accepts edits only from its own page (origin and control capability)',async t=>{
   const dir=tempDir(t,'cr-recipe-');
