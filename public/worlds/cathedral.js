@@ -33,7 +33,10 @@
 //                            the foot up, halo rings tilted toward the view, one more per repeat); its own moment pushes
 //                            the camera in on that spire with a gold flare
 //  - agent                -> a servitor: a lantern inside two precessing brass rings, circling the tower it works on below
-//                            the skyline, beaming onto it and casting a warm pool of light on the facade
+//                            the skyline, beaming onto it and casting a warm pool of light on the facade; brighter while
+//                            it works. Each edit touches the tower (touch.js): its windows light in a quick cascade from
+//                            the foot to the crown in the servitor's colour, a glint flashes at the top and a halo ring
+//                            opens from it (a read: a gentler cascade, no halo)
 // Ambient life (never progress): mist banks drifting past the bases, cloud shadows passing, cloud banks crossing the
 // moon (the rays, rims and glitter dim and return), drips ringing the wet floor, dust glinting toward the moon, windows
 // breathing on the bars with a slow candle flicker, the orrery precessing with beads ticking on the bars, a carillon peal
@@ -45,6 +48,7 @@ import {createCathedralGrammar,JOB as LIFE_JOB} from './life/cathedral.js';
 import {CH as LIFE_CH} from './life/sim.js';
 import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {presence as catalog} from '../providers.js';
+import {touchesAt,touchOf,touchRing,touchGain,touchSprites,touchVisits,visitBlend} from './touch.js';
 const STATE_INDEX={draft:0,committed:1,validated:2,stressed:3};
 // Storey proportions per symbol kind (KINDS) and architectures (ARCH): cathedral-layout.js.
 // Facade looks (shader): 0 lancet, 1 paired lancets, 2 stained glass, 3 tracery screen, 4 plinth, 5 roof spire,
@@ -220,7 +224,8 @@ export function createFamily(ctx){
   const stoneB=instancedBuffers(frustum,{iA:4,iB:4,iL:4,iS:4,iF:4,iC:4,iT:4},512);
   const stoneU={...common,uStone:{value:stone},uMetal:{value:metal},uStress:{value:pal.warning},uValid:{value:pal.valid},uDraft:{value:new THREE.Color('#9cc8ff').lerp(pal.highlight,.3)},
     uGlass:{value:[pal.accent,new THREE.Color('#c41e3a'),new THREE.Color('#1f4fd8'),pal.valid].map(c=>{const h={};c.getHSL(h);return new THREE.Color().setHSL(h.h,.88,.42);})},uWin:{value:winK},uGlassK:{value:glassK},uMetalK:{value:metalK},
-    uSides:{value:SIDES},uArch:{value:A.id},uGold:{value:GOLD},uRoseDir:{value:new THREE.Vector2(-Math.cos(moonAz),-Math.sin(moonAz))}};
+    uSides:{value:SIDES},uArch:{value:A.id},uGold:{value:GOLD},uRoseDir:{value:new THREE.Vector2(-Math.cos(moonAz),-Math.sin(moonAz))},
+    uTouch:{value:Array.from({length:4},()=>new THREE.Vector4(0,0,-1e5,0))},uTouchC:{value:Array.from({length:4},()=>new THREE.Vector4())}};
   const stoneMat=new THREE.ShaderMaterial({uniforms:stoneU,
     vertexShader:`${FOG}attribute vec4 iA,iB,iL,iS,iF,iC,iT;uniform float uT,uSpeed,uV,uSides;
       varying vec3 vW,vL,vN,vC;varying vec4 vB,vS,vF,vX,vT;varying vec2 vP;varying float vFog,vAsm,vTest;
@@ -244,7 +249,7 @@ export function createFamily(ctx){
         w.y*=uMirror;n.y*=uMirror;
         vW=w;vL=vec3(lp.x,lp.y,lp.z);vN=n;vB=iB;vS=iS;vF=iF;vC=iC.rgb;vT=iT;vP=iA.xy;vX=vec4(age,gone,(uT-iL.z)/uSpeed,iL.w);vAsm=a;
         vFog=fogAmt(w);gl_Position=projectionMatrix*viewMatrix*vec4(w,1.);}`,
-    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uKey,uWarm,uStone,uMetal,uStress,uValid,uDraft,uGold,uGlass[4],uAgentC[4];uniform vec4 uUnlock,uMood,uCold,uAgentL[4];uniform vec3 uCentre;uniform vec2 uRoseDir;
+    fragmentShader:`${FOG}${OUT_ALPHA}uniform vec3 uKey,uWarm,uStone,uMetal,uStress,uValid,uDraft,uGold,uGlass[4],uAgentC[4];uniform vec4 uUnlock,uMood,uCold,uAgentL[4],uTouch[4],uTouchC[4];uniform vec3 uCentre;uniform vec2 uRoseDir;
       uniform float uT,uV,uSpeed,uBeat,uBars,uWin,uGlassK,uMetalK,uSides,uArch,uActivity;
       varying vec3 vW,vL,vN,vC;varying vec4 vB,vS,vF,vX,vT;varying vec2 vP;varying float vFog,vAsm,vTest;
       float h11b(float n){return fract(sin(n*12.9898)*43758.5453);}
@@ -270,6 +275,11 @@ export function createFamily(ctx){
         float ang=atan(vL.x,vL.z);float fs=(ang/6.2831853+.5)*uSides;float fi=floor(fs),fu=fract(fs);
         float faceW=2.*r*sin(3.14159265/uSides);float px=(fu-.5)*faceW,py=vL.y*h;
         float seed=vX.w;
+        // An agent's touch (touch.js; uTouch: the tower's x, z, start, strength; uTouchC: colour): its windows light in a
+        // quick cascade from the foot to the crown in the agent's colour, a bright band leading, then fade.
+        float tch=0.;vec3 tcol=vec3(0.);
+        for(int k=0;k<4;k++){vec4 T=uTouch[k];if(T.w<=0.||distance(vP,T.xy)>.02)continue;float ag=(uT-T.z)/uSpeed;if(ag<0.||ag>3.2)continue;
+          float front=ag/.8*top*1.08;float v=(step(wy,front)*pow(1.-ag/3.2,1.5)*.9+exp(-pow((wy-front)*4.,2.))*2.4*(1.-smoothstep(.8,1.3,ag)))*T.w;if(v>tch){tch=v;tcol=uTouchC[k].rgb;}}
         // Lighting: moonlight from behind the city (broken by passing cloud) rimming the silhouettes, a faint cool fill,
         // warm bounce from the lit precinct below.
         float cs=cloudSh(vW.xz);float key=max(dot(N,uKey),0.)*cs*(.3+.7*uMoonK);
@@ -306,7 +316,7 @@ export function createFamily(ctx){
           float litFrac=st>2.5?0.:st>1.5?.88:st>.5?.42:0.;
           float human=exp(-max(vS.w,0.)*.9)*step(0.,vS.w);float weld=vX.z>0.?exp(-vX.z*.8):0.;
           if(vF.y>3.5&&vF.y<4.5&&fxk>0.)weld=max(weld,exp(-fxk*.45)*smoothstep(0.,.8,fxk));if(vF.y>2.5&&vF.y<3.5&&fk2>0.)weld=max(weld,exp(-fk2*.45)*step(wy,fk2*2.4));
-          litFrac=min(1.,litFrac+human*.5+weld*1.2);
+          litFrac=min(1.,litFrac+human*.5+weld*1.2+tch*1.5);
           float on=step(lit2,litFrac);
           float fl=texture(uNoise,vec2(cid*.071+seed*.37,uV*.23+lh)).x;
           float breathe=.84+.16*sin(6.2832*uBars/${breathBars}.+seed*6.)+.3*(fl-.5)+.02*uBeat;
@@ -322,7 +332,7 @@ export function createFamily(ctx){
             glass=vec3(.002,.003,.008)+uStress*emer*.14*(.7+.3*sin(uV*.9+cid))+gc*gut*1.4*step(lit2,.88);}
           if(st<.5)glass=vec3(.002,.004,.008);
           if(look>2.5&&look<3.5){float lat=min(abs(fract(wp.x*14.)-.5),abs(fract(wp.y*14.)-.5));glass*=.5+.5*smoothstep(.1,.2,lat);}
-          glass*=(.6+.4*lead)*(1.-.85*mull);
+          glass*=(.6+.4*lead)*(1.-.85*mull);glass=mix(glass,tcol*(1.4+1.6*tch)*(.6+.4*lead)*(1.-.85*mull),min(1.,tch*.8));
           // A verified milestone (lasting): the covered tower's top storey becomes a lantern of lit tracery, kindled from
           // the sill up, brighter for a while after its moment, then steady.
           float ra=(uT-vF.z)/uSpeed;
@@ -618,6 +628,9 @@ export function createFamily(ctx){
       gl_PointSize=clamp(aS*uPx*60./max(.5,-mv.z),0.,64.);vC=vec4(aC.rgb*(1.-fogAmt(p)*.85),aC.a);}`,fragmentShader:POINT_FS}));
   const lampPoints=new THREE.Points(lamps.geometry,lampMat);lampPoints.frustumCulled=false;lampPoints.renderOrder=6;scene.add(lampPoints);
   const lampMirror=new THREE.Points(lamps.geometry,lampMat);lampMirror.frustumCulled=false;mirror.add(lampMirror);
+  // Touches (touch.js): the glint at a touched tower's top, sized in pixels so it reads across the city (additive here,
+  // alpha untouched: the floor's reflection reads coverage from it).
+  const sprites=touchSprites(THREE,{uniforms:common});additive(sprites.points.material);sprites.points.renderOrder=7;scene.add(sprites.points);let touches=[];
   const BURSTS=24,PER=40,burstPts=pointBuffers({bDir:4},BURSTS*PER);
   {const r=rng(hash(`burst/${seed}`));for(let b=0;b<BURSTS;b++)for(let k=0;k<PER;k++){const u=r()*2-1,a=r()*6.283,s=Math.sqrt(1-u*u);burstPts.write('position',b*PER+k,0,0,0);burstPts.write('bDir',b*PER+k,Math.cos(a)*s,Math.abs(u)*.9+.1,Math.sin(a)*s,b+r()*.9);}burstPts.commit(BURSTS*PER);}
   const burstU={uBA:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(0,0,0,-1e5))},uBB:{value:Array.from({length:BURSTS},()=>new THREE.Vector4())},uBC:{value:Array.from({length:BURSTS},()=>new THREE.Vector4(1,0,1,0))}};
@@ -970,6 +983,10 @@ export function createFamily(ctx){
     floorU.uRose.value.w=unl[1]*.6+.25;
     // States per tower (with the time of the last change), the last human edit and agent work.
     const working=workingSet;working.clear();for(const a of i.agents)if(a.fileId&&a.display==='tool')working.add(a.fileId);
+    // An agent's touch: the tower's window cascade (the stone shader), its glint and halo (with the rings below).
+    touches=touchesAt(ctx.agents,i.agents.slice(0,10),i.t,sp,{known:id=>towers.has(id)});const tg=touchGain(G,i.overrides);
+    for(let k=0;k<4;k++){const x=touches[k],T=stoneU.uTouch.value[k];if(!x){T.w=0;continue;}const tw=towers.get(x.fileId),c=AGENT_COLORS[x.voice%8];
+      T.set(tw.pos.x,tw.pos.z,secs(x.at,epoch),x.k*tg);stoneU.uTouchC.value[k].set(c.r,c.g,c.b,0);}
     for(const [id,list2] of towerBlocks){const m=model.modules.get(id);if(!m)continue;let cur=m.initial,prev=m.initial,t0=-1e5;for(const e of m.states){if(e.at>i.t)break;prev=cur;cur=e.state;t0=secs(e.at,epoch);}
       const hum=Number.isFinite(m.lastHuman)&&m.lastHuman<=i.t?(i.t-m.lastHuman)/1000/sp:working.has(id)?.6:1e3;
       const s0=STATE_INDEX[cur]??1,s1=STATE_INDEX[prev]??1,hv=working.has(id)?Math.min(hum,.6):hum;for(const b of list2)b.buf.write('iS',b.index,s0,s1,t0,hv);}
@@ -990,13 +1007,22 @@ export function createFamily(ctx){
     li=0;nd=0;const MAX_AGENTS=10;const seen=seenSet;seen.clear();let na=0;for(const v of common.uAgentL.value)v.w=0;
     for(const a of i.agents.slice(0,MAX_AGENTS)){seen.add(a.id);const orbit=orbitOf(a,i,tmpA);const tw=a.fileId?towers.get(a.fileId):null;const blend=smooth(Math.min(1,(a.since||0)/1000/sp/1.6));
       const work=tw&&a.display==='tool';
-      if(work){const ph=rand(hash(a.id+'h'))*6.283+i.tview*.18;const rr=tw.R*2.2+.45;tmpB.set(tw.pos.x+Math.cos(ph)*rr,Math.max(.7,tw.top*.8)+Math.sin(i.tview*.9)*.05,tw.pos.z+Math.sin(ph)*rr);orbit.lerp(tmpB,blend);}
+      // While it works the lantern burns brighter and a little larger, most of all as it touches a tower.
+      const T=touchOf(touches,a.id),tk=T?T.env*T.k:0,wk=work?1:a.busy?.4:0,lk=1+.5*wk+1.2*tk;
+      const circle=(t,out)=>{const ph=rand(hash(a.id+'h'))*6.283+i.tview*.18;const rr=t.R*2.2+.45;return out.set(t.pos.x+Math.cos(ph)*rr,Math.max(.7,t.top*.8)+Math.sin(i.tview*.9)*.05,t.pos.z+Math.sin(ph)*rr);};
+      if(work)orbit.lerp(circle(tw,tmpB),blend);
+      // It stays a few seconds at the towers it has just touched (an edit's tool lasts a moment: touch.js visits).
+      const visits=touchVisits(ctx.agents,a.id,i.t,sp,id=>towers.has(id)),vw=visits.reduce((m,v)=>Math.max(m,v.w),0);
+      if(visits.length)visitBlend(orbit,visits,id=>circle(towers.get(id),new THREE.Vector3()),orbit);
       let pos=agentPos.get(a.id);if(!pos){pos=new THREE.Vector3();agentPos.set(a.id,pos);}pos.copy(orbit);
       const c=AGENT_COLORS[a.voice%8],alpha=a.alpha*(a.busy?1:.45)*(G.agentProminence??.8);
-      lamp(pos.x,pos.y,pos.z,c.r*1.1*alpha,c.g*1.*alpha,c.b*.9*alpha,5);const dr=drones[nd++];dr.pos=pos;dr.c=c;dr.a=alpha;dr.ph=rand(hash(a.id))*6.283;dr.busy=a.busy;
-      if(na<4){const L=common.uAgentL.value[na],C=common.uAgentC.value[na];L.set(pos.x,pos.y,pos.z,(work?1.1*blend:.25)*alpha);C.set(c.r*.6+warm.r*.4,c.g*.6+warm.g*.4,c.b*.6+warm.b*.4);na++;}
+      lamp(pos.x,pos.y,pos.z,c.r*1.1*alpha*lk,c.g*1.*alpha*lk,c.b*.9*alpha*lk,5*(1+.25*wk+.5*tk));const dr=drones[nd++];dr.pos=pos;dr.c=c;dr.a=alpha*(1+tk);dr.ph=rand(hash(a.id))*6.283;dr.busy=a.busy;
+      if(na<4){const L=common.uAgentL.value[na],C=common.uAgentC.value[na];L.set(pos.x,pos.y,pos.z,Math.max(work?1.1*blend:.25,1.1*vw)*alpha);C.set(c.r*.6+warm.r*.4,c.g*.6+warm.g*.4,c.b*.6+warm.b*.4);na++;}
       if(work&&gi<glowB.capacity){glowB.write('kA',gi,pos.x,pos.y-.05,pos.z,.22);glowB.write('kB',gi,tw.pos.x,pos.y-.25,tw.pos.z,0);glowB.write('kInfo',gi,-1e5,1e6,3,rand(hash(a.id)));
-        glowB.write('kC',gi,c.r,c.g,c.b,.6*alpha*blend);gi++;}}
+        glowB.write('kC',gi,c.r,c.g,c.b,.6*alpha*blend);gi++;}
+      // Its touch: the beam reaches the touched tower's crown for a moment as the cascade climbs.
+      else if(T&&gi<glowB.capacity){const ttw=towers.get(T.fileId),f=1-smooth((T.age-.5)/.6);if(ttw&&f>0){glowB.write('kA',gi,pos.x,pos.y-.05,pos.z,.22);glowB.write('kB',gi,ttw.pos.x,Math.max(.6,ttw.top*.9),ttw.pos.z,0);
+        glowB.write('kInfo',gi,-1e5,1e6,3,rand(hash(a.id)));glowB.write('kC',gi,c.r,c.g,c.b,.6*alpha*f*T.k);gi++;}}}
     for(const id of agentPos.keys())if(!seen.has(id))agentPos.delete(id);
     glowB.commit(gi);
     // Beacons (unlock 2) on the tallest spires, breathing on the bars.
@@ -1052,6 +1078,16 @@ export function createFamily(ctx){
     // Lock clamps: a ring drops onto each end of the new bridge, closing from wide and steep to tight and level.
     for(const L of lockRings){const tw=towers.get(L.id);if(!tw)continue;const ag=(i.tsec-L.at)/sp;if(ag<0||ag>5)continue;const e=1-Math.pow(1-clamp(ag/1.1),3);
       orientN(1.2*(1-e),L.az,U,Vv);R.set(tw.pos.x,Math.max(.6,L.y),tw.pos.z);tmpC.copy(pal.highlight).multiplyScalar(1.6*Math.exp(-Math.max(0,ag-1.1)*.8));ring(R,tw.R*(1.25+2.2*(1-e)),.035,U,Vv,1,1-ag/5,tmpC);}
+    // Touches: a glint at the tower's top as the cascade reaches it, and (an edit) a halo ring opening from it toward the view.
+    sprites.begin();
+    // (Sized for the long lens: a small building far across the water still gets a ring and a glint that read.)
+    for(const x of touches){const tw=towers.get(x.fileId);if(!tw)continue;const c=AGENT_COLORS[x.voice%8],e=x.k*tg,edit=x.kind==='edit',gl=touchRing(x.age,.7,1.3);
+      const far=Math.hypot(tw.pos.x-estab.C.x,tw.pos.z-estab.C.z);
+      tmpV.set(tw.pos.x,tw.roofTop+.06,tw.pos.z);if(gl)sprites.add(tmpV,tmpC.copy(c).lerp(warm,.3).multiplyScalar(2.2),gl.a*e,(edit?44:26)+56*gl.a,{world:tw.R*1.2,kind:2});
+      sprites.add(tmpV,c,x.env*e*.6,14+22*x.env,{world:tw.R*.6});
+      const h=edit?touchRing(x.age,.8,1.5):null;
+      if(h){orientN(.55,camAz(tw.pos.x,tw.pos.z),U,Vv);R.set(tw.pos.x,tw.top+(tw.roofTop-tw.top)*.4,tw.pos.z);tmpC.copy(c).multiplyScalar(2.6*e*h.a);ring(R,Math.max(tw.R,far*.012)*(1.2+3.6*h.r),Math.max(.03,far*.0016),U,Vv,1,1,tmpC);}}
+    sprites.commit();
     ringB.commit(ri);lamps.commit(li);
     // Beams: searchlights (after the searchlights unlock) and the recovery beam.
     let bi=0;
@@ -1251,9 +1287,9 @@ export function createFamily(ctx){
   function pick(x,y,cam){let best=null,bd=.05;for(const [id,tw] of towers){const p=tw.pos.clone().setY(tw.top*.6).project(cam);const d=Math.hypot(p.x-x,(p.y-y)*.6);if(p.z<1&&d<bd){bd=d;best=id;}}return best;}
   function inspect(id,i){const tw=towers.get(id),m=model.modules.get(id);if(!tw||!m)return null;const deps=[...model.links.values()].filter(l=>(l.a===id||l.b===id)&&model.alive(l,i.t)).length;
     return {position:tw.pos.clone().setY(tw.top),text:`A tower · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'storey')} · ${plural(deps,'link')} · ${ctx.name(m.group)}`};}
-  function stats(){return {districts:districts.size,towers:towers.size,stones:stoneCount,pinnacles:pinCount,naves:naves.length,spires:greats.length,flyers:flyers.length,bridges:bridges.length,channels:channels.length,rings:ringB.geometry.instanceCount,crowns:crowns.length,roses:roses.size,
+  function stats(){return {districts:districts.size,towers:towers.size,touches:touches.length,stones:stoneCount,pinnacles:pinCount,naves:naves.length,spires:greats.length,flyers:flyers.length,bridges:bridges.length,channels:channels.length,rings:ringB.geometry.instanceCount,crowns:crowns.length,roses:roses.size,
     architecture:archName,camera:camera.position.toArray().map(x=>+x.toFixed(1)),extent:+extent.toFixed(1),estab:[estab.C.x,estab.C.y,estab.C.z,estab.S.x,estab.S.z,centre.x,centre.z].map(x=>+x.toFixed(1)),view:{L:+estab.L.toFixed(1),fov:+estab.fov.toFixed(1),moonEl:+moonEl.toFixed(3),mist:+common.uMistD.value.toFixed(4)}};}
-  function dispose(){life?.dispose();for(const o of [floor,stoneMesh,pinMesh,naveMesh,latMesh,bayMesh,solidMesh,glowMesh,ringMesh,beamMesh,motePoints,lampPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}
+  function dispose(){life?.dispose();scene.remove(sprites.points);sprites.dispose();for(const o of [floor,stoneMesh,pinMesh,naveMesh,latMesh,bayMesh,solidMesh,glowMesh,ringMesh,beamMesh,motePoints,lampPoints,burstPoints]){scene.remove(o);o.geometry.dispose();o.material.dispose();}
     mirror.clear();noiseTex.dispose();sky.dispose();frustum.dispose();pinGeo.dispose();naveGeo.dispose();latGeo.dispose();ribbonGeo.dispose();bayShape.dispose();ringGeo.dispose();beamGeo.dispose();reflRT.dispose();}
   // After a seek: transient effects are cleared (lasting rose windows and crowns come from director.lasting() each frame).
   function onPrime(){for(const v of common.uWaves.value)v.w=-1e5;for(const v of burstU.uBA.value)v.w=-1e5;for(const v of burstU.uBC.value)v.set(1,0,1,0);
