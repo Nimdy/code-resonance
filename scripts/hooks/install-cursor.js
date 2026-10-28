@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 'use strict';
-// Opt-in: adds the Code Resonance adapter to <project>/.cursor/hooks.json (personal, not committed).
+// Opt-in: adds the Code Resonance adapter to <project>/.cursor/hooks.json (Cursor may commit this file; the command is
+// an absolute path on this machine — gitignore it or do not commit the adapter entry).
 // `--print` shows the configuration instead of writing it. Observe-only after-hooks; nothing that can deny or block.
 const fs=require('node:fs');
 const path=require('node:path');
-const EVENTS=['sessionStart','sessionEnd','afterFileEdit','afterShellExecution','subagentStart','subagentStop','stop'];
+const EVENTS=['sessionStart','sessionEnd','afterFileEdit','afterShellExecution','subagentStop','stop'];
 const adapter=path.resolve(__dirname,'cursor.js');
 const command=`node ${JSON.stringify(adapter)}`;
+const isPlain=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+const wanted=new Set(EVENTS);
 function merge(settings){
   const next={version:1,...settings,hooks:{...(settings.hooks||{})}};
   for(const event of EVENTS){
@@ -14,11 +17,17 @@ function merge(settings){
     if(!list.some(h=>h&&h.command===command))list.push({command,timeout:5});
     next.hooks[event]=list;
   }
+  // Strip this adapter from events we do not install (a previous build registered subagentStart, which can deny).
+  for(const [event,list] of Object.entries(next.hooks)){
+    if(wanted.has(event)||!Array.isArray(list))continue;
+    const kept=list.filter(h=>!(isPlain(h)&&h.command===command));
+    if(kept.length===list.length)continue;
+    if(kept.length)next.hooks[event]=kept;else delete next.hooks[event];
+  }
   return next;
 }
 // The inverse (the Control Center's removal): exactly the adapter's entries leave, and only the events and `hooks` key
 // that they leave empty; every other byte of meaning in the user's file stays.
-const isPlain=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 function unmerge(settings){
   if(!isPlain(settings.hooks))return settings;
   const hooks={...settings.hooks};let touched=false;

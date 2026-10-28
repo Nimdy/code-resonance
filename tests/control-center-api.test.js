@@ -338,6 +338,7 @@ test('Capture evidence: the extension\'s reported settings and capture state, ag
   assert.equal(integrations.claude.projects.find(p=>p.projectId===projectId).events,5);
   assert.deepEqual(integrations.claude.events,EVENTS);assert.equal(integrations.claude.adapter,undefined,'adapter path: capability only');
   assert.deepEqual(integrations.cursor.events,CURSOR_EVENTS);assert.equal(integrations.cursor.adapter,undefined,'adapter path: capability only');
+  assert(!integrations.cursor.events.includes('subagentStart'));
   assert.deepEqual(integrations.providers.map(p=>p.id),['claude-code','cursor','codex','grok','qwen','kimi']);
   assert.equal(integrations.providers.find(p=>p.id==='claude-code').adapter,'first-party');
   assert.equal(integrations.providers.find(p=>p.id==='cursor').adapter,'first-party');

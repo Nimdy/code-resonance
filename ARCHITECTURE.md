@@ -172,7 +172,7 @@ refused. Reads return derived, privacy-safe data. **Administrative** routes need
 | `GET /docs/<name>` | The documents the Control Center opens, from a fixed list, as inert text |
 | `GET /pack-frame.html` | The isolated frame code packs run in (no connections allowed) |
 | `POST /api/session` | A control capability, for a paired browser only |
-| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/compositions`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}` | Administrative (`/api/recipe/preview` never writes) |
+| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/compositions`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}`, `/api/integrations/cursor/{plan,apply}` | Administrative (`/api/recipe/preview` never writes) |
 | `POST /v1/events` | Ingestion: valid events kept, rejections listed |
 | `POST /v1/flush?id=`, `/v1/rebuild?id=`, `/v1/pairing-code` | Token holders: close the open window, re-interpret from the journal, a single-use pairing link |
 

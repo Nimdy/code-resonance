@@ -2,7 +2,7 @@
 'use strict';
 // Cursor hook adapter (https://cursor.com/docs/agent/hooks). Observe-only after-hooks: it reads documented hook JSON
 // from stdin and forwards only what Code Resonance needs. It never prints to stdout and always exits 0, so it cannot
-// block or alter Cursor. Payloads that are not this harness's documented shape (K14) become no events.
+// block or alter Cursor. Payloads that are not this harness's documented shape become no events.
 const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
@@ -12,7 +12,7 @@ const {projectIdForRoot,findProjectRoot}=require('../../sdk/project-id');
 const {isFileEligible,classifyCommand}=require('../../extension/filters');
 const DATA=process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance');
 const PROVIDER='cursor';
-const KNOWN=new Set(['afterFileEdit','afterShellExecution','stop','subagentStart','subagentStop','sessionStart','sessionEnd']);
+const KNOWN=new Set(['afterFileEdit','afterShellExecution','stop','subagentStop','sessionStart','sessionEnd']);
 const sha=s=>crypto.createHash('sha256').update(String(s)).digest('hex');
 const isPlain=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const isStr=v=>typeof v==='string';
@@ -24,9 +24,8 @@ function relativeFile(root,file){
 }
 function matches(event,input){
   if(event==='afterFileEdit')return isStr(input.file_path)&&Array.isArray(input.edits);
-  if(event==='afterShellExecution')return isStr(input.command)&&(input.output===undefined||isStr(input.output))&&(input.duration===undefined||(isNum(input.duration)&&input.duration>=0));
-  if(event==='stop')return true;
-  if(event==='subagentStart')return isStr(input.subagent_id)&&isStr(input.subagent_type);
+  if(event==='afterShellExecution')return isStr(input.command)&&(input.output==null||isStr(input.output))&&(input.duration===undefined||(isNum(input.duration)&&input.duration>=0));
+  if(event==='stop')return isStr(input.status);
   if(event==='subagentStop')return isStr(input.subagent_type);
   if(event==='sessionStart'||event==='sessionEnd')return isStr(input.session_id)||isStr(input.conversation_id);
   return false;
@@ -34,8 +33,8 @@ function matches(event,input){
 function sessionOf(input){return String(input.session_id||input.conversation_id||'unknown');}
 function agentOf(input,event){
   const session=sessionOf(input);
-  if(event==='subagentStart')return `${session}/${input.subagent_id}`;
-  if(event==='subagentStop')return `${session}/${input.subagent_id||input.subagent_type}`;
+  // Cursor's documented subagentStop has no instance id: identity is type-only (two explore subagents share a voice).
+  if(event==='subagentStop')return `${session}/${input.subagent_type}`;
   return session;
 }
 function rootOf(input){
@@ -66,7 +65,6 @@ function translate(input,now=Date.now()){
       return out;
     }
     case 'stop':return [base('agent.response.completed')];
-    case 'subagentStart':return [base('agent.subagent.started',{tool:String(input.subagent_type).slice(0,40)})];
     case 'subagentStop':return [base('agent.subagent.stopped',{tool:String(input.subagent_type).slice(0,40)})];
     case 'sessionStart':return [base('agent.session.started',{reason:String(input.composer_mode||input.source||'')})];
     case 'sessionEnd':return [base('agent.session.ended',{reason:String(input.reason||'')})];

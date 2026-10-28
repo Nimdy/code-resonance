@@ -16,8 +16,8 @@
 .ws-connections .conn-error{display:flex;align-items:center;gap:6px;color:var(--danger);font-size:13px;min-height:0}
 .ws-connections .conn-error:empty{display:none}
 .ws-connections .conn-error svg{width:14px;height:14px;flex:none}
-/* ---- The signal strip: four channels, each with a thin level line that lights only on evidence ---- */
-.ws-connections .conn-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden}
+/* ---- The signal strip: five channels, each with a thin level line that lights only on evidence ---- */
+.ws-connections .conn-strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden}
 .ws-connections .conn-seg{--lvl:var(--line-2);position:relative;display:grid;gap:5px;align-content:start;text-align:left;padding:15px 20px 14px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--text-1);min-width:0;transition:background var(--t-1)}
 .ws-connections .conn-seg:last-child{border-right:0}
 .ws-connections .conn-seg::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:var(--lvl);transition:background var(--t-2)}
@@ -192,7 +192,7 @@
   .ws-connections .conn-guide-steps>.conn-step-row{flex-direction:column;align-items:flex-start;gap:8px}
   .ws-connections .conn-guide-steps>.conn-step-row>span{flex:none}
   .ws-connections .conn-col-guide .conn-guide-stack{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start}}
-@media (max-width:1180px){.ws-connections .conn-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(2){border-right:0}.ws-connections .conn-seg:nth-child(-n+2){border-bottom:1px solid var(--line)}
+@media (max-width:1180px){.ws-connections .conn-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(3){border-right:0}.ws-connections .conn-seg:nth-child(-n+3){border-bottom:1px solid var(--line)}
   .ws-connections .conn-data-body{grid-template-columns:1fr}}
 @media (max-width:1080px){.ws-connections .conn-editor{grid-template-columns:230px minmax(0,1fr)}.ws-connections .conn-tr{grid-template-columns:minmax(0,1fr) 110px 70px}}
 @media (max-width:900px){.ws-connections .conn-editor{grid-template-columns:1fr}

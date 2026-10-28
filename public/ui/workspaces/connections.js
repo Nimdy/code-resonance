@@ -421,7 +421,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const form=h('form',{class:'conn-form',noValidate:true,onSubmit:e=>{e.preventDefault();void busyShow();}},
       h('label',{class:'field-label',for:'connCursorPath',text:'Project folder (absolute path)'}),
       input,err,h('div',{class:'conn-form-row'},action,show),
-      h('p',{class:'faint small',id:'connCursorPathHelp',text:'Only <folder>/.cursor/hooks.json changes (personal, not committed), and in it only this adapter’s hook entries. Everything else in the file stays as it is. Cursor runs project hooks only in a trusted workspace.'}));
+      h('p',{class:'faint small',id:'connCursorPathHelp',text:'Only <folder>/.cursor/hooks.json changes, and in it only this adapter’s hook entries. Everything else in the file stays as it is. Cursor may commit this file; the adapter command is an absolute path on this machine — gitignore the file or do not commit that entry. Cursor runs project hooks only in a trusted workspace.'}));
     input.addEventListener('input',()=>{err.replaceChildren();input.removeAttribute('aria-invalid');updateCli();if(plan)reset();});
     function updateCli(){const t=integ?.cursor?.command||'npm run hooks:cursor -- /path/to/project',p=input.value.trim();cli.set(p?t.replace('/path/to/project',quote(p)):t);}
     function reset(){plan=null;result.replaceChildren();}

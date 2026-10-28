@@ -151,9 +151,10 @@ const CLAUDE_EXCLUDED=['Prompt text (unless RESONANCE_CAPTURE_PROMPT_TEXT=1 is s
 const CURSOR_CAPTURED=['Session start and end, when Cursor sends them',
   'File edits: the project-relative path a file tool edits, when it passes the same filters as the extension',
   'Shell: a command category (test, build, lint, typecheck, …), never the command line or its output',
-  'Subagents: start and stop, so each subagent is a distinct voice',
+  'Subagents: stop by type (two of the same type share a voice)',
   'Response completed when the agent loop stops'];
 const CURSOR_EXCLUDED=['Edit hunks (old_string / new_string) and file contents','Command lines and command output','Prompt text (beforeSubmitPrompt is not installed)',
+  'Subagent start (subagentStart is a permission hook and is not installed)',
   'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
 async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unmerge}){
   if(action!=='install'&&action!=='remove')throw coded('invalid','action must be "install" or "remove"',{key:'action'});
