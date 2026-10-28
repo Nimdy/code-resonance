@@ -79,6 +79,16 @@ Then start a new agent session in that project: a session that was already runni
 also asks you to review and trust new hooks (`/hooks`) before they run. While an agent is only thinking, nothing new
 arrives: Code Resonance sees its sessions, tools and files, never its reasoning.
 
+**Several agents on one project.** The hooks belong to the project, not to one session: once a tool's hooks are in,
+every session of that tool in the project joins, at the same time if you like. A typical day (Claude Code in two
+terminals on different parts of the code, a Cursor agent chat on a third, Codex on tests) shows four presences, each
+going to the files it works on, each edit attributed to the session whose tool touched the file. Sessions of the same
+tool running together are numbered in labels and the hover card (*Claude*, *Claude 2*; a lone session is just
+*Claude*; a closed session's number is free again), and share the tool's colour and voice. Subagents show as their
+tool's *subagent*. Two different tools on the same file (or the same subsystem) within a minute are a *meeting* of
+agents; two sessions of the same tool are not. An agent with no hooks here (for example one built into an editor
+without an adapter) is not a presence: its edits still arrive, unattributed, like your own.
+
 Connections shows what the receiver has actually observed (VS Code capture, the settings the extension reported, Claude
 Code, Cursor and Codex activity) and can add or remove each adapter after showing the exact change. Cursor is
 observe-only after-hooks (never `subagentStart`). Codex is observe-only (never `PreToolUse` / `PermissionRequest`;

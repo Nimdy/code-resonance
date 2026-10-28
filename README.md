@@ -54,8 +54,9 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   Codex, Grok, Qwen, Kimi on stable seats; unknown providers hash into the remaining seats. Stage chips show catalog
   names, never vendor art. Claude Code, Cursor and Codex have observe-only adapters. A file change is attributed to an
   agent only when it follows that agent's own tool event; everything else stays `unknown`. Hidden reasoning is never
-  inferred. Two providers on the same file or district inside 60 s emit `agent.collision` (an intent and a derived cue;
-  last-writer still attributes).
+  inferred. Several agents can work at once: each session is its own presence, and sessions of the same tool running
+  together are numbered (*Claude*, *Claude 2*). Two providers on the same file or district inside 60 s emit
+  `agent.collision` (an intent and a derived cue; last-writer still attributes); two sessions of the same tool do not.
 - **Composes.** Each project has a musical identity (key, mode, progressions, motif, tempo) that never changes. New
   projects play the composed score: long-form arcs, voice-led harmony, phrases built from the motif; failures bring
   tension and verified milestones lift the next passage. Four styles: Ambient, Pulse, Cinematic, Chip. Projects made
@@ -125,6 +126,12 @@ through WSL, run the receiver inside WSL too.
 **AI agents (optional).** `npm run hooks:claude -- /path/to/your/project` (or `hooks:cursor`, `hooks:codex`) adds
 observe-only hooks, so the agent joins the world as a CAST presence. Start a new agent session afterwards: a session
 that is already running does not pick up new hooks.
+
+**Several agents at once.** Install the hooks once per project for each tool you use; then every session joins on its
+own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex. Each is a separate
+presence with its own work and edits; sessions of the same tool are numbered while they run at the same time
+(*Claude*, *Claude 2*), subagents appear as their tool's *subagent*. An agent without hooks (for example one built into
+an editor that has no adapter here) is not shown as a presence, but its edits still reach the world, unattributed.
 
 **After the first time,** run `npm run up` (or `npm start`) in this folder. Capture in VS Code resumes by itself until
 you stop it from **CR**.

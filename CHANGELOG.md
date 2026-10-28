@@ -23,6 +23,11 @@
   and not at quality 3. Behind the network, the far tissue: out-of-focus fibres with bokeh nodes in every direction
   (atmosphere, never code; about 1–2 ms on an integrated GPU at 1080p). The render lab takes `--after` (seconds after
   each event, with `--events`). The brief's stills are now rendered on a GPU.
+- **Several agents at once:** sessions of the same tool running together are numbered in public labels and the hover
+  card (*Claude*, *Claude 2*; the lowest number free, so a lone session is just *Claude*). The README and the first-run
+  guide explain running several agents on one project (two Claude Code terminals, Cursor chats, Codex): hooks once per
+  project and tool, each session its own presence; agents without hooks are not presences, their edits arrive
+  unattributed. `tests/agents-multi.test.js` new.
 - **Public repository:** REPOSITORY.md no longer calls it private; SECURITY.md says how to report a vulnerability
   privately (GitHub's private vulnerability reporting); the README's hero caption says the Cursor and Codex events in
   that film were posted through their adapters, Claude was a live session.
