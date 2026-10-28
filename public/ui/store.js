@@ -8,7 +8,7 @@ import {STYLES,TEMPO_MIN,TEMPO_MAX,resolveMusic,engineOptions,pinOf} from './mus
 const P=window.ResonancePlayer;
 const params=new URLSearchParams(location.search);
 // ?music= pins the composed score's performance profile ({"mood":.7,"mix":{"perc":0}}), as ?style= pins the style.
-const pins={world:P.WORLDS.includes(params.get('world'))?params.get('world'):null,style:STYLES.includes(params.get('style'))?params.get('style'):null,
+const pins={world:P.worldOf(params.get('world')),style:STYLES.includes(params.get('style'))?params.get('style'):null,
   labels:P.LABEL_MODES.includes(params.get('labels'))?params.get('labels'):null,quality:params.has('quality')||params.has('adapt'),captions:params.get('captions')==='0'?false:null,
   profile:pinOf(params.get('music'))};
 const DEVICE_KEY='code-resonance-device-v1',UI_KEY='code-resonance-ui-v1',LEGACY_KEY='code-resonance-player-v1';
@@ -180,7 +180,7 @@ async function migrateLegacy(){
   if(['project','manual'].includes(old.tempoMode))music.tempoMode=old.tempoMode;
   if(Number.isInteger(old.tempo)&&old.tempo>=TEMPO_MIN&&old.tempo<=TEMPO_MAX)music.tempo=old.tempo;
   const patch={music,onboarding:{migrated:true}};
-  if(P.WORLDS.includes(old.world))patch.stage={world:old.world};
+  const world=P.worldOf(old.world);if(world)patch.stage={world};
   if(['720p','1080p','stage'].includes(old.recordSize))patch.recording={profile:old.recordSize};
   try{await saveSettings(patch);if(P.QUALITY.includes(old.quality))setDevice({quality:old.quality});try{localStorage.removeItem(LEGACY_KEY);}catch{}}catch(e){console.warn('Settings migration postponed',e.message);}
 }

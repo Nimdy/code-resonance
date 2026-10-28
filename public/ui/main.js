@@ -7,7 +7,7 @@
 import {h,clear,text,button,popover,menuItem,toast,modal,copyable} from './dom.js';
 import {icon} from './icons.js';
 import * as store from './store.js';
-import {ago,timecode,projectName,stageWorldName} from './format.js';
+import {ago,timecode,projectName,stageWorldName,WORLD_NAMES} from './format.js';
 const P=store.player;
 const params=new URLSearchParams(location.search);
 const host=document.getElementById('stageHost'),chrome=document.getElementById('stageChrome'),root=document.getElementById('app');
@@ -128,7 +128,7 @@ function updateShell(topics){
     text(recordBtn.querySelector('.label'),active?`Stop ${timecode(r.stats.elapsedMs)}${r.audio&&!r.audioLost?'':' · no sound'}`:other?'Recording elsewhere':'Record');
     recordBtn.disabled=other;recordBtn.title=other?'Another window of Code Resonance is recording':active?'Stop and save the recording':'Record the stage and the music to a WebM file';
   }
-  if(!topics||topics.has('world')||topics.has('recipe')){const s=P.state,name=s.world==='living'?stageWorldName(s.recipe):({construct:'The Construct',nexus:'Nexus',city:'Monolith',nebula:'Nebula'})[s.world];
+  if(!topics||topics.has('world')||topics.has('recipe')){const s=P.state,name=s.world==='living'?stageWorldName(s.recipe):WORLD_NAMES[s.world];
     stageBtn.replaceChildren(icon('stage'),h('span',{text:'Stage'}),h('span',{class:'stage-btn-world',text:name||''}));stageBtn.title=`Enter the Performance Stage: ${name} (F)`;}
   if(!topics||topics.has('mode')||topics.has('position')){
     const live=s.mode==='live';modePill.className=`pill ${live?'accent live':'plain'}`;text(modePill,live?'Live':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);

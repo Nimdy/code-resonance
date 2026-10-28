@@ -10,8 +10,10 @@
   const $=id=>document.getElementById(id);
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
   const params=new URLSearchParams(location.search);
-  // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages.
-  const WORLDS=['living','construct','nexus','city','nebula'];
+  // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages. Nexus and
+  // Nebula, 2D stages retired after 0.7.1, show Monolith: an OBS bookmark (?world=nebula) or a stored choice still plays.
+  const WORLDS=['living','construct','city'],RETIRED={nexus:'city',nebula:'city'};
+  const worldOf=w=>WORLDS.includes(w)?w:Object.hasOwn(RETIRED,w)?RETIRED[w]:null;
   // Film mode: the clock is driven frame by frame (window.__film), so a recorded performance renders deterministically.
   const FILM=params.has('film');
   const overlay=params.has('overlay');
@@ -93,7 +95,7 @@
   const notices=[];let noticeSeq=0;
   // `action` (optional): what the message offers, e.g. {label:'Show Monolith', world:'city'}; the interface decides.
   function notify(text,kind='info',action=null){notices.push({id:++noticeSeq,text:String(text),kind,at:Date.now(),...(action?{action}:{})});if(notices.length>20)notices.shift();changed('notice');}
-  if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
+  if(worldOf(params.get('world')))selectedWorld=worldOf(params.get('world'));
   if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
   if(params.get('adapt')==='0'&&!params.has('quality'))qualityChoice='0';
   const qualityLevel=()=>qualityChoice==='auto'?(Number(params.get('quality'))||0):Number(qualityChoice),qualityAdaptive=()=>qualityChoice==='auto';
@@ -753,7 +755,7 @@
     try{await music.start();soundError='';}catch(e){soundError=String(e.message||e);changed('sound');throw e;}
     soundEnabled=true;changed('sound');return true;
   }
-  function setWorld(world){if(!WORLDS.includes(world)||world===selectedWorld)return;
+  function setWorld(world){world=worldOf(world);if(!world||world===selectedWorld)return;
     selectedWorld=world;changed('world');
     if(world==='construct')void ensureConstruct();
     if(world==='living')void ensureLiving();
@@ -943,7 +945,7 @@
   }
   // ---- The engine's interface ---------------------------------------------------------------------------------
   const player={
-    WORLDS,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
+    WORLDS,worldOf,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
     on(f){listeners.add(f);return ()=>listeners.delete(f);},
     // A snapshot of everything a view may show (cheap: no copies of large structures).
     get state(){const h=history();return {

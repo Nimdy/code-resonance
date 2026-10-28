@@ -116,19 +116,19 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     check('export: "Render music (WAV)" downloads a WAV of the active project',wav.suggestedFilename().endsWith('.wav')&&head.startsWith('RIFF')&&head.endsWith('WAVE')&&!wav.suggestedFilename().includes('lumen'),`${wav.suggestedFilename()} (${fs.statSync(wavPath).size} bytes)`);
     // ---- Independence of projects, and a second window converging ----------------------------------------------
     // lumen's world and information mode are changed on the Stage (as a person would), then compared with sample's.
-    await page.goto(env.url+'/#/stage');await page.waitForSelector('[data-world="nexus"]',{timeout:15000});
+    await page.goto(env.url+'/#/stage');await page.waitForSelector('[data-world="construct"]',{timeout:15000});
     // The Stage's controls fade while the pointer rests; the keyboard reaches them all the same.
     const press=async sel=>{await page.focus(sel);await page.keyboard.press('Enter');};
-    await press('[data-world="nexus"]');await press('.stage-top [role="radio"]:has-text("Explorer")');
+    await press('[data-world="construct"]');await press('.stage-top [role="radio"]:has-text("Explorer")');
     await page.waitForTimeout(1200);
     const [pl,ps]=await Promise.all([json(`/api/preferences?id=${lumen}`),json(`/api/preferences?id=${sample}`)]);
     const [rl,rs]=await Promise.all([json(`/api/recipe?id=${lumen}`),json(`/api/recipe?id=${sample}`)]);
-    check('receiver: lumen’s world preference changed, sample’s did not',pl.world==='nexus'&&ps.world===null,`lumen=${pl.world} sample=${ps.world}`);
+    check('receiver: lumen’s world preference changed, sample’s did not',pl.world==='construct'&&ps.world===null,`lumen=${pl.world} sample=${ps.world}`);
     check('receiver: lumen’s recipe has its own information mode, sample’s is untouched',rl.overrides?.labels==='explorer'&&rs.overrides?.labels!=='explorer',`lumen=${rl.overrides?.labels} sample=${rs.overrides?.labels}`);
     const cfg=async id=>{await page.goto(env.url+`/#/projects/${id}`);await page.waitForFunction(()=>!document.querySelector('.cfg')?.parentElement?.textContent.includes('Loading this project'),null,{timeout:10000});await page.waitForTimeout(600);
       return page.$$eval('.cfg-row',els=>Object.fromEntries(els.map(e=>[e.children[0].textContent,[...e.children[1].children].filter(c=>c.tagName!=='BUTTON').map(c=>c.textContent).join('')])));};
     const cl=await cfg(lumen),cs=await cfg(sample);
-    check('Projects: lumen shows its own world and where it comes from',cl.World==='NexusThis project',cl.World);
+    check('Projects: lumen shows its own world and where it comes from',cl.World==='The ConstructThis project',cl.World);
     check('Projects: sample keeps the global world',cs.World==='Living worldGlobal default',cs.World);
     check('Projects: lumen’s information mode comes from its identity',cl.Information.startsWith('Explorer'),cl.Information);
     check('Projects: sample’s information mode is not lumen’s',!cs.Information.startsWith('Explorer'),cs.Information);
@@ -141,11 +141,11 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     check('"Make active" confirms without the private name',toasts.includes('now the active project')&&!toasts.includes('sample-app'),toasts);
     await page.goto(env.url+'/#/stage');await page.waitForSelector('[data-world="city"]',{timeout:15000});await press('[data-world="city"]');
     await pass('a second window converges after a preference change made in the first',b.page.waitForFunction(()=>[...document.querySelectorAll('.cfg-row')].some(r=>r.textContent.startsWith('World')&&r.textContent.includes('Monolith')&&r.textContent.includes('This project')),null,{timeout:15000}));
-    check('receiver: sample’s world saved, lumen’s unchanged',(await json(`/api/preferences?id=${sample}`)).world==='city'&&(await json(`/api/preferences?id=${lumen}`)).world==='nexus');
+    check('receiver: sample’s world saved, lumen’s unchanged',(await json(`/api/preferences?id=${sample}`)).world==='city'&&(await json(`/api/preferences?id=${lumen}`)).world==='construct');
     // "Use global" hands sample's world back to the global default; both windows follow.
     await page.goto(env.url+`/#/projects/${sample}`);await page.waitForSelector('#cfgWorldGlobal',{timeout:15000});await page.click('#cfgWorldGlobal');
     await pass('World "Use global": the row shows the global default again',page.waitForFunction(()=>[...document.querySelectorAll('.cfg-row')].some(r=>r.textContent.startsWith('World')&&r.textContent.includes('Global default'))&&!document.querySelector('#cfgWorldGlobal'),null,{timeout:10000}));
-    check('receiver: sample’s world preference is cleared, lumen’s kept',(await json(`/api/preferences?id=${sample}`)).world===null&&(await json(`/api/preferences?id=${lumen}`)).world==='nexus');
+    check('receiver: sample’s world preference is cleared, lumen’s kept',(await json(`/api/preferences?id=${sample}`)).world===null&&(await json(`/api/preferences?id=${lumen}`)).world==='construct');
     check('the engine plays the global world for sample again',await page.evaluate(()=>window.ResonancePlayer.state.world)==='living');
     await pass('a second window follows "Use global"',b.page.waitForFunction(()=>[...document.querySelectorAll('.cfg-row')].some(r=>r.textContent.startsWith('World')&&r.textContent.includes('Living')&&r.textContent.includes('Global default')),null,{timeout:15000}));
     allErrors.push(...b.errors);await b.context.close();

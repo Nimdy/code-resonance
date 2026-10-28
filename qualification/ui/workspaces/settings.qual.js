@@ -35,8 +35,9 @@ async function until(fn,ms=10000,step=150){const t=Date.now();for(;;){const v=aw
     const page2=await ctx.newPage();watch(page2,'second');await open(page2);
     await page.screenshot({path:path.join(OUT,'settings-global-1440.png')});
     // ---- Global settings: one change each, verified through the receiver --------------------------------------------
-    await page.selectOption('#setWorld','nebula');
-    check('Default world is saved by the receiver',await until(async()=>(await settings()).stage.world==='nebula'),(await settings()).stage.world);
+    await page.selectOption('#setWorld','city');
+    check('Default world is saved by the receiver',await until(async()=>(await settings()).stage.world==='city'),(await settings()).stage.world);
+    check('the Default world offers three worlds (Nexus and Nebula are retired)',(await page.$$eval('#setWorld option',os=>os.map(o=>o.value))).join()==='living,construct,city');
     await page.focus('#setLabels [aria-checked="true"]');await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');
     check('Information mode (keyboard: arrows) is saved by the receiver',await until(async()=>(await settings()).stage.labels==='stream'),(await settings()).stage.labels);
     // A project follows this default until its identity has an information mode of its own (chosen on the Stage or in
@@ -69,14 +70,14 @@ async function until(fn,ms=10000,step=150){const t=Date.now();for(;;){const v=aw
     // ---- A refused change: said next to the control, and the control shows what the receiver still holds -----------
     const before=errors.length;
     await page.route('**/api/settings',r=>r.request().method()==='POST'?r.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'Invalid value for stage.world',code:'invalid'})}):r.continue());
-    await page.selectOption('#setWorld','city');
-    const refused=await until(()=>page.evaluate(()=>/Not saved: Invalid value/.test(document.querySelector('#rowWorld .set-status').textContent)&&document.getElementById('setWorld').value==='nebula'),5000);
-    check('a refused change is reported and the control returns to the saved value',refused&&(await settings()).stage.world==='nebula',await page.textContent('#rowWorld .set-status'));
+    await page.selectOption('#setWorld','construct');
+    const refused=await until(()=>page.evaluate(()=>/Not saved: Invalid value/.test(document.querySelector('#rowWorld .set-status').textContent)&&document.getElementById('setWorld').value==='city'),5000);
+    check('a refused change is reported and the control returns to the saved value',refused&&(await settings()).stage.world==='city',await page.textContent('#rowWorld .set-status'));
     await page.unroute('**/api/settings');
     // The browser logs the deliberately refused request itself; that one line is expected, nothing else is.
     errors.splice(before,errors.length-before,...errors.slice(before).filter(e=>!/status of 400/.test(e)));
     // ---- The second window follows through the change feed --------------------------------------------------------
-    const conv=await until(()=>page2.evaluate(()=>document.getElementById('setWorld').value==='nebula'&&document.querySelector('#setLabels [aria-checked="true"]').dataset.value==='stream'&&
+    const conv=await until(()=>page2.evaluate(()=>document.getElementById('setWorld').value==='city'&&document.querySelector('#setLabels [aria-checked="true"]').dataset.value==='stream'&&
       !document.getElementById('setCaptions').checked&&document.querySelector('#setProfile [aria-checked="true"]').dataset.value==='1080p'&&document.documentElement.dataset.motion==='reduce'&&!document.getElementById('setGuide').checked),10000);
     check('a second window shows every change without reloading (and applies the motion)',conv);
     // ---- After a reload ------------------------------------------------------------------------------------------
@@ -85,7 +86,7 @@ async function until(fn,ms=10000,step=150){const t=Date.now();for(;;){const v=aw
       profile:document.querySelector('#setProfile [aria-checked="true"]').dataset.value,motion:document.querySelector('#setMotion [aria-checked="true"]').dataset.value,html:document.documentElement.dataset.motion||null,guide:document.getElementById('setGuide').checked,
       engine:{world:window.ResonancePlayer.state.world,size:window.ResonancePlayer.state.recording.size,captions:window.ResonancePlayer.state.captions}}));
     measurements.afterReload=shown;
-    check('every global setting is shown as saved after a reload',shown.world==='nebula'&&shown.labels==='stream'&&shown.captions===false&&shown.profile==='1080p'&&shown.motion==='reduce'&&shown.html==='reduce'&&shown.guide===false,JSON.stringify(shown));
+    check('every global setting is shown as saved after a reload',shown.world==='city'&&shown.labels==='stream'&&shown.captions===false&&shown.profile==='1080p'&&shown.motion==='reduce'&&shown.html==='reduce'&&shown.guide===false,JSON.stringify(shown));
     check('the engine plays the saved defaults (recording size, captions)',shown.engine.size==='1080p'&&shown.engine.captions===false,JSON.stringify(shown.engine));
     await page.click('label:has(#setGuide)');
     check('Showing the setup guide again saves onboarding.dismissed = false (round trip)',await until(async()=>(await settings()).onboarding.dismissed===false));

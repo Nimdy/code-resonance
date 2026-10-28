@@ -38,9 +38,7 @@ const ESSENTIALS={
   common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
-  {id:'nexus',icon:'globe',line:'Modules and links as a network (Canvas 2D)'},
-  {id:'city',icon:'layers',line:'Modules as blocks of a city (Canvas 2D); the fallback without WebGL'},
-  {id:'nebula',icon:'spark',line:'The same layout wound into a turning spiral (Canvas 2D)'}];
+  {id:'city',icon:'layers',line:'The site plan drawn flat, as an architectural elevation (Canvas 2D); the fallback without WebGL'}];
 // Parameter groups (the first genome path segment), named for the sub-headings inside a creative purpose.
 const GROUPS=[['params','World controls'],['uniforms','Look controls'],['geometry','Geometry'],['secondary','Secondary forms'],['space','Space'],['material','Materials'],['atmosphere','Atmosphere'],
   ['light','Light'],['motion','Motion'],['camera','Camera'],['palette','Palette'],['grade','Grade'],['music','Music response'],['agents','Agents'],['limits','Labels on screen'],['technique','Rendering technique'],['life','Digital life']];
@@ -877,7 +875,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   }
   function renderClassic(){
     const eff=savedWorld(),src=S.effective().sources?.world;
-    note('Earlier stages, kept for comparison; no World DNA.','Earlier stages; no World DNA.');
+    note('Fixed stages, no World DNA: the first WebGL world and a lightweight 2D one.','Fixed stages; no World DNA.');
     // A project's own stage choice is the only way out of the global default; this is the way back in.
     if(src==='project'){const g=S.state.settings?.stage?.world||'living';
       browserActions.append(button({label:`Use the global default (${WORLD_NAMES[g]})`,size:'sm',kind:'ghost',id:'vsWorldGlobal',disabled:pending(),
