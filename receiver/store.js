@@ -7,7 +7,11 @@ const path=require('node:path');
 const crypto=require('node:crypto');
 const Score=require('../public/score.js');
 const STYLES=[...Score.STYLES],TEMPO_MODES=['project','manual'],TEMPO_MIN=58,TEMPO_MAX=160;
-const WORLDS=['living','construct','nexus','city','nebula'],LABELS=['cinematic','explorer','stream','off'];
+const WORLDS=['living','construct','city'],LABELS=['cinematic','explorer','stream','off'];
+// Nexus and Nebula, the 2D stages retired after 0.7.1, read as Monolith (the 2D stage that remains): a document that
+// names one still loads and reading it never rewrites it; its next write stores Monolith, which every reader was
+// already shown. A write that asks for one is refused like any unknown world.
+const RETIRED_WORLDS={nexus:'city',nebula:'city'};
 const PROFILES=['720p','1080p','stage'],MOTION=['system','reduce','full'];
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u,PRESET_ID=/^p-[0-9a-f]{12}$/,PACK_REF=/^[a-z0-9.-]{1,64}$/,TUNING_PATH=/^[A-Za-z0-9_.]{1,64}$/;
 const MAX_PRESETS=200,MAX_TUNING=128;
@@ -67,12 +71,14 @@ const integer=(key,v,min,max)=>{if(!Number.isInteger(v)||v<min||v>max)throw inva
 const bool=(key,v)=>{if(typeof v!=='boolean')throw invalid(key);return v;};
 const section=(key,v)=>{if(!isPlain(v))throw invalid(key);return v;};
 const orNull=(fn,key,v,...a)=>v===null?null:fn(key,v,...a);
+const world=(key,v,read)=>oneOf(key,read&&Object.hasOwn(RETIRED_WORLDS,v)?RETIRED_WORLDS[v]:v,WORLDS);
 // A mix is one value, validated as a whole: known groups only, each 0..1.5; a group it leaves out plays as composed.
 function mix(key,v){section(key,v);onlyKeys(key+'.',v,MIX_GROUPS);
   return Object.fromEntries(MIX_GROUPS.map(g=>{const x=v[g]===undefined?1:v[g];if(typeof x!=='number'||!Number.isFinite(x)||x<0||x>1.5)throw invalid(`${key}.${g}`);return [g,x];}));}
 const profile=(key,m,fn)=>Object.fromEntries(PROFILE_KEYS.map(k=>[k,fn(`${key}.${k}`,m[k])]));
-// createDocument(file,{schema, defaults, validate, apply?, nullResets?}): validate(data) returns the normalized data or
-// throws a coded error naming the key; apply(data, patch) computes the next data (default: deep merge of known keys).
+// createDocument(file,{schema, defaults, validate, apply?, nullResets?}): validate(data, {read}) returns the normalized data
+// or throws a coded error naming the key (read: the data comes from the file, not from a write); apply(data, patch)
+// computes the next data (default: deep merge of known keys).
 function createDocument(file,{schema,defaults,validate,apply,nullResets=false}){
   const fresh=()=>clone(typeof defaults==='function'?defaults():defaults);
   const merge=apply||((data,patch)=>mergePatch(fresh(),data,patch,{nullResets}));
@@ -83,7 +89,7 @@ function createDocument(file,{schema,defaults,validate,apply,nullResets=false}){
       raw=JSON.parse(text);
       if(!isPlain(raw)||raw.schema!==schema||!Number.isInteger(raw.revision)||raw.revision<0)throw new Error('not a '+schema+' document');
       const {schema:_s,revision,...data}=raw;
-      return {doc:{schema,revision,...validate(overlay(fresh(),data))},broken:false};
+      return {doc:{schema,revision,...validate(overlay(fresh(),data),{read:true})},broken:false};
     }catch(e){
       console.warn(`[resonance store] ${path.basename(file)} is invalid (${e.message}); using the defaults`);
       // Keep the revision counting upward, so a client holding an older revision sees a conflict rather than a match.
@@ -112,20 +118,20 @@ function createDocument(file,{schema,defaults,validate,apply,nullResets=false}){
 // ---- Global settings: <data>/settings.json
 const SETTINGS_DEFAULTS={music:{style:'ambient',volume:.55,texture:.58,tempoMode:'project',tempo:92,...PROFILE_DEFAULTS,mix:{...MIX_DEFAULTS}},stage:{world:'living',labels:'cinematic',captions:true},
   recording:{profile:'720p'},interface:{motion:'system'},onboarding:{dismissed:false,migrated:false}};
-function validateSettings(d){
+function validateSettings(d,{read=false}={}){
   const m=section('music',d.music),s=section('stage',d.stage),r=section('recording',d.recording),i=section('interface',d.interface),o=section('onboarding',d.onboarding);
   return {music:{style:oneOf('music.style',m.style,STYLES),volume:unit('music.volume',m.volume),texture:unit('music.texture',m.texture),
       tempoMode:oneOf('music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:integer('music.tempo',m.tempo,TEMPO_MIN,TEMPO_MAX),...profile('music',m,unit),mix:mix('music.mix',m.mix)},
-    stage:{world:oneOf('stage.world',s.world,WORLDS),labels:oneOf('stage.labels',s.labels,LABELS),captions:bool('stage.captions',s.captions)},
+    stage:{world:world('stage.world',s.world,read),labels:oneOf('stage.labels',s.labels,LABELS),captions:bool('stage.captions',s.captions)},
     recording:{profile:oneOf('recording.profile',r.profile,PROFILES)},interface:{motion:oneOf('interface.motion',i.motion,MOTION)},
     onboarding:{dismissed:bool('onboarding.dismissed',o.dismissed),migrated:bool('onboarding.migrated',o.migrated)}};
 }
 function settings(dataDir){return createDocument(path.join(dataDir,'settings.json'),{schema:'code-resonance.settings.v1',defaults:SETTINGS_DEFAULTS,validate:validateSettings});}
 // ---- Per-project preferences: <project dir>/preferences.json; null = inherit the global setting.
 const PREFERENCES_DEFAULTS={world:null,music:{style:null,texture:null,tempoMode:null,tempo:null,...Object.fromEntries(PROFILE_KEYS.map(k=>[k,null])),mix:null}};
-function validatePreferences(d){
+function validatePreferences(d,{read=false}={}){
   const m=section('music',d.music);
-  return {world:orNull(oneOf,'world',d.world,WORLDS),music:{style:orNull(oneOf,'music.style',m.style,STYLES),texture:orNull(unit,'music.texture',m.texture),
+  return {world:orNull(world,'world',d.world,read),music:{style:orNull(oneOf,'music.style',m.style,STYLES),texture:orNull(unit,'music.texture',m.texture),
     tempoMode:orNull(oneOf,'music.tempoMode',m.tempoMode,TEMPO_MODES),tempo:orNull(integer,'music.tempo',m.tempo,TEMPO_MIN,TEMPO_MAX),
     ...profile('music',m,(k,v)=>orNull(unit,k,v)),mix:orNull(mix,'music.mix',m.mix)}};
 }
@@ -200,4 +206,4 @@ function presets(dataDir,{now=Date.now,newId=()=>`p-${crypto.randomBytes(6).toSt
   return createDocument(path.join(dataDir,'presets.json'),{schema:'code-resonance.presets.v1',defaults:{presets:[]},validate:validatePresets,apply});
 }
 module.exports={createDocument,settings,preferences,presets,writeAtomic,withLock,mergePatch,
-  SETTINGS_DEFAULTS,PREFERENCES_DEFAULTS,STYLES,TEMPO_MODES,TEMPO_MIN,TEMPO_MAX,WORLDS,LABELS,PROFILES,MOTION,PROFILE_KEYS,MIX_GROUPS};
+  SETTINGS_DEFAULTS,PREFERENCES_DEFAULTS,STYLES,TEMPO_MODES,TEMPO_MIN,TEMPO_MAX,WORLDS,RETIRED_WORLDS,LABELS,PROFILES,MOTION,PROFILE_KEYS,MIX_GROUPS};

@@ -10,8 +10,10 @@
   const $=id=>document.getElementById(id);
   const canvas=$('stage'); const g=canvas.getContext('2d',{alpha:false});
   const params=new URLSearchParams(location.search);
-  // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages.
-  const WORLDS=['living','construct','nexus','city','nebula'];
+  // 'living' is the project's own generative world (its Visual Recipe); the others are fixed visual languages. Nexus and
+  // Nebula, 2D stages retired after 0.7.1, show Monolith: an OBS bookmark (?world=nebula) or a stored choice still plays.
+  const WORLDS=['living','construct','city'],RETIRED={nexus:'city',nebula:'city'};
+  const worldOf=w=>WORLDS.includes(w)?w:Object.hasOwn(RETIRED,w)?RETIRED[w]:null;
   // Film mode: the clock is driven frame by frame (window.__film), so a recorded performance renders deterministically.
   const FILM=params.has('film');
   const overlay=params.has('overlay');
@@ -63,8 +65,9 @@
     return {request,post:(url,body,o)=>request('POST',url,body,o),session,pair,get capability(){return capability;}};})();
   let selected=params.get('project')||'',model=null,etag='',mode='live',playback=false,replayPos=0,replayClock=0,speedChoice=4,windowUntil=null;
   let frame=null,scaledW=0,scaledH=0,replay=null,lastSeq=-1,delayMs=10500,feedCues=[],section='home',barPhase=0,receiverOk=null;
-  // World coordinates are centred on (0,0); the camera eases to frame the structure as it grows.
-  const scene={nodes:new Map(),edges:new Map(),groups:new Map(),order:0,pulses:[],comets:new Map(),ripples:[],extent:.12,view:.12};
+  // What is on stage: the graph as of the performance clock (every world reads it; `version` counts its changes), and
+  // what Monolith animates from the cues (marks on the ground line, agents' last files).
+  const scene={nodes:new Map(),edges:new Map(),groups:new Map(),marks:[],agents:new Map(),version:0};
   let firstBar=null,barNumber=0,musicKey='';
   const queue=[];
   const music=new window.ResonanceMusic(({index,section:s,key})=>{if(firstBar===null)firstBar=index;barNumber=index-firstBar+1;if(s)section=s;if(key)musicKey=key;});
@@ -93,7 +96,7 @@
   const notices=[];let noticeSeq=0;
   // `action` (optional): what the message offers, e.g. {label:'Show Monolith', world:'city'}; the interface decides.
   function notify(text,kind='info',action=null){notices.push({id:++noticeSeq,text:String(text),kind,at:Date.now(),...(action?{action}:{})});if(notices.length>20)notices.shift();changed('notice');}
-  if(params.get('world')&&WORLDS.includes(params.get('world')))selectedWorld=params.get('world');
+  if(worldOf(params.get('world')))selectedWorld=worldOf(params.get('world'));
   if(params.has('quality'))qualityChoice=params.get('adapt')==='0'?String(Math.max(0,Math.min(3,Number(params.get('quality'))||0))):'auto';
   if(params.get('adapt')==='0'&&!params.has('quality'))qualityChoice='0';
   const qualityLevel=()=>qualityChoice==='auto'?(Number(params.get('quality'))||0):Number(qualityChoice),qualityAdaptive=()=>qualityChoice==='auto';
@@ -131,10 +134,6 @@
     try{const v=JSON.parse(params.get('music')||'null');return v&&typeof v==='object'&&!Array.isArray(v)?window.ResonanceScore.profileOf(v):null;}catch{return null;}})()}:null;
   if(FILM)music.setOptions({profile:filmMusic.profile});
   function filmScore(){const v=filmMusic.score??window.ResonanceScore.versionOf((living?.recipe||recipe)?.genome?.music?.score);if(music.options.scoreVersion!==v)music.setOptions({scoreVersion:v});return v;}
-  const typeColor={module:'#7ceeff','ui.component':'#df9cff','api.route':'#a6f5cb',function:'#75c9ff',variable:'#9e8fff',class:'#f4ca97',interface:'#ffaec2',method:'#9ae8ef',type:'#b8b8fc',callsite:'#6795bd'};
-  const AGENT_COLORS=['#ff9ee8','#ffd27a','#9dffcf','#a7b8ff','#ffb08a','#8ef0ff','#e2a6ff','#c9ff8a'];
-  // Section colour temperature: the image follows the music's form.
-  const SECTION_TINT={home:[104,233,255],away:[170,140,255],tension:[255,150,120],resolve:[140,255,200],lift:[255,220,140],breath:[90,140,230]};
   const labels={
     'project.baseline':'Initial architecture scan','document.baseline.indexed':'Indexed existing symbols',
     'symbol.created':'A structure emerged','symbol.modified':'A structure evolved','symbol.removed':'A structure was reshaped',
@@ -155,8 +154,6 @@
   };
   const QUIET=new Set(['editor.change.observed','editor.newline.inserted','document.baseline.indexed','validation.diagnostics','execution.command.started','agent.tool.started']);
   function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-  function rand(seed){let t=seed+0x6D2B79F5;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}
-  function opacity(color,opacity){const a=Math.floor(Math.min(1,Math.max(0,opacity))*255).toString(16).padStart(2,'0');return color+a;}
   const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
   function readable(type){return labels[type]||type.replaceAll('.',' · ');}
   function kindClass(type){return type.startsWith('agent.')?'ai':type.startsWith('validation.')||type.startsWith('milestone.')||type==='source.parse.diagnostics'?'validation':type.startsWith('symbol.')||type.startsWith('dependency.')?'structure':'system';}
@@ -183,43 +180,30 @@
     for(const cue of entry.cues){
       const time=cueTime(cue,entry),live=animate&&time>=from;
       if(live&&!QUIET.has(cue.type))music.enqueue(cue,time);
-      at(time,()=>{if(live){animateCue(cue);construct?.cue(cue,time);living?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);changed('feed');});
+      at(time,()=>{if(live){animateCue(cue,time);construct?.cue(cue,time);living?.cue(cue,time);}feedCues.push(cue);if(feedCues.length>400)feedCues.splice(0,feedCues.length-400);changed('feed');});
     }
   }
   function applyFrame(f){if(!f)return;frame=f;music.setFrame(f);changed('frame');}
-  // ---- Scene graph: stable growth layout -------------------------------------------------------------------
-  function placeModule(node){
-    // Phyllotaxis by birth order: each module keeps its place and the structure grows outward like a sunflower.
-    const k=scene.order++,h=hash(node.id),a=k*2.3999632+rand(h)*.25,r=.035*Math.sqrt(k+.6);
-    node.angle=a;node.radius=r;node.tx=Math.cos(a)*r;node.ty=Math.sin(a)*r;
-    scene.extent=Math.max(scene.extent,r+.03);
-  }
-  function placeSymbol(node){
-    const parent=scene.nodes.get(node.parent);const h=hash(node.id),a=rand(h)*Math.PI*2,r=.006+rand(h+2)*.012;
-    node.tx=(parent?parent.tx:0)+Math.cos(a)*r;node.ty=(parent?parent.ty:0)+Math.sin(a)*r;node.angle=a;node.radius=r;
-  }
+  // ---- Scene graph ----------------------------------------------------------------------------------------
   function addNode(n,born){
-    // Architectural districts are drawn only by the Construct; the 2D worlds keep modules and symbols.
+    // Districts (groups) are kept apart: the Construct and Monolith draw them, every world reads them from constructGraph().
     if(n.type==='group'){scene.groups.set(n.id,{...n});return;}
     const existing=scene.nodes.get(n.id);
-    if(existing){Object.assign(existing,{...n,x:existing.x,y:existing.y,tx:existing.tx,ty:existing.ty,dying:null});return;}
-    const node={...n,born,dying:null,x:0,y:0,glow:0};
-    scene.nodes.set(n.id,node);
-    if(n.type==='module')placeModule(node);else placeSymbol(node);
-    const parent=scene.nodes.get(node.parent);node.x=parent?parent.x:node.tx;node.y=parent?parent.y:node.ty;
+    if(existing){const was=existing.counts;Object.assign(existing,{...n,dying:null});
+      // Monolith grows a tower from what it showed when the file's symbols change (a seek rebuilds it settled).
+      if(Number.isFinite(born)&&JSON.stringify(was)!==JSON.stringify(existing.counts))Object.assign(existing,{countsWas:was,countsAt:born});return;}
+    scene.nodes.set(n.id,{...n,born,dying:null});
   }
   const edgeKey=e=>`${e.a}>${e.b}>${e.kind}`;
-  // `birth` (replay) orders modules by when they first appeared, so every seek rebuilds the same layout.
+  // `birth` (replay) orders modules by when they first appeared, so every seek rebuilds the same scene.
   function resetScene(graph,birth){
-    scene.nodes.clear();scene.edges.clear();scene.groups.clear();scene.order=0;scene.extent=.12;
+    scene.nodes.clear();scene.edges.clear();scene.groups.clear();scene.marks.length=0;scene.agents.clear();scene.version++;
     for(const e of graph.edges)scene.edges.set(edgeKey(e),e);
     const parents=new Map();for(const e of graph.edges)if(e.kind==='contains')parents.set(e.b,e.a);
     const modules=graph.nodes.filter(n=>n.type==='module');
     if(birth)modules.sort((a,b)=>(birth.get(a.id)??Infinity)-(birth.get(b.id)??Infinity));
     for(const n of modules)addNode(n,-Infinity);
     for(const n of graph.nodes.filter(n=>n.type!=='module'))addNode({...n,parent:n.parent||parents.get(n.id)},-Infinity);
-    for(const n of scene.nodes.values()){n.x=n.tx;n.y=n.ty;}
-    scene.view=scene.extent;
     construct?.reset(constructGraph(),perfNow());
     if(living){living.reset(constructGraph(),perfNow());if(replay&&mode==='replay')living.prime(replay.entries,perfNow());}
   }
@@ -234,28 +218,23 @@
       d={add:d.nodes.filter(n=>!scene.nodes.has(n.id)||scene.nodes.get(n.id).dying!==null),remove:[...scene.nodes.keys()].filter(id=>!ids.has(id)),
         addEdges:d.edges.filter(e=>!scene.edges.has(edgeKey(e))),removeEdges:[...scene.edges.values()].filter(e=>!keys.has(edgeKey(e)))};
     }
+    scene.version++;
     for(const e of d.addEdges)scene.edges.set(edgeKey(e),e);
     for(const e of d.removeEdges)scene.edges.delete(edgeKey(e));
     const span=Math.max(1,end-start);
     d.add.filter(n=>n.type==='module').concat(d.add.filter(n=>n.type!=='module')).forEach((n,i,all)=>addNode(n,start+span*(i/Math.max(1,all.length))));
     for(const id of d.remove){const n=scene.nodes.get(id);if(n)n.dying=perfNow();}
   }
-  // ---- Cue animation: pulses travel to the module that actually changed ----------------------------------
+  // ---- Cue animation (Monolith), at the cues' own times: the file that changed lights up, an agent's mark stays over
+  // the file it last worked on, a commit or a verified moment sweeps the ground line and a failure reddens it.
   function moduleFor(cue){return cue.detail?.fileId?scene.nodes.get(cue.detail.fileId):null;}
-  function animateCue(c){
-    const category=kindClass(c.type),voice=Number.isInteger(c.detail?.voice)?c.detail.voice:null;
-    const color=voice!==null?AGENT_COLORS[voice%8]:category==='ai'?'#ed94ff':category==='validation'?'#ffbb84':category==='system'?'#93f6c0':'#75edff';
-    const target=moduleFor(c);
-    if(target){target.glow=1;scene.pulses.push({node:target.id,x:target.x,y:target.y,color,age:0,speed:.05+Math.min(.12,(c.weight||0)*.04),life:1.4});}
-    else if(category!=='system')scene.pulses.push({node:null,x:0,y:0,color,age:0,speed:.18,life:1.6});
-    if(voice!==null){
-      const comet=scene.comets.get(voice)||{voice,x:0,y:0,tx:0,ty:0,trail:[],last:0};
-      if(target){comet.tx=target.x;comet.ty=target.y;}
-      comet.last=perfNow();scene.comets.set(voice,comet);
-    }
-    if(/^milestone\.|^repository\.commit/.test(c.type)||(c.type==='validation.test.passed'&&(c.weight||0)>=1))scene.ripples.push({age:0,color:'#ffe6a8'});
-    if(c.type==='validation.test.failed'||c.type==='validation.build.failed')scene.ripples.push({age:0,color:'#ff8f7a',inward:true});
-    if(scene.pulses.length>220)scene.pulses.splice(0,scene.pulses.length-220);
+  function animateCue(c,time){
+    const voice=Number.isInteger(c.detail?.voice)?c.detail.voice:null,target=moduleFor(c);
+    if(target)target.litAt=time;
+    if(voice!==null){const a=scene.agents.get(voice);if(target)scene.agents.set(voice,{id:target.id,at:time});else if(a)a.at=time;}
+    if(/^milestone\.|^repository\.commit/.test(c.type)||(c.type==='validation.test.passed'&&(c.weight||0)>=1))scene.marks.push({at:time,kind:'lift'});
+    if(c.type==='validation.test.failed'||c.type==='validation.build.failed')scene.marks.push({at:time,kind:'strain'});
+    if(scene.marks.length>16)scene.marks.splice(0,scene.marks.length-16);
   }
   // ---- Data -----------------------------------------------------------------------------------------------
   async function getJSON(url,headers){const r=await fetch(url,{cache:'no-store',headers});if(r.status===304||r.status===404)return null;if(!r.ok)throw Error(`HTTP ${r.status}`);return {json:await r.json(),etag:r.headers.get('etag')||''};}
@@ -286,7 +265,7 @@
   function selectProject(id){
     id=typeof id==='string'?id:'';if(id===selected&&(model||!id))return;
     selected=id;etag='';model=null;lastSeq=-1;replay=null;queue.length=0;feedCues=[];previewRecipe=null;previewNotice='';disposeLiving();resetScene({nodes:[],edges:[]});
-    scene.pulses.length=0;scene.ripples.length=0;scene.comets.clear();music.resync();frame=null;firstBar=null;barNumber=0;
+    music.resync();frame=null;firstBar=null;barNumber=0;
     $('stageEmpty')?.classList.toggle('hidden',!!id);
     changed('project','model','feed','frame','recipe','preview','position');
     if(mode==='replay')changeMode('replay');else{pollProject();}
@@ -302,31 +281,12 @@
     return source.slice(-limit).reverse().map(c=>({id:c.id,ts:c.ts,type:c.type,label:eventLabel(c),kind:kindClass(c.type),category:c.category,structural:!!c.weight,agent:c.detail?.attribution==='correlated',voice:Number.isInteger(c.detail?.voice)?c.detail.voice:null}));
   }
   // ---- Rendering ------------------------------------------------------------------------------------------
-  const sprites=new Map();
-  // Glow sprites are rendered once per colour; drawing images is far cheaper than per-node shadowBlur.
-  function sprite(color){
-    if(sprites.has(color))return sprites.get(color);
-    const s=document.createElement('canvas');s.width=s.height=64;const c=s.getContext('2d');
-    const grad=c.createRadialGradient(32,32,0,32,32,32);grad.addColorStop(0,opacity(color,1));grad.addColorStop(.18,opacity(color,.55));grad.addColorStop(.5,opacity(color,.12));grad.addColorStop(1,opacity(color,0));
-    c.fillStyle=grad;c.fillRect(0,0,64,64);sprites.set(color,s);return s;
-  }
-  let starfield=null;
   function resize(){
     const r=canvas.getBoundingClientRect();if(r.width===0||r.height===0)return;
     scaledW=r.width;scaledH=r.height;const dpr=Math.min(devicePixelRatio||1,2);
     if(canvas.width!==Math.floor(r.width*dpr)||canvas.height!==Math.floor(r.height*dpr)){
-      canvas.width=Math.floor(r.width*dpr);canvas.height=Math.floor(r.height*dpr);g.setTransform(dpr,0,0,dpr,0,0);starfield=null;
+      canvas.width=Math.floor(r.width*dpr);canvas.height=Math.floor(r.height*dpr);g.setTransform(dpr,0,0,dpr,0,0);
     }
-  }
-  function tint(alpha){const [r,gg,b]=SECTION_TINT[section]||SECTION_TINT.home;return `rgba(${r},${gg},${b},${alpha})`;}
-  function backdrop(t){
-    const w=scaledW,h=scaledH;
-    if(!starfield){starfield=document.createElement('canvas');starfield.width=Math.ceil(w);starfield.height=Math.ceil(h);const c=starfield.getContext('2d');
-      for(let i=0;i<420;i++){const seed=hash('star-'+i);c.fillStyle=`rgba(176,209,250,${.05+rand(seed+5)*.22})`;c.fillRect(rand(seed)*w,rand(seed+29)*h,rand(seed+3)>.92?2:1,1);}}
-    g.fillStyle='#070a12';g.fillRect(0,0,w,h);
-    const haze=g.createRadialGradient(w*.5,h*.48,10,w*.5,h*.5,Math.max(w,h)*.65);
-    haze.addColorStop(0,tint(.13+.05*(frame?.controls?.energy||0)));haze.addColorStop(.4,'rgba(12,20,40,.35)');haze.addColorStop(1,'rgba(7,10,17,0)');g.fillStyle=haze;g.fillRect(0,0,w,h);
-    g.globalAlpha=.75+.25*Math.sin(t*.3);g.drawImage(starfield,0,0);g.globalAlpha=1;
   }
   // Breathing on the bar grid, from the music when playing or from the deterministic grid when muted.
   let forcedPhase=null;
@@ -335,151 +295,21 @@
     else{const stepMs=60000/((window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92)*4);barPhase=((perfNow()/(stepMs*16))%1+1)%1;}
     const q=(barPhase*4)%1;return Math.exp(-q*5);
   }
-  function stepScene(dt,now){
-    scene.view+=(scene.extent-scene.view)*Math.min(1,dt*.6);
-    for(const [id,n] of scene.nodes){
-      n.x+=(n.tx-n.x)*Math.min(1,dt*2.2);n.y+=(n.ty-n.y)*Math.min(1,dt*2.2);n.glow=Math.max(0,n.glow-dt*.8);
-      if(n.dying!==null&&now-n.dying>1500)scene.nodes.delete(id);
-    }
-    for(const c of scene.comets.values()){c.x+=(c.tx-c.x)*Math.min(1,dt*1.6);c.y+=(c.ty-c.y)*Math.min(1,dt*1.6);c.trail.push([c.x,c.y]);if(c.trail.length>28)c.trail.shift();}
-    for(const [v,c] of scene.comets)if(now-c.last>45000)scene.comets.delete(v);
-    // Pulses and ripples age with the scene, drawn or not: a 2D stage shown later never bursts a backlog.
-    for(let i=scene.pulses.length-1;i>=0;i--){const p=scene.pulses[i];p.age+=dt;if(p.age>p.life)scene.pulses.splice(i,1);}
-    for(let i=scene.ripples.length-1;i>=0;i--){const r=scene.ripples[i];r.age+=dt;if(r.age>2.4)scene.ripples.splice(i,1);}
+  function stepScene(now){
+    for(const [id,n] of scene.nodes)if(n.dying!==null&&now-n.dying>1500)scene.nodes.delete(id);
+    for(const [v,a] of scene.agents)if(now-a.at>60000)scene.agents.delete(v);
   }
-  // Birth is a flash and a growing ring; death a fade. Visible-from time keeps future nodes hidden until born.
-  function life(n,now){if(n.born>now)return 0;if(n.dying!==null)return clamp(1-(now-n.dying)/1500);return 1;}
-  function birthFlash(n,now){const a=(now-n.born)/1200;return a>=0&&a<1?1-a:0;}
-  // Settled edges are batched into one path per kind; only edges being born or removed are drawn individually.
-  function drawEdges(now,w,h,mapXY,pulse){
-    g.lineWidth=.8;const depends=new Path2D(),contains=new Path2D(),flows=[];
-    for(const e of scene.edges.values()){
-      const a=scene.nodes.get(e.a),b=scene.nodes.get(e.b);if(!a||!b)continue;
-      const vis=Math.min(life(a,now),life(b,now));if(vis<=0)continue;
-      const [x1,y1]=mapXY(a),[x2,y2]=mapXY(b);
-      if(e.kind==='depends'){
-        const mx=(x1+x2)/2+(y2-y1)*.12,my=(y1+y2)/2-(x2-x1)*.12;
-        if(vis<1){g.strokeStyle=`rgba(237,148,255,${.18*vis})`;g.beginPath();g.moveTo(x1,y1);g.quadraticCurveTo(mx,my,x2,y2);g.stroke();}
-        else{depends.moveTo(x1,y1);depends.quadraticCurveTo(mx,my,x2,y2);}
-        if(flows.length<240)flows.push([x1,y1,mx,my,x2,y2,rand(hash(e.a+e.b))]);
-      }else if(vis>=1){contains.moveTo(x1,y1);contains.lineTo(x2,y2);}
-    }
-    g.strokeStyle='rgba(106,212,242,.08)';g.stroke(contains);
-    g.strokeStyle=`rgba(237,148,255,${.15+.08*pulse})`;g.stroke(depends);
-    const dot=sprite('#efb9ff');
-    for(const [x1,y1,mx,my,x2,y2,r] of flows){const f=((now/7000)+r)%1,u=1-f;g.drawImage(dot,u*u*x1+2*u*f*mx+f*f*x2-5,u*u*y1+2*u*f*my+f*f*y2-5,10,10);}
+  // ---- Monolith (Canvas 2D, public/worlds/monolith.js), loaded on demand: the lightweight stage, and the last fallback --
+  let monolith=null,monolithLoading=null,monolithRetryAt=0;
+  function ensureMonolith(){
+    if(monolith||monolithLoading||performance.now()<monolithRetryAt)return monolithLoading||Promise.resolve(monolith);
+    monolithLoading=import('/worlds/monolith.js').then(m=>{monolith=m.createMonolith();return monolith;},e=>{monolithRetryAt=performance.now()+2000;if(!unreachable(e))console.error(e);return null;})
+      .finally(()=>{monolithLoading=null;});
+    return monolithLoading;
   }
-  function drawNodes(now,mapXY,pulse,density){
-    let i=0;
-    for(const n of scene.nodes.values()){
-      const vis=life(n,now);if(vis<=0){i++;continue;}
-      const [x,y]=mapXY(n);const color=typeColor[n.type]||'#8cbad8',flash=birthFlash(n,now);
-      const base=(n.type==='module'?5:2.2)*clamp(n.weight||1,.6,3)*.7;
-      const r=base*(1+.25*pulse*(n.type==='module'?1:.4)+.8*n.glow+1.4*flash);
-      const glow=r*(n.type==='module'?5:3.4);
-      g.globalAlpha=vis*density*(.55+.25*Math.sin(now/900+i*.7)+.4*n.glow+.6*flash);
-      g.drawImage(sprite(color),x-glow,y-glow,glow*2,glow*2);
-      g.globalAlpha=vis;g.fillStyle=color;g.beginPath();g.arc(x,y,Math.max(.8,base*.55),0,Math.PI*2);g.fill();
-      if(flash>0){g.globalAlpha=flash*.8;g.strokeStyle=color;g.lineWidth=1.2;g.beginPath();g.arc(x,y,base+(1-flash)*26,0,Math.PI*2);g.stroke();}
-      i++;
-    }
-    g.globalAlpha=1;
-  }
-  function drawCore(t,pulse){
-    const w=scaledW,h=scaledH,core=Math.min(w,h),x=w*.5,y=h*.5;
-    const energy=frame?.controls?.energy||0,tension=frame?.controls?.tension||0;
-    for(let ring=0;ring<3;ring++){
-      const radius=core*(.05+ring*.03)*(1+.04*pulse),rot=t*(ring%2?-.08:.06)+(ring*1.7),arc=Math.PI*(.7+ring*.13);
-      g.save();g.translate(x,y);g.rotate(rot);g.strokeStyle=tint(.08+energy*.12);g.lineWidth=ring===0?1.5:1;
-      g.beginPath();g.arc(0,0,radius,0,arc);g.stroke();g.restore();
-    }
-    const rad=core*(.02+energy*.006)*(1+.15*pulse);
-    g.globalAlpha=.8;g.drawImage(sprite(tension>.35?'#f4adc3':'#8bdcf4'),x-rad*5,y-rad*5,rad*10,rad*10);g.globalAlpha=1;
-  }
-  function drawComets(w,h,mapXY){
-    for(const c of scene.comets.values()){
-      const color=AGENT_COLORS[c.voice%8];
-      c.trail.forEach(([px,py],i)=>{const [x,y]=mapXY({x:px,y:py});const a=i/c.trail.length;g.globalAlpha=a*.5;g.drawImage(sprite(color),x-6*a,y-6*a,12*a,12*a);});
-      const [x,y]=mapXY(c);g.globalAlpha=1;g.drawImage(sprite(color),x-11,y-11,22,22);
-    }
-    g.globalAlpha=1;
-  }
-  function drawPulses(mapXY){
-    const scale=Math.min(scaledW,scaledH);
-    for(let i=scene.pulses.length-1;i>=0;i--){
-      const p=scene.pulses[i],[x,y]=mapXY(scene.nodes.get(p.node)||p),r=(p.age*p.speed)*scale,alpha=(1-p.age/p.life)*.7;
-      g.strokeStyle=opacity(p.color,alpha);g.lineWidth=1.6-p.age*.6;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.stroke();
-    }
-    for(let i=scene.ripples.length-1;i>=0;i--){
-      const r=scene.ripples[i],f=r.age/2.4,radius=(r.inward?1-f:f)*Math.max(scaledW,scaledH)*.6;
-      g.strokeStyle=opacity(r.color,(1-f)*.45);g.lineWidth=2.5*(1-f)+.5;g.beginPath();g.arc(scaledW/2,scaledH/2,Math.max(1,radius),0,Math.PI*2);g.stroke();
-    }
-  }
-  function camera(){const w=scaledW,h=scaledH,s=Math.min(w,h)*.45/Math.max(.08,scene.view);return n=>[w/2+n.x*s,h/2+n.y*s*.86];}
-  function drawNexus(t,dt,now,pulse){
-    const w=scaledW,h=scaledH,mapXY=camera();
-    drawCore(t,pulse);drawEdges(now,w,h,mapXY,pulse);drawNodes(now,mapXY,pulse,1);drawComets(w,h,mapXY);drawPulses(mapXY);
-  }
-  function drawNebula(t,dt,now,pulse){
-    const w=scaledW,h=scaledH,size=Math.min(w,h),cx=w*.5,cy=h*.51;
-    // The same stable layout, wrapped into a slowly turning spiral.
-    const fit=.5/Math.max(.08,scene.view);
-    const mapXY=n=>{const r=Math.hypot(n.x,n.y)*fit,a=Math.atan2(n.y,n.x)+t*.03+r*2.4;return [cx+Math.cos(a)*r*size*.95,cy+Math.sin(a)*r*size*.6];};
-    const core=g.createRadialGradient(cx,cy,0,cx,cy,size*.45);core.addColorStop(0,tint(.16+.08*pulse));core.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=core;g.fillRect(0,0,w,h);
-    g.save();g.globalCompositeOperation='lighter';
-    // Additive light is normalised by node count, so large projects stay luminous instead of blowing out white.
-    const density=clamp(Math.sqrt(140/Math.max(140,scene.nodes.size)),.18,1);
-    drawEdges(now,w,h,mapXY,pulse*.5);drawNodes(now,mapXY,pulse,density*.8);g.restore();
-    drawComets(w,h,mapXY);drawPulses(mapXY);
-  }
-  function drawCity(t,dt,now,pulse){
-    const w=scaledW,h=scaledH,modules=[...scene.nodes.values()].filter(n=>n.type==='module');
-    const energy=frame?.controls?.energy||0,count=Math.max(9,modules.length),cols=Math.max(3,Math.ceil(Math.sqrt(count))),rows=Math.ceil(count/cols);
-    const unit=Math.min(54,w/(cols+rows+2)*1.15,h/(cols+rows+2)*2.1),cx=w*.5,cy=h*.3;
-    const iso=(c,r,z=0)=>[cx+(c-r)*unit*.94,cy+(c+r)*unit*.39-z];
-    g.strokeStyle=tint(.06);g.lineWidth=1;
-    for(let c=-2;c<=cols+2;c++){g.beginPath();g.moveTo(...iso(c,-2));g.lineTo(...iso(c,rows+2));g.stroke();}
-    for(let r=-2;r<=rows+2;r++){g.beginPath();g.moveTo(...iso(-2,r));g.lineTo(...iso(cols+2,r));g.stroke();}
-    const floors=new Map();for(const n of scene.nodes.values())if(n.parent&&life(n,now)>0)floors.set(n.parent,(floors.get(n.parent)||0)+1);
-    // Buildings take plots in birth order (scene insertion order), so the city grows instead of rearranging.
-    const positions=new Map();
-    modules.forEach((m,i)=>{m.c=i%cols;m.r=Math.floor(i/cols);});
-    for(const m of modules.slice().sort((a,b)=>(a.c+a.r)-(b.c+b.r))){
-      const vis=life(m,now);if(vis<=0)continue;
-      const f=floors.get(m.id)||0,target=unit*(.45+Math.min(5,Math.log2(f+1)*.9));
-      m.height=(m.height??0)+(target-(m.height??0))*Math.min(1,dt*1.5);
-      const height=m.height*vis*(1+.03*pulse),flash=birthFlash(m,now);
-      const a=iso(m.c+.12,m.r+.12),b=iso(m.c+.8,m.r+.12),c2=iso(m.c+.8,m.r+.8),d=iso(m.c+.12,m.r+.8);
-      const top=[a,b,c2,d].map(([x,y])=>[x,y-height]);
-      positions.set(m.id,[(top[0][0]+top[2][0])/2,(top[0][1]+top[2][1])/2]);
-      const topColor=['#bdfcff','#b6a0ff','#c1f0c8','#eec4ff'][hash(m.id)%4];
-      g.fillStyle=`rgba(29,105,130,${.36*vis})`;g.beginPath();g.moveTo(...top[0]);g.lineTo(...top[3]);g.lineTo(...d);g.lineTo(...a);g.closePath();g.fill();
-      g.fillStyle=`rgba(13,43,72,${.82*vis})`;g.beginPath();g.moveTo(...top[3]);g.lineTo(...top[2]);g.lineTo(...c2);g.lineTo(...d);g.closePath();g.fill();
-      g.strokeStyle=`rgba(97,206,234,${.28*vis})`;g.stroke();
-      g.fillStyle=opacity(topColor,(.36+energy*.2+.6*m.glow+.6*flash)*vis);
-      g.beginPath();g.moveTo(...top[0]);g.lineTo(...top[1]);g.lineTo(...top[2]);g.lineTo(...top[3]);g.closePath();g.fill();
-      const lit=Math.min(12,f);
-      for(let j=0;j<lit;j++){
-        const level=(j+1)/(lit+1),y0=d[1]-(d[1]-top[3][1])*level;
-        g.strokeStyle=opacity(topColor,(.14+.22*((Math.sin(j*1.7+now/1600)+1)/2)+.3*m.glow)*vis);
-        g.beginPath();g.moveTo(d[0]+3,y0);g.lineTo(c2[0]-3,c2[1]-(c2[1]-top[2][1])*level);g.stroke();
-      }
-      if(m.glow>0||flash>0){g.globalAlpha=Math.max(m.glow,flash);g.drawImage(sprite(topColor),positions.get(m.id)[0]-30,positions.get(m.id)[1]-30,60,60);g.globalAlpha=1;}
-    }
-    // Only the most-connected modules' dependencies are drawn, so the skyline stays readable at scale.
-    g.lineWidth=1;const degree=new Map();
-    for(const e of scene.edges.values())if(e.kind==='depends')degree.set(e.b,(degree.get(e.b)||0)+1);
-    const routes=[...scene.edges.values()].filter(e=>e.kind==='depends').sort((x,y)=>(degree.get(y.b)||0)-(degree.get(x.b)||0)).slice(0,90);
-    for(const e of routes){
-      const a=positions.get(e.a),b=positions.get(e.b);if(!a||!b)continue;
-      g.strokeStyle=`rgba(227,172,255,${.22+.12*pulse})`;g.beginPath();g.moveTo(...a);g.quadraticCurveTo((a[0]+b[0])/2,(a[1]+b[1])/2-40,...b);g.stroke();
-      const f=((now/6000)+rand(hash(e.a+e.b)))%1,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-40;
-      g.drawImage(sprite('#efb9ff'),(1-f)*(1-f)*a[0]+2*(1-f)*f*mx+f*f*b[0]-4,(1-f)*(1-f)*a[1]+2*(1-f)*f*my+f*f*b[1]-4,8,8);
-    }
-    const fallback=camera();
-    drawComets(w,h,n=>positions.get(n.parent||n.id)||fallback(n));
-    drawPulses(n=>positions.get(n.parent||n.id)||fallback(n));
-  }
+  // Reduced motion (Settings › Interface, else the system's preference) stills Monolith; a film never asks.
+  const reduceQuery=typeof matchMedia==='function'?matchMedia('(prefers-reduced-motion: reduce)'):null;
+  function stillMotion(){if(FILM)return false;const m=document.documentElement.dataset.motion;return m==='reduce'||m!=='full'&&!!reduceQuery?.matches;}
   // ---- The Construct (WebGL), loaded on demand; Monolith is the fallback where WebGL is unavailable ----------
   function replaySpeed(){return FILM?filmSpeed:mode==='replay'?speedChoice||1:1;}
   let filmSpeed=1;
@@ -655,12 +485,11 @@
     $('construct').classList.toggle('hidden',!c);canvas.classList.toggle('hidden',!!(c||l));
     // In the OBS view the living worlds draw their own lower third: the page's corner captions would overlap it.
     document.body.classList.toggle('living-world',l);}
-  let lastPaint=performance.now(),clock=0,constructSize='',livingSize='';
+  let lastPaint=performance.now(),constructSize='',livingSize='';
   function renderAt(dt,now){
-    clock+=dt;
     runQueue();
     const pulse=beat();
-    stepScene(dt,now);
+    stepScene(now);
     showWorldCanvas();
     if(selectedWorld==='living'&&(!living||livingFor!==selected)&&model)void ensureLiving();
     // Nothing is drawn while no view shows the stage and nothing records it (a pack's frame is told so, so its
@@ -686,8 +515,11 @@
       const tempo=window.ResonanceScore.createIdentity(frame?.projectSeed||hash(selected)).tempo[music.options.style]||92;
       construct.setMood({section,energy:frame?.controls?.energy||0,tempo:music.options.tempoMode==='project'?tempo:music.options.tempo});
       construct.render(now,dt,{phase:barPhase});
-    }else if(scaledW&&scaledH){backdrop(clock);
-      if(selectedWorld==='nexus')drawNexus(clock,dt,now,pulse);else if(selectedWorld==='city')drawCity(clock,dt,now,pulse);else drawNebula(clock,dt,now,pulse);}
+    }else if(scaledW&&scaledH){
+      // Monolith; while a WebGL world is still loading, Monolith's empty ground.
+      if(!monolith){void ensureMonolith();g.fillStyle='#070a12';g.fillRect(0,0,scaledW,scaledH);}
+      else monolith.draw(g,{w:scaledW,h:scaledH,scale:canvas.width/scaledW,now,speed:replaySpeed(),nodes:selectedWorld==='city'?scene.nodes:null,groups:scene.groups,edges:scene.edges,
+        marks:scene.marks,agents:scene.agents,version:scene.version,recipe,labels:labelMode,section,pulse,energy:frame?.controls?.energy||0,still:stillMotion()});}
     if(recording.active)recording.frame((g2,w,h)=>composeFrame(g2,w,h,now));
   }
   // The presented frame, for the recording: the world and its labels as the viewer sees them (right after rendering,
@@ -753,10 +585,11 @@
     try{await music.start();soundError='';}catch(e){soundError=String(e.message||e);changed('sound');throw e;}
     soundEnabled=true;changed('sound');return true;
   }
-  function setWorld(world){if(!WORLDS.includes(world)||world===selectedWorld)return;
+  function setWorld(world){world=worldOf(world);if(!world||world===selectedWorld)return;
     selectedWorld=world;changed('world');
     if(world==='construct')void ensureConstruct();
     if(world==='living')void ensureLiving();
+    if(world==='city')void ensureMonolith();
   }
   function setRecordSize(v){if(recording.active)return recordSize;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';changed('recording');return recordSize;}
   // One recording at a time in this browser: the recorder lock (recording.js) is taken before anything starts (the sound,
@@ -943,7 +776,7 @@
   }
   // ---- The engine's interface ---------------------------------------------------------------------------------
   const player={
-    WORLDS,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
+    WORLDS,worldOf,LABEL_MODES,QUALITY,api,film:FILM,overlay,get pairing(){return pairing;},
     on(f){listeners.add(f);return ()=>listeners.delete(f);},
     // A snapshot of everything a view may show (cheap: no copies of large structures).
     get state(){const h=history();return {
@@ -1011,7 +844,7 @@
     document.body.classList.add('overlay','film');mode='replay';
     window.__film={
       async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
-        if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else{await ensureConstruct();construct?.setSpeed(speed);}
+        if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else if(selectedWorld==='city')await ensureMonolith();else{await ensureConstruct();construct?.setSpeed(speed);}
         // The music the film's soundtrack must be rendered with (film.js passes it to renderOffline). The Construct loads
         // no recipe of its own: the project's saved one still says which score it plays.
         if(!living&&!recipe)await reloadRecipe().catch(()=>null);
@@ -1049,13 +882,13 @@
     };
   }else{
     // Render counts only (draw calls, buildings, …) for the technical qualification.
-    window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();
+    window.__constructStats=()=>construct?.stats();window.__worldStats=()=>living?.stats();window.__monolithStats=()=>monolith?.stats();
     setInterval(pollProject,3000);setInterval(pollTimeline,1000);setInterval(loadPacks,15000);void loadPacks();
     // Delay = window + grace + scan + 3 s for outbox delivery (<=2.5 s) and polling (<=1 s). Measured worst case: ~9.9 s.
     getJSON('/health').then(r=>{setReceiver(true);const x=r.json;delayMs=(x.windowMs||10000)+(x.graceMs??3000)+(x.sortIntervalMs||1000)+3000;changed('receiver');}).catch(()=>setReceiver(false));
     if(selected)pollProject();
     requestAnimationFrame(paint);
-    if(selectedWorld==='construct')void ensureConstruct();
+    if(selectedWorld==='construct')void ensureConstruct();else if(selectedWorld==='city')void ensureMonolith();
     bindWorldCanvas($('world'));
     // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
     if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});

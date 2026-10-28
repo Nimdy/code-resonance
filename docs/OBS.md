@@ -4,7 +4,9 @@
 
 1. Start the receiver and open the Control Center; choose the project, and its world and look in the Visual Studio.
 2. **Record & Broadcast › OBS** builds the overlay URL with its options, for example
-   `http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient`.
+   `http://127.0.0.1:4174/?overlay=1&sound=1&project=<id>&world=living&style=ambient`. `world=` pins `living`,
+   `construct` or `city` (Monolith); a bookmark with `world=nexus` or `world=nebula`, worlds retired after 0.7.1, shows
+   Monolith.
 3. In OBS: **Sources → + → Browser**. URL: the overlay URL. Width 1920, height 1080, FPS 30 or 60 (custom frame rate).
    Tick **Control audio via OBS** (the music then appears in OBS's mixer and in recordings and streams).
 4. The overlay shows only the stage: labels are in *stream* mode (no controls, no project selector, nothing private).

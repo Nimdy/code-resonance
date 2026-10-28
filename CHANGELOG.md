@@ -5,6 +5,18 @@
 - **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
   included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
   ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
+- **Worlds:** the choices are now Living world, The Construct and Monolith. Nexus and Nebula, two Canvas 2D stages,
+  are retired. A setting or project preference that names one still loads as Monolith (the receiver never rewrites a
+  file for reading it; the document's next write stores Monolith), and a URL pin `?world=nexus` or `?world=nebula`
+  (an OBS bookmark) shows Monolith. A new write that asks for a retired world is refused (400, `stage.world` or
+  `world`). Recipes and packs are unaffected.
+- **Monolith** is redrawn as a flat architectural elevation of the site plan (`public/worlds/monolith.js`): files are
+  towers on their persisted plots, storeys their symbols, districts in the project's palette, dependencies as arcs
+  below the ground line, with a public title, counts and a district legend. Motion is calm and follows the cues;
+  reduced motion stills it. An unchanged frame is copied from a cached layer: on a 450-file project in headless
+  Chromium with software rendering, 18 ms of script per second while idle (0.7.1's Monolith: 164 ms).
+- **Generated subsystem names** (`generatedName`) move from `host.js` to `labels.js`, unchanged, so the 2D world can
+  use them without three.js.
 - **Token proof for every client, bound to the port:** the extension's capture outbox, the Claude Code, Cursor and Codex
   hooks, `scripts/event.js` and `npm run demo` now verify the receiver before they send `Authorization`; in 0.7.1 only
   `npm run up`, `npm run pair` and the extension's pairing link did. The proof is now

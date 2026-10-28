@@ -67,13 +67,13 @@ async function canvasHash(page){return page.evaluate(()=>{const c=document.getEl
     check('audio context runs and produces signal',levels.at(-1).state==='running'&&rms>0.002,JSON.stringify(measurements.audio));
     check('audio output does not clip',peak<0.99,`peak=${peak.toFixed(3)}`);
     measurements.fps={};
-    for(const world of ['nexus','city','nebula']){
+    for(const world of ['city']){
       await page.click(`[data-world="${world}"]`);await page.waitForTimeout(800);
       measurements.fps[world]=+(await fps(page)).toFixed(1);
       await page.screenshot({path:path.join(OUT,`live-${world}.png`)});
     }
-    check('all worlds render at >= 30 fps (headless software raster, 1920x1080)',Object.values(measurements.fps).every(x=>x>=30),JSON.stringify(measurements.fps));
-    await page.click('[data-world="nexus"]');
+    check('Monolith (the 2D world) renders at >= 30 fps (headless software raster, 1920x1080)',Object.values(measurements.fps).every(x=>x>=30),JSON.stringify(measurements.fps));
+    await page.click('[data-world="city"]');
     await page.click('#replayBtn');
     await page.waitForFunction(()=>window.ResonancePlayer.state.position.loaded&&window.ResonancePlayer.state.position.events>0,null,{timeout:15000});
     const replayCues=await page.evaluate(()=>window.ResonancePlayer.state.position.events);

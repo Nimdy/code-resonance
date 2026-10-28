@@ -58,7 +58,7 @@ test('The mixer offers only the voice groups the style can sound',async()=>{
 test('store.effective() resolves the profile with its precedence and pushes it to the engine with the score version',async()=>{
   const M=await load(),pushed=[];let ps={project:'p1',recipe:{genome:{music:{score:3}}},preview:null};
   // The interface store, on a stand-in engine (window.ResonancePlayer), with a window address that pins the style and space.
-  globalThis.window={ResonancePlayer:{WORLDS:['living','construct'],LABEL_MODES:['cinematic','explorer','stream','off'],QUALITY:['auto'],film:false,overlay:false,
+  globalThis.window={ResonancePlayer:{WORLDS:['living','construct'],worldOf:()=>null,LABEL_MODES:['cinematic','explorer','stream','off'],QUALITY:['auto'],film:false,overlay:false,
     record:{active:false,setSize(){}},get state(){return ps;},on(){},setMusic:o=>pushed.push(o),setWorld(){},setLabels(){},setCaptions(){},setQuality(){},selectProject(){},api:{post:async()=>({})}}};
   globalThis.location={search:`?style=chip&music=${encodeURIComponent(JSON.stringify({space:.9}))}`};
   globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.addEventListener=()=>{};

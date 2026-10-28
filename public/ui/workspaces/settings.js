@@ -47,7 +47,7 @@ export default {mount(view,{store:S,player:P,navigate}){
   const worldSel=select({id:'setWorld',label:'Default world',options:P.WORLDS.map(w=>({value:w,label:WORLD_NAMES[w]})),value:'living',onChange:v=>save({stage:{world:v}},worldRow)});
   const worldRow=row({id:'rowWorld',label:'Default world',doc:'Shown for projects that have not chosen their own world.',control:worldSel});
   const captions=toggle({id:'setCaptions',onChange:v=>save({stage:{captions:v}},captionsRow)});captions.input.setAttribute('aria-label','Captions');
-  const captionsRow=row({id:'rowCaptions',label:'Captions',doc:'A line of narration under the Construct and the 2D worlds when something notable happens (the living worlds carry their own titles).',control:captions});
+  const captionsRow=row({id:'rowCaptions',label:'Captions',doc:'A line of narration under the Construct when something notable happens (the living worlds carry their own titles, Monolith its legend).',control:captions});
   const labelsSeg=segmented({id:'setLabels',label:'Default information mode',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:LABEL_DOCS[m]})),value:'cinematic',onChange:v=>save({stage:{labels:v}},labelsRow)});
   const labelsRow=row({id:'rowLabels',label:'Information on the stage',doc:'',control:labelsSeg});
   const profileSeg=segmented({id:'setProfile',label:'Default recording profile',options:[{value:'720p',label:'720p'},{value:'1080p',label:'1080p'},{value:'stage',label:'Stage size'}],value:'720p',
@@ -194,7 +194,7 @@ export default {mount(view,{store:S,player:P,navigate}){
     return {webgl2,mediaRecorder:!!window.MediaRecorder,webm:rec.ok?rec.mimeType:null,audioContext:!!(window.AudioContext||window.webkitAudioContext),eventSource:'EventSource' in window,
       broadcastChannel:'BroadcastChannel' in window,fullscreen:!!document.fullscreenEnabled,clipboard:!!navigator.clipboard?.writeText};
   }
-  const CAP_NAMES=[['webgl2','WebGL 2','the living worlds and the Construct (without it: the 2D worlds)'],['mediaRecorder','MediaRecorder','live recording'],['webm','WebM video','recording format'],
+  const CAP_NAMES=[['webgl2','WebGL 2','the living worlds and the Construct (without it: Monolith)'],['mediaRecorder','MediaRecorder','live recording'],['webm','WebM video','recording format'],
     ['audioContext','Web Audio','the music'],['eventSource','Server-sent events','changes from other windows and the receiver'],['broadcastChannel','BroadcastChannel','one recording across windows'],
     ['fullscreen','Fullscreen','the Stage in full screen'],['clipboard','Clipboard','copy buttons']];
   function renderDiagnostics(){
