@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
+  included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
+  ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
 - **Synaptic Storm (preview):** a fourth built-in world family, chosen only explicitly (Visual Studio, marked
   *Preview*; the render lab's `--family synaptic-storm`). Subsystems are clusters of glassy neurons placed by a force
   layout over the real dependencies, files are dendrite branches, symbols boutons, dependencies axons; agents travel as
