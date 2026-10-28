@@ -26,7 +26,7 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 ## One engine, many views
 
 `public/app.js` is the performance engine: the performance clock, scheduling, the worlds (built-in families, the
-Construct, the 2D stages, isolated packs), the music (`music.js`/`score.js`), replay, recording (`recording.js`) and
+Construct, Monolith, isolated packs), the music (`music.js`/`score.js`), replay, recording (`recording.js`) and
 the audio export. It renders no controls and exposes `window.ResonancePlayer` (commands and change notifications).
 The interface (`public/ui/`) drives it: `main.js` (shell, routing), `store.js` (receiver state), `dom.js` (controls),
 `workspaces/*.js` (one module per workspace, loaded on first visit).
@@ -57,7 +57,9 @@ engine, as every window must, and shares the receiver's state.
 Every receiver document has a schema and a `revision`, is validated on write and on read, and is written atomically.
 Project settings never leak into other projects: a project's `preferences.json` only holds the values chosen for it
 (`null` inherits the global value). The effective configuration a window plays is resolved in `store.js`:
-URL pins (OBS bookmarks) › project preference › global setting › built-in default.
+URL pins (OBS bookmarks) › project preference › global setting › built-in default. The worlds are the living world,
+the Construct and Monolith (`city`); a pin, setting or preference that names Nexus or Nebula, retired after 0.7.1,
+reads as Monolith, and the receiver refuses a new write of either ([WORLDS.md](WORLDS.md#classic-stages)).
 
 The player before 0.5 kept its choices in the browser's `localStorage`; on first start they move once to the receiver
 (quality stays on the device).

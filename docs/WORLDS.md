@@ -187,6 +187,43 @@ world, also in the Music Studio) on Machine Cathedral, and `music.beatPulse` (*B
 `secondary.blossomScale` (*Blossom scale*) on Fractal Biosphere. They stay in the catalogue because saved recipes and
 packs set them and are validated against it; making them work now would change the approved look of those worlds.
 
+## Classic stages
+
+Two fixed stages without World DNA stay beside the living worlds (Visual Studio › Classic stages, the Stage's world
+buttons, Settings › Default world). They draw the same public graph and follow the same performance clock.
+
+- **The Construct** (WebGL, `public/construct.js`): the first architectural model, kept unchanged
+  ([CONSTRUCT.md](CONSTRUCT.md)).
+- **Monolith** (Canvas 2D, `public/worlds/monolith.js`): the project's site plan drawn flat, as an architectural
+  elevation. It is the lightweight stage, the one offered to a machine too slow for the living world, and the last
+  fallback without WebGL (the living world falls back to the Construct, the Construct to Monolith).
+
+| What you see in Monolith | What it means |
+|---|---|
+| A tower standing on the floor | A file, on its persisted plot (`engine/layout.js`, the Construct's site plan seen from the front): plots never move, so the skyline grows without reshuffling; rows further back stand higher and paler |
+| Storeys; a mast on top | Its symbols, up to 16; the mast says there are more |
+| A low plinth | A file without code symbols |
+| A colour | Its district (subsystem), from the project's palette; the core district is stone, tests take the valid colour |
+| Outline only / solid / lit windows / warning colour | Draft / committed / validated / stressed, as the data says; a test file is an open frame |
+| Arcs hanging below the ground line | Dependencies, brighter between districts |
+| Windows warming and a light climbing a tower | That file just changed |
+| A small diamond over a tower | An agent's last file (CAST colour; correlated provenance only) |
+| A light sweeping the ground line / the line turning red | A commit or a verified moment / a failing test or build |
+
+The only words are public ones (`public/worlds/labels.js`): the public title, or "Code Resonance"; counts of files,
+symbols and links; each district's alias, or its generated name, with its role; and one line of key. Information mode
+*Off* draws no text. Motion happens at the cues' own times, in viewer time; with reduced motion (Settings › Interface,
+or the system's preference) nothing rises, climbs or sweeps. A frame is a function of the graph, the recipe and the
+clock, and an unchanged frame is copied from a cached layer (`tests/monolith.test.js`). Measured in headless Chromium
+with software rendering at 1280×720 on copies of the qualification datasets: 60 fps, and while nothing happens no
+redraw in 180 frames and about 18 ms of script and 33 ms of main-thread work per second for 450 files (the 0.7.1
+Monolith: 164 and 238 ms). A candidate for artistic review, not an accepted design.
+
+**Nexus and Nebula**, two more 2D stages, were retired after 0.7.1. Nothing that names one breaks: a setting or a
+project preference that says `nexus` or `nebula` still loads (the receiver reads it as Monolith and never rewrites the
+file for reading it; the document's next write stores Monolith), and a URL pin `?world=nexus` or `?world=nebula`, such
+as an OBS bookmark, shows Monolith. A new write that asks for a retired world is refused like any unknown world.
+
 ## Semantic fidelity
 
 Intents are emitted by the reducer next to the facts that justify them and recorded with the timeline.
