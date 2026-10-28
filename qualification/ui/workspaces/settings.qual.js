@@ -130,7 +130,7 @@ async function until(fn,ms=10000,step=150){const t=Date.now();for(;;){const v=aw
     check('About shows the receiver and SDK versions',(await page.textContent('#setAbout')).includes(status.version)&&(await page.textContent('#setAbout')).includes(status.sdk));
     const docs=await page.$$eval('[data-doc]',b=>b.map(x=>x.dataset.doc));
     const docOk=[];for(const d of docs){const r=await fetch(`${url}/docs/${d}`);docOk.push(`${d}:${r.status}`);}
-    check('every linked document exists on the receiver',docs.length===7&&docOk.every(x=>x.endsWith(':200')),docOk.join(' '));
+    check('every linked document exists on the receiver',docs.length===8&&docOk.every(x=>x.endsWith(':200')),docOk.join(' '));
     await page.focus('[data-doc="OBS.md"]');await page.keyboard.press('Enter');
     const obs=await until(()=>page.evaluate(()=>document.querySelector('.modal .doc-view')?.textContent.includes('Browser')),8000);
     await page.keyboard.press('Escape');await until(()=>page.evaluate(()=>!document.querySelector('.modal-backdrop')),3000);
