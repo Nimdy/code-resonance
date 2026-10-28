@@ -21,9 +21,12 @@ test('VSIX packager needs only Node and produces a valid, versioned extension ar
   try{
     build(dest);
     const files=readZip(fs.readFileSync(dest));
-    for(const f of ['[Content_Types].xml','extension.vsixmanifest','extension/package.json','extension/extension.js','extension/outbox.js','extension/filters.js','extension/README.md'])assert(files.has(f),f);
+    for(const f of ['[Content_Types].xml','extension.vsixmanifest','extension/package.json','extension/extension.js','extension/outbox.js','extension/filters.js','extension/README.md','extension/LICENSE.txt'])assert(files.has(f),f);
     const pkg=JSON.parse(files.get('extension/package.json'));
     const manifest=files.get('extension.vsixmanifest').toString();
+    assert.equal(pkg.license,'MIT');
+    assert.deepEqual(files.get('extension/LICENSE.txt'),fs.readFileSync(path.join(__dirname,'../LICENSE')));
+    assert.match(manifest,/<License>extension\/LICENSE\.txt<\/License>/);
     assert.match(manifest,new RegExp(`Version="${pkg.version.replace(/\./g,'\\.')}"`));
     assert.match(manifest,new RegExp(`Id="${pkg.publisher}\\.${pkg.name}"`));
     assert.deepEqual(files.get('extension/extension.js'),fs.readFileSync(path.join(__dirname,'../extension/extension.js')));

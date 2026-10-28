@@ -9,6 +9,13 @@ Node.js 20 or later, in the Code Resonance folder (it has no dependencies to ins
 Chromium-based browser (Chrome or Edge: recording needs one, and other browsers have not been tested) with WebGL2 for
 the living worlds. For capture: VS Code 1.99 or later.
 
+Two places are involved. The **receiver** runs in a terminal in the Code Resonance folder and keeps running while you
+work. The **VS Code window of the project you want to watch** is where the extension captures your work and sends it to
+the receiver. The receiver must run where that window's extension host runs: for a project opened in VS Code through
+WSL, run the receiver inside WSL ([WSL.md](WSL.md)).
+
+In the Code Resonance folder:
+
 ```bash
 npm run up
 ```
@@ -20,18 +27,31 @@ That one command, on loopback only:
    already there. If any other program holds the port, it **refuses**: it does not write a token, mint a pairing link, or
    open a browser. Free the port and run it again. `RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port` change the
    directory and port.
-3. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and opens it unless you pass
-   `--no-open`.
-4. Builds `code-resonance-0.7.1.vsix` (Node only) and, when `code` is on PATH, installs it unless you pass
-   `--no-install`.
+3. Builds `code-resonance-0.7.1.vsix` (Node only) and, when the `code` command works, installs it unless you pass
+   `--no-install`. If the install does not succeed, it says so; install the file from VS Code (step 1 below).
+4. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and tries to open it unless you
+   pass `--no-open`. Inside WSL it also prints a `localhost` link *From Windows (WSL)*: open that one in your Windows
+   browser. When this command starts the receiver, the receiver prints a link of its own as well; either works, once.
 5. If you have no real project yet, posts a fictional session labelled *Demonstration (fictional)* unless you pass
    `--no-demo`. It does not add a demonstration on top of a real project.
 
-`Ctrl+C` stops a receiver this command started. A receiver it reused is left running.
+Leave that terminal open: `Ctrl+C` stops a receiver this command started. A receiver it reused is left running.
 
-Then, still yours: open a **trusted workspace**, click **CR** in the status bar (or **CODE RESONANCE: Start Code
-Performance**) and accept local capture. Click **Enable sound** (browsers need a click before audio). For WSL or remote
-workspaces see [WSL.md](WSL.md).
+Then, in the VS Code window of the project you want to watch:
+
+1. **The extension.** *Extensions* should list **Code Resonance** (under *WSL* for a WSL window). If it is missing,
+   use *Extensions › … › Install from VSIX* and pick `code-resonance-0.7.1.vsix` from the Code Resonance folder. If the
+   status bar shows no **CR** item, run **Developer: Reload Window**.
+2. **Capture.** The item reads **CR stopped** until you start: click it, choose **Start Code Performance** (also in the
+   Command Palette as **CODE RESONANCE: Start Code Performance**) and accept local capture. The workspace must be
+   trusted.
+3. **Check.** Within seconds the Control Center shows the project by its folder name, with its files under Structure.
+   Home says *VS Code capture running*.
+4. **Watch and listen.** Click **Enable sound** (browsers need a click before audio), then **Open Stage**. What you see
+   and hear runs about 10 seconds behind your work, by design.
+
+Capture resumes by itself when VS Code restarts, until you stop it from the **CR** menu. On later days, `npm run up`
+(or `npm start`) in the Code Resonance folder is all you need.
 
 ```bash
 node scripts/up.js [--data <dir>] [--port <port>] [--no-demo] [--no-install] [--no-open]
@@ -54,6 +74,10 @@ npm run hooks:claude -- /path/to/project
 npm run hooks:cursor -- /path/to/project
 npm run hooks:codex -- /path/to/project
 ```
+
+Then start a new agent session in that project: a session that was already running does not pick up new hooks. Codex
+also asks you to review and trust new hooks (`/hooks`) before they run. While an agent is only thinking, nothing new
+arrives: Code Resonance sees its sessions, tools and files, never its reasoning.
 
 Connections shows what the receiver has actually observed (VS Code capture, the settings the extension reported, Claude
 Code, Cursor and Codex activity) and can add or remove each adapter after showing the exact change. Cursor is
@@ -210,7 +234,13 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | The page does not load | receiver not running, or another port | `npm run doctor`; start it with `npm run up` or `npm start` |
 | `npm run up` refuses the port | another program (not Code Resonance) is on 4174 | free `RESONANCE_PORT` (default 4174) and run it again |
 | `npm run up` refuses leftover on the port | a Code Resonance receiver answers, but `--data` has no `receiver-auth.json` (another data directory, or a leftover process) | pass the matching `--data` / `RESONANCE_DATA`, or free the port |
+| `npm run up` says *code --install-extension did not succeed*, after *Unable to connect to VS Code server … ENOENT … vscode-ipc-….sock* | the terminal was restored from an earlier VS Code session and points at a VS Code connection that no longer exists | open a new terminal (**+** in the terminal panel) and run it again, or in VS Code use *Extensions › … › Install from VSIX* with `code-resonance-0.7.1.vsix` from the Code Resonance folder |
+| `npm run up` says *VS Code CLI (code) is not on PATH* | it ran outside VS Code's terminal, or VS Code's `code` command is not installed | *Extensions › … › Install from VSIX* in VS Code, or run it from VS Code's integrated terminal |
+| No **CR** item in the status bar | the window was already open when the extension was installed, or the extension is installed on the other side (Windows instead of WSL) | **Developer: Reload Window**; *Extensions* should list Code Resonance under *WSL* for a WSL window |
 | No project appears | capture not started, or the extension cannot reach the receiver | CR status-bar item → Start; `npm run doctor` shows the port the receiver uses; the extension's port setting is `resonance.receiverPort` |
+| The project shows as *Project 1a2b3c4d*, says *No VS Code capture* and has no structure | only an agent's hooks have reported so far; VS Code capture is not running in that folder | in that project's VS Code window: **CR stopped** → **Start Code Performance**; the name and files follow within seconds |
+| An agent never appears after `npm run hooks:…` | the agent session started before the hooks were added; Codex has not trusted the new hooks yet; or the workspace is not trusted | start a new agent session in that project; in Codex, review the hooks with `/hooks`; nothing arrives while an agent is only thinking |
+| The world looks grainy or soft | **Auto** quality lowered the resolution because frames were slow on this GPU; the Cinematic finish adds a fine film grain | Visual Studio (or Settings) → rendering quality on this device → **High**; Visual Studio → Finish → **Clean** for less grain; on Windows, let the browser use the high-performance GPU (Settings → System → Display → Graphics); **Open Stage** shows the full resolution |
 | Events arrive late | by design: interpretation runs ~10 s behind the work | wait; the replay has everything |
 | No sound | the browser needs a click; or the tab is muted | **Enable sound**; check the tab's audio |
 | Recording says *no sound* | sound was off or the audio output could not be captured | enable sound first, then record |
@@ -219,7 +249,7 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | *Recording finished early (the sound stopped …)* | the audio device was disconnected or stopped working | reconnect it, check that you hear the music, record again |
 | Last night is missing | the recording is short, a demo, or nothing scored | keep capturing; it appears once a real project has a highlight |
 | `npm run film` refuses | no public title | set one in Visual Studio, or pass `--allow-untitled` |
-| `npm run film` prints `cd qualification && npm ci` | Playwright stays in qualification/, not the product | run that command once |
+| `npm run film` prints `cd qualification && npm ci` | Playwright stays in qualification/, not the product | run that command once, then `npx playwright-core install chromium` in `qualification/` (Playwright downloads no browser by itself) |
 | Cursor or Codex hooks silent | workspace not trusted, or a permission hook expected | prove only in a trusted workspace; Cursor never uses `subagentStart`; Codex never uses `PreToolUse` / `PermissionRequest` |
 | *… stopped: the pack stopped answering* | a visual pack hung or was too slow for this machine | lower **Quality**, then **Retry**; or choose another look |
 | *… exceeds its declared budget* | the pack draws more than its author declared | it keeps running; lower Quality if frames are slow |

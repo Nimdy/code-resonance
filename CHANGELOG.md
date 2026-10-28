@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
+  included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
+  ([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)). The VSIX carries the licence as `extension/LICENSE.txt`.
 - **Worlds:** the choices are now Living world, The Construct and Monolith. Nexus and Nebula, two Canvas 2D stages,
   are retired. A setting or project preference that names one still loads as Monolith (the receiver never rewrites a
   file for reading it; the document's next write stores Monolith), and a URL pin `?world=nexus` or `?world=nebula`
