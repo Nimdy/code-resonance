@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased — integrated into main at the final consolidation (product version still 0.5.0; not released)
+## 0.6.0 — 2026-10-27
 
-Four milestones built on 0.5.0 without changing the product version, then integrated into `main`. Nothing here has
-been released or tagged. The product version is separate from the versions of the data formats, the score, the Visual
-Recipe generator, digital life and the Visual Pack SDK, which these milestones did change: they are listed, with the
-rules that keep existing identities as they were, in [ARCHITECTURE.md](ARCHITECTURE.md#versions-and-compatibility).
+The first tagged release, `v0.6.0`: four milestones built on 0.5.0 and the final consolidation, integrated into `main`.
+For private use on your own machine; not stable. The VS Code extension is 0.6.0 with the same code as 0.5.0 (only its
+version changed), so reinstalling it is optional. The product version is separate from the versions of the data formats,
+the score, the Visual Recipe generator, digital life and the Visual Pack SDK, which these milestones did change: they
+are listed, with the rules that keep existing identities as they were, in
+[ARCHITECTURE.md](ARCHITECTURE.md#versions-and-compatibility).
 
 ### Final consolidation
 
@@ -47,9 +49,9 @@ No intended change of product behaviour. The pull-request stack is integrated in
 
 ### Creative mastering and the Artist Studio (PR #11)
 
-Music that develops, digital life that answers it, cinematic finishes, and a workbench for original compositions.
-Built on the digital-life branch (version unchanged); not stable, not released. Existing identities keep their sound
-and image until deliberately upgraded: new behaviour sits behind versions (recipe generator v4, score v3, ecology 2).
+Music that develops, digital life that answers it, cinematic finishes, and a workbench for original compositions. Built
+on the digital-life branch. Existing identities keep their sound and image until deliberately upgraded: new behaviour
+sits behind versions (recipe generator v4, score v3, ecology 2).
 
 - **Composed score (v3)** (`public/score.js`, `public/music.js`, [docs/MUSIC.md](docs/MUSIC.md)):
   - Long-form arcs: statement, development, interlude, return and release.
@@ -102,8 +104,7 @@ and image until deliberately upgraded: new behaviour sits behind versions (recip
 
 ### Digital life (PR #10)
 
-Autonomous inhabitants in the three flagship worlds ([docs/LIFE.md](docs/LIFE.md)). Built on the desktop experience
-(version unchanged); not stable, not released.
+Autonomous inhabitants in the three flagship worlds ([docs/LIFE.md](docs/LIFE.md)). Built on the desktop experience.
 
 - **A deterministic ecosystem** (`public/worlds/life/`): entities with inertia and bounded steering on a fixed step,
   shared fields they deposit into and sense (trail, energy, disturbance, momentum), sites with conditions, bounded
@@ -131,8 +132,7 @@ Autonomous inhabitants in the three flagship worlds ([docs/LIFE.md](docs/LIFE.md
 
 ### Desktop experience (PR #9)
 
-The Control Center redesigned for desktop screens, from 1280×720 to 2560×1440. Built on the flagship worlds (version
-unchanged); not stable, not released.
+The Control Center redesigned for desktop screens, from 1280×720 to 2560×1440. Built on the flagship worlds.
 
 - **Type and layout:** a readable type scale (body 14 px, nothing under 12 px), a wider rail, top bar and inspector,
   and pages that use the screen's width (up to 2400 px).
@@ -155,7 +155,7 @@ unchanged); not stable, not released.
 ### Flagship worlds (PR #8)
 
 The three built-in living worlds rebuilt as flagship worlds, each a different universe with its own visual grammar.
-Built on 0.5.0 (the version is unchanged); not stable, not released.
+Built on 0.5.0.
 
 - **Fractal Biosphere:** a bioluminescent reef grown from the code. Recursive crowns (sea fans, pinnate fronds, polyp
   buds, photophores), species chosen from the project's data, blight on failing branches only, recovery that regrows

@@ -135,7 +135,7 @@ made with, and older versions stay in the code.
 
 | What | Current | Defined in | Rule |
 |---|---|---|---|
-| Product | 0.5.0, not released | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes |
+| Product | 0.6.0 (tag `v0.6.0`) | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes |
 | Interpretation | 7 | `engine/reducer.js` `INTERPRETATION_VERSION` | A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
 | Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |
