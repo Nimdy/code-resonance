@@ -39,7 +39,7 @@ test('Settings refuse unknown keys and invalid values, naming them, and change n
   await rejects(settings.update({patch:'x'}),'invalid','patch');
   const doc=await settings.read();assert.equal(doc.revision,1);assert.equal(doc.music.tempo,100);
   // Boundaries are inclusive.
-  const edge=await settings.update({patch:{music:{tempo:58,volume:0,texture:1},stage:{world:'nebula',captions:false},recording:{profile:'stage'},interface:{motion:'reduce'},onboarding:{dismissed:true,migrated:true}}});
+  const edge=await settings.update({patch:{music:{tempo:58,volume:0,texture:1},stage:{world:'city',captions:false},recording:{profile:'stage'},interface:{motion:'reduce'},onboarding:{dismissed:true,migrated:true}}});
   assert.equal(edge.revision,2);assert.equal(edge.music.tempo,58);assert.equal(edge.stage.captions,false);
 });
 test('A stale ifRevision is refused with the current document',async t=>{
@@ -90,8 +90,8 @@ const INHERIT_PROFILE={mood:null,evolution:null,melody:null,rhythm:null,atmosphe
 test('Preferences: null inherits, a whole section can be cleared, the file lives in the project directory',async t=>{
   const dir=path.join(tempDir(t,'cr-store-'),'projects','abc'),prefs=store.preferences(dir);
   assert.deepEqual(await prefs.read(),{schema:'code-resonance.preferences.v1',revision:0,world:null,music:{style:null,texture:null,tempoMode:null,tempo:null,...INHERIT_PROFILE}});
-  let doc=await prefs.update({patch:{world:'nexus',music:{style:'pulse',tempo:120,tempoMode:'manual'}}});
-  assert.deepEqual({world:doc.world,music:doc.music},{world:'nexus',music:{style:'pulse',texture:null,tempoMode:'manual',tempo:120,...INHERIT_PROFILE}});
+  let doc=await prefs.update({patch:{world:'construct',music:{style:'pulse',tempo:120,tempoMode:'manual'}}});
+  assert.deepEqual({world:doc.world,music:doc.music},{world:'construct',music:{style:'pulse',texture:null,tempoMode:'manual',tempo:120,...INHERIT_PROFILE}});
   doc=await prefs.update({patch:{world:null,music:{tempo:null}}});
   assert.equal(doc.world,null);assert.equal(doc.music.tempo,null);assert.equal(doc.music.style,'pulse');
   doc=await prefs.update({patch:{music:null}});
@@ -99,6 +99,23 @@ test('Preferences: null inherits, a whole section can be cleared, the file lives
   for(const [patch,key] of [[{world:'mars'},'world'],[{music:{volume:.5}},'music.volume'],[{music:{texture:2}},'music.texture'],[{music:{tempo:'fast'}},'music.tempo'],[{stage:{}},'stage']])
     await rejects(prefs.update({patch}),'invalid',key);
   assert.ok(JSON.parse(await fs.readFile(path.join(dir,'preferences.json'),'utf8')).revision===3);
+});
+test('Nexus and Nebula, retired, read as Monolith without a rewrite or a warning; a write cannot choose them',async t=>{
+  const warnings=quiet(t),dir=tempDir(t,'cr-store-'),file=path.join(dir,'settings.json'),pdir=path.join(dir,'projects','abc'),pfile=path.join(pdir,'preferences.json');
+  const settings=store.settings(dir),prefs=store.preferences(pdir);
+  const text=JSON.stringify({schema:'code-resonance.settings.v1',revision:6,...store.SETTINGS_DEFAULTS,stage:{...store.SETTINGS_DEFAULTS.stage,world:'nebula'}});
+  const ptext=JSON.stringify({schema:'code-resonance.preferences.v1',revision:2,...store.PREFERENCES_DEFAULTS,world:'nexus'});
+  await fs.writeFile(file,text);await fs.mkdir(pdir,{recursive:true});await fs.writeFile(pfile,ptext);
+  assert.deepEqual(store.WORLDS,['living','construct','city']);assert.deepEqual(store.RETIRED_WORLDS,{nexus:'city',nebula:'city'});
+  const doc=await settings.read(),p=await prefs.read();
+  assert.deepEqual([doc.revision,doc.stage.world,p.revision,p.world],[6,'city',2,'city']);
+  assert.deepEqual(warnings,[],'valid documents');
+  assert.equal(await fs.readFile(file,'utf8'),text);assert.equal(await fs.readFile(pfile,'utf8'),ptext,'reading never rewrites');
+  for(const w of ['nexus','nebula']){await rejects(settings.update({patch:{stage:{world:w}}}),'invalid','stage.world');await rejects(prefs.update({patch:{world:w}}),'invalid','world');}
+  assert.equal(await fs.readFile(pfile,'utf8'),ptext,'a refused write changes nothing');
+  // The next write stores what every reader was shown.
+  assert.equal((await prefs.update({patch:{music:{tempo:110}}})).world,'city');assert.equal(JSON.parse(await fs.readFile(pfile,'utf8')).world,'city');
+  assert.equal((await settings.update({patch:{music:{tempo:90}}})).stage.world,'city');assert.equal(JSON.parse(await fs.readFile(file,'utf8')).stage.world,'city');
 });
 test('Presets: create, rename, update and delete, with exact payload validation',async t=>{
   const dir=tempDir(t,'cr-store-');let clock=1000;

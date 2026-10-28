@@ -1,5 +1,5 @@
 'use strict';
-// Interpretation v8: canonical performance intents, CAST seats, and agent.collision. Worlds express intents; they never
+// Interpretation v8 (v9: catalogued providers only): canonical performance intents, CAST seats, and agent.collision. Worlds express intents; they never
 // decide whether something happened, so these rules are the honesty boundary of every visual effect.
 const test=require('node:test'),assert=require('node:assert/strict');
 const {newState,apply,closeBatch,drainIntents}=require('../engine/reducer');

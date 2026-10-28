@@ -9,7 +9,7 @@ import {createModel} from './model.js';
 import {createDirector} from './director.js';
 import {createAgents} from './agents.js';
 import {createHistory} from './history.js';
-import {composeLabels,labelStrings,LABEL_MODES} from './labels.js';
+import {composeLabels,labelStrings,LABEL_MODES,generatedName} from './labels.js';
 import {createSdk,validateWorld} from './sdk.js';
 import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
@@ -19,20 +19,10 @@ const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.j
 // Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
 // whose base is the artist canvas runs on the canvas world (canvas.js) instead of the family's; the canvas is never
 // chosen for a project otherwise.
+// The generated subsystem names live with the rest of the public text (labels.js); still exported here for its callers.
+export {generatedName};
 const compositionOf=r=>r?.composition&&typeof r.composition==='object'&&Array.isArray(r.composition.layers)?r.composition:null;
 const moduleOf=r=>compositionOf(r)?.base==='canvas'?'./canvas.js':BUILTIN[r?.family];
-const ONSET=['V','Th','M','L','S','K','R','D','N','C','Z','Er','Al','Or','El','Ar','Ly','Se','Ca','Ta','Va','Io','Hy','Ae'];
-const VOWEL=['a','e','i','o','u','ae','ia','eo','y','au'];
-const CODA=['l','r','n','s','th','v','d','m','','',''];
-const ENDING=['ra','ris','on','el','is','ar','en','or','ia','eth','ion','yn','os','ae','ix','ara','ene','ira'];
-// Re-roll anything that could read as a crude or offensive word.
-const BLOCK=/anu|nus|ass|cum|tit|fag|nig|sex|pis|poo|shi|fuc|dic|coc|kik|rap|cun|vag|tw|hor|slu|wh|nazi|dam|hel/i;
-// A pronounceable name derived from a salted subsystem id: memorable, stable, and it reveals nothing about the code.
-export function generatedName(id){
-  const r=rng(hash(id)^0x9e3779b9),pick=list=>list[Math.floor(r()*list.length)];
-  for(let i=0;i<12;i++){const name=pick(ONSET)+pick(VOWEL)+pick(CODA)+pick(ENDING);if(!BLOCK.test(name))return name;}
-  return 'Aurel';
-}
 // ---- Finishes ------------------------------------------------------------------------------------------------------
 // Lens and colour profiles over each world's own grade (`technique.finish`; docs/packs/catalogue.md). A finish scales
 // the world's light, then the composite's finishing terms (core.js, FINISH) master it: AgX highlights, an optical fringe

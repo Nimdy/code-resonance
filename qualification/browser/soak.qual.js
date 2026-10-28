@@ -45,9 +45,9 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     await page.goto(`${url}/?project=${projectId}#/stage`);
     await page.waitForTimeout(8000);await page.click('#stageSoundBtn');
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
-    const worlds=['nexus','city','nebula'],started=Date.now();
+    const worlds=['city'],started=Date.now();
     for(let i=0;Date.now()-started<MINUTES*60000;i++){
-      if(i%6===0)await page.click(`[data-world="${worlds[(i/6)%3|0]}"]`);
+      if(i%6===0)await page.click(`[data-world="${worlds[(i/6)%worlds.length|0]}"]`);
       await page.waitForTimeout(28000);
       const {metrics}=await cdp.send('Performance.getMetrics');const m=Object.fromEntries(metrics.map(x=>[x.name,x.value]));
       const fps=await page.evaluate(()=>new Promise(r=>{let k=0;const s=performance.now();const f=()=>{k++;performance.now()-s<2000?requestAnimationFrame(f):r(k/((performance.now()-s)/1000));};requestAnimationFrame(f);}));

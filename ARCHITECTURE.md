@@ -20,8 +20,9 @@ public/         the player, served by the receiver:
   music.js        the Web Audio performer and offline renderer
   recording.js    live WebM recording
   composition.js  the Artist Studio's data model (allowlists, limits, validation); composition-text.js its words
-  construct.js    the Construct (WebGL)
+  construct.js    the Construct (WebGL2, three.js)
   worlds/         the living worlds: host, renderer core, the three flagship families, director, agents, labels,
+                  Monolith (monolith.js, the 2D world and last fallback),
                   musical expression, Artist Studio layers (layers*.js, canvas.js), the pack frame and worker, the
                   Visual Pack SDK (sdk.js); life/ the digital-life simulation
   ui/             the Control Center and the Performance Stage: shell, store, one module per workspace
@@ -60,7 +61,7 @@ VS Code extension (workspace host)        Agent hooks (Claude Code, Cursor, Code
                  ├── music.js      Web Audio performer, offline renderer
                  ├── worlds/       living worlds: flagship families, finishes, digital life (life/), Artist Studio
                  │                 layers; packs with code in an isolated frame and worker
-                 ├── construct.js  the Construct; Nexus, Monolith and Nebula are Canvas 2D stages in app.js
+                 ├── construct.js  the Construct (WebGL2); worlds/monolith.js is Monolith (Canvas 2D)
                  └── recording.js  live WebM of the stage and the music
                   ▲
         Control Center and Performance Stage (public/ui/) drive it through window.ResonancePlayer
@@ -70,9 +71,9 @@ The engine renders no controls: the Control Center and the Performance Stage (`p
 `window.ResonancePlayer`, and configuration lives in the receiver (settings, project preferences, presets, recipes,
 compositions), announced to every open view by `GET /api/changes`. See [docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md).
 
-When a world cannot run, the engine falls back and says so: the living world (WebGL2) to the Construct (WebGL), the
-Construct to Monolith (Canvas 2D). A machine on which no quality level draws the living world smoothly gets a notice
-offering Monolith; the selected world is never changed without the viewer.
+When a world cannot run, the engine falls back and says so: the living world (WebGL2) to the Construct (WebGL2 too,
+through three.js r170), the Construct to Monolith (Canvas 2D). A machine on which no quality level draws the living
+world smoothly gets a notice offering Monolith; the selected world is never changed without the viewer.
 
 **Who owns which state.** The receiver owns everything that persists: the journal and derived files, settings,
 project preferences, presets, recipes, compositions, packs and approvals ([where each
@@ -107,7 +108,7 @@ Window 5 s, grace 1.5 s, worker scan 1 s. Measured from posting to the recorded 
 - Editor handlers only enqueue. Typing is summarised per file per second; snapshots are debounced (1.2 s) and capped at 150 KB; the outbox persists batches every 500 ms and delivers every 2 s.
 - The outbox quarantines permanently rejected batches, holds back the baseline index until a receiver is reachable, and caps queued content at 256 MB.
 - The receiver main thread serves cached projections and byte-indexed timeline pages; parsing, AST analysis and projection happen in the worker. Measured on a real 448-file project after an hour of simulated edits: `GET /api/project` 3 ms, sort per window 61 ms, `state.json` 7.6 MB.
-- The public graph shows every module (up to 700) and fills a 1400-node budget with the most meaningful symbols. The Canvas 2D stages draw it with pre-rendered glow sprites and batched edge paths; the living worlds instance their geometry (a few draw calls per kind of thing).
+- The public graph shows every module (up to 700) and fills a 1400-node budget with the most meaningful symbols. Monolith (Canvas 2D) draws it as flat shapes and copies an unchanged frame from a cached layer; the living worlds instance their geometry (a few draw calls per kind of thing).
 
 ## Visual packs and recording
 
@@ -137,7 +138,7 @@ made with, and older versions stay in the code.
 | What | Current | Defined in | Rule |
 |---|---|---|---|
 | Product | 0.7.1 | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes. Last published GitHub Release before 0.7: `v0.6.0` |
-| Interpretation | 8 | `engine/reducer.js` `INTERPRETATION_VERSION` | Independent of the product version. A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s |
+| Interpretation | 9 | `engine/reducer.js` `INTERPRETATION_VERSION` | Independent of the product version. A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s; v9 counts only catalogued providers for it and gives its cue weight 0, so it adds no progress (`tests/reducer.test.js` pins that two agents keep one agent's progress and chapter) |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
 | Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |
 | Renderer | 1 | `engine/recipe.js` `RENDERER_VERSION` | The world renderers a genome is written for |
@@ -158,7 +159,7 @@ refused. Reads return derived, privacy-safe data. **Administrative** routes need
 | Route | Use |
 |---|---|
 | `GET /health` | Status, version and timing (window, grace, scan interval) |
-| `GET /v1/challenge?nonce=` | Occupant proves it holds the ingestion token: HMAC-SHA256(token, 32-hex nonce). Clients verify before sending `Authorization` |
+| `GET /v1/challenge?nonce=&v=2` | Occupant proves it holds the ingestion token: `{ok, v:2, proof}`, proof = HMAC-SHA256(token, `cr-challenge-v2\|<port>\|<nonce>`) for the port the request arrived on (32-hex nonce). Every client that sends `Authorization` checks it first and never follows a redirect (`extension/proof.js`). Without `v`: HMAC-SHA256(token, nonce), for extensions from 0.7.1 |
 | `GET /api/status`, `/api/evidence?id=`, `/api/integrations` | Receiver health (its data directory only to a capability); what capture was observed per project; integrations |
 | `GET /api/projects` | Projects, most recent first |
 | `GET /api/project?id=` | Anonymised graph, stats and recent frames (ETag) |

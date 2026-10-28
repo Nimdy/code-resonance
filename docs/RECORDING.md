@@ -10,8 +10,8 @@ that downloads when you stop. One window records at a time.
 (1920×1080) or *Stage size*. At 720p
 or 1080p the world renders at exactly that size with a 16:9 camera (the living worlds, visual packs and the
 Construct), and the stage shows the same picture letterboxed while you record: what you see is what is recorded,
-nothing is stretched, cut or bordered in the file. The 2D worlds (Nexus, Monolith, Nebula) keep the stage's shape and
-are fitted into the frame with black bars. Labels scale with the output, so 720p and 1080p have the same composition.
+nothing is stretched, cut or bordered in the file. Monolith, the 2D world, keeps the stage's shape and is fitted into
+the frame with black bars. Labels scale with the output, so 720p and 1080p have the same composition.
 *Stage size* records the stage as it is on screen (any aspect ratio). Video bitrate: 5 Mbit/s at 720p, 8 Mbit/s at
 1080p, in proportion for the stage size. Adaptive quality may lower the world's internal resolution while frames are
 slow; the file keeps the chosen dimensions.

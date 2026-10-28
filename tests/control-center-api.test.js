@@ -145,12 +145,12 @@ test('Settings, preferences and presets round-trip with revisions; stale and inv
   assert.equal((await get('/api/settings')).revision,1,'refused writes change nothing');
   // Per-project preferences (null = inherit the global setting); the project must exist.
   assert.equal((await fetch(`${new URL(r.url).origin}/api/preferences?id=${sha('nobody-here')}`)).status,404);
-  assert.equal((await send(`/api/preferences?id=${sha('nobody-here')}`,{patch:{world:'nebula'}})).status,404);
+  assert.equal((await send(`/api/preferences?id=${sha('nobody-here')}`,{patch:{world:'city'}})).status,404);
   const prefs=await get(`/api/preferences?id=${projectId}`);assert.equal(prefs.revision,0);assert.equal(prefs.world,null);assert.equal(prefs.music.tempo,null);
-  r=await send(`/api/preferences?id=${projectId}`,{patch:{world:'nebula',music:{tempo:100}}});assert.equal(r.status,200);assert.equal((await r.json()).revision,1);
+  r=await send(`/api/preferences?id=${projectId}`,{patch:{world:'construct',music:{tempo:100}}});assert.equal(r.status,200);assert.equal((await r.json()).revision,1);
   let listed=(await get('/api/projects')).projects.find(p=>p.id===projectId);
   const inherit={mood:null,evolution:null,melody:null,rhythm:null,atmosphere:null,harmony:null,dynamics:null,space:null,mix:null};
-  assert.deepEqual(listed.preferences,{world:'nebula',music:{style:null,texture:null,tempoMode:null,tempo:100,...inherit}});
+  assert.deepEqual(listed.preferences,{world:'construct',music:{style:null,texture:null,tempoMode:null,tempo:100,...inherit}});
   r=await send(`/api/preferences?id=${projectId}`,{patch:{world:null},ifRevision:1});const cleared=await r.json();assert.equal(cleared.world,null);assert.equal(cleared.music.tempo,100);
   assert.equal((await send(`/api/preferences?id=${projectId}`,{patch:{world:'living'},ifRevision:1})).status,409);
   assert.equal((await send(`/api/preferences?id=${projectId}`,{patch:{world:'mars'}})).status,400);
@@ -178,6 +178,30 @@ test('Settings, preferences and presets round-trip with revisions; stale and inv
   assert.deepEqual((await get('/api/presets')).presets.find(x=>x.name==='Deep focus').payload,performance);
   assert.deepEqual((await get('/api/presets')).presets.find(x=>x.name==='Calm').payload,{style:'ambient',texture:.4,tempoMode:'manual',tempo:80},'a preset from before keeps its shape');
   r=await send('/api/presets',{action:'create',kind:'music',name:'Keyed',payload:{...performance,key:'D'}});assert.equal(r.status,400);assert.equal((await r.json()).key,'payload.key');
+});
+test('Retired worlds: documents that name Nexus or Nebula load as Monolith and stay as stored; a write cannot name them',async t=>{
+  const {dir,projectId,send,get}=await start(t);
+  const settingsFile=path.join(dir,'settings.json'),prefsFile=path.join(dir,'projects',sha(projectId),'preferences.json');
+  // As an earlier version wrote them, when both were still offered.
+  const settingsText=JSON.stringify({schema:'code-resonance.settings.v1',revision:3,stage:{world:'nebula',labels:'stream',captions:true}});
+  const prefsText=JSON.stringify({schema:'code-resonance.preferences.v1',revision:2,world:'nexus',music:{tempo:100}});
+  fs.writeFileSync(settingsFile,settingsText);fs.writeFileSync(prefsFile,prefsText);
+  const s=await get('/api/settings');assert.equal(s.revision,3);assert.equal(s.stage.world,'city');assert.equal(s.stage.labels,'stream','the rest as stored');
+  const p=await get(`/api/preferences?id=${projectId}`);assert.equal(p.revision,2);assert.equal(p.world,'city');assert.equal(p.music.tempo,100);
+  assert.equal((await get('/api/projects')).projects.find(x=>x.id===projectId).preferences.world,'city','the project list says the same');
+  assert.equal(fs.readFileSync(settingsFile,'utf8'),settingsText);assert.equal(fs.readFileSync(prefsFile,'utf8'),prefsText,'reading never rewrites');
+  assert(!fs.existsSync(settingsFile+'.invalid')&&!fs.existsSync(prefsFile+'.invalid'),'valid documents, not set aside');
+  // A write cannot choose one (refused and named like any unknown world; nothing changes) ...
+  for(const w of ['nexus','nebula']){
+    let r=await send('/api/settings',{patch:{stage:{world:w}}});assert.equal(r.status,400);assert.equal((await r.json()).key,'stage.world');
+    r=await send(`/api/preferences?id=${projectId}`,{patch:{world:w}});assert.equal(r.status,400);assert.equal((await r.json()).key,'world');
+  }
+  assert.equal(fs.readFileSync(settingsFile,'utf8'),settingsText);assert.equal(fs.readFileSync(prefsFile,'utf8'),prefsText);
+  // ... and the next write of a document stores Monolith, which every reader was already shown.
+  let r=await send(`/api/preferences?id=${projectId}`,{patch:{music:{tempo:104}},ifRevision:2});assert.equal(r.status,200);
+  assert.deepEqual([(await r.json()).world,JSON.parse(fs.readFileSync(prefsFile,'utf8')).world],['city','city']);
+  r=await send('/api/settings',{patch:{music:{volume:.4}},ifRevision:3});assert.equal(r.status,200);
+  assert.deepEqual([(await r.json()).stage.world,JSON.parse(fs.readFileSync(settingsFile,'utf8')).stage.world],['city','city']);
 });
 test('Recipe batches apply all or nothing against a revision; a preview never writes; the tunable parameters are listed',async t=>{
   const {dir,projectId,send,get}=await start(t);
@@ -549,6 +573,25 @@ test('Cursor hooks: plan and apply install, then remove, leaving the rest of the
   assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'hooks.json is a directory');
   fs.rmSync(cursorDir,{recursive:true});fs.writeFileSync(cursorDir,'not a folder');
   assert.equal((await plan({projectPath:linked,action:'install'})).status,400,'.cursor is a file');
+});
+test('Hooks refuse the home directory (its hook files are user-level, for every workspace), a link to it and a path ending there',async t=>{
+  // A temporary home for this test: os.homedir() follows HOME (USERPROFILE on Windows).
+  const home=tempDir(t,'cr-home-'),key=process.platform==='win32'?'USERPROFILE':'HOME',saved=process.env[key];
+  process.env[key]=home;t.after(()=>{if(saved===undefined)delete process.env[key];else process.env[key]=saved;});
+  const {send}=await start(t,{events:false});
+  const project=path.join(home,'code','app');fs.mkdirSync(project,{recursive:true});
+  const linked=path.join(tempDir(t,'cr-home-link-'),'me');let link=true;
+  try{fs.symlinkSync(home,linked,'junction');}catch(e){if(!['EPERM','EACCES'].includes(e.code))throw e;link=false;}
+  for(const adapter of ['claude','cursor','codex']){
+    const plan=body=>send(`/api/integrations/${adapter}/plan`,body),apply=body=>send(`/api/integrations/${adapter}/apply`,body);
+    for(const projectPath of [home,path.join(home,'code','..'),...(link?[linked]:[])])for(const action of ['install','remove']){
+      for(const r of [await plan({projectPath,action}),await apply({projectPath,action,expectHash:''})]){
+        assert.equal(r.status,400,`${adapter} ${action} ${projectPath}`);assert.match((await r.json()).error,/home directory/);
+      }
+    }
+    assert.equal((await plan({projectPath:project,action:'install'})).status,200,`${adapter}: a project inside the home directory is fine`);
+  }
+  for(const f of ['.claude','.cursor','.codex'])assert.equal(fs.existsSync(path.join(home,f)),false,`nothing written in ${f}`);
 });
 test('Codex hooks: plan and apply install, then remove, leaving the rest of the hooks file untouched',async t=>{
   const {svc,dir,send}=await start(t,{events:false});

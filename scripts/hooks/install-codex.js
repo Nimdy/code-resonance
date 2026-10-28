@@ -25,13 +25,14 @@ const wanted=new Set(EVENTS);
 const matchers=new Set(SPECS.filter(s=>s.matcher).map(s=>s.matcher));
 const matchOf=spec=>g=>isPlain(g)&&Array.isArray(g.hooks)&&g.hooks.some(ours)&&(spec.matcher?g.matcher===spec.matcher:!g.matcher);
 const entry=spec=>({...(spec.matcher?{matcher:spec.matcher}:{}),hooks:[{type:'command',command,timeout:5}]});
+// Whether anything was ours, not the group count: a group shared with the user's own hook keeps its place.
 function stripOurs(groups){
-  const kept=[];
+  const kept=[];let changed=false;
   for(const g of groups){
     if(!isPlain(g)||!Array.isArray(g.hooks)||!g.hooks.some(ours)){kept.push(g);continue;}
-    const rest=g.hooks.filter(h=>!ours(h));if(rest.length)kept.push({...g,hooks:rest});
+    changed=true;const rest=g.hooks.filter(h=>!ours(h));if(rest.length)kept.push({...g,hooks:rest});
   }
-  return kept;
+  return {kept,changed};
 }
 function merge(settings){
   const next={...settings,hooks:{...(settings.hooks||{})}};
@@ -45,8 +46,8 @@ function merge(settings){
   for(const [event,groups] of Object.entries(next.hooks)){
     if(!Array.isArray(groups))continue;
     if(!wanted.has(event)){
-      const kept=stripOurs(groups);
-      if(kept.length===groups.length)continue;
+      const {kept,changed}=stripOurs(groups);
+      if(!changed)continue;
       if(kept.length)next.hooks[event]=kept;else delete next.hooks[event];
       continue;
     }
@@ -67,8 +68,8 @@ function unmerge(settings){
   const hooks={...settings.hooks};let touched=false;
   for(const [event,groups] of Object.entries(hooks)){
     if(!Array.isArray(groups))continue;
-    const kept=stripOurs(groups);
-    if(kept.length===groups.length)continue;touched=true;
+    const {kept,changed}=stripOurs(groups);
+    if(!changed)continue;touched=true;
     if(kept.length)hooks[event]=kept;else delete hooks[event];
   }
   if(!touched)return settings;

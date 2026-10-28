@@ -8,7 +8,7 @@ Product **0.7.0**, tagged `v0.7.0` on `main`. Interpretation **8** (CAST seats a
 the product version: [ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility).
 
 Agents are a CAST (name, seat, voice) in the project's world. Stage chips show catalog names: Claude, Cursor, Codex,
-Grok, Qwen, Kimi. No vendor art styles.
+Grok, Qwen, Kimi; any other agent is "Agent". No vendor art styles.
 
 ## Privacy floor
 
@@ -59,7 +59,8 @@ Not done. When you run it:
 5. Stage / OBS labels stay on **cinematic** or **stream**. Confirm no folder name, path or prompt is drawn.
 
 A meeting of two catalogued providers on the same file or district inside 60 s is `agent.collision` (an intent and a
-derived cue). Last-writer still attributes the edit. Worlds express the collision; they never invent one.
+derived cue that adds no progress, since interpretation 9). Last-writer still attributes the edit. Worlds express the
+collision; they never invent one.
 
 ## 4. Morning: Last night and a film
 

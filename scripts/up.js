@@ -86,7 +86,7 @@ async function waitForCr(port, timeoutMs=20000, signal){
 }
 async function mintPairing(port, token){
   await proof.verifyServer(port, token);
-  const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(3000)});
+  const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',redirect:'error',headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(3000)});
   if(!r.ok) throw new Error(`The receiver refused a pairing code (HTTP ${r.status}): is it a receiver from before 0.5, or another program on port ${port}?`);
   const {code}=await r.json();
   if(typeof code!=='string'||!/^[0-9a-f]{32}$/.test(code)) throw new Error('The receiver did not return a pairing code.');

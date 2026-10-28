@@ -8,6 +8,7 @@ const http=require('node:http');
 const crypto=require('node:crypto');
 const {VALID_KINDS,sha}=require('../receiver/protocol');
 const {projectIdForRoot}=require('../sdk/project-id');
+const proof=require('../receiver/proof');
 function arg(k){const i=process.argv.indexOf(k);return i<0?undefined:process.argv[i+1];}
 function request(port,token,events){
   return new Promise((resolve,reject)=>{
@@ -32,7 +33,10 @@ async function main(){
     meta:{provider:arg('--provider')||'external-agent',source:'explicit-hook',tool:arg('--tool')||'',
       ...(bodyText?{length:bodyText.length,fingerprint:sha(bodyText).slice(0,20)}:{})},
     ...(process.argv.includes('--include-text')&&bodyText?{text:bodyText}: {})};
-  const result=await request(Number(arg('--port')||auth.port||4174),auth.token,[event]);
+  const port=Number(arg('--port')||auth.port||4174);
+  // The token goes only to an occupant that proves it holds it.
+  await proof.verifyServer(port,auth.token);
+  const result=await request(port,auth.token,[event]);
   console.log(`CODE RESONANCE event recorded: ${kind} (${JSON.parse(result).accepted})`);
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});

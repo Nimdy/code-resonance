@@ -65,3 +65,39 @@ test('whenOnline resolves only after a successful delivery',async t=>{
   await new Promise(r=>setImmediate(r));assert.equal(online,false);
   outbox.enqueue(ev('online-01'));await outbox.deliver();await waiting;assert.equal(online,true);
 });
+test('The token goes only to an occupant that proved it holds it, verified once per receiver connection',async t=>{
+  const http=require('node:http');
+  const {verifyServer}=require('../extension/proof');
+  const seen=[];
+  const fake=http.createServer((req,res)=>{
+    seen.push({url:req.url,auth:req.headers.authorization||null});
+    const challenge=req.url.startsWith('/v1/challenge');
+    res.writeHead(challenge?200:202,{'Content-Type':'application/json'});
+    res.end(challenge?JSON.stringify({ok:true,v:2,proof:'0'.repeat(64)}):'{"accepted":1}');
+  });
+  t.after(()=>new Promise(r=>fake.close(()=>r())));
+  await new Promise(r=>fake.listen(0,'127.0.0.1',r));
+  let calls=0;const statuses=[];
+  const {dir,service,outbox,journal}=await harness(t,{verify:(...a)=>{calls++;return verifyServer(...a);},onStatus:k=>statuses.push(k)});
+  const queued=async()=>(await fs.readdir(path.join(dir,'outbox'))).filter(n=>n.endsWith('.json')).length;
+  for(let i=0;i<3;i++){outbox.enqueue(ev(`verified-${i}`));await outbox.deliver();}
+  assert.equal(calls,1,'one proof for one connection');
+  assert.match(await journal(),/verified-2/);
+  const port=service.port;await service.stop();
+  outbox.enqueue(ev('while-down'));
+  await assert.rejects(outbox.deliver());
+  assert.equal(outbox.verified,null,'a failed delivery forgets the proof');
+  const again=await startService(t,{port,dataDir:path.join(dir,'receiver'),sortIntervalMs:600000});
+  await outbox.deliver();
+  assert.equal(calls,2,'the receiver on the same port proves itself again');
+  assert.match(await journal(),/while-down/);
+  outbox.port=fake.address().port;outbox.enqueue(ev('to-the-fake'));
+  await assert.rejects(outbox.deliver(),e=>e.status==='unverified'&&e.code==='challenge-mismatch');
+  assert.equal(calls,3,'a changed port is verified before anything is sent');
+  assert.equal(await queued(),1,'the batch stays queued');
+  assert.deepEqual(seen.map(x=>x.auth),[null]);
+  assert(seen.every(x=>x.url.startsWith('/v1/challenge?')));
+  outbox.port=again.port;await outbox.deliver();
+  assert.equal(calls,4);assert.equal(await queued(),0);assert.match(await journal(),/to-the-fake/);
+  assert(statuses.includes('online'));
+});
