@@ -36,9 +36,9 @@ procedure to check it. The measurements behind each mark are in [QUALIFICATION.m
 - **Listening and viewing:** the owner has reviewed the application, its worlds, the digital-life films and the
   creative direction. No one else has, and whether the music stays pleasant through hours of work is not established.
 - **Interpretation:** TypeScript and JavaScript are analysed in depth, Python and manifests partly, other languages
-  at file level. Interpretation **8** (CAST seats, `agent.collision`) is independent of the product version. AI agents other
+  at file level. Interpretation **9** (CAST seats, `agent.collision`) is independent of the product version. AI agents other
   than Claude Code, Cursor and Codex can report only through `scripts/event.js`. Stage chips show CAST catalog names
-  (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor art.
+  (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor art; any other provider is shown as "Agent".
 - **Cursor hooks:** prove only in a trusted workspace; CI does not run Cursor.
 - **Codex hooks:** prove only in a trusted workspace (project `.codex/` must be trusted); CI does not run Codex. Paths only from patches; `PreToolUse` is not installed.
 - **Labels at the edge:** agent chips and explorer labels stay inside the frame (they flip, then they are omitted). A
@@ -134,8 +134,8 @@ renewed automatically.
 - `GET http://127.0.0.1:4174/health` answers `{"ok":true,…}` with the version while the receiver runs.
 - `GET /v1/challenge?nonce=&v=2` proves the occupant holds the local token, for the port asked, before any client sends it
   (the extension, `npm run up`, `npm run pair`, the agent hooks, `scripts/event.js`, `npm run demo`). A receiver started
-  before this check answers no v2 proof: those clients then hold their events (the hooks in `spool/`, the extension in its
-  outbox) until it is restarted.
+  before this check answers no v2 proof: restart it. Until then the hooks keep their events in `spool/`, the extension in
+  its outbox (status *queued (receiver not verified)*), and the commands refuse.
 
 ## Updating from an earlier development version
 
@@ -148,8 +148,10 @@ On the first start the receiver adapts what it finds, and nothing you made is re
 - A receiver from before 0.5 had no pairing key: one is created, and browsers pair once with the printed link.
 - A browser's player choices from before 0.5 move to the receiver once.
 - If the interpretation version differs from the one a project was built with, its derived files are rebuilt from the
-  journal (the journal itself is never rewritten). Interpretation is **8** (CAST seats and `agent.collision`); that
-  version is independent of the product version. It was 7 from the living worlds until the CAST catalog.
+  journal (the journal itself is never rewritten). Interpretation is **9** (CAST seats; `agent.collision` between
+  catalogued providers, adding no progress); that version is independent of the product version. It was 8 for the
+  CAST catalog in 0.7.0 and 0.7.1, and 7 from the living worlds until then. Going from 8 to 9 can lower the chapter of a
+  project on which two agents met, back to what one agent would have reached.
 - **Identities keep their look and sound.** A project's saved identity keeps the classic score (v2), the Classic finish
   and ecology 1 (or no digital life) until you change them: *Use the composed score* in the Music Studio, *Use the
   Phase 11 finish* (and ecology) and the *Digital life* switch in the Visual Studio. Each is an ordinary tuning you
