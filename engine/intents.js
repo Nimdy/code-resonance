@@ -26,7 +26,7 @@ function makeIntent(event,type,{tier=0,magnitude=0,evidence='observed',subject={
 }
 // Agent activity from the tool a provider reported: a category, never the tool's arguments.
 const ACTIVITY={Read:'reading',NotebookRead:'reading',Grep:'searching',Glob:'searching',LS:'searching',
-  Edit:'editing',Write:'editing',MultiEdit:'editing',NotebookEdit:'editing',WebFetch:'researching',WebSearch:'researching',
+  Edit:'editing',Write:'editing',MultiEdit:'editing',NotebookEdit:'editing',apply_patch:'editing',WebFetch:'researching',WebSearch:'researching',
   Task:'delegating',Agent:'delegating',TodoWrite:'planning'};
 const COMMAND_ACTIVITY={test:'testing',build:'building',typecheck:'checking',lint:'checking',install:'installing',git:'versioning',format:'formatting',run:'running'};
 function activityOf(tool,category){

@@ -25,6 +25,7 @@ const providers=require('../engine/providers');
 const highlight=require('../engine/highlight');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
 const cursorHooks=require('../scripts/hooks/install-cursor');
+const codexHooks=require('../scripts/hooks/install-codex');
 const VERSION=require('../package.json').version;
 const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
@@ -52,7 +53,7 @@ const INERT=type=>({'Content-Type':type,'Cache-Control':'no-store','X-Content-Ty
 // Administrative (mutating) routes: a control capability (receiver/control.js) is required before anything else is read.
 const ADMIN=new Set(['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
   '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply',
-  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/compositions']);
+  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/integrations/codex/plan','/api/integrations/codex/apply','/api/compositions']);
 // Coded errors of the modules → HTTP status; anything uncoded is a receiver failure (500).
 const STATUS={invalid:400,'invalid-json':400,'pack-unavailable':409,'invalid-archive':400,'unsafe-path':400,'too-large':400,'too-many-files':400,'not-found':404,stale:409,changed:409,'invalid-pack':422,'pending-limit':429};
 const LOOPBACK_HOSTS=['127.0.0.1','::1','localhost'];
@@ -157,6 +158,17 @@ const CURSOR_CAPTURED=['Session start and end, when Cursor sends them',
 const CURSOR_EXCLUDED=['Edit hunks (old_string / new_string) and file contents','Command lines and command output','Prompt text (beforeSubmitPrompt is not installed)',
   'Subagent start (subagentStart is a permission hook and is not installed)',
   'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
+// Accurate to scripts/hooks/codex.js (translate()): observe-only; patch hunks and command text never leave. PreToolUse is not installed.
+const CODEX_CAPTURED=['Session start and end, when Codex sends them',
+  'Prompt submitted: its length and a fingerprint (a truncated SHA-256), not its text',
+  'File edits through apply_patch: the project-relative path of each file the patch names, when it passes the same filters as the extension (paths only, never the hunk)',
+  'Bash: a command category (test, build, lint, typecheck, …) and the exit code, never the command line',
+  'Subagents: start and stop, the subagent type and its id',
+  'Response completed when the agent turn stops'];
+const CODEX_EXCLUDED=['Prompt text (unless RESONANCE_CAPTURE_PROMPT_TEXT=1 is set in the environment Codex runs hooks in)',
+  'Assistant and subagent message text','Command lines, tool inputs, tool outputs and patch hunks','File contents',
+  'PreToolUse and PermissionRequest (they can deny; they are not installed)',
+  'Files outside the project, secrets (.env, keys, credentials) and excluded folders (node_modules, build output, …)'];
 async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unmerge}){
   if(action!=='install'&&action!=='remove')throw coded('invalid','action must be "install" or "remove"',{key:'action'});
   if(typeof projectPath!=='string'||!projectPath||projectPath.length>1024||!path.isAbsolute(projectPath))throw coded('invalid','projectPath must be an absolute path',{key:'projectPath'});
@@ -186,6 +198,7 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
 }
 async function claudePlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.claude',name:'settings.local.json',merge:claudeHooks.merge,unmerge:claudeHooks.unmerge});}
 async function cursorPlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.cursor',name:'hooks.json',merge:cursorHooks.merge,unmerge:cursorHooks.unmerge});}
+async function codexPlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.codex',name:'hooks.json',merge:codexHooks.merge,unmerge:codexHooks.unmerge});}
 function createService(options={}) {
   const dataDir=path.resolve(options.dataDir||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
   const intervalMs=Number(options.sortIntervalMs)||1000;
@@ -384,22 +397,25 @@ function createService(options={}) {
       capabilities:control.count(),...(authorized?{dataDir}:{})};
   }
   async function integrations(authorized){
-    const vscode=[],claude=[],cursorProjects=[];
+    const vscode=[],claude=[],cursorProjects=[],codexProjects=[];
     for(const p of await listProjects()){
       const doc=await evidence.get(p.id);if(!doc||doc.building)continue;
       // The demonstration (scripts/demo.js) sends workspace events too, but no editor was involved.
       if(!doc.demonstration&&(doc.editor.events||doc.editor.capture.state))vscode.push({projectId:p.id,name:p.name,editor:publicEvidence(doc).editor});
       const a=doc.agents['claude-code'];if(a)claude.push({projectId:p.id,name:p.name,lastAt:a.lastAt,events:a.events});
       const c=doc.agents.cursor;if(c)cursorProjects.push({projectId:p.id,name:p.name,lastAt:c.lastAt,events:c.events});
+      const x=doc.agents.codex;if(x)codexProjects.push({projectId:p.id,name:p.name,lastAt:x.lastAt,events:x.events});
     }
     const settings=Object.entries(EXTENSION.contributes?.configuration?.properties||{}).map(([id,s])=>({id,type:s.type,default:s.default,description:s.description}));
-    const firstParty=id=>id==='claude-code'||id==='cursor';
+    const firstParty=id=>id==='claude-code'||id==='cursor'||id==='codex';
     return {vscode:{projects:vscode,latestVersion:EXTENSION.version,install:{package:'npm run package:vsix',install:`code --install-extension code-resonance-${EXTENSION.version}.vsix`},
         settings,openSettingsUri:`vscode://${EXTENSION.publisher}.${EXTENSION.name}/settings`},
       claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:claudeHooks.adapter}:{}),
         command:'npm run hooks:claude -- /path/to/project'},
       cursor:{projects:cursorProjects,events:[...cursorHooks.EVENTS],captured:CURSOR_CAPTURED,excluded:CURSOR_EXCLUDED,...(authorized?{adapter:cursorHooks.adapter}:{}),
         command:'npm run hooks:cursor -- /path/to/project'},
+      codex:{projects:codexProjects,events:[...codexHooks.EVENTS],captured:CODEX_CAPTURED,excluded:CODEX_EXCLUDED,...(authorized?{adapter:codexHooks.adapter}:{}),
+        command:'npm run hooks:codex -- /path/to/project'},
       generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'},
       providers:Object.values(providers.PROVIDERS).map(p=>({id:p.id,display:p.display,chip:p.chip,seat:p.seat,adapter:firstParty(p.id)?'first-party':'generic'}))};
   }
@@ -563,9 +579,9 @@ function createService(options={}) {
           evidence:evidence.compact(await evidence.get(p.id))})))});return;
       }
       if(req.method==='GET'&&pathname==='/api/integrations'){response(res,200,await integrations(control.read(req,expectedOrigins).ok));return;}
-      if(req.method==='POST'&&(pathname==='/api/integrations/claude/plan'||pathname==='/api/integrations/claude/apply'||pathname==='/api/integrations/cursor/plan'||pathname==='/api/integrations/cursor/apply')){
+      if(req.method==='POST'&&(pathname==='/api/integrations/claude/plan'||pathname==='/api/integrations/claude/apply'||pathname==='/api/integrations/cursor/plan'||pathname==='/api/integrations/cursor/apply'||pathname==='/api/integrations/codex/plan'||pathname==='/api/integrations/codex/apply')){
         const body=await readBody(req,res,8192);if(!body)return;
-        const planOf=pathname.includes('/cursor/')?cursorPlan:claudePlan;
+        const planOf=pathname.includes('/codex/')?codexPlan:pathname.includes('/cursor/')?cursorPlan:claudePlan;
         try{
           if(pathname.endsWith('/plan')){response(res,200,await planOf(dataDir,body));return;}
           const plan=await planOf(dataDir,body);
