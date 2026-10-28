@@ -25,7 +25,9 @@ const FAMILIES=[
 // rendered for them and the Artist Studio does not compose over them yet.
 const PREVIEW_FAMILIES=[
   {id:'synaptic-storm',name:'Synaptic Storm (preview)',line:'A living neural network wired by the real dependencies',
-    why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. A preview: still changing, never chosen automatically.'}];
+    why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. A preview: still changing, never chosen automatically.'},
+  {id:'fractal-continuum',name:'Fractal Continuum (preview)',line:'An evolving 3D fractal whose recursion is the code',
+    why:'The code\'s character picks the universe (a Mandelbulb, a Julia bulb, a Mandelbox or a crystal) and its branching; subsystems are regions of the surface, files sites of light on it. Growth unfolds the recursion, agents touch their files with ripples in their own colour, tests send a coherent wave of light, failures distort the region they cover, verified milestones earn a rare fractal bloom. A preview: still changing, never chosen automatically.'}];
 // Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
 // a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[

@@ -122,7 +122,26 @@ const PREVIEWS={
     'camera.personality':e(['orbit','glide'],'camera behaviour'),'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,.8,'elevation'),'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
     'agents.form':e(['signal'],'agent form: a travelling signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
     effects:['neurogenesis','sprout','arborize','prune','axon-link','misfire','activation-wave','resync','consolidate','storm','potentiate','expand'],
-    unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']}
+    unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
+  'fractal-continuum':{name:'Fractal Continuum (preview)',preview:true,parameters:{
+    'fractal.form':e(['bulb','julia','box','kifs'],'the universe: a Mandelbulb, a Julia bulb, a Mandelbox or a kaleidoscopic crystal (each a different recursive geometry, not a colour)'),
+    'fractal.power':i(4,10,'branching: the n-fold symmetry of a bulb or a Julia bulb'),'fractal.twist':n(0,1,'twist: a bulb\'s phase, a box\'s or a crystal\'s turn per recursion'),
+    'fractal.julia':i(0,5,'which Julia constant a Julia bulb grows around'),'fractal.shape':n(0,1,'shape: a box\'s or a crystal\'s scale, a bulb\'s second phase'),
+    'fractal.detail':n(.7,1.3,'how far the recursion unfolds as the project grows'),
+    'geometry.spacing':n(.05,.6,'angular spacing of the files\' sites on the surface (radians)'),'geometry.regions':n(.6,1.5,'how far each subsystem\'s region spreads'),
+    'geometry.swell':n(0,.6,'how far a subsystem\'s region swells outward with its files'),'geometry.siteSize':n(.5,1.8,'size of the files\' sites of light'),
+    'geometry.threads':n(0,1.5,'brightness of the dependency threads between sites'),
+    'material.occlusion':n(.5,1.6,'ambient occlusion: how deep the crevices are shaded'),'material.trap':n(0,1,'how much the surface\'s colour follows its recursion (orbit traps)'),
+    'material.sheen':n(0,1,'specular sheen of the surface'),'material.rim':n(0,1.5,'rim light along the silhouette and ridges'),'material.glow':n(.5,1.6,'light of the sites and events'),
+    'atmosphere.haze':n(0,1.5,'haze in the void'),'atmosphere.particles':n(0,1.5,'dust in the void'),'atmosphere.halo':n(0,1.5,'soft halo around the form'),
+    'motion.breath':e([2,4,8],'breathing period (bars)'),'motion.drift':n(0,1.5,'how far the camera drifts in toward a region while nothing happens'),'motion.shimmer':n(0,1.5,'glints on the surface, on the beat'),
+    'motion.resonance':n(.2,2,'spontaneous pulses of the sites (always on the beat grid; work and recent events raise them)'),'motion.light':n(0,1.5,'how fast the key light circles'),
+    'motion.sync':n(0,1,'how tightly the spontaneous pulses lock to the beat'),
+    'camera.personality':e(['orbit','glide','pole'],'camera behaviour (pole: looking down the symmetry axis)'),'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,1.2,'elevation'),
+    'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
+    'agents.form':e(['signal'],'agent form: a signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    effects:['emerge','seed','unfold','erode','thread','decohere','coherence-wave','recohere','refine','bloom','glow','deepen'],
+    unlocks:['stardust','inner-light','corona','echoes']}
 };
 for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
