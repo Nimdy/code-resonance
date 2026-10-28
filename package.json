@@ -16,6 +16,7 @@
     "package:vsix": "node scripts/package-vsix.js",
     "hooks:claude": "node scripts/hooks/install-claude-code.js",
     "hooks:cursor": "node scripts/hooks/install-cursor.js",
+    "hooks:codex": "node scripts/hooks/install-codex.js",
     "pack": "node scripts/pack.js",
     "doctor": "node scripts/doctor.js",
     "pair": "node scripts/pair.js",

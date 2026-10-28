@@ -27,7 +27,7 @@ public/         the player, served by the receiver:
   ui/             the Control Center and the Performance Stage: shell, store, one module per workspace
 sdk/            the performance-frame contract; project identity shared with hooks and CLIs
 scripts/        receiver tools (doctor, pair), VSIX packager, demo, generic event CLI, visual pack CLI (pack.js),
-                Claude Code hooks (hooks/)
+                Claude Code, Cursor and Codex hooks (hooks/)
 packs/          the pack manifest schema, reference packs (examples/), starter templates, runtime test fixtures (testing/)
 tests/          unit and integration tests (node:test, no dependencies)
 qualification/  real-environment harnesses: VS Code, Chromium, audio, OBS, worlds, recording, the interface (own npm ci)
@@ -38,7 +38,7 @@ vendor/         the TypeScript compiler used for AST analysis; public/vendor/ th
 ## Components and data flow
 
 ```
-VS Code extension (workspace host)        Agent hooks (Claude Code) / event CLI
+VS Code extension (workspace host)        Agent hooks (Claude Code, Cursor, Codex) / event CLI
   handlers only enqueue; durable outbox     opt-in, explicit, category + counts only
                  \                               /
                   ▼                             ▼
@@ -172,7 +172,7 @@ refused. Reads return derived, privacy-safe data. **Administrative** routes need
 | `GET /docs/<name>` | The documents the Control Center opens, from a fixed list, as inert text |
 | `GET /pack-frame.html` | The isolated frame code packs run in (no connections allowed) |
 | `POST /api/session` | A control capability, for a paired browser only |
-| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/compositions`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}`, `/api/integrations/cursor/{plan,apply}` | Administrative (`/api/recipe/preview` never writes) |
+| `POST /api/recipe`, `/api/recipe/preview`, `/api/settings`, `/api/preferences`, `/api/presets`, `/api/compositions`, `/api/packs/{import,install,discard,trust,remove}`, `/api/integrations/claude/{plan,apply}`, `/api/integrations/cursor/{plan,apply}`, `/api/integrations/codex/{plan,apply}` | Administrative (`/api/recipe/preview` never writes) |
 | `POST /v1/events` | Ingestion: valid events kept, rejections listed |
 | `POST /v1/flush?id=`, `/v1/rebuild?id=`, `/v1/pairing-code` | Token holders: close the open window, re-interpret from the journal, a single-use pairing link |
 
