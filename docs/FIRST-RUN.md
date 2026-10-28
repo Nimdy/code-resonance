@@ -178,6 +178,7 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 |---|---|---|
 | The page does not load | receiver not running, or another port | `npm run doctor`; start it with `npm run up` or `npm start` |
 | `npm run up` refuses the port | another program (not Code Resonance) is on 4174 | free `RESONANCE_PORT` (default 4174) and run it again |
+| `npm run up` refuses leftover on the port | a Code Resonance receiver answers, but `--data` has no `receiver-auth.json` (another data directory, or a leftover process) | pass the matching `--data` / `RESONANCE_DATA`, or free the port |
 | No project appears | capture not started, or the extension cannot reach the receiver | CR status-bar item → Start; `npm run doctor` shows the port the receiver uses; the extension's port setting is `resonance.receiverPort` |
 | Events arrive late | by design: interpretation runs ~10 s behind the work | wait; the replay has everything |
 | No sound | the browser needs a click; or the tab is muted | **Enable sound**; check the tab's audio |

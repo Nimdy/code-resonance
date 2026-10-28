@@ -2,6 +2,7 @@
 // scripts/up.js: first-run starts or reuses a CR receiver, refuses a foreign occupant, never prints the token.
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),net=require('node:net'),cp=require('node:child_process');
+const {sha}=require('../receiver/protocol');
 const {tempDir,startService}=require('./helpers');
 const {isCrHealth,probe}=require('../scripts/up');
 const UP=path.join(__dirname,'../scripts/up.js');
@@ -162,4 +163,40 @@ test('up: --no-open --no-install --no-demo does not spawn a browser',async t=>{
   assert(!fs.existsSync(marker),'xdg-open / open / code were not invoked');
   const projects=(await (await fetch(`http://127.0.0.1:${svc.port}/api/projects`)).json()).projects||[];
   assert.equal(projects.length,0,'--no-demo did not post a demonstration');
+});
+
+test('up: a receiver that dies on start exits promptly',async t=>{
+  const dir=tempDir(t,'cr-up-die-'), blocked=path.join(dir,'not-a-dir'), {env}=trap(t), port=await freePort();
+  fs.writeFileSync(blocked,'x');
+  const t0=Date.now();
+  const r=await runUp(['--data',blocked,'--port',String(port),...FLAGS],env,8000);
+  assert.equal(r.code,1,r.out);
+  assert.ok(Date.now()-t0<5000,'must not wait out waitForCr');
+  assert.doesNotMatch(r.out,/did not become ready/);
+});
+
+test('up: demo-if-empty posts a labelled demonstration',async t=>{
+  const dir=tempDir(t,'cr-up-demo-'), {marker,env}=trap(t);
+  const svc=await startService(t,{port:0,dataDir:dir,quiet:true});
+  const r=await runUp(['--data',dir,'--port',String(svc.port),'--no-open','--no-install'],env,60000);
+  assert.equal(r.code,0,r.out);
+  assert(!r.out.includes(svc.token),'the token is never printed');
+  assert(!fs.existsSync(marker));
+  const projects=(await (await fetch(`http://127.0.0.1:${svc.port}/api/projects`)).json()).projects||[];
+  assert.ok(projects.length>=1,r.out);
+  assert.ok(projects.every(p=>p.evidence && p.evidence.demonstration===true),JSON.stringify(projects.map(p=>p.evidence)));
+});
+
+test('up: does not stack a demonstration on a real project',async t=>{
+  const dir=tempDir(t,'cr-up-real-'), {env}=trap(t);
+  const svc=await startService(t,{port:0,dataDir:dir,quiet:true});
+  const projectId=sha('up-real-project');
+  const posted=await fetch(`http://127.0.0.1:${svc.port}/v1/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${svc.token}`},
+    body:JSON.stringify({events:[{v:1,id:'up-real-01',ts:Date.now(),kind:'document.saved',projectId,sessionId:'up-real',file:'src/a.ts'}]})});
+  assert.equal(posted.status,202,await posted.text());
+  const r=await runUp(['--data',dir,'--port',String(svc.port),'--no-open','--no-install'],env,30000);
+  assert.equal(r.code,0,r.out);
+  const projects=(await (await fetch(`http://127.0.0.1:${svc.port}/api/projects`)).json()).projects||[];
+  assert.equal(projects.length,1,JSON.stringify(projects));
+  assert.equal(projects[0].evidence?.demonstration,false);
 });

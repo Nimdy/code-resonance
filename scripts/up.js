@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 // ~60 s first-run: start or reuse the loopback receiver, print a pairing link, build the VSIX, optionally sideload it,
-// open the player, and show a visible world. Reuses only a Code Resonance /health document; any other occupant of the
-// port is leftover-on-port (SECURITY.md) — no auth write, no pairing, no browser. The token and pairing key are never
-// printed; the link carries a single-use code. Does not set RESONANCE_ALLOW_REMOTE (the child binds loopback only).
+// open the player, and show a visible world. Reuses only a Code Resonance /health document; any other occupant is
+// refused — no auth write, no pairing, no browser. The token and pairing key are never printed; the link carries a
+// single-use code. The child must not inherit RESONANCE_ALLOW_REMOTE (loopback only).
 //   node scripts/up.js [--data <dir>] [--port <port>] [--no-demo] [--no-install] [--no-open]
 const fs=require('node:fs');
 const path=require('node:path');
@@ -13,8 +13,9 @@ const {once}=require('node:events');
 const {build}=require('./package-vsix');
 const ROOT=path.resolve(__dirname,'..');
 const DEFAULT_PORT=4174;
-const flag=(args,k)=>{const i=args.indexOf(`--${k}`);return i<0?undefined:args[i+1];};
-const has=(args,k)=>args.includes(`--${k}`);
+const args=process.argv.slice(2);
+const flag=k=>{const i=args.indexOf(`--${k}`);return i<0?undefined:args[i+1];};
+const has=k=>args.includes(`--${k}`);
 function isCrHealth(x){
   return !!x && typeof x==='object' && x.ok===true && typeof x.version==='string' && x.version.length>0
     && Number.isFinite(x.windowMs) && Number.isFinite(x.graceMs);
@@ -36,14 +37,6 @@ async function probe(port, timeoutMs=2000){
 }
 function readAuth(dir){
   try{return JSON.parse(fs.readFileSync(path.join(dir,'receiver-auth.json'),'utf8'));}catch{return null;}
-}
-function onPath(cmd){
-  const exts=process.platform==='win32'?(process.env.PATHEXT||'.EXE;.CMD;.BAT').split(';'):[''];
-  for(const dir of (process.env.PATH||'').split(path.delimiter)){
-    if(!dir) continue;
-    for(const ext of exts){try{fs.accessSync(path.join(dir,cmd+ext),fs.constants.X_OK);return true;}catch{}}
-  }
-  return false;
 }
 function wsl(){try{return /microsoft/i.test(fs.readFileSync('/proc/version','utf8'));}catch{return false;}}
 function openUrl(url){
@@ -72,22 +65,28 @@ function printHuman(vsix, installed){
   console.log('  • Click CR (or CODE RESONANCE: Start Code Performance) and accept local capture');
   console.log('  • Click Enable sound in the Control Center');
 }
-async function waitForCr(port, timeoutMs=20000){
+async function waitForCr(port, timeoutMs=20000, signal){
   const start=Date.now();
   let last='';
-  while(Date.now()-start<timeoutMs){
+  while(!signal?.aborted && Date.now()-start<timeoutMs){
     const p=await probe(port, 400);
+    if(signal?.aborted) break;
     if(p.status==='cr') return p;
     last=p.status==='foreign'?p.reason:p.status;
-    await new Promise(r=>setTimeout(r,100));
+    await new Promise(resolve=>{
+      if(signal?.aborted) return resolve();
+      const t=setTimeout(resolve,100);
+      signal?.addEventListener('abort',()=>{clearTimeout(t);resolve();},{once:true});
+    });
   }
+  if(signal?.aborted){const e=new Error('aborted');e.name='AbortError';throw e;}
   throw new Error(`The receiver did not become ready on http://127.0.0.1:${port} (${last||'no answer'}).`);
 }
 async function mintPairing(port, token){
   const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(3000)});
   if(!r.ok) throw new Error(`The receiver refused a pairing code (HTTP ${r.status}): is it a receiver from before 0.5, or another program on port ${port}?`);
   const {code}=await r.json();
-  if(typeof code!=='string'||!code) throw new Error('The receiver did not return a pairing code.');
+  if(typeof code!=='string'||!/^[0-9a-f]{32}$/.test(code)) throw new Error('The receiver did not return a pairing code.');
   return {code, url:`http://127.0.0.1:${port}/#pair=${code}`};
 }
 async function shouldDemo(port){
@@ -103,16 +102,17 @@ function childEnv(data, port){
   delete env.RESONANCE_ALLOW_REMOTE;
   return env;
 }
-async function main(argv=process.argv.slice(2)){
+async function main(){
   const major=+process.versions.node.split('.')[0];
   if(major<20){console.error(`Code Resonance needs Node.js 20 or later (this is ${process.version}).`);process.exitCode=1;return;}
-  const DATA=path.resolve(flag(argv,'data')||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
-  const port=Number(flag(argv,'port')||process.env.RESONANCE_PORT||DEFAULT_PORT);
+  const DATA=path.resolve(flag('data')||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
+  const port=Number(flag('port')||process.env.RESONANCE_PORT||DEFAULT_PORT);
   if(!Number.isInteger(port)||port<1||port>65535){console.error('Port must be an integer 1–65535.');process.exitCode=1;return;}
-  const noDemo=has(argv,'no-demo'), noInstall=has(argv,'no-install'), noOpen=has(argv,'no-open');
+  const noDemo=has('no-demo'), noInstall=has('no-install'), noOpen=has('no-open');
   const found=await probe(port);
   let child=null, spawned=false, exited=null;
   const stop=()=>{if(child && child.exitCode==null && child.signalCode==null) try{child.kill('SIGTERM');}catch{};};
+  const release=()=>{stop();process.off('SIGINT',stop);process.off('SIGTERM',stop);};
   if(found.status==='foreign'){refuse(port, found.reason);return;}
   if(found.status==='cr'){
     const auth=readAuth(DATA);
@@ -123,42 +123,37 @@ async function main(argv=process.argv.slice(2)){
     child=spawn(process.execPath,[path.join(ROOT,'receiver/server.js'),'--data',DATA,'--port',String(port)],{stdio:'inherit',cwd:ROOT,env});
     spawned=true;
     process.on('SIGINT',stop);process.on('SIGTERM',stop);
-    exited=once(child,'exit');
-    const failed=new Promise((_,reject)=>child.once('error',reject));
-    try{
-      const ready=await Promise.race([waitForCr(port).then(()=>'ok'), exited.then(([code,sig])=>['dead',code,sig]), failed]);
-      if(ready!=='ok'){
-        process.off('SIGINT',stop);process.off('SIGTERM',stop);
-        console.error(`The receiver exited before it was ready (${ready[1]??ready[2]}).`);process.exitCode=1;return;
-      }
-    }catch(e){
-      stop();process.off('SIGINT',stop);process.off('SIGTERM',stop);
-      console.error(e.message);process.exitCode=1;return;
+    const ac=new AbortController();
+    exited=once(child,'exit').finally(()=>ac.abort());
+    const failed=new Promise(resolve=>child.once('error',e=>resolve({error:e})));
+    failed.then(()=>ac.abort(),()=>{});
+    const waiting=waitForCr(port,20000,ac.signal).then(()=>'ok',e=>e.name==='AbortError'?{aborted:true}:{error:e});
+    const ready=await Promise.race([waiting, exited.then(([code,sig])=>['dead',code,sig]), failed]);
+    if(ready!=='ok'){
+      release();
+      if(Array.isArray(ready)&&ready[0]==='dead') console.error(`The receiver exited before it was ready (${ready[1]??ready[2]}).`);
+      else if(ready?.error) console.error(ready.error.message||ready.error);
+      else console.error('The receiver did not start.');
+      process.exitCode=1;return;
     }
   }
   let vsix;
   try{vsix=build();console.log(`Created ${vsix}`);}
-  catch(e){stop();process.off('SIGINT',stop);process.off('SIGTERM',stop);console.error(`Could not build the VSIX: ${e.message}`);process.exitCode=1;return;}
+  catch(e){release();console.error(`Could not build the VSIX: ${e.message}`);process.exitCode=1;return;}
   let installed=false;
-  if(!noInstall && onPath('code')){
+  if(!noInstall){
     const r=spawnSync('code',['--install-extension',vsix],{stdio:'inherit',env:process.env});
-    installed=r.status===0;
-    if(!installed) console.error('code --install-extension did not succeed; install the VSIX from VS Code if you need capture.');
-  }else if(!noInstall){
-    console.log(`VS Code CLI (code) is not on PATH. Install the extension with:\n  code --install-extension ${vsix}`);
+    if(r.error?.code==='ENOENT') console.log(`VS Code CLI (code) is not on PATH. Install the extension with:\n  code --install-extension ${vsix}`);
+    else if(r.status===0) installed=true;
+    else console.error('code --install-extension did not succeed; install the VSIX from VS Code if you need capture.');
   }
+  const still=await probe(port);
+  if(still.status!=='cr'){release();refuse(port, still.status==='foreign'?still.reason:'the receiver stopped answering');return;}
   const auth=readAuth(DATA);
-  if(!auth?.token){
-    stop();process.off('SIGINT',stop);process.off('SIGTERM',stop);
-    refuse(port, `no receiver token in ${DATA} after the receiver answered`);
-    return;
-  }
+  if(!auth?.token){release();refuse(port, `no receiver token in ${DATA} after the receiver answered`);return;}
   let pairing;
   try{pairing=await mintPairing(port, auth.token);}
-  catch(e){
-    stop();process.off('SIGINT',stop);process.off('SIGTERM',stop);
-    console.error(e.message);process.exitCode=1;return;
-  }
+  catch(e){release();console.error(e.message);process.exitCode=1;return;}
   printPairing(pairing.url, port, pairing.code);
   if(!noOpen) openUrl(pairing.url);
   if(!noDemo && await shouldDemo(port)){
@@ -169,8 +164,8 @@ async function main(argv=process.argv.slice(2)){
   if(!spawned) return;
   console.log('\nReceiver is running in the foreground. Ctrl+C stops it.');
   const [code,sig]=await exited;
-  process.off('SIGINT',stop);process.off('SIGTERM',stop);
+  release();
   if(process.exitCode==null) process.exitCode=sig?1:(code??0);
 }
 if(require.main===module) main().catch(e=>{console.error(e.message||e);process.exitCode=1;});
-module.exports={isCrHealth, probe, main};
+module.exports={isCrHealth, probe};
