@@ -14,6 +14,21 @@
   part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
   (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
   digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
+- **Fractal Continuum (preview):** a fifth built-in world family, chosen only explicitly (Visual Studio, marked
+  *Preview*; the render lab's `--family fractal-continuum`). One raymarched, distance-estimated fractal: the code's
+  character picks its universe (Mandelbulb, Julia bulb, Mandelbox or kaleidoscopic crystal) and its parameters from the
+  identity's own stream, and the live code unfolds its recursion. Subsystems are regions of the surface that swell with
+  their files, files are sites of light traced onto it with a JS twin of the estimator, dependencies are threads of
+  light; agents travel as signals in their CAST colour and shape and ripple the surface around the file they edit;
+  tests send a coherent wave, failures make the covered region decohere in the warning colour, recovery restores
+  coherence, a commit glows from the crevices, and a verified milestone with the director's token, at least 4 minutes
+  after the last, earns a fractal bloom. Idle: breathing, a circling light, glints and pulses on the beat grid. Drawn at
+  0.6 of the resolution at quality 0 (less at 1 to 3, and when it fills the frame) in a coarse cone pass, a march and a
+  shading pass; measured 15–20 ms GPU per frame at 1920×1080 on the AMD iGPU over the brief's stills on Lumen, up to
+  25 ms in a close-up that fills the frame (Self). Never part of the
+  family scores: the recipe generator stays at version 4 and every existing identity is unchanged (`tests/recipe.test.js`
+  as pinned; `tests/fractal.test.js` new). `/api/catalog` lists it under `previews`. No digital life yet. Design brief
+  and stills: `docs/worlds/fractal-continuum.md`.
 - **Synaptic Storm up close:** each axon now ends in a synaptic terminal, a glass bell of vesicles facing a cup on the
   receiving branch; a spike's arrival sparks across the cleft and the vesicles at the mouth cross it. Branches are
   seamless tubes (consecutive segments share their joint, free ends are rounded) whose trunks swell at the soma, with a
