@@ -1020,6 +1020,13 @@ ms in two of four runs. Not the page's work: a profiled run (JavaScript CPU prof
 task after start-up while a frame waited 200 ms, and the counts of programs, geometries and textures never changed
 (13/13/15). The GPU runs at about 90 % at 1080p; the cause in the GPU path was not identified (the same class as the
 172 ms outlier under [Recording synchronisation](#recording-synchronisation-method-replaced-one-clock-defect-fixed-the-172-ms-outlier-not-reproduced)).
+Rendered again after the audit below (final code; the other runs are from before it, and Synaptic Storm changed only
+in its labels): Fractal Continuum without recording 54.5 fps · p95 33.3 ms, 48.0 in close-ups, 17.2 ms GPU (53.9 ·
+33.3, 47.7, 17.4 before); recording 1080p 46.0 fps, the file 29.86 fps with one gap of 362 ms; Synaptic Storm
+recording 1080p 51.2 fps, the file 29.90 fps with one gap of 274 ms. Fractal Continuum now had long frames as well
+(117–350 ms, five in the recorded run): in a profiled run its one long frame was a 263 ms gap in which the
+renderer's 1 ms profiler took no sample at all, so the process had no CPU (other programs were loading the machine:
+another Chromium, VS Code's server), unlike Synaptic Storm's, where sampling went on while a frame waited.
 
 **Identity** (`visual/identity.qual.js --gpu amd`, new): Fractal Continuum 15/15 on three real projects with the same
 form (bulb: Excalidraw power 8, Self 9, VS Code's built-in extensions 10); Synaptic Storm 22/22 on four (Lumen,
