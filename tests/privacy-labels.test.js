@@ -57,6 +57,27 @@ test('chips and explorer labels stay inside the frame or are omitted',async()=>{
   const explorer=frame(r,'explorer');explorer.toScreen=()=>({x:1910,y:1070,visible:true});
   assert.equal(composeLabels(explorer).filter(x=>x.kind==='label'||x.kind==='chip').length,0);
 });
+test('Two agents working side by side next to an event: their chips and the callout keep clear of each other',async()=>{
+  const {composeLabels,labelBox}=await load();
+  const r=recipe.generate(project,{family:'stellar-forge',now:0});
+  // the Fractal Continuum film at 4 s: Claude and Claude 2 a few pixels apart, a new region's callout beside them
+  const at={a:{x:740,y:440},b:{x:968,y:444},c:{x:1054,y:486}};
+  const agent=(id,number)=>({id,number,provider:'claude-code',label:'working on a request',busy:true,alpha:1,arrived:T0,since:100,display:'tool'});
+  for(const mode of ['cinematic','explorer']){
+    const f=frame(r,mode);f.info.agents=[agent('a',1),agent('b',2)];f.commands=[{at:T0+1500,tier:2,subject:{groupId:'g1'}}];
+    f.world={...world,agentPosition:id=>({id}),subsystemLabels:()=>[]};f.toScreen=p=>({...(p.id?at[p.id]:at.c),visible:true});
+    const items=composeLabels(f),boxes=items.map(it=>[it,labelBox(it,1920,1080)]).filter(([it,b])=>b&&it.kind!=='title');
+    assert.equal(items.filter(x=>x.kind==='chip').length,2,'both agents are named');
+    for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){const [p,a]=boxes[i],[q,b]=boxes[j];
+      assert(!(a.x0<b.x1&&b.x0<a.x1&&a.y0<b.y1&&b.y0<a.y1),`${mode}: ${p.kind} "${p.text}" and ${q.kind} "${q.text}" overlap`);}
+  }
+  // explorer: subsystem names at almost the same place step apart (or leave room) instead of printing over each other
+  const f=frame(r,'explorer');f.info.agents=[];f.commands=[];
+  f.world={...world,subsystemLabels:()=>[{position:{n:0},text:'Lyisae',sub:'logic · 4 files'},{position:{n:1},text:'Oraedae',sub:'logic · 130 files'}]};
+  f.toScreen=p=>({x:705+(p.n||0)*30,y:530+(p.n||0)*3,visible:true});
+  const labels=composeLabels(f).filter(x=>x.kind==='label').map(it=>labelBox(it,1920,1080));
+  assert.equal(labels.length,2);assert(!(labels[0].x0<labels[1].x1&&labels[1].x0<labels[0].x1&&labels[0].y0<labels[1].y1&&labels[1].y0<labels[0].y1),'the two names do not overlap');
+});
 test('An explicitly approved public title is the only project name the Stage shows',async()=>{
   const {composeLabels,labelStrings}=await load();
   const r=recipe.update(recipe.generate(project,{family:'machine-cathedral',now:0}),{type:'title',title:'Night Build'},project);
