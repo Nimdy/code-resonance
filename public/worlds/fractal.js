@@ -67,14 +67,23 @@ export function createFamily(ctx){
   // A region's own shade: the surface hue turned a little, lighter or darker, as a multiplier of the albedo.
   const tintOf=id=>{const h=hash(`tint/${id}`),c=pal.primary.clone(),hsl={};c.getHSL(hsl);c.setHSL((hsl.h+(rand(h)-.5)*.11+1)%1,clamp(hsl.s*(.8+.45*rand(h+1)),0,1),clamp(hsl.l*(.82+.4*rand(h+2)),.05,.7));
     return [c.r/Math.max(.02,pal.primary.r),c.g/Math.max(.02,pal.primary.g),c.b/Math.max(.02,pal.primary.b)].map(x=>clamp(x,.4,2.2));};
-  let swSig='';
+  let swSig='',swShape='';
+  // Each region's kernel at every texel, kept for its exact width (up to 64 regions): while a project grows its regions'
+  // weights change far more often than their widths, and then only the swell is summed again (the tints stay).
+  const swK=new Map(),SWK_MAX=64;
   // The octahedral map's inverse (y up), as the shader's oct() encodes it.
   function octDecode(px,pz,out){let x=px,y=1-Math.abs(px)-Math.abs(pz),z=pz;const t=Math.max(-y,0);x+=x>=0?-t:t;z+=z>=0?-t:t;const l=Math.hypot(x,y,z)||1;out[0]=x/l;out[1]=y/l;out[2]=z/l;return out;}
   function swellTable(regions,weights){
     const sig=regions.map((r,k)=>`${r.id}:${Math.round(weights[k]*128)}:${Math.round(kappaOf(r)*256)}`).join(',');if(sig===swSig)return;swSig=sig;
-    const tints=regions.map(r=>tintOf(r.id)),u=[0,0,0];
+    const shape=regions.map(r=>`${r.id}|${kappaOf(r)}|${r.dir}`).join(','),cache=regions.length<=SWK_MAX;
+    if(cache&&shape===swShape){
+      const Ks=regions.map(r=>swK.get(r.id));
+      for(let i=0;i<SW*SW;i++){let s=0;for(let k=0;k<regions.length;k++)s+=weights[k]*Ks[k][i];swData[i*4+3]=toHalf(1+SWELL*Math.min(1,s));}
+      swTex.needsUpdate=true;return;}
+    swShape=shape;for(const id of swK.keys())if(!regions.some(r=>r.id===id))swK.delete(id);
+    const tints=regions.map(r=>tintOf(r.id)),Ks=cache?regions.map(r=>{let K=swK.get(r.id);if(!K){K=new Float64Array(SW*SW);swK.set(r.id,K);}return K;}):null,u=[0,0,0];
     for(let y=0;y<SW;y++){for(let x=0;x<SW;x++){octDecode((x+.5)/SW*2-1,(y+.5)/SW*2-1,u);
-        let s=0,tw=0,tr=0,tg=0,tb=0;for(let k=0;k<regions.length;k++){const R=regions[k],c=u[0]*R.dir[0]+u[1]*R.dir[1]+u[2]*R.dir[2],K=Math.exp((c-1)/kappaOf(R));s+=weights[k]*K;
+        let s=0,tw=0,tr=0,tg=0,tb=0;for(let k=0;k<regions.length;k++){const R=regions[k],c=u[0]*R.dir[0]+u[1]*R.dir[1]+u[2]*R.dir[2],K=Math.exp((c-1)/kappaOf(R));s+=weights[k]*K;if(Ks)Ks[k][y*SW+x]=K;
           const w=Math.exp((c-1)/(kappaOf(R)*.6));tw+=w;tr+=w*tints[k][0];tg+=w*tints[k][1];tb+=w*tints[k][2];}
         const a=Math.min(1,tw),o=(y*SW+x)*4,n=Math.max(tw,1e-6);
         swData[o]=toHalf(1+(tr/n-1)*a);swData[o+1]=toHalf(1+(tg/n-1)*a);swData[o+2]=toHalf(1+(tb/n-1)*a);swData[o+3]=toHalf(1+SWELL*Math.min(1,s));}}
@@ -84,7 +93,7 @@ export function createFamily(ctx){
   // sites are hidden behind the form) -------------------------------------------------------------------------------
   const L4=n=>Array.from({length:n},v4);
   const M3=a=>new THREE.Matrix3().set(...a);
-  const R={BS:{value:fc.S??-2},BROT:{value:M3(fc.rot||rotation(0,0))},KR1:{value:M3(fc.rot1||rotation(0,0))},KR2:{value:M3(fc.rot2||rotation(0,0))},FIT:{value:MAX_IT+1},TWON:{value:formula.twist.tw||formula.twist.sp?1:0},uDecOn:{value:0},uCoarse:{value:null},uCSteps:{value:120},uConeK:{value:4},uInvVP:{value:new THREE.Matrix4()},uVP:{value:new THREE.Matrix4()},uCamF:{value:new THREE.Vector3(0,0,8)},uWSg:{value:WS},uRB:{value:R0*1.05*(1+SWELL)},
+  const R={BS:{value:fc.S??-2},BROT:{value:M3(fc.rot||rotation(0,0))},KR1:{value:M3(fc.rot1||rotation(0,0))},KR2:{value:M3(fc.rot2||rotation(0,0))},FIT:{value:MAX_IT+1},TWON:{value:formula.twist.tw||formula.twist.sp?1:0},uDecOn:{value:0},uCoarse:{value:null},uCSteps:{value:120},uConeK:{value:4},uInvVP:{value:new THREE.Matrix4()},uVP:{value:new THREE.Matrix4()},uCamF:{value:new THREE.Vector3(0,0,8)},uWSg:{value:WS},uRB:{value:R0*1.04*(1+SWELL)},
     uPix:{value:.001},uEpsK:{value:.8},uSteps:{value:200},uAOn:{value:5},uIt:{value:6},TWC:{value:new THREE.Vector2(Math.cos(formula.twist.tw),Math.sin(formula.twist.tw))},
     SPC:{value:new THREE.Vector2(Math.cos(formula.twist.sp),Math.sin(formula.twist.sp))},uSw:{value:swTex},uDec:{value:L4(2)},uDecA:{value:L4(2)},
     uKey:{value:new THREE.Vector3(.4,.8,.3).normalize()},uKeyC:{value:new THREE.Vector3(3.1,2.9,2.65)},uFillC:{value:V3(pal.highlight,.22)},uRimC:{value:V3(pal.highlight,.7)},
@@ -318,7 +327,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     {uDust:{value:.07},uMC:{value:[V3(pal.highlight,.5),V3(pal.accent,.6),V3(pal.primary,1.1)]}});
   add(new THREE.Points(motes.geometry,moteMat),5);
   // ---- The bloom's burst: light leaving the surface (GPU points, from surface samples traced once, at the first bloom) --
-  const burst=pointsOf({bO:4},BURST);let burstReady=false;
+  const burst=pointsOf({bO:4},BURST);let burstReady=false,burstTraced=false;
   const burstMat=glow(`attribute vec4 bO;uniform float uPx,uBA,uBK,uSc;uniform vec3 uBC,uBO,uAccB,uHiB;varying vec3 vC;
     void main(){vec3 o=bO.xyz;float delay=length(o-uBO)*.9,a=uBA-delay;if(a<0.||uBK<=0.){gl_Position=vec4(0.,0.,2.,1.);gl_PointSize=0.;vC=vec3(0.);return;}
       vec3 dir=normalize(o+.35*vec3(sin(bO.w*91.),sin(bO.w*57.),sin(bO.w*23.)));float travel=(1.-exp(-a*.9))/.9*(.4+.9*fract(bO.w*13.7));
@@ -560,10 +569,11 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     R.TWON.value=formula.twist.tw||formula.twist.sp||twist?1:0;R.TWC.value.set(Math.cos(formula.twist.tw+twist),Math.sin(formula.twist.tw+twist));R.SPC.value.set(Math.cos(formula.twist.sp+twist*.5),Math.sin(formula.twist.sp+twist*.5));
     fracScale=q.scale;R.uIt.value=itDraw;R.FIT.value=Math.floor(itDraw)+2;R.uSteps.value=q.steps;R.uEpsK.value=q.eps;R.uAOn.value=q.ao;R.uQ.value=i.quality||0;R.uTime.value=i.tview;
     R.uBeat.value=i.beat*num(MU.beatPulse,.4)*reactive;R.uBreath.value=breath;R.uInner.value=i.unlocks[1]?.level||0;R.uStress.value=stressNow;
-    R.uRB.value=R0*1.04*(1+SWELL);
     eventUniforms(i);
     // the burst
-    if(bloomCmd){if(!burstReady){burstReady=true;for(let k=0;k<BURST;k++){const y=1-2*(k+.5)/BURST,s=Math.sqrt(1-y*y),a=k*2.39996,u=[Math.cos(a)*s,y,Math.sin(a)*s],r=radiusAt(`burst${k}`,u,5)*.98;burst.write('position',k,0,0,0);burst.write('bO',k,u[0]*r,u[1]*r,u[2]*r,rand(hash(`b/${seed}/${k}`)));}burst.commit(BURST);}
+    // the burst's points are traced on the first frame (already a long one), not on the milestone's: shown at the first bloom
+    if(!burstTraced){burstTraced=true;for(let k=0;k<BURST;k++){const y=1-2*(k+.5)/BURST,s=Math.sqrt(1-y*y),a=k*2.39996,u=[Math.cos(a)*s,y,Math.sin(a)*s],r=radiusAt(`burst${k}`,u,5)*.98;burst.write('position',k,0,0,0);burst.write('bO',k,u[0]*r,u[1]*r,u[2]*r,rand(hash(`b/${seed}/${k}`)));}}
+    if(bloomCmd){if(!burstReady){burstReady=true;burst.commit(BURST);}
       const a=(i.t-bloomCmd.at)/1000/sp;burstMat.uniforms.uBA.value=a;burstMat.uniforms.uBK.value=clamp(i.overrides.intensity??1,.3,1.3)*(bloomCmd.grand?1.3:1);burstMat.uniforms.uBO.value.set(...(bloomCmd.o||[0,R0,0]));}
     else burstMat.uniforms.uBK.value=0;
     burstMat.uniforms.uSc.value=gsNow*WS;
@@ -577,7 +587,6 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
   function afterCamera(i){camera.updateMatrixWorld();
     vp.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);R.uVP.value.copy(vp);R.uInvVP.value.copy(vp).invert();
     const s=gsNow*WS;R.uCamF.value.copy(camera.position).divideScalar(s);
-    const [,h]=ctx.pipeline.size;R.uPix.value=2*Math.tan(camera.fov*Math.PI/360)/Math.max(1,h*fracScale);
     // the key light: above and to the side of the camera, circling slowly (ambient)
     camera.getWorldDirection(fwd);rightV.crossVectors(fwd,camera.up).normalize();upV.crossVectors(rightV,fwd).normalize();
     const la=(i?.tview||0)*.035*clamp(num(mot.light,.6),0,1.6)+rand(seed+3)*TAU;

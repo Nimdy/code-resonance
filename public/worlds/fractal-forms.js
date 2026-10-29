@@ -30,7 +30,6 @@ export function rotation(ax,ay){const cx=Math.cos(ax),sx=Math.sin(ax),cy=Math.co
   // R = Ry * Rx
   return [cy,sy*sx,sy*cx, 0,cx,-sx, -sy,cy*sx,cy*cx];}
 const mul3=(m,x,y,z)=>[m[0]*x+m[1]*y+m[2]*z,m[3]*x+m[4]*y+m[5]*z,m[6]*x+m[7]*y+m[8]*z];
-const glslMat=m=>`mat3(${[m[0],m[3],m[6],m[1],m[4],m[7],m[2],m[5],m[8]].map(f).join(',')})`;// column-major
 function f(x){const s=(+x).toPrecision(9);return /[.e]/.test(s)?s:`${s}.`;}
 // ---- The universe a recipe draws ------------------------------------------------------------------------------------
 // The formula's constants from the genome (a tuned value is clamped to what the renderer handles).
