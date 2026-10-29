@@ -141,6 +141,35 @@ test('More than 24 subsystems: every region keeps a direction of its own, and th
   assert.equal(seen.size,49,'every subsystem is labelled from some side');assert.equal(new Set(seen.values()).size,49,'no two labels at the same place');
   w.dispose();
 });
+// A headless world on a model (as the host drives it), for the tests below.
+async function headless(model,name='headless'){
+  const {THREE}=await load('core'),{createFamily}=await load('fractal'),{createDirector}=await load('director'),{createAgents}=await load('agents');
+  const r=recipe.generate(project(name),{family:ID,now:0}),agents=createAgents(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,16/9,.1,4000);camera.position.set(0,8,60);camera.lookAt(0,0,0);
+  const w=createFamily({scene,camera,model,recipe:r,speed:()=>1,name:id=>`Name ${id}`,director:createDirector({recipe:r}),agents,pipeline:{size:[640,360]}});w.rebuild();
+  const frame=t=>({t,tsec:(t-model.epoch)/1000,tview:(t-model.epoch)/1000,dt:1/30,beat:.5,barPhase:.2,mood:{section:'home',energy:.4,tempo:96},energy:.4,activity:0,phase:'idle',
+    unlocks:[0,1,2,3].map(()=>({name:'',level:0})),agents:agents.list(t),overrides:{},quality:0,music:null});
+  return {w,scene,frame,at:t=>w.update(frame(t))};
+}
+test('A file born between two whole seconds is on the surface from its birth, whether the moment is played through or sought',async()=>{
+  const grow=async start=>{const m=await network();m.applyDelta({add:[{id:'a8',type:'module',group:'A',dir:'A',q:0,r:0,state:'committed',counts:{function:3}}],remove:[],addEdges:[],removeEdges:[]},start,start+100);return m;};
+  // a birth well inside a second (births are snapped to the score's step grid)
+  let start=T0+20000,m=await grow(start);for(let k=0;k<40&&!(m.bornAt(m.modules.get('a8'))%1000>=100&&m.bornAt(m.modules.get('a8'))%1000<=600);k++)m=await grow(start+=37);
+  const born=m.bornAt(m.modules.get('a8')),from=Math.floor(born/1000)*1000+1,to=born+300;assert(born>from&&Math.floor(to/1000)===Math.floor(from/1000));
+  const A=await headless(m),B=await headless(await grow(start));
+  A.at(from);A.at(to);B.at(to);
+  assert.deepEqual(snapshot(A.scene),snapshot(B.scene),'played through or sought, the same state');
+  A.w.dispose();B.w.dispose();
+});
+test('An effect stays on its own file when the layout reorders: a wave started before a new file arrives ends where one started after does',async()=>{
+  const at=T0+59000,wave={effect:'coherence-wave',intent:'validation.passed',tier:2,scale:1,at,subject:{fileIds:['b0']}};
+  // a7 joins subsystem A at T0+60000: every site of B and C moves one place on in the layout
+  const A=await headless(await network({extra:true})),C=await headless(await network({extra:true}));
+  A.at(at);A.w.effect(wave,A.frame(at));A.at(T0+61000);
+  C.at(T0+61000);C.w.effect(wave,C.frame(T0+61000));C.at(T0+61000);
+  const a=snapshot(A.scene).u,c=snapshot(C.scene).u;assert(a.uWavK.some(x=>x[1]>0),'the wave is on');
+  assert.deepEqual(a.uWav,c.uWav,'the wave front starts from b0 in both');
+  A.w.dispose();C.w.dispose();
+});
 function snapshot(scene){
   let R=null,sites=null;scene.traverse(o=>{if(o.userData?.fractal)R=o.userData.fractal;if(o.isPoints&&o.geometry.attributes.sS)sites=o;});
   const v=x=>x?.toArray?x.toArray():Array.isArray(x)?x.map(y=>y.toArray()):x;

@@ -356,7 +356,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
         if(uEcho>0.){for(int k=0;k<3;k++){vec3 e=normalize(vec3(sin(uSeed.x+float(k)*2.1),.25*sin(uSeed.y+float(k)),cos(uSeed.x+float(k)*2.1)));c+=uAcc*uEcho*.05*exp(-(1.-dot(d,e))*30.);}}
         gl_FragColor=vec4(c,1.);}`}));
   // ---- Structure -----------------------------------------------------------------------------------------------------
-  let lay={regions:[],sites:[]},layKey='',siteIdx=new Map(),regionIdx=new Map(),threads=[],weights=[];
+  let lay={regions:[],sites:[]},layKey='',layFrom=-Infinity,layUntil=Infinity,siteIdx=new Map(),regionIdx=new Map(),threads=[],weights=[];
   const radCache=new Map();
   // The surface radius along a site's direction at integer recursion n (cached: the shape at n never changes).
   function radiusAt(key,dir,n){const k=`${key}|${n}`;let r=radCache.get(k);if(r===undefined){r=formula.radial(dir,n);if(r===null){
@@ -365,10 +365,13 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
       r=best??R0*.5;}radCache.set(k,r);if(radCache.size>20000)radCache.delete(radCache.keys().next().value);}return r;}
   function structure(t){
     let files=0;for(const d of model.districts.values())files+=d.members.length;
-    const key=`${model.version}|${model.districts.size}|${files}|${Math.floor(t/1000)}`;if(key===layKey)return;layKey=key;
+    const key=`${model.version}|${model.districts.size}|${files}`;if(key===layKey&&t>=layFrom&&t<layUntil)return;layKey=key;
     // more subsystems than slots: the sequence continues, so no two regions share a direction (the first slots stay)
     if(model.districts.size>slots.length)slots=regionSlots(lc.seed,model.districts.size);
     lay=layoutAt(model,t,lc,slots);siteIdx=new Map(lay.sites.map((s,i)=>[s.id,i]));regionIdx=new Map(lay.regions.map((r,i)=>[r.id,i]));
+    // it holds until the next birth or removal (model.alive: born, and removed + 1.6 s), however t was reached
+    layFrom=-Infinity;layUntil=Infinity;const edge=x=>{if(!Number.isFinite(x))return;if(x<=t)layFrom=Math.max(layFrom,x);else layUntil=Math.min(layUntil,x);};
+    for(const x of [...model.modules.values(),...model.links.values()]){edge(model.bornAt(x));if(x.removed!==null)edge(x.removed+1600);}
     threads=[];const seen=new Set();
     for(const l of model.links.values()){if(!model.alive(l,t))continue;const a=siteIdx.get(l.a),b=siteIdx.get(l.b);if(a===undefined||b===undefined||a===b)continue;const k=`${a}>${b}`;if(seen.has(k))continue;seen.add(k);
       threads.push({a,b,born:model.bornAt(l),removed:l.removed,cross:lay.sites[a].region!==lay.sites[b].region,seed:rand(hash(l.key))});}
@@ -400,13 +403,13 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     times.sort((a,b)=>a-b);let last=-Infinity,ok=false;for(const x of times){const can=x-last>=BLOOM_GAP;if(can)last=x;if(x===at)ok=can;}return ok;}
   const centroidSite=(files,from=siteSurf)=>{let c=[0,0,0],n=0;const pts=[];for(const id of files||[]){const k=siteIdx.get(id);if(k===undefined)continue;const p=from[k];if(!p)continue;pts.push([k,p]);c[0]+=p[0];c[1]+=p[1];c[2]+=p[2];n++;}
     if(!n)return null;c=c.map(x=>x/n);let best=pts[0],bd=Infinity;for(const x of pts){const d=Math.hypot(x[1][0]-c[0],x[1][1]-c[1],x[1][2]-c[2]);if(d<bd){bd=d;best=x;}}
-    let spread=0;for(const x of pts)spread=Math.max(spread,Math.hypot(x[1][0]-c[0],x[1][1]-c[1],x[1][2]-c[2]));return {p:best[1],k:best[0],spread,n};};
+    let spread=0;for(const x of pts)spread=Math.max(spread,Math.hypot(x[1][0]-c[0],x[1][1]-c[1],x[1][2]-c[2]));return {p:best[1],k:best[0],id:lay.sites[best[0]]?.id,spread,n};};
   // Touches: the agent's own tool event on a file (touch.js), and an attributed edit landing (the model's correlated cue).
   function touchList(i){
     const sp=ctx.speed(),gain=touchGain(G,i.overrides),out=[];
     for(const x of touchesAt(ctx.agents,i.agents,i.t,sp,{known:id=>siteIdx.has(id),max:4})){const a=i.agents.find(p=>p.id===x.agentId);out.push({fileId:x.fileId,age:x.age,k:x.env*x.k*gain,seat:a?seatOf(a):0,agentId:x.agentId,kind:x.kind});}
     for(const m of model.modules.values()){if(!Number.isInteger(m.agentVoice)||!Number.isFinite(m.lastAgent)||!siteIdx.has(m.id))continue;const age=(i.t-m.lastAgent)/sp/1000;if(age<0||age>3.2)continue;
-      if(out.some(x=>x.fileId===m.id))continue;const a=i.agents.find(p=>p.voice===m.agentVoice);out.push({fileId:m.id,age,k:smooth(age/.15)*Math.pow(1-age/3.2,1.6)*gain,seat:a?seatOf(a):m.agentVoice%6,agentId:a?.id||null,kind:'edit'});}
+      if(out.some(x=>x.fileId===m.id))continue;const a=i.agents.find(p=>p.voice===m.agentVoice);out.push({fileId:m.id,age,k:smooth(age/.15)*Math.pow(1-age/3.2,1.6)*gain,seat:a?seatOf(a):m.agentVoice%8,agentId:a?.id||null,kind:'edit'});}
     return out.sort((a,b)=>b.k-a.k).slice(0,4);}
   let touches=[];
   function writeState(i){
@@ -415,6 +418,8 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     const N=lay.sites.length,fires=lay.sites.map(()=>top2()),stressS=new Float32Array(N),validS=new Float32Array(N);
     const decFields=[];
     for(let k=0;k<N;k++){const s=lay.sites[k];siteBase[k]=siteBase[k]||[0,0,0];siteSurf[k]=surfacePoint(s,siteSurf[k]||[0,0,0],siteBase[k]);}
+    // an effect follows its own site's surface point, whichever index the site has now (a gone site's last point stays)
+    for(const l of [waves,recoheres,glows,blooms])for(const x of l){if(!x.site)continue;const k=siteIdx.get(x.site);if(k!==undefined)x.o=siteSurf[k];else{x.o=x.o&&[...x.o];x.site=null;}}
     // material state per site (stressed eased in, relaxing away; validated a calm sheen) and the regions' decoherence
     const regStress=new Map();
     for(let k=0;k<N;k++){const s=lay.sites[k],m=model.modules.get(s.id);if(!m)continue;let cur=m.initial,prev=m.initial,at=-Infinity;for(const e of m.states){if(e.at>t)break;prev=cur;cur=e.state;at=e.at;}
@@ -449,7 +454,8 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     // sprites
     const size=clamp(num(geo.siteSize,1),.4,2),gs=gsNow*WS,alpha=clamp(i.overrides.intensity??1,.4,1.3);let n=0;
     const touchK=new Map();for(const x of touches)touchK.set(x.fileId,Math.max(touchK.get(x.fileId)||0,x.k));
-    for(let k=0;k<N;k++){const s=lay.sites[k],m=model.modules.get(s.id);if(!m)continue;
+    sitePos.length=N;
+    for(let k=0;k<N;k++){const s=lay.sites[k],m=model.modules.get(s.id);if(!m){sitePos[k]=null;continue;}
       const life=model.alive(m,t)?smooth((t-model.bornAt(m))/(1200*sp))*(m.removed===null?1:1-smooth((t-m.removed)/(1600*sp))):0;if(life<=.002){sitePos[k]=null;continue;}
       let q=siteSurf[k];if(decFields.length){const b0=siteBase[k],o=decohereAt(b0,decFields),sw=Math.hypot(...q)/Math.max(1e-6,Math.hypot(...b0));q=[(b0[0]-o[0])*sw,(b0[1]-o[1])*sw,(b0[2]-o[2])*sw];}
       const out=1.018+.004*size,p=[q[0]*out*gs,q[1]*out*gs,q[2]*out*gs];sitePos[k]=p;
@@ -516,11 +522,11 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     if(i)info=i;const s=clamp(cmd.scale,0,1.6),subj=cmd.subject||{},at=Number.isFinite(cmd.at)?cmd.at:info.t;if(s<=0)return;
     const files=new Set(subj.fileIds||(subj.fileId?[subj.fileId]:[]));const c=centroidSite(files);
     switch(cmd.effect){
-      case 'coherence-wave':push(waves,{at,files,s,o:c?.p||[0,R0,0],speed:.55});break;
+      case 'coherence-wave':push(waves,{at,files,s,o:c?.p||[0,R0,0],site:c?.id,speed:.55});break;
       case 'decohere':push(decoheres,{at,files,s});break;
-      case 'recohere':push(recoheres,{at,files,s,o:c?.p||[0,R0,0],r:Math.max(.25,(c?.spread||0)+.3)});break;
-      case 'bloom':case 'refine':{const full=cmd.tier>=3&&bloomAllowed(cmd.at);push(blooms,{at,files,s,o:c?.p||null,full,grand:full&&cmd.tier>=4,refactor:cmd.effect==='refine'},4);break;}
-      case 'glow':push(glows,{at,files,s,o:c?.p||null,r:Math.max(.12,(c?.spread||0)+.1)});break;
+      case 'recohere':push(recoheres,{at,files,s,o:c?.p||[0,R0,0],site:c?.id,r:Math.max(.25,(c?.spread||0)+.3)});break;
+      case 'bloom':case 'refine':{const full=cmd.tier>=3&&bloomAllowed(cmd.at);push(blooms,{at,files,s,o:c?.p||null,site:c?.id,full,grand:full&&cmd.tier>=4,refactor:cmd.effect==='refine'},4);break;}
+      case 'glow':push(glows,{at,files,s,o:c?.p||null,site:c?.id,r:Math.max(.12,(c?.spread||0)+.1)});break;
       case 'deepen':push(deepens,{at,s});break;
       default:break;// growth (emerge, seed, unfold, erode, thread) is drawn from the model's own times
     }

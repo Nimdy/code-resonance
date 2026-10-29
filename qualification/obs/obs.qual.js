@@ -77,8 +77,9 @@ function obsConfig(home,port,recordings){
   let obs=null,client=null;
   try{
     // The project exists once its first window is sorted (window and grace, about 13 s): the world is chosen then.
-    if(FAMILY){let r=null;for(let i=0;i<45&&!r?.ok;i++){await wait(2000);r=await adminPost(svc,`/api/recipe?id=${projectId}`,{action:{type:'family',family:FAMILY}});}
-      if(!r?.ok)throw new Error(`family ${FAMILY}: ${r?await r.text():'no answer'}`);measurements.family=FAMILY;console.log(`family ${FAMILY}`);}
+    // (only an unknown project is waited for: any other refusal, such as an unknown family, fails at once)
+    if(FAMILY){let r=null;for(let i=0;i<45&&(!r||r.status===404);i++){await wait(2000);r=await adminPost(svc,`/api/recipe?id=${projectId}`,{action:{type:'family',family:FAMILY}});}
+      if(!r.ok)throw new Error(`family ${FAMILY}: HTTP ${r.status} ${await r.text()}`);measurements.family=FAMILY;console.log(`family ${FAMILY}`);}
     obs=cp.spawn('obs',['--disable-updater','--disable-shutdown-check','--multi','--verbose','--profile','Qualification','--collection','Qualification'],
       {env:{...process.env,XDG_CONFIG_HOME:home,QT_QPA_PLATFORM:'xcb',LIBGL_ALWAYS_SOFTWARE:'1'},stdio:['ignore','pipe','pipe']});
     let obsOut='';obs.stdout.on('data',d=>obsOut+=d);obs.stderr.on('data',d=>obsOut+=d);
@@ -106,8 +107,7 @@ function obsConfig(home,port,recordings){
     check('the music reaches OBS\'s mixer through the Browser Source',levels.length>0&&peakDb>-50,`${levels.length} meter samples, peak ${peakDb===null?'none':peakDb.toFixed(1)} dBFS, ${Math.round(measurements.audioMeters.activeShare*100)} % above -60 dB`);
     // A real OBS recording.
     const statsBefore=await client.request('GetStats');
-    await client.request('StartRecord');await wait(SECONDS*1000);const stopped=await client.request('StopRecord');await wait(3000);
-    const statsAfter=await client.request('GetStats');
+    await client.request('StartRecord');await wait(SECONDS*1000);const statsAfter=await client.request('GetStats');const stopped=await client.request('StopRecord');await wait(3000);
     // OBS's own frame rate and what it skipped while recording (rendering lagged, or encoding lagged).
     measurements.obsStats={activeFps:statsAfter.activeFps,averageFrameRenderTimeMs:statsAfter.averageFrameRenderTime,cpuUsage:statsAfter.cpuUsage,memoryUsageMb:statsAfter.memoryUsage,
       renderSkippedFrames:statsAfter.renderSkippedFrames-statsBefore.renderSkippedFrames,renderTotalFrames:statsAfter.renderTotalFrames-statsBefore.renderTotalFrames,
