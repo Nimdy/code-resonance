@@ -183,8 +183,11 @@ function probe(file){
     if(json){const f=path.join(OUT,'output-export.json');await json.saveAs(f);const raw=fs.readFileSync(f,'utf8');let doc=null;try{doc=JSON.parse(raw);}catch{}
       check('Download JSON gives the derived history of the selected project, without its private name',doc?.schema==='code-resonance.export.v2'&&doc.projectId===sample&&Array.isArray(doc.timeline)&&!names.some(n=>raw.includes(n)),`${raw.length} bytes, ${doc?.timeline?.length} windows`);}
     else check('Download JSON gives the derived history of the selected project',false,'no download');
-    const film=await page.textContent('.out-cmds');
-    check('the film command is the real one (film.js after npm ci in qualification, with this data folder and project)',/cd qualification && npm ci/.test(film)&&film.includes(`node visual/film.js --data "${env.dir}" --project ${sample}`),film.replace(/\s+/g,' ').slice(0,200));
+    // The publish path (since the reel): npm ci in qualification once (Setup), then `npm run film` for this project, shown
+    // only once the project has a public title (otherwise the page asks for one).
+    const setup=await page.$$eval('.out-cmds',els=>els.map(e=>e.textContent).join(' | ')),gate=await page.textContent('.out-film-gate');
+    check('the film commands are the real ones (npm ci in qualification once, then npm run film for this project, or a request for its public title)',
+      /cd qualification && npm ci/.test(setup)&&(gate.includes(`npm run film -- --project ${sample}`)||/public title/i.test(gate)),`${setup.replace(/\s+/g,' ').slice(0,160)} · ${gate.replace(/\s+/g,' ').slice(0,120)}`);
     // ---- One recorder, atomically: two windows press Record at the same instant, many times -------------------------
     // Both windows' buttons are enabled when pressed (neither has heard the other announce a recording, so the
     // announcements cannot decide); the browser's recorder lock lets exactly one start, and the other says why.
