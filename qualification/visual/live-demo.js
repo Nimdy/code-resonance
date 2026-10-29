@@ -20,7 +20,7 @@ const media=require('./media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const SRC=path.resolve(arg('dataset')),FAMILY=arg('family'),GPU=arg('gpu',null),[W,H]=arg('size','1920x1080').split('x').map(Number);
 const SPEED=Number(arg('speed',1)),RECORD=arg('record',null),QUALITY=arg('quality','auto'),OVERLAY=process.argv.includes('--overlay'),IDLE=Number(arg('idle',60));
-const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','live'))),TAG=arg('tag',`${FAMILY}-${OVERLAY?'overlay':'player'}${RECORD?`-${RECORD}`:''}`);
+const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','films','live'))),TAG=arg('tag',`${FAMILY}-${OVERLAY?'overlay':'player'}${RECORD?`-${RECORD}`:''}`);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const pct=(a,p)=>{const s=a.filter(Number.isFinite).sort((x,y)=>x-y);return s.length?+s[Math.min(s.length-1,Math.floor(p*(s.length-1)))].toFixed(2):null;};
 const mean=a=>{const s=a.filter(Number.isFinite);return s.length?+(s.reduce((x,y)=>x+y,0)/s.length).toFixed(2):null;};

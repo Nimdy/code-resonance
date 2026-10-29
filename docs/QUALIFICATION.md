@@ -1039,9 +1039,22 @@ own direction, at least 19° apart; the first 24 unchanged). Large subsystems st
 GPU), measured, not gating.
 
 **Defects fixed:** Synaptic Storm stopped on its first frame for a project with no dependencies yet (since the preview
-was added); Fractal Continuum's regions beyond 24 (above). **Open:** the long frames above; agent chips and event
-captions can overlap when two agents work side by side (the films at 4 s and 72 s); explorer labels of neighbouring
-regions can touch at 49 subsystems.
+was added); Fractal Continuum's regions beyond 24 (above); agent chips and event captions overlapping when two agents
+work side by side (the films at 4 s and 72 s), and explorer names of neighbouring regions printing over each other;
+a film render that failed waited forever on its encoder (and kept its copy of the data in `/tmp`).
+
+**Audit (after the measurements):** a code review of the PR found, in Fractal Continuum, a layout rebuilt at most once
+a second (a file born mid-second appeared late when played through, at once when sought), effects that jumped to
+another file when the layout reordered, stale sprite positions, a fallback agent colour that differed from the flare,
+a swell table summed again almost every frame while a project grows (26 ms per rebuild at 49 subsystems; now kept per
+region, byte-identical over 1,801 frames at 6 and 49 subsystems), and 3,200 surface traces on the first bloom's frame;
+all fixed, with tests that fail on the previous code. A UI review of the preview worlds in the Visual Studio: at
+1920×1080 the fifth world was hidden past the strip's edge (now a peek of it shows), the previews had no thumbnail
+(now rendered from the project like the three's), "Previewing" and "Preview" pills side by side (the world's state is
+now *In design*), and the look-pack and Artist Studio panels pointed to things a preview cannot have (now said in
+words). **Open:** the long frames above. Fractal Continuum's site lights on the 49-subsystem project can differ between
+browser launches (the form itself is the same; within one browser frames are bit-identical; also before these
+changes); cause not established.
 
 ## Not verified
 

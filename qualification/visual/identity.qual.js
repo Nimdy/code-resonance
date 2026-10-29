@@ -14,7 +14,7 @@ const os=require('node:os');
 const {projectOf,launch,rendererOf,withService,recipeAction,filmPage,renderTo,thumb,diff,sha,checker}=require('./harness');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const SETS=arg('datasets').split(',').map(d=>path.resolve(d)),FAMILY=arg('family','fractal-continuum'),[W,H]=arg('size','960x540').split('x').map(Number);
-const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual'))),RAW=new Set(['id','salt','events.jsonl','blobs','recipe.json']);
+const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','lab','identity'))),RAW=new Set(['id','salt','events.jsonl','blobs','recipe.json']);
 const {checks,check}=checker();
 (async()=>{
   fs.mkdirSync(OUT,{recursive:true});

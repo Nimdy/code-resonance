@@ -227,8 +227,8 @@ measured: OBS on a GPU, long soak.
   unchanged and passing).
 - `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, and not a base for declarative
   packs (they may still change). `/api/catalog` lists it under `previews`, apart from `families`.
-- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with a *Preview* pill (no
-  thumbnail, no Artist Studio yet).
+- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with an *In design* pill and a
+  thumbnail rendered from the project, like the three's (no Artist Studio or look packs yet: its panel says so).
 - A recipe that chose it is stored like any user choice (locked, founded) with the v4 additions (Cinematic finish,
   composed score).
 

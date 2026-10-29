@@ -51,6 +51,23 @@
 - **Synaptic Storm without dependencies:** the world no longer stops with an error while nothing in the project links
   yet (a new project, or the first moments of a replay or film from the start: `Cannot set properties of undefined
   (setting 'needsUpdate')` since the preview was added). `tests/synaptic.test.js`.
+- **Fractal Continuum, review fixes:** the layout follows every birth and removal exactly (it was rebuilt at most once
+  a second, so a file born mid-second appeared late when played through but at once when sought); waves, recoveries,
+  glows and blooms stay on their own file when a new file reorders the layout; files missing from the model leave no
+  stale position for threads and composition anchors; an attributed edit ripples and flares in one agent's colour. The
+  swell table keeps each region's kernel and sums only the swell again while a project grows (it was rebuilt almost
+  every frame, 26 ms at 49 subsystems; byte-identical output), and the first bloom's 3,200 surface traces run on the
+  world's first frame instead of the milestone's. `tests/fractal.test.js`.
+- **Labels keep clear of each other:** when two agents work side by side their chips no longer print over each other
+  or over an event's callout (each takes the first free place around its agent, or its old one when none is free); in
+  explorer mode a subsystem's name steps down or up from the others and is left out where every place is taken (the
+  hover card still names it). `tests/privacy-labels.test.js`.
+- **Visual Studio, preview worlds:** they show a thumbnail rendered from the project like the three; their state reads
+  *In design* (no longer "Preview" beside "Previewing"); the strip shows a peek of the card past its edge at every
+  width (at 1920×1080 the fifth world was hidden); a preview world's panel says that look packs and the Artist Studio
+  are for the three flagship worlds, instead of sending you to Visual Packs.
+- **Films:** a render that fails ends at once instead of waiting forever on its encoder (and keeping its copy of the
+  data in `/tmp`); with no frames rendered, `--out` is left as it was.
 - **Public repository:** REPOSITORY.md no longer calls it private; SECURITY.md says how to report a vulnerability
   privately (GitHub's private vulnerability reporting); the README's hero caption says the Cursor and Codex events in
   that film were posted through their adapters, Claude was a live session.
