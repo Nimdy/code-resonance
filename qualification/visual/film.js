@@ -41,7 +41,13 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
   let dataDir=path.resolve(arg('data'));
   // Every way out stops the browser and the receiver (its worker would keep the process alive) and removes the copy.
   let svc=null,browser=null,enc=null,stopped=null;
-  const stop=()=>stopped||(stopped=(async()=>{if(enc&&enc.exitCode===null&&enc.signalCode===null)enc.kill();
+  // An encoder still waiting for frames (a render that failed, or Ctrl-C) ignores SIGTERM while it blocks on its input, and
+  // would keep this process alive, and the copy it removes on exit, for good. With frames written it is asked to stop and
+  // gets the end of its input (the film so far is finished); with none it is killed, so --out is not replaced by a film
+  // without pictures. SIGKILL after 3 s either way.
+  let written=0;
+  const stop=()=>stopped||(stopped=(async()=>{if(enc&&enc.exitCode===null&&enc.signalCode===null){if(written){enc.kill('SIGTERM');enc.stdin.destroy();
+      await Promise.race([new Promise(r=>enc.once('close',r)),new Promise(r=>setTimeout(r,3000))]);}if(enc.exitCode===null&&enc.signalCode===null)enc.kill('SIGKILL');}
     await browser?.close().catch(()=>{});await svc?.stop().catch(()=>{});})());
   if(process.argv.includes('--copy'))dataDir=temporaryCopy(dataDir,{stop}).dir;
   // A pinned recipe is installed before the receiver starts, so the player loads exactly that identity.
@@ -126,7 +132,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
         const t=from+i*frameMs;
         const img=await page.evaluate(([x,dt])=>window.__film.frame(x,dt),[t,1/fps]);
         const buf=Buffer.from(img.split(',')[1],'base64');
-        if(!enc.stdin.write(buf))await new Promise(r=>enc.stdin.once('drain',r));
+        if(!enc.stdin.write(buf))await new Promise(r=>enc.stdin.once('drain',r));written++;
         const second=i/fps;if(keyframes.some(k=>Math.abs(k-second)<.5/fps))fs.writeFileSync(OUT.replace(/\.webm$/,'')+`-frame-${String(Math.round(second)).padStart(4,'0')}s.jpg`,buf);
         if(i%(fps*10)===0)console.log(`frame ${i}/${total} (${(i/total*100).toFixed(0)}%) ${JSON.stringify(await page.evaluate(()=>window.__film.stats()))}`);
       }

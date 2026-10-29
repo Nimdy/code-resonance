@@ -77,7 +77,10 @@ it) but does not fire: one hop, sub-threshold, so activity shows influence witho
 - **Depth of field**: a circle of confusion from the focus distance (the camera's subject) widens and dims ribbons,
   somas and points (energy kept), so the near and far network turns to bokeh; anything just in front of the lens fades out.
 - **Atmosphere** (never code): a far network of dim, out-of-focus neurons beyond the camera's orbit, slow violet haze,
-  two vast soft glows, motes and bokeh. They fire only spontaneously, and in a full storm.
+  two vast soft glows, motes and bokeh. They fire only spontaneously, and in a full storm. Behind them the **far
+  tissue**: 32 out-of-focus fibres in every direction (seeded arcs that wander, break off and differ in depth, a few
+  warm), each with a soft bokeh node, drifting very slowly in the background pass; thicker where the haze is, brighter
+  with the deep-network unlock, dimmer under strain, scaled by `atmosphere.ghosts`.
 - **Grade**: AgX, warm bloom with a light anamorphic streak; strain desaturates and cools it, a storm lifts bloom and
   exposure. The recipe's finish (Cinematic by default) applies on top.
 
@@ -184,7 +187,7 @@ effects are dropped and the lasting myelin comes back from the director's record
 
 ## Performance
 
-Eight draw calls (background at half resolution, motes, axons, synaptic terminals, dendrites, somas, boutons,
+Eight draw calls (background at half resolution, with the far tissue, motes, axons, synaptic terminals, dendrites, somas, boutons,
 signals), all instanced ribbons, billboards and points with additive blending, no raymarching, no extra render target.
 Per-frame CPU state goes into two RGBA float textures read with `texelFetch`. The terminals are evaluated on the GPU
 from the axons' own curves (one billboard per axon); the CPU no longer draws two points per axon for the synapse.
@@ -194,6 +197,7 @@ from the axons' own curves (one billboard per axon); the CPU no longer draws two
 | Before the close-up detail (the end of the session and two agent-touch stills) | 12.4–13.6 ms | not measured |
 | With it, the same three stills | 14.3–16.4 ms | |
 | With it, 13 stills (events, touches, the end) | 14.1–17.9 ms | 23.0 ms (the end) |
+| The far tissue, A/B back to back (the end; 30 s idle), two rounds | 16.1–16.4 → 17.5–18.4 ms; 14.6–14.9 → 15.5–15.6 ms | |
 
 | Measured (Node update / lab, SwiftShader 960×540) | Lumen (17 files) | Self (92 files) | Excalidraw (450 files) |
 |---|---|---|---|
@@ -207,9 +211,13 @@ from the axons' own curves (one billboard per axon); the CPU no longer draws two
 | 0 | MSAA 4×, everything |
 | 1 | No MSAA (host) |
 | 2 | 75 % resolution (host); half the far network; 55 % of the motes |
-| 3 | 55 % resolution (host); no far network; 35 % of the motes; the void's haze without its noise; none of the close-up detail (membrane web, specks, beads, lobes, organelles, vesicles) |
+| 3 | 55 % resolution (host); no far network or far tissue; 35 % of the motes; the void's haze without its noise; none of the close-up detail (membrane web, specks, beads, lobes, organelles, vesicles) |
 
-Films always render at quality 0. Not yet measured: GPU time at Auto in live playback, OBS capture, long soak. The
+Films always render at quality 0. Live playback at Auto (1920×1080, AMD iGPU): 58.6 fps, frame time p95 16.8 ms,
+55.3 fps in close-ups, 15.4 ms GPU per frame, Auto at the top level, with one to five frames of 117–900 ms per
+five-minute run that are not the page's work (none at 720p;
+[QUALIFICATION.md](../QUALIFICATION.md#preview-worlds-acceptance-films-and-live-measurements-pr-28)). Not yet measured:
+OBS on a GPU, long soak. The
 costs to watch: fill (soma billboards are 3.2× the soma, terminal billboards 6 × 3 bell radii; blurred ribbons widen up
 to 36 px; up close the fragment work of the filament web) and, in large projects, the CPU update (the per-frame layout
 signature walks every link; spike heads and synapse flares evaluate each axon's curve on the CPU).
@@ -222,8 +230,8 @@ signature walks every link; spike heads and synapse flares evaluate each axon's 
   `RECIPE_VERSION` stays 4: no existing input produces a different output (`tests/recipe.test.js` unchanged and passing).
 - `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, and not a base for
   declarative packs (they may still change). `/api/catalog` lists it under `previews`, apart from `families`.
-- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with a *Preview* pill (no
-  thumbnail, no Artist Studio yet).
+- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with an *In design* pill and a
+  thumbnail rendered from the project, like the three's (no Artist Studio or look packs yet: its panel says so).
 - A recipe that chose it is stored like any user choice (locked, founded) with the v4 additions (Cinematic finish,
   composed score).
 

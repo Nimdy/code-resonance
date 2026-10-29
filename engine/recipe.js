@@ -26,8 +26,8 @@
 // Preview families (PREVIEWS, engine/catalog.js PREVIEWS): built-in worlds still being designed, chosen only explicitly
 // (the Visual Studio, the render lab's --family) exactly as a pack is. They are never scored and never drawn: FAMILIES
 // alone drives the family scores and their random draws, and a preview's genome and palette come from its own streams,
-// so adding one changes no existing identity (tests/recipe.test.js and tests/synaptic.test.js pin that). Taking one into
-// the automatic choice later is a new generator version with its own scoring stream.
+// so adding one changes no existing identity (tests/recipe.test.js, tests/synaptic.test.js and tests/fractal.test.js
+// pin that). Taking one into the automatic choice later is a new generator version with its own scoring stream.
 //
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
@@ -47,8 +47,8 @@ const RECIPE_VERSION=4;      // generator: bump when the same inputs would produ
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
 const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
-const PREVIEWS=['synaptic-storm'];
-const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)'};
+const PREVIEWS=['synaptic-storm','fractal-continuum'];
+const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)','fractal-continuum':'Fractal Continuum (preview)'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -129,7 +129,21 @@ function synapticPalette(r,family,traits){
   return {scheme,hue:round(mem,1),primary:hsl(soma,.92,.58),secondary:hsl(mem,sat,.62),accent:hsl(soma+12,1,.7),highlight:hsl(soma+20,.6,.9),
     deep:hsl(mem+6,.62,between(r,.04,.065)),haze:hsl(mem+20,.5,.17),warning:hsl(pick(r,[350,6,340]),.82,.58),valid:hsl(pick(r,[160,172,186]),.66,.66)};
 }
-const PALETTES={'synaptic-storm':synapticPalette};
+// Fractal Continuum (preview): a matte sculpted surface in a black void, lit by sites of light. The surface's hue (teal
+// like the reference, or blue, jade, violet, copper, amber, rose) and whether its light contrasts with it (warm on cool,
+// cool on warm) or shares its family are the identity's own, from its own stream. Failure stays red-magenta, never the
+// light's colour.
+function fractalPalette(r,family,traits){
+  const scheme=weighted(r,[['complementary',3],['analogous',2]]);
+  const hue=pick(r,[188,192,182,198,206,172,160,214,266,24,38,330])+between(r,-6,6),cool=hue>=150&&hue<=290;
+  const glow=scheme==='complementary'?(cool?pick(r,[34,40,46,28]):pick(r,[186,196,176])):hue+pick(r,[-28,24,32]);
+  const sat=between(r,.36,.58)*(1-.12*clamp(traits.tests*2));
+  const dist=h=>{const d=Math.abs((((h-glow)%360)+360)%360);return Math.min(d,360-d);};
+  const warn=[352,346,6,338].find(h=>dist(h)>=40)??322;
+  return {scheme,hue:round(hue,1),primary:hsl(hue,sat,between(r,.34,.42)),secondary:hsl(hue+between(r,-24,24),sat*.9,.2),accent:hsl(glow,.88,.62),
+    highlight:hsl(hue+8,.32,.84),deep:hsl(hue+10,.5,between(r,.016,.03)),haze:hsl(hue+14,.42,.12),warning:hsl(warn,.85,.58),valid:hsl(pick(r,[168,178,150,190]),.62,.7)};
+}
+const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette};
 // ---- Family genomes: the structural language of each universe -------------------------------------------------------
 const GENOMES={
   'stellar-forge'(r,t){
@@ -205,6 +219,30 @@ const GENOMES={
         'subsystem.connected':'axon-link','validation.failed':'misfire','validation.passed':'activation-wave','validation.recovered':'resync',
         'refactor.validated':'consolidate','milestone.achieved':'storm','repository.checkpoint':'potentiate','world.expanded':'expand'}
     };
+  },
+  // Preview (chosen only explicitly). The code's character picks the universe (the formula: a Mandelbulb for interface
+  // and hub-centred code, a Julia bulb for function-heavy code, a Mandelbox for classes and types and coupled
+  // subsystems, a kaleidoscopic crystal for tested, widely branching code), the number of subsystems the bulbs' n-fold
+  // branching, coupling their twist, symbols per file how far it may unfold, the project's size how closely its sites
+  // stand; the seeded share makes similar projects different universes.
+  'fractal-continuum'(r,t){
+    const form=weighted(r,[['bulb',1.3+1.2*clamp((t.uiModules||0)*2)+.6*clamp((t.hubness||0)*2)],['julia',.8+1.5*clamp(((t.functions||0)-.45)*3)],
+      ['box',.6+1.6*clamp((t.model||0)*3)+.4*clamp(t.crossDensity||0)],['kifs',.6+1.5*clamp((t.tests||0)*4)+.4*clamp((t.branching||0)*2)]]);
+    const power=Math.max(4,Math.min(10,Math.round(4+1.1*Math.log2(1+(t.districts||1))+(r()-.5)*2)));
+    return {
+      fractal:{form,power,twist:r()<.35?0:round(clamp(between(r,.08,.45)+.3*clamp(t.crossDensity||0))),julia:Math.floor(r()*6)%6,shape:between(r,0,1),
+        detail:round(between(r,.9,1.1)*(.92+.16*clamp((t.depth||0)/10)))},
+      geometry:{spacing:round(clamp(Math.sqrt(2.2/Math.max(6,t.modules||0)),.05,.6)),regions:between(r,.85,1.15),swell:between(r,.15,.4),siteSize:between(r,.85,1.2),threads:between(r,.6,1.1)},
+      material:{occlusion:between(r,.85,1.2),trap:between(r,.25,.8),sheen:between(r,.2,.6),rim:between(r,.4,1),glow:between(r,.85,1.25)},
+      atmosphere:{haze:between(r,.4,1),particles:between(r,.5,1.1),halo:between(r,.4,1)},
+      motion:{breath:pick(r,[2,4,4,8]),drift:between(r,.4,1),shimmer:round(between(r,.55,1)*(.85+.3*clamp((t.agentShare||0)*2))),
+        resonance:round(between(r,.7,1.1)*(.85+.35*clamp((t.agentShare||0)*2))),light:between(r,.3,1),sync:round(clamp(between(r,.35,.75)+.25*clamp((t.tests||0)*3)))},
+      camera:{personality:weighted(r,[['orbit',3],['glide',2],['pole',form==='bulb'?3:1]]),distance:between(r,.95,1.08),elevation:between(r,.18,.55),fov:pick(r,[28,32,36]),drift:between(r,.4,1)},
+      agents:{form:'signal',trail:between(r,.6,1.4)},
+      effects:{'subsystem.created':'emerge','module.created':'seed','structure.created':'unfold','structure.removed':'erode',
+        'subsystem.connected':'thread','validation.failed':'decohere','validation.passed':'coherence-wave','validation.recovered':'recohere',
+        'refactor.validated':'refine','milestone.achieved':'bloom','repository.checkpoint':'glow','world.expanded':'deepen'}
+    };
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
@@ -212,7 +250,8 @@ const AMBIENT={
   'stellar-forge':{base:['nebula','starfield','convection','orbits','corona-loops','dust-lanes'],unlocks:['aurora-veils','plasma-currents','distant-pulsar','galactic-halo']},
   'fractal-biosphere':{base:['spores','sway','nutrient-flow','light-shafts','breathing-glow'],unlocks:['fireflies','blossom-drift','canopy-veins','bioluminescent-tide']},
   'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']},
-  'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']}
+  'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
+  'fractal-continuum':{base:['breathing','light-drift','shimmer','resonance','motes'],unlocks:['stardust','inner-light','corona','echoes']}
 };
 function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);

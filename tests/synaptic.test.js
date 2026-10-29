@@ -19,7 +19,7 @@ function project(id,{modules=10,ui=0,classes=0,fns=3,tests=0,dirs=3,hub=0,cross=
   return {projectId:sha(id),graph:{nodes,edges},stats:{raw:100,agentEvents,testsPassed:0,testsFailed:0},agents:Array.from({length:agents},(_,i)=>({id:`a${i}`}))};
 }
 test('Synaptic Storm is chosen only explicitly: never by the family scores, automatic or a plain regenerate',()=>{
-  assert.deepEqual(recipe.FAMILIES,['stellar-forge','fractal-biosphere','machine-cathedral']);assert.deepEqual(recipe.PREVIEWS,[ID]);
+  assert.deepEqual(recipe.FAMILIES,['stellar-forge','fractal-biosphere','machine-cathedral']);assert(recipe.PREVIEWS.includes(ID));
   const shapes=[{modules:120,ui:70,dirs:40},{modules:12,hub:10,agents:5,agentEvents:80},{modules:60,classes:40,tests:20,cross:50},{modules:3},{modules:400,cross:300,agents:8,agentEvents:90}];
   for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0});
     assert(recipe.FAMILIES.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FAMILIES);}
@@ -125,6 +125,18 @@ test('The world runs headless: its state at a moment is the same whatever was dr
   const colors=['claude-code','cursor','codex','grok','qwen','kimi'].map(p=>A.w.agentColor({provider:p}));assert.equal(new Set(colors).size,6);
   assert(A.w.agentPosition('x'),'the editing agent has a position for its chip');
   A.w.dispose();B.w.dispose();
+});
+test('A project with no dependencies yet (or no files at all) is drawn: no axon is not an error',async()=>{
+  const {THREE}=await load('core');const {createFamily}=await load('synaptic');const {createDirector}=await load('director');const {createAgents}=await load('agents');
+  const {createModel}=await load('model'),r=recipe.generate(project('unlinked'),{family:ID,now:0});
+  for(const model of [await network({links:[]}),(()=>{const m=createModel();m.reset({nodes:[],edges:[]},T0);return m;})()]){
+    const agents=createAgents(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,16/9,.1,4000);
+    const w=createFamily({scene,camera,model,recipe:r,speed:()=>1,name:id=>`Name ${id}`,director:createDirector({recipe:r}),agents,pipeline:{size:[640,360]}});w.rebuild();
+    const frame=t=>({t,tsec:(t-model.epoch)/1000,tview:(t-model.epoch)/1000,dt:1/30,beat:.5,barPhase:.2,mood:{section:'home',energy:.4,tempo:96},energy:.4,activity:0,phase:'idle',unlocks:[],
+      agents:agents.list(t),overrides:{},quality:0,music:null});
+    for(const t of [T0+1000,T0+4000])w.update(frame(t));
+    assert(w.stats().neurons>=0);w.dispose();
+  }
 });
 test('The player and the receiver know the preview: the host loads it, /api/catalog lists it apart from the three',async t=>{
   assert.match(fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8'),/'synaptic-storm':'\.\/synaptic\.js'/);

@@ -188,6 +188,20 @@ chosen only explicitly (the Visual Studio, the render lab's `--family`), never b
 life yet; adding it changed no existing identity. Design brief, stills and what remains:
 [worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`, `synaptic-layout.js`).
 
+### Fractal Continuum (preview)
+
+An evolving 3D fractal universe: one raymarched, distance-estimated fractal whose formula and parameters (a Mandelbulb,
+a Julia bulb, a Mandelbox or a kaleidoscopic crystal, its branching, twist and shape) come from the code's character and
+the identity's own stream, so projects become different universes, not only different colours. Development unfolds its
+recursion; subsystems are regions of its surface (swelling with their files), files are sites of light on it,
+dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
+shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
+decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
+fractal bloom. It is a **preview**: chosen only explicitly (the Visual Studio, the render lab's `--family`), never by
+the family scores, with no digital life yet; adding it changed no existing identity. Design brief, stills, measured GPU
+time and what remains: [worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`,
+`fractal-forms.js`).
+
 The Visual Studio shows why to choose each world, offers six curated looks (two per family, built in and read-only,
 previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials
 group above the full parameter groups.

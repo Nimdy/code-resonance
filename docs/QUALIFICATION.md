@@ -724,7 +724,8 @@ robustness quick 15/15; recording quick 45/45. `npm test` 30/30 runs under `unit
 one timing-dependent test was made deterministic (24/30 before; the receiver's behaviour was correct, the test assumed
 which of two orders happened).
 
-**In CI.** GitHub's runners for this private repository have two cores and no GPU. There, the studios that render WebGL
+**In CI.** GitHub's runners had two cores and no GPU when this was measured (PR #7, while the repository was
+private). There, the studios that render WebGL
 continuously (Visual, Music, Record & Broadcast) and the acceptance scenarios with three windows rendering at once starve
 the browser (measured on PR #7: clicks timing out after 30 s, screenshots refused, a saved change taking 105 s to appear
 in the other windows). The required `ui` job therefore runs Connections, Home, Packs, Projects, Settings and the
@@ -974,6 +975,93 @@ Focused checks only, as the brief asked. All rendering was on the AMD integrated
 **Not verified in Phase 11:** human listening and viewing (metrics and our own review of renders only); the Music Studio
 and the Artist Studio on Windows, macOS or OBS; live sessions longer than a few minutes with a composition; frame
 rates on other GPUs; the generation handover with ecology 2 (expected continuous, not measured).
+
+## Preview worlds: acceptance films and live measurements (PR #28)
+
+Fractal Continuum and Synaptic Storm on the lumen recording (a real 4.4-minute session, six Claude Code sessions, no
+event added or removed), on the AMD integrated GPU (WSL2, ANGLE → D3D12), 1920×1080. Films, live recordings, stills
+and every measurement file: `qualification/results/films/acceptance-0.8/` (ignored), with a review page (`index.html`).
+
+**Films** (`visual/film.js --family <id> --speed 3 --tail 24 --gpu amd`): 88 s each, VP9 + Opus, the composed score
+(v3): growth, agents, the failing run (24.7 s), recovery with the first verified milestone (31.4 s), "Integration
+validated" (52.2 s), two commits, idle from 76 s. The first Synaptic Storm film failed on its first frame: the defect
+below, fixed before it was rendered again.
+
+**Live** (`visual/live-demo.js`, new): the real player replays the recording at 1× (real time, real camera), then
+switches to Live for 60 s of idle, about 300 s per run, one run at a time; the lean driver (no Playwright memory
+inflation). Frame times are the intervals between presented frames (requestAnimationFrame, 60 Hz display); a
+close-up is the camera within 26 units of what Synaptic Storm frames, or nearer than 0.7 of Fractal Continuum's
+usual framing (read from the scene, nothing changed). Every run plays the music.
+
+| 1920×1080, Auto | fps · frame p95 | Close-ups (s) fps · p95 | 2+ agents fps · p95 | Idle fps · p95 | GPU ms mean / p95 · busy | Renderer MB first → last · GPU process max |
+|---|---|---|---|---|---|---|
+| Fractal Continuum, player | 53.9 · 33.3 ms | (46 s) 47.7 · 33.4 | 56.4 · 33.3 | 54.8 · 33.3 | 17.4 / 20.7 · 93 % | 172 → 214 · 345 |
+| Fractal Continuum, OBS overlay page | 54.8 · 33.3 | 47.7 · 33.4 | 57.4 · 16.8 | 55.8 · 33.3 | 17.4 / 20.8 · 95 % | 192 → 203 · 329 |
+| Synaptic Storm, player | 58.6 · 16.8 | (64 s) 55.3 · 33.3 | 56.4 · 33.3 | 60.0 · 16.7 | 15.4 / 17.0 · 90 % | 189 → 232 · 339 |
+| Synaptic Storm, OBS overlay page | 58.8 · 16.8 | 55.9 · 33.3 | 57.7 · 16.8 | 59.1 · 16.7 | 15.4 / 17.1 · 91 % | 213 → 201 · 323 |
+
+Auto stayed at the top level in every run (it steps down under 24 fps). Renderer memory grows over the first 30 s and
+then with the project; idle is flat (Fractal Continuum 212 → 214 MB over the last 60 s). Five minutes rules out no
+slow leak: no soak was run.
+
+| Recording (● RECORD, Auto) | Live fps · p95 | File: fps · interval p95 / max · gaps > 250 ms | Sound | Size |
+|---|---|---|---|---|
+| Fractal Continuum, 1080p | 45.0 · 33.4 ms | 29.91 · 51 / 82 ms · 0 | −23.6 dBFS | 266 MB / 300 s |
+| Fractal Continuum, 720p (default) | 59.8 · 16.7 | 29.97 · 35 / 172 ms · 0 | −23.6 | 153 MB |
+| Synaptic Storm, 1080p | 50.7 · 33.4 | 29.82 · 51 / 624 ms · 2 (624, 278 ms) | −24.9 | 239 MB |
+| Synaptic Storm, 720p (default) | 59.8 · 16.7 | 30.00 · 34 / 49 ms · 0 | −24.2 | 135 MB |
+
+A fixed recording size draws the stage at that size (720p: 1280×720, about half the GPU time). The browser process
+holds the recording until it stops (1080p: 99 → 370 MB for 300 s).
+
+**Long frames, Synaptic Storm at 1920×1080:** one to five frames per run of 117–900 ms (1080p recording 617 ms; player
+750 ms; the OBS page 900 ms as it switched from replay to Live), none at 720p; Fractal Continuum one frame of 133–183
+ms in two of four runs. Not the page's work: a profiled run (JavaScript CPU profile, long-task observer) had no long
+task after start-up while a frame waited 200 ms, and the counts of programs, geometries and textures never changed
+(13/13/15). The GPU runs at about 90 % at 1080p; the cause in the GPU path was not identified (the same class as the
+172 ms outlier under [Recording synchronisation](#recording-synchronisation-method-replaced-one-clock-defect-fixed-the-172-ms-outlier-not-reproduced)).
+Rendered again after the audit below (final code; the other runs are from before it, and Synaptic Storm changed only
+in its labels): Fractal Continuum without recording 54.5 fps · p95 33.3 ms, 48.0 in close-ups, 17.2 ms GPU (53.9 ·
+33.3, 47.7, 17.4 before); recording 1080p 46.0 fps, the file 29.86 fps with one gap of 362 ms; Synaptic Storm
+recording 1080p 51.2 fps, the file 29.90 fps with one gap of 274 ms. Fractal Continuum now had long frames as well
+(117–350 ms, five in the recorded run): in a profiled run its one long frame was a 263 ms gap in which the
+renderer's 1 ms profiler took no sample at all, so the process had no CPU (other programs were loading the machine:
+another Chromium, VS Code's server), unlike Synaptic Storm's, where sampling went on while a frame waited.
+
+**Identity** (`visual/identity.qual.js --gpu amd`, new): Fractal Continuum 15/15 on three real projects with the same
+form (bulb: Excalidraw power 8, Self 9, VS Code's built-in extensions 10); Synaptic Storm 22/22 on four (Lumen,
+Excalidraw, Self, the extensions). For each project: a restart keeps the recipe file byte for byte and renders the
+same frame bit for bit; with every derived file removed (state, performance windows, public view, evidence) the
+receiver rebuilds from the journal alone and renders the same frame bit for bit. Different projects differ in their
+structure (power, recursion, regions, sites; clusters, neurons, axons) and their frames by 11.5–72.0 (luminance
+thumbnail) against 0.00 for a project's own frame repeated. Two bulbs read as relatives without their colours (the
+same crown and banded silhouette, different branching and twist).
+
+**More than 24 subsystems** (the extensions: 450 files in 49 subsystems): the 25th region onwards reused the first 24
+directions, so subsystems were drawn in pairs on one region with their names over each other; fixed (each region its
+own direction, at least 19° apart; the first 24 unchanged). Large subsystems still spiral over their neighbours (the
+130-file one), as in Excalidraw at 9 subsystems.
+
+**OBS Studio itself:** `obs/obs.qual.js --family <id>` in the extended tier's disposable runner (software OpenGL, no
+GPU), measured, not gating.
+
+**Defects fixed:** Synaptic Storm stopped on its first frame for a project with no dependencies yet (since the preview
+was added); Fractal Continuum's regions beyond 24 (above); agent chips and event captions overlapping when two agents
+work side by side (the films at 4 s and 72 s), and explorer names of neighbouring regions printing over each other;
+a film render that failed waited forever on its encoder (and kept its copy of the data in `/tmp`).
+
+**Audit (after the measurements):** a code review of the PR found, in Fractal Continuum, a layout rebuilt at most once
+a second (a file born mid-second appeared late when played through, at once when sought), effects that jumped to
+another file when the layout reordered, stale sprite positions, a fallback agent colour that differed from the flare,
+a swell table summed again almost every frame while a project grows (26 ms per rebuild at 49 subsystems; now kept per
+region, byte-identical over 1,801 frames at 6 and 49 subsystems), and 3,200 surface traces on the first bloom's frame;
+all fixed, with tests that fail on the previous code. A UI review of the preview worlds in the Visual Studio: at
+1920×1080 the fifth world was hidden past the strip's edge (now a peek of it shows), the previews had no thumbnail
+(now rendered from the project like the three's), "Previewing" and "Preview" pills side by side (the world's state is
+now *In design*), and the look-pack and Artist Studio panels pointed to things a preview cannot have (now said in
+words). **Open:** the long frames above. Fractal Continuum's site lights on the 49-subsystem project can differ between
+browser launches (the form itself is the same; within one browser frames are bit-identical; also before these
+changes); cause not established.
 
 ## Not verified
 

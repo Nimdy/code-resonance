@@ -19,13 +19,18 @@ export function createAgents(){
   reset();
   const gone=(a,ts)=>{const e=a.events.at(-1)||a.past;if(!e)return false;
     return ts-e.ts>SILENT_MS||(e.state==='disconnected'&&ts-e.ts>DEPART_MS)||(e.state==='completed'&&ts-e.ts>COMPLETE_MS+DEPART_MS);};
+  // An agent's place among the sessions of the same tool present when it arrives: the lowest number free, so a lone
+  // session is just "Claude" and a second one at the same time "Claude 2" (subagents are not numbered).
+  function slotOf(chip,subagent){if(subagent)return 1;const used=new Set();for(const x of s.agents.values())if(!x.subagent&&catalog(x.provider).chip===chip)used.add(x.slot);
+    let n=1;while(used.has(n))n++;return n;}
   function record(intent){
     if(intent.type!=='agent.state')return;
     const sub=intent.subject||{},d=intent.detail||{};
     for(const [id,x] of s.agents)if(id!==sub.agentId&&gone(x,intent.ts)){s.agents.delete(id);s.retired.set(id,x.number);if(s.retired.size>RETIRED_MAX)s.retired.delete(s.retired.keys().next().value);}
     let a=s.agents.get(sub.agentId);
     if(!a){const back=s.retired.get(sub.agentId);if(back!==undefined)s.retired.delete(sub.agentId);
-      a={id:sub.agentId,voice:sub.voice??0,provider:d.provider||'agent',number:back??++s.ordinal,subagent:!!d.subagent,events:[],first:intent.ts,past:null,home:null};s.agents.set(sub.agentId,a);}
+      const provider=d.provider||'agent';
+      a={id:sub.agentId,voice:sub.voice??0,provider,number:back??++s.ordinal,slot:slotOf(catalog(provider).chip,!!d.subagent),subagent:!!d.subagent,events:[],first:intent.ts,past:null,home:null};s.agents.set(sub.agentId,a);}
     let i=a.events.length;while(i>0&&a.events[i-1].ts>intent.ts)i--;
     a.events.splice(i,0,{ts:intent.ts,state:d.state||'connected',activity:d.activity||null,fileId:sub.fileId||null});
     a.first=Math.min(a.first,intent.ts);
@@ -43,13 +48,13 @@ export function createAgents(){
     else if((e.state==='processing'||e.state==='tool'||e.state==='thinking')&&since>UNKNOWN_MS){display='unknown';alpha=.35;}
     else if((e.state==='waiting'||e.state==='connected')&&since>DORMANT_MS){display='dormant';alpha=.25;}
     const label=display==='tool'?(e.activity||'using a tool'):LABEL[display]||display;
-    return {id:a.id,voice:a.voice,number:a.number,provider:a.provider,subagent:a.subagent,state:e.state,display,label,activity:e.activity,fileId:e.state==='tool'?e.fileId:null,
+    return {id:a.id,voice:a.voice,number:a.number,slot:a.slot,provider:a.provider,subagent:a.subagent,state:e.state,display,label,activity:e.activity,fileId:e.state==='tool'?e.fileId:null,
       home,since,arrived:a.first,alpha,busy:display==='processing'||display==='tool'||display==='thinking'};
   }
   function list(t){const out=[];for(const a of s.agents.values()){const p=presence(a,t);if(p)out.push(p);}return out;}
   // Recent tool activity of an agent (for tails, beams): its observed events between t-ms and t (ms <= ten minutes).
   function trail(id,t,ms){const a=s.agents.get(id);return a?a.events.filter(x=>x.ts<=t&&x.ts>t-ms):[];}
-  function name(p){const chip=catalog(p.provider).chip;return p.subagent?`${chip} · subagent`:chip;}
+  function name(p){const chip=catalog(p.provider).chip;return p.subagent?`${chip} · subagent`:p.slot>1?`${chip} ${p.slot}`:chip;}
   return {record,list,presence:(id,t)=>{const a=s.agents.get(id);return a?presence(a,t):null;},trail,name,reset,
     get agents(){return s.agents;},
     snapshot(){return structuredClone(s);},restore(snap){s=structuredClone(snap);},

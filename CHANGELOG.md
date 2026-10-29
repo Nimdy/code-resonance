@@ -14,14 +14,63 @@
   part of the family scores: the recipe generator stays at version 4 and every existing identity is unchanged
   (`tests/recipe.test.js` as pinned; `tests/synaptic.test.js` new). `/api/catalog` lists it under `previews`. No
   digital life yet. Design brief and stills: `docs/worlds/synaptic-storm.md`.
+- **Fractal Continuum (preview):** a fifth built-in world family, chosen only explicitly (Visual Studio, marked
+  *Preview*; the render lab's `--family fractal-continuum`). One raymarched, distance-estimated fractal: the code's
+  character picks its universe (Mandelbulb, Julia bulb, Mandelbox or kaleidoscopic crystal) and its parameters from the
+  identity's own stream, and the live code unfolds its recursion. Subsystems are regions of the surface that swell with
+  their files, files are sites of light traced onto it with a JS twin of the estimator, dependencies are threads of
+  light; agents travel as signals in their CAST colour and shape and ripple the surface around the file they edit;
+  tests send a coherent wave, failures make the covered region decohere in the warning colour, recovery restores
+  coherence, a commit glows from the crevices, and a verified milestone with the director's token, at least 4 minutes
+  after the last, earns a fractal bloom. Idle: breathing, a circling light, glints and pulses on the beat grid. Drawn at
+  0.6 of the resolution at quality 0 (less at 1 to 3, and when it fills the frame) in a coarse cone pass, a march and a
+  shading pass; measured 15–20 ms GPU per frame at 1920×1080 on the AMD iGPU over the brief's stills on Lumen, up to
+  25 ms in a close-up that fills the frame (Self). Never part of the
+  family scores: the recipe generator stays at version 4 and every existing identity is unchanged (`tests/recipe.test.js`
+  as pinned; `tests/fractal.test.js` new). `/api/catalog` lists it under `previews`. No digital life yet. Design brief
+  and stills: `docs/worlds/fractal-continuum.md`.
 - **Synaptic Storm up close:** each axon now ends in a synaptic terminal, a glass bell of vesicles facing a cup on the
   receiving branch; a spike's arrival sparks across the cleft and the vesicles at the mouth cross it. Branches are
   seamless tubes (consecutive segments share their joint, free ends are rounded) whose trunks swell at the soma, with a
   web of fine filaments and gold specks on their membranes and gold beads along every fibre; somas have lobed
   membranes, organelles and a bright nucleus inside two shells. A recorded event the director gives attention is seen
   up close, an agent's work in a medium close-up. The detail is drawn only where it is large enough on screen to read,
-  and not at quality 3. The render lab takes `--after` (seconds after each event, with `--events`). The brief's stills
-  are now rendered on a GPU.
+  and not at quality 3. Behind the network, the far tissue: out-of-focus fibres with bokeh nodes in every direction
+  (atmosphere, never code; about 1–2 ms on an integrated GPU at 1080p). The render lab takes `--after` (seconds after
+  each event, with `--events`). The brief's stills are now rendered on a GPU.
+- **Several agents at once:** sessions of the same tool running together are numbered in public labels and the hover
+  card (*Claude*, *Claude 2*; the lowest number free, so a lone session is just *Claude*). The README and the first-run
+  guide explain running several agents on one project (two Claude Code terminals, Cursor chats, Codex): hooks once per
+  project and tool, each session its own presence; agents without hooks are not presences, their edits arrive
+  unattributed. `tests/agents-multi.test.js` new.
+- **Fractal Continuum with more than 24 subsystems:** every subsystem now has a region of its own. The 25th subsystem
+  and later reused the first 24 directions, so two subsystems were drawn as one region with their names on top of each
+  other (VS Code's 49 built-in extensions, indexed as a project: 49 regions on 24 directions). The sequence of
+  directions now continues past 24; its first 24 are bit-identical (4,000 seeded sequences compared), so a project with
+  24 subsystems or fewer looks exactly as before. `tests/fractal.test.js`.
+- **Synaptic Storm without dependencies:** the world no longer stops with an error while nothing in the project links
+  yet (a new project, or the first moments of a replay or film from the start: `Cannot set properties of undefined
+  (setting 'needsUpdate')` since the preview was added). `tests/synaptic.test.js`.
+- **Fractal Continuum, review fixes:** the layout follows every birth and removal exactly (it was rebuilt at most once
+  a second, so a file born mid-second appeared late when played through but at once when sought); waves, recoveries,
+  glows and blooms stay on their own file when a new file reorders the layout; files missing from the model leave no
+  stale position for threads and composition anchors; an attributed edit ripples and flares in one agent's colour. The
+  swell table keeps each region's kernel and sums only the swell again while a project grows (it was rebuilt almost
+  every frame, 26 ms at 49 subsystems; byte-identical output), and the first bloom's 3,200 surface traces run on the
+  world's first frame instead of the milestone's. `tests/fractal.test.js`.
+- **Labels keep clear of each other:** when two agents work side by side their chips no longer print over each other
+  or over an event's callout (each takes the first free place around its agent, or its old one when none is free); in
+  explorer mode a subsystem's name steps down or up from the others and is left out where every place is taken (the
+  hover card still names it). `tests/privacy-labels.test.js`.
+- **Visual Studio, preview worlds:** they show a thumbnail rendered from the project like the three; their state reads
+  *In design* (no longer "Preview" beside "Previewing"); the strip shows a peek of the card past its edge at every
+  width (at 1920×1080 the fifth world was hidden); a preview world's panel says that look packs and the Artist Studio
+  are for the three flagship worlds, instead of sending you to Visual Packs.
+- **Films:** a render that fails ends at once instead of waiting forever on its encoder (and keeping its copy of the
+  data in `/tmp`); with no frames rendered, `--out` is left as it was.
+- **Public repository:** REPOSITORY.md no longer calls it private; SECURITY.md says how to report a vulnerability
+  privately (GitHub's private vulnerability reporting); the README's hero caption says the Cursor and Codex events in
+  that film were posted through their adapters, Claude was a live session.
 - **Hover details:** resting the pointer on the living world, wherever a view shows it (the Stage, Home's live
   preview, the studios, Record & Broadcast), shows a small card beside the pointer: the world's own words for what is
   there, then what the player knows there at that moment (agents at work or that used a tool there and how long ago,

@@ -5,9 +5,11 @@
 // authentication, bound to loopback); the player's overlay (?overlay=1&sound=1) added as a Browser Source with its audio
 // controlled by OBS. Then, through obs-websocket: source screenshots (the overlay renders, is not black, and moves),
 // the source's audio meters (the music reaches OBS's mixer), and a real OBS recording measured with ffmpeg (video and
-// audio streams, duration, sound level, picture changing). OBS's own log gives the versions and the renderer used.
+// audio streams, duration, sound level, picture changing). OBS's own log gives the versions and the renderer used, and
+// OBS's statistics (obs-websocket GetStats, before and after the recording) its own frame rate and skipped frames.
 //
-// xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js [--seconds 20] [--out results/obs]
+// xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js [--seconds 20] [--family synaptic-storm] [--out results/obs]
+// --family: the world the project is shown in (chosen as the Visual Studio chooses it; default: the generated one).
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
@@ -17,7 +19,8 @@ const {createService}=require(path.join(REPO,'receiver/server'));
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const media=require('../visual/media');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
-const SECONDS=+arg('seconds',20),OUT=path.resolve(arg('out',path.join(__dirname,'..','results','obs')));
+const SECONDS=+arg('seconds',20),OUT=path.resolve(arg('out',path.join(__dirname,'..','results','obs'))),FAMILY=arg('family',null);
+const {adminPost}=require('../visual/harness');
 const checks=[];const check=(name,pass,detail='')=>{checks.push({name,pass:!!pass,detail:String(detail)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${detail}`:''}`);};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const measurements={};
@@ -73,6 +76,10 @@ function obsConfig(home,port,recordings){
   const cfg=obsConfig(home,wsPort,recordings);
   let obs=null,client=null;
   try{
+    // The project exists once its first window is sorted (window and grace, about 13 s): the world is chosen then.
+    // (only an unknown project is waited for: any other refusal, such as an unknown family, fails at once)
+    if(FAMILY){let r=null;for(let i=0;i<45&&(!r||r.status===404);i++){await wait(2000);r=await adminPost(svc,`/api/recipe?id=${projectId}`,{action:{type:'family',family:FAMILY}});}
+      if(!r.ok)throw new Error(`family ${FAMILY}: HTTP ${r.status} ${await r.text()}`);measurements.family=FAMILY;console.log(`family ${FAMILY}`);}
     obs=cp.spawn('obs',['--disable-updater','--disable-shutdown-check','--multi','--verbose','--profile','Qualification','--collection','Qualification'],
       {env:{...process.env,XDG_CONFIG_HOME:home,QT_QPA_PLATFORM:'xcb',LIBGL_ALWAYS_SOFTWARE:'1'},stdio:['ignore','pipe','pipe']});
     let obsOut='';obs.stdout.on('data',d=>obsOut+=d);obs.stderr.on('data',d=>obsOut+=d);
@@ -99,11 +106,20 @@ function obsConfig(home,port,recordings){
     measurements.audioMeters={samples:levels.length,peakDb,activeShare:levels.length?+(active/levels.length).toFixed(3):0};
     check('the music reaches OBS\'s mixer through the Browser Source',levels.length>0&&peakDb>-50,`${levels.length} meter samples, peak ${peakDb===null?'none':peakDb.toFixed(1)} dBFS, ${Math.round(measurements.audioMeters.activeShare*100)} % above -60 dB`);
     // A real OBS recording.
-    await client.request('StartRecord');await wait(SECONDS*1000);const stopped=await client.request('StopRecord');await wait(3000);
+    const statsBefore=await client.request('GetStats');
+    await client.request('StartRecord');await wait(SECONDS*1000);const statsAfter=await client.request('GetStats');const stopped=await client.request('StopRecord');await wait(3000);
+    // OBS's own frame rate and what it skipped while recording (rendering lagged, or encoding lagged).
+    measurements.obsStats={activeFps:statsAfter.activeFps,averageFrameRenderTimeMs:statsAfter.averageFrameRenderTime,cpuUsage:statsAfter.cpuUsage,memoryUsageMb:statsAfter.memoryUsage,
+      renderSkippedFrames:statsAfter.renderSkippedFrames-statsBefore.renderSkippedFrames,renderTotalFrames:statsAfter.renderTotalFrames-statsBefore.renderTotalFrames,
+      outputSkippedFrames:statsAfter.outputSkippedFrames-statsBefore.outputSkippedFrames,outputTotalFrames:statsAfter.outputTotalFrames-statsBefore.outputTotalFrames};
     const file=stopped.outputPath||fs.readdirSync(recordings).map(f=>path.join(recordings,f))[0];
     const a=file&&fs.existsSync(file)?media.analyse(file):null;measurements.recording=a;
+    // The page's own frame rate inside OBS: OBS samples the source 30 times a second, so a page drawing fewer frames
+    // repeats them (an unchanged frame keeps its checksum).
+    if(a)measurements.pageFpsInObs=+(a.fps*a.changingFrames).toFixed(1);
     check('an OBS recording of the overlay has video and sound',a&&a.video&&a.audio&&Math.abs(a.videoDuration-SECONDS)<=3,a?`${a.container} · ${a.video?.codec} ${a.video?.width}×${a.video?.height} ${a.fps} fps · ${a.audio?.codec||'NO AUDIO'} · ${a.videoDuration} s`:'no file');
-    check('the OBS recording\'s sound is the music (not silent) and its picture moves',a&&a.audioMeanDb>-55&&a.changingFrames>.3,a?`mean ${a.audioMeanDb} dBFS, longest silence ${a.longestSilenceMs} ms, ${Math.round((a.changingFrames||0)*100)} % of frames change`:'no file');
+    check('the OBS recording\'s sound is the music (not silent) and its picture moves',a&&a.audioMeanDb>-55&&a.changingFrames>.3,a?`mean ${a.audioMeanDb} dBFS, longest silence ${a.longestSilenceMs} ms, ${Math.round((a.changingFrames||0)*100)} % of frames change (the page drew ~${measurements.pageFpsInObs} fps)`:'no file');
+    console.log(`OBS: ${JSON.stringify(measurements.obsStats)}`);
     if(a)media.still(file,SECONDS/2,path.join(OUT,'obs-recording.jpg'),960);
   }catch(e){check('OBS qualification completed',false,String(e.message||e).slice(0,1500));}
   finally{
