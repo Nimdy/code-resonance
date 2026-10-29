@@ -21,8 +21,8 @@ const FAMILIES=[
     why:'Scale and gravity: modules orbit their hubs, agents cross as comets, failures are storms over the affected worlds, milestones are novae that leave remnants. For large projects of many modules.'},
   {id:'machine-cathedral',name:'Machine Cathedral',line:'Needle spires on still water under a moon',
     why:'Order and craft: subsystems are towers, live work lights their windows, links are bridges of light, failures crack the stone and recovery seals it. For tested, engineered code.'}];
-// Preview families: built in, chosen only here (never generated from the code), still being designed. No thumbnail is
-// rendered for them and the Artist Studio does not compose over them yet.
+// Preview families: built in, chosen only here (never generated from the code), still being designed. Their thumbnails
+// are rendered from the project like the three's; the Artist Studio does not compose over them yet.
 const PREVIEW_FAMILIES=[
   {id:'synaptic-storm',name:'Synaptic Storm (preview)',line:'A living neural network wired by the real dependencies',
     why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. A preview: still changing, never chosen automatically.'},
@@ -231,8 +231,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const upgradeBox=h('div',{class:'vs-upgrade'});
   // The way on to deeper composition (layers and reactive mappings over this world): the Artist Studio, from this family.
   const artistBtn=button({label:'Open in Artist Studio',icon:'brush',kind:'outline',id:'vsArtist',onClick:()=>openArtist()});
+  const COMPOSE_LINE='Layers, reactive mappings and a finish of your own over this world.',composeLine=h('span',{class:'small faint',text:COMPOSE_LINE});
   const compose=h('div',{class:'vs-compose'},h('div',{class:'vs-compose-text'},h('strong',{text:'Make it your own'}),
-    h('span',{class:'small faint',text:'Layers, reactive mappings and a finish of your own over this world.'})),artistBtn);
+    composeLine),artistBtn);
   const sectionHead=(title,sub=null,...extra)=>h('div',{class:'vs-sec-head'},h('h3',{class:'eyebrow',text:title}),sub?h('span',{class:'tiny faint',text:sub}):null,h('span',{class:'rule'}),...extra);
   const finishSection=h('section',{class:'vs-sec vs-sec-finish','aria-label':'Finish'},sectionHead('Finish','lens and colour'),finishSeg,finishLine,finishErr,h('div',{class:'vs-props'},fAberration),upgradeBox,compose);
   // The Essentials (first, open) and every other parameter under its creative purpose (folded).
@@ -648,7 +649,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const cur=s.pack?.id||'';
     if(cur&&!looks.some(([id])=>id===cur))looks.push([cur,{base:s.family,kind:s.pack.kind}]);
     lookField.hidden=!looks.length;lookBox.lastChild.hidden=!!looks.length;
-    if(!looks.length){text(lookNone,`No look pack for ${familyName(s.family)} is installed.`);return;}
+    const preview=PREVIEW_FAMILIES.some(f=>f.id===s.family);lookNone.nextSibling.hidden=!looks.length&&preview;
+    if(!looks.length){text(lookNone,preview?'Look packs are drawn over the three flagship worlds; none can be made for a preview world yet.':`No look pack for ${familyName(s.family)} is installed.`);return;}
     lookSelect.setOptions([{value:'',label:'None (the family as generated)'},...looks.map(([id,l])=>{const p=packOf(id);
       return {value:id,label:`${p?.name||id} · ${l.kind==='shader'?'shader, code':'declarative'}${p&&p.executable&&!p.trusted?' · not approved':''}${!p||!p.ok?' · unavailable':''}`};})]);
     lookSelect.value=cur;
@@ -666,6 +668,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
     artistBtn.disabled=!builtin;
     artistBtn.title=builtin?`Compose your own layers and reactive mappings over ${familyName(s.family)} in the Artist Studio`:'The Artist Studio composes over the three built-in worlds';
+    text(composeLine,builtin||!s?COMPOSE_LINE:'The Artist Studio composes over the three flagship worlds; not over this one yet.');
     finishSection.hidden=!s||!spec?.['technique.finish'];
     if(finishSection.hidden)return;
     const t=s.genome?.technique||{},finish=FINISH_LOOKS.some(f=>f.value===t.finish)?t.finish:'classic',tuned=s.tuning?.family===s.family?s.tuning.values:{};
@@ -872,9 +875,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     }
     for(const f of PREVIEW_FAMILIES){
       const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:tile('visual','Preview on the stage','preview'),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
+      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
-        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('Preview','warn',{title:'A world still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
+        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('In design','warn',{title:'A preview world, still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
     }
     for(const p of P.state.packs.filter(x=>x.kind==='world')){
       const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
@@ -930,11 +933,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!saved)return;
     renderLook();renderOverrides();renderFinish();renderParams();renderTitle();renderAliases();renderQuality();
   }
-  // ---- Thumbnails: the built-in families rendered from this project, one at a time -----------------------------------
+  // ---- Thumbnails: the built-in families (the three, then the previews) rendered from this project, one at a time -------
   async function runThumbs(){
     const run=++thumbRun;
     await new Promise(r=>setTimeout(r,700));
-    for(const f of FAMILIES){
+    for(const f of [...FAMILIES,...PREVIEW_FAMILIES]){
       if(!alive||run!==thumbRun||!saved)return;
       const key=`${projectId}:${saved.revision}:${f.id}`;if(THUMBS.has(key))continue;
       // The graph the thumbnail draws is the project's, so it waits for the project to load; nothing renders while recording.
@@ -947,7 +950,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       await new Promise(r=>setTimeout(r,80));
     }
   }
-  const thumbsWaiting=()=>saved&&FAMILIES.some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
+  const thumbsWaiting=()=>saved&&[...FAMILIES,...PREVIEW_FAMILIES].some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
   // ---- Routes: #/visual/family/<id> and #/visual/look/<packId> start a preview ---------------------------------------
   function consumeRoute(){
     if(!wantedRoute||!saved)return;const [kind,id]=wantedRoute;wantedRoute=null;

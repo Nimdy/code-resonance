@@ -26,10 +26,11 @@
 .ws-visual .vs-note-short{display:none}
 @container vs-main (max-width:860px){.ws-visual .vs-note-long{display:none}.ws-visual .vs-note-short{display:inline}}
 .ws-visual .vs-browser-actions{display:flex;gap:6px;flex:none}
-/* Four cards share the width (more scroll sideways); each is as tall as the strip. A column too narrow for four whole
-   cards shows three and a deliberate peek of the fourth, and the edge the strip continues past fades (.fade-r/.fade-l,
-   set from script while it overflows), so a cut card reads as "more this way". */
-.ws-visual .vs-cards{flex:1 1 0;min-height:0;display:grid;grid-auto-flow:column;grid-auto-columns:clamp(228px,calc((100% - 36px) / 4),460px);grid-template-rows:minmax(0,1fr);
+/* Four cards share the width with a deliberate peek of the fifth (more scroll sideways); each is as tall as the strip. A
+   column too narrow for four whole cards shows three and a peek of the fourth, and the edge the strip continues past fades
+   (.fade-r/.fade-l, set from script while it overflows), so a cut card reads as "more this way" (with five worlds and
+   the packs, four whole cards alone hid the fifth world completely at 1920 wide). */
+.ws-visual .vs-cards{flex:1 1 0;min-height:0;display:grid;grid-auto-flow:column;grid-auto-columns:clamp(228px,calc((100% - 36px - 56px) / 4),460px);grid-template-rows:minmax(0,1fr);
   gap:12px;overflow-x:auto;overflow-y:hidden;padding:1px 1px 8px;scroll-snap-type:x proximity;container:vs-cards/size}
 .ws-visual .vs-cards-empty{align-self:center;padding:24px 4px}
 @container vs-main (max-width:947px){.ws-visual .vs-cards{grid-auto-columns:calc((100% - 24px - 56px) / 3)}}
