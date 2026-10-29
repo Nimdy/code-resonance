@@ -205,6 +205,14 @@ jobs:
           # Ubuntu 24.04 restricts unprivileged user namespaces, which the Chromium inside OBS's browser source needs.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js
+      # The preview worlds in OBS, measured (not gating): this runner renders in software, and a raymarched or
+      # depth-of-field world is far slower there than on a GPU (their GPU figures are in docs/QUALIFICATION.md).
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js --family fractal-continuum --seconds 30 --out results/obs/fractal-continuum
+        if: always()
+        continue-on-error: true
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" node obs/obs.qual.js --family synaptic-storm --seconds 30 --out results/obs/synaptic-storm
+        if: always()
+        continue-on-error: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:

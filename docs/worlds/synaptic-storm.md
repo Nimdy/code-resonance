@@ -213,7 +213,11 @@ from the axons' own curves (one billboard per axon); the CPU no longer draws two
 | 2 | 75 % resolution (host); half the far network; 55 % of the motes |
 | 3 | 55 % resolution (host); no far network or far tissue; 35 % of the motes; the void's haze without its noise; none of the close-up detail (membrane web, specks, beads, lobes, organelles, vesicles) |
 
-Films always render at quality 0. Not yet measured: GPU time at Auto in live playback, OBS capture, long soak. The
+Films always render at quality 0. Live playback at Auto (1920×1080, AMD iGPU): 58.6 fps, frame time p95 16.8 ms,
+55.3 fps in close-ups, 15.4 ms GPU per frame, Auto at the top level, with one to five frames of 117–900 ms per
+five-minute run that are not the page's work (none at 720p;
+[QUALIFICATION.md](../QUALIFICATION.md#preview-worlds-acceptance-films-and-live-measurements-pr-28)). Not yet measured:
+OBS on a GPU, long soak. The
 costs to watch: fill (soma billboards are 3.2× the soma, terminal billboards 6 × 3 bell radii; blurred ribbons widen up
 to 36 px; up close the fragment work of the filament web) and, in large projects, the CPU update (the per-frame layout
 signature walks every link; spike heads and synapse flares evaluate each axon's curve on the CPU).
