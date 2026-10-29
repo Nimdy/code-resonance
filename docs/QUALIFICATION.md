@@ -1043,7 +1043,8 @@ own direction, at least 19° apart; the first 24 unchanged). Large subsystems st
 130-file one), as in Excalidraw at 9 subsystems.
 
 **OBS Studio itself:** `obs/obs.qual.js --family <id>` in the extended tier's disposable runner (software OpenGL, no
-GPU), measured, not gating.
+GPU), measured, not gating; not run for this PR. After the merge the owner ran OBS themselves and reported it working
+(2026-10-29); no measurements were recorded.
 
 **Defects fixed:** Synaptic Storm stopped on its first frame for a project with no dependencies yet (since the preview
 was added); Fractal Continuum's regions beyond 24 (above); agent chips and event captions overlapping when two agents

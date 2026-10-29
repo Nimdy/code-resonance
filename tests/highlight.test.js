@@ -239,7 +239,7 @@ test('film wrapper pins nvidia, auto, and a bare --gpu; /dev/dri alone is not a 
 test('Home play does not require Playwright; product stays dependency-free; film script is wired',()=>{
   const root=path.join(__dirname,'..');
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-  assert.equal(pkg.version,'0.7.1');
+  assert.equal(pkg.version,'0.7.2');
   assert.equal(pkg.scripts.film,'node scripts/film.js');
   assert.equal(pkg.dependencies,undefined);
   const app=fs.readFileSync(path.join(root,'public/app.js'),'utf8');
