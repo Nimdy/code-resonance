@@ -368,7 +368,8 @@ export function createFamily(ctx){
       self.capacity=c;};
     self.write=(name,i,...v)=>{const s=layout[name],a=self.arrays[name];for(let k=0;k<s;k++)a[i*s+k]=v[k]??0;};
     self.commit=n=>{g.instanceCount=n;self.n=n;for(const name of Object.keys(layout))g.attributes[name].needsUpdate=true;};
-    self.dispose=()=>g.dispose();g.instanceCount=0;keep(self);return self;
+    // allocated at once, as pointBuffersOf is: a project without dependencies commits no axon (and has no buffer to update)
+    self.ensure(64);self.dispose=()=>g.dispose();g.instanceCount=0;keep(self);return self;
   }
   function pointBuffersOf(layout,cap=64){
     const all={position:3,...layout},g=new THREE.BufferGeometry(),self={geometry:g,capacity:0,arrays:{},n:0};

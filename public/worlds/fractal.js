@@ -52,7 +52,7 @@ export function createFamily(ctx){
   // The void stays a void and the surface a surface whatever a tuned palette says.
   const capL=(c,max)=>{const h={};c.getHSL(h);if(h.l>max)c.setHSL(h.h,h.s,max);return c;};capL(pal.deep,.05);capL(pal.haze,.18);capL(pal.primary,.6);
   const seed=(recipe.projectSeed>>>0)||1;
-  const formula=createFormula(recipe),fc=formula.cfg,lc=layoutConfig(recipe),slots=regionSlots(lc.seed);
+  const formula=createFormula(recipe),fc=formula.cfg,lc=layoutConfig(recipe);let slots=regionSlots(lc.seed);
   const V3=(c,k=1)=>new THREE.Vector3(c.r*k,c.g*k,c.b*k),v4=()=>new THREE.Vector4();
   const agentCol=AGENT_COLORS.map(c=>new THREE.Color(c));
   const COLS=[...agentCol.map(c=>V3(c,1.4)),V3(new THREE.Color('#fff4e4'),1.2),V3(pal.accent,1.3),V3(pal.valid,1.3),V3(pal.accent.clone().lerp(new THREE.Color('#fff6e8'),.45),2),V3(pal.warning,1.1),V3(pal.accent,.9)];
@@ -357,6 +357,8 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
   function structure(t){
     let files=0;for(const d of model.districts.values())files+=d.members.length;
     const key=`${model.version}|${model.districts.size}|${files}|${Math.floor(t/1000)}`;if(key===layKey)return;layKey=key;
+    // more subsystems than slots: the sequence continues, so no two regions share a direction (the first slots stay)
+    if(model.districts.size>slots.length)slots=regionSlots(lc.seed,model.districts.size);
     lay=layoutAt(model,t,lc,slots);siteIdx=new Map(lay.sites.map((s,i)=>[s.id,i]));regionIdx=new Map(lay.regions.map((r,i)=>[r.id,i]));
     threads=[];const seen=new Set();
     for(const l of model.links.values()){if(!model.alive(l,t))continue;const a=siteIdx.get(l.a),b=siteIdx.get(l.b);if(a===undefined||b===undefined||a===b)continue;const k=`${a}>${b}`;if(seen.has(k))continue;seen.add(k);

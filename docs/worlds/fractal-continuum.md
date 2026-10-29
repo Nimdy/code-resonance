@@ -94,7 +94,8 @@ Pure functions of the recipe, the model and the time (`fractal-forms.js`, no THR
    measured along 96 directions) and writes its GLSL with the same constants. The JS twin computes the same function
    (the bulb's powers by complex multiplication in both, no trigonometry).
 2. **Regions**: slot *k* (a seeded sequence of directions kept to latitudes −35° to 70°, each the farthest from the ones
-   before it) for the *k*-th subsystem in creation order.
+   before it) for the *k*-th subsystem in creation order. The sequence continues for as many subsystems as the project
+   has (its first slots never move): at 49 subsystems the nearest two regions stand 19° apart.
 3. **Sites**: file *j* of a region on a golden spiral around the region's direction at `geometry.spacing` (from the
    project's size at generation) × √j; its radius traced from outside along that direction at the drawn recursion,
    cached per file and integer recursion (the fractional level blends the two neighbours), scaled exactly by the
@@ -212,7 +213,10 @@ passes, 44–61 ms. The share costs sharpness: up close the surface is visibly s
 | 2 | 75 % resolution (host), share 0.5, two taps, at most 10 recursions; less dust |
 | 3 | 55 % resolution (host), share 0.45, one tap, at most 8.5 recursions, no glints; less dust |
 
-Films always render at quality 0. Not yet measured: GPU time at Auto in live playback, OBS capture, long soak.
+Films always render at quality 0. Live playback at Auto (1920×1080, AMD iGPU): 53.9 fps, frame time p95 33.3 ms,
+47.7 fps in close-ups, 17.4 ms GPU per frame, Auto at the top level; the OBS overlay page the same
+([QUALIFICATION.md](../QUALIFICATION.md#preview-worlds-acceptance-films-and-live-measurements-pr-28)). Not yet
+measured: OBS on a GPU, long soak.
 
 ## Selection and compatibility
 

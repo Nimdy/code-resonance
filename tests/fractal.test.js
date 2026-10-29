@@ -118,6 +118,29 @@ test('The project on the surface is a pure function of the model and the time: r
   assert(swellAt(a.regions[0].dir,a.regions,w,cfg.swell)>swellAt(a.regions[1].dir,a.regions,w,cfg.swell));
   assert(massAt(grown,T0+59000)<massAt(grown,T0+80000));
 });
+test('More than 24 subsystems: every region keeps a direction of its own, and the first 24 stay where they were',async()=>{
+  const {layoutConfig,layoutAt,regionSlots}=await load('fractal-forms'),{createModel}=await load('model');
+  const cfg=layoutConfig(recipe.generate(project('wide'),{family:ID,now:0})),m=createModel(),nodes=[];
+  for(let k=0;k<49;k++){nodes.push({id:`G${k}`,type:'group',q:k,r:0,order:k,counts:{}});for(let j=0;j<2;j++)nodes.push({id:`G${k}m${j}`,type:'module',group:`G${k}`,dir:`G${k}`,q:0,r:0,state:'committed',counts:{function:3}});}
+  m.reset({nodes,edges:[]},T0);
+  const first=regionSlots(cfg.seed),more=regionSlots(cfg.seed,49);
+  assert.deepEqual(more.slice(0,24),first,'the sequence continues: the first 24 slots are unchanged');
+  const {regions}=layoutAt(m,T0+1000,cfg,more),key=d=>d.map(x=>x.toFixed(9)).join(',');
+  assert.equal(regions.length,49);assert.equal(new Set(regions.map(r=>key(r.dir))).size,49,'no two regions share a direction');
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  for(let i=0;i<49;i++)for(let j=i+1;j<49;j++)assert(dot(regions[i].dir,regions[j].dir)<Math.cos(10*Math.PI/180),`regions ${i} and ${j} at least 10 degrees apart`);
+  // The world itself: no two subsystems are drawn (or named) at the same place, seen from any side.
+  const {THREE}=await load('core'),{createFamily}=await load('fractal'),{createDirector}=await load('director'),{createAgents}=await load('agents');
+  const r=recipe.generate(project('wide'),{family:ID,now:0}),agents=createAgents(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,16/9,.1,4000);
+  const w=createFamily({scene,camera,model:m,recipe:r,speed:()=>1,name:id=>`Name ${id}`,director:createDirector({recipe:r}),agents,pipeline:{size:[640,360]}});w.rebuild();
+  const frame=t=>({t,tsec:(t-m.epoch)/1000,tview:(t-m.epoch)/1000,dt:1/30,beat:.5,barPhase:.2,mood:{section:'home',energy:.4,tempo:96},energy:.4,activity:0,phase:'idle',
+    unlocks:[0,1,2,3].map(()=>({name:'',level:0})),agents:agents.list(t),overrides:{},quality:0,music:null});
+  w.update(frame(T0+6000));assert.equal(w.stats().regions,49);const seen=new Map();
+  for(const [x,y,z] of [[0,8,60],[60,8,0],[0,8,-60],[-60,8,0],[0,50,20]]){camera.position.set(x,y,z);camera.lookAt(0,0,0);
+    for(const l of w.subsystemLabels(frame(T0+6000)))seen.set(l.text,l.position.toArray().map(v=>v.toFixed(4)).join(','));}
+  assert.equal(seen.size,49,'every subsystem is labelled from some side');assert.equal(new Set(seen.values()).size,49,'no two labels at the same place');
+  w.dispose();
+});
 function snapshot(scene){
   let R=null,sites=null;scene.traverse(o=>{if(o.userData?.fractal)R=o.userData.fractal;if(o.isPoints&&o.geometry.attributes.sS)sites=o;});
   const v=x=>x?.toArray?x.toArray():Array.isArray(x)?x.map(y=>y.toArray()):x;

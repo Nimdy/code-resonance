@@ -126,6 +126,18 @@ test('The world runs headless: its state at a moment is the same whatever was dr
   assert(A.w.agentPosition('x'),'the editing agent has a position for its chip');
   A.w.dispose();B.w.dispose();
 });
+test('A project with no dependencies yet (or no files at all) is drawn: no axon is not an error',async()=>{
+  const {THREE}=await load('core');const {createFamily}=await load('synaptic');const {createDirector}=await load('director');const {createAgents}=await load('agents');
+  const {createModel}=await load('model'),r=recipe.generate(project('unlinked'),{family:ID,now:0});
+  for(const model of [await network({links:[]}),(()=>{const m=createModel();m.reset({nodes:[],edges:[]},T0);return m;})()]){
+    const agents=createAgents(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(34,16/9,.1,4000);
+    const w=createFamily({scene,camera,model,recipe:r,speed:()=>1,name:id=>`Name ${id}`,director:createDirector({recipe:r}),agents,pipeline:{size:[640,360]}});w.rebuild();
+    const frame=t=>({t,tsec:(t-model.epoch)/1000,tview:(t-model.epoch)/1000,dt:1/30,beat:.5,barPhase:.2,mood:{section:'home',energy:.4,tempo:96},energy:.4,activity:0,phase:'idle',unlocks:[],
+      agents:agents.list(t),overrides:{},quality:0,music:null});
+    for(const t of [T0+1000,T0+4000])w.update(frame(t));
+    assert(w.stats().neurons>=0);w.dispose();
+  }
+});
 test('The player and the receiver know the preview: the host loads it, /api/catalog lists it apart from the three',async t=>{
   assert.match(fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8'),/'synaptic-storm':'\.\/synaptic\.js'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-synaptic-'),quiet:true});

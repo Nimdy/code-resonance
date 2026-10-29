@@ -43,6 +43,14 @@
   guide explain running several agents on one project (two Claude Code terminals, Cursor chats, Codex): hooks once per
   project and tool, each session its own presence; agents without hooks are not presences, their edits arrive
   unattributed. `tests/agents-multi.test.js` new.
+- **Fractal Continuum with more than 24 subsystems:** every subsystem now has a region of its own. The 25th subsystem
+  and later reused the first 24 directions, so two subsystems were drawn as one region with their names on top of each
+  other (VS Code's 49 built-in extensions, indexed as a project: 49 regions on 24 directions). The sequence of
+  directions now continues past 24; its first 24 are bit-identical (4,000 seeded sequences compared), so a project with
+  24 subsystems or fewer looks exactly as before. `tests/fractal.test.js`.
+- **Synaptic Storm without dependencies:** the world no longer stops with an error while nothing in the project links
+  yet (a new project, or the first moments of a replay or film from the start: `Cannot set properties of undefined
+  (setting 'needsUpdate')` since the preview was added). `tests/synaptic.test.js`.
 - **Public repository:** REPOSITORY.md no longer calls it private; SECURITY.md says how to report a vulnerability
   privately (GitHub's private vulnerability reporting); the README's hero caption says the Cursor and Codex events in
   that film were posted through their adapters, Claude was a live session.

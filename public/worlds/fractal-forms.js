@@ -185,11 +185,14 @@ export function detailCap(cfg,footprint){return Math.max(MIN_IT+1,Math.log(R0/Ma
 export function unfoldAt(cfg,mass){return clamp(MIN_IT+(.95*cfg.detail*Math.log2(1+Math.max(0,mass)))*(cfg.itK||1),MIN_IT,MAX_IT-.001);}
 // ---- Layout: regions and sites ----------------------------------------------------------------------------------------
 // Slot k's direction: a fixed sequence (seeded per identity) whose first slots stand far apart, kept to the band the
-// camera sees best (latitude -35 .. 70 degrees). Slot k depends only on k.
+// camera sees best (latitude -35 .. 70 degrees). Slot k depends only on k: asking for more slots (a project with more
+// subsystems than 24) continues the sequence and leaves the first ones where they are.
 export function regionSlots(seed,count=24){
   const cand=[];for(let k=0;k<600;k++){const y=1-2*(k+.5)/600,s=Math.sqrt(1-y*y),a=k*GOLD+rand(seed)*TAU;const lat=Math.asin(y);if(lat<-.61||lat>1.22)continue;cand.push([Math.cos(a)*s,y,Math.sin(a)*s]);}
-  const out=[cand[Math.floor(rand(seed+1)*cand.length)]];
-  while(out.length<count){let best=null,bd=-1;for(const c of cand){let m=Infinity;for(const o of out)m=Math.min(m,1-(c[0]*o[0]+c[1]*o[1]+c[2]*o[2]));if(m>bd){bd=m;best=c;}}out.push(best);}
+  const out=[cand[Math.floor(rand(seed+1)*cand.length)]],far=cand.map(()=>Infinity);
+  // far[i]: candidate i's distance to the nearest slot so far (the next slot is the candidate farthest from all of them)
+  while(out.length<count){const o=out.at(-1);let best=null,bd=-1;
+    cand.forEach((c,i)=>{far[i]=Math.min(far[i],1-(c[0]*o[0]+c[1]*o[1]+c[2]*o[2]));if(far[i]>bd){bd=far[i];best=c;}});out.push(best);}
   return out;
 }
 // File j of a region: a golden spiral around the region's direction, at angular spacing `spacing` (radians).
