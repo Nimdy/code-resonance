@@ -87,7 +87,7 @@
   const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720],vertical:[1080,1920]},RECORD_BITRATE={'1080p':8000000,'720p':5000000,vertical:8000000};
   // The words' rules for portrait frames (labels.js: sizes by the short side, the platforms' safe area), for the captions
   // and the end card this page draws itself.
-  let frameRules=null;const frameRulesLoading=import('/worlds/labels.js').then(m=>{frameRules=m;return m;},()=>null);
+  let frameRules=null;const frameRulesLoading=import('./worlds/labels.js').then(m=>{frameRules=m;return m;},()=>null);
   let recordSize='720p',recordFrame=null,recordPace={frames:0,at:0,slowSince:0,warned:false},recordNotice='';
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):overlay?'stream':'cinematic';
