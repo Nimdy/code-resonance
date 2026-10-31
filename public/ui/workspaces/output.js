@@ -15,8 +15,8 @@ const PROFILES=[
   {id:'stage',name:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
 // Where the recording is written (this device's choice; recording.js disk). Memory is the default.
 const DESTS=[
-  {id:'disk',name:'Record to a file on disk',tag:'Long sessions',note:'Recommended for long sessions. You choose the file when you press Record; every second is written to disk as it is recorded, so memory stays flat, the length is bounded by the disk, and a crash or a closed tab keeps what was recorded.'},
-  {id:'memory',name:'Keep in memory, download when stopped',tag:'Up to ½ hour',note:'The browser holds the whole file in memory until you stop (about 60 MB a minute at 720p, 90 MB at 1080p), then downloads it. A crash or a closed tab loses it.'}];
+  {id:'disk',name:'Record to a file on disk',tag:'Long sessions',note:'Recommended for long sessions. You choose the file when you press Record; each second goes to disk as it is recorded: memory stays flat, the length is bounded by the disk, and a crash keeps what was recorded.'},
+  {id:'memory',name:'Keep in memory, download when stopped',tag:'Up to ½ hour',note:'The browser holds the file in memory until you stop (about 60 MB a minute at 720p, 90 MB at 1080p), then downloads it. A crash or a closed tab loses it.'}];
 const even=n=>Math.max(2,Math.round(n/2)*2);
 const mbit=n=>`${(n/1e6).toFixed(n%1e6?1:0)} Mbit/s`;
 const OBS_LABELS=[{value:'stream',label:'Stream',title:'A lower third with the public title (the OBS default)'},{value:'cinematic',label:'Cinematic',title:'Titles and major moments only'},{value:'off',label:'Off',title:'The world alone'}];
@@ -25,7 +25,10 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   const offs=[];
   // ---- The monitor: the stage as recorded, and the one recorder under it ----------------------------------------
   const slot=h('div',{class:'stage-slot out-slot','data-stage-slot':'',role:'img','aria-label':'The stage as it will be recorded: the world and its labels, never the controls'});
-  const recBtn=button({label:'Record',kind:'',size:'lg',id:'outRecordBtn',attrs:{class:'btn record lg','aria-pressed':'false'},onClick:()=>toggleRecording().then(renderRecording)});
+  // While Record answers, the button is busy (dom.js busy()), which enables it again when the answer comes: the state is
+  // then drawn once more, so a window that heard meanwhile that another one records shows its Record disabled.
+  const recBtn=button({label:'Record',kind:'',size:'lg',id:'outRecordBtn',attrs:{class:'btn record lg','aria-pressed':'false'},
+    onClick:()=>{const p=toggleRecording().then(renderRecording);p.finally(()=>setTimeout(renderRecording,0)).catch(()=>{});return p;}});
   // The dot is not a span: setLabel() rewrites the button's first span.
   recBtn.prepend(h('i',{class:'dot','aria-hidden':'true'}));
   const clock=h('span',{class:'out-clock num',id:'outElapsed',text:'00:00'});
