@@ -45,15 +45,20 @@ test('Graduating it changes no existing identity (the generator fingerprints of 
   assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
   const q=project('scores',{modules:40,classes:30,tests:10});assert.deepEqual(recipe.generate(q,{now:0}).familyScores,recipe.familyScores(recipe.traitsOf(q),recipe.generate(q,{now:0}).projectSeed,0));
 });
-test('Its catalogue covers every value its generator draws; tuning offers it (no digital life parameters yet)',()=>{
+test('Its catalogue covers every value its generator draws; tuning offers it, digital life included',()=>{
   const cat=catalog.FAMILIES[ID];assert(cat&&!cat.preview,'a family of the catalogue: a base for declarative packs');assert.equal(catalog.PREVIEWS[ID],undefined);
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
+    // (the digital-life group too: generator 5 draws life for a new identity)
     for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);}
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the standard digital-life group, as the flagships offer it (public/worlds/life/synaptic.js)
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());
+  const living=recipe.update(r,{type:'tune',values:{'life.enabled':true,'life.density':.6}},project('tune'),0);
+  assert.deepEqual([living.genome.life.enabled,living.genome.life.density],[true,.6]);assert.equal(living.family,ID);
   const tuned=recipe.update(r,{type:'tune',values:{'geometry.filesPerNeuron':7,'motion.sync':.9}},project('tune'),0);
   assert.deepEqual([tuned.genome.geometry.filesPerNeuron,tuned.genome.motion.sync],[7,.9]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'geometry.filesPerNeuron':12}},project('tune'),0),/filesPerNeuron/);

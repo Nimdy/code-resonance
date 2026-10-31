@@ -47,7 +47,7 @@ const ESSENTIALS={
   'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','life.enabled','life.music'],
   'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed','life.enabled','life.music'],
   'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows','life.enabled','life.music'],
-  'synaptic-storm':['material.glow','motion.firingRate','space.depth','atmosphere.haze','atmosphere.ghosts','geometry.dendrites'],
+  'synaptic-storm':['material.glow','motion.firingRate','space.depth','atmosphere.haze','atmosphere.ghosts','geometry.dendrites','life.enabled','life.music'],
   'fractal-continuum':['fractal.form','fractal.power','fractal.twist','material.trap','material.glow','camera.personality','life.enabled','life.music'],
   'temporal-terrain':['relief.height','contour.interval','contour.glow','atmosphere.mist','time.scale','camera.personality','life.enabled','life.music'],
   common:['technique.exposure','music.reactivity']};

@@ -66,7 +66,8 @@ async function launchLean(gpu=null){
         async close(){await send('Target.closeTarget',{targetId}).catch(()=>{});}
       };
     },
-    async newBrowserCDPSession(){return {send:(method,params)=>send(method,params)};},
+    // (on/off: the browser's events, e.g. Tracing.dataCollected for visual/stalls.js)
+    async newBrowserCDPSession(){return {send:(method,params)=>send(method,params),on:fn=>listeners.add(fn),off:fn=>listeners.delete(fn)};},
     async close(){try{ws.close();}catch{}child.kill('SIGTERM');await wait(1500);if(child.exitCode===null)child.kill('SIGKILL');
       fs.rmSync(profile,{recursive:true,force:true});fs.rmSync(downloads,{recursive:true,force:true});}
   };

@@ -5,43 +5,83 @@
 - **Six worlds to choose from: generator 5.** Synaptic Storm, Fractal Continuum and Temporal Terrain graduate: the
   family scores can choose them for a new identity, each scored from its own random stream after the flagships'
   unchanged draws. Synaptic Storm wants dense, coupled wiring and the agents' share of the work, Fractal Continuum
-  intricate, function-heavy code in a few subsystems, Temporal Terrain a project that grew while it was observed (a new
-  trait, `grown`: the share of its symbols created since its first scan). Their new identities get digital life (its
-  own stream), which draws nothing until each world's ecosystem lands. No existing identity changes: generator 4's
-  families, order, draws and values are as pinned (`tests/recipe.test.js`; `tests/generator-v5.test.js` checks v3 and
-  v4 bit for bit against the generator before it), an identity stored by generator 4 is redrawn with 4 and never moves
-  by itself, and choosing a family, regenerating or going back to automatic is a new identity, as before. Over a
-  synthetic corpus of 2,000 projects generator 5 chooses Stellar Forge 29.3 %, Synaptic Storm 15.8 %, Fractal
-  Biosphere 15.6 %, Fractal Continuum 13.9 %, Machine Cathedral 13.3 %, Temporal Terrain 12.2 % (generator 4: Stellar
-  Forge 53.4 %); Excalidraw becomes a Synaptic Storm, Lumen Recipes and Code Resonance itself Temporal Terrains
+  intricate, function-heavy code in a few subsystems, Temporal Terrain a project that grew while it was observed (a
+  new trait, `grown`: the share of its symbols created since its first scan). Their new identities get digital life
+  (its own stream; each world's ecosystem below). No existing identity changes: generator 4's families, order, draws
+  and values are as pinned (`tests/recipe.test.js`; `tests/generator-v5.test.js` checks v3 and v4 bit for bit against
+  the generator before it), an identity stored by generator 4 is redrawn with 4 and never moves by itself, and
+  choosing a family, regenerating or going back to automatic is a new identity, as before. Over a synthetic corpus of
+  2,000 projects generator 5 chooses Stellar Forge 29.3 %, Synaptic Storm 15.8 %, Fractal Biosphere 15.6 %, Fractal
+  Continuum 13.9 %, Machine Cathedral 13.3 %, Temporal Terrain 12.2 % (generator 4: Stellar Forge 53.4 %); Excalidraw
+  becomes a Synaptic Storm, Lumen Recipes and Code Resonance itself Temporal Terrains
   ([docs/WORLDS.md](docs/WORLDS.md#from-data-to-identity)). The web demo keeps opening on Stellar Forge
   (`scripts/build-site.js` chooses it for the recording, as an author would; the genome is the one it has served since
   0.8.0) and offers the other five a click away.
 - **Graduation:** the three are families of the catalogue (their parameters frozen, a base for declarative and shader
   looks; the pack schema's shader `base` lists them), `/api/catalog` lists six families and no preview, and the Visual
-  Studio shows them as worlds of their own: no *In design* pill, two curated looks each (*Storm front*, *Glass cortex*;
-  *Teal Mandelbulb*, *Kaleidoscope crystal*; *Survey map*, *Misty valley*) and an Essentials group. The Artist Studio
-  composes over them (a composition may take one as its base). The new curated looks have not been reviewed
-  artistically.
+  Studio shows them as worlds of their own: no *In design* pill, two curated looks each (*Storm front*, *Glass
+  cortex*; *Teal Mandelbulb*, *Kaleidoscope crystal*; *Survey map*, *Misty valley*) and an Essentials group. The
+  Artist Studio composes over them (a composition may take one as its base). The new curated looks have not been
+  reviewed artistically.
+- **Synaptic Storm can be inhabited:** behind `life.enabled`, as in the flagship worlds, the network is inhabited by
+  astrocytes that settle in domains beside the neurons' synapses, vesicles that ride a slow neuromodulator tide and
+  gather in swirls at active synapses, and microglia that survey an inhibited neuron's edge
+  (`public/worlds/life/synaptic.js`). A failing run inhibits the neurons of the files it covers and life withdraws
+  from them; after the recovery it returns. A calcium wave crosses the glia when their neuron fires (always gold,
+  never an agent's colour), and a neuron's membrane and synaptic clefts brighten with the life gathered there. Only as
+  many inhabitants are awake as the neurons can host. On for new identities (generator 5); the catalogue's entry
+  offers the standard `life.*` group and its Essentials the switch. A recipe without life renders exactly as before
+  (pinned against 1226b8a). Tests: `tests/life-synaptic*.test.js`. Not yet watched in motion by a person.
+- **Fractal Continuum can be inhabited:** motes of light living on the fractal's surface drift with its current,
+  gather at the sites being worked on and leave threads of light between them; small flocks skim the relief and embers
+  rest in its hollows. A failing run opens a void over its region and the motes wait at its edge; after the recovery
+  they come back. The ecosystem lives on a map of the sphere of directions (azimuthal equidistant around the form's
+  pole, the life held within 135° of it), the world draws each inhabitant on the surface as drawn at that moment,
+  hidden behind the relief, and the life's light pools in the relief around its gatherings. Behind the recipe's `life`
+  values, on for new identities (generator 5); the catalogue offers the life group and its Essentials the switch, and
+  with life off the world renders exactly as before. Measured on the AMD iGPU at 1920×1080: about 1.2 ms of GPU time a
+  frame at quality 0 (two draw calls), about 1.1–1.5 ms of CPU a simulated tick. Grammar
+  `public/worlds/life/fractal.js`; tests `tests/life-fractal*.test.js`; design and measurements in
+  [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#digital-life).
+- **Temporal Terrain can be inhabited:** digital life (`public/worlds/life/terrain.js`), on when the recipe's life
+  values say so: on for new identities (generator 5); the catalogue offers the flagships' `life.*` group and its
+  Essentials the switch, and off the world is exactly as it was. Grazers graze the pastures of the present (each
+  file's ridge behind the front edge) against the flow of time, travel in the valleys, lie down and are carried back
+  by the land when tired, and drift into the haze when old; a fault scatters them to shelter in other ranges until it
+  heals. Swifts flock over the present; gleaners follow the herds' paths as they recede through the older land. The
+  land's rate is the macro current, and the trail, energy and disturbance fields ride the land back. The world draws
+  them on the drawn ground, with their light on the contour lines around them and their paths through the lines.
+  Determinism, behaviour and the world's life-off guarantee are tested (`tests/life-terrain*.test.js`); not yet
+  watched in motion by a person (`docs/worlds/temporal-terrain.md`).
+- **Synaptic Storm's agents travel the network:** between two neurons the axon graph joins, an agent's signal runs in
+  from its branch to the soma and along those axons' own curves at conduction speed (1.8 to 4.5 s) instead of a lifted
+  arc; two agents on one file (`agent.collision`) are two signals in their colours meeting at its branch in a ring.
+  With the host's musical clock (now offered to worlds as `ctx.musicAt`, as the artist layers had it), its neurons
+  also fire on the eighth notes between the beats where the arrangement plays rhythm (read at their own bar: a pulse
+  in flight never changes), and a section's onset is a soft synchronous volley.
+- **Temporal Terrain's touch:** an agent's edit opens two rings that last about two seconds and cross the contour
+  lines (they read faint next to its pool of light).
+- **Fractal Continuum: the same frame whatever was played before a seek:** after a seek the world read the camera left
+  from the previous moment (for its level of detail and for a close-up's dolly) before the camera rig snapped to the
+  new moment, so two sessions seeking to the same moment could render different frames (`visual/worlds.qual.js`
+  determinism on Lumen at 160 s; also at 1226b8a). Until the rig has placed the camera for the new moment, the world
+  now takes the framing distance and the direction its goal turns to; continuous play is unchanged. The check passes
+  on SwiftShader with digital life off and on; `tests/fractal-seek.test.js` (new) fails without the fix. Details in
+  [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#determinism).
 - **Qualification parity:** `catalogue.qual.js` renders all six families with every parameter at both ends (12/12,
   SwiftShader); `worlds.qual.js` qualifies determinism across seeks, idle life, label privacy and resource release for
-  every family (`--families`, `--size`, `--fps`, `--tag`). Run for the three graduated worlds: 21/22. Fractal
-  Continuum fails determinism across seeks (two sessions with different seek histories render different frames on
-  Lumen at 160 s); the code before generator 5 renders the same two frames, so the defect is older and still open
+  every family (`--families`, `--size`, `--fps`, `--tag`). Run for the three graduated worlds: 21/22. The one failure,
+  Fractal Continuum's determinism across seeks (older than generator 5), is fixed below and the check passes on
+  SwiftShader with digital life off and on
   ([QUALIFICATION.md](docs/QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
-- **Temporal Terrain can be inhabited:** digital life for the preview (`public/worlds/life/terrain.js`), on when the
-  recipe's life values say so (the catalogue now offers the flagships' `life.*` group on Temporal Terrain's entry only,
-  so the Visual Studio or a tuning turns it on; the generator adds none, and off the world is exactly as it was).
-  Grazers graze the pastures of the present (each file's ridge behind the front edge) against the flow of time, travel
-  in the valleys, lie down and are carried back by the land when tired, and drift into the haze when old; a fault
-  scatters them to shelter in other ranges until it heals. Swifts flock over the present; gleaners follow the herds'
-  paths as they recede through the older land. The land's rate is the macro current, and the trail, energy and
-  disturbance fields ride the land back. The world draws them on the drawn ground, with their light on the contour lines
-  around them and their paths through the lines. Determinism, behaviour and the world's life-off guarantee are tested
-  (`tests/life-terrain*.test.js`); seen in stills only, not yet in motion (`docs/worlds/temporal-terrain.md`).
-- **Temporal Terrain's touch:** an agent's edit opens two rings that last about two seconds and cross the contour lines
-  (they read faint next to its pool of light).
-
+- **Long frames at 1920×1080 diagnosed** (`qualification/visual/stalls.js`, new: per-frame callback, WebGL and GPU
+  timer records plus a Chrome trace of every process): on the WSL2 AMD path (ANGLE's GL backend over Mesa d3d12) the
+  GPU process blocks in `GLContextEGL::MakeCurrent` about 47 times a second at 1080p (median 12 ms, under 8 ms at
+  720p), waiting for the GPU to finish its queued work; when GPU frames lengthen (heavier moments, another process on
+  the same GPU) the waits reach 40–53 ms and frames are missed in runs of 100–133 ms. Not the page's work and not the
+  label overlay, and not removed by drawing less (an empty scene showed it too), so nothing in the world changed for
+  it; native Windows Chrome (ANGLE on Direct3D 11) does not take this path and was not measured. Details in
+  `docs/worlds/synaptic-storm.md`.
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
   receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the
@@ -52,24 +92,6 @@
 - **The release download:** the README names the VSIX on the latest release and how to check it: its SHA-256 in
   `SHA256SUMS.txt`, or a build of the release's tag, which with the same Node version is the same file byte for byte
   (the packager writes fixed timestamps; 0.8.0 checked in two checkouts and against the download).
-- **Fractal Continuum: the same frame whatever was played before a seek** (preview): after a seek the world read the
-  camera left from the previous moment (for its level of detail and for a close-up's dolly) before the camera rig
-  snapped to the new moment, so two sessions seeking to the same moment could render different frames
-  (`visual/worlds.qual.js` determinism on Lumen at 160 s; also at 1226b8a). Until the rig has placed the camera for the
-  new moment, the world now takes the framing distance and the direction its goal turns to; continuous play is
-  unchanged. The check passes on SwiftShader with digital life off and on; `tests/fractal-seek.test.js` (new) fails
-  without the fix. Details in [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#determinism).
-- **Fractal Continuum: digital life** (preview): motes of light living on the fractal's surface drift with its
-  current, gather at the sites being worked on and leave threads of light between them; small flocks skim the relief
-  and embers rest in its hollows. A failing run opens a void over its region and the motes wait at its edge; after the
-  recovery they come back. The ecosystem lives on a map of the sphere of directions (azimuthal equidistant around the
-  form's pole, the life held within 135° of it), the world draws each inhabitant on the surface as drawn at that moment,
-  hidden behind the relief, and the life's light pools in the relief around its gatherings. Behind the recipe's `life`
-  values: the catalogue offers the life group for Fractal Continuum (the Visual Studio and the lab can turn it on with a
-  tuning); the generator draws none for it, no recipe or identity changes, and with life off the world renders exactly
-  as before. Measured on the AMD iGPU at 1920×1080: about 1.2 ms of GPU time a frame at quality 0 (two draw
-  calls), about 1.1–1.5 ms of CPU a simulated tick. Grammar `public/worlds/life/fractal.js`; tests `tests/life-fractal*.test.js`; design and
-  measurements in [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#digital-life).
 
 ## 0.8.0 — 2026-10-31
 

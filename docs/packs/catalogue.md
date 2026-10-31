@@ -302,6 +302,23 @@ Ambient layers unlocked by verified milestones, in order: `searchlights`, `mecha
 | `camera.drift` | number 0 … 1.5 | idle drift |
 | `agents.form` | `signal` | agent form: a travelling signal in its provider's colour and shape |
 | `agents.trail` | number 0.2 … 2 | agent trail length |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
 | `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
 | `palette.hue` | number 0 … 360 | base hue (degrees) |
 | `palette.primary` | `#rrggbb` | main structure colour |
