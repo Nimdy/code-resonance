@@ -11,6 +11,7 @@ const {presence,catalogued} = require('./providers');
 // v9: agent.collision only between catalogued providers, and its cue adds no progress (weight 0, like every agent cue).
 // v10: language adapters for Go, Rust, Java, Kotlin, C#, Swift, C/C++, PHP and Ruby; deeper Python (Protocol/ABC, typed
 //      aliases, Django and Flask routes); go.mod/Cargo.toml/composer.json packages; each language's test-file convention.
+//      The CAST catalog names twelve more providers (Gemini, Copilot, Droid, Goose, ...): their seats, chips and collisions.
 const INTERPRETATION_VERSION=10;
 const RENAME_WINDOW_MS=60000;
 // Test files: test folders anywhere and *.test / *.spec scripts, plus (v10) each language's own convention. Every form

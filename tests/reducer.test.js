@@ -248,3 +248,18 @@ test('Rebuild v9 to v10 from a journal is byte-stable; two providers on the same
   await s.rebuild(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
 });
+test('Providers catalogued with their hook adapters are a CAST voice: their seat, and collisions with the others',()=>{
+  // gemini shares seat 5 with kimi (its chip tells them apart); before it was catalogued it hashed into seat 6 or 7 and
+  // was not a second provider in a collision.
+  const state=newState(projectId);state.salt='cast-salt';
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'gemini',agent:'G',tool:'Edit'}}));
+  const collisions=drainIntents(state).filter(i=>i.type==='agent.collision');
+  assert.equal(collisions.length,1);assert.deepEqual(collisions[0].detail.providers,['claude-code','gemini']);
+  assert.deepEqual(Object.values(state.agents).map(a=>[a.provider,a.voice]).sort(),[['claude-code',0],['gemini',5]]);
+  const seats={copilot:6,droid:7,goose:3,qwen:4,grok:3};
+  for(const [provider,seat] of Object.entries(seats)){
+    const s=newState(projectId);apply(s,e('agent.session.started',{meta:{provider,agent:'x'}}));
+    assert.equal(Object.values(s.agents)[0].voice,seat,provider);
+  }
+});

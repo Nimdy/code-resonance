@@ -47,11 +47,21 @@ has not been run on Windows, on macOS or from a Remote-WSL, SSH or container win
   candidate folders; each adapter's header in `engine/languages/` lists what it does not recognise. Other languages
   count at file level. The scanners ran without errors over the Python 3.12 standard library, part of the JDK 21
   sources and the system's C and C++ headers, and over a handful of real Go, C#, PHP and Ruby files; Rust, Kotlin and
-  Swift are verified on fixtures only. Interpretation **10** (language adapters) is independent of the product version. AI agents other
-  than Claude Code, Cursor and Codex can report only through `scripts/event.js`. Stage chips show CAST catalog names
-  (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor art; any other provider is shown as "Agent".
+  Swift are verified on fixtures only. Interpretation **10** (language adapters,
+  the larger agent catalog) is independent of the product version. AI agents with an observe-only adapter: Claude
+  Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot (CLI and VS Code's Copilot harness), Factory Droid, Grok
+  Build and goose. Any other agent can report only through `scripts/event.js` (why each has no adapter:
+  [AGENTS.md](AGENTS.md)). Stage chips show CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi, Gemini,
+  Copilot, Droid, Goose, OpenCode, Cline, Windsurf, Amp, Kiro, Augment, Junie, Aider), not vendor art; any other
+  provider is shown as "Agent". Eight seats: later providers share a colour and voice with an earlier one and are told
+  apart by their chip.
 - **Cursor hooks:** prove only in a trusted workspace; CI does not run Cursor.
 - **Codex hooks:** prove only in a trusted workspace (project `.codex/` must be trusted); CI does not run Codex. Paths only from patches; `PreToolUse` is not installed.
+- **Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose hooks:** implemented from each tool's
+  documentation (checked 2026-10-30) and tested against its documented payloads only; no real session of any of them
+  was run, and CI runs none of them. Their payloads document no shell exit codes (commands show a category and at most
+  *failed*); Copilot and Grok name no files, Droid only for `Create`. Copilot (and Grok Build, Devin) also read the
+  repository's Claude Code hook files: with Claude Code's hooks installed, a Copilot session can also appear as Claude.
 - **Labels at the edge:** agent chips and explorer labels stay inside the frame (they flip, then they are omitted). A
   callout that cannot sit near its subject becomes a caption.
 - **Three catalogued values have no visible effect on one world each:** *Reactivity* (`music.reactivity`) on Machine
@@ -91,7 +101,7 @@ Everything is on the computer that runs the receiver, in its data directory: `~/
 The VS Code extension reads the token from `~/.code-resonance/receiver-auth.json`, or from `RESONANCE_DATA` when that
 variable is set in VS Code's own environment, and starts its receiver with that directory; a receiver started with
 another data directory receives nothing from it. Another directory suits the demonstration, tests and the qualification
-(`RESONANCE_DATA` applies to `npm run demo`, `doctor`, `pair`, `scripts/pack.js` and the Claude Code, Cursor and Codex hooks too).
+(`RESONANCE_DATA` applies to `npm run demo`, `doctor`, `pair`, `scripts/pack.js` and every agent hook adapter too).
 
 Outside it: the VS Code extension's outbox (events waiting for the receiver) in VS Code's global storage
 (`…/globalStorage/zerobandwidth.code-resonance/outbox`); each browser keeps its pairing key, the active project and a

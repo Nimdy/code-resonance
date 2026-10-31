@@ -2,7 +2,8 @@
 'use strict';
 // First-run and troubleshooting checks, read-only: Node version, the receiver (running? which port? token present and
 // private?), projects received, visual packs (installed, approved, problems), and on WSL how to reach the player from
-// Windows without opening the receiver to the network.
+// Windows without opening the receiver to the network; which agents were observed (by CAST name) and which hook
+// installers exist.
 //   node scripts/doctor.js [--data <dir>] [--port <port>] [--json]
 const fs=require('node:fs');
 const path=require('node:path');
@@ -11,6 +12,9 @@ const args=process.argv.slice(2);
 const flag=k=>{const i=args.indexOf(`--${k}`);return i<0?undefined:args[i+1];};
 const DATA=path.resolve(flag('data')||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
 const results=[];
+// Agents with an observe-only hook installer (npm run hooks:<slug>); any other tool reports through scripts/event.js.
+const HOOKS=['claude','cursor','codex',...require('./hooks/registry').map(t=>t.INFO.slug)];
+const {privateName}=require('../engine/providers');
 const report=(status,topic,message,fix='')=>results.push({status,topic,message,fix});
 function wsl(){try{return /microsoft/i.test(fs.readFileSync('/proc/version','utf8'));}catch{return false;}}
 (async()=>{
@@ -36,7 +40,11 @@ function wsl(){try{return /microsoft/i.test(fs.readFileSync('/proc/version','utf
   else{
     report('ok','Receiver',`running: version ${health.version} on http://127.0.0.1:${port} (loopback only)`);
     try{const p=(await (await fetch(`http://127.0.0.1:${port}/api/projects`)).json()).projects||[];
-      report(p.length?'ok':'note','Projects',p.length?`${p.length} received`:'none yet',p.length?'':'Open a trusted workspace in VS Code, click CR and accept local capture; or run npm run demo.');}catch{}
+      report(p.length?'ok':'note','Projects',p.length?`${p.length} received`:'none yet',p.length?'':'Open a trusted workspace in VS Code, click CR and accept local capture; or run npm run demo.');
+      // The agents each project's evidence names, by their CAST name (an uncatalogued id by the name it reported).
+      const seen=new Map();for(const x of p)for(const a of x.evidence?.agents||[])if(typeof a.provider==='string')seen.set(a.provider,(seen.get(a.provider)||0)+1);
+      report(seen.size?'ok':'note','Agents',seen.size?[...seen].map(([id,n])=>`${privateName(id)} (${n} project${n===1?'':'s'})`).join(', '):'none observed yet',
+        seen.size?'':`Add hooks to a project: npm run hooks:<${HOOKS.join('|')}> -- <project folder> (or in the Control Center: Connections). Any other tool: node scripts/event.js --provider <name>.`);}catch{}
     try{const list=(await (await fetch(`http://127.0.0.1:${port}/api/packs`)).json()).packs||[];
       for(const k of list){const state=!k.ok?'problem':k.executable&&!k.trusted?'note':'ok';
         report(state,'Visual pack',`${k.id} ${k.version} (${k.kind}): ${!k.ok?`problem: ${(k.problems||[]).join('; ')}`:k.executable?(k.trusted?'approved':'installed, not approved'):'ready'}`,

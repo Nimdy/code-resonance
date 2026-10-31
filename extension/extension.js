@@ -398,7 +398,7 @@ async function connectAgent(){
   await showPlan(a,plan,action);
   // The command the receiver planned (its adapter path), and Code Resonance entries already there for another path (for
   // example installed from a checkout): both would run, and the agent would be reported twice.
-  const adapter=/^(?:claude|cursor|codex)$/.test(a.id)?{claude:'claude-code.js',cursor:'cursor.js',codex:'codex.js'}[a.id]:'';
+  const adapter=agentHooks.AGENTS[a.id]?.adapter||'';
   const before=new Set(hookCommands(plan.current));
   const planned=new Set(hookCommands(plan.next).filter(c=>c.startsWith('node ')&&c.includes(adapter)&&!before.has(c)));
   const command=[...planned][0]||'';

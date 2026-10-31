@@ -16,8 +16,8 @@
 .ws-connections .conn-error{display:flex;align-items:center;gap:6px;color:var(--danger);font-size:13px;min-height:0}
 .ws-connections .conn-error:empty{display:none}
 .ws-connections .conn-error svg{width:14px;height:14px;flex:none}
-/* ---- The signal strip: six channels, each with a thin level line that lights only on evidence ---- */
-.ws-connections .conn-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden}
+/* ---- The signal strip: seven channels, each with a thin level line that lights only on evidence ---- */
+.ws-connections .conn-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden}
 .ws-connections .conn-seg{--lvl:var(--line-2);position:relative;display:grid;gap:5px;align-content:start;text-align:left;padding:15px 20px 14px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--text-1);min-width:0;transition:background var(--t-1)}
 .ws-connections .conn-seg:last-child{border-right:0}
 .ws-connections .conn-seg::before{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:var(--lvl);transition:background var(--t-2)}
@@ -185,6 +185,14 @@
 @media (max-width:1600px){.ws-connections .conn-vs{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"editor editor" "settings settings" "guide change";row-gap:22px}
   .ws-connections .conn-vs:has(>.conn-vs-settings:empty){grid-template-areas:"editor editor" "guide change"}
   .ws-connections .conn-vs-change{position:static}}
+/* ---- More agents: one tab per tool; its dot lights only on evidence, like the strip ---- */
+.ws-connections .conn-tools{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.ws-connections .conn-tool{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--bg-1);color:var(--text-2);font:inherit;font-size:13px;cursor:pointer;transition:background var(--t-1),border-color var(--t-1)}
+.ws-connections .conn-tool:hover{background:var(--bg-2);color:var(--text-1)}
+.ws-connections .conn-tool[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--text-1)}
+.ws-connections .conn-tool .dot{width:7px;height:7px}
+@media (max-width:1600px){.ws-connections .conn-strip{grid-template-columns:repeat(4,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(4n){border-right:0}.ws-connections .conn-seg:nth-child(-n+4){border-bottom:1px solid var(--line)}
+  .ws-connections .conn-seg:last-child{grid-column:span 2}}
 /* ---- Narrower desktops: guidance moves under the observed state, side by side where it fits ---- */
 @media (max-width:1366px){.ws-connections .conn-pair,.ws-connections .conn-pair.guide-wide,.ws-connections .conn-pair.even{grid-template-columns:1fr;gap:16px}
   .ws-connections .conn-guide-steps{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:24px}.ws-connections .conn-guide-steps>.conn-guide-head{grid-column:1/-1}
@@ -192,12 +200,14 @@
   .ws-connections .conn-guide-steps>.conn-step-row{flex-direction:column;align-items:flex-start;gap:8px}
   .ws-connections .conn-guide-steps>.conn-step-row>span{flex:none}
   .ws-connections .conn-col-guide .conn-guide-stack{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start}}
-@media (max-width:1180px){.ws-connections .conn-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(3n){border-right:0}.ws-connections .conn-seg:nth-child(-n+3){border-bottom:1px solid var(--line)}
+@media (max-width:1180px){.ws-connections .conn-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(4n){border-right:1px solid var(--line)}
+  .ws-connections .conn-seg:nth-child(3n),.ws-connections .conn-seg:last-child{border-right:0}.ws-connections .conn-seg:nth-child(-n+6){border-bottom:1px solid var(--line)}
+  .ws-connections .conn-seg:last-child{grid-column:span 3}
   .ws-connections .conn-data-body{grid-template-columns:1fr}}
 @media (max-width:1080px){.ws-connections .conn-editor{grid-template-columns:230px minmax(0,1fr)}.ws-connections .conn-tr{grid-template-columns:minmax(0,1fr) 110px 70px}}
 @media (max-width:900px){.ws-connections .conn-editor{grid-template-columns:1fr}
   .ws-connections .conn-vs,.ws-connections .conn-vs:has(>.conn-vs-settings:empty){grid-template-columns:1fr;grid-template-areas:"editor" "settings" "guide" "change"}
   .ws-connections .conn-projects{border-right:0;border-bottom:1px solid var(--line)}.ws-connections .conn-project-rows{max-height:240px}.ws-connections .conn-capture{grid-template-columns:1fr}
   .ws-connections .conn-table.privacy .conn-tr{grid-template-columns:1fr;gap:4px}.ws-connections .conn-table.privacy .conn-tr.head{display:none}}
-@media (max-width:640px){.ws-connections .conn-strip{grid-template-columns:1fr}.ws-connections .conn-seg{border-right:0;border-bottom:1px solid var(--line)}
+@media (max-width:640px){.ws-connections .conn-strip{grid-template-columns:1fr}.ws-connections .conn-seg:last-child{grid-column:auto}.ws-connections .conn-seg,.ws-connections .conn-seg:nth-child(4n){border-right:0;border-bottom:1px solid var(--line)}
   .ws-connections .conn-tr{grid-template-columns:1fr;gap:6px}.ws-connections .conn-tr.head{display:none}}

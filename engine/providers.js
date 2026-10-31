@@ -8,7 +8,24 @@ const PROVIDERS={
   codex:{id:'codex',display:'Codex',chip:'Codex',seat:2},
   grok:{id:'grok',display:'Grok',chip:'Grok',seat:3},
   qwen:{id:'qwen',display:'Qwen',chip:'Qwen',seat:4},
-  kimi:{id:'kimi',display:'Kimi',chip:'Kimi',seat:5}
+  kimi:{id:'kimi',display:'Kimi',chip:'Kimi',seat:5},
+  // The renderers and the score have eight seats (a colour, a signal shape and a voice each; 6 and 7 also hold the
+  // uncatalogued ids), so the providers below share a seat with one above: their chip, callouts and hover cards name
+  // them, and the player numbers sessions per chip ("Gemini 2"), never across providers that share a seat.
+  // With an observe-only hook adapter (scripts/hooks):
+  gemini:{id:'gemini',display:'Gemini',chip:'Gemini',seat:5},
+  copilot:{id:'copilot',display:'Copilot',chip:'Copilot',seat:6},
+  droid:{id:'droid',display:'Droid',chip:'Droid',seat:7},
+  goose:{id:'goose',display:'Goose',chip:'Goose',seat:3},
+  // Named for scripts/event.js --provider (no adapter: their tools document no observe-only hooks this one can use):
+  opencode:{id:'opencode',display:'OpenCode',chip:'OpenCode',seat:4},
+  cline:{id:'cline',display:'Cline',chip:'Cline',seat:6},
+  windsurf:{id:'windsurf',display:'Windsurf',chip:'Windsurf',seat:3},
+  amp:{id:'amp',display:'Amp',chip:'Amp',seat:7},
+  kiro:{id:'kiro',display:'Kiro',chip:'Kiro',seat:5},
+  augment:{id:'augment',display:'Augment',chip:'Augment',seat:4},
+  junie:{id:'junie',display:'Junie',chip:'Junie',seat:6},
+  aider:{id:'aider',display:'Aider',chip:'Aider',seat:7}
 };
 const UNKNOWN_SEATS=[6,7];
 const PUBLIC_NAME='Agent';

@@ -105,10 +105,18 @@ async function controlSession(port,dataDir){
   if(r.status!==200||!/^[0-9a-f]{64}$/.test(r.doc?.capability||''))throw failure(r.doc?.error||`The receiver refused a control session (HTTP ${r.status})`,{status:r.status,code:r.doc?.code});
   return {origin,capability:r.doc.capability};
 }
+// The tools with an observe-only adapter (scripts/hooks/registry.js names the same files for the six after Codex); the
+// adapter each entry runs is scripts/hooks/<adapter>.
 const AGENTS=Object.freeze({
-  claude:{label:'Claude Code',file:'.claude/settings.local.json'},
-  cursor:{label:'Cursor',file:'.cursor/hooks.json'},
-  codex:{label:'Codex',file:'.codex/hooks.json'}
+  claude:{label:'Claude Code',file:'.claude/settings.local.json',adapter:'claude-code.js'},
+  cursor:{label:'Cursor',file:'.cursor/hooks.json',adapter:'cursor.js'},
+  codex:{label:'Codex',file:'.codex/hooks.json',adapter:'codex.js'},
+  gemini:{label:'Gemini CLI',file:'.gemini/settings.json',adapter:'gemini.js'},
+  qwen:{label:'Qwen Code',file:'.qwen/settings.json',adapter:'qwen.js'},
+  copilot:{label:'GitHub Copilot',file:'.github/copilot/settings.local.json',adapter:'copilot.js'},
+  droid:{label:'Factory Droid',file:'.factory/hooks.json',adapter:'droid.js'},
+  grok:{label:'Grok Build',file:'.grok/hooks/code-resonance.json',adapter:'grok.js'},
+  goose:{label:'goose',file:'.agents/plugins/code-resonance/hooks/hooks.json',adapter:'goose.js'}
 });
 async function hookCall(step,{port,dataDir,agent,body}){
   if(!Object.hasOwn(AGENTS,agent))throw failure(`Unknown agent ${agent}`,{code:'invalid'});

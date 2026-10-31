@@ -57,8 +57,10 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   lines or re-running green tests earns nothing; removing code counts once a test run validates it; recovering a
   failing suite is a milestone.
 - **Represents AI agents honestly.** Agents are a CAST in the project's world (name, seat, voice): Claude, Cursor,
-  Codex, Grok, Qwen, Kimi on stable seats; unknown providers hash into the remaining seats. Stage chips show catalog
-  names, never vendor art. Claude Code, Cursor and Codex have observe-only adapters. A file change is attributed to an
+  Codex, Grok, Qwen, Kimi on stable seats; Gemini, Copilot, Droid, Goose and the other catalogued tools share those
+  eight seats and are told apart by their chip; unknown providers hash into seats 6–7 and read *Agent*. Stage chips
+  show catalog names, never vendor art. Claude Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory
+  Droid, Grok Build and goose have observe-only adapters ([docs/AGENTS.md](docs/AGENTS.md)). A file change is attributed to an
   agent only when it follows that agent's own tool event; everything else stays `unknown`. Hidden reasoning is never
   inferred. Several agents can work at once: each session is its own presence, and sessions of the same tool running
   together are numbered (*Claude*, *Claude 2*). Two providers on the same file or district inside 60 s emit
@@ -153,11 +155,14 @@ installed extension uses this receiver and never starts or replaces one while it
    by design.
 
 **AI agents (optional).** **CR › Connect an AI agent…** in VS Code, or `npm run hooks:claude -- /path/to/your/project`
-(or `hooks:cursor`, `hooks:codex`) in a checkout, adds observe-only hooks, so the agent joins the world as a CAST
-presence. Start a new agent session afterwards: a session that is already running does not pick up new hooks.
+(or `hooks:cursor`, `hooks:codex`, `hooks:gemini`, `hooks:qwen`, `hooks:copilot`, `hooks:droid`, `hooks:grok`,
+`hooks:goose`) in a checkout, adds observe-only hooks, so the agent joins the world as a CAST presence. Start a new
+agent session afterwards: a session that is already running does not pick up new hooks. What each tool documents, what
+its adapter reads and never reads, and why the others (Kimi, Cline, Windsurf, Kiro, Augment, Junie, OpenCode, Amp,
+Aider, …) have no adapter yet: [docs/AGENTS.md](docs/AGENTS.md).
 
 **Several agents at once.** Install the hooks once per project for each tool you use; then every session joins on its
-own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex. Each is a separate
+own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex, Gemini CLI, Copilot. Each is a separate
 presence with its own work and edits; sessions of the same tool are numbered while they run at the same time
 (*Claude*, *Claude 2*), subagents appear as their tool's *subagent*. An agent without hooks (for example one built into
 an editor that has no adapter here) is not shown as a presence, but its edits still reach the world, unattributed.
@@ -195,11 +200,12 @@ extension starts it there by itself. Windows reaches it at `http://localhost:417
 forwarding, with the receiver still on loopback ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
 
 **AI agents (CAST):** in a trusted workspace, `npm run hooks:claude -- /path/to/your/project` (and `hooks:cursor`,
-`hooks:codex`) add observe-only adapters; Connections and **CR › Connect an AI agent…** can add or remove them after
-showing the exact change. Hooks the extension's own receiver writes run the adapters it keeps in
-`~/.code-resonance/hooks`, a path that survives extension updates. Cursor
-never installs `subagentStart`; Codex never installs `PreToolUse` / `PermissionRequest`; Codex paths come from patch
-headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
+`hooks:codex`, `hooks:gemini`, `hooks:qwen`, `hooks:copilot`, `hooks:droid`, `hooks:grok`, `hooks:goose`) add
+observe-only adapters; Connections and **CR › Connect an AI agent…** can add or remove them after showing the exact
+change. Hooks the extension's own receiver writes run the adapters it keeps in `~/.code-resonance/hooks`, a path that
+survives extension updates. No adapter installs an event that can deny (Cursor never `subagentStart`; Codex and Qwen
+never `PreToolUse` / `PermissionRequest`; Gemini never `BeforeTool`; Copilot never `preToolUse`); Codex paths come from
+patch headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
 
 ## The Control Center
 
@@ -210,7 +216,7 @@ view agree ([docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md)).
 |---|---|
 | **Home** | Whether the receiver runs, which project is active, whether capture is really active, what needs attention; **Last night**; create or continue a composition |
 | **Projects** | Projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
-| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code / Cursor / Codex hooks, CAST, other agents |
+| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code / Cursor / Codex hooks, more agents (Gemini CLI, Qwen Code, Copilot, Droid, Grok Build, goose), CAST, other agents |
 | **Record & Broadcast** | Recording profiles, the OBS browser source, audio and data exports |
 | **Settings** | Global preferences, this device's quality, where everything is stored, diagnostics, documentation |
 
@@ -282,8 +288,10 @@ sessions with the final code; listening and viewing by anyone other than the own
 
 **Limits:** semantics are deepest for TypeScript and JavaScript. Source snapshots are captured after you start capture
 unless `resonance.captureDocumentContents` is off, and a file that does not match the secret patterns can still contain
-secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through Claude Code, Cursor and
-Codex hooks; other agents report through `scripts/event.js` or their file writes are seen but attributed `unknown`. A
+secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through the hooks of Claude
+Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose (none of the last six
+was run against a real session here; their payloads carry no exit codes, Copilot and Grok no file paths); other agents
+report through `scripts/event.js` or their file writes are seen but attributed `unknown`. A
 passing test means the command exited 0, not that the software is correct. A replay holds only what was captured. The
 full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
