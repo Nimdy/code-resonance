@@ -303,7 +303,7 @@
   let monolith=null,monolithLoading=null,monolithRetryAt=0;
   function ensureMonolith(){
     if(monolith||monolithLoading||performance.now()<monolithRetryAt)return monolithLoading||Promise.resolve(monolith);
-    monolithLoading=import('/worlds/monolith.js').then(m=>{monolith=m.createMonolith();return monolith;},e=>{monolithRetryAt=performance.now()+2000;if(!unreachable(e))console.error(e);return null;})
+    monolithLoading=import('./worlds/monolith.js').then(m=>{monolith=m.createMonolith();return monolith;},e=>{monolithRetryAt=performance.now()+2000;if(!unreachable(e))console.error(e);return null;})
       .finally(()=>{monolithLoading=null;});
     return monolithLoading;
   }
@@ -315,7 +315,7 @@
   let filmSpeed=1;
   function ensureConstruct(){
     if(construct||constructFailed)return Promise.resolve(construct);
-    if(!constructLoading)constructLoading=import('/construct.js').then(m=>{
+    if(!constructLoading)constructLoading=import('./construct.js').then(m=>{
       try{construct=m.createConstruct($('construct'),{onCaption:showCaption,film:FILM,speed:replaySpeed()});construct.reset(constructGraph(),perfNow());}
       catch(e){console.error('Construct unavailable, using Monolith',e);constructFailed=true;construct=null;if(selectedWorld==='construct'){selectedWorld='city';changed('world');}notify('The Construct needs WebGL, which is not available here: showing Monolith instead.','warning');}
       constructLoading=null;return construct;
@@ -389,7 +389,7 @@
         const options={film:FILM,speed:replaySpeed(),labels:labelMode,quality:FILM?0:qualityLevel(),adaptive:!FILM&&qualityAdaptive(),...(!FILM&&qualityAdaptive()&&autoLevel!==null?{level:autoLevel}:{})};
         if(plan?.pack){
           // An approved pack with code: the same world host, inside the isolated frame.
-          const m=await import('/worlds/remote.js');
+          const m=await import('./worlds/remote.js');
           living=await m.createRemoteWorld($('world').parentElement,{...plan,recipe:candidate||recipe,...options,epoch:replay?.entries.length?replay.start:null});
           // A pack that fails, hangs, loses its GPU context or is too slow is stopped; the identity without it takes over.
           const pack=plan.pack;living.onError(message=>stopPack(pack,message));
@@ -402,7 +402,7 @@
             if(candidate){previewNotice=`${why}: the preview shows the saved identity instead.`;shown=recipe;}
             else packNotice=`${why}: showing the identity without it.`;
             if(!candidate||runtimeOf(recipe)!=='builtin')shown=(await getJSON(`/api/recipe?id=${encodeURIComponent(id)}&fallback=1`))?.json||recipe;}
-          const m=await import('/worlds/host.js');
+          const m=await import('./worlds/host.js');
           living=await m.createWorld($('world'),{overlayCanvas:FILM?null:$('worldOverlay'),recipe:shown,...options});
         }
         if(id!==selected){disposeLiving();return null;}
@@ -824,7 +824,7 @@
     // A short-lived renderer for gallery thumbnails: the same world host on a detached canvas, disposed after use.
     async thumbnail(candidate,{width=384,height=216,frames=24}={}){
       if(!candidate||candidate.familyKind==='pack'||candidate.pack?.kind==='shader')return null;
-      const m=await import('/worlds/host.js'),c=document.createElement('canvas');c.width=width;c.height=height;
+      const m=await import('./worlds/host.js'),c=document.createElement('canvas');c.width=width;c.height=height;
       const w=await m.createWorld(c,{recipe:candidate,labels:'off',quality:1,adaptive:false,film:true});
       // The page keeps responding between frames (a software renderer may take a while per frame).
       try{w.resize(width,height,1);w.reset(constructGraph(),0);let t=12000;for(let i=0;i<frames;i++){w.render(t,1/30,{phase:(i%30)/30});t+=1000/30;if(i%4===3)await new Promise(r=>setTimeout(r,0));}return c.toDataURL('image/jpeg',.82);}

@@ -764,7 +764,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   if(!S.state.catalog)void S.loadCatalog();
   renderFoot();renderChrome();
   // The model and its words are plain scripts (shared with the receiver): loaded once, then the studio is built.
-  Promise.all([C?null:import('/composition.js'),W?null:import('/composition-text.js')]).then(()=>{
+  Promise.all([C?null:import('../../composition.js'),W?null:import('../../composition-text.js')]).then(()=>{
     if(!alive)return;C=globalThis.ResonanceComposition;W=globalThis.ResonanceCompositionText;
     if(session.work)session.work=C.normalize(session.work);
     renderAll();consumeRoute();if(session.work)schedulePreview(0);
