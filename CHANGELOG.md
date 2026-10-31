@@ -8,7 +8,7 @@ keeps its v9 structure and test flag. The extension's part (below) reaches VS Co
 
 - **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
   enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with
-  its music after a click, in any of the five world families, the Construct or Monolith, at 1×, 4× or 16×; it also
+  its music after a click, in any of the six world families, the Construct or Monolith, at 1×, 4× or 16×; it also
   plays on a phone. `npm run site` (`scripts/build-site.js`, Node only) starts a receiver in-process on a temporary
   copy of the recording (a free loopback port), exports every read-only answer the Stage needs for a replay to
   `site/api/` with a manifest, and copies the player beside them; the same recording builds the same files byte for
@@ -17,6 +17,20 @@ keeps its v9 structure and test flag. The extension's part (below) reaches VS Co
   mode, pairing, saving). `.github/workflows/pages.yml` builds and deploys it on pushes to `main` and by hand, never on
   pull requests; the owner sets *Settings › Pages › Source: GitHub Actions* once. Checked by `tests/web-demo.test.js`
   and, in a real browser, `qualification/site/web-demo.qual.js`. [docs/WEB-DEMO.md](docs/WEB-DEMO.md).
+- **Temporal Terrain (preview):** a sixth built-in world family, chosen only explicitly (Visual Studio, marked *In
+  design*; the render lab's `--family temporal-terrain`; the web demo), never by the family scores: `RECIPE_VERSION`
+  stays 4 and every existing identity is unchanged. The project's history as a contour landscape: the present is the
+  lit front edge, the past recedes toward the horizon on a logarithmic scale; subsystems are ranges in their own hues
+  (placed from the middle outward in order of birth), files ridges running back from their birth, their height from
+  their symbols, with luminous anti-aliased contour lines over a dark relief. Agents survey as lights in their CAST
+  colour and shape and raise the ground where they edit; tests sweep a scan; a failure opens a fault that stays as a
+  scar for exactly as long as the files were stressed; recovery heals it; commits leave survey lines and stakes;
+  verified milestones leave beacons and, with the director's token and a four-minute gap, earn a sunrise.
+  `public/worlds/terrain-layout.js` keeps the land as rows of fixed moments (a pyramid of levels, each row computed once
+  while it stays in its level), `terrain-glsl.js` draws it. The host gives a built-in world that asks for them a
+  replay's recorded windows (`onHistory`), so the land behind a seek is the whole recorded history, as when played from
+  the start. `tests/terrain.test.js`; design, stills and GPU time in
+  [docs/worlds/temporal-terrain.md](docs/worlds/temporal-terrain.md).
 - **Relative URLs in the player:** its dynamic module imports (`public/app.js`, the Visual, Artist and Packs
   workspaces) and the workspaces' stylesheets (`public/ui/dom.js`) are relative, so the page works under any path. The
   receiver serves the same files at the same URLs as before.

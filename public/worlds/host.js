@@ -15,10 +15,10 @@ import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
 import {createMusical} from './musical.js';
 import {createQualityGovernor} from './quality.js';
-// Synaptic Storm and Fractal Continuum are previews: built in like the three, but a recipe names one only when chosen
-// (engine/recipe.js PREVIEWS).
+// Synaptic Storm, Fractal Continuum and Temporal Terrain are previews: built in like the three, but a recipe names one
+// only when chosen (engine/recipe.js PREVIEWS).
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js','synaptic-storm':'./synaptic.js',
-  'fractal-continuum':'./fractal.js'};
+  'fractal-continuum':'./fractal.js','temporal-terrain':'./terrain.js'};
 // Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
 // whose base is the artist canvas runs on the canvas world (canvas.js) instead of the family's; the canvas is never
 // chosen for a project otherwise.
@@ -121,6 +121,10 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const rig=createCameraRig(camera);
   const model=createModel({speed});
   let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,titleFrom=null,info=null,selected=null,ext=null;
+  // A replay's recorded windows from the last prime: a built-in world that draws the whole history (onHistory, Temporal
+  // Terrain) rebuilds it from them, also when it loads into a replay already under way. Packs never get them.
+  let recorded=null;
+  const history_=(w,t)=>{if(recorded&&w?.onHistory&&BUILTIN[current?.family]&&!families[current?.family]&&Number.isFinite(t))w.onHistory(recorded,t);};
   // After a reset, prime or new epoch the world still holds the frame before it: the first intent brings it up to date at
   // the intent's time, so an effect is placed as it is in continuous play (a seek then an event before the next frame).
   let stale=true;
@@ -188,7 +192,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     if(mod.createFamily)world=mod.createFamily(ctx);
     else{world=mod.createWorld(createSdk(ctx,{assets,quality:()=>level}));const problems=validateWorld(world);if(problems.length)throw new Error(`World API ${problems.join(', ')}`);}
     ext=extensionFor(next,ctx);
-    world.rebuild();snapCamera=true;
+    world.rebuild();snapCamera=true;history_(world,info?.t);
     await syncLayers();
   }
   await load(recipe);
@@ -277,16 +281,16 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       const list=[];for(const e of entries)(e.intents||[]).forEach((i,k)=>{if(i.ord===undefined&&Number.isInteger(e.seq))i.ord=e.seq*65536+k;if(i.ts<t)list.push(i);});
       // A replay (its windows carry structure) gives the ecosystem its whole recorded timeline; a live session's history
       // brings intents only (from before the session's origin they set lasting conditions only).
-      if(entries.some(e=>e.graph)){if(!lifeReplay){lifeReplay=true;lifeDriver?.clearBase();}lifeTimeline.prime(entries);}
+      if(entries.some(e=>e.graph)){if(!lifeReplay){lifeReplay=true;lifeDriver?.clearBase();}lifeTimeline.prime(entries);recorded=entries;}
       else for(const e of entries)for(const i of e.intents||[])lifeTimeline.intent(i);
       history.prime(t,list);
       // After a seek: no transient effect from another moment survives; lasting transformations are rebuilt from history.
-      world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);layers?.onPrime();stale=true;},
+      history_(world,t);world.onPrime?.(t,(t-model.epoch)/1000);ext?.effects?.onPrime?.(t);layers?.onPrime();stale=true;},
     setMood(m){if(m.section)mood.section=m.section;if(Number.isFinite(m.energy))mood.energy=m.energy;if(m.tempo){mood.tempo=m.tempo;model.setTempo(m.tempo);}
       if(m.music)musical.configure({...m.music,tempo:mood.tempo});},
     setSpeed(k){if(k>0){speedK=k;model.setSpeed(k);}},
     // Replay -> live: a new performance (its origin is set by the next reset; the replay's inputs are not its own).
-    newPerformance(){pinnedStart=null;model.clearEpoch();lifeTimeline.clear();lifeReplay=false;lifeBase=null;lifeDriver?.clearBase();stale=true;},
+    newPerformance(){pinnedStart=null;model.clearEpoch();lifeTimeline.clear();lifeReplay=false;lifeBase=null;recorded=null;lifeDriver?.clearBase();stale=true;},
     setEpoch(t){if(Number.isFinite(t))pinnedStart=t;const before=model.epoch;model.setEpoch(t);if(model.epoch!==before){world.rebuild();snapCamera=true;stale=true;
       // Another performance: its ecosystem starts from its own inputs only.
       if(lifeTimeline.items.length){lifeTimeline.clear();lifeReplay=false;}}},
