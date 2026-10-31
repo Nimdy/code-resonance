@@ -132,8 +132,8 @@
   // The user chooses the file when Record is pressed (the browser's Save dialog). While recording, a worker writes each
   // chunk in place to a working file in this browser's private storage for the page (recording-worker.js says why
   // there: it is the one place a page can write so that a crash keeps what was written); memory stays flat and the
-  // length is bounded by disk. When the recording stops, the working file is copied into the chosen file, made seekable
-  // on the way (webm.js), then deleted. If the page crashes or closes first, the working file stays: any window of this
+  // length is bounded by disk. When the recording stops, the worker copies the working file into the chosen file, made
+  // seekable on the way (webm.js), then deletes it (the page copies it itself if a worker may not write that file). If the page crashes or closes first, the working file stays: any window of this
   // browser lists it as an interrupted recording, to save or discard. Each working file is held by its own Web Lock
   // while a window records or saves it, so another window never offers it, and a crash releases it at once.
   const disk=(()=>{
@@ -181,7 +181,8 @@
         return {ok:false,reason:`The browser did not open its Save dialog (${message(e)}): press Record again${e?.name==='SecurityError'||e?.name==='NotAllowedError'?' (the dialog opens only when a button is pressed)':''}.`};
       }
     }
-    // The working file copied into the chosen file: made seekable (webm.js) when it can be indexed, as written otherwise.
+    // The working file copied into the chosen file by the page itself (when a worker may not write it): made seekable
+    // (webm.js) when it can be indexed, as written otherwise.
     async function copyTo(dest,file,index,progress){
       const W=window.ResonanceWebm,p=index&&W?W.plan(index):null;
       const w=await dest.createWritable();
@@ -200,13 +201,14 @@
       if(!release)throw new Error('this working file is in use in another window');
       let worker;
       try{worker=new Worker(workerUrl());}catch(e){release();throw e;}
-      let written=0,failure=null,onfail=null,closing=null,saving=null,opened,closed;
+      let written=0,failure=null,onfail=null,closing=null,saving=null,opened,closed,progressed=null;
       const fail=why=>{if(failure)return;failure=why;onfail?.(why);};
       const ready=new Promise((res,rej)=>{opened={res,rej};});
       worker.onmessage=e=>{const m=e.data||{};
         if(m.op==='open'){if(m.ok)opened.res();else opened.rej(new Error(m.error));}
         else if(m.op==='written')written=m.bytes;
         else if(m.op==='failed'){written=m.bytes;fail(m.error);}
+        else if(m.op==='progress')progressed?.(m.done,m.total);
         else if(m.op==='closed'){written=m.bytes;closed?.(m);}};
       worker.onerror=e=>{e.preventDefault?.();const why=`the recording worker failed (${e.message||'unknown error'})`;opened.rej(new Error(why));fail(why);closed?.({bytes:written,index:null,error:why});};
       worker.postMessage({op:'open',name});
@@ -215,13 +217,16 @@
       const sink={name,
         get written(){return written;},get failure(){return failure;},set onfail(f){onfail=f;},
         write(blob){if(!failure&&!closing)worker.postMessage({op:'write',blob});},
-        // Everything written, the file closed: {bytes, index}.
-        close(){return closing||=new Promise(res=>{closed=m=>{closed=null;worker.terminate();res({bytes:m.bytes,index:m.index||null,error:m.error||null});};worker.postMessage({op:'close'});});},
-        // Into the chosen file, then the working file deleted (once, however many callers ask).
+        // Everything written, the file closed (and, given `dest`, copied into it by the worker): the worker's answer.
+        close(dest=null,progress=null){progressed=progress;return closing||=new Promise(res=>{closed=m=>{closed=null;worker.terminate();res(m);};worker.postMessage({op:'close',dest});});},
+        // Into the chosen file, then the working file deleted (once, however many callers ask). The worker copies it;
+        // if it may not write the chosen file, the page does.
         save(dest,progress){return saving||=(async()=>{
-          const c=await sink.close();
+          const c=await sink.close(dest,progress);
+          if(c.empty)throw Object.assign(new Error('nothing was written'),{empty:true});
+          if(c.saved){release();return c.saved;}
+          if(!c.fallback)throw new Error(c.error||'the recording could not be copied');
           const file=await (await (await folder()).getFileHandle(name)).getFile();
-          if(!file.size)throw new Error('nothing was written');
           const r=await copyTo(dest,file,c.index,progress);
           await remove(name);release();return r;})();},
         // Left in the browser (saving failed): offered as an interrupted recording.
@@ -245,10 +250,23 @@
       }
       return out.sort((a,b)=>(a.startedAt||a.lastModified)-(b.startedAt||b.lastModified));
     }
-    // An interrupted recording saved into a chosen file: indexed up to its last complete block, made seekable, deleted.
+    // An interrupted recording saved into a chosen file: indexed up to its last complete block, made seekable, deleted;
+    // by a worker, or by the page if no worker may (or can) do it.
+    function saveInWorker(name,dest,progress){
+      return new Promise(resolve=>{
+        let w;try{w=new Worker(workerUrl());}catch{resolve(null);return;}
+        if(typeof w.postMessage!=='function'){resolve(null);return;}
+        const end=v=>{w.terminate();resolve(v);};
+        w.onmessage=e=>{const m=e.data||{};if(m.op==='progress'&&m.phase!=='reading')progress?.(m.done,m.total);if(m.op==='saved')end(m);};
+        w.onerror=e=>{e.preventDefault?.();end(null);};
+        w.postMessage({op:'save',name,dest});});
+    }
     async function save(name,dest,progress){
       const release=await hold(name);if(!release)throw new Error('this recording is being written or saved in another window');
       try{
+        const m=await saveInWorker(name,dest,progress);
+        if(m?.saved)return m.saved;
+        if(m&&!m.fallback&&!m.open)throw new Error(m.error||'the recording could not be copied');
         const file=await (await (await folder()).getFileHandle(name)).getFile(),W=window.ResonanceWebm;
         let index=null;
         if(W){const s=W.scanner();for(let at=0;at<file.size;at+=PIECE)s.feed(new Uint8Array(await file.slice(at,at+PIECE).arrayBuffer()));index=s.index();}

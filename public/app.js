@@ -786,6 +786,8 @@
       lastRecording={...lastRecording,bytes:r.bytes,seekable:r.seekable,file:dest.name,saving:null,at:Date.now()};
       if(reason!=='stopped')notify(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved to ${dest.name}.`,'warning');
     }catch(e){
+      if(e.empty){await sink.discard().catch(()=>{});lastRecording={...lastRecording,file:null,saving:null,at:Date.now()};
+        notify(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`,'error');changed('recording');return lastRecording;}
       await sink.keep().catch(()=>{});
       lastRecording={...lastRecording,file:null,saving:null,kept:sink.name,error:String(e.message||e),at:Date.now()};
       notify(`The recording could not be saved to ${dest?.name||'a file'} (${e.message||e}). It is kept in this browser: save it from Record & Broadcast.`,'error');
