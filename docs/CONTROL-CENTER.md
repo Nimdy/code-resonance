@@ -19,9 +19,18 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 | Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
 | Visual Packs | `#/packs` | My creations; installed packs grouped as imported creations and looks, shader packs and full coded worlds; install (zip or folder), review, approve, revoke, remove, inspect; creator documentation |
 | Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code / Cursor / Codex hooks, CAST catalog, other agents |
-| Record & Broadcast | `#/output` | Recording profiles and state, the OBS browser source, exports, the `npm run film` command (not a live record) |
+| Record & Broadcast | `#/output` | Recording profiles (720p, 1080p, **Vertical** 1080 × 1920, stage size) and state, the OBS browser source, exports, the `npm run film` command and the **vertical clip** command next to it (not a live record) |
 | Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics, documentation (including the 0.7.0 campaign runbook) |
 | Performance Stage | `#/stage` | The immersive stage: live/replay, labels, world, sound, record, full screen |
+
+**Record & Broadcast** in detail: the monitor shows the stage exactly as it is recorded, with the recorder under it.
+The recording profile is saved for every window; **Vertical** records the stage upright at 1080 × 1920 for Reels,
+Shorts and TikTok (every world frames portraits, its words inside the platforms' safe area; the slot shows it with
+bars at the sides; the browser saves WebM). Under **Export and replay**, the **Deterministic film** card gives two
+commands once the project has a public title: `npm run film -- --project <id>` (the whole highlight, 16:9 WebM) and
+`npm run film -- --project <id> --vertical` (a 30-second 9:16 MP4 around the night's key moment, with an end card
+carrying the public title); without a public title it asks for one, for both. The page cannot render films itself
+(Playwright stays in `qualification/`). See [RECORDING.md](RECORDING.md#vertical-clips-916).
 
 ## One engine, many views
 

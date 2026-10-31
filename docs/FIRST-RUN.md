@@ -211,6 +211,11 @@ missing GPU is an error); `--gpu off` is software. Ctrl-C stops it and removes i
 `cd qualification && npm ci`. Films never show folder names, paths or prompts. The overnight CAST checklist:
 [campaign-0.7.md](campaign-0.7.md).
 
+To post the night on Reels, Shorts or TikTok, add `--vertical`: a 1080 × 1920 MP4 (H.264 and AAC) of 30 seconds
+(`--duration` changes it) around the highlight's key moment, opening on the title card and ending on the public title
+and *Code Resonance*, the music faded in and out, written to `qualification/results/films/last-night-vertical.mp4`
+([RECORDING.md](RECORDING.md#vertical-clips-916)).
+
 ## Stream with OBS
 
 **Record & Broadcast › OBS** builds the overlay URL (`?overlay=1&sound=1&project=<id>`) with its options and the Browser

@@ -7,11 +7,12 @@ labels, for every world and every kind of visual pack) together with the music, 
 that downloads when you stop. One window records at a time.
 
 **Recording profile** (Record & Broadcast; the global default in Settings): *720p* (1280×720, the default), *1080p*
-(1920×1080) or *Stage size*. At 720p
+(1920×1080), *Vertical* (1080×1920, 9:16: see [Vertical clips](#vertical-clips-916)) or *Stage size*. At 720p
 or 1080p the world renders at exactly that size with a 16:9 camera (the living worlds, visual packs and the
 Construct), and the stage shows the same picture letterboxed while you record: what you see is what is recorded,
 nothing is stretched, cut or bordered in the file. Monolith, the 2D world, keeps the stage's shape and is fitted into
-the frame with black bars. Labels scale with the output, so 720p and 1080p have the same composition.
+the frame with black bars (at Vertical it is drawn upright at 1080×1920 too). Labels scale with the output, so 720p and
+1080p have the same composition.
 *Stage size* records the stage as it is on screen (any aspect ratio). Video bitrate: 5 Mbit/s at 720p, 8 Mbit/s at
 1080p, in proportion for the stage size. Adaptive quality may lower the world's internal resolution while frames are
 slow; the file keeps the chosen dimensions.
@@ -26,6 +27,53 @@ than about half an hour, record with OBS.
 
 If the sound stops reaching the recording (an audio device disconnected or stalled), the browser's recorder would stall
 the whole file, so the player finishes and saves the recording at that moment and says why.
+
+## Vertical clips (9:16)
+
+A coding night, posted: a 1080×1920 clip of the project's best moment with its music, for Instagram Reels, YouTube
+Shorts and TikTok. Two ways to make one:
+
+- **`npm run film -- --project <id> --vertical`** (or `--aspect 9:16`): the publish path. The same highlight Home plays
+  (`engine/highlight.js`), cut to `--duration` seconds of film (default 30, from 3 to 180) at the highlight's speed and
+  centred on its key moment: of the moments that made the night score (a recovery, a milestone, a meeting of agents, a
+  new structure, a checkpoint), the one whose 30-second clip scores highest by the same rules. Near an end of the
+  recording the clip shifts to stay inside it; a recording shorter than the clip gives all of it. The clip opens on the
+  living world's title card (the public title and the family), and its last 3 seconds are an end card: the public
+  title and *Code Resonance* over the dimmed world (the labels give way to it). The music is faded in over 1 second and
+  out over the last 2.5.
+  Output: `qualification/results/films/last-night-vertical.mp4`, **H.264 (High profile, CRF 18, yuv420p) and AAC
+  192 kbit/s in MP4** with the index at the front (`+faststart`), which the bundled ffmpeg (ffmpeg-static 6.0) encodes;
+  `--format webm` (or an `--out` ending in `.webm`) gives VP9 and Opus instead. `--size 540x960` renders a smaller
+  preview. Like every film it needs a public title (`--allow-untitled` otherwise, and the end card then says only
+  *Code Resonance*), always renders from a `--copy`, and accepts `--gpu`, `--labels`, `--world living|construct|city`
+  and `--family <id>`.
+- **Record** with the **Vertical** profile: the live recorder at 1080×1920 (8 Mbit/s), what the stage plays now. The
+  browser saves WebM (VP9 and Opus), which YouTube and TikTok take; Instagram wants MP4, so use the film for Reels or
+  convert the file.
+
+**Framing.** A frame taller than it is wide is a portrait, and every world frames it for itself; a landscape frame is
+drawn exactly as before (a film rendered with the default arguments gives the same frames as 0.7.2, byte for byte).
+
+| World | In a portrait frame |
+|---|---|
+| Fractal Biosphere | composed as a square frame with the anchor organism centred (not on a third); the host then keeps the field of view across the width, so the camera stays where a landscape view puts it, in front of the giant far organisms |
+| Stellar Forge | the galaxy seen from about 22° higher over the disc, far enough that its central 85 % fills the width, the core centred; what changed fills the width |
+| Machine Cathedral | the standpoint 1.4 times further back, the field of view fitted to 80 % of the city's angular width (up to 66°), the spires under the top fifth, the reflections filling the water below; close-ups fit the width |
+| Synaptic Storm, Fractal Continuum, visual packs | the host's rule for worlds that do not frame portraits themselves (`framesPortrait`): the field of view is kept across the width, so what the world framed for a landscape frame's height fills the portrait's width (a 34° view becomes 57° tall) |
+| Construct | the site fitted to 90 % of the width and centred a little above the middle |
+| Monolith | the title, counts and districts stacked under the top 12 %, the skyline across the middle, the dependencies below it, the legend above the bottom fifth |
+
+**Words.** In a portrait frame the labels, chips, captions, banners, the title card and the end card are sized by the
+short side (1.4 times their landscape size at 1080 wide, so they read on a phone) and kept inside the area the
+platforms leave clear of their own interface: under the top 12 %, above the bottom 20 %, 6 % from the left edge and
+10 % from the right (where their buttons are). A line wider than that area is drawn smaller; a callout stands over its
+point (or under it near the top), clear of the words already placed, and becomes the caption where it cannot fit. The
+rules are in `public/worlds/labels.js` (`textScale`, `safeArea`, `portraitPlaces`) and tested in
+`tests/vertical.test.js`.
+
+**Not verified:** uploading to Instagram, YouTube or TikTok (nothing here talks to them), and how each platform's
+interface overlaps a clip on a given phone: the safe area is a conservative common margin, not a platform
+specification.
 
 ## Architecture
 
@@ -95,5 +143,5 @@ The first marker method (white flash, 2 kHz click found by band energy) could pa
   world's).
 - On machines without a capable GPU the built-in worlds render slowly and recordings stutter (the player warns).
 - **Record** is live (MediaRecorder). **Home Last night** is a sped-up replay of a scored highlight; Playwright is not
-  involved. **`npm run film`** is the publish path: the same window, frame-exact, title-gated, always `--copy`. See
-  [FIRST-RUN.md](FIRST-RUN.md#last-night).
+  involved. **`npm run film`** is the publish path: the same window, frame-exact, title-gated, always `--copy`;
+  **`npm run film -- --vertical`** cuts a 9:16 clip of it (above). See [FIRST-RUN.md](FIRST-RUN.md#last-night).
