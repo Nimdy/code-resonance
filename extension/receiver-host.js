@@ -214,7 +214,9 @@ async function ensureOnce(o){
       if(!again||again.instance!==mine.instance||(await occupant(port,dir)).state!=='verified')return reused(dir,port);
       log(`The receiver on port ${port} was started by Code Resonance ${mine.version||'(unknown)'}; replacing it with ${version}.`);
       if(!await requestStop(dir,mine,{log})){log('It did not stop; it stays in use.');return reused(dir,port);}
-      occ=await occupant(port,dir);
+      // A receiver that is shutting down may still hold the port for a moment without answering the proof: wait for the
+      // port (up to 5 s) rather than take it for another program.
+      for(const t0=Date.now();(occ=await occupant(port,dir,{timeoutMs:500})).state==='foreign'&&Date.now()-t0<5000;)await sleep(100);
       if(occ.state!=='free')return occ.state==='verified'?reused(dir,port):{status:'occupied',port,reason:occ.reason};
       return await spawnReceiver(o);
     }finally{await lock.release();}
