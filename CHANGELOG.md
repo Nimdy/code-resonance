@@ -23,7 +23,10 @@
   artistically.
 - **Qualification parity:** `catalogue.qual.js` renders all six families with every parameter at both ends (12/12,
   SwiftShader); `worlds.qual.js` qualifies determinism across seeks, idle life, label privacy and resource release for
-  every family (`--families`, `--size`, `--fps`, `--tag`).
+  every family (`--families`, `--size`, `--fps`, `--tag`). Run for the three graduated worlds: 21/22. Fractal
+  Continuum fails determinism across seeks (two sessions with different seek histories render different frames on
+  Lumen at 160 s); the code before generator 5 renders the same two frames, so the defect is older and still open
+  ([QUALIFICATION.md](docs/QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
   receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the

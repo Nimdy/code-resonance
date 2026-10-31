@@ -287,6 +287,11 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 
 ## Known gaps
 
+- **Determinism across seeks**: `visual/worlds.qual.js` renders Lumen at 160 s in two sessions, the second after
+  rendering the end of the recording first, and the frames differ (the code before generator 5 too; the world's
+  reported state is the same in both). Not diagnosed; the world's update and camera goal read the live camera (level of
+  detail, `facing()`), which would make the camera the host snaps to after a seek depend on where it was before
+  ([QUALIFICATION.md](../QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Sharpness**: the fractal is drawn at 0.6 of the resolution (0.48 when it fills the frame) and upsampled; the finest
   relief is softer than a full-resolution render. The crystal's small facets still glitter where the key's highlight
   falls on them (tinted by their region, no longer a white coat over the whole form).

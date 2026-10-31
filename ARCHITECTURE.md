@@ -257,7 +257,7 @@ node audio/balance.js --data <dir> --project <id> [--base <git-rev>]       # spe
 node session/history-session.js <repo> /tmp/cr-session 120 30   # build a 30-minute real-code session
 node session/session.qual.js /tmp/cr-session <projectId>          # render and analyse it
 node visual/datasets.js results/datasets --excalidraw <repo> --self <repo> --long 300   # datasets for the visual checks
-node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance]
+node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance] [--families a,b] [--size WxH] [--fps 15] [--tag name]
 node visual/construct.qual.js [path-to-a-real-repo]   # the Construct (CR_QUAL_GPU=wsl for the GPU under WSL2)
 node visual/life.qual.js [--gpu amd]                  # digital life in the player: determinism, frame rates, idle, seeks
 node visual/life-perf.js / life-cpu.js / life-music.js   # digital life: cost in the player, CPU per tick, what the music changes
@@ -265,7 +265,7 @@ node visual/history.qual.js                           # long histories, syntheti
 node visual/long.qual.js                              # long-history replay in the player (lumen-long fixture)
 node visual/unchanged.qual.js [--baseline <ref>]      # built-in worlds render the same frames as a baseline commit
 node visual/pack.qual.js <pack dir> [--gpu amd]       # visual pack compatibility (= node scripts/pack.js test)
-node visual/catalogue.qual.js                         # every family at the extremes of its parameter catalogue
+node visual/catalogue.qual.js [--families a,b]        # every family at the extremes of its parameter catalogue
 node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
 node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
 node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart

@@ -9,8 +9,8 @@ four-minute session in which six Claude Code agents built a small recipe app
 silently behind a short introduction; **Start the performance** turns the music on (browsers need a click for sound)
 and plays it from the beginning, and it starts again when it ends.
 
-On the Stage: the six world families (Stellar Forge, Fractal Biosphere, Machine Cathedral, and the previews Synaptic
-Storm, Fractal Continuum and Temporal Terrain), the Construct and Monolith; replay speed (1×, 4×, 16×) and scrubbing; information modes;
+On the Stage: the six world families (Stellar Forge, Fractal Biosphere, Machine Cathedral, Synaptic Storm, Fractal
+Continuum and Temporal Terrain), the Construct and Monolith; replay speed (1×, 4×, 16×) and scrubbing; information modes;
 quality (Auto lowers it while frames are slow, and offers Monolith on a machine that cannot draw the living world
 smoothly); sound; full screen; recording the stage to a WebM file (in the browser, as in the application). On a phone
 the worlds are a menu instead of seven buttons.
