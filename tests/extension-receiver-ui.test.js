@@ -80,7 +80,7 @@ test('Connect an AI agent: the receiver\'s plan is shown in a diff, confirmed, t
   x=load(t,{answers:{'^Add Code Resonance\'s Claude Code hooks':'Add Hooks'},plans:{'claude:install':plan,'cursor:install':{...plan},'codex:install':{...plan}}});
   plan.next=settings([stableCmd(x.data)]);
   await x.run('resonance.connectAgent');
-  assert.deepEqual(x.said.find(([k])=>k==='quickpick')[1],['Claude Code','Cursor','Codex']);
+  assert.deepEqual(x.said.find(([k])=>k==='quickpick')[1],['Claude Code','Cursor','Codex','Gemini CLI','Qwen Code','GitHub Copilot','Factory Droid','Grok Build','goose']);
   const diff=x.executed.find(([id])=>id==='vscode.diff');assert(diff,'the change is shown in a diff editor first');
   const modal=x.said.find(([k,m])=>k==='warning'&&/^Add Code Resonance's Claude Code hooks/.test(m));
   assert.match(modal[2],/the same path across updates/);assert.doesNotMatch(modal[2],/reported twice/);

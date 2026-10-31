@@ -19,8 +19,9 @@ function temp(t,prefix='cr-hooks-'){
   });
   return dir;
 }
-const EXPECTED=['extension/filters.js','extension/proof.js','receiver/proof.js','scripts/hooks/claude-code.js','scripts/hooks/codex.js','scripts/hooks/cursor.js',
-  'scripts/hooks/install-claude-code.js','scripts/hooks/install-codex.js','scripts/hooks/install-cursor.js','sdk/project-id.js'];
+const TOOLS=['claude-code','codex','copilot','cursor','droid','gemini','goose','grok','qwen'];
+const EXPECTED=['extension/filters.js','extension/proof.js','receiver/proof.js',...[...TOOLS.map(n=>`${n}.js`),
+  ...TOOLS.map(n=>`install-${n}.js`),'install-shared.js','registry.js','shared.js'].sort().map(n=>`scripts/hooks/${n}`),'sdk/project-id.js'];
 test('The hook files are the adapters, their installers and everything they require, found by following requires',()=>{
   assert.deepEqual(hooks.hookFiles(REPO),EXPECTED);
 });
@@ -93,8 +94,8 @@ test('The bundled receiver writes hook entries naming the stable path; the exten
   const removal=await hooks.planHooks({port,dataDir:data,agent:'claude',projectPath:project,action:'remove'});
   assert.equal((await hooks.applyHooks({port,dataDir:data,agent:'claude',projectPath:project,action:'remove',expectHash:removal.currentHash})).written,true);
   assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),{permissions:{allow:['Bash(npm test)']}});
-  // Cursor and Codex go the same way, to their own files, naming their stable adapters.
-  for(const [agent,rel,adapter] of [['cursor','.cursor/hooks.json','cursor.js'],['codex','.codex/hooks.json','codex.js']]){
+  // Cursor, Codex and the registry's tools (Gemini here) go the same way, to their own files, naming their stable adapters.
+  for(const [agent,rel,adapter] of [['cursor','.cursor/hooks.json','cursor.js'],['codex','.codex/hooks.json','codex.js'],['gemini','.gemini/settings.json','gemini.js']]){
     const p=await hooks.planHooks({port,dataDir:data,agent,projectPath:project,action:'install'});
     assert.equal(p.file,path.join(project,...rel.split('/')));assert.equal(p.exists,false);
     assert(p.next.includes(JSON.stringify(`node ${JSON.stringify(path.join(data,'hooks','scripts','hooks',adapter))}`).slice(1,-1)),`${agent} names its stable adapter`);
@@ -102,7 +103,7 @@ test('The bundled receiver writes hook entries naming the stable path; the exten
   // The receiver's rules apply: never the home directory, never inside the data directory.
   await assert.rejects(hooks.planHooks({port,dataDir:data,agent:'claude',projectPath:os.homedir(),action:'install'}),e=>e.status===400&&/home directory/.test(e.message));
   await assert.rejects(hooks.planHooks({port,dataDir:data,agent:'claude',projectPath:path.join(data,'hooks'),action:'install'}),e=>e.status===400&&/data directory/.test(e.message));
-  await assert.rejects(hooks.planHooks({port,dataDir:data,agent:'gemini',projectPath:project,action:'install'}),/Unknown agent/);
+  await assert.rejects(hooks.planHooks({port,dataDir:data,agent:'kimi',projectPath:project,action:'install'}),/Unknown agent/);
 });
 test('The pairing key goes only to a receiver that proved it holds the token',async t=>{
   const data=temp(t),seen=[];
@@ -122,7 +123,7 @@ test('The receiver\'s installers are the stable copies once aliased (what the la
     const claude=require(${JSON.stringify(path.join(REPO,'scripts','hooks','install-claude-code.js'))});
     console.log(JSON.stringify({aliased,adapter:claude.adapter,command:claude.command}));`;
   const out=JSON.parse(cp.execFileSync(process.execPath,['-e',script],{encoding:'utf8'}).trim());
-  assert.deepEqual(out.aliased,['install-claude-code.js','install-codex.js','install-cursor.js']);
+  assert.deepEqual(out.aliased,[...TOOLS.map(n=>`install-${n}.js`),'install-shared.js'].sort());
   assert.equal(out.adapter,path.join(data,'hooks','scripts','hooks','claude-code.js'));
   assert.equal(out.command,`node ${JSON.stringify(out.adapter)}`);
   // Without the alias (npm start in a checkout), the checkout's own adapters, as before.
