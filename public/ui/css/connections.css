@@ -191,7 +191,8 @@
 .ws-connections .conn-tool:hover{background:var(--bg-2);color:var(--text-1)}
 .ws-connections .conn-tool[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--text-1)}
 .ws-connections .conn-tool .dot{width:7px;height:7px}
-@media (max-width:1600px){.ws-connections .conn-strip{grid-template-columns:repeat(4,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(4n){border-right:0}.ws-connections .conn-seg:nth-child(-n+4){border-bottom:1px solid var(--line)}}
+@media (max-width:1600px){.ws-connections .conn-strip{grid-template-columns:repeat(4,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(4n){border-right:0}.ws-connections .conn-seg:nth-child(-n+4){border-bottom:1px solid var(--line)}
+  .ws-connections .conn-seg:last-child{grid-column:span 2}}
 /* ---- Narrower desktops: guidance moves under the observed state, side by side where it fits ---- */
 @media (max-width:1366px){.ws-connections .conn-pair,.ws-connections .conn-pair.guide-wide,.ws-connections .conn-pair.even{grid-template-columns:1fr;gap:16px}
   .ws-connections .conn-guide-steps{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:24px}.ws-connections .conn-guide-steps>.conn-guide-head{grid-column:1/-1}
@@ -201,11 +202,12 @@
   .ws-connections .conn-col-guide .conn-guide-stack{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start}}
 @media (max-width:1180px){.ws-connections .conn-strip{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-connections .conn-seg:nth-child(4n){border-right:1px solid var(--line)}
   .ws-connections .conn-seg:nth-child(3n),.ws-connections .conn-seg:last-child{border-right:0}.ws-connections .conn-seg:nth-child(-n+6){border-bottom:1px solid var(--line)}
+  .ws-connections .conn-seg:last-child{grid-column:span 3}
   .ws-connections .conn-data-body{grid-template-columns:1fr}}
 @media (max-width:1080px){.ws-connections .conn-editor{grid-template-columns:230px minmax(0,1fr)}.ws-connections .conn-tr{grid-template-columns:minmax(0,1fr) 110px 70px}}
 @media (max-width:900px){.ws-connections .conn-editor{grid-template-columns:1fr}
   .ws-connections .conn-vs,.ws-connections .conn-vs:has(>.conn-vs-settings:empty){grid-template-columns:1fr;grid-template-areas:"editor" "settings" "guide" "change"}
   .ws-connections .conn-projects{border-right:0;border-bottom:1px solid var(--line)}.ws-connections .conn-project-rows{max-height:240px}.ws-connections .conn-capture{grid-template-columns:1fr}
   .ws-connections .conn-table.privacy .conn-tr{grid-template-columns:1fr;gap:4px}.ws-connections .conn-table.privacy .conn-tr.head{display:none}}
-@media (max-width:640px){.ws-connections .conn-strip{grid-template-columns:1fr}.ws-connections .conn-seg,.ws-connections .conn-seg:nth-child(4n){border-right:0;border-bottom:1px solid var(--line)}
+@media (max-width:640px){.ws-connections .conn-strip{grid-template-columns:1fr}.ws-connections .conn-seg:last-child{grid-column:auto}.ws-connections .conn-seg,.ws-connections .conn-seg:nth-child(4n){border-right:0;border-bottom:1px solid var(--line)}
   .ws-connections .conn-tr{grid-template-columns:1fr;gap:6px}.ws-connections .conn-tr.head{display:none}}
