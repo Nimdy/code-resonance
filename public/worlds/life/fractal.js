@@ -118,7 +118,7 @@ export function createFractalGrammar(recipe){
   // 25 s), who left a site last and for where (STREAM: 8 s), how often a leaver follows (FOLLOW).
   const REVIVE=Math.exp(-1/(25*HZ)),STREAM=8*HZ,FOLLOW=.7,CROWD=14,CURIOSITY=.014,FLOCK=10;
   function ecosystem(){
-    const VR=new Float32Array(MAX_SITES),STR=new Float32Array(MAX_SITES),REV=new Float32Array(MAX_SITES),strained=new Int16Array(MAX_SITES),revived=new Int16Array(MAX_SITES);
+    const VR=new Float32Array(MAX_SITES),REACH=new Uint8Array(MAX_SITES),STR=new Float32Array(MAX_SITES),REV=new Float32Array(MAX_SITES),strained=new Int16Array(MAX_SITES),revived=new Int16Array(MAX_SITES);
     const streamTo=new Int16Array(MAX_SITES),streamT=new Int32Array(MAX_SITES),W=new Float64Array(MAX_SITES),fl=[0,0,0];let nStr=0,nRev=0,E2=false,GA=1,EXP=1;
     // ---- Per tick (before anything moves): strain and its void, recovery and its draw, the streams --------------------
     // Conditions a recovery leaves (revive, strained) are site conditions, so snapshots carry them; the rest is derived
@@ -126,7 +126,7 @@ export function createFractalGrammar(recipe){
     function perTick(api){
       const S=api.sites,n=S.count,t=api.tick;nStr=0;nRev=0;
       if((E2=api.ecology===2)){GA=api.felt(MOTE,'gather');EXP=api.felt(MOTE,'explore');}
-      for(let k=0;k<n;k++){const st=S.state(k);streamTo[k]=-1;streamT[k]=-1;STR[k]=0;REV[k]=0;if(!st)continue;
+      for(let k=0;k<n;k++){const st=S.state(k);streamTo[k]=-1;streamT[k]=-1;STR[k]=0;REV[k]=0;REACH[k]=hyp(S.x[k],S.z[k])<SOFT-.4?1:0;if(!st)continue;
         if(st.revive===undefined){st.revive=0;st.strained=0;}
         if(st.stress>.2)st.strained=1;else if(st.strained&&st.stress<.05){st.strained=0;st.revive=1;}
         st.revive*=REVIVE;
@@ -142,9 +142,10 @@ export function createFractalGrammar(recipe){
     // already circling it (winner-take-more: a gathering draws more, until it carries all it can); never a strained
     // one; nearer is better. (ecology 2: the music's willingness to gather sets what a site carries and how strongly
     // the gatherings concentrate; exploration widens the reach; the turning attractor moves the appeal around the form)
+    // A site beyond the life's reach (a file far down its region's spiral toward the south pole) is never chosen.
     function choose(api,i,avoid){
       const S=api.sites,n=S.count,x=api.px[i],z=api.pz[i],P=api.params,reach=E2?4.5*Math.sqrt(EXP):4.5,carries=CROWD*(E2?GA:1)*P.collective,wtm=E2?clamp(1.6*Math.sqrt(GA),1.1,2.2):1.6;let total=0;
-      for(let k=0;k<n;k++){const st=S.state(k);if(!st||k===avoid||st.stress>.3){W[k]=0;continue;}const v=S.visits[k];
+      for(let k=0;k<n;k++){const st=S.state(k);if(!st||k===avoid||st.stress>.3||!REACH[k]){W[k]=0;continue;}const v=S.visits[k];
         let a=S.w[k]*(1+1.5*st.novelty+.8*st.lasting+.8*st.nourish+3*REV[k])*(.5+Math.min(2,api.sample(CH.energy,S.x[k],S.z[k])))*(1+.4*Math.min(3,api.sample(CH.trail,S.x[k],S.z[k]))*P.trails)*(1+.35*Math.min(v,carries));
         a=Math.pow(a,wtm)/(1+Math.pow(v/Math.max(1,carries),3))/(1+hyp(S.x[k]-x,S.z[k]-z)/reach)*(1-.9*st.stress)*api.cond.attract*P.attraction*api.shiftOf(k);
         W[k]=Math.max(0,a);total+=W[k];}
@@ -194,7 +195,7 @@ export function createFractalGrammar(recipe){
         // a strained site (a failing run) opens a void over its region: everything is pushed out of it while the strain
         // lasts; the motes wait at its edge
         for(let q=0;q<nStr;q++){const k=strained[q],ex=x-S.x[k],ez=z-S.z[k],d=hyp(ex,ez),R=VR[k];
-          if(d<R&&d>1e-3){const c=(s===EMBER?2:3.4)*Math.min(1,STR[k]*1.6)*(1-d/R)/d;f[0]+=ex*c;f[2]+=ez*c;}}
+          if(d<R&&d>1e-3){const c=(s===EMBER?3:4.5)*Math.min(1,STR[k]*3)*(1-d/R)/d;f[0]+=ex*c;f[2]+=ez*c;}}
         // its own altitude: each inhabitant keeps to a height of its own above the surface while it explores (seeded)
         if(m===MODE.explore||m===MODE.settle||m===MODE.rest){const sp=api.species[s],h=api.fa[i*2+1],yt=sp.yMin+(sp.yMax-sp.yMin)*(s===EMBER?.15+.3*h:.15+.7*h*h);
           f[1]+=(yt-y)*(m===MODE.settle?1.6:.5)-api.vy[i]*.6;}

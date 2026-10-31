@@ -524,7 +524,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     }
     const upload=(geo,name,n)=>{const a=geo.attributes[name];a.clearUpdateRanges();a.addUpdateRange(0,n*a.itemSize);a.needsUpdate=true;};
     let lightEco=null,lightTick=-1;
-    const hide=()=>{pGeo.setDrawRange(0,0);rGeo.instanceCount=0;R.uLifeK.value.set(0,0,0,0);lifeStatsNow={drawn:0,followers:0,trailSegments:0,drawCalls:2};};
+    const hide=()=>{pGeo.setDrawRange(0,0);rGeo.instanceCount=0;R.uLifeK.value.set(0,0,0,0);lifeStatsNow={drawn:0,followers:0,trailSegments:0,points:0,drawCalls:2};};
     const D=[0,0,0],P3=[0,0,0],P4=[0,0,0],P5=[0,0,0];
     updateLife=i=>{
       const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
