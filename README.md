@@ -93,8 +93,10 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Requirements
 
-- **Node.js 20 or later** (CI uses 22). The application has no runtime dependencies: nothing to install.
-- **VS Code 1.99 or later** for capture.
+- **VS Code 1.99 or later** for capture. With the extension alone, that is all: its receiver runs in VS Code's own
+  runtime.
+- **Node.js 20 or later** (CI uses 22) to run from this repository, and on the agents' PATH for agent hooks. The
+  application has no runtime dependencies: nothing to install.
 - **A Chromium-based browser** (Chrome or Edge) for the Control Center and for recording; other browsers have not been
   tested. **WebGL2** for the flagship worlds and the Construct, ideally with a GPU; without it the player shows
   Monolith (Canvas 2D).
@@ -102,9 +104,30 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Quick start
 
-Two places are involved: the **receiver**, which runs in a terminal in this folder and keeps running, and the **VS Code
-window of the project you want to watch**, where the extension captures your work. If that project is open in VS Code
-through WSL, run the receiver inside WSL too.
+Two ways in. Either way, the **receiver** (it records and interprets your work and serves the player) runs on your own
+machine, on loopback, where the VS Code window of your project runs its extensions: inside WSL for a project opened
+through WSL.
+
+### From the extension alone
+
+1. **Install Code Resonance in VS Code:** from the Visual Studio Marketplace or Open VSX once it is published there
+   (publisher *zerobandwidth*; not yet), or from a VSIX with *Extensions › … › Install from VSIX* (`npm run
+   package:vsix` builds one in a checkout).
+2. **Start capture.** In your project's trusted folder, click **CR stopped** in the status bar, choose **Start
+   capture** and accept local capture. When no receiver is running, the extension starts the one it carries, on
+   `http://127.0.0.1:4174`, in VS Code's own runtime: no Node.js, no checkout, nothing else to install.
+3. **Watch and listen.** **CR › Open Stage** opens the Control Center in your browser, already paired. Click **Enable
+   sound**, then **Open Stage**. The Stage runs about 10 seconds behind your work, by design.
+
+That receiver keeps running when VS Code closes, and every window shares it. **CR › Receiver status** says which
+receiver runs and who started it, opens the Control Center again and stops it; its log is
+`~/.code-resonance/logs/receiver.log`. Details: [Getting started](docs/FIRST-RUN.md#with-the-extension-alone).
+
+### From this repository
+
+The **receiver** runs in a terminal in this folder and keeps running; the **VS Code window of the project you want to
+watch** captures your work. If that project is open in VS Code through WSL, run the receiver inside WSL too. An
+installed extension uses this receiver and never starts or replaces one while it answers.
 
 1. **Start the receiver** in this folder, and leave the terminal open (`Ctrl+C` stops it):
 
@@ -127,9 +150,9 @@ through WSL, run the receiver inside WSL too.
 5. **Watch and listen.** Click **Enable sound**, then **Open Stage**. The Stage runs about 10 seconds behind your work,
    by design.
 
-**AI agents (optional).** `npm run hooks:claude -- /path/to/your/project` (or `hooks:cursor`, `hooks:codex`) adds
-observe-only hooks, so the agent joins the world as a CAST presence. Start a new agent session afterwards: a session
-that is already running does not pick up new hooks.
+**AI agents (optional).** **CR › Connect an AI agent…** in VS Code, or `npm run hooks:claude -- /path/to/your/project`
+(or `hooks:cursor`, `hooks:codex`) in a checkout, adds observe-only hooks, so the agent joins the world as a CAST
+presence. Start a new agent session afterwards: a session that is already running does not pick up new hooks.
 
 **Several agents at once.** Install the hooks once per project for each tool you use; then every session joins on its
 own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex. Each is a separate
@@ -137,8 +160,8 @@ presence with its own work and edits; sessions of the same tool are numbered whi
 (*Claude*, *Claude 2*), subagents appear as their tool's *subagent*. An agent without hooks (for example one built into
 an editor that has no adapter here) is not shown as a presence, but its edits still reach the world, unattributed.
 
-**After the first time,** run `npm run up` (or `npm start`) in this folder. Capture in VS Code resumes by itself until
-you stop it from **CR**.
+**After the first time,** run `npm run up` (or `npm start`) in this folder, or let the extension start its own
+receiver. Capture in VS Code resumes by itself until you stop it from **CR**.
 
 Something not right? `npm run doctor` checks the setup, and [Getting started](docs/FIRST-RUN.md#troubleshooting) lists
 symptoms and fixes, including what to do when the picture looks grainy.
@@ -149,21 +172,30 @@ symptoms and fixes, including what to do when the picture looks grainy.
 npm run package:vsix          # writes code-resonance-0.7.2.vsix, with Node only (Windows, Linux, macOS)
 ```
 
+The VSIX (about 3 MB) holds the extension and the receiver it starts when none answers: the receiver, engine, player,
+Control Center, vendored three.js and TypeScript and the hook adapters, nothing from `tests/` or `qualification/`.
+Publishing it to the Marketplace and Open VSX: [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
 Install the VSIX yourself, with `code --install-extension code-resonance-0.7.2.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
 --install-extension code-resonance-0.7.2.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
-accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
-when VS Code restarts until you stop it.
+accept local capture. The status-bar menu also stops capture, opens the Stage or the OBS view, shows the receiver's
+status (and stops the one the extension started) and connects AI agents. Capture resumes when VS Code restarts until
+you stop it. When nothing answers on `resonance.receiverPort`, capture and *Open Stage* start the receiver the
+extension carries (`resonance.startReceiver`, on by default): a detached process on loopback that every window
+reuses through the token proof. A receiver that already answers, such as `npm start` here, is always used instead.
 
-**WSL and remote workspaces:** run the receiver where the extension host runs (inside WSL for a WSL project). Windows
-reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback
-([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
+**WSL and remote workspaces:** the receiver runs where the extension host runs (inside WSL for a WSL project); the
+extension starts it there by itself. Windows reaches it at `http://localhost:4174/` through WSL2's localhost
+forwarding, with the receiver still on loopback ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
 
 **AI agents (CAST):** in a trusted workspace, `npm run hooks:claude -- /path/to/your/project` (and `hooks:cursor`,
-`hooks:codex`) add observe-only adapters. Connections can add or remove them after showing the exact change. Cursor
+`hooks:codex`) add observe-only adapters; Connections and **CR › Connect an AI agent…** can add or remove them after
+showing the exact change. Hooks the extension's own receiver writes run the adapters it keeps in
+`~/.code-resonance/hooks`, a path that survives extension updates. Cursor
 never installs `subagentStart`; Codex never installs `PreToolUse` / `PermissionRequest`; Codex paths come from patch
 headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
 

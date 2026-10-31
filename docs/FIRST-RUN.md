@@ -1,7 +1,49 @@
 # Getting started
 
 From nothing to a project you can watch, hear, record and stream, then make it your own. About a minute to a visible
-world; choosing a look, recording and streaming follow when you want them.
+world; choosing a look, recording and streaming follow when you want them. Two ways in: the VS Code extension alone
+(below), or this repository ([About 60 seconds](#about-60-seconds)).
+
+## With the extension alone
+
+VS Code 1.99 or later, and for the Control Center a Chromium-based browser (Chrome or Edge) with WebGL2. No Node.js and
+no checkout: the extension carries the receiver and runs it with VS Code's own runtime.
+
+1. **Install the extension.** From the Visual Studio Marketplace or Open VSX once it is published there (*Code
+   Resonance*, publisher *zerobandwidth*; not yet), or from a VSIX: *Extensions › … › Install from VSIX*. For a WSL,
+   SSH or container window, install it in that window: *Extensions* lists it under *WSL* (or the remote's name).
+2. **Start capture.** Open your project's folder (trusted), click **CR stopped** in the status bar, choose **Start
+   capture** and accept local capture. If no receiver answers on `127.0.0.1:4174` (`resonance.receiverPort`), the
+   extension starts the one it carries: a separate process, bound to `127.0.0.1` only, with its data in
+   `~/.code-resonance` and its log in `~/.code-resonance/logs/receiver.log`. The **Code Resonance** Output channel says
+   what it decided and where the log is.
+3. **Open the Control Center.** **CR › Open Stage** opens it in your browser with a single-use pairing link: this
+   browser is paired once and may change settings from then on. Within seconds it shows your project by name, with its
+   files under Structure.
+4. **Watch and listen.** Click **Enable sound**, then **Open Stage**. What you see and hear runs about 10 seconds behind
+   your work, by design.
+
+What the receiver does from then on:
+
+- **Every window shares it.** A second window (or another VS Code) finds it through the token proof and starts nothing.
+  Two windows starting at the same moment start one receiver: they take turns through a lock file in the data
+  directory.
+- **It keeps running** when VS Code closes, so a session survives a window reload; capture resumes with VS Code and
+  starts it again after a reboot. **CR › Receiver status** says which receiver runs, who started it and since when, and
+  offers **Open Control Center**, **Stop Receiver** and **Show Log** (also in the Command Palette as *CODE RESONANCE:
+  Receiver Status*, *Stop Receiver*, *Show Receiver Log*, *Open Control Center (Pairing Link)*).
+- **A receiver that is already running is used instead**, whoever started it (`npm start` or `npm run up` in a
+  checkout, another window); the extension never replaces or stops one it did not start. If another program holds the
+  port, or a receiver of another data directory, it starts nothing and says so; capture waits, queued on disk.
+- **After an update**, the next capture or *Open Stage* replaces the receiver an older version started (a window
+  still running the older version keeps using the newer receiver).
+- With `resonance.startReceiver` off, the extension never starts one, as in 0.7.2 and earlier.
+
+**AI agents.** **CR › Connect an AI agent…** lists Claude Code, Cursor and Codex for this workspace, shows the exact
+change to `.claude/settings.local.json`, `.cursor/hooks.json` or `.codex/hooks.json` in a diff editor, and writes it
+only after you confirm (and only if the file did not change meanwhile). Choosing a connected agent removes its hooks the
+same way. The entries run `node` with an adapter the receiver keeps in `~/.code-resonance/hooks`, a path that stays the
+same across extension updates; the agent needs Node.js on its PATH. Start a new agent session afterwards.
 
 ## About 60 seconds
 
@@ -248,7 +290,10 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| The page does not load | receiver not running, or another port | `npm run doctor`; start it with `npm run up` or `npm start` |
+| The page does not load | receiver not running, or another port | **CR › Receiver status** (or `npm run doctor`); **CR › Open Stage** starts the extension's receiver; in a checkout `npm run up` or `npm start` |
+| *Port 4174 is used by another program* (extension) | something else listens on the port, so the extension starts no receiver there | free the port, or set `resonance.receiverPort` to a free one |
+| *A receiver using … is running on port N, but resonance.receiverPort is M* | a receiver of the same data directory runs on another port; a second one would interpret the same journals | set `resonance.receiverPort` to N, or stop that receiver |
+| *Code Resonance could not start its receiver* | the receiver stopped while starting | **Show Log** (`~/.code-resonance/logs/receiver.log`) and the **Code Resonance** Output channel say why |
 | `npm run up` refuses the port | another program (not Code Resonance) is on 4174 | free `RESONANCE_PORT` (default 4174) and run it again |
 | `npm run up` refuses leftover on the port | a Code Resonance receiver answers, but `--data` has no `receiver-auth.json` (another data directory, or a leftover process) | pass the matching `--data` / `RESONANCE_DATA`, or free the port |
 | `npm run up` says *code --install-extension did not succeed*, after *Unable to connect to VS Code server … ENOENT … vscode-ipc-….sock* | the terminal was restored from an earlier VS Code session and points at a VS Code connection that no longer exists | open a new terminal (**+** in the terminal panel) and run it again, or in VS Code use *Extensions › … › Install from VSIX* with `code-resonance-0.7.2.vsix` from the Code Resonance folder |
