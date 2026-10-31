@@ -9,7 +9,7 @@ develops as the software does: structure grows, failures bring tension, fixes re
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
 **Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
-player, with its music, in any of the five worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
+player, with its music, in any of the six worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
 is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
 
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
