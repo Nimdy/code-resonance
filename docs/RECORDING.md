@@ -3,8 +3,17 @@
 ## Using it
 
 **Record** (in the top bar, on the Stage, or in **Record & Broadcast**) records what the stage shows (the world and its
-labels, for every world and every kind of visual pack) together with the music, to a WebM file (VP9 video, Opus sound)
-that downloads when you stop. One window records at a time.
+labels, for every world and every kind of visual pack) together with the music, to a WebM file (VP9 video, Opus sound).
+One window records at a time.
+
+**Where it is written** (Record & Broadcast, a choice of this browser, kept in its storage):
+
+- *Keep in memory, download when stopped* (the default, as before): the browser holds the whole file in memory until
+  you stop, then downloads it. A crash or a closed tab loses it. For up to about half an hour (see *Limits*).
+- *Record to a file on disk* (recommended for long sessions): you choose the file in the browser's Save dialog when you
+  press Record, and the recording is written to disk as it is recorded. Memory stays flat, the length is bounded by the
+  disk, a crash or a closed tab keeps what was written, and the saved file is seekable with its duration. See
+  [Recording to a file on disk](#recording-to-a-file-on-disk).
 
 **Recording profile** (Record & Broadcast; the global default in Settings): *720p* (1280×720, the default), *1080p*
 (1920×1080), *Vertical* (1080×1920, 9:16: see [Vertical clips](#vertical-clips-916)) or *Stage size*. At 720p
@@ -22,11 +31,89 @@ slow; the file keeps the chosen dimensions.
 1080p the built-in worlds (rendered on the player's main thread) drew about 31 frames a second and the file kept 26-28
 (visual packs, rendered in their worker, still recorded at 30). If a
 recording cannot keep up (fewer than 28 frames drawn per second for ten seconds), the player says so once and suggests
-720p or a lower Quality. The browser keeps the recording in memory until you stop (see *Limits*); for sessions longer
-than about half an hour, record with OBS.
+720p or a lower Quality. Kept in memory, a recording grows the browser's memory until you stop (see *Limits*): for
+sessions longer than about half an hour, record to a file on disk, or with OBS.
 
 If the sound stops reaching the recording (an audio device disconnected or stalled), the browser's recorder would stall
 the whole file, so the player finishes and saves the recording at that moment and says why.
+
+## Recording to a file on disk
+
+**Using it.** Choose *Record to a file on disk* under *Where it is written*. Record then opens the browser's Save dialog
+(the name is `code-resonance-<project>-<time>.webm`; the browser remembers the folder) and starts once you have chosen
+the file; cancelling records nothing. While it records, the *Data* readout is *On disk*: the bytes written so far, as the
+writer confirms them, beside the elapsed time; the *File* line names your file. When you stop, the line under Record says
+*Saving … %* while the recording is copied into your file, then *Saved … in the file you chose*. The top bar and the
+Stage record the same way (the dialog opens there too).
+
+**How it works, and why this way.** The browser's recorder delivers a chunk of the file every second. A worker
+(`public/recording-worker.js`) writes each chunk at once, in place, into a working file in the browser's own file
+storage for this page (the *origin private file system*), through a synchronous access handle, and drops it: nothing of
+the recording is kept in the page's memory. Writing straight into the file you chose is not crash-safe in Chromium: a
+`FileSystemWritableFileStream` writes to a temporary copy (`<name>.crswap`) that becomes your file only when the stream is
+closed, and Chromium deletes that copy when the page crashes or closes first. Measured in the Chromium the tests use
+(151), on files of the private storage: 5 MB written through a writable stream, then the renderer crashed: the
+temporary copy was gone and the file had 0 bytes; 4 MB written through a synchronous access handle, then the renderer
+crashed: all 4 MB kept. (A file the user picks gets the same writer, its temporary copy beside it: not measured, since
+headless Chromium shows no Save dialog.) That handle is the only browser API that writes into a file in place, and it
+exists only for the private file storage, in a worker. So the recording is written there, and when it stops the same
+worker copies it into your file in large pieces, off the page's main thread (which keeps drawing the world), made
+seekable on the way (`public/webm.js`); the working file is then deleted. (If a worker may not write the file you
+chose, the page copies it itself.) The cost: at the end the recording is on disk twice until the copy finishes, and the
+working file is on the drive of the browser's profile. Nothing goes through the receiver (it serves two more static
+files, the worker and `webm.js`); nothing is uploaded; an unpaired browser records to disk as well.
+
+**A crash or a closed tab.** The working file keeps every chunk written until then: what the encoder had not yet
+delivered (the last second or two) is lost. Any window of the browser opened afterwards offers it in Record & Broadcast
+(*Interrupted recording kept*: **Save to a file…** or **Discard**), and the other pages say so once. Saving indexes it up
+to its last complete block and makes it seekable. While a window records or saves a working file it holds that file's
+own Web Lock, so no other window offers it; a crash releases the lock at once. The file you chose is written only by
+the copy, so it holds nothing of an interrupted recording (the browser may have created it empty): save the
+interrupted recording over it or elsewhere.
+
+**Seekable.** The recorder writes a live WebM: the Segment and its Clusters have no size, the Info has no duration and
+there are no Cues, so players show no length and browsers cannot seek it. While it is written the worker indexes it
+(element headers only), and the copy writes the Segment's size, a SeekHead, the duration, every Cluster's size and Cues
+on each Cluster's first video keyframe; the picture and sound are copied unchanged. A recording kept in memory is
+saved as the browser wrote it; `ffmpeg -i in.webm -c copy out.webm` makes one seekable (ffmpeg is not part of the
+product).
+
+**Bounds.** The disk space the browser lets the page use (Chromium allows a site up to about 60 % of the disk; the card
+shows what is free for it). A chunk that cannot be written (the disk or that allowance full) finishes the recording and
+saves what was written; if the copy into your file fails, the recording stays in the browser as an interrupted
+recording to save again. In a private (incognito) window Chromium keeps this storage in memory, so there the length is
+not bounded by disk (not measured here).
+
+**Where it is not offered.** Browsers without the File System Access API (Firefox, Safari; Brave turns it off by
+default) and pages opened on a network address rather than `localhost` or `127.0.0.1` (the browser allows file writing
+only on a secure page): the choice is disabled with the reason, and recordings are kept in memory.
+
+**Measured** (`qualification/visual/record-disk.qual.js`, headless Chromium 151 with SwiftShader, the lean driver, three
+minutes per run; `qualification/results/memory/memory-record-disk.json`). SwiftShader draws few frames, so the files
+grow slower than on a GPU (16-17 MB a minute at 720p, 11-12 MB at 1080×1920); what matters is where the growth goes.
+
+| 3 minutes | file | browser process | renderer | GPU process | all processes | saved after Stop |
+|---|---|---|---|---|---|---|
+| 720p, in memory | +45.9 MB | **+46 MB** | +31 MB | +8 MB | +85 MB | download |
+| 720p, to disk | +48.1 MB | **+0 MB** (104-115) | +29 MB | +6 MB | +36 MB | 0.4 s, seekable (181.1 s) |
+| 1080×1920, in memory | +34.7 MB | **+37 MB** | +34 MB | +5 MB | +77 MB | download |
+| 1080×1920, to disk | +32.9 MB | **+3 MB** (104-112) | +36 MB | +7 MB | +46 MB | 0.5 s, seekable (181.7 s) |
+
+Kept in memory, the recording's bytes accumulate in the browser process, one for one; written to disk they do not, and
+the working file on disk grew by exactly what the recorder delivered at every sample. The renderer grew about 30 MB in
+every run, whichever the destination (the world, not the recording); the JS heap stayed between 9 and 16 MB. A
+recording killed at 61.9 s (the renderer crashed) left 16,636,802 bytes on disk, everything written: the working file as
+it was decodes to 60.9 s, and saved through *Interrupted recording kept* it is a seekable 60.9 s file with picture and
+sound that decodes without an error. A tab closed at 27.3 s left 27.0 s, saved the same way. A recording of 1,035 MB (a
+64.5-minute live WebM made from a real one) was indexed and copied into the chosen file through the interface in 5.1 s
+(about 200 MB/s on this machine's disk), and seeks to its middle.
+
+**Not verified:** headed Chrome or Edge on Windows with the real Save dialog (the tests answer the dialog with a file of
+the private storage: the same `FileSystemFileHandle` and `createWritable()`, but not a file the user picked, so the
+browser's check of a downloaded file on close is not exercised, nor whether the worker may write such a file: if not, the
+page copies it, a path checked with stand-ins only), live recordings longer than three minutes (the 1 GB file was made
+from a real recording, not recorded for an hour), a GPU's frame rate (SwiftShader only), a disk that fills up (the
+failure paths are checked with stand-ins in `tests/record-to-disk.test.js`, not on a real disk), and private windows.
 
 ## Vertical clips (9:16)
 
@@ -132,12 +219,11 @@ The first marker method (white flash, 2 kHz click found by band energy) could pa
 
 ## Limits
 
-- The recording is held in memory until it stops. Measured: the file grows about 17 MB a minute at a 746×512 stage,
-  35-37 MB at 720p and 50-61 MB at 1080p, and the browser holds 1.5-1.7 times that while recording (3 minutes at 720p:
-  a 110 MB file, +185 MB; at 1080p: 182 MB, +268 MB), so about 60 MB a minute at 720p and 90 MB at 1080p, against
-  about 70 MB for the earlier default (the stage at 6.2 Mbit/s: a 132 MB file, +208 MB in three minutes).
-  Streaming to disk (the File System Access API) is possible in Chromium but needs a file chosen by the user before
-  each recording and cannot be exercised by the automated tests; it is not implemented. Use OBS for long sessions.
+- *Keep in memory* (the default) holds the recording in memory until it stops. Measured: the file grows about 17 MB a
+  minute at a 746×512 stage, 35-37 MB at 720p and 50-61 MB at 1080p, and the browser holds 1.5-1.7 times that while
+  recording (3 minutes at 720p: a 110 MB file, +185 MB; at 1080p: 182 MB, +268 MB), so about 60 MB a minute at 720p and
+  90 MB at 1080p, against about 70 MB for the earlier default (the stage at 6.2 Mbit/s: a 132 MB file, +208 MB in three
+  minutes). For long sessions record to a file on disk (above), whose length is bounded by disk, or use OBS.
 - Chromium-based browsers only (MediaRecorder with VP9/VP8 + Opus and canvas capture).
 - A label that follows a moving object near the frame's edge can be cut by it (as on screen; the layout is the
   world's).

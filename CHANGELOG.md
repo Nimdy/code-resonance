@@ -6,6 +6,37 @@ Interpretation **10** (9 in 0.7.2: the language adapters and the larger agent ca
 rebuilds each project's derived files once from its journal. No existing identity changes: recipe traits still count only the v9 language categories, and every JS/TS file
 keeps its v9 structure and test flag. The extension's part (below) reaches VS Code with a rebuilt VSIX.
 
+- **Record to a file on disk:** Record & Broadcast offers *Record to a file on disk* (recommended for long sessions)
+  beside *Keep in memory, download when stopped* (the default, unchanged), a choice kept by this browser. Record opens
+  the browser's Save dialog; a worker (`public/recording-worker.js`) then writes each chunk the recorder delivers, in
+  place, to a working file in the browser's private file storage through a synchronous access handle, so memory stays
+  flat, the length is bounded by disk and a crash or a closed tab keeps everything written (a writable stream on the
+  chosen file writes to a temporary copy that Chromium deletes when the page crashes: measured). When it stops, the
+  working file is copied into the chosen file and made seekable on the way (`public/webm.js`: the Segment's and every
+  Cluster's size, a SeekHead, the duration, Cues), then deleted. An interrupted recording is offered by any window
+  opened afterwards (**Save to a file…** or **Discard**); each working file is held by its own Web Lock while a window
+  writes or saves it. The recorder shows the bytes on disk and the file; a browser without the File System Access API,
+  or a page on a network address, says why the choice is unavailable. No receiver write path (two more static files
+  are served). Measured in headless Chromium for three minutes (`qualification/results/memory/memory-record-disk.json`):
+  kept in memory, the browser process grew with the file one for one (+46 MB for a 46 MB file at 720p, +37 MB for 35 MB
+  at 1080 × 1920); written to disk, +0 and +3 MB, the working file on disk growing with every chunk; saved in 0.4-0.5 s
+  as seekable files of 181 s. A renderer crashed at 61.9 s left all 16.6 MB written, saved as a seekable 60.9 s file; a
+  1 GB recording was indexed and saved in 5.1 s. Checked by `tests/webm.test.js`, `tests/record-to-disk.test.js`, the Output interface suite and
+  `qualification/visual/record-disk.qual.js`; not verified with the real Save dialog on Windows or for hours.
+- **Recorder:** a recording whose recorder stops by itself (a recorder error, or a chunk that cannot be written to
+  disk) is saved too, once, however many finishes ask for it; before, a recorder error dropped the file. Record &
+  Broadcast draws Record's state again once a press is answered (the busy state enabled it even if another window had
+  started recording meanwhile).
+- **Output interface suite:** the two-window Record race and the crash take-over wait on what the windows show (both
+  idle with the recorder lock free before a round; both presses answered before judging it; each window's own log of
+  when it recorded), stop a late recording before the next round, and press again a round whose presses were not
+  simultaneous. The failures under load were the test's: a fixed two-second watch, while a first Record on a software
+  renderer can take longer (3.3 and 7.2 s for a first round with `npm test` running alongside), and a press whose timer
+  fires late in a busy window finds its button already disabled (4.8 s late in a loaded run of the previous checks,
+  which failed 51/53 while every round had exactly one recording); the lock never let two windows record. The control
+  (lock bypassed) now measures what it was meant to: two windows recording at once (it read 0 before, its watch ending
+  before either had started). The new checks passed 62/62 unloaded and in three loaded runs.
+
 - **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
   enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with
   its music after a click, in any of the five world families, the Construct or Monolith, at 1×, 4× or 16×; it also

@@ -108,9 +108,12 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
   names an unknown layer type or signal or exceeds the budget. It is drawn by the built-in layer runtime, never in the
   pack frame, and gains no executable privilege.
 - **This browser** keeps, in its storage for the receiver's origin: the pairing key, the active project's id, the last
-  view, rendering quality, a few interface choices (such as the OBS URL options), the composition last opened in the
-  Artist Studio, and the author name and licence you last used for an export. No project names, paths or tokens.
-- **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download; nothing is uploaded. **Films** (`npm run film`) and **Home Last night** follow the same floor. Agent chips, collision callouts and the Last night cast use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), never vendor marks; an agent that reports any other id is shown as "Agent" (the Control Center, which is private, names the id it reported), and visual packs receive catalog ids only.
+  view, rendering quality, where recordings are written, a few interface choices (such as the OBS URL options), the
+  composition last opened in the Artist Studio, and the author name and licence you last used for an export. No
+  project names, paths or tokens. While a recording is written to disk, its working file (the recording itself) is in
+  the browser's private file storage for that origin, until it is copied into the file you chose; after a crash, until
+  you save or discard it.
+- **Recordings** (Record) contain only the stage the viewer sees (world and labels, in the chosen label mode) and the music output: no microphone, source, paths, prompts, commands or the receiver's token. They are saved by the browser as a download, or, recorded to disk, written by the browser to the file you chose (the File System Access API; the receiver has no write path for them); nothing is uploaded. **Films** (`npm run film`) and **Home Last night** follow the same floor. Agent chips, collision callouts and the Last night cast use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), never vendor marks; an agent that reports any other id is shown as "Agent" (the Control Center, which is private, names the id it reported), and visual packs receive catalog ids only.
 - Not a boundary against other local users with access to your home directory or against malware running as you.
 
 ## Erasing data
