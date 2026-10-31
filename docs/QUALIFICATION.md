@@ -1244,6 +1244,18 @@ to identity). What was checked, on the development machine with three other trac
   - Resources: switching between all six worlds twelve times leaves geometries (29 → 29) and textures (19 → 19).
   - Not run: the flagships' new idle and privacy checks (Stellar Forge's ran before), the live-player performance of the
     graduated worlds on a GPU (`--gpu amd`: the GPU was shared with other tracks), and the live priming section.
+- **Worlds again, on the integrated branch** (`feat/worlds-graduate` at `9c400f8`, the three worlds' digital life
+  merged and on for their generator 5 identities; `--only determinism,idle,privacy`, the same families, size, fps and
+  copies of the datasets; `results/visual/worlds-qualification-integrated.json`): **22/22**, 2026-10-31.
+  - Determinism across seeks passes for all three, Fractal Continuum included, after its fix (the camera read before
+    the rig snapped after a seek; `docs/worlds/fractal-continuum.md` › Determinism): Synaptic Storm on Excalidraw
+    `69097a39bbc73c60` twice, Fractal Continuum on Lumen `b3a7be29511d6a8f` twice, Temporal Terrain on Self
+    `03057340a0926361` twice. No page errors.
+  - Idle life with the ecosystems on: mean |Δluma| between samples Synaptic Storm 4.2-5.1, Fractal Continuum 10.9-11.2,
+    Temporal Terrain 5.4-8.8; structure counts, intents (205), lasting transformations and unlocks unchanged; the
+    director reports idle.
+  - Privacy: 46, 49 and 45 distinct label strings, none with a path, file name, source identifier or the folder name.
+  - Resources: switching between the six worlds twelve times leaves geometries 29 → 29 and textures 19 → 19.
 - **Visual Studio** (`ui/workspaces/visual.qual.js`, an isolated installation, SwiftShader,
   `results/ui/visual.json`): **79/79**, including the graduated worlds' thumbnails rendered from the project, no *In
   design* pill on any card, twelve read-only curated looks, and a new identity's life on generator 5. The first run
