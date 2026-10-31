@@ -12,14 +12,17 @@ const RUNTIME={root:REPO,kind:'checkout'},LAUNCHER=path.join(REPO,'extension','l
 const VERSION=require('../extension/package.json').version;
 const freePort=()=>new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const {port}=s.address();s.close(()=>resolve(port));});s.on('error',reject);});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-// A data directory whose bundled receiver (if any) is stopped, then removed, when the test ends.
+// A data directory whose bundled receiver (if any) is stopped, then removed, when the test ends. On Windows a process's
+// open files (its log in the data directory) keep the directory busy until the process has exited, so the removal waits
+// for the exit and retries for a few seconds (EBUSY on a CI runner otherwise).
 async function stopBundled(dir){
   const s=host.readState(dir);if(!s||!host.alive(s.pid))return;
   if(!await host.requestStop(dir,s,{timeoutMs:15000})&&host.alive(s.pid))try{process.kill(s.pid,'SIGKILL');}catch{}
+  for(let i=0;i<100&&host.alive(s.pid);i++)await sleep(100);
 }
 function dataDir(t){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-host-'));
-  t.after(async()=>{await stopBundled(dir);fs.rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
+  t.after(async()=>{await stopBundled(dir);fs.rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});});
   return dir;
 }
 function counting(){const calls=[];const spawnImpl=(...a)=>{calls.push(a);return cp.spawn(...a);};return {calls,spawnImpl};}
