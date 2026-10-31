@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **Digital life for Synaptic Storm (preview):** behind `life.enabled`, as in the flagship worlds, the network is
+  inhabited by astrocytes that settle in domains beside the neurons' synapses, vesicles that ride a slow neuromodulator
+  tide and gather in swirls at active synapses, and microglia that survey an inhibited neuron's edge
+  (`public/worlds/life/synaptic.js`). A failing run inhibits the neurons of the files it covers and life withdraws from
+  them; after the recovery it returns. A calcium wave crosses the glia when their neuron fires (always gold, never an
+  agent's colour), and a neuron's membrane and synaptic clefts brighten with the life gathered there. Only as many
+  inhabitants are awake as the neurons can host. The catalogue's Synaptic Storm entry offers the standard `life.*`
+  group, so the Visual Studio and the lab turn it on with a tuning; the generator does not add it to the preview yet.
+  A recipe without life renders exactly as before (pinned against 1226b8a). Tests: `tests/life-synaptic*.test.js`.
+- **Synaptic Storm's agents travel the network:** between two neurons the axon graph joins, an agent's signal runs in
+  from its branch to the soma and along those axons' own curves at conduction speed (1.8 to 4.5 s) instead of a lifted
+  arc; two agents on one file (`agent.collision`) are two signals in their colours meeting at its branch in a ring.
+  With the host's musical clock (now offered to worlds as `ctx.musicAt`, as the artist layers had it), its neurons
+  also fire on the eighth notes between the beats where the arrangement plays rhythm (read at their own bar: a pulse in
+  flight never changes), and a section's onset is a soft synchronous volley.
+- **Long frames at 1920×1080 diagnosed** (`qualification/visual/stalls.js`, new: per-frame callback, WebGL and GPU timer
+  records plus a Chrome trace of every process): on the WSL2 AMD path (ANGLE's GL backend over Mesa d3d12) the GPU
+  process blocks in `GLContextEGL::MakeCurrent` about 47 times a second at 1080p (median 12 ms, under 8 ms at 720p),
+  waiting for the GPU to finish its queued work; when GPU frames lengthen (heavier moments, another process on the same
+  GPU) the waits reach 40–53 ms and frames are missed in runs of 100–133 ms. Not the page's work and not the label
+  overlay; details in `docs/worlds/synaptic-storm.md`.
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
   receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the

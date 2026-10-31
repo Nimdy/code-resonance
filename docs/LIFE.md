@@ -1,7 +1,8 @@
 # Digital life
 
 The three flagship worlds can be inhabited: autonomous populations that sense, move, gather, leave traces and react
-to the world and to each other. This document is the contract: what the system is, what is deterministic and how
+to the world and to each other. So can Synaptic Storm, a preview, where a tuning turns it on (its catalogue entry
+offers the same `life.*` group; the generator does not add `genome.life` to a preview identity yet). This document is the contract: what the system is, what is deterministic and how
 exactly, what changes for existing identities, and what it costs.
 
 ## The loop
@@ -48,13 +49,14 @@ live a seeded lifetime, fade out, and their slot is reused by a new generation a
 with time: no per-event spawning, fixed arrays, fixed trail length, a bounded number of sites (64) whose conditions are
 forgotten when the site disappears.
 
-## The three ecologies
+## The ecologies
 
 | World | Inhabitants | What they do | What the world shows of them |
 |---|---|---|---|
 | Fractal Biosphere (`life/biosphere.js`) | pollinators, spores, plankton colonies, drifters (about 1000) | Pollinators choose an organism's crown heads by appeal (visitors, trail, the organism's prominence, lasting milestones; winner-take-more), crowd above a threshold that scales with the crown, drain its nectar and leave in small streams for the next crown. Plankton colonies gather and move on between crowns; spores ride the gyre and settle in calm water; drifters wake where the water is disturbed. A failure opens a void around the strained organism and scatters life; a recovery lets it return. | Visited crowns and buds light up locally (the organisms' own photophores); explorers are dim and tail-less, gatherings are the brightest. |
 | Stellar Forge (`life/stellar.js`) | dust, accretion fragments, charged motes, stellar wind (about 1100) | Matter moves with the galaxy's differential rotation, density waves and eddies; systems capture fragments on eccentric bands; a failure's onset blows a system's halo out and its wind thickens, a recovery draws the matter back; a new system pulls harder for a while; verified milestones are lasting attractors. | Soft tapered ribbons and uneven beaded clumps; the gas map brightens along the streams matter keeps using (a matter map rebuilt from the state each tick). The galaxy stays the protagonist. |
 | Machine Cathedral (`life/cathedral.js`) | couriers, wardens, sparks | Routed on the city's own network (kerbs, docks, shafts on each tower's stone, galleries, spokes, channels, canal corridors, cables), never through stone. Traffic on a route deters the next traveller (congestion) or draws it (trail); shaft gates release climbers in convoys, kerb junctions admit platoons on the precinct's beat. A failure withdraws the wardens from the struck precinct; after a recovery they gather at the hub's foot and climb together. | Lanterns with their own halo shader; copings, channels and cables lit by recent traffic. |
+| Synaptic Storm, preview (`life/synaptic.js`) | astrocytes, vesicles, microglia (900 slots; awake only as many as the neurons host) | Sites are the neurons where the world comes to draw them; anchors the synapses where its axons arrive. Glia settle in domains of their own beside a neuron's synapses and tile the network, moving on seldom (less where the neuron is nourished or lasting); vesicles ride the neuromodulator tide (a slow circulation, an in- and outflow turned by the swing, broad eddies) in loose clouds, gather in swirls about active synapses and leave fed in streams. A failure inhibits the neurons of the files it covers: glia and vesicles leave a sphere about each soma, microglia come to hold its edge; after the recovery life returns. | Glassy astrocytes with fine beaded processes and endfeet, a gold calcium wave crossing them when their neuron fires; glass vesicle bubbles; small ramified microglia that round up where the field is disturbed. A neuron's membrane, inner light and synaptic clefts brighten with the life gathered there. |
 
 ## Ecology v2
 
@@ -318,6 +320,9 @@ a new coding agent, a courier is never a tool call.
 
 - Generator v3 (`engine/recipe.js`) adds `genome.life` to **new built-in identities** (from its own random stream: every
   v2 value is unchanged, pinned in `tests/recipe.test.js`). Pack worlds and looks never get it.
+- Synaptic Storm (a preview, `engine/catalog.js` `PREVIEWS`) offers the `life.*` group; the generator does not add
+  `genome.life` to it, so it lives only where a tuning turns it on. Without `life` it renders as before (every shader,
+  uniform, buffer and state texture pinned against 1226b8a in `tests/life-synaptic-world.test.js`).
 - **Stored identities keep exactly what they had**: a recipe without `life` renders as before. The Visual Studio's
   *Digital life* group turns it on (a tuning of `life.enabled`: preview, cancel, apply; reset removes it again).
 - `life.enabled: false` (or absent) renders the world exactly as before: no ecosystem, no draw call, no uniform
