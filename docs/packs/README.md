@@ -51,7 +51,7 @@ manage what is installed. `--data <dir>` selects another receiver data directory
 
 ## What your world receives
 
-The [World API](world-api.md) is the same interface the three built-in families implement. Your world gets:
+The [World API](world-api.md) is the same interface the six built-in families implement. Your world gets:
 
 - **structure**: subsystems (districts), modules, symbols and dependencies, with the times they appear and are
   removed and the material state of each module (draft, committed, validated, stressed) at any time;

@@ -1,4 +1,4 @@
-# Temporal Terrain (preview)
+# Temporal Terrain
 
 A contour landscape in which **time is the land**. The project's history is a terrain that unrolls toward the viewer:
 the present is the front edge, a lit cut through the land where new ground is laid down, and the past recedes into the
@@ -8,10 +8,10 @@ ridges that run back through time from the moment they were created, symbols the
 ridges. A replay lays the land down: every file that arrives raises a ridge at the front edge that then travels back
 with the rest of history; where a ridge grew, its contour lines turn and crowd.
 
-**Status.** A preview, the sixth built-in world family (`public/worlds/terrain.js`, `terrain-layout.js`,
-`terrain-glsl.js`): chosen only explicitly (the Visual Studio, marked *In design*; the render lab's `--family
-temporal-terrain`; the web demo), never by the family scores. Adding it changed no existing identity (see
-[Selection and compatibility](#selection-and-compatibility)). It has **not been reviewed artistically** and has not been
+**Status.** The sixth built-in world family (`public/worlds/terrain.js`, `terrain-layout.js`, `terrain-glsl.js`), a
+preview until generator 5 graduated it: the family scores can choose it, it is a base for declarative and shader packs,
+the Visual Studio offers it with two curated looks and the Artist Studio composes over it. Graduating it changed no
+existing identity (see [Selection and compatibility](#selection-and-compatibility)). It has **not been reviewed artistically** and has not been
 watched in motion by a person (stills only, see [What is not done](#what-is-not-done)). Everything described here is
 implemented unless marked *planned*.
 
@@ -152,7 +152,7 @@ Pure functions of the recipe, the model and the time (`terrain-layout.js`, no TH
 | `milestone.achieved` (sunrise), `refactor.validated` (terrace) | The **earned sunrise** or a local glow (below); a beacon (a cairn for a refactor) stays |
 | `world.expanded` (horizon) | A brief lift of exposure |
 
-**The sunrise rule.** As in the other previews: a sunrise needs the director's milestone tier (3 or more, one of its
+**The sunrise rule.** As in Synaptic Storm and Fractal Continuum: a sunrise needs the director's milestone tier (3 or more, one of its
 three spectacle tokens) and, in the director's lasting record, the milestone is the first or comes at least **4 minutes
 of performance time** after the last one that could earn it. Then the key light swings low behind the land, the sky
 warms from the horizon, a wave of warm light runs over every range from the subject and the camera pulls back a little.
@@ -225,15 +225,30 @@ Films always render at quality 0.
 
 ## Selection and compatibility
 
-- `engine/recipe.js` `PREVIEWS = ['synaptic-storm', 'fractal-continuum', 'temporal-terrain']`: accepted by
-  `generate({family})` and the `family` action, never part of `FAMILIES`, so the family scores and their draws are
-  unchanged. Its genome comes from `rng('genome', 'temporal-terrain', …)` and its palette from its own stream.
-  `RECIPE_VERSION` stays 4: the generator fingerprints of `tests/recipe.test.js` hold unedited.
-- `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, not a base for declarative
-  packs. `/api/catalog` lists it under `previews`.
+- **Generator 5** (`engine/recipe.js`, `RECIPE_VERSION` 5) graduated it from `PREVIEWS` into `FAMILIES` (`GRADUATED`).
+  Its score, from its own random stream (`rng('family', 'temporal-terrain', seed, variant)`) after the flagships'
+  unchanged draws: the structure grown while the project was observed (1.4 for all of it: generator 5's trait `grown`,
+  the share of its symbols created since the first scan), subsystems (0.6 at seven: ranges across the land), tests (0.3
+  at a third of the files: a surveyed land) and no single hub at the centre (0.2: a land, not a star system). A
+  repository indexed whole by its first scan has no history to lay down (Excalidraw is one massif, above); a project
+  recorded from its first file has all of it, so Lumen Recipes and Code Resonance itself are Temporal Terrains under
+  generator 5. Over the synthetic corpus of `tests/generator-v5.test.js` it is chosen for 12.2 % of projects, nearly all
+  of them recorded from their first file ([WORLDS.md](../WORLDS.md#from-data-to-identity)).
+- **No existing identity changes.** Generator 4 scores the flagships alone, with the same draws and the same traits
+  (`grown` is added from 5 on, after the others): every v4 value is as pinned (`tests/recipe.test.js`, and
+  `tests/generator-v5.test.js` against the generator at 1226b8a). An identity stored by generator 4 is redrawn with 4
+  (`generatorOf`), so it never becomes a Temporal Terrain by itself; choosing it, regenerating or going back to
+  automatic is a new identity on generator 5 (regenerating one founded before 5 scores its unknown history as halfway). A
+  recipe that chose it before graduation is served as stored (its name still says "(preview)", without digital life).
+- Its genome comes from `rng('genome', 'temporal-terrain', …)` and its palette from its own stream, as before; a new
+  identity also gets `genome.life` from `rng('life', 'temporal-terrain', …)` (enabled, ecology 2), which draws nothing
+  until the world has an ecosystem grammar.
+- `engine/catalog.js` `FAMILIES`: its parameters plus the common ones, frozen (added to, never removed or narrowed),
+  so a declarative or shader look can name it as its base. `/api/catalog` lists it under `families`; `previews` is empty.
 - `public/worlds/host.js` `BUILTIN` loads it; the host remembers a replay's recorded windows from its last prime and
-  hands them to a built-in world that implements `onHistory` (packs never get them). The Visual Studio lists it after the
-  other previews with an *In design* pill and a thumbnail; the web demo offers it with the other worlds (eight in all).
+  hands them to a built-in world that implements `onHistory` (packs never get them). The Visual Studio lists it with the
+  flagships (thumbnail, the code's-match star, two curated looks: *Survey map* and *Misty valley*, and an Essentials
+  group), the Artist Studio offers it as a base, and the web demo offers it with the other worlds (eight in all).
 
 ## What is not done
 
@@ -255,7 +270,7 @@ Films always render at quality 0.
   1920×1080, or over a long soak. The web demo and Visual Studio UI suites (`qualification/site/web-demo.qual.js`,
   `qualification/ui/workspaces/visual.qual.js`) were updated for the sixth world but not run.
 - **Digital life**: none yet (no ecosystem grammar for the land); the preview offers no life parameters.
-- **Generator inclusion and graduation**: as for the other previews, a new generator version would be needed to let the
-  family scores choose it, and its parameters would freeze into the catalogue with curated looks and the Artist Studio.
+- **Generator inclusion and graduation** are done (generator 5, above); its curated looks have not been reviewed
+  artistically, and the web demo, rebuilt, opens on it (generator 5's choice for Lumen Recipes).
 </content>
 </invoke>

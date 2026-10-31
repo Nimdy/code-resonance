@@ -1,7 +1,7 @@
 # The Artist Studio
 
-The Artist Studio (`#/artist`) makes original visual compositions without code: procedural layers over one of the
-flagship worlds, or over the minimal artist canvas, that react to the music and to the project's real engineering
+The Artist Studio (`#/artist`) makes original visual compositions without code: procedural layers over one of the six
+built-in worlds, or over the minimal artist canvas, that react to the music and to the project's real engineering
 events. A composition is data (`public/composition.js`); nothing in it is ever evaluated. Artists who want unrestricted
 rendering code use the Visual Pack SDK (shader and world packs), which keeps its approval and isolation.
 
@@ -71,7 +71,7 @@ New layers start with one tasteful mapping, and an empty list offers one-click s
   replace it (theirs stays in the history).
 - **Apply to project** saves first if needed, then applies the composition to the selected project as one recipe action
   (`{type:'composition'}`) against the identity revision the preview started from; a change made meanwhile in another
-  window asks whether to reload or apply on top. When the composition names another flagship world, the project switches
+  window asks whether to reload or apply on top. When the composition names another built-in world, the project switches
   to it; its world values and finish are applied through the ordinary tuning (only tunable, valid values); its music
   profile becomes the project's music preferences (key, mode and motif stay the project's own). The project's digital
   life and structure stay. Every window, the OBS view, recordings and replays then show it.
@@ -120,8 +120,8 @@ The change feed announces `compositions` with the library's revision, which its 
 
 ## How a composition is rendered
 
-An artist composition is a stack of procedural layers over a base (one of the three flagship worlds, or the artist
-canvas), with a finish, optional world tuning and music profile, and reactive mappings from deterministic signals to
+An artist composition is a stack of procedural layers over a base (one of the six built-in worlds, or the artist
+canvas; Synaptic Storm, Fractal Continuum and Temporal Terrain since generator 5 graduated them), with a finish, optional world tuning and music profile, and reactive mappings from deterministic signals to
 bounded parameters. The data model is `public/composition.js` (allowlisted types, clamped values, nothing evaluated
 as code). This document is the renderer's contract: how a composition is drawn, what it can anchor to, what it can
 respond to, and what is deterministic.

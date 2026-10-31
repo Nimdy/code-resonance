@@ -318,6 +318,12 @@ a new coding agent, a courier is never a tool call.
 
 - Generator v3 (`engine/recipe.js`) adds `genome.life` to **new built-in identities** (from its own random stream: every
   v2 value is unchanged, pinned in `tests/recipe.test.js`). Pack worlds and looks never get it.
+- Generator v5 adds it to new identities of **Synaptic Storm, Fractal Continuum and Temporal Terrain**, the worlds it
+  graduated, in the same way (`rng('life', <family>, seed, variant)`: enabled, the per-project character of `density`,
+  `vitality`, `collective` and `trails`, ecology 2), so every v4 value of those worlds is unchanged
+  (`tests/generator-v5.test.js`). An identity of one of them saved before v5 has no `life` and keeps it so. The
+  values draw nothing until the world has an ecosystem grammar (`ctx.life.create`), and the life controls appear in
+  the Visual Studio when its catalogue lists the `life.*` group.
 - **Stored identities keep exactly what they had**: a recipe without `life` renders as before. The Visual Studio's
   *Digital life* group turns it on (a tuning of `life.enabled`: preview, cancel, apply; reset removes it again).
 - `life.enabled: false` (or absent) renders the world exactly as before: no ecosystem, no draw call, no uniform
@@ -335,7 +341,8 @@ is a version, not a scale: see [Ecology v2](#ecology-v2).
 ## Visual packs
 
 The generator never adds digital life to an identity drawn with a pack's world or look (generator v3 adds it to new
-built-in identities only), and SDK 1.2 does not change that; packs keep their sandbox and approval.
+built-in identities only, v5 to the graduated worlds' as well, never under a look), and SDK 1.2 does not change that;
+packs keep their sandbox and approval.
 
 ## Privacy
 

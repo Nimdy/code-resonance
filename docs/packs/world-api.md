@@ -16,8 +16,8 @@ export function createWorld(sdk){
 }
 ```
 
-The three built-in families (`public/worlds/stellar.js`, `biosphere.js`, `cathedral.js`) implement exactly this
-interface; read them for complete examples of instancing, shaders, labels and lasting state.
+The six built-in families (`public/worlds/stellar.js`, `biosphere.js`, `cathedral.js`, `synaptic.js`, `fractal.js`,
+`terrain.js`) implement exactly this interface; read them for complete examples of instancing, shaders, labels and lasting state.
 
 ## Functions your world implements
 
