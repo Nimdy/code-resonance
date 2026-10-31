@@ -379,7 +379,11 @@ export function createFamily(ctx){
     // idle: the camera travels between the vantage points (ambient; work and events end it)
     const idle=clamp(1-(i.activity||0)*6),cyc=i.tview/170,ph=cyc-Math.floor(cyc),order=['survey','valley','map'],next=VANTAGE[order[(order.indexOf(cam.personality)+1+Math.floor(cyc))%3]]||own;
     const dip=idle*Math.pow(Math.sin(ph*Math.PI),2)*clamp(num(mot.drift,.7),0,1.5)*.9;el=lerp(el,next.el,dip);back=lerp(back,next.back,dip);
-    let distance=Math.max(wd*.62/Math.tan(hx),peak*5.5)*clamp(num(cam.distance,1),.6,1.6)*lerp(1.02,.9,smooth((el-.3)/.7));
+    // A portrait frame (a vertical clip): time runs up the frame. The camera looks down more steeply, so the present's
+    // front edge spans the width at the bottom and the past recedes toward the top, and stands a little closer, since the
+    // width fit above already counts the narrow frame (the host leaves its field of view alone: framesPortrait).
+    const portrait=aspect<1;if(portrait){el=Math.max(el,.74);back=Math.max(back,1.05);}
+    let distance=Math.max(wd*.62/Math.tan(hx),peak*5.5)*clamp(num(cam.distance,1),.6,1.6)*lerp(1.02,.9,smooth((el-.3)/.7))*(portrait?.82:1);
     const target=new THREE.Vector3(cx,peak*.25,-wd*back*.6);
     let az=baseAz+Math.sin(i.tview/150)*.22*drift*motion*(1-.6*smooth((el-.6)/.4));
     // what changed is seen up close: the front edge where it happened. An agent's edit (its touch raising the ground) is
@@ -457,6 +461,6 @@ export function createFamily(ctx){
     composeA.subsystems=present.ranges.map(r=>({id:r.id,pos:new THREE.Vector3(r.cd,peak*.4,-4),size:Math.max(1,r.w*.5)}));
     composeA.nodes=[...files.values()].slice(0,64).map(f=>({pos:new THREE.Vector3(f.x,(crest.get(f.id)??0)+.5,-.4)}));
     const att=i?ctx.director.attentionAt(i.t,1):null;composeA.active.pos.copy((att&&attentionPoint(att))||composeA.center);return composeA;}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,onHistory,onDelta,onCue,
+  return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,onHistory,onDelta,onCue,
     compose:{camera,scene,anchors:composeAnchors}};
 }
