@@ -141,7 +141,23 @@ const PREVIEWS={
     'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
     'agents.form':e(['signal'],'agent form: a signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
     effects:['emerge','seed','unfold','erode','thread','decohere','coherence-wave','recohere','refine','bloom','glow','deepen'],
-    unlocks:['stardust','inner-light','corona','echoes']}
+    unlocks:['stardust','inner-light','corona','echoes']},
+  'temporal-terrain':{name:'Temporal Terrain (preview)',preview:true,parameters:{
+    'time.scale':n(15,90,'how many seconds of the recent past the land near the front edge holds (τ): smaller, the land flows back faster'),
+    'time.depth':n(35,90,'depth of the land per e-fold of age: larger, the past stays wider'),
+    'relief.height':n(.4,1.8,'height of the files\' ridges'),'relief.massif':n(.3,1.8,'height of the ranges\' plateaus under their files'),
+    'relief.detail':n(0,2,'fine relief from the files\' symbols'),'relief.spacing':n(.3,9,'spacing of the files across a range (world units, from the project\'s size)'),
+    'contour.interval':n(.4,1.6,'height between two contour lines'),'contour.index':i(3,6,'every n-th contour line is an index line (brighter)'),
+    'contour.width':n(.5,2,'contour line width (pixels at 1080 lines)'),'contour.glow':n(.4,1.8,'light of the contour lines'),
+    'material.rock':n(.2,1.4,'how much light the relief takes'),'material.sheen':n(0,1,'sheen of the slopes facing the light'),'material.cut':n(0,1.8,'light of the front edge\'s cut'),
+    'atmosphere.mist':n(0,1.6,'mist in the valleys'),'atmosphere.haze':n(0,1.5,'haze toward the horizon'),'atmosphere.motes':n(0,1.6,'drifting motes over the land'),
+    'motion.breath':e([2,4,8],'breathing period of the light (bars)'),'motion.light':n(0,1.5,'how fast the key light travels its arc'),
+    'motion.shimmer':n(0,1.5,'contour shimmer on the beat'),'motion.drift':n(0,1.5,'how far the camera drifts between vantage points while nothing happens'),
+    'camera.personality':e(['survey','valley','map'],'camera behaviour (survey: oblique from the front edge; valley: low along the land; map: from high above)'),
+    'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,1.2,'elevation'),'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
+    'agents.form':e(['surveyor'],'agent form: a surveyor\'s light in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    effects:['range','peak','uplift','erode','road','fault','scan','heal','terrace','sunrise','survey','horizon'],
+    unlocks:['dawn','lanterns','stars','aurora']}
 };
 for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
