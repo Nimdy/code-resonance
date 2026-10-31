@@ -237,10 +237,13 @@ their files), lit hard from the side like a cut stone, files are sites of light 
 dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
 shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
 decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
-fractal bloom. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs, two
-curated looks; adding it changed no existing identity, and it has not been reviewed artistically since the owner found
-it "gum"-like. Design brief, stills, measured GPU time and what remains: [worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`,
-`fractal-forms.js`).
+fractal bloom. Its digital life, behind the recipe's `life` values (on for new identities), is motes of light living
+on the surface: they gather at the sites being worked on, leave threads of light between them and withdraw from a
+decohering region. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically since the owner
+found it "gum"-like. Design brief, stills, measured GPU time and what remains:
+[worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`, `fractal-forms.js`,
+`life/fractal.js`).
 
 ### Temporal Terrain
 

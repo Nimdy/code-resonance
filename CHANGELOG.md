@@ -50,6 +50,17 @@
 - **The release download:** the README names the VSIX on the latest release and how to check it: its SHA-256 in
   `SHA256SUMS.txt`, or a build of the release's tag, which with the same Node version is the same file byte for byte
   (the packager writes fixed timestamps; 0.8.0 checked in two checkouts and against the download).
+- **Fractal Continuum: digital life** (preview): motes of light living on the fractal's surface drift with its
+  current, gather at the sites being worked on and leave threads of light between them; small flocks skim the relief
+  and embers rest in its hollows. A failing run opens a void over its region and the motes wait at its edge; after the
+  recovery they come back. The ecosystem lives on a map of the sphere of directions (azimuthal equidistant around the
+  form's pole, the life held within 135° of it), the world draws each inhabitant on the surface as drawn at that moment,
+  hidden behind the relief, and the life's light pools in the relief around its gatherings. Behind the recipe's `life`
+  values: the catalogue offers the life group for Fractal Continuum (the Visual Studio and the lab can turn it on with a
+  tuning); the generator draws none for it, no recipe or identity changes, and with life off the world renders exactly
+  as before. Measured on the AMD iGPU at 1920×1080: about 1.2 ms of GPU time a frame at quality 0 (two draw
+  calls), about 1.1–1.5 ms of CPU a simulated tick. Grammar `public/worlds/life/fractal.js`; tests `tests/life-fractal*.test.js`; design and
+  measurements in [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#digital-life).
 
 ## 0.8.0 — 2026-10-31
 

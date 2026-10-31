@@ -43,17 +43,25 @@ test('Graduating it changes no existing identity (the generator fingerprints of 
   assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
   const q=project('scores',{modules:40,classes:30,tests:10});assert.deepEqual(recipe.generate(q,{now:0}).familyScores,recipe.familyScores(recipe.traitsOf(q),recipe.generate(q,{now:0}).projectSeed,0));
 });
-test('Its catalogue covers every value its generator draws; tuning offers it (no digital life parameters yet)',()=>{
+test('Its catalogue covers every value its generator draws; tuning offers it with the digital life group',()=>{
   const cat=catalog.FAMILIES[ID];assert(cat&&!cat.preview,'a family of the catalogue: a base for declarative packs');assert.equal(catalog.PREVIEWS[ID],undefined);
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11,ui:seed%4,groups:1+seed%9}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
+    // (the digital-life group too: generator 5 draws life for a new identity)
     for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);}
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the digital life group, the same values as the three families offer
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')),Object.keys(catalog.LIFE));for(const k of Object.keys(catalog.LIFE))assert.equal(spec[k].group,'life');
   const tuned=recipe.update(r,{type:'tune',values:{'fractal.form':'box','fractal.power':6}},project('tune'),0);
   assert.deepEqual([tuned.genome.fractal.form,tuned.genome.fractal.power],['box',6]);
+  // a new identity lives (generator 5); a tuning changes or stops it, and reset gives its own life back
+  assert.equal(r.genome.life.enabled,true);
+  const thinner=recipe.update(r,{type:'tune',values:{'life.enabled':false,'life.density':.6}},project('tune'),0);
+  assert.deepEqual([thinner.genome.life.enabled,thinner.genome.life.density],[false,.6]);
+  assert.deepEqual(recipe.update(thinner,{type:'tune-reset'},project('tune'),0).genome.life,r.genome.life);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'fractal.power':13}},project('tune'),0),/power/);
 });
 test('Each project draws its own universe: the formula and its parameters, not only the colours, from its own stream',async()=>{

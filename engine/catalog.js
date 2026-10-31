@@ -161,7 +161,7 @@ const GRADUATED={
     effects:['range','peak','uplift','erode','road','fault','scan','heal','terrace','sunrise','survey','horizon'],
     unlocks:['dawn','lanterns','stars','aurora']}
 };
-const WITH_LIFE=['temporal-terrain'];
+const WITH_LIFE=['fractal-continuum','temporal-terrain'];
 for(const id of WITH_LIFE)GRADUATED[id].parameters={...GRADUATED[id].parameters,...LIFE};
 for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON};
 Object.assign(FAMILIES,GRADUATED);
