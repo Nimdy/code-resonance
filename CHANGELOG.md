@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
+  (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
+  receiver keeps everything in its data folder and serves the browser, recordings go to your disk, and nothing goes to
+  the internet. The README's *At a glance* points at it, and SECURITY.md says it in words too.
+- **The release download:** the README names the VSIX on the latest release and how to check it: its SHA-256 in
+  `SHA256SUMS.txt`, or a build of the release's tag, which with the same Node version is the same file byte for byte
+  (the packager writes fixed timestamps; 0.8.0 checked in two checkouts and against the download).
+
 ## 0.8.0 — 2026-10-31
 
 Product 0.8.0, for use on your own machine; not stable. This tag is `v0.8.0`. Interpretation **10** (9 in 0.7.2: the

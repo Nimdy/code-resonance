@@ -24,8 +24,11 @@ player, with its music, in any of the eight worlds; nothing to install, nothing 
 - **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
   music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
   OBS takes the Stage as a browser source.
-- **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running
-  (Marketplace and Open VSX listing prepared, [not yet published](docs/PUBLISHING.md)).
+- **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running.
+  Download the VSIX from the [latest release](https://github.com/Nimdy/code-resonance/releases/latest), or build the
+  same file yourself (Marketplace and Open VSX listing prepared, [not yet published](docs/PUBLISHING.md)).
+- **Nothing leaves your machine.** The extension and the agent hooks talk only to the receiver on `127.0.0.1`. No
+  analytics, telemetry, remote calls or account: [where your data goes](#local-first-and-private).
 
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
@@ -107,6 +110,10 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Local-first and private
 
+![Where your data goes: the VS Code extension and the AI agent hooks send events only to the receiver on 127.0.0.1;
+the receiver keeps them in ~/.code-resonance and serves your browser; recordings are saved to your disk; nothing goes
+to the internet](docs/media/data-flow.svg)
+
 - Capture starts only after you accept it in a trusted VS Code workspace; the receiver listens on loopback only.
 - Source snapshots stay on your machine, for analysis. Typed text is never captured; command lines and prompt text are
   stored only if you opt in.
@@ -136,9 +143,12 @@ through WSL.
 
 ### From the extension alone
 
-1. **Install Code Resonance in VS Code:** from the Visual Studio Marketplace or Open VSX once it is published there
-   (publisher *zerobandwidth*; not yet), or from a VSIX with *Extensions › … › Install from VSIX* (`npm run
-   package:vsix` builds one in a checkout).
+1. **Install Code Resonance in VS Code** from a VSIX, with *Extensions › … › Install from VSIX*: download
+   `code-resonance-<version>.vsix` from the [latest release](https://github.com/Nimdy/code-resonance/releases/latest),
+   or build it in a checkout of the release's tag with `npm run package:vsix` (Node only, nothing to install). The
+   build is reproducible: built with the Node version named in the release, it is the same file, byte for byte, as the
+   download (compare its SHA-256 with the release's `SHA256SUMS.txt`). The Visual Studio Marketplace and Open VSX
+   listings (publisher *zerobandwidth*) are not published yet.
 2. **Start capture.** In your project's trusted folder, click **CR stopped** in the status bar, choose **Start
    capture** and accept local capture. When no receiver is running, the extension starts the one it carries, on
    `http://127.0.0.1:4174`, in VS Code's own runtime: no Node.js, no checkout, nothing else to install.
@@ -205,7 +215,9 @@ The VSIX (about 3 MB) holds the extension and the receiver it starts when none a
 Control Center, vendored three.js and TypeScript and the hook adapters, nothing from `tests/` or `qualification/`.
 Publishing it to the Marketplace and Open VSX: [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
-Install the VSIX yourself, with `code --install-extension code-resonance-0.8.0.vsix`
+Or download it from the [latest release](https://github.com/Nimdy/code-resonance/releases/latest), with its SHA-256
+in `SHA256SUMS.txt`: the packager writes fixed timestamps, so a build of the release's tag with the same Node version
+is the same file. Install the VSIX yourself, with `code --install-extension code-resonance-0.8.0.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
 --install-extension code-resonance-0.8.0.vsix`, then open your project with the same two options.

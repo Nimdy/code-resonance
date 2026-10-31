@@ -2,6 +2,17 @@
 
 **Capture is opt-in; privacy and data minimisation matter more than real-time effects.**
 
+![Where your data goes: the VS Code extension and the AI agent hooks send events only to the receiver on 127.0.0.1;
+the receiver keeps them in ~/.code-resonance and serves your browser; recordings are saved to your disk; nothing goes
+to the internet](docs/media/data-flow.svg)
+
+The extension, the agent hooks, the command-line tools and the player send only to `127.0.0.1`. Nothing in Code
+Resonance calls anything on the internet: no analytics, telemetry, update check, font or script from a CDN, or account.
+The web demo is a static page that replays a public recording and sends nothing either. One thing you may see: VS
+Code's own page for the extension (the Extensions view) shows its README's three screenshots from
+`raw.githubusercontent.com`, as it does for any extension whose README has images; Code Resonance itself makes no
+request, and nothing about you or your project is in it.
+
 ## What is collected, and where it stays
 
 | Data | Collected | Stored | Ever on the Stage / OBS / films / exports |

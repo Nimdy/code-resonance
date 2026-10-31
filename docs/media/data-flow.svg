@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 612" width="960" height="612" role="img" aria-label="Where Code Resonance data goes: the VS Code extension and AI agent hooks send events only to the receiver on 127.0.0.1; the receiver keeps them in a folder on your computer and serves the browser views; recordings are saved to your disk; nothing is sent to the internet: no analytics, telemetry, remote calls or account.">
+<title>Where your data goes</title>
+<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9aa9d6"/></marker></defs>
+<rect x="0" y="0" width="960" height="612" rx="16" fill="#0b1020"/>
+<text x="40" y="48" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" font-weight="700" fill="#f2f5ff" text-anchor="start">Where your data goes</text>
+<text x="40" y="74" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8e9bc4" text-anchor="start">Everything runs on your own computer. Nothing is uploaded, and there is no account.</text>
+<rect x="30" y="96" width="900" height="378" rx="14" fill="#0f1730" stroke="#3b4d86" stroke-width="1.5" stroke-dasharray="7 6"/>
+<text x="50" y="120" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#7fd1ff" text-anchor="start">YOUR COMPUTER</text>
+<rect x="50" y="134" width="230" height="146" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="50" y="144" width="4" height="126" rx="2" fill="#7fd1ff"/>
+<text x="68" y="162" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">VS Code extension</text>
+<text x="68" y="182" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#7fd1ff" text-anchor="start">only after you accept</text>
+<text x="68" y="207" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">edit counts, never typed text</text>
+<text x="68" y="227" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">project-relative file paths</text>
+<text x="68" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">source snapshots, for analysis</text>
+<text x="68" y="267" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">test and build results</text>
+<rect x="50" y="304" width="230" height="150" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="50" y="314" width="4" height="130" rx="2" fill="#7fd1ff"/>
+<text x="68" y="332" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">AI agent hooks</text>
+<text x="68" y="352" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#7fd1ff" text-anchor="start">observe-only</text>
+<text x="68" y="377" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">tool names and file paths</text>
+<text x="68" y="397" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">prompt length, not its text</text>
+<text x="68" y="417" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">command type, not the line</text>
+<text x="68" y="437" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="start">text only if you opt in</text>
+<rect x="365" y="164" width="230" height="128" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="365" y="174" width="4" height="108" rx="2" fill="#b49cff"/>
+<text x="383" y="192" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">Receiver</text>
+<text x="383" y="212" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#b49cff" text-anchor="start">127.0.0.1:4174</text>
+<text x="383" y="237" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">listens on loopback only</text>
+<text x="383" y="257" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">turns events into</text>
+<text x="383" y="277" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">worlds and music</text>
+<rect x="365" y="344" width="230" height="110" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="365" y="354" width="4" height="90" rx="2" fill="#b49cff"/>
+<text x="383" y="372" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">Data folder</text>
+<text x="383" y="392" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#b49cff" text-anchor="start">~/.code-resonance</text>
+<text x="383" y="417" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">journal, snapshots, settings</text>
+<text x="383" y="437" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">delete it to erase all</text>
+<rect x="680" y="134" width="230" height="146" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="680" y="144" width="4" height="126" rx="2" fill="#7ee2a8"/>
+<text x="698" y="162" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">Your browser</text>
+<text x="698" y="182" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#7ee2a8" text-anchor="start">127.0.0.1:4174</text>
+<text x="698" y="207" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">Control Center (private)</text>
+<text x="698" y="227" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">Stage and OBS view: never</text>
+<text x="698" y="247" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">source, file names, paths,</text>
+<text x="698" y="267" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">prompts or commands</text>
+<rect x="680" y="344" width="230" height="110" rx="10" fill="#172140" stroke="#33447a"/>
+<rect x="680" y="354" width="4" height="90" rx="2" fill="#7ee2a8"/>
+<text x="698" y="372" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#f2f5ff" text-anchor="start">Recordings &amp; films</text>
+<text x="698" y="392" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#7ee2a8" text-anchor="start">saved to your disk</text>
+<text x="698" y="417" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">you choose what to post</text>
+<text x="698" y="437" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#c9d1ea" text-anchor="start">only the public title you set</text>
+<line x1="280" y1="207" x2="363" y2="214" stroke="#9aa9d6" stroke-width="2" marker-end="url(#head)"/>
+<line x1="280" y1="379" x2="363" y2="282" stroke="#9aa9d6" stroke-width="2" marker-end="url(#head)"/>
+<text x="322" y="238" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="middle">events to</text>
+<text x="322" y="253" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="middle">127.0.0.1</text>
+<text x="322" y="268" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="middle">only</text>
+<line x1="480" y1="292" x2="480" y2="342" stroke="#9aa9d6" stroke-width="2" marker-end="url(#head)"/>
+<text x="492" y="322" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="start">keeps</text>
+<line x1="595" y1="214" x2="678" y2="207" stroke="#9aa9d6" stroke-width="2" marker-end="url(#head)"/>
+<text x="637" y="198" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="middle">serves</text>
+<line x1="795" y1="280" x2="795" y2="342" stroke="#9aa9d6" stroke-width="2" marker-end="url(#head)"/>
+<text x="807" y="316" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#8e9bc4" text-anchor="start">you record</text>
+<line x1="480" y1="474" x2="480" y2="530" stroke="#8e9bc4" stroke-width="2" stroke-dasharray="5 5"/>
+<line x1="468" y1="490" x2="492" y2="514" stroke="#ff6b6b" stroke-width="3" stroke-linecap="round"/>
+<line x1="492" y1="490" x2="468" y2="514" stroke="#ff6b6b" stroke-width="3" stroke-linecap="round"/>
+<rect x="395" y="532" width="170" height="36" rx="18" fill="#172140" stroke="#33447a"/>
+<text x="480" y="556" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="700" fill="#f2f5ff" text-anchor="middle">The internet</text>
+<text x="480" y="596" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#ff6b6b" text-anchor="middle">No analytics · no telemetry · no remote calls · no account</text>
+</svg>
