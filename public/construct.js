@@ -423,6 +423,9 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     // The outline is quantised, so the search (a few ms) reruns only when the site or the orbit has changed noticeably.
     ty=q(ty);const key=`${el.toFixed(3)}|${ty}|${camera.aspect.toFixed(3)}|${pts.join(';')}`;if(key===fitMemo.key)return fitMemo;
     probeCam.fov=camera.fov;probeCam.aspect=camera.aspect;probeCam.updateProjectionMatrix();
+    // A portrait frame (a vertical clip): the site fills the width and sits a little above the middle, inside the area
+    // Reels, Shorts and TikTok leave clear (under the top 19 %, above the bottom 25 % of the frame).
+    const portrait=camera.aspect<1,top=portrait?.62:TOP,bottom=portrait?-.5:BOTTOM,side=portrait?.9:SIDE;
     const R=Math.max(MIN_SITE,...pts.map(p=>Math.hypot(p[0],p[2])));
     const extent=(d,s)=>{
       probeCam.position.set(Math.cos(el)*d-s,ty+Math.sin(el)*d,0);probeCam.lookAt(-s,ty,0);probeCam.updateMatrixWorld();
@@ -432,11 +435,11 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
       return {x,y0,y1};
     };
     // Aiming further away moves the site down the frame; search for the aim that centres it between the margins.
-    const aimFor=d=>{let a=-R,b=R,s=0,e=null;for(let j=0;j<12;j++){s=(a+b)/2;e=extent(d,s);if(!e){a=s;continue;}if((e.y0+e.y1)/2>(TOP+BOTTOM)/2)a=s;else b=s;}return {s,e};};
+    const aimFor=d=>{let a=-R,b=R,s=0,e=null;for(let j=0;j<12;j++){s=(a+b)/2;e=extent(d,s);if(!e){a=s;continue;}if((e.y0+e.y1)/2>(top+bottom)/2)a=s;else b=s;}return {s,e};};
     let lo=Math.max(MIN_DISTANCE,R*.5)*.999,hi=Math.max(MIN_DISTANCE,R*20),best=null;
     for(let k=0;k<16;k++){
       const d=(lo+hi)/2,{s,e}=aimFor(d);
-      if(e&&e.x<=SIDE&&e.y1-e.y0<=TOP-BOTTOM){hi=d;best={d,s};}else lo=d;
+      if(e&&e.x<=side&&e.y1-e.y0<=top-bottom){hi=d;best={d,s};}else lo=d;
     }
     if(!best)best={d:hi,s:aimFor(hi).s};
     return Object.assign(fitMemo,{key},best);

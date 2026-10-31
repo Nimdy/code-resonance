@@ -83,7 +83,11 @@
   const QUALITY=['auto','0','1','2','3'];let qualityChoice='auto';
   // Recording size: the encoded video's dimensions. At a fixed size the world renders at exactly that size (16:9), and
   // the stage shows the same picture letterboxed; "stage" records the stage as it is on screen.
-  const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720]},RECORD_BITRATE={'1080p':8000000,'720p':5000000};
+  // "vertical" is a 9:16 clip for Reels, Shorts and TikTok: every world frames portraits for it (public/worlds/labels.js).
+  const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720],vertical:[1080,1920]},RECORD_BITRATE={'1080p':8000000,'720p':5000000,vertical:8000000};
+  // The words' rules for portrait frames (labels.js: sizes by the short side, the platforms' safe area), for the captions
+  // and the end card this page draws itself.
+  let frameRules=null;const frameRulesLoading=import('/worlds/labels.js').then(m=>{frameRules=m;return m;},()=>null);
   let recordSize='720p',recordFrame=null,recordPace={frames:0,at:0,slowSince:0,warned:false},recordNotice='';
   const LABEL_MODES=['cinematic','explorer','stream','off'];
   let labelMode=LABEL_MODES.includes(params.get('labels'))?params.get('labels'):overlay?'stream':'cinematic';
@@ -282,6 +286,9 @@
   }
   // ---- Rendering ------------------------------------------------------------------------------------------
   function resize(){
+    // Recording a vertical clip: Monolith (this canvas) is drawn at the recording's portrait size, shown letterboxed.
+    if(recordFrame&&recordFrame.h>recordFrame.w){if(canvas.width!==recordFrame.w||canvas.height!==recordFrame.h){canvas.width=recordFrame.w;canvas.height=recordFrame.h;g.setTransform(1,0,0,1,0,0);}
+      scaledW=recordFrame.w;scaledH=recordFrame.h;return;}
     const r=canvas.getBoundingClientRect();if(r.width===0||r.height===0)return;
     scaledW=r.width;scaledH=r.height;const dpr=Math.min(devicePixelRatio||1,2);
     if(canvas.width!==Math.floor(r.width*dpr)||canvas.height!==Math.floor(r.height*dpr)){
@@ -555,9 +562,36 @@
   function drawCaption(g2,w,h,t){
     const age=(t-caption.at)/Math.max(1,filmSpeed);
     if(!caption.text||age>=4200||!captions)return;
+    if(h>w&&frameRules)return drawCaptionPortrait(g2,w,h,age);
     const a=Math.min(1,age/500)*Math.min(1,(4200-age)/700),scale=w/1920;
     g2.save();g2.globalAlpha=Math.max(0,a)*.92;g2.font=`500 ${Math.round(30*scale)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='center';
     g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*scale;g2.fillStyle='#eef3fb';g2.fillText(caption.text,w/2,h-90*scale);g2.restore();
+  }
+  // A portrait frame (a vertical clip): the caption at the portrait size, low in the platforms' safe area.
+  function drawCaptionPortrait(g2,w,h,age){
+    const P=frameRules.portraitPlaces(w,h),k=P.k,a=Math.min(1,age/500)*Math.min(1,(4200-age)/700);
+    g2.save();g2.globalAlpha=Math.max(0,a)*.92;g2.textAlign='center';g2.textBaseline='middle';fitFont(g2,500,30*k,caption.text,P.maxW);
+    g2.shadowColor='rgba(4,6,12,.95)';g2.shadowBlur=18*k;g2.fillStyle='#eef3fb';g2.fillText(caption.text,P.cx,P.caption.y);g2.restore();
+  }
+  // A font of `size` px, smaller where the text would be wider than maxW.
+  function fitFont(g2,weight,size,text,maxW){const f=px=>`${weight} ${Math.max(1,Math.round(px))}px Inter, "Segoe UI", system-ui, sans-serif`;g2.font=f(size);const m=g2.measureText(text).width;if(m>maxW)g2.font=f(Math.floor(size*maxW/m));}
+  // The end card of a vertical clip (npm run film -- --vertical): from `at` (performance time) the world dims and the public
+  // title and "Code Resonance" stand over it, centred in the safe area. Only the recipe's approved public title is drawn.
+  // The labels and captions give way to it as it fades in (drawn through `fading`).
+  let endCard=null;
+  const endAlpha=t=>endCard&&t>=endCard.at?Math.min(1,(t-endCard.at)/endCard.speed/800):0;
+  function fading(g2,w,h,t,draw){const a=endAlpha(t);if(!a){draw(g2);return;}if(a>=1)return;
+    const layer=document.createElement('canvas');layer.width=w;layer.height=h;draw(layer.getContext('2d'));g2.save();g2.globalAlpha=1-a;g2.drawImage(layer,0,0);g2.restore();}
+  function drawEndCard(g2,w,h,t){
+    if(!endCard||t<endCard.at)return;
+    const a=endAlpha(t),k=frameRules?frameRules.textScale(w,h):w/1920,s=frameRules?frameRules.safeArea(w,h):{x0:0,y0:0,x1:w,y1:h};
+    const r=living?.recipe||recipe,title=typeof r?.title==='string'&&r.title.trim()?r.title.trim():null,cx=(s.x0+s.x1)/2,cy=s.y0+(s.y1-s.y0)*.44,maxW=(s.x1-s.x0)*.92;
+    g2.save();g2.fillStyle=`rgba(4,6,12,${(.66*a).toFixed(3)})`;g2.fillRect(0,0,w,h);g2.globalAlpha=a;g2.textAlign='center';g2.textBaseline='middle';
+    g2.shadowColor='rgba(0,0,0,.7)';g2.shadowBlur=20*k;
+    if(title){g2.fillStyle='rgba(248,246,240,.97)';fitFont(g2,200,64*k,title,maxW);g2.fillText(title,cx,cy);
+      g2.fillStyle='rgba(232,238,248,.55)';g2.fillRect(cx-28*k,cy+52*k,56*k,Math.max(1,1.5*k));}
+    g2.fillStyle='rgba(225,232,245,.86)';g2.letterSpacing=`${(4*k).toFixed(1)}px`;fitFont(g2,500,(title?18:30)*k,'CODE RESONANCE',maxW);g2.fillText('CODE RESONANCE',cx,title?cy+92*k:cy);
+    g2.restore();
   }
   function onPackFrame(bitmap){packFrame?.close();packFrame=bitmap;}
   // A pack well beyond its declared budget for ten seconds gets a warning (the pack keeps running; adaptive quality
@@ -628,7 +662,7 @@
     // A fixed size: the world renders at that size from now on (the stage shows it letterboxed). "stage": the stage's own
     // size (the canvas area, laid out whatever world is showing or loading).
     let bitrate=RECORD_BITRATE[recordSize];
-    if(RECORD_SIZES[recordSize]){const [W,H]=RECORD_SIZES[recordSize];recording.resize(W,H);recordFrame={w:W,h:H};document.body.classList.add('recording-fixed');livingSize='';constructSize='';
+    if(RECORD_SIZES[recordSize]){const [W,H]=RECORD_SIZES[recordSize];recording.resize(W,H);recordFrame={w:W,h:H};document.body.classList.add('recording-fixed');if(H>W)document.body.classList.add('recording-portrait');livingSize='';constructSize='';
       await new Promise(res=>requestAnimationFrame(()=>requestAnimationFrame(res)));}
     else{const r=$('world').parentElement.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,1.5);recording.resize(Math.max(320,r.width*dpr),Math.max(180,r.height*dpr));
       bitrate=Math.round(Math.min(8000000,Math.max(2500000,8000000*recording.canvas.width*recording.canvas.height/(1920*1080))));}
@@ -646,7 +680,7 @@
     changed('recording');
     return {ok:true,audio:started.audio,width:started.width,height:started.height};
   }
-  function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed');livingSize='';constructSize='';}
+  function endRecordFrame(){if(!recordFrame)return;recordFrame=null;document.body.classList.remove('recording-fixed','recording-portrait');livingSize='';constructSize='';}
   // A machine that cannot keep the chosen size near 30 frames per second is told once (the file would stutter). The
   // recorder keeps every presented frame up to 30 a second, so the recorded rate is what the file gets.
   function updateRecordPace(){
@@ -851,30 +885,39 @@
     // Deterministic film: open a recorded performance, then render each frame at an exact performance time.
     document.body.classList.add('overlay','film');mode='replay';
     window.__film={
-      async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await pollProject();await loadReplay();
+      async open({project,speed=1,note=''}){selected=project;filmSpeed=speed;filmNote=String(note||'').slice(0,160);await frameRulesLoading;await pollProject();await loadReplay();
         if(selectedWorld==='living'){await ensureLiving();living?.setSpeed(speed);}else if(selectedWorld==='city')await ensureMonolith();else{await ensureConstruct();construct?.setSpeed(speed);}
         // The music the film's soundtrack must be rendered with (film.js passes it to renderOffline). The Construct loads
         // no recipe of its own: the project's saved one still says which score it plays.
         if(!living&&!recipe)await reloadRecipe().catch(()=>null);
-        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':'construct',recipe:living?.recipe||null,
+        return {start:replay.start,end:replay.end,windows:replay.entries.length,webgl:!!(living||construct),world:living?'living':construct?'construct':'city',recipe:living?.recipe||null,
           music:{scoreVersion:filmScore(),profile:filmMusic.profile}};},
       sections(list){filmSections=list;},
+      // The end card from performance time `at` (vertical clips), fading in over 0.8 s of film at `speed`.
+      endCard({at,speed=filmSpeed}){endCard=Number.isFinite(at)?{at,speed:Math.max(1e-3,speed)}:null;},
+      // The living world's title card from performance time `t` (a vertical clip opens on the public title).
+      titleCard(t){living?.setTitleFrom?.(t);},
       seek(t){filmTime=t;seek(t);},
       // phase (optional): the bar phase to render with (qualification: does the world follow the beat?).
       async frame(t,dt,phase=null){
         filmTime=t;replayPos=t;forcedPhase=Number.isFinite(phase)?phase:null;
         while(replay.scheduledTo<replay.entries.length-1&&replay.entries[replay.scheduledTo+1].start<=t+60000)schedule(replay.entries[++replay.scheduledTo],{animate:true});
+        // Monolith draws on the stage canvas, sized here (a film has no animation frames to size it).
+        if(!living&&!construct)resize();
         renderAt(dt,t);
         // A pack frame renders the exact frame with its labels and hands back a bitmap.
         const bitmap=selectedWorld==='living'&&living?.remote?await living.capture(t,dt,{phase:barPhase}):null;
         // Composite the stage with the caption layer so the film carries the narration.
         const src=bitmap||(selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas),out=document.createElement('canvas');out.width=src.width;out.height=src.height;
         const g2=out.getContext('2d');g2.drawImage(src,0,0);bitmap?.close();
-        if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);
+        if(selectedWorld==='living'&&living){fading(g2,out.width,out.height,t,g=>living.drawOverlay(g,out.width,out.height));
           // A film can carry a persistent note (e.g. that a fixture is supplemental or a family was chosen by hand).
-          if(filmNote){const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}
+          if(filmNote){if(out.height>out.width&&frameRules){const k=frameRules.textScale(out.width,out.height),sa=frameRules.safeArea(out.width,out.height);g2.save();g2.globalAlpha=.72;fitFont(g2,500,15*k,filmNote,sa.x1-sa.x0);g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,sa.x0,sa.y0+44*k);g2.restore();}
+            else{const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}}
+          drawEndCard(g2,out.width,out.height,t);
           return out.toDataURL('image/jpeg',.92);}
-        drawCaption(g2,out.width,out.height,t);
+        fading(g2,out.width,out.height,t,g=>drawCaption(g,out.width,out.height,t));
+        drawEndCard(g2,out.width,out.height,t);
         return out.toDataURL('image/jpeg',.92);
       },
       stats(){return living?living.stats():construct?.stats();},

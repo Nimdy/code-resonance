@@ -2,7 +2,9 @@
 // Record & Broadcast through the real interface, on an isolated installation (never ~/.code-resonance): the recording
 // profile saved by the receiver and applied by the engine (mouse and keyboard), real recordings started and stopped
 // from this page, the top bar and the Stage (one recorder: every control shows the same state, a second window is told
-// another one records), the files checked with ffmpeg (WebM, VP9 + Opus, the profile's dimensions, sound present),
+// another one records), the files checked with ffmpeg (WebM, VP9 + Opus, the profile's dimensions, sound present; the
+// vertical profile's 1080 × 1920 too, its middle frame saved as output-vertical.jpg to look at), the film and vertical
+// clip commands behind the public-title gate,
 // the OBS URL options loaded as real overlays (no controls, no private names), the audio and data exports.
 // Usage: node qualification/ui/workspaces/output.qual.js        Results: qualification/results/ui/output.json + PNGs
 const path=require('node:path');
@@ -113,6 +115,19 @@ function probe(file){
     if(file2){const saved=path.join(OUT,'output-1080p.webm');await file2.saveAs(saved);const p=probe(saved);measurements.rec1080=p;
       check('the 1080p recording is 1920 × 1080 with video and sound',p.ebml&&(p.tool==='none'?p.size>50000:p.video?.width===1920&&p.video?.height===1080&&p.audio?.codec==='opus'),JSON.stringify(p));}
     else check('the 1080p recording is 1920 × 1080 with video and sound',false,'no download');
+    // ---- Vertical (9:16): saved and applied, recorded upright at 1080 × 1920 -----------------------------------------
+    await page.click('[data-profile="vertical"]');
+    const vert=await until(async()=>(await settings()).recording.profile==='vertical'&&(await state()).size==='vertical'&&(await page.getAttribute('[data-profile="vertical"]','aria-checked'))==='true');
+    check('choosing Vertical saves it and applies it to the engine',vert,`settings=${(await settings()).recording.profile} engine=${(await state()).size}`);
+    check('Vertical shows its real output dimensions',(await page.textContent('#outDims')).includes('1080 × 1920'),await page.textContent('#outDims'));
+    const download4=page.waitForEvent('download',{timeout:60000});
+    await page.click('#outRecordBtn');await until(async()=>(await state()).stats.elapsedMs>=3200,10000);
+    await page.click('#outRecordBtn');
+    const file4=await download4.catch(()=>null);
+    if(file4){const saved=path.join(OUT,'output-vertical.webm');await file4.saveAs(saved);const p=probe(saved);measurements.recVertical=p;
+      check('the vertical recording is 1080 × 1920 with video and sound',p.ebml&&(p.tool==='none'?p.size>50000:p.video?.width===1080&&p.video?.height===1920&&p.audio?.codec==='opus'),JSON.stringify(p));
+      if(ffmpeg)cp.spawnSync(ffmpeg,['-y','-loglevel','error','-ss','2','-i',saved,'-frames:v','1','-q:v','3',path.join(OUT,'output-vertical.jpg')]);}
+    else check('the vertical recording is 1080 × 1920 with video and sound',false,'no download');
     await page.click('[data-profile="720p"]');
     check('back to 720p (saved)',await until(async()=>(await settings()).recording.profile==='720p'));
     // ---- The sound lost while recording: the engine finishes and saves the file early; this page says why ------------
@@ -188,6 +203,9 @@ function probe(file){
     const setup=await page.$$eval('.out-cmds',els=>els.map(e=>e.textContent).join(' | ')),gate=await page.textContent('.out-film-gate');
     check('the film commands are the real ones (npm ci in qualification once, then npm run film for this project, or a request for its public title)',
       /cd qualification && npm ci/.test(setup)&&(gate.includes(`npm run film -- --project ${sample}`)||/public title/i.test(gate)),`${setup.replace(/\s+/g,' ').slice(0,160)} · ${gate.replace(/\s+/g,' ').slice(0,120)}`);
+    // The vertical clip of the same night, behind the same gate: its command next to the film's, or the same request.
+    check('the vertical clip command sits next to the film command, behind the same public-title gate',
+      (gate.includes(`npm run film -- --project ${sample} --vertical`)&&/Vertical clip/.test(gate)&&gate.includes(`npm run film -- --project ${sample}`))||(/public title/i.test(gate)&&!/--vertical/.test(gate)),gate.replace(/\s+/g,' ').slice(0,200));
     // ---- One recorder, atomically: two windows press Record at the same instant, many times -------------------------
     // Both windows' buttons are enabled when pressed (neither has heard the other announce a recording, so the
     // announcements cannot decide); the browser's recorder lock lets exactly one start, and the other says why.
@@ -272,7 +290,12 @@ function probe(file){
     // ---- Keyboard and screenshots ----------------------------------------------------------------------------------
     await page.evaluate(()=>document.querySelector('.ws-output h1').focus());
     const order=[];for(let i=0;i<8;i++){await page.keyboard.press('Tab');order.push(await page.evaluate(()=>document.activeElement.id||document.activeElement.dataset.profile||document.activeElement.textContent.trim().slice(0,24)));}
-    check('the record control and the profile are reachable with Tab',order.includes('outRecordBtn')&&order.some(x=>['720p','1080p','stage'].includes(x)),order.join(' → '));
+    check('the record control and the profile are reachable with Tab',order.includes('outRecordBtn')&&order.some(x=>['720p','1080p','vertical','stage'].includes(x)),order.join(' → '));
+    // At 1920 × 1080 (the page's design size) nothing overflows and Record stays in the first view, with four profiles.
+    await page.setViewportSize({width:1920,height:1080});await page.evaluate(()=>{document.querySelector('.page').scrollTop=0;});await page.waitForTimeout(800);
+    await page.screenshot({path:path.join(OUT,'output-idle-1920.png')});
+    const wide=await page.evaluate(()=>{const p=document.querySelector('.ws-output'),b=document.getElementById('outRecordBtn').getBoundingClientRect();return {overflow:p.scrollWidth-p.clientWidth,visible:b.bottom<=innerHeight&&b.top>0,cards:document.querySelectorAll('[data-profile]').length};});
+    check('at 1920 × 1080 nothing overflows sideways and Record is visible, with the four profiles',wide.overflow<=1&&wide.visible&&wide.cards===4,JSON.stringify(wide));
     await page.evaluate(()=>{document.querySelector('.page').scrollTop=0;});
     await page.setViewportSize({width:1280,height:720});await page.waitForTimeout(800);
     await page.screenshot({path:path.join(OUT,'output-idle-1280.png')});

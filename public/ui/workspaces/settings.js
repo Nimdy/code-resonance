@@ -50,7 +50,7 @@ export default {mount(view,{store:S,player:P,navigate}){
   const captionsRow=row({id:'rowCaptions',label:'Captions',doc:'A line of narration under the Construct when something notable happens (the living worlds carry their own titles, Monolith its legend).',control:captions});
   const labelsSeg=segmented({id:'setLabels',label:'Default information mode',options:P.LABEL_MODES.map(m=>({value:m,label:LABEL_NAMES[m],title:LABEL_DOCS[m]})),value:'cinematic',onChange:v=>save({stage:{labels:v}},labelsRow)});
   const labelsRow=row({id:'rowLabels',label:'Information on the stage',doc:'',control:labelsSeg});
-  const profileSeg=segmented({id:'setProfile',label:'Default recording profile',options:[{value:'720p',label:'720p'},{value:'1080p',label:'1080p'},{value:'stage',label:'Stage size'}],value:'720p',
+  const profileSeg=segmented({id:'setProfile',label:'Default recording profile',options:[{value:'720p',label:'720p'},{value:'1080p',label:'1080p'},{value:'vertical',label:'Vertical 9:16'},{value:'stage',label:'Stage size'}],value:'720p',
     onChange:v=>save({recording:{profile:v}},profileRow).then(()=>{if(st()&&!P.record.active)P.record.setSize(st().recording.profile);})});
   const profileRow=row({id:'rowProfile',label:'Recording profile',control:profileSeg}),profileText=h('span');
   profileRow.doc.append(profileText,h('button',{type:'button',class:'link-btn',text:'Record & Broadcast',onClick:()=>navigate('output')}));

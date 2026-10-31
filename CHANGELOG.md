@@ -121,6 +121,31 @@ keeps its v9 structure and test flag. The extension's part (below) reaches VS Co
   section. The page is checked at 1920×1080 and 1280×720.
 - **Known limit.** Copilot (and Grok Build, Devin) also read the repository's Claude Code hook files. With Claude Code's
   hooks installed, a Copilot session in that project can also appear as Claude.
+- **Vertical clips (9:16):** `npm run film -- --project <id> --vertical` (or `--aspect 9:16`) renders the night's best
+  moment for Instagram Reels, YouTube Shorts and TikTok: 1080 × 1920, `--duration` seconds of film (default 30) at the
+  highlight's speed, centred on its key moment (of the moments that made the night score, the one whose clip scores
+  highest by the same rules; `engine/highlight.js` `clip`), opening on the title card and ending on a 3-second end card
+  with the public title and *Code Resonance*, the music faded in (1 s) and out (2.5 s). H.264 and AAC in MP4
+  (`last-night-vertical.mp4`; the bundled ffmpeg-static 6.0 has libx264 and aac), or `--format webm`. The film's
+  public-title gate and `--copy` apply unchanged. The wrapper also passes `--world` and `--family` through, and the
+  renderer can now film Monolith (`--world city`).
+- **Portrait framing:** every world frames a frame taller than it is wide (Stellar Forge sees the galaxy from higher
+  with the core centred, Machine Cathedral stands back and fits the city's width, Fractal Biosphere centres its anchor,
+  the Construct fills the width, Monolith stacks its words); Fractal Biosphere, Synaptic Storm, Fractal Continuum and
+  visual packs get the host's rule (the field of view kept across the width; a pack that frames portraits itself sets
+  `framesPortrait: true`). Words in a portrait are sized by the short side
+  and kept inside the area the platforms leave clear (under the top 12 %, above the bottom 20 %, side margins):
+  `public/worlds/labels.js` `textScale`, `safeArea`, `portraitPlaces`. Landscape output is unchanged: films rendered
+  with the default arguments by 0.7.2 and by this change give byte-identical frames (the page's JPEG frames and every
+  decoded video frame of the WebM, in five worlds); the WebM files differ only through the music, whose offline render
+  already differs by at most one 16-bit step in about 1 % of samples between two runs of 0.7.2. Landscape labels are
+  pinned by a test.
+- **Control Center:** Record & Broadcast offers a **Vertical** recording profile (1080 × 1920, 8 Mbit/s; also in
+  Settings; the receiver accepts `recording.profile: "vertical"`), and the Deterministic film card shows the vertical
+  clip command next to the film's, behind the same public-title gate.
+- Tests: `tests/vertical.test.js` (portrait words and safe area, landscape labels unchanged, the clip window, the
+  wrapper's arguments, MP4 encoding, the host's portrait rule); the Output interface suite records a vertical file and
+  checks the page at 1920 × 1080. Not verified: uploads to the platforms themselves.
 
 ## 0.7.2 — 2026-10-29
 

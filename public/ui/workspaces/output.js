@@ -10,6 +10,7 @@ import {openDoc} from '../markdown.js';
 const PROFILES=[
   {id:'720p',name:'Standard',tag:'720p',size:[1280,720],rate:5e6,note:'Holds 30 frames per second on modest GPUs. The default.'},
   {id:'1080p',name:'High quality',tag:'1080p',size:[1920,1080],rate:8e6,note:'Sharper. The built-in worlds may not hold 30 fps on an integrated GPU.'},
+  {id:'vertical',name:'Vertical',tag:'9:16',size:[1080,1920],rate:8e6,note:'For Reels, Shorts and TikTok: every world frames the project upright, its words clear of their buttons.'},
   {id:'stage',name:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
 const even=n=>Math.max(2,Math.round(n/2)*2);
 const mbit=n=>`${(n/1e6).toFixed(n%1e6?1:0)} Mbit/s`;
@@ -96,7 +97,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   const exportBtn=button({label:'Export audio',icon:'wave',id:'exportAudioBtn',onClick:()=>exportAudio()});
   const exportNote=h('p',{class:'field-doc',id:'exportAudioNote'});
   const dataLink=h('a',{class:'btn',id:'exportDataLink',download:''},icon('download'),h('span',{text:'Download JSON'}));
-  const filmCmd=copyable('',{label:'Copy'}),filmSetup=copyable('cd qualification && npm ci',{label:'Copy'});
+  const filmCmd=copyable('',{label:'Copy'}),verticalCmd=copyable('',{label:'Copy'}),filmSetup=copyable('cd qualification && npm ci',{label:'Copy'});
+  filmCmd.id='outFilmCmd';verticalCmd.id='outVerticalCmd';
   const filmGate=h('div',{class:'out-film-gate'});
   const kind=(ic,title,what,body,action)=>h('div',{class:'out-kind'},
     h('span',{class:'out-kind-icon'},icon(ic)),h('div',{class:'out-kind-title'},h('strong',{text:title}),h('span',{class:'out-kind-what',text:what})),
@@ -104,7 +106,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   const kinds=h('div',{class:'out-kinds'},
     kind('wave','Audio','WAV · the music only',exportNote,exportBtn),
     kind('code','Performance data','JSON · the derived history',h('p',{class:'field-doc',text:'Statistics, sessions and every timeline window as the receiver interpreted them, with hashed identities only (no file names, source or prompts). For analysis or archiving; not a video.'}),dataLink),
-    kind('film','Deterministic film','WebM · publish path',[h('p',{class:'field-doc',text:'The same highlight Home plays, rendered frame by frame with the music offline. Needs a public title. Playwright stays in qualification/; this page cannot render it.'}),
+    kind('film','Deterministic film','WebM, or a vertical MP4 · publish path',[h('p',{class:'field-doc',text:'The same highlight Home plays, rendered frame by frame with the music offline. Needs a public title. Playwright stays in qualification/; this page cannot render it.'}),
       filmGate,disclosure({summary:'Setup'},h('p',{class:'field-doc',text:'First time, install the qualification tools. npm run film always --copy, so ~/.code-resonance is not changed.'}),
         h('div',{class:'out-cmds'},filmSetup))]));
   const exportSection=h('section',{class:'out-export panel','aria-labelledby':'outExportTitle'},
@@ -145,7 +147,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
       b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;b.disabled=locked;
       text(b.dims,s?`${s[0]} × ${s[1]}`:'—');const rate=rateOf(id,s);text(b.rate,rate?mbit(rate):'');}
     text(profileHelp,locked?`Recording at ${r.stats.width} × ${r.stats.height}: the profile can change once this recording stops.`:
-      current==='stage'?'Stage size follows the stage where recording starts: here, this frame; on the Performance Stage, the whole window.':'The world renders at exactly this size while recording; the stage shows it letterboxed, so what you see is what is recorded.');
+      current==='stage'?'Stage size follows the stage where recording starts: here, this frame; on the Performance Stage, the whole window.':
+      current==='vertical'?'The world renders upright at 1080 × 1920 while recording, framed for a phone and its words clear of the platforms’ buttons; the stage shows it with bars at the sides. The browser saves WebM: for an MP4 of the night’s best moment, use the vertical clip under Export.':
+      'The world renders at exactly this size while recording; the stage shows it letterboxed, so what you see is what is recorded.');
   }
   function renderFacts(){
     const s=P.state,r=s.recording,sup=r.supported,snd=s.sound;
@@ -242,8 +246,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     else{dataLink.removeAttribute('href');dataLink.setAttribute('aria-disabled','true');dataLink.tabIndex=-1;}
     const titled=!!s.recipe?.title;
     filmCmd.set(`npm run film -- --project ${id||'<project id>'}`);
+    verticalCmd.set(`npm run film -- --project ${id||'<project id>'} --vertical`);
+    // The film, and the vertical clip of the same night: 30 s around its key moment, 1080 × 1920, the public title on its
+    // end card (the same public-title gate).
     filmGate.replaceChildren(!id?h('p',{class:'field-doc',text:'Choose a project first.'}):
-      titled?h('div',{class:'out-cmds'},filmCmd):
+      titled?h('div',{class:'out-cmds'},
+        h('span',{class:'out-cmd-label'},h('strong',{text:'Film'}),h('span',{class:'faint',text:' · 16:9 WebM, the whole highlight'})),filmCmd,
+        h('span',{class:'out-cmd-label',id:'outVerticalLabel'},h('strong',{text:'Vertical clip'}),h('span',{class:'faint',text:' · 9:16 MP4, 30 s around the key moment, an end card with the public title: for Reels, Shorts and TikTok'})),verticalCmd):
       callout({kind:'warn',icon:'info',title:'Set a public title to export this film',
         body:'Play on Home still works without one. A film for a README or OBS hero does not.',
         actions:[button({label:'Set the public title',size:'sm',onClick:()=>navigate('visual')})]}));

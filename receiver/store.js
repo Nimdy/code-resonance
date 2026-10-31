@@ -12,7 +12,7 @@ const WORLDS=['living','construct','city'],LABELS=['cinematic','explorer','strea
 // names one still loads and reading it never rewrites it; its next write stores Monolith, which every reader was
 // already shown. A write that asks for one is refused like any unknown world.
 const RETIRED_WORLDS={nexus:'city',nebula:'city'};
-const PROFILES=['720p','1080p','stage'],MOTION=['system','reduce','full'];
+const PROFILES=['720p','1080p','vertical','stage'],MOTION=['system','reduce','full'];
 const PRESET_NAME=/^[\p{L}\p{N} .,'&()-]{1,40}$/u,PRESET_ID=/^p-[0-9a-f]{12}$/,PACK_REF=/^[a-z0-9.-]{1,64}$/,TUNING_PATH=/^[A-Za-z0-9_.]{1,64}$/;
 const MAX_PRESETS=200,MAX_TUNING=128;
 // The composed score's performance profile (public/score.js v3 PROFILE, GROUPS): eight creative controls, 0..1 with .5 as

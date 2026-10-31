@@ -265,7 +265,9 @@ second window for another monitor.
   32 was qualified on Linux in a disposable CI machine; on Windows or macOS, follow the procedure in
   [docs/OBS.md](docs/OBS.md).
 - **Last night** (Home) is a sped-up replay of a scored highlight. **`npm run film`** renders that same window for a
-  README hero (needs a public title, always `--copy`). Neither is Record.
+  README hero (needs a public title, always `--copy`); **`npm run film -- --vertical`** cuts a 30-second 1080 × 1920
+  MP4 of its key moment, with the music and an end card, for Reels, Shorts and TikTok
+  ([docs/RECORDING.md](docs/RECORDING.md#vertical-clips-916)). Neither is Record.
 - **Exports:** up to ten minutes of the recorded performance rendered offline to WAV; the derived timeline as JSON (no
   source, paths or prompts).
 
