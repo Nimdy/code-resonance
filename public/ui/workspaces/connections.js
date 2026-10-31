@@ -3,7 +3,9 @@
 // known is said to be unknown. VS Code owns its settings: this view shows the values the extension *reported* and how
 // to change them in VS Code, never a control that looks like it changes VS Code. Claude Code and Cursor hooks are written
 // only after the exact change to the file was shown and accepted, and only if the file is still the one that was shown.
-// Codex hooks follow the same review: project `.codex/hooks.json` only, observe-only, never PreToolUse.
+// Codex hooks follow the same review: project `.codex/hooks.json` only, observe-only, never PreToolUse. The other tools
+// with an observe-only adapter (GET /api/integrations `agents`: Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid,
+// Grok Build, goose) share one section and the same review, one tool at a time.
 // Project ids never appear as text (they look like secrets and mean nothing to people): names or short labels only.
 import {h,button,segmented,section,disclosure,pill,callout,copyable,toast,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
@@ -124,6 +126,12 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const codexObserved=h('div',{class:'conn-observed'});
   const codexInfo=h('div',{class:'conn-fixed conn-codex-info'});
   const codexSetup=h('div',{class:'conn-guide conn-codex-setup'});
+  const moreTools=h('div',{class:'conn-tools',role:'tablist','aria-label':'Agent',id:'connMoreTools'});
+  const moreObserved=h('div',{class:'conn-observed'});
+  const moreInfo=h('div',{class:'conn-fixed conn-more-info'});
+  const moreSetup=h('div',{class:'conn-guide conn-more-setup'});
+  // The tool the section shows (a slug of integ.agents): kept in memory only, like the folder field.
+  let moreSlug='';
   const agentsObserved=h('div',{class:'conn-observed'});
   const agentsFacts=h('div',{class:'conn-fixed conn-agents-facts'});
   const agentsInfo=h('div',{class:'conn-agents-info'});
@@ -154,9 +162,15 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     emptyPath:'Enter the folder Codex runs in.',
     installNext:'Start a new Codex session in that trusted workspace: its events then appear under Observed activity.',
     removeNext:'Codex sessions started in that folder from now on no longer send events here.'});
+  const moreTool=()=>(integ?.agents||[]).find(t=>t.slug===moreSlug)||(integ?.agents||[])[0]||null;
+  const more=hookFlow({slug:'more',api:()=>moreTool()?.slug,entry:moreTool,commandFallback:'npm run hooks:<tool> -- /path/to/project',
+    help:()=>{const t=moreTool();return t?`Only <folder>/${t.file} changes, and in it only this adapter’s hook entries. Everything else in the file stays as it is. ${t.commit} ${t.trust}`:'Loading…';},
+    emptyPath:()=>`Enter the folder ${moreTool()?.name||'the agent'} runs in.`,
+    installNext:()=>`Start a new ${moreTool()?.name||'agent'} session in that folder: its events then appear under Observed activity.`,
+    removeNext:()=>`${moreTool()?.name||'Agent'} sessions started in that folder from now on no longer send events here.`});
   view.append(h('div',{class:'page ws-connections'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Capture and sources'}),h('h1',{class:'title-l',text:'Connections'}),
-      h('p',{class:'muted measure',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and Claude Code, Cursor or Codex hooks change only after you review and write them.'})),
+      h('p',{class:'muted measure',text:'What this receiver has actually received, and from where. Nothing on this page changes VS Code, and agent hooks (Claude Code, Cursor, Codex and the others below) change only after you review and write them.'})),
       h('div',{class:'actions'},refreshBtn)),
     strip,
     sec('receiver','Local receiver','The program on this computer that receives, analyses and stores captures',pair(receiverBody,troubleshooting())),
@@ -177,6 +191,10 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     sec('codex','Codex','Observe-only after-hooks, installed per project with your review',
       h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed activity, per project',codexObserved),col('fixed','What the hooks send',codexInfo)),
         col('guide','Add or remove the hooks',h('div',{class:'conn-guide-stack'},codex.el,codexSetup))),codex.result),
+    sec('more','More agents','Observe-only hooks for Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose, installed per project with your review',
+      moreTools,
+      h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed activity, per project',moreObserved),col('fixed','What the hooks send',moreInfo)),
+        col('guide','Add or remove the hooks',h('div',{class:'conn-guide-stack'},more.el,moreSetup))),more.result),
     sec('agents','Other agents','Any tool can send events through the generic endpoint',
       h('div',{class:'conn-pair even'},h('div',{class:'conn-col-stack'},col('status','Observed providers',agentsObserved),col('fixed','What an agent’s events carry',agentsFacts)),
         col('guide','Send events',agentsInfo))),
@@ -328,33 +346,65 @@ export default {mount(view,{store:S,player:P,navigate,params}){
         h('div',{class:'conn-change-link'},h('a',{class:'btn outline sm',id:'connOpenVsSettings',href:v.openSettingsUri},icon('external'),h('span',{text:'Open Code Resonance settings in VS Code'})),
           h('span',{class:'faint small',text:'Works with extension 0.5 or later. Your system asks before opening VS Code; the link only opens the settings.'}))));
   }
-  // ---- Agent hooks (Claude Code, Cursor, Codex) ------------------------------------------------------------------
-  function renderHook(slug,{observed,info,setup,empty,footnote}){
-    const Cap=slug[0].toUpperCase()+slug.slice(1),c=integ?.[slug],now=Date.now();
-    if(!c){rebuild(observed,h('p',{class:'faint small',text:integError?`Not available (${integError}).`:'Loading…'}));rebuild(info);rebuild(setup);return;}
+  // ---- Agent hooks (Claude Code, Cursor, Codex, then the others one at a time) -------------------------------------
+  // `entry` is the integrations entry shown (integ[slug], or the chosen tool of integ.agents); the fixed facts are filled
+  // once per `key` (the tool), the observed activity on every render.
+  function renderHook(slug,{observed,info,setup,empty,footnote,entry=integ?.[slug],key=slug,extra=null}){
+    const Cap=slug[0].toUpperCase()+slug.slice(1),c=entry,now=Date.now();
+    if(!c){rebuild(observed,h('p',{class:'faint small',text:integError?`Not available (${integError}).`:'Loading…'}));rebuild(info);rebuild(setup);delete info.dataset.key;return;}
+    // An entry that names its provider says when a project's events did not come through its hook (scripts/event.js).
+    const other=p=>c.provider&&p.source&&p.source!==`${c.provider}-hook`;
     rebuild(observed,
       c.projects.length?h('div',{class:'conn-list',id:`conn${Cap}Projects`},...c.projects.slice().sort((a,b)=>(b.lastAt||0)-(a.lastAt||0)).map(p=>h('div',{class:'conn-list-row',dataset:{project:p.projectId}},
           h('span',{class:['dot',p.lastAt&&now-p.lastAt<RUNNING_MS?'ok':'']}),h('span',{class:'grow ellipsis',text:projectName({id:p.projectId,name:p.name})}),
-          h('span',{class:'faint small num',text:`${count(p.events,'event')} · ${ago(p.lastAt,now)}`}))))
+          h('span',{class:'faint small num',text:`${count(p.events,'event')} · ${ago(p.lastAt,now)}${other(p)?' · not through the hook':''}`}))))
         :h('p',{class:'muted small',id:`conn${Cap}Projects`,text:empty}));
-    if(info.firstChild)return;
-    info.append(
+    if(info.dataset.key===key)return;
+    info.dataset.key=key;
+    rebuild(info,
       h('div',{class:'conn-capture'},
         h('div',{},h('div',{class:'conn-capture-head'},icon('check'),h('strong',{text:'Sent to this receiver'})),h('ul',{class:'conn-bullets'},...c.captured.map(x=>h('li',{text:x})))),
         h('div',{},h('div',{class:'conn-capture-head'},icon('lock'),h('strong',{text:'Never sent'})),h('ul',{class:'conn-bullets'},...c.excluded.map(x=>h('li',{text:x}))))),
       h('p',{class:'faint small',text:footnote}));
-    setup.append(h('div',{class:'conn-guide-head'},icon('sliders'),h('strong',{text:'What gets installed'})),
+    rebuild(setup,h('div',{class:'conn-guide-head'},icon('sliders'),h('strong',{text:'What gets installed'})),
       h('div',{class:'conn-hook-events'},h('span',{class:'faint small',text:'Hook events used'}),h('div',{class:'conn-chips'},...c.events.map(e=>h('code',{text:e})))),
-      ...(c.adapter?[h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Each hook runs'}),h('code',{class:'conn-adapter conn-cmd'},...words(`node ${JSON.stringify(c.adapter)}`,true)))]:[]));
+      ...(c.adapter?[h('div',{class:'conn-step'},h('span',{class:'faint small',text:'Each hook runs'}),h('code',{class:'conn-adapter conn-cmd'},...words(`node ${JSON.stringify(c.adapter)}`,true)))]:[]),
+      ...(extra?extra(c):[]));
   }
   const renderClaude=()=>renderHook('claude',{observed:claudeObserved,info:claudeInfo,setup:claudeSetup,empty:'No Claude Code events observed.',
     footnote:'Hooks only receive the lifecycle events Claude Code documents; nothing here sees the model’s reasoning. The adapter never writes to Claude Code’s output and always exits successfully, so it cannot change what Claude does.'});
   const renderCursor=()=>renderHook('cursor',{observed:cursorObserved,info:cursorInfo,setup:cursorSetup,empty:'No Cursor events observed.',
     footnote:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Prove these hooks only in a trusted workspace.'});
+  // The other tools: a tab per tool (its dot is live while its events arrive), the chosen one's activity, facts and flow.
+  function renderMore(){
+    const list=integ?.agents||[],now=Date.now();
+    if(list.length&&!list.some(t=>t.slug===moreSlug))moreSlug=list[0].slug;
+    const t=moreTool();
+    rebuild(moreTools,...list.map(x=>{const last=Math.max(0,...x.projects.map(p=>p.lastAt||0)),on=x.slug===moreSlug;
+      return h('button',{type:'button',role:'tab',class:'conn-tool',id:`connTool-${x.slug}`,'aria-selected':String(on),tabIndex:on?0:-1,dataset:{key:`tool:${x.slug}`,tool:x.slug},
+          title:x.projects.length?`${x.name}: events from ${count(x.projects.length,'project')}, the last ${ago(last,now)}`:`${x.name}: no events observed`,
+          onClick:()=>chooseTool(x.slug),onKeydown:e=>toolKey(e,x.slug)},
+        h('span',{class:['dot',last&&now-last<RUNNING_MS?'ok':'']}),h('span',{text:x.name}));}));
+    renderHook('more',{observed:moreObserved,info:moreInfo,setup:moreSetup,entry:t,key:t?.slug||'',empty:t?`No ${t.name} events observed.`:'',
+      footnote:t?`Hooks only receive the events ${t.name} documents; nothing here sees the model’s reasoning. The adapter never writes to ${t.name}’s output and always exits successfully, so it cannot deny, block or change what ${t.name} does. Only what its documented payloads name is read: anything else becomes no event.`:'',
+      extra:c=>[h('div',{class:'conn-step'},h('span',{class:'faint small',text:'In the project'}),h('code',{class:'conn-cmd',id:'connMoreTarget'},...words(c.file,true))),
+        h('p',{class:'faint small',text:c.trust}),
+        h('p',{class:'faint small'},'Reference: ',h('a',{href:c.docs,target:'_blank',rel:'noopener noreferrer',text:`${c.name} hooks documentation`}),'.'),
+        h('div',{},button({label:'What each tool documents',icon:'doc',size:'sm',kind:'outline',id:'connAgentsDoc',onClick:()=>openDoc('AGENTS.md')}))]});
+  }
+  function chooseTool(slug){if(slug===moreSlug)return;moreSlug=slug;more.retarget();renderMore();}
+  // Arrow keys move between the tabs (and choose), Home and End go to the ends.
+  function toolKey(e,slug){
+    const list=integ?.agents||[],i=list.findIndex(t=>t.slug===slug);if(i<0)return;
+    const j=e.key==='ArrowRight'||e.key==='ArrowDown'?(i+1)%list.length:e.key==='ArrowLeft'||e.key==='ArrowUp'?(i-1+list.length)%list.length:e.key==='Home'?0:e.key==='End'?list.length-1:-1;
+    if(j<0)return;e.preventDefault();chooseTool(list[j].slug);document.getElementById(`connTool-${list[j].slug}`)?.focus();
+  }
   const renderCodex=()=>renderHook('codex',{observed:codexObserved,info:codexInfo,setup:codexSetup,empty:'No Codex events observed.',
     footnote:'Hooks only receive the lifecycle events Codex documents; nothing here sees the model’s reasoning. Paths come from patch headers only, never hunk text. The adapter never writes to Codex’s output and always exits successfully, so it cannot deny, block or change what Codex does. PreToolUse is not installed. Prove these hooks only in a trusted workspace.'});
-  function hookFlow({slug,commandFallback,help,emptyPath,installNext,removeNext}){
-    const Cap=slug[0].toUpperCase()+slug.slice(1),id=n=>`conn${Cap}${n}`;
+  // `api` names the route's tool (the More agents flow changes it with its tab; `retarget` starts over), `entry` its
+  // integrations entry; texts may be functions of the current tool.
+  function hookFlow({slug,commandFallback,help,emptyPath,installNext,removeNext,api=()=>slug,entry=()=>integ?.[slug]}){
+    const Cap=slug[0].toUpperCase()+slug.slice(1),id=n=>`conn${Cap}${n}`,val=v=>typeof v==='function'?v():v;
     let plan=null;
     const input=h('input',{class:'input mono',id:id('Path'),type:'text',spellcheck:'false',autocomplete:'off',placeholder:'/home/you/projects/my-app','aria-describedby':id('PathHelp')});
     // The folder path names a private project: it is never kept in browser storage (and a value an earlier version kept is dropped).
@@ -364,20 +414,24 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const show=button({label:'Show the change',kind:'primary',id:id('Show'),type:'submit'});
     const cli=command('');
     const result=h('div',{class:'conn-plan',id:id('Plan'),'aria-live':'polite'});
+    const helpEl=h('p',{class:'faint small',id:id('PathHelp'),text:val(help)});
     const form=h('form',{class:'conn-form',noValidate:true,onSubmit:e=>{e.preventDefault();void busyShow();}},
       h('label',{class:'field-label',for:id('Path'),text:'Project folder (absolute path)'}),
-      input,err,h('div',{class:'conn-form-row'},action,show),
-      h('p',{class:'faint small',id:id('PathHelp'),text:help}));
+      input,err,h('div',{class:'conn-form-row'},action,show),helpEl);
     input.addEventListener('input',()=>{err.replaceChildren();input.removeAttribute('aria-invalid');updateCli();if(plan)reset();});
-    function updateCli(){const t=integ?.[slug]?.command||commandFallback,p=input.value.trim();cli.set(p?t.replace('/path/to/project',quote(p)):t);}
+    function updateCli(){const t=entry()?.command||commandFallback,p=input.value.trim();cli.set(p?t.replace('/path/to/project',quote(p)):t);}
+    // The texts again (the tool's entry arrived or changed), and for another tool a fresh start: no plan, no error.
+    function refresh(){helpEl.textContent=val(help);updateCli();}
+    function retarget(){reset();err.replaceChildren();input.removeAttribute('aria-invalid');refresh();}
     function reset(){plan=null;result.replaceChildren();}
     function busyShow(){const p=planFor(input.value.trim(),action.value);show.disabled=true;show.setAttribute('aria-busy','true');
       return p.finally(()=>{show.disabled=false;show.removeAttribute('aria-busy');});}
     async function planFor(projectPath,act){
       err.replaceChildren();input.removeAttribute('aria-invalid');
-      if(!projectPath){fieldError(emptyPath);return;}
+      if(!projectPath){fieldError(val(emptyPath));return;}
       if(!/^(\/|[A-Za-z]:[\\/]|\\\\)/.test(projectPath)){fieldError('Enter an absolute path, for example /home/you/projects/my-app or C:\\Users\\you\\my-app.');return;}
-      try{plan={...await P.api.post(`/api/integrations/${slug}/plan`,{projectPath,action:act}),projectPath,action:act};renderPlan();}
+      const target=api();if(!target)return;
+      try{plan={...await P.api.post(`/api/integrations/${target}/plan`,{projectPath,action:act}),projectPath,action:act,target};renderPlan();}
       catch(e){plan=null;result.replaceChildren();
         if(e.code==='invalid'&&e.data?.key==='projectPath')fieldError(sentence(e.message.replace(/^projectPath\b/,'This folder')));
         else result.append(callout({kind:'danger',icon:'warn',title:'The change could not be prepared',body:sentence(e.message)}));}
@@ -399,9 +453,9 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     }
     async function apply(){
       const p=plan;if(!p)return;
-      try{const r=await P.api.post(`/api/integrations/${slug}/apply`,{projectPath:p.projectPath,action:p.action,expectHash:p.currentHash});plan=null;
+      try{const r=await P.api.post(`/api/integrations/${p.target}/apply`,{projectPath:p.projectPath,action:p.action,expectHash:p.currentHash});plan=null;
         result.replaceChildren(callout({kind:'accent',icon:'check',title:r.written?(p.action==='install'?'Hooks added':'Hooks removed'):'Nothing was written',
-          body:r.written?h('div',{},h('div',{},'Written to ',h('code',{text:r.file}),'.'),h('div',{text:p.action==='install'?installNext:removeNext}))
+          body:r.written?h('div',{},h('div',{},'Written to ',h('code',{text:r.file}),'.'),h('div',{text:val(p.action==='install'?installNext:removeNext)}))
             :'The file already matched; it was left untouched.'}));
         result.querySelector('.callout')?.setAttribute('id',id('Result'));
       }catch(e){
@@ -414,14 +468,15 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const el=h('div',{class:'conn-guide conn-flow'},h('div',{class:'conn-flow-head'},h('div',{class:'conn-guide-head'},icon('terminal'),h('strong',{text:'Install or remove the hooks'})),h('span',{class:'faint small',text:'Shows the exact change first; writes nothing until you accept it.'})),
       form,
       disclosure({summary:'Or use the command line'},h('p',{class:'faint small',text:'In the Code Resonance folder. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
-    return {el,result,updateCli};
+    return {el,result,updateCli,refresh,retarget};
   }
   const sentence=m=>{const s=String(m||'Unknown error');return s.charAt(0).toUpperCase()+s.slice(1)+(/[.!?]$/.test(s)?'':'.');};
   // ---- Other agents -----------------------------------------------------------------------------------------------
   function providers(){
-    const out=new Map();
+    // Providers with an adapter of their own are listed in their section (More agents), whatever sent their events.
+    const out=new Map(),hooked=new Set((integ?.agents||[]).map(t=>t.provider));
     for(const p of S.state.projects){const ev=evidenceOf(p.id);if(!ev||ev.building)continue;
-      for(const [name,a] of Object.entries(ev.agents||{})){if(name==='claude-code'||name==='cursor'||name==='codex')continue;
+      for(const [name,a] of Object.entries(ev.agents||{})){if(name==='claude-code'||name==='cursor'||name==='codex'||hooked.has(name))continue;
         const o=out.get(name)||{name,events:0,lastAt:0,projects:[],demo:false};o.events+=a.events;o.lastAt=Math.max(o.lastAt,a.lastAt||0);o.projects.push(projectName(p));
         o.demo=o.demo||ev.demonstration||a.source==='demonstration';out.set(name,o);}}
     return [...out.values()].sort((a,b)=>b.lastAt-a.lastAt);
@@ -466,7 +521,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     const real=S.state.projects.filter(p=>{const ev=evidenceOf(p.id);return !(ev?.demonstration||p.evidence?.demonstration);});
     const states=real.map(p=>editorState(evidenceOf(p.id),now).key);
     const running=states.filter(k=>k==='running').length,quiet=states.filter(k=>k==='quiet').length,seen=real.some(p=>evidenceOf(p.id)?.editor?.capture?.state);
-    const cl=(integ?.claude?.projects||[]),clLast=Math.max(0,...cl.map(p=>p.lastAt||0)),cu=(integ?.cursor?.projects||[]),cuLast=Math.max(0,...cu.map(p=>p.lastAt||0)),cx=(integ?.codex?.projects||[]),cxLast=Math.max(0,...cx.map(p=>p.lastAt||0)),prov=providers().filter(o=>!o.demo),provLast=Math.max(0,...prov.map(o=>o.lastAt||0));
+    const mo=(integ?.agents||[]).filter(t=>t.projects.length),moLast=Math.max(0,...mo.flatMap(t=>t.projects.map(p=>p.lastAt||0))),cl=(integ?.claude?.projects||[]),clLast=Math.max(0,...cl.map(p=>p.lastAt||0)),cu=(integ?.cursor?.projects||[]),cuLast=Math.max(0,...cu.map(p=>p.lastAt||0)),cx=(integ?.codex?.projects||[]),cxLast=Math.max(0,...cx.map(p=>p.lastAt||0)),prov=providers().filter(o=>!o.demo),provLast=Math.max(0,...prov.map(o=>o.lastAt||0));
     const seg=(id,label,ic,state,line,sub)=>h('button',{type:'button',class:['conn-seg',state],dataset:{key:`seg:${id}`,seg:id},onClick:()=>jump(id)},
       h('span',{class:'conn-seg-label'},icon(ic),h('span',{class:'eyebrow',text:label})),h('span',{class:'conn-seg-line'},h('span',{class:['dot',state==='on'?'ok':state==='warn'?'warn':state==='off-danger'?'danger':'']}),h('strong',{text:line})),
       h('span',{class:'faint tiny ellipsis',text:sub}));
@@ -477,6 +532,8 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       seg('claude','Claude Code','terminal',clLast&&now-clLast<RUNNING_MS?'on':'idle',cl.length?`Events ${ago(clLast,now)}`:'No events observed',cl.length?`in ${count(cl.length,'project')}`:'hooks not seen yet'),
       seg('cursor','Cursor','terminal',cuLast&&now-cuLast<RUNNING_MS?'on':'idle',cu.length?`Events ${ago(cuLast,now)}`:'No events observed',cu.length?`in ${count(cu.length,'project')}`:'hooks not seen yet'),
       seg('codex','Codex','terminal',cxLast&&now-cxLast<RUNNING_MS?'on':'idle',cx.length?`Events ${ago(cxLast,now)}`:'No events observed',cx.length?`in ${count(cx.length,'project')}`:'hooks not seen yet'),
+      seg('more','More agents','terminal',moLast&&now-moLast<RUNNING_MS?'on':'idle',mo.length?`Events ${ago(moLast,now)}`:'No events observed',
+        mo.length?mo.map(t=>t.name).join(' · '):`${count((integ?.agents||[]).length,'tool')}, hooks not seen yet`),
       seg('agents','Other agents','agent',provLast&&now-provLast<RUNNING_MS?'on':'idle',prov.length?count(prov.length,'provider'):'No events observed',prov.length?`last ${ago(provLast,now)}`:'generic endpoint ready'));
   }
   function jump(id){const s=document.getElementById(`conn-${id}`);if(!s)return;s.scrollIntoView({block:'start',behavior:reducedMotion()?'auto':'smooth'});heads[id]?.focus({preventScroll:true});}
@@ -485,7 +542,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     // With the capability the response also names the adapter's path (shown as the hook command).
     try{integ=await P.api.request('GET','/api/integrations');integError=null;}
     catch{try{integ=await S.get('/api/integrations');integError=null;}catch(e){integError=e.message;}}
-    claude.updateCli();cursor.updateCli();codex.updateCli();renderVsGuide();renderClaude();renderCursor();renderCodex();renderAgents();renderEditors();renderStrip();
+    claude.updateCli();cursor.updateCli();codex.updateCli();renderVsGuide();renderClaude();renderCursor();renderCodex();renderMore();more.refresh();renderAgents();renderEditors();renderStrip();
   }
   const pending=new Map();
   function later(key,fn,ms){if(pending.has(key))return;const t=setTimeout(()=>{pending.delete(key);timers.delete(t);fn();},ms);pending.set(key,t);timers.add(t);}
@@ -508,8 +565,8 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   }));
   const statusTimer=setInterval(()=>{if(!document.hidden)void loadStatus();},STATUS_MS);
   // Relative times ("2 min ago") and the running/quiet boundary move with the clock, not only with new data.
-  const tick=setInterval(()=>{if(document.hidden)return;renderReceiver();renderEditors();renderClaude();renderCursor();renderCodex();renderAgents();renderStrip();},TICK_MS);
-  renderReceiver();renderEditors();renderVsGuide();renderClaude();renderCursor();renderCodex();renderAgents();renderStrip();
+  const tick=setInterval(()=>{if(document.hidden)return;renderReceiver();renderEditors();renderClaude();renderCursor();renderCodex();renderMore();renderAgents();renderStrip();},TICK_MS);
+  renderReceiver();renderEditors();renderVsGuide();renderClaude();renderCursor();renderCodex();renderMore();renderAgents();renderStrip();
   void loadStatus();void loadIntegrations();syncEvidence();
   return {
     route(next){focus=next?.[0]||'';renderEditors();},

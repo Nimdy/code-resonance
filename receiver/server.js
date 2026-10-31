@@ -43,7 +43,7 @@ const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 const pageCsp=styles=>`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`;
 // Documentation the Control Center links to, served as inert text: a fixed list, never a path taken from the request.
 const DOCS=new Map([...['packs/README.md','packs/manifest.md','packs/world-api.md','packs/determinism.md','packs/performance.md','packs/security.md','packs/migration.md',
-  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','campaign-0.7.md','ARTIST-STUDIO.md','MUSIC.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
+  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','campaign-0.7.md','ARTIST-STUDIO.md','MUSIC.md','AGENTS.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
 // The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
 // Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
@@ -185,7 +185,8 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
   if(!(await fs.stat(dir)).isDirectory())throw coded('invalid','projectPath is not a directory',{key:'projectPath'});
   if(path.parse(dir).root===dir)throw coded('invalid','projectPath cannot be the root of a file system',{key:'projectPath'});
   // The home directory is not a project: its .claude, .cursor, .codex, .gemini, .qwen, .factory, .grok and .agents hold
-  // user-level settings and hooks, which run in every workspace. Compared after resolving both, so a link to it or a path that ends there is refused too.
+  // user-level settings and hooks, which run in every workspace. Compared after resolving both, so a link to it or a
+  // path that ends there is refused too.
   const home=await fs.realpath(os.homedir()).catch(()=>path.resolve(os.homedir()));
   if(path.relative(home,dir)==='')throw coded('invalid','projectPath cannot be your home directory: hooks there apply to every workspace, so choose the project folder',{key:'projectPath'});
   const data=await fs.realpath(dataDir).catch(()=>dataDir),rel=path.relative(data,dir);
