@@ -86,7 +86,11 @@ test('The bundled receiver starts once, detached, in its own process, and is reu
   assert.equal(status.occupant,'verified');assert.equal(status.ours,true);assert.equal(status.bundled.pid,state.pid);
   // Stop: the launcher stops the receiver cleanly and removes its state; the port is free.
   const stopped=await host.stopReceiver({port,dir});
-  assert.equal(stopped.status,'stopped');assert.equal(host.alive(state.pid),false);
+  // 'stopped' means the port is free and the state is gone; the process exits a moment later (and this test, its
+  // parent, reaps it on its own event loop), so its end is awaited rather than sampled at once.
+  assert.equal(stopped.status,'stopped');
+  for(const t0=Date.now();host.alive(state.pid)&&Date.now()-t0<5000;)await new Promise(r=>setTimeout(r,50));
+  assert.equal(host.alive(state.pid),false);
   assert.equal(await host.portState(port),'free');assert.equal(host.readState(dir),null);assert(!fs.existsSync(path.join(dir,host.STOP)));
   assert.match(fs.readFileSync(host.logFile(dir),'utf8'),/\[launcher\] stopping \(asked by the extension\)[\s\S]*\[launcher\] stopped/);
   assert.equal((await host.stopReceiver({port,dir})).status,'not-running');
