@@ -10,13 +10,15 @@ const {translate}=require('../scripts/hooks/claude-code');
 const {EVENTS}=require('../scripts/hooks/install-claude-code');
 const {EVENTS:CURSOR_EVENTS}=require('../scripts/hooks/install-cursor');
 const {EVENTS:CODEX_EVENTS}=require('../scripts/hooks/install-codex');
+const moreHooks=require('../scripts/hooks/registry');
 const {tempDir,startService}=require('./helpers');
 const proof=require('../receiver/proof');
 const EXAMPLES=path.join(__dirname,'../packs/examples');
 const NAME='secret-project-name',FILE='src/secret-dir/hidden-file.ts';
 const ADMIN=['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
   '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply',
-  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/integrations/codex/plan','/api/integrations/codex/apply','/api/compositions'];
+  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/integrations/codex/plan','/api/integrations/codex/apply','/api/compositions',
+  ...moreHooks.flatMap(h=>[`/api/integrations/${h.INFO.slug}/plan`,`/api/integrations/${h.INFO.slug}/apply`])];
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 // A path as it appears in text and inside JSON (where Windows backslashes are escaped).
 const forms=p=>[p,JSON.stringify(p).slice(1,-1)];
@@ -373,11 +375,16 @@ test('Capture evidence: the extension\'s reported settings and capture state, ag
   assert(!integrations.cursor.events.includes('subagentStart'));
   assert.deepEqual(integrations.codex.events,CODEX_EVENTS);assert.equal(integrations.codex.adapter,undefined,'adapter path: capability only');
   assert(!integrations.codex.events.includes('PreToolUse'));assert(!integrations.codex.events.includes('PermissionRequest'));
-  assert.deepEqual(integrations.providers.map(p=>p.id),['claude-code','cursor','codex','grok','qwen','kimi']);
+  assert.deepEqual(integrations.providers.map(p=>p.id),['claude-code','cursor','codex','grok','qwen','kimi','gemini','copilot','droid','goose','opencode','cline','windsurf','amp','kiro','augment','junie','aider']);
   assert.equal(integrations.providers.find(p=>p.id==='claude-code').adapter,'first-party');
   assert.equal(integrations.providers.find(p=>p.id==='cursor').adapter,'first-party');
   assert.equal(integrations.providers.find(p=>p.id==='codex').adapter,'first-party');
-  assert(integrations.providers.filter(p=>p.id!=='claude-code'&&p.id!=='cursor'&&p.id!=='codex').every(p=>p.adapter==='generic'));
+  // An adapter of its own: the three above and the registry's (scripts/hooks/registry.js); the rest report through event.js.
+  const hooked=new Set(['claude-code','cursor','codex','gemini','qwen','copilot','droid','grok','goose']);
+  for(const p of integrations.providers)assert.equal(p.adapter,hooked.has(p.id)?'first-party':'generic',p.id);
+  assert.deepEqual(integrations.agents.map(a=>a.slug),['gemini','qwen','copilot','droid','grok','goose']);
+  for(const a of integrations.agents){assert.equal(a.adapter,undefined,'adapter path: capability only');assert.deepEqual(a.projects,[]);
+    assert.equal(a.command,`npm run hooks:${a.slug} -- /path/to/project`);assert(a.events.length&&a.captured.length&&a.excluded.length&&a.file&&a.docs&&a.display);}
   assert.equal(integrations.providers[0].display,'Claude');assert.equal(integrations.providers[0].seat,0);
   // The demonstration (scripts/demo.js: a demo- session) sends workspace events, but no editor was involved.
   const demo=sha('control-center-demo');
@@ -582,7 +589,7 @@ test('Hooks refuse the home directory (its hook files are user-level, for every 
   const project=path.join(home,'code','app');fs.mkdirSync(project,{recursive:true});
   const linked=path.join(tempDir(t,'cr-home-link-'),'me');let link=true;
   try{fs.symlinkSync(home,linked,'junction');}catch(e){if(!['EPERM','EACCES'].includes(e.code))throw e;link=false;}
-  for(const adapter of ['claude','cursor','codex']){
+  for(const adapter of ['claude','cursor','codex',...moreHooks.map(h=>h.INFO.slug)]){
     const plan=body=>send(`/api/integrations/${adapter}/plan`,body),apply=body=>send(`/api/integrations/${adapter}/apply`,body);
     for(const projectPath of [home,path.join(home,'code','..'),...(link?[linked]:[])])for(const action of ['install','remove']){
       for(const r of [await plan({projectPath,action}),await apply({projectPath,action,expectHash:''})]){
@@ -591,7 +598,46 @@ test('Hooks refuse the home directory (its hook files are user-level, for every 
     }
     assert.equal((await plan({projectPath:project,action:'install'})).status,200,`${adapter}: a project inside the home directory is fine`);
   }
-  for(const f of ['.claude','.cursor','.codex'])assert.equal(fs.existsSync(path.join(home,f)),false,`nothing written in ${f}`);
+  for(const f of ['.claude','.cursor','.codex',...moreHooks.map(h=>h.INFO.file.split('/')[0])])assert.equal(fs.existsSync(path.join(home,f)),false,`nothing written in ${f}`);
+});
+test('The other agents’ hooks: plan and apply for each tool, the user’s file kept, every folder on the way refused when it is a link',async t=>{
+  const {dir,send,get,capability}=await start(t,{events:false});
+  const link=(target,at)=>{try{fs.symlinkSync(target,at,'junction');return true;}catch(e){if(['EPERM','EACCES'].includes(e.code))return false;throw e;}};
+  for(const tool of moreHooks){
+    const slug=tool.INFO.slug,project=tempDir(t,`cr-cc-${slug}-`),real=fs.realpathSync.native(project),file=path.join(real,...tool.INFO.file.split('/'));
+    const plan=body=>send(`/api/integrations/${slug}/plan`,body),apply=body=>send(`/api/integrations/${slug}/apply`,body);
+    assert.equal((await send(`/api/integrations/${slug}/plan`,{projectPath:project,action:'install'},{cap:null})).status,401,`${slug}: a capability is required`);
+    let r=await plan({projectPath:project,action:'install'});assert.equal(r.status,200,slug);let p=await r.json();
+    assert.equal(p.file,file);assert.equal(p.exists,false);assert.equal(p.changed,true);
+    r=await apply({projectPath:project,action:'install',expectHash:''});assert.deepEqual(await r.json(),{file,written:true});
+    assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),tool.merge({}));
+    r=await plan({projectPath:project,action:'install'});assert.equal((await r.json()).changed,false,`${slug}: installing twice changes nothing`);
+    // A file with the user's own settings and hook: install adds only the adapter's entries, removal gives the file back.
+    const mine=slug==='copilot'?{type:'command',command:'mine.sh'}:{hooks:[{type:'command',command:'mine.sh'}]};
+    const own=slug==='droid'?{Stop:[mine]}:{model:'kept',hooks:{[slug==='copilot'?'agentStop':'Stop']:[mine]}};
+    fs.writeFileSync(file,JSON.stringify(own,null,4));
+    r=await plan({projectPath:project,action:'install'});p=await r.json();assert.deepEqual(JSON.parse(p.next),tool.merge(own));
+    r=await apply({projectPath:project,action:'install',expectHash:p.currentHash});assert.equal((await r.json()).written,true);
+    r=await plan({projectPath:project,action:'remove'});p=await r.json();
+    r=await apply({projectPath:project,action:'remove',expectHash:p.currentHash});assert.equal((await r.json()).written,true);
+    assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),own,`${slug}: removal leaves exactly the user’s file`);
+    fs.rmSync(path.join(real,tool.INFO.file.split('/')[0]),{recursive:true});
+    // Each folder of the path in turn is a link (to the receiver's data folder): refused, nothing written there.
+    const folders=path.posix.dirname(tool.INFO.file).split('/');
+    for(let i=0;i<folders.length;i++){
+      const at=path.join(real,...folders.slice(0,i+1));fs.mkdirSync(path.dirname(at),{recursive:true});
+      if(!link(dir,at)){t.diagnostic('directory links unavailable here: skipped');break;}
+      for(const action of ['install','remove']){r=await plan({projectPath:project,action});assert.equal(r.status,400,`${slug} ${folders.slice(0,i+1).join('/')} ${action}`);
+        assert.match((await r.json()).error,/is a link/);}
+      assert.equal((await apply({projectPath:project,action:'install',expectHash:''})).status,400);
+      try{fs.unlinkSync(at);}catch{fs.rmdirSync(at);}
+      fs.rmSync(path.join(real,folders[0]),{recursive:true,force:true});
+    }
+    assert(!fs.existsSync(path.join(dir,path.posix.basename(tool.INFO.file))),'nothing written through a link');
+  }
+  // With the capability the page learns each adapter's path (shown as the hook command); its activity comes from evidence.
+  const integ=await get('/api/integrations',{'X-Resonance-Capability':capability});
+  for(const a of integ.agents)assert.equal(a.adapter,path.join(__dirname,'..','scripts','hooks',`${a.slug}.js`));
 });
 test('Codex hooks: plan and apply install, then remove, leaving the rest of the hooks file untouched',async t=>{
   const {svc,dir,send}=await start(t,{events:false});

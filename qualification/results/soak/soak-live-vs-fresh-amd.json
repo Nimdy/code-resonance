@@ -1,0 +1,365 @@
+{
+ "minutes": 15,
+ "tickMs": 300,
+ "visits": [
+  {
+   "label": "Stellar Forge",
+   "fps": 41.6,
+   "drawsPerFrame": 39,
+   "heapAfterGcMB": 10.7,
+   "rssMB": {
+    "node": 196,
+    "browser": 101,
+    "gpu": 409,
+    "renderer": 224,
+    "other": 211
+   },
+   "hot": null,
+   "minute": 1.2,
+   "events": 585
+  },
+  {
+   "label": "Cymatic Field (world pack)",
+   "fps": 60.2,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 7.9,
+   "rssMB": {
+    "node": 202,
+    "browser": 101,
+    "gpu": 343,
+    "renderer": 226,
+    "other": 211
+   },
+   "hot": null,
+   "minute": 2.4,
+   "events": 1109
+  },
+  {
+   "label": "Blueprint Cathedral (shader pack)",
+   "fps": 60.2,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 8.1,
+   "rssMB": {
+    "node": 217,
+    "browser": 102,
+    "gpu": 367,
+    "renderer": 271,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 3.6,
+   "events": 1633
+  },
+  {
+   "label": "Fractal Biosphere",
+   "fps": 60.2,
+   "drawsPerFrame": 39,
+   "heapAfterGcMB": 14.6,
+   "rssMB": {
+    "node": 222,
+    "browser": 102,
+    "gpu": 381,
+    "renderer": 210,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 4.8,
+   "events": 2163
+  },
+  {
+   "label": "Construct",
+   "fps": 60.1,
+   "drawsPerFrame": 3411,
+   "heapAfterGcMB": 36.2,
+   "rssMB": {
+    "node": 222,
+    "browser": 102,
+    "gpu": 404,
+    "renderer": 244,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 5.4,
+   "events": 2163
+  },
+  {
+   "label": "Ember Observatory (declarative)",
+   "fps": 45.1,
+   "drawsPerFrame": 36,
+   "heapAfterGcMB": 34.2,
+   "rssMB": {
+    "node": 224,
+    "browser": 102,
+    "gpu": 430,
+    "renderer": 248,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 6,
+   "events": 2425
+  },
+  {
+   "label": "Stellar Forge",
+   "fps": 45.7,
+   "drawsPerFrame": 36,
+   "heapAfterGcMB": 36.8,
+   "rssMB": {
+    "node": 234,
+    "browser": 102,
+    "gpu": 430,
+    "renderer": 249,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 7.2,
+   "events": 2949
+  },
+  {
+   "label": "Cymatic Field (world pack)",
+   "fps": 60.3,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 34.7,
+   "rssMB": {
+    "node": 256,
+    "browser": 102,
+    "gpu": 372,
+    "renderer": 274,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 8.4,
+   "events": 3474
+  },
+  {
+   "label": "Blueprint Cathedral (shader pack)",
+   "fps": 60.3,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 36.4,
+   "rssMB": {
+    "node": 259,
+    "browser": 102,
+    "gpu": 394,
+    "renderer": 314,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 9.6,
+   "events": 4000
+  },
+  {
+   "label": "Fractal Biosphere",
+   "fps": 60.2,
+   "drawsPerFrame": 39,
+   "heapAfterGcMB": 43.2,
+   "rssMB": {
+    "node": 271,
+    "browser": 102,
+    "gpu": 407,
+    "renderer": 249,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 10.8,
+   "events": 4530
+  },
+  {
+   "label": "Construct",
+   "fps": 41.8,
+   "drawsPerFrame": 6428,
+   "heapAfterGcMB": 58,
+   "rssMB": {
+    "node": 271,
+    "browser": 102,
+    "gpu": 409,
+    "renderer": 277,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 11.3,
+   "events": 4530
+  },
+  {
+   "label": "Ember Observatory (declarative)",
+   "fps": 45.2,
+   "drawsPerFrame": 36,
+   "heapAfterGcMB": 52.7,
+   "rssMB": {
+    "node": 274,
+    "browser": 102,
+    "gpu": 434,
+    "renderer": 269,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 11.9,
+   "events": 4794
+  },
+  {
+   "label": "Stellar Forge",
+   "fps": 45,
+   "drawsPerFrame": 36,
+   "heapAfterGcMB": 53.8,
+   "rssMB": {
+    "node": 244,
+    "browser": 102,
+    "gpu": 433,
+    "renderer": 272,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 13.1,
+   "events": 5319
+  },
+  {
+   "label": "Cymatic Field (world pack)",
+   "fps": 60.2,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 52.1,
+   "rssMB": {
+    "node": 272,
+    "browser": 102,
+    "gpu": 377,
+    "renderer": 296,
+    "other": 211
+   },
+   "hot": null,
+   "minute": 14.3,
+   "events": 5844
+  },
+  {
+   "label": "Blueprint Cathedral (shader pack)",
+   "fps": 60.1,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 52.7,
+   "rssMB": {
+    "node": 255,
+    "browser": 102,
+    "gpu": 397,
+    "renderer": 335,
+    "other": 212
+   },
+   "hot": null,
+   "minute": 15.5,
+   "events": 6369
+  }
+ ],
+ "longLived": [
+  {
+   "label": "Stellar Forge",
+   "fps": 41.8,
+   "drawsPerFrame": 39,
+   "heapAfterGcMB": 55.9,
+   "rssMB": {
+    "node": 253,
+    "browser": 102,
+    "gpu": 435,
+    "renderer": 280,
+    "other": 212
+   },
+   "hot": null
+  },
+  {
+   "label": "Cymatic Field (world pack)",
+   "fps": 60.2,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 52.2,
+   "rssMB": {
+    "node": 265,
+    "browser": 103,
+    "gpu": 377,
+    "renderer": 280,
+    "other": 212
+   },
+   "hot": null
+  },
+  {
+   "label": "Construct",
+   "fps": 43.6,
+   "drawsPerFrame": 6016,
+   "heapAfterGcMB": 57.4,
+   "rssMB": {
+    "node": 266,
+    "browser": 103,
+    "gpu": 372,
+    "renderer": 291,
+    "other": 212
+   },
+   "hot": [
+    "13.1% (anon) three.module.min.js:6",
+    "7.0% refreshFogUniforms three.module.min.js:6",
+    "6.8% updateMatrixWorld three.module.min.js:6",
+    "5.4% upload three.module.min.js:6",
+    "5.0% renderBufferDirect three.module.min.js:6",
+    "4.7% i three.module.min.js:6",
+    "4.1% Vt three.module.min.js:6",
+    "4.0% multiplyMatrices three.module.min.js:6",
+    "4.0% Wt three.module.min.js:6",
+    "3.9% render construct.js:447",
+    "3.9% (program) :0",
+    "2.8% uniformMatrix4fv :0"
+   ]
+  }
+ ],
+ "longLivedErrors": [],
+ "fresh": [
+  {
+   "label": "Stellar Forge",
+   "fps": 42.3,
+   "drawsPerFrame": 39,
+   "heapAfterGcMB": 14.3,
+   "rssMB": {
+    "node": 253,
+    "browser": 102,
+    "gpu": 391,
+    "renderer": 217,
+    "other": 212
+   },
+   "hot": null
+  },
+  {
+   "label": "Cymatic Field (world pack)",
+   "fps": 60.3,
+   "drawsPerFrame": 0,
+   "heapAfterGcMB": 9.6,
+   "rssMB": {
+    "node": 252,
+    "browser": 102,
+    "gpu": 334,
+    "renderer": 214,
+    "other": 212
+   },
+   "hot": null
+  },
+  {
+   "label": "Construct",
+   "fps": 52,
+   "drawsPerFrame": 6139,
+   "heapAfterGcMB": 49.9,
+   "rssMB": {
+    "node": 254,
+    "browser": 102,
+    "gpu": 340,
+    "renderer": 269,
+    "other": 212
+   },
+   "hot": [
+    "10.3% (anon) three.module.min.js:6",
+    "7.9% refreshFogUniforms three.module.min.js:6",
+    "6.5% updateMatrixWorld three.module.min.js:6",
+    "5.4% i three.module.min.js:6",
+    "5.3% upload three.module.min.js:6",
+    "4.6% renderBufferDirect three.module.min.js:6",
+    "4.3% multiplyMatrices three.module.min.js:6",
+    "4.2% Vt three.module.min.js:6",
+    "4.1% (program) :0",
+    "3.1% uniformMatrix4fv :0",
+    "3.1% Xt three.module.min.js:6",
+    "2.7% oo three.module.min.js:6"
+   ]
+  }
+ ],
+ "freshErrors": [],
+ "events": 6369,
+ "accepted": 6369,
+ "modules": 417
+}

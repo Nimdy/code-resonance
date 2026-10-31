@@ -278,10 +278,14 @@ test('Hooks and CLIs send the token only to an occupant that proves it holds it'
   const {RESONANCE_PORT,RESONANCE_DATA,...base}=process.env;
   const env=port=>({...base,RESONANCE_DATA:data,RESONANCE_PORT:String(port)});
   const hooks=[['claude-code.js',{hook_event_name:'Stop',session_id:'proof-c',cwd:root}],['cursor.js',{hook_event_name:'stop',conversation_id:'proof-u',status:'completed',loop_count:0,cwd:root}],
-    ['codex.js',{hook_event_name:'Stop',session_id:'proof-x',cwd:root,stop_hook_active:false}]];
+    ['codex.js',{hook_event_name:'Stop',session_id:'proof-x',cwd:root,stop_hook_active:false}],
+    // The adapters after those three (scripts/hooks/shared.js): the same proof before any token leaves.
+    ['gemini.js',{hook_event_name:'AfterAgent',session_id:'proof-g',cwd:root,prompt_response:''}],['qwen.js',{hook_event_name:'Stop',session_id:'proof-q',cwd:root}],
+    ['copilot.js',{sessionId:'proof-gh',timestamp:1,cwd:root,stopReason:'end_turn'},['agentStop']],['droid.js',{hook_event_name:'Stop',session_id:'proof-d',cwd:root}],
+    ['grok.js',{hookEventName:'Stop',sessionId:'proof-k',cwd:root}],['goose.js',{event:'Stop',session_id:'proof-s'},[],{PLUGIN_ROOT:path.join(root,'.agents','plugins','code-resonance')}]];
   const spooled=()=>{try{return fs.readdirSync(path.join(data,'spool')).filter(n=>n.endsWith('.json')).length;}catch{return 0;}};
-  for(const [i,[file,payload]] of hooks.entries()){
-    const r=await runNode(path.join(__dirname,'..','scripts','hooks',file),[],{input:JSON.stringify(payload),env:env(fakePort)});
+  for(const [i,[file,payload,args=[],extra={}]] of hooks.entries()){
+    const r=await runNode(path.join(__dirname,'..','scripts','hooks',file),args,{input:JSON.stringify(payload),env:{...env(fakePort),...extra}});
     assert.equal(r.code,0,file);assert.equal(r.stdout,'',file);
     assert.equal(spooled(),i+1,`${file} spools instead of sending`);
   }
@@ -289,7 +293,7 @@ test('Hooks and CLIs send the token only to an occupant that proves it holds it'
   assert.equal(ev.code,1);assert.match(ev.stderr,/did not prove/);
   const demo=await runNode(path.join(__dirname,'..','scripts','demo.js'),['--fast'],{env:env(fakePort)});
   assert.equal(demo.code,1);assert.match(demo.stderr,/did not prove/);
-  assert(seen.length>=5);
+  assert(seen.length>=hooks.length+2);
   assert(seen.every(x=>x.auth===null),JSON.stringify(seen));
   assert(!seen.some(x=>x.url.startsWith('/v1/events')||x.url.startsWith('/v1/flush')));
   // A real receiver on the data directory: the next invocation proves it, then delivers the spool and its own events.
@@ -299,5 +303,5 @@ test('Hooks and CLIs send the token only to an occupant that proves it holds it'
   await svc.flush();
   const {projectIdForRoot,findProjectRoot}=require('../sdk/project-id');
   const journal=fs.readFileSync(path.join(data,'projects',sha(projectIdForRoot(findProjectRoot(root))),'events.jsonl'),'utf8');
-  for(const s of ['claude-code-proof-c','cursor-proof-u','codex-proof-x','claude-code-proof-c2'])assert(journal.includes(s),s);
+  for(const s of ['claude-code-proof-c','cursor-proof-u','codex-proof-x','gemini-proof-g','qwen-proof-q','copilot-proof-gh','droid-proof-d','grok-proof-k','goose-proof-s','claude-code-proof-c2'])assert(journal.includes(s),s);
 });

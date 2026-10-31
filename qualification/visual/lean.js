@@ -39,6 +39,8 @@ async function launchLean(gpu=null){
   // The start-up tab is closed once the first page exists (its renderer would count in the measurements).
   let initial=(await send('Target.getTargets')).targetInfos.filter(t=>t.type==='page').map(t=>t.targetId);
   const browser={
+    // The browser's profile and download folders (a measurement may read what the browser wrote there).
+    profile,downloads,pid:child.pid,
     async newPage({viewport={width:1280,height:720}}={}){
       const {targetId}=await send('Target.createTarget',{url:'about:blank',width:viewport.width,height:viewport.height});
       const {sessionId}=await send('Target.attachToTarget',{targetId,flatten:true});

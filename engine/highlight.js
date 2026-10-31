@@ -239,9 +239,39 @@ async function lastNight({start,end,windowsSince}){
   if(end-start>RECENT_MS){const hit=recent(await windowsSince(end-RECENT_MS),end);if(hit)return hit;}
   return pick(intentsOf(await windowsSince(-Infinity)),start,end);
 }
+// ---- A short clip of the highlight (npm run film -- --vertical) -------------------------------------------------------
+// `seconds` of film at the highlight's own speed, centred on its key moment: of the moments that made the window score
+// (its anchors and its recoveries), the one whose centred clip scores highest by the same rules, then the more
+// telling kind (a recovery, a milestone, a meeting of agents, a new structure, a checkpoint), then the earliest. Near an
+// end of the recording (`start`, `end`; the window's own ends without them) the clip keeps its length and shifts inside
+// it; a recording shorter than the clip gives all of it. Without any such moment the clip is centred on the window.
+const KEY_RANK={'validation.recovered':6,'milestone.achieved':5,'refactor.validated':5,'agent.collision':4,'structure.created':3,
+  'subsystem.connected':3,'repository.checkpoint':2};
+function placeClip(t,span,lo,hi){
+  if(!(hi-lo>span))return {from:lo,to:hi};
+  let a=t-span/2;if(a<lo)a=lo;if(a+span>hi)a=hi-span;
+  return {from:a,to:a+span};
+}
+function clip(intents,picked,{seconds=30,start=null,end=null}={}){
+  if(!picked||!Number.isFinite(picked.from)||!Number.isFinite(picked.to)||!(picked.to>picked.from))return null;
+  const speed=Number(picked.speed)>0?Number(picked.speed):4,s=Number(seconds);
+  if(!Number.isFinite(s)||s<=0)return null;
+  const span=s*1000*speed;
+  const lo=Number.isFinite(start)?Math.min(start,picked.from):picked.from,hi=Number.isFinite(end)?Math.max(end,picked.to):picked.to;
+  const all=(intents||[]).filter(i=>i&&Number.isFinite(i.ts)).slice().sort((a,b)=>a.ts-b.ts||String(a.id||'').localeCompare(String(b.id||'')));
+  const W=inWindow(all,picked.from,picked.to);
+  let best=null;
+  for(const i of W){
+    if(!isAnchor(i)&&i.type!=='validation.recovered')continue;
+    const w=placeClip(i.ts,span,lo,hi),score=scoreWindow(inWindow(all,w.from,w.to)).score,rank=KEY_RANK[i.type]||1;
+    if(!best||score>best.score||(score===best.score&&rank>best.rank))best={...w,key:i.ts,keyType:i.type,score,rank};
+  }
+  if(!best){const mid=(picked.from+picked.to)/2,w=placeClip(mid,span,lo,hi);best={...w,key:mid,keyType:null,score:scoreWindow(inWindow(all,w.from,w.to)).score};}
+  return {from:best.from,to:best.to,speed,seconds:(best.to-best.from)/1000/speed,key:best.key,keyType:best.keyType,score:best.score};
+}
 function publicView(projectId,picked){
   if(!picked)return {schema:SCHEMA,projectId,from:null,to:null,speed:null,viewMs:null,score:null,reasons:[],providers:[]};
   return {schema:SCHEMA,projectId,from:picked.from,to:picked.to,speed:picked.speed,viewMs:picked.viewMs,
     score:picked.score,reasons:picked.reasons,providers:picked.providers};
 }
-module.exports={RECENT_MS,pick,fromWindows,lastNight,publicView,inWindow,scoreWindow};
+module.exports={RECENT_MS,pick,fromWindows,lastNight,publicView,inWindow,scoreWindow,clip,intentsOf,bounds};

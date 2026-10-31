@@ -7,7 +7,7 @@ import {catalogued} from '../providers.js';
 const TOKEN=/^[A-Za-z0-9_-]{1,64}$/;
 const SYMBOL_TYPES=new Set(['function','method','class','interface','type','variable','ui.component','api.route','callsite','module']);
 const STATES=new Set(['draft','committed','validated','stressed']);
-const LANGS=new Set(['ts','tsx','js','jsx','mjs','cjs','py','go','rs','json','css','md','html','other']);
+const LANGS=new Set(['ts','tsx','js','jsx','mjs','cjs','py','go','rs','json','css','md','html','java','kt','cs','swift','c','cpp','php','rb','other']);
 const EDGE_KINDS=new Set(['depends','contains']);
 const CATEGORIES=new Set(['structure','validation','ai','system','activity','editor','execution','repository','agent','dependency','symbol']);
 const EVIDENCE=new Set(['observed','derived','inferred','verified']);

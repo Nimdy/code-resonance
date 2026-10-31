@@ -1,23 +1,44 @@
 {
   "name": "code-resonance",
   "displayName": "Code Resonance",
-  "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
+  "description": "Turns your real development work into a live, private audiovisual performance: a world that grows with your code and a score that follows it. Everything runs on your machine.",
   "version": "0.7.2",
   "publisher": "zerobandwidth",
   "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#0b0a1f",
+    "theme": "dark"
+  },
+  "preview": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nimdy/code-resonance.git"
+  },
+  "homepage": "https://github.com/Nimdy/code-resonance#readme",
+  "bugs": {
+    "url": "https://github.com/Nimdy/code-resonance/issues"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
   "categories": [
-    "Other",
-    "Visualization"
+    "Visualization",
+    "Other"
   ],
   "keywords": [
     "code resonance",
-    "software",
     "generative music",
-    "developer tools",
-    "visualization"
+    "generative art",
+    "sonification",
+    "audiovisual",
+    "live coding",
+    "visualization",
+    "ai agents",
+    "claude code",
+    "obs",
+    "streaming",
+    "local-first"
   ],
   "extensionKind": [
     "workspace"
@@ -52,6 +73,26 @@
       {
         "command": "resonance.menu",
         "title": "CODE RESONANCE: Menu"
+      },
+      {
+        "command": "resonance.openControlCenter",
+        "title": "CODE RESONANCE: Open Control Center (Pairing Link)"
+      },
+      {
+        "command": "resonance.receiverStatus",
+        "title": "CODE RESONANCE: Receiver Status"
+      },
+      {
+        "command": "resonance.stopReceiver",
+        "title": "CODE RESONANCE: Stop Receiver"
+      },
+      {
+        "command": "resonance.showReceiverLog",
+        "title": "CODE RESONANCE: Show Receiver Log"
+      },
+      {
+        "command": "resonance.connectAgent",
+        "title": "CODE RESONANCE: Connect an AI Agent (Hooks)"
       }
     ],
     "configuration": {
@@ -62,7 +103,12 @@
           "default": 4174,
           "minimum": 1,
           "maximum": 65535,
-          "description": "Loopback receiver port in the same VS Code extension host (including WSL/SSH)."
+          "description": "Loopback port of the receiver, in the same extension host (inside WSL or the SSH host for a remote window). When nothing answers there, the receiver this extension carries starts on it."
+        },
+        "resonance.startReceiver": {
+          "type": "boolean",
+          "default": true,
+          "description": "When no receiver answers on resonance.receiverPort, start the one this extension carries: a separate process on 127.0.0.1 that every window shares and that keeps running after VS Code closes (stop it from the CR menu). A receiver already running, for example npm start in a checkout, is always used instead."
         },
         "resonance.baselineFileLimit": {
           "type": "number",

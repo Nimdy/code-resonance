@@ -193,7 +193,8 @@ life yet; adding it changed no existing identity. Design brief, stills and what 
 An evolving 3D fractal universe: one raymarched, distance-estimated fractal whose formula and parameters (a Mandelbulb,
 a Julia bulb, a Mandelbox or a kaleidoscopic crystal, its branching, twist and shape) come from the code's character and
 the identity's own stream, so projects become different universes, not only different colours. Development unfolds its
-recursion; subsystems are regions of its surface (swelling with their files), files are sites of light on it,
+recursion; subsystems are regions of its surface, each in its own hue on the identity's harmony (swelling with
+their files), lit hard from the side like a cut stone, files are sites of light on it,
 dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
 shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
 decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
@@ -201,6 +202,21 @@ fractal bloom. It is a **preview**: chosen only explicitly (the Visual Studio, t
 the family scores, with no digital life yet; adding it changed no existing identity. Design brief, stills, measured GPU
 time and what remains: [worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`,
 `fractal-forms.js`).
+
+### Temporal Terrain (preview)
+
+The project's history as a contour landscape: time is the land. The present is the front edge, a lit cut through the
+land where new ground is laid down, and the past recedes toward the horizon on a logarithmic scale. Subsystems are
+ranges across the land, each in its own hue on the identity's harmony, files the ridges that run back through time from
+the moment they were created, their height from their live symbols; luminous contour lines over a dark relief crowd
+where code grew fast. Agents survey the land as lights in their provider's colour and shape and raise the ground where
+they edit; tests sweep a scan, a failure opens a fault that stays as a scar for as long as the files were stressed,
+recovery heals it, commits leave survey lines and stakes, and a verified milestone can earn a rare sunrise and a beacon.
+A replay's land is its whole recorded history, also after a seek (the host hands built-in worlds that ask for them the
+recorded windows). It is a **preview**: chosen only explicitly (the Visual Studio, the render lab's `--family`), never by
+the family scores, with no digital life yet; adding it changed no existing identity. Design brief, stills, measured GPU
+time and what remains: [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`,
+`terrain-layout.js`, `terrain-glsl.js`).
 
 The Visual Studio shows why to choose each world, offers six curated looks (two per family, built in and read-only,
 previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials

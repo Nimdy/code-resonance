@@ -6,14 +6,26 @@ const path=require('node:path');
 const {DurableOutbox}=require('./outbox');
 const {verifyServer}=require('./proof');
 const {SOURCE_GLOB,EXCLUDE_GLOB,isFileEligible,countNewlines,classifyCommand}=require('./filters');
+const host=require('./receiver-host');
+const agentHooks=require('./agent-hooks');
 const VERSION=require('./package.json').version;
 const SETTINGS_QUERY='@ext:zerobandwidth.code-resonance';
+// The receiver's data directory (RESONANCE_DATA, else ~/.code-resonance), where its token is; the receiver this
+// extension carries (runtime/ in the VSIX, the checkout in development; null in a copy without one).
+const DATA=host.dataDir();
+const RUNTIME=host.findRuntime(__dirname);
+const LAUNCHER=path.join(__dirname,'launcher.js');
+const PLAN_SCHEME='code-resonance-plan';
 let recording=null;
 let statusBar=null;
+let output=null;
+const planDocs=new Map();
 const EDIT_WINDOW_MS=1000;
 const SETTINGS_DEBOUNCE_MS=500;
 function hash(s){return crypto.createHash('sha256').update(String(s)).digest('hex');}
 function conf(){return vscode.workspace.getConfiguration('resonance');}
+function port(){return conf().get('receiverPort',4174);}
+function say(line){output?.appendLine(`[${new Date().toISOString().slice(11,19)}] ${line}`);}
 function decorateStatus(text){if(statusBar){statusBar.text=`$(pulse) CR ${text}`;statusBar.tooltip='Code Resonance';statusBar.show();}}
 function createEvent(rec,kind,fields={}){return {v:1,id:crypto.randomUUID(),ts:Date.now(),kind,projectId:rec.projectId,sessionId:rec.sessionId,origin:fields.origin||'unknown',...fields};}
 // What this capture is configured to do, reported in workspace events so the Control Center can show facts instead of
@@ -211,12 +223,14 @@ async function start(context,showConsent=true){
   const projectId=hash(folder.uri.toString());
   const directory=path.join(context.globalStorageUri.fsPath,'outbox',projectId);
   const rec={folder,projectId,sessionId:crypto.randomUUID(),active:true,documentTimers:new Map(),editWindows:new Map(),listeners:[],outbox:null,reported:null};
-  rec.outbox=new DurableOutbox({directory,port:conf().get('receiverPort',4174),onStatus:(kind)=>{
+  rec.outbox=new DurableOutbox({directory,port:port(),authFile:path.join(DATA,'receiver-auth.json'),onStatus:(kind)=>{
     if(recording!==rec)return;
     decorateStatus({online:'recording',offline:'queued offline',unverified:'queued (receiver not verified)','disk-error':'storage error','queue-full':'queue full','rejected':'recording (events rejected)'}[kind]||'recording');
   }});
   await rec.outbox.start().catch(()=>{});
   recording=rec;
+  // The outbox queues on disk until a receiver answers: starting one (or finding one) need not hold capture up.
+  void ensureReceiver({interactive:showConsent});
   listen(rec);
   // The folder name labels the project in the local player's project list; it is never drawn on the Stage.
   const meta=settingsMeta(rec);rec.reported=JSON.stringify(meta);
@@ -243,24 +257,180 @@ async function recordPrompt(){
   const meta={fingerprint:hash(content).slice(0,20),length:content.length,source:'manual'};
   send(recording,'agent.prompt.submitted',{meta,...(conf().get('capturePromptText',false)?{text:content}:{})});
 }
+// ---- The receiver. One that proves it holds the token in DATA is used whoever started it; when none answers on
+// resonance.receiverPort, the receiver this extension carries is started, detached, and every window shares it
+// (./receiver-host.js). Problems are explained once per session and kind unless the user asked; the Output channel
+// "Code Resonance" keeps every decision and where the receiver's log is.
+const told=new Set();
+let lastReceiver='';
+function receiverProblem(r){
+  const settings=['Open Settings',()=>vscode.commands.executeCommand('workbench.action.openSettings',SETTINGS_QUERY)];
+  switch(r.status){
+    case 'occupied':return {text:r.reason==='receiver'?`Port ${r.port} is used by a Code Resonance receiver that does not hold the token in ${DATA} (another data directory). Capture waits, queued on disk. Stop that receiver, or choose another resonance.receiverPort.`
+      :`Port ${r.port} is used by another program, so Code Resonance cannot start its receiver there. Capture waits, queued on disk. Free the port, or choose another resonance.receiverPort.`,actions:[settings]};
+    case 'elsewhere':return {text:`A receiver using ${DATA} is running on port ${r.other}, but resonance.receiverPort is ${r.port}. Set resonance.receiverPort to ${r.other}, or stop that receiver.`,actions:[settings]};
+    case 'absent':return {text:`No receiver answers on 127.0.0.1:${r.port}, and resonance.startReceiver is off. Start one (for example npm start in a Code Resonance checkout), or turn the setting on.`,actions:[settings]};
+    case 'unavailable':return {text:`No receiver answers on 127.0.0.1:${r.port}, and this copy of the extension carries none. Start one (npm start in a Code Resonance checkout).`,actions:[]};
+    case 'failed':return {text:`Code Resonance could not start its receiver: ${r.message}`,actions:[['Show Log',showReceiverLog]],error:true};
+    default:return null;
+  }
+}
+async function ensureReceiver({interactive=false}={}){
+  let r;
+  try{r=await host.ensureReceiver({port:port(),dir:DATA,runtime:RUNTIME,launcher:LAUNCHER,version:VERSION,start:conf().get('startReceiver',true),log:say});}
+  catch(e){r={status:'failed',port:port(),message:e.message};}
+  const key=`${r.status}:${r.port}:${r.owner||''}:${r.state?.instance||''}`;
+  if(key!==lastReceiver){
+    lastReceiver=key;
+    if(r.status==='reused')say(r.owner==='bundled'?`Using the receiver Code Resonance ${r.state.version} started on 127.0.0.1:${r.port} (process ${r.state.pid}). Log: ${host.logFile(DATA)}`
+      :`Using the receiver on 127.0.0.1:${r.port}, which this extension did not start (for example npm start in a checkout). Data: ${DATA}`);
+    if(r.status==='started')say(`Receiver log: ${r.log}. It keeps running when VS Code closes; the CR menu stops it.`);
+  }
+  const problem=receiverProblem(r);
+  if(problem){
+    say(problem.text);if(r.detail)say(`Last lines of the receiver's log:\n${r.detail}`);
+    if(interactive||!told.has(key)){
+      told.add(key);
+      const show=problem.error?vscode.window.showErrorMessage:vscode.window.showWarningMessage;
+      void Promise.resolve(show.call(vscode.window,problem.text,...problem.actions.map(([label])=>label))).then(pick=>problem.actions.find(([label])=>label===pick)?.[1]()).catch(()=>{});
+    }
+  }
+  return r;
+}
+async function showReceiverLog(){
+  const file=host.logFile(DATA);
+  if(!require('node:fs').existsSync(file)){void vscode.window.showInformationMessage(`Code Resonance has not started a receiver here yet (its log would be ${file}).`);return;}
+  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(file)),{preview:true});
+}
+async function showReceiverStatus(){
+  const s=await host.receiverStatus({port:port(),dir:DATA}),actions=[];
+  const since=s.bundled?` since ${new Date(s.bundled.startedAt).toLocaleString()}`:'';
+  let text;
+  if(s.occupant==='verified'){
+    text=s.ours?`The receiver on 127.0.0.1:${s.port} was started by Code Resonance ${s.bundled.version} (process ${s.bundled.pid}${since}, ${s.bundled.electron?'in VS Code\'s runtime':`Node ${s.bundled.node}`}). Data: ${DATA}.`
+      :`A receiver runs on 127.0.0.1:${s.port} that this extension did not start (for example npm start in a checkout); it is used as it is. Data: ${DATA}.`;
+    actions.push('Open Control Center');if(s.ours)actions.push('Stop Receiver');
+  }else if(s.occupant==='foreign')text=receiverProblem({status:'occupied',port:s.port,reason:s.reason}).text;
+  else if(s.elsewhere)text=receiverProblem({status:'elsewhere',port:s.port,other:s.elsewhere}).text;
+  else{
+    const auto=conf().get('startReceiver',true)&&RUNTIME;
+    text=`No receiver is running on 127.0.0.1:${s.port}.${auto?' Starting capture or opening the Stage starts the one Code Resonance carries.':''}`;
+    if(auto)actions.push('Start Receiver');
+  }
+  if(s.bundled&&!s.ours){text+=` The receiver Code Resonance started runs on port ${s.bundled.port} (process ${s.bundled.pid}).`;actions.push('Stop Receiver');}
+  if(require('node:fs').existsSync(s.log))actions.push('Show Log');
+  say(text);
+  const pick=await vscode.window.showInformationMessage(text,...actions);
+  if(pick==='Open Control Center')await openStage(false,{withProject:false});
+  else if(pick==='Stop Receiver')await stopReceiver();
+  else if(pick==='Start Receiver')await ensureReceiver({interactive:true});
+  else if(pick==='Show Log')await showReceiverLog();
+}
+async function stopReceiver(){
+  const s=host.bundled(DATA);
+  if(!s){
+    const st=await host.receiverStatus({port:port(),dir:DATA});
+    void vscode.window.showInformationMessage(st.occupant==='verified'?`The receiver on port ${st.port} was not started by this extension: stop it where it runs (Ctrl+C in its terminal).`:'No receiver started by Code Resonance is running.');
+    return;
+  }
+  const answer=await vscode.window.showWarningMessage(`Stop the receiver Code Resonance started on port ${s.port}?`,
+    {modal:true,detail:'Capture in every window keeps its events on disk until a receiver runs again. Starting capture or opening the Stage starts it again.'},'Stop Receiver');
+  if(answer!=='Stop Receiver')return;
+  const r=await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:'Code Resonance: stopping the receiver…'},()=>host.stopReceiver({port:port(),dir:DATA,log:say}));
+  lastReceiver='';
+  if(r.status==='stopped')void vscode.window.showInformationMessage('Code Resonance: the receiver stopped.');
+  else void vscode.window.showWarningMessage(`Code Resonance: the receiver (process ${s.pid}) did not stop. Its log: ${host.logFile(DATA)}`);
+}
 // The Control Center opens paired: the receiver (asked with this account's ingestion token) gives a single-use code,
 // valid minutes, which the page exchanges for the pairing key. The key itself never appears in a link or a command line.
 async function pairingFragment(port){try{
-  const a=JSON.parse(await fs.readFile(path.join(require('node:os').homedir(),'.code-resonance','receiver-auth.json'),'utf8'));if(!a.token)return '';
+  const a=JSON.parse(await fs.readFile(path.join(DATA,'receiver-auth.json'),'utf8'));if(!a.token)return '';
   // The occupant proves it holds the token for this port before it is sent (./proof.js, shared with the receiver).
   await verifyServer(port,a.token,2000);
   const r=await fetch(`http://127.0.0.1:${port}/v1/pairing-code`,{method:'POST',redirect:'error',headers:{Authorization:`Bearer ${a.token}`},signal:AbortSignal.timeout(2000)});
   if(!r.ok)return '';const {code}=await r.json();return /^[0-9a-f]{32}$/.test(code||'')?`#pair=${code}`:'';}catch{return '';}}
-async function openStage(overlay=false){
-  const port=conf().get('receiverPort',4174);
-  const project=recording?`?project=${recording.projectId}`:'';
-  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${project?`&project=${recording.projectId}`:''}`:`http://127.0.0.1:${port}/${project}${await pairingFragment(port)}`));
+async function openStage(overlay=false,{withProject=true}={}){
+  const r=await vscode.window.withProgress({location:vscode.ProgressLocation.Window,title:'Code Resonance receiver'},()=>ensureReceiver({interactive:true}));
+  // Nothing of ours to open: the notification says why (another program on the port, a failed start).
+  if(r.status==='occupied'||r.status==='elsewhere'||r.status==='failed')return;
+  const port=r.port,id=withProject&&recording?recording.projectId:null;
+  await vscode.env.openExternal(vscode.Uri.parse(overlay?`http://127.0.0.1:${port}/?overlay=1&sound=1${id?`&project=${id}`:''}`:`http://127.0.0.1:${port}/${id?`?project=${id}`:''}${await pairingFragment(port)}`));
+}
+// ---- Agent hooks for this workspace, through the receiver's own plan and apply (./agent-hooks.js): the exact change
+// is shown in a diff editor first and written only after the user confirms, and only if the file did not change since.
+// The hook commands in a hooks file (the planned one or the current one): every string under a "command" key.
+function hookCommands(text){
+  const out=[];const walk=v=>{if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')for(const [k,x] of Object.entries(v)){if(k==='command'&&typeof x==='string')out.push(x);else walk(x);}};
+  try{walk(JSON.parse(text||'{}'));}catch{}
+  return out;
+}
+function hasNode(){
+  return new Promise(resolve=>{try{require('node:child_process').execFile('node',['--version'],{timeout:5000,windowsHide:true},(err,out)=>resolve(!err&&/^v\d+/.test(String(out).trim())));}catch{resolve(false);}});
+}
+async function showPlan(agent,plan,action){
+  const id=crypto.randomBytes(4).toString('hex');
+  const left=vscode.Uri.parse(`${PLAN_SCHEME}:/${id}/now/${agent.file}`),right=vscode.Uri.parse(`${PLAN_SCHEME}:/${id}/planned/${agent.file}`);
+  planDocs.set(left.toString(),plan.current??'');planDocs.set(right.toString(),plan.next);
+  while(planDocs.size>20)planDocs.delete(planDocs.keys().next().value);
+  await vscode.commands.executeCommand('vscode.diff',left,right,`${agent.file}: ${plan.exists?'now':'new file'} ↔ ${action==='install'?'with':'without'} Code Resonance's hooks`,{preview:true});
+}
+async function connectAgent(){
+  const folder=vscode.workspace.workspaceFolders?.[0];
+  if(!folder||folder.uri.scheme!=='file'){void vscode.window.showWarningMessage('Open a folder on this computer (or in this WSL/SSH host) before connecting an AI agent.');return;}
+  if(!vscode.workspace.isTrusted){void vscode.window.showWarningMessage('Connecting an AI agent requires a trusted workspace.');return;}
+  const r=await vscode.window.withProgress({location:vscode.ProgressLocation.Window,title:'Code Resonance receiver'},()=>ensureReceiver({interactive:true}));
+  if(r.status!=='started'&&r.status!=='reused')return;
+  const projectPath=folder.uri.fsPath,p=r.port;
+  const agents=await Promise.all(Object.entries(agentHooks.AGENTS).map(async([id,a])=>{
+    try{const plan=await agentHooks.planHooks({port:p,dataDir:DATA,agent:id,projectPath,action:'install'});return {id,...a,installed:plan.exists&&!plan.changed,plan};}
+    catch(e){return {id,...a,error:e.message};}
+  }));
+  const pick=await vscode.window.showQuickPick(agents.map(a=>({label:a.label,description:a.error?'unavailable':a.installed?'connected':'',
+    detail:a.error?a.error:a.installed?`Remove Code Resonance's hooks from ${a.file}`:`Add observe-only hooks to ${a.file}`,agent:a})),
+    {title:'Code Resonance: connect an AI agent to this workspace',placeHolder:'The agent then joins the performance: sessions, tools and files, never its prompts or code unless you opt in'});
+  if(!pick)return;
+  const a=pick.agent;if(a.error){void vscode.window.showWarningMessage(`Code Resonance cannot plan the ${a.label} hooks: ${a.error}`);return;}
+  const action=a.installed?'remove':'install';
+  let plan=a.plan;
+  try{if(action==='remove')plan=await agentHooks.planHooks({port:p,dataDir:DATA,agent:a.id,projectPath,action});}
+  catch(e){void vscode.window.showWarningMessage(`Code Resonance cannot plan the ${a.label} hooks: ${e.message}`);return;}
+  if(!plan.changed){void vscode.window.showInformationMessage(`Nothing to change in ${a.file}.`);return;}
+  await showPlan(a,plan,action);
+  // The command the receiver planned (its adapter path), and Code Resonance entries already there for another path (for
+  // example installed from a checkout): both would run, and the agent would be reported twice.
+  const adapter=agentHooks.AGENTS[a.id]?.adapter||'';
+  const before=new Set(hookCommands(plan.current));
+  const planned=new Set(hookCommands(plan.next).filter(c=>c.startsWith('node ')&&c.includes(adapter)&&!before.has(c)));
+  const command=[...planned][0]||'';
+  const others=[...new Set(hookCommands(plan.current).filter(c=>c.startsWith('node ')&&/scripts[\\/]+hooks[\\/]+/.test(c)&&c.includes(adapter)&&!planned.has(c)))];
+  const stable=command.includes(agentHooks.stableRoot(DATA))||command.includes(JSON.stringify(agentHooks.stableRoot(DATA)).slice(1,-1));
+  const detail=action==='install'?[`The diff shows the whole change to ${plan.file}: only the adapter's observe-only entries are added, nothing else in the file changes.`,
+    `Each entry runs ${command||'node with the receiver\'s adapter'}${stable?' (a copy Code Resonance keeps in the data directory, at the same path across updates)':''}. It never prints and always exits 0, so it cannot block or change ${a.label}.`,
+    ...(others.length?[`This file already has Code Resonance hooks running ${others.join(', ')} (for example installed from a checkout). Remove those entries first, or ${a.label} is reported twice.`]:[]),
+    ...(a.id==='claude'?[]:[`${a.file} may be committed with the project: the command is a path on this computer, so gitignore it or leave that entry out of commits.`]),
+    ...(await hasNode()?[]:['Node.js was not found on the PATH here: the agent needs node on its PATH to run the hook.'])].join('\n\n')
+    :`The diff shows the whole change to ${plan.file}: only Code Resonance's entries are removed.`;
+  const confirm=action==='install'?'Add Hooks':'Remove Hooks';
+  const answer=await vscode.window.showWarningMessage(`${action==='install'?'Add':'Remove'} Code Resonance's ${a.label} hooks ${action==='install'?'in':'from'} ${a.file}?`,{modal:true,detail},confirm);
+  if(answer!==confirm)return;
+  try{
+    const res=await agentHooks.applyHooks({port:p,dataDir:DATA,agent:a.id,projectPath,action,expectHash:plan.currentHash});
+    say(`${a.label} hooks ${action==='install'?'added to':'removed from'} ${res.file} (${res.written?'written':'unchanged'}).`);
+    void vscode.window.showInformationMessage(!res.written?`Nothing changed in ${a.file}.`:action==='install'
+      ?`${a.label} hooks added to ${a.file}. Start a new ${a.label} session in this folder: sessions already running do not pick up new hooks.${a.id==='codex'?' Codex asks you to review and trust them first (/hooks).':''}`
+      :`${a.label} hooks removed from ${a.file}.`);
+  }catch(e){void vscode.window.showWarningMessage(`Code Resonance could not ${action==='install'?'add':'remove'} the ${a.label} hooks: ${e.message}`);}
 }
 // One click from the status bar to everything a performer needs while coding.
 async function menu(context){
   const items=recording?[{label:'$(debug-stop) Stop capture',run:()=>stop(context)},{label:'$(globe) Open Stage',run:()=>openStage(false)},
     {label:'$(device-camera-video) Open OBS view',detail:'Clean browser-source view with sound',run:()=>openStage(true)},{label:'$(comment) Record AI prompt (explicit)',run:recordPrompt}]
     :[{label:'$(record) Start capture',detail:'Asks for consent before recording this workspace locally',run:()=>start(context,true)},{label:'$(globe) Open Stage',run:()=>openStage(false)}];
+  if(vscode.QuickPickItemKind)items.push({label:'Receiver and agents',kind:vscode.QuickPickItemKind.Separator});
+  items.push({label:'$(server) Receiver status',detail:'Where it runs, who started it, its log; open the Control Center (pairing link)',run:showReceiverStatus},
+    {label:'$(plug) Connect an AI agent…',detail:'Observe-only hooks for Claude Code, Cursor or Codex in this workspace',run:connectAgent});
+  const mine=host.bundled(DATA);
+  if(mine)items.push({label:'$(circle-slash) Stop receiver',description:`started by Code Resonance on port ${mine.port}`,run:stopReceiver});
   const pick=await vscode.window.showQuickPick(items,{title:'Code Resonance'});
   if(pick)await pick.run();
 }
@@ -273,10 +443,18 @@ function activate(context){
   statusBar=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,45);
   statusBar.command='resonance.menu';context.subscriptions.push(statusBar);
   decorateStatus('stopped');
+  output=vscode.window.createOutputChannel('Code Resonance');context.subscriptions.push(output);
+  say(`Code Resonance ${VERSION}. Receiver data: ${DATA}. ${RUNTIME?`Bundled receiver: ${RUNTIME.root}${RUNTIME.kind==='checkout'?' (a checkout)':''}; its log: ${host.logFile(DATA)}.`:'No bundled receiver in this copy.'}`);
+  context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(PLAN_SCHEME,{provideTextDocumentContent:uri=>planDocs.get(uri.toString())??''}));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.start',()=>start(context,true)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.stop',()=>stop(context)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.openStage',()=>openStage(false)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.openOverlay',()=>openStage(true)));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.openControlCenter',()=>openStage(false,{withProject:false})));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.receiverStatus',showReceiverStatus));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.stopReceiver',stopReceiver));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.showReceiverLog',showReceiverLog));
+  context.subscriptions.push(vscode.commands.registerCommand('resonance.connectAgent',connectAgent));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.menu',()=>menu(context)));
   context.subscriptions.push(vscode.commands.registerCommand('resonance.recordPrompt',recordPrompt));
   context.subscriptions.push(vscode.window.registerUriHandler({handleUri}));

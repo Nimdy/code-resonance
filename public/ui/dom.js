@@ -198,7 +198,8 @@ export function toast(message,kind='info',{timeout=kind==='error'?9000:5200,acti
     button({icon:'close',kind:'ghost',size:'sm',onClick:close,attrs:{'aria-label':'Dismiss'}}));
   toastHost.append(t);if(timeout)setTimeout(close,timeout);return close;
 }
-// A workspace's own stylesheet (public/ui/css/<name>.css), linked once.
-export function styles(name){const href=`/ui/css/${name}.css`;if(document.querySelector(`link[href="${href}"]`))return;document.head.append(h('link',{rel:'stylesheet',href}));}
+// A workspace's own stylesheet (public/ui/css/<name>.css), linked once (relative to this module, so the page works
+// under any path: the receiver serves it at /ui/css/, the web demo under its own folder).
+export function styles(name){const href=new URL(`css/${name}.css`,import.meta.url).href;if(document.querySelector(`link[href="${href}"]`))return;document.head.append(h('link',{rel:'stylesheet',href}));}
 // Reduced motion: the interface setting (Settings › Motion) or, when it follows the system, the system's choice.
 export function reducedMotion(){const m=document.documentElement.dataset.motion;return m==='reduce'||(m!=='full'&&matchMedia('(prefers-reduced-motion: reduce)').matches);}

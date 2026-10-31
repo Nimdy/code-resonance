@@ -2,7 +2,9 @@
 // Real-browser qualification of the Connections workspace on an isolated installation (never ~/.code-resonance):
 // receiver facts equal GET /api/status, capture states follow the real evidence (lumen's recorded journal, the sample
 // project's 0.5 report, a project with agent events only), nothing claims to change VS Code, and the Claude Code hook
-// flow round-trips on a temporary folder (checked on disk), including the "file changed meanwhile" refusal.
+// flow round-trips on a temporary folder (checked on disk), including the "file changed meanwhile" refusal. More agents:
+// one tab per registry tool, the observed activity of one, and the Gemini CLI flow round-trips on a temporary folder;
+// the page fits 1920×1080 and 1280×720.
 // Usage: node qualification/ui/workspaces/connections.qual.js [--port 4185]
 const path=require('node:path');
 const fs=require('node:fs');
@@ -13,6 +15,7 @@ const {chromium}=require(path.join(REPO,'qualification/node_modules/playwright-c
 const {createEnvironment}=require('../environment.js');
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const {EVENTS}=require(path.join(REPO,'scripts/hooks/install-claude-code.js'));
+const geminiHooks=require(path.join(REPO,'scripts/hooks/install-gemini.js'));
 const OUT=path.join(REPO,'qualification/results/ui');
 const args=process.argv.slice(2),PORT=Number(args[args.indexOf('--port')+1]||0)||4185;
 const checks=[];const shots=[];
@@ -35,6 +38,10 @@ const TOKENISH=/\b[0-9a-f]{64}\b/i;
   const settingsFile=path.join(await fsp.realpath(claudeDir),'.claude','settings.local.json');
   const original={permissions:{allow:['Bash(ls:*)'],deny:[]},env:{QUAL_KEEP:'1'},hooks:{PreToolUse:[{matcher:'Bash',hooks:[{type:'command',command:'echo kept'}]}]},model:'kept'};
   await fsp.mkdir(path.dirname(settingsFile),{recursive:true});await fsp.writeFile(settingsFile,JSON.stringify(original,null,2)+'\n');
+  const geminiDir=await fsp.mkdtemp(path.join(os.tmpdir(),'cr-gemini-qual-'));
+  const geminiFile=path.join(await fsp.realpath(geminiDir),'.gemini','settings.json');
+  const geminiOriginal={model:{name:'kept'},hooks:{SessionStart:[{matcher:'startup',hooks:[{type:'command',command:'echo kept',name:'mine'}]}]}};
+  await fsp.mkdir(path.dirname(geminiFile),{recursive:true});await fsp.writeFile(geminiFile,JSON.stringify(geminiOriginal,null,2)+'\n');
   const browser=await chromium.launch({args:['--enable-unsafe-swiftshader','--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required']});
   // Chrome logs every HTTP refusal as a console error; the refusals this script provokes on purpose (a missing folder:
   // 400, a file changed meanwhile: 409) are expected only while `expecting` is set, and are reported separately.
@@ -166,9 +173,43 @@ const TOKENISH=/\b[0-9a-f]{64}\b/i;
     await page.click('#connClaudeWrite');await until(page,()=>!!document.querySelector('#connClaudeResult'),null,8000);
     disk=JSON.parse(fs.readFileSync(settingsFile,'utf8'));
     check('after showing again: written, keeping the meanwhile change',hooked(disk)&&disk.addedMeanwhile===true);
+    // ---- More agents: a tab per tool; the chosen tool's activity, facts and hook flow (Gemini CLI on a temporary folder) ----
+    const toolSlugs=integ.agents.map(a=>a.slug);
+    const tabs=await page.evaluate(()=>[...document.querySelectorAll('#connMoreTools [role="tab"]')].map(b=>({tool:b.dataset.tool,selected:b.getAttribute('aria-selected')})));
+    check('More agents: one tab per tool the receiver lists, one chosen',JSON.stringify(tabs.map(t=>t.tool))===JSON.stringify(toolSlugs)&&tabs.filter(t=>t.selected==='true').length===1,JSON.stringify(tabs));
+    check('strip: seven channels, More agents among them',await page.evaluate(()=>document.querySelectorAll('.conn-seg').length===7&&!!document.querySelector('.conn-seg[data-seg="more"]')));
+    await post([agentEv('agent.session.started','gemini',{source:'gemini-hook',agent:'g-1'}),agentEv('agent.response.completed','gemini',{source:'gemini-hook',agent:'g-1'})]);await flush(agentOnly);
+    await page.click('#connTool-gemini');
+    check('Gemini CLI: its events observed for the project, through its hook',await until(page,()=>{const t=document.querySelector('#connMoreProjects')?.textContent||'';return t.includes('agent-only')&&t.includes('2 events')&&!t.includes('not through the hook');},null,20000),
+      await page.evaluate(()=>document.querySelector('#connMoreProjects')?.textContent));
+    check('Gemini CLI: listed in its own section, not under Other agents',!(await page.evaluate(()=>!!document.querySelector('#connProviders [data-provider="gemini"]'))));
+    check('Gemini CLI: the facts name its file and events',await page.evaluate(n=>{const t=document.querySelector('#conn-more').innerText;return t.includes('.gemini/settings.json')&&t.includes('AfterTool')&&t.includes('BeforeTool, BeforeModel and BeforeToolSelection')&&n.every(e=>t.includes(e));},geminiHooks.EVENTS));
+    // Keyboard: arrows move between tools and the facts follow.
+    await page.focus('#connTool-gemini');await page.keyboard.press('ArrowRight');
+    check('tabs: ArrowRight chooses the next tool, and its facts are shown',await until(page,()=>document.activeElement?.id==='connTool-qwen'&&document.querySelector('#connTool-qwen').getAttribute('aria-selected')==='true'
+      &&document.querySelector('.conn-more-info').innerText.includes('Qwen Code')&&document.querySelector('#connMoreTarget').textContent==='.qwen/settings.json',null,3000));
+    await page.keyboard.press('ArrowLeft');await until(page,()=>document.querySelector('#connTool-gemini').getAttribute('aria-selected')==='true',null,3000);
+    await page.fill('#connMorePath',geminiDir);await page.keyboard.press('Enter');
+    check('Gemini CLI: Show the change names .gemini/settings.json',await until(page,f=>document.querySelector('#connMoreFile')?.textContent===f,geminiFile,8000),await page.evaluate(()=>document.querySelector('#connMorePlan')?.innerText.slice(0,200)));
+    check('Gemini CLI: nothing written before "Write this change"',fs.readFileSync(geminiFile,'utf8')===JSON.stringify(geminiOriginal,null,2)+'\n');
+    // Another tool starts over: the plan for Gemini CLI is not offered for Qwen Code's file.
+    await page.click('#connTool-qwen');
+    check('choosing another tool drops the shown change',await until(page,()=>!document.querySelector('#connMoreWrite')&&document.querySelector('#connMorePath').value!=='' ,null,3000));
+    await page.click('#connTool-gemini');await page.click('#connMoreShow');await until(page,()=>!!document.querySelector('#connMoreWrite'),null,8000);
+    await shot(page,'more-gemini-plan-1440');
+    await page.click('#connMoreWrite');await until(page,()=>!!document.querySelector('#connMoreResult'),null,8000);
+    let gdisk=JSON.parse(fs.readFileSync(geminiFile,'utf8'));
+    const geminiHooked=s=>geminiHooks.EVENTS.every(e=>(s.hooks?.[e]||[]).some(g=>(g.hooks||[]).some(x=>x.command===geminiHooks.command)));
+    check('Gemini CLI write: hooks for every event on disk, the user’s settings and hook kept',geminiHooked(gdisk)&&gdisk.model.name==='kept'&&gdisk.hooks.SessionStart.some(g=>g.matcher==='startup'&&g.hooks[0].command==='echo kept')
+      &&!gdisk.hooks.BeforeTool,JSON.stringify(gdisk).slice(0,200));
+    await page.focus('#connMoreAction [aria-checked="true"]');await page.keyboard.press('ArrowRight');
+    await page.click('#connMoreShow');await until(page,()=>!!document.querySelector('#connMoreWrite'),null,8000);
+    await page.click('#connMoreWrite');await until(page,()=>!!document.querySelector('#connMoreResult'),null,8000);
+    gdisk=JSON.parse(fs.readFileSync(geminiFile,'utf8'));
+    check('Gemini CLI remove: the file equals the original again',JSON.stringify(gdisk)===JSON.stringify(geminiOriginal),JSON.stringify(gdisk).slice(0,160));
     // ---- Browser storage never holds the typed folder (it names a private project); the route survives a reload ----
     const stored=await page.evaluate(()=>{const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);o[k]=localStorage.getItem(k);}for(let i=0;i<sessionStorage.length;i++){const k=sessionStorage.key(i);o['session:'+k]=sessionStorage.getItem(k);}return JSON.stringify(o);});
-    check('the typed project folder is not kept in browser storage',!stored.includes(path.basename(claudeDir))&&!stored.includes('connectionsClaudePath'),stored.includes(path.basename(claudeDir))?'found in storage':'');
+    check('the typed project folder is not kept in browser storage',!stored.includes(path.basename(claudeDir))&&!stored.includes(path.basename(geminiDir))&&!stored.includes('connectionsClaudePath'),stored.includes(path.basename(claudeDir))?'found in storage':'');
     await page.reload();await until(page,()=>!!document.querySelector('#connEditorState'));
     check('after reload: the focused project is kept, the folder field starts empty',await page.evaluate(id=>document.querySelector(`.conn-row[data-project="${id}"]`)?.getAttribute('aria-current')==='true'&&document.querySelector('#connClaudePath').value==='',agentOnly));
     text=await pageText(page);
@@ -177,7 +218,16 @@ const TOKENISH=/\b[0-9a-f]{64}\b/i;
       while((n=w.nextNode()))if(/^(null|undefined|NaN|\[object Object\])$/.test(n.textContent.trim())&&!n.parentElement.closest('.diff,pre,code'))out.push(n.textContent.trim());return out;});
     check('no stray null/undefined text rendered',!stray.length,stray.join(','));
     check('no token-like string after all actions',!TOKENISH.test(text),TOKENISH.exec(text)?.[0]||'');
-    // ---- Layouts ----
+    // ---- Layouts: the desktop sizes the page is designed for, then narrower ----
+    for(const [w,hgt] of [[1920,1080],[1280,720]]){
+      await page.setViewportSize({width:w,height:hgt});await page.goto(`${url}/#/connections/${projects.sample}`);await until(page,()=>!!document.querySelector('#connMoreTools [role="tab"]'));await page.waitForTimeout(600);
+      const fit=await page.evaluate(()=>{const p=document.querySelector('.page'),tabs=document.querySelector('#connMoreTools'),r=tabs.getBoundingClientRect();
+        const segs=[...document.querySelectorAll('.conn-seg-line strong')].filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent);
+        return {overflow:p.scrollWidth>p.clientWidth+1,tabsOut:[...tabs.children].some(b=>{const q=b.getBoundingClientRect();return q.right>r.right+1||q.left<r.left-1;}),cut:segs};});
+      check(`${w}×${hgt}: no horizontal overflow, tabs inside their row`,!fit.overflow&&!fit.tabsOut,JSON.stringify(fit));
+      check(`${w}×${hgt}: no strip line cut off`,!fit.cut.length,fit.cut.join(' | '));
+      await page.evaluate(()=>document.getElementById('conn-more').scrollIntoView());await page.waitForTimeout(300);await shot(page,`more-${w}`);
+    }
     await page.setViewportSize({width:1280,height:720});await page.goto(`${url}/#/connections/${projects.sample}`);await until(page,()=>!!document.querySelector('#connEditorState'));await page.waitForTimeout(600);
     await shot(page,'overview-1280');
     const narrow=await open({width:900,height:800},`#/connections/${projects.sample}`);await narrow.waitForTimeout(600);
@@ -186,7 +236,7 @@ const TOKENISH=/\b[0-9a-f]{64}\b/i;
     await narrow.evaluate(()=>document.getElementById('conn-vscode').scrollIntoView());await narrow.waitForTimeout(300);await shot(narrow,'vscode-900');
     check('no console or page errors (besides the 2 refusals provoked on purpose)',errors.length===0&&expected.length===2,`${errors.slice(0,3).join(' | ')}${expected.length!==2?` expected refusals logged: ${expected.length}: ${expected.join(' | ')}`:''}`);
   }catch(e){check('qualification ran to the end',false,e.stack||e.message);}
-  finally{await browser.close().catch(()=>{});await env.stop();await fsp.rm(claudeDir,{recursive:true,force:true});}
+  finally{await browser.close().catch(()=>{});await env.stop();await fsp.rm(claudeDir,{recursive:true,force:true});await fsp.rm(geminiDir,{recursive:true,force:true});}
   const failed=checks.filter(c=>!c.pass).length;
   fs.writeFileSync(path.join(OUT,'connections.json'),JSON.stringify({at:new Date().toISOString(),passed:checks.length-failed,failed,checks,screenshots:shots},null,2));
   console.log(`\n${checks.length-failed}/${checks.length} passed · report qualification/results/ui/connections.json`);

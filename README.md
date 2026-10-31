@@ -8,6 +8,25 @@ interprets it in the background. The player draws each project as a generative w
 develops as the software does: structure grows, failures bring tension, fixes resolve it, verified milestones leave
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
+**Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
+player, with its music, in any of the eight worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
+is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
+
+**At a glance**
+
+- **Your agents on stage.** Claude Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok
+  Build and goose join through observe-only hooks, each with its own colour, shape and voice; several sessions at
+  once are numbered. What each tool documents and what its adapter reads: [docs/AGENTS.md](docs/AGENTS.md).
+- **Your language.** TypeScript and JavaScript through the compiler; Python, Go, Rust, Java, Kotlin, C#, Swift, C and
+  C++, PHP and Ruby through dependency-free scanners: classes, functions, routes, imports and test files.
+- **Eight worlds.** Fractal Biosphere, Stellar Forge and Machine Cathedral; the previews Synaptic Storm, Fractal
+  Continuum and Temporal Terrain; the Construct and Monolith.
+- **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
+  music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
+  OBS takes the Stage as a browser source.
+- **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running
+  (Marketplace and Open VSX listing prepared, [not yet published](docs/PUBLISHING.md)).
+
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
 *An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered by the player in
@@ -30,6 +49,13 @@ The three flagship worlds, finishes, music influence and the Artist Studio, from
 | ![Finishes](docs/media/finishes.jpg) | ![Music influence](docs/media/music-influence.jpg) | ![Aurora Loom](docs/media/artist-aurora-loom.jpg) |
 | **Finishes.** Clean, Cinematic (the default for new identities) and Dreamlike: the same moment, the same camera. | **Music influence** 0, 1 and 2: how much the score moves the digital life; the same performance, the same framing. | **Aurora Loom**, a composition built entirely in the Artist Studio's interface, over the artist canvas. |
 
+The three preview worlds (chosen by hand in the Visual Studio; not yet part of automatic choice, no digital life yet):
+
+| | | |
+|---|---|---|
+| ![Synaptic Storm](docs/worlds/synaptic-storm-closeup.jpg) | ![Fractal Continuum on Excalidraw](docs/worlds/fractal-continuum-excalidraw.jpg) | ![Temporal Terrain](docs/worlds/temporal-terrain-hero.jpg) |
+| **Synaptic Storm.** Subsystems are clusters of glass neurons over the real dependencies; a recovery resynchronises them. | **Fractal Continuum.** One raymarched fractal (here Excalidraw's) whose regions swell with their files, each in its own hue. | **Temporal Terrain.** The project's history as a contour landscape: the present at the front edge, the past receding. |
+
 | | |
 |---|---|
 | ![The Artist Studio](docs/media/ui-artist-studio.jpg) | ![An Artist Studio preview](docs/media/ui-graphite-signal-preview.jpg) |
@@ -47,12 +73,16 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   terminal commands reduced to a local *category* (test, build, lint, typecheck, install, git, run; never the command
   text), and Git commits.
 - **Interprets meaning, not volume.** A TypeScript/JavaScript AST diff recognises components, routes, classes,
-  functions, methods, variables and imports (Python and manifests partly; other languages at file level). Inserting
+  functions, methods, variables and imports; dependency-free scanners do the same for Python, Go, Rust, Java, Kotlin,
+  C#, Swift, C/C++, PHP and Ruby (types, members, framework routes with a literal path, and imports resolved through
+  go.mod, Cargo.toml, composer.json or the package's folders); other languages count at file level. Inserting
   lines or re-running green tests earns nothing; removing code counts once a test run validates it; recovering a
   failing suite is a milestone.
 - **Represents AI agents honestly.** Agents are a CAST in the project's world (name, seat, voice): Claude, Cursor,
-  Codex, Grok, Qwen, Kimi on stable seats; unknown providers hash into the remaining seats. Stage chips show catalog
-  names, never vendor art. Claude Code, Cursor and Codex have observe-only adapters. A file change is attributed to an
+  Codex, Grok, Qwen, Kimi on stable seats; Gemini, Copilot, Droid, Goose and the other catalogued tools share those
+  eight seats and are told apart by their chip; unknown providers hash into seats 6–7 and read *Agent*. Stage chips
+  show catalog names, never vendor art. Claude Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory
+  Droid, Grok Build and goose have observe-only adapters ([docs/AGENTS.md](docs/AGENTS.md)). A file change is attributed to an
   agent only when it follows that agent's own tool event; everything else stays `unknown`. Hidden reasoning is never
   inferred. Several agents can work at once: each session is its own presence, and sessions of the same tool running
   together are numbered (*Claude*, *Claude 2*). Two providers on the same file or district inside 60 s emit
@@ -89,8 +119,10 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Requirements
 
-- **Node.js 20 or later** (CI uses 22). The application has no runtime dependencies: nothing to install.
-- **VS Code 1.99 or later** for capture.
+- **VS Code 1.99 or later** for capture. With the extension alone, that is all: its receiver runs in VS Code's own
+  runtime.
+- **Node.js 20 or later** (CI uses 22) to run from this repository, and on the agents' PATH for agent hooks. The
+  application has no runtime dependencies: nothing to install.
 - **A Chromium-based browser** (Chrome or Edge) for the Control Center and for recording; other browsers have not been
   tested. **WebGL2** for the flagship worlds and the Construct, ideally with a GPU; without it the player shows
   Monolith (Canvas 2D).
@@ -98,9 +130,30 @@ pictures. The Control Center screenshots were taken at 1920×1080.
 
 ## Quick start
 
-Two places are involved: the **receiver**, which runs in a terminal in this folder and keeps running, and the **VS Code
-window of the project you want to watch**, where the extension captures your work. If that project is open in VS Code
-through WSL, run the receiver inside WSL too.
+Two ways in. Either way, the **receiver** (it records and interprets your work and serves the player) runs on your own
+machine, on loopback, where the VS Code window of your project runs its extensions: inside WSL for a project opened
+through WSL.
+
+### From the extension alone
+
+1. **Install Code Resonance in VS Code:** from the Visual Studio Marketplace or Open VSX once it is published there
+   (publisher *zerobandwidth*; not yet), or from a VSIX with *Extensions › … › Install from VSIX* (`npm run
+   package:vsix` builds one in a checkout).
+2. **Start capture.** In your project's trusted folder, click **CR stopped** in the status bar, choose **Start
+   capture** and accept local capture. When no receiver is running, the extension starts the one it carries, on
+   `http://127.0.0.1:4174`, in VS Code's own runtime: no Node.js, no checkout, nothing else to install.
+3. **Watch and listen.** **CR › Open Stage** opens the Control Center in your browser, already paired. Click **Enable
+   sound**, then **Open Stage**. The Stage runs about 10 seconds behind your work, by design.
+
+That receiver keeps running when VS Code closes, and every window shares it. **CR › Receiver status** says which
+receiver runs and who started it, opens the Control Center again and stops it; its log is
+`~/.code-resonance/logs/receiver.log`. Details: [Getting started](docs/FIRST-RUN.md#with-the-extension-alone).
+
+### From this repository
+
+The **receiver** runs in a terminal in this folder and keeps running; the **VS Code window of the project you want to
+watch** captures your work. If that project is open in VS Code through WSL, run the receiver inside WSL too. An
+installed extension uses this receiver and never starts or replaces one while it answers.
 
 1. **Start the receiver** in this folder, and leave the terminal open (`Ctrl+C` stops it):
 
@@ -123,18 +176,21 @@ through WSL, run the receiver inside WSL too.
 5. **Watch and listen.** Click **Enable sound**, then **Open Stage**. The Stage runs about 10 seconds behind your work,
    by design.
 
-**AI agents (optional).** `npm run hooks:claude -- /path/to/your/project` (or `hooks:cursor`, `hooks:codex`) adds
-observe-only hooks, so the agent joins the world as a CAST presence. Start a new agent session afterwards: a session
-that is already running does not pick up new hooks.
+**AI agents (optional).** **CR › Connect an AI agent…** in VS Code, or `npm run hooks:claude -- /path/to/your/project`
+(or `hooks:cursor`, `hooks:codex`, `hooks:gemini`, `hooks:qwen`, `hooks:copilot`, `hooks:droid`, `hooks:grok`,
+`hooks:goose`) in a checkout, adds observe-only hooks, so the agent joins the world as a CAST presence. Start a new
+agent session afterwards: a session that is already running does not pick up new hooks. What each tool documents, what
+its adapter reads and never reads, and why the others (Kimi, Cline, Windsurf, Kiro, Augment, Junie, OpenCode, Amp,
+Aider, …) have no adapter yet: [docs/AGENTS.md](docs/AGENTS.md).
 
 **Several agents at once.** Install the hooks once per project for each tool you use; then every session joins on its
-own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex. Each is a separate
+own: Claude Code in two terminals (or in the VS Code extension), Cursor's agent chats, Codex, Gemini CLI, Copilot. Each is a separate
 presence with its own work and edits; sessions of the same tool are numbered while they run at the same time
 (*Claude*, *Claude 2*), subagents appear as their tool's *subagent*. An agent without hooks (for example one built into
 an editor that has no adapter here) is not shown as a presence, but its edits still reach the world, unattributed.
 
-**After the first time,** run `npm run up` (or `npm start`) in this folder. Capture in VS Code resumes by itself until
-you stop it from **CR**.
+**After the first time,** run `npm run up` (or `npm start`) in this folder, or let the extension start its own
+receiver. Capture in VS Code resumes by itself until you stop it from **CR**.
 
 Something not right? `npm run doctor` checks the setup, and [Getting started](docs/FIRST-RUN.md#troubleshooting) lists
 symptoms and fixes, including what to do when the picture looks grainy.
@@ -145,23 +201,33 @@ symptoms and fixes, including what to do when the picture looks grainy.
 npm run package:vsix          # writes code-resonance-0.7.2.vsix, with Node only (Windows, Linux, macOS)
 ```
 
+The VSIX (about 3 MB) holds the extension and the receiver it starts when none answers: the receiver, engine, player,
+Control Center, vendored three.js and TypeScript and the hook adapters, nothing from `tests/` or `qualification/`.
+Publishing it to the Marketplace and Open VSX: [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
 Install the VSIX yourself, with `code --install-extension code-resonance-0.7.2.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
 --install-extension code-resonance-0.7.2.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
-accept local capture. The status-bar menu also stops capture and opens the Stage or the OBS view. Capture resumes
-when VS Code restarts until you stop it.
+accept local capture. The status-bar menu also stops capture, opens the Stage or the OBS view, shows the receiver's
+status (and stops the one the extension started) and connects AI agents. Capture resumes when VS Code restarts until
+you stop it. When nothing answers on `resonance.receiverPort`, capture and *Open Stage* start the receiver the
+extension carries (`resonance.startReceiver`, on by default): a detached process on loopback that every window
+reuses through the token proof. A receiver that already answers, such as `npm start` here, is always used instead.
 
-**WSL and remote workspaces:** run the receiver where the extension host runs (inside WSL for a WSL project). Windows
-reaches it at `http://localhost:4174/` through WSL2's localhost forwarding, with the receiver still on loopback
-([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
+**WSL and remote workspaces:** the receiver runs where the extension host runs (inside WSL for a WSL project); the
+extension starts it there by itself. Windows reaches it at `http://localhost:4174/` through WSL2's localhost
+forwarding, with the receiver still on loopback ([docs/WSL.md](docs/WSL.md)). Never bind the receiver publicly.
 
 **AI agents (CAST):** in a trusted workspace, `npm run hooks:claude -- /path/to/your/project` (and `hooks:cursor`,
-`hooks:codex`) add observe-only adapters. Connections can add or remove them after showing the exact change. Cursor
-never installs `subagentStart`; Codex never installs `PreToolUse` / `PermissionRequest`; Codex paths come from patch
-headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
+`hooks:codex`, `hooks:gemini`, `hooks:qwen`, `hooks:copilot`, `hooks:droid`, `hooks:grok`, `hooks:goose`) add
+observe-only adapters; Connections and **CR › Connect an AI agent…** can add or remove them after showing the exact
+change. Hooks the extension's own receiver writes run the adapters it keeps in `~/.code-resonance/hooks`, a path that
+survives extension updates. No adapter installs an event that can deny (Cursor never `subagentStart`; Codex and Qwen
+never `PreToolUse` / `PermissionRequest`; Gemini never `BeforeTool`; Copilot never `preToolUse`); Codex paths come from
+patch headers only. Each adapter never prints and always exits 0. Other tools report through `node scripts/event.js`.
 
 ## The Control Center
 
@@ -172,7 +238,7 @@ view agree ([docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md)).
 |---|---|
 | **Home** | Whether the receiver runs, which project is active, whether capture is really active, what needs attention; **Last night**; create or continue a composition |
 | **Projects** | Projects, their identity, statistics, timeline (replay from any moment), agents, validations and exports |
-| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code / Cursor / Codex hooks, CAST, other agents |
+| **Connections** | The receiver, VS Code capture and the settings the extension reports, Claude Code / Cursor / Codex hooks, more agents (Gemini CLI, Qwen Code, Copilot, Droid, Grok Build, goose), CAST, other agents |
 | **Record & Broadcast** | Recording profiles, the OBS browser source, audio and data exports |
 | **Settings** | Global preferences, this device's quality, where everything is stored, diagnostics, documentation |
 
@@ -221,7 +287,9 @@ second window for another monitor.
   32 was qualified on Linux in a disposable CI machine; on Windows or macOS, follow the procedure in
   [docs/OBS.md](docs/OBS.md).
 - **Last night** (Home) is a sped-up replay of a scored highlight. **`npm run film`** renders that same window for a
-  README hero (needs a public title, always `--copy`). Neither is Record.
+  README hero (needs a public title, always `--copy`); **`npm run film -- --vertical`** cuts a 30-second 1080 × 1920
+  MP4 of its key moment, with the music and an end card, for Reels, Shorts and TikTok
+  ([docs/RECORDING.md](docs/RECORDING.md#vertical-clips-916)). Neither is Record.
 - **Exports:** up to ten minutes of the recorded performance rendered offline to WAV; the derived timeline as JSON (no
   source, paths or prompts).
 
@@ -244,8 +312,10 @@ sessions with the final code; listening and viewing by anyone other than the own
 
 **Limits:** semantics are deepest for TypeScript and JavaScript. Source snapshots are captured after you start capture
 unless `resonance.captureDocumentContents` is off, and a file that does not match the secret patterns can still contain
-secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through Claude Code, Cursor and
-Codex hooks; other agents report through `scripts/event.js` or their file writes are seen but attributed `unknown`. A
+secrets: use dedicated projects and never share `~/.code-resonance`. Agents are observed through the hooks of Claude
+Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose (none of the last six
+was run against a real session here; their payloads carry no exit codes, Copilot and Grok no file paths); other agents
+report through `scripts/event.js` or their file writes are seen but attributed `unknown`. A
 passing test means the command exited 0, not that the software is correct. A replay holds only what was captured. The
 full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 

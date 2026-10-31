@@ -56,10 +56,10 @@ test('The mixer offers only the voice groups the style can sound',async()=>{
   assert(M.soundingGroups(score,'ambient',{atmosphere:0}).includes('atmos'),'atmosphere transitions follow its level alone');
 });
 test('store.effective() resolves the profile with its precedence and pushes it to the engine with the score version',async()=>{
-  const M=await load(),pushed=[];let ps={project:'p1',recipe:{genome:{music:{score:3}}},preview:null};
+  const M=await load(),pushed=[],targets=[];let ps={project:'p1',recipe:{genome:{music:{score:3}}},preview:null};
   // The interface store, on a stand-in engine (window.ResonancePlayer), with a window address that pins the style and space.
   globalThis.window={ResonancePlayer:{WORLDS:['living','construct'],worldOf:()=>null,LABEL_MODES:['cinematic','explorer','stream','off'],QUALITY:['auto'],film:false,overlay:false,
-    record:{active:false,setSize(){}},get state(){return ps;},on(){},setMusic:o=>pushed.push(o),setWorld(){},setLabels(){},setCaptions(){},setQuality(){},selectProject(){},api:{post:async()=>({})}}};
+    record:{active:false,setSize(){},setTarget:v=>targets.push(v)},get state(){return ps;},on(){},setMusic:o=>pushed.push(o),setWorld(){},setLabels(){},setCaptions(){},setQuality(){},selectProject(){},api:{post:async()=>({})}}};
   globalThis.location={search:`?style=chip&music=${encodeURIComponent(JSON.stringify({space:.9}))}`};
   globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.addEventListener=()=>{};
   const S=await import('../public/ui/store.js');
@@ -74,6 +74,8 @@ test('store.effective() resolves the profile with its precedence and pushes it t
   assert.equal(e.music.style,'chip');assert.equal(e.sources.style,'url');assert.equal(e.music.texture,.4);assert.equal(e.sources.texture,'global');
   assert.equal(e.music.scoreVersion,3);assert.equal(e.sources.scoreVersion,'recipe');
   S.applyEffective({force:true});
+  // Where recordings go is this device's choice: in memory unless it chose a file on disk.
+  assert.equal(e.recordTo,'memory');assert.deepEqual(targets,['memory']);
   const o=pushed.at(-1);
   assert.equal(o.scoreVersion,3);assert.equal(o.style,'chip');
   assert.deepEqual(o.profile,{...score.PROFILE,mood:.25,harmony:.2,space:.9,mix:{...M.DEFAULT_MIX,perc:0}});

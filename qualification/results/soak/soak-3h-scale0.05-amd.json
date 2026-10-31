@@ -1,0 +1,1447 @@
+{
+ "at": "2026-10-31T10:27:25.363Z",
+ "hours": 3,
+ "scale": 0.05,
+ "viewport": "1920x1080",
+ "quality": "auto",
+ "thresholds": "full",
+ "gpu": "amd",
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "driver": "lean",
+ "checks": [
+  {
+   "name": "events: every event produced was accepted and stored exactly once (including across the receiver restart)",
+   "pass": true,
+   "detail": "304 produced, 304 accepted, 304 stored (304 distinct), 1 failed posts retried"
+  },
+  {
+   "name": "memory: after a forced collection, the page that ran the whole soak holds no more than a fresh browser on the same project (page heap within 25 % + 10 MB; renderer and GPU processes within 25 % + 50 MB)",
+   "pass": true,
+   "detail": "Construct heap 17.5/12.2, renderer 230/205, gpu 400/402 MB; Stellar heap 17.1/12.3, renderer 242/205, gpu 426/404 MB; Cymatic heap 14.7/11.5, renderer 228/201, gpu 366/348 MB; Blueprint heap 14.8/11.6, renderer 237/214, gpu 387/371 MB; Fractal heap 17.8/15.9, renderer 227/203, gpu 402/387 MB; Ember heap 16/14.4, renderer 231/210, gpu 426/411 MB (soak/fresh); hourly means, not collected: 8.3 → 12.8 → 10.1 MB"
+  },
+  {
+   "name": "memory: DOM nodes and listeners stay bounded",
+   "pass": false,
+   "detail": "nodes 485 → 841 → 1145; listeners 67 → 103 → 129"
+  },
+  {
+   "name": "memory: the browser and receiver processes do not grow hour over hour (last hour within 25 % of the first)",
+   "pass": true,
+   "detail": "node 177→184→198 MB; browser 122→137→133 MB; renderer 232→238→248 MB; gpu 386→395→373 MB"
+  },
+  {
+   "name": "frame rate: no decay over time (each world at the end at least 80 % of its frame rate in a fresh browser on the same project)",
+   "pass": true,
+   "detail": "Construct 60.3/60; Stellar 42.3/46.6; Cymatic 60.2/60.4; Blueprint 60/60.2; Fractal 60.3/60.2; Ember 46.2/45.9 fps (soak/fresh); hourly: Stellar Forge 41→42; Blueprint Cathedral (shader pack) 60→60; Fractal Biosphere 60"
+  },
+  {
+   "name": "GPU objects: geometries and textures stay bounded per world (not growing with time)",
+   "pass": true,
+   "detail": "Stellar Forge: geometries 29/29/29 textures 19/19/19 (first/max/last); Blueprint Cathedral (shader pack): geometries 22/22/22 textures 16/16/16 (first/max/last); Fractal Biosphere: geometries 32/32/32 textures 15/15/15 (first/max/last)"
+  },
+  {
+   "name": "sound: the music keeps playing (its audio clock runs at real time; sampled level above silence)",
+   "pass": true,
+   "detail": "audio clock 1.000-1.000× real time; 0/7 silent samples"
+  },
+  {
+   "name": "pack transport: never more than one render in flight; no pack stopped during the soak",
+   "pass": true,
+   "detail": "2 samples on packs; max latency 0.9 ms; notices: none"
+  },
+  {
+   "name": "recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync",
+   "pass": false,
+   "detail": "Stellar@24m: 29.45 fps, sound 60/59.873 s, gaps 0, pilot gap 0 ms, sync max 57 ms; Blueprint@46m: 30.02 fps, sound 60/59.97 s, gaps 0, pilot gap 0 ms, sync max 37 ms; Fractal@69m: 30.02 fps, sound 60/59.968 s, gaps 0, pilot gap 0 ms, sync max 40 ms; Stellar@92m: 29.63 fps, sound 60/59.87 s, gaps 1, pilot gap 0 ms, sync max 13 ms; Blueprint@114m: 30.01 fps, sound 60/59.971 s, gaps 0, pilot gap 0 ms, sync max 14 ms; Blueprint@135m: 30.01 fps, sound 60/59.977 s, gaps 0, pilot gap 0 ms, sync max 17 ms; Fractal@183m: 30.01 fps, sound 60/59.976 s, gaps 0, pilot gap 0 ms, sync max 74 ms; Fractal@204m: 30.01 fps, sound 60/59.977 s, gaps 0, pilot gap 0 ms, sync max 18 ms; Fractal@226m: 30.01 fps, sound 60/59.979 s, gaps 0, pilot gap 0 ms, sync max 23 ms"
+  },
+  {
+   "name": "receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived",
+   "pass": true,
+   "detail": "intents 145 → 179; down 17 s; world living/machine-cathedral → living/machine-cathedral"
+  },
+  {
+   "name": "no page errors in the whole soak",
+   "pass": true,
+   "detail": "none"
+  }
+ ],
+ "restart": {
+  "downMs": 17034,
+  "intentsBefore": 145,
+  "intentsAfter": 179,
+  "outboxAfterRestart": 0,
+  "worldBefore": {
+   "selectedWorld": "living",
+   "remote": true,
+   "pack": "northlight.blueprint-cathedral",
+   "family": "machine-cathedral",
+   "look": "northlight.blueprint-cathedral",
+   "frames": 1,
+   "notice": "",
+   "lastStop": null
+  },
+  "worldAfter": {
+   "selectedWorld": "living",
+   "remote": true,
+   "pack": "northlight.blueprint-cathedral",
+   "family": "machine-cathedral",
+   "look": "northlight.blueprint-cathedral",
+   "frames": 1,
+   "notice": "",
+   "lastStop": null
+  }
+ },
+ "control": {
+  "settleMs": 30000,
+  "longLived": [
+   {
+    "world": "Construct",
+    "fps": 60.3,
+    "heapAfterGcMB": 17.5,
+    "rssMB": {
+     "node": 197,
+     "browser": 143,
+     "gpu": 400,
+     "renderer": 230,
+     "other": 210
+    }
+   },
+   {
+    "world": "Stellar Forge",
+    "fps": 42.3,
+    "heapAfterGcMB": 17.1,
+    "rssMB": {
+     "node": 197,
+     "browser": 143,
+     "gpu": 426,
+     "renderer": 242,
+     "other": 210
+    }
+   },
+   {
+    "world": "Cymatic Field (world pack)",
+    "fps": 60.2,
+    "heapAfterGcMB": 14.7,
+    "rssMB": {
+     "node": 197,
+     "browser": 144,
+     "gpu": 366,
+     "renderer": 228,
+     "other": 210
+    }
+   },
+   {
+    "world": "Blueprint Cathedral (shader pack)",
+    "fps": 60,
+    "heapAfterGcMB": 14.8,
+    "rssMB": {
+     "node": 197,
+     "browser": 143,
+     "gpu": 387,
+     "renderer": 237,
+     "other": 210
+    }
+   },
+   {
+    "world": "Fractal Biosphere",
+    "fps": 60.3,
+    "heapAfterGcMB": 17.8,
+    "rssMB": {
+     "node": 197,
+     "browser": 143,
+     "gpu": 402,
+     "renderer": 227,
+     "other": 210
+    }
+   },
+   {
+    "world": "Ember Observatory (declarative)",
+    "fps": 46.2,
+    "heapAfterGcMB": 16,
+    "rssMB": {
+     "node": 197,
+     "browser": 143,
+     "gpu": 426,
+     "renderer": 231,
+     "other": 210
+    }
+   }
+  ],
+  "fresh": [
+   {
+    "world": "Construct",
+    "fps": 60,
+    "heapAfterGcMB": 12.2,
+    "rssMB": {
+     "node": 197,
+     "browser": 101,
+     "gpu": 402,
+     "renderer": 205,
+     "other": 208
+    }
+   },
+   {
+    "world": "Stellar Forge",
+    "fps": 46.6,
+    "heapAfterGcMB": 12.3,
+    "rssMB": {
+     "node": 197,
+     "browser": 101,
+     "gpu": 404,
+     "renderer": 205,
+     "other": 208
+    }
+   },
+   {
+    "world": "Cymatic Field (world pack)",
+    "fps": 60.4,
+    "heapAfterGcMB": 11.5,
+    "rssMB": {
+     "node": 198,
+     "browser": 102,
+     "gpu": 348,
+     "renderer": 201,
+     "other": 208
+    }
+   },
+   {
+    "world": "Blueprint Cathedral (shader pack)",
+    "fps": 60.2,
+    "heapAfterGcMB": 11.6,
+    "rssMB": {
+     "node": 198,
+     "browser": 101,
+     "gpu": 371,
+     "renderer": 214,
+     "other": 209
+    }
+   },
+   {
+    "world": "Fractal Biosphere",
+    "fps": 60.2,
+    "heapAfterGcMB": 15.9,
+    "rssMB": {
+     "node": 198,
+     "browser": 102,
+     "gpu": 387,
+     "renderer": 203,
+     "other": 208
+    }
+   },
+   {
+    "world": "Ember Observatory (declarative)",
+    "fps": 45.9,
+    "heapAfterGcMB": 14.4,
+    "rssMB": {
+     "node": 198,
+     "browser": 102,
+     "gpu": 411,
+     "renderer": 210,
+     "other": 208
+    }
+   }
+  ]
+ },
+ "events": [
+  {
+   "minute": 0,
+   "event": "world: Stellar Forge"
+  },
+  {
+   "minute": 25.2,
+   "event": "world: Blueprint Cathedral (shader pack)"
+  },
+  {
+   "minute": 47.4,
+   "event": "world: Fractal Biosphere"
+  },
+  {
+   "minute": 47.4,
+   "event": "session paused (idle)"
+  },
+  {
+   "minute": 69.9,
+   "event": "world: Stellar Forge"
+  },
+  {
+   "minute": 69.9,
+   "event": "session resumed"
+  },
+  {
+   "minute": 92.5,
+   "event": "world: Blueprint Cathedral (shader pack)"
+  },
+  {
+   "minute": 92.5,
+   "event": "receiver stopped"
+  },
+  {
+   "minute": 140.5,
+   "event": "receiver started again"
+  },
+  {
+   "minute": 161.5,
+   "event": "world: Fractal Biosphere"
+  },
+  {
+   "minute": 161.5,
+   "event": "session paused (idle)"
+  }
+ ],
+ "recordings": [
+  {
+   "minute": 24.2,
+   "world": "Stellar Forge",
+   "seconds": 63.6,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 29.45,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 66,
+   "maxIntervalAfterStartupMs": 89,
+   "frameIntervalMedianMs": 32,
+   "frameIntervalMaxMs": 89,
+   "videoDuration": 59.873,
+   "audioDuration": 60,
+   "audioMeanDb": -23.3,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.994,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -22,
+    "maxAbsOffsetMs": 57,
+    "pairs": [
+     {
+      "flash": 12.308,
+      "prevFrame": 12.28,
+      "chirp": 12.29,
+      "r": 0.779,
+      "offsetMs": -18,
+      "offsetRangeMs": [
+       -18,
+       10
+      ]
+     },
+     {
+      "flash": 24.325,
+      "prevFrame": 24.265,
+      "chirp": 24.318,
+      "r": 0.769,
+      "offsetMs": -7,
+      "offsetRangeMs": [
+       -7,
+       53
+      ]
+     },
+     {
+      "flash": 36.305,
+      "prevFrame": 36.278,
+      "chirp": 36.2995,
+      "r": 0.713,
+      "offsetMs": -6,
+      "offsetRangeMs": [
+       -6,
+       21
+      ]
+     },
+     {
+      "flash": 48.373,
+      "prevFrame": 48.296,
+      "chirp": 48.3158,
+      "r": 0.711,
+      "offsetMs": -57,
+      "offsetRangeMs": [
+       -57,
+       20
+      ]
+     }
+    ]
+   },
+   "bytes": 31511130,
+   "audioLostReported": false
+  },
+  {
+   "minute": 46.4,
+   "world": "Blueprint Cathedral (shader pack)",
+   "seconds": 63,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.02,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 39,
+   "maxIntervalAfterStartupMs": 37,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 39,
+   "videoDuration": 59.97,
+   "audioDuration": 60,
+   "audioMeanDb": -22.7,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.994,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -12,
+    "maxAbsOffsetMs": 37,
+    "pairs": [
+     {
+      "flash": 12.306,
+      "prevFrame": 12.272,
+      "chirp": 12.2915,
+      "r": 0.741,
+      "offsetMs": -15,
+      "offsetRangeMs": [
+       -15,
+       19
+      ]
+     },
+     {
+      "flash": 24.305,
+      "prevFrame": 24.271,
+      "chirp": 24.3194,
+      "r": 0.728,
+      "offsetMs": 14,
+      "offsetRangeMs": [
+       14,
+       48
+      ]
+     },
+     {
+      "flash": 36.338,
+      "prevFrame": 36.304,
+      "chirp": 36.3009,
+      "r": 0.699,
+      "offsetMs": -37,
+      "offsetRangeMs": [
+       -37,
+       -3
+      ]
+     },
+     {
+      "flash": 48.338,
+      "prevFrame": 48.304,
+      "chirp": 48.3288,
+      "r": 0.707,
+      "offsetMs": -9,
+      "offsetRangeMs": [
+       -9,
+       25
+      ]
+     }
+    ]
+   },
+   "bytes": 26056340,
+   "audioLostReported": false
+  },
+  {
+   "minute": 68.9,
+   "world": "Fractal Biosphere",
+   "seconds": 63.7,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.02,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 39,
+   "maxIntervalAfterStartupMs": 38,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 39,
+   "videoDuration": 59.968,
+   "audioDuration": 60,
+   "audioMeanDb": -28.1,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.995,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": 11,
+    "maxAbsOffsetMs": 40,
+    "pairs": [
+     {
+      "flash": 12.303,
+      "prevFrame": 12.269,
+      "chirp": 12.3428,
+      "r": 0.763,
+      "offsetMs": 40,
+      "offsetRangeMs": [
+       40,
+       74
+      ]
+     },
+     {
+      "flash": 24.336,
+      "prevFrame": 24.302,
+      "chirp": 24.3242,
+      "r": 0.738,
+      "offsetMs": -12,
+      "offsetRangeMs": [
+       -12,
+       22
+      ]
+     },
+     {
+      "flash": 36.336,
+      "prevFrame": 36.301,
+      "chirp": 36.3522,
+      "r": 0.79,
+      "offsetMs": 16,
+      "offsetRangeMs": [
+       16,
+       51
+      ]
+     },
+     {
+      "flash": 48.335,
+      "prevFrame": 48.301,
+      "chirp": 48.3337,
+      "r": 0.822,
+      "offsetMs": -1,
+      "offsetRangeMs": [
+       -1,
+       33
+      ]
+     }
+    ]
+   },
+   "bytes": 33938737,
+   "audioLostReported": false
+  },
+  {
+   "minute": 91.5,
+   "world": "Stellar Forge",
+   "seconds": 63.6,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 29.63,
+   "longGaps": 1,
+   "gapsAt": [
+    {
+     "t": 0.23,
+     "ms": 311
+    }
+   ],
+   "startupMaxMs": 311,
+   "maxIntervalAfterStartupMs": 76,
+   "frameIntervalMedianMs": 32,
+   "frameIntervalMaxMs": 311,
+   "videoDuration": 59.87,
+   "audioDuration": 60,
+   "audioMeanDb": -25.6,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.994,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -6,
+    "maxAbsOffsetMs": 13,
+    "pairs": [
+     {
+      "flash": 12.307,
+      "prevFrame": 12.271,
+      "chirp": 12.2936,
+      "r": 0.799,
+      "offsetMs": -13,
+      "offsetRangeMs": [
+       -13,
+       23
+      ]
+     },
+     {
+      "flash": 24.316,
+      "prevFrame": 24.286,
+      "chirp": 24.3216,
+      "r": 0.753,
+      "offsetMs": 6,
+      "offsetRangeMs": [
+       6,
+       36
+      ]
+     },
+     {
+      "flash": 36.31,
+      "prevFrame": 36.275,
+      "chirp": 36.3031,
+      "r": 0.795,
+      "offsetMs": -7,
+      "offsetRangeMs": [
+       -7,
+       28
+      ]
+     },
+     {
+      "flash": 48.311,
+      "prevFrame": 48.276,
+      "chirp": 48.2991,
+      "r": 0.702,
+      "offsetMs": -12,
+      "offsetRangeMs": [
+       -12,
+       23
+      ]
+     }
+    ]
+   },
+   "bytes": 32230669,
+   "audioLostReported": false
+  },
+  {
+   "minute": 113.8,
+   "world": "Blueprint Cathedral (shader pack)",
+   "seconds": 63.1,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.01,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 36,
+   "maxIntervalAfterStartupMs": 36,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 36,
+   "videoDuration": 59.971,
+   "audioDuration": 60,
+   "audioMeanDb": -22.5,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.994,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -3,
+    "maxAbsOffsetMs": 14,
+    "pairs": [
+     {
+      "flash": 12.306,
+      "prevFrame": 12.273,
+      "chirp": 12.2922,
+      "r": 0.691,
+      "offsetMs": -14,
+      "offsetRangeMs": [
+       -14,
+       19
+      ]
+     },
+     {
+      "flash": 24.306,
+      "prevFrame": 24.272,
+      "chirp": 24.3201,
+      "r": 0.725,
+      "offsetMs": 14,
+      "offsetRangeMs": [
+       14,
+       48
+      ]
+     },
+     {
+      "flash": 36.306,
+      "prevFrame": 36.272,
+      "chirp": 36.3016,
+      "r": 0.726,
+      "offsetMs": -4,
+      "offsetRangeMs": [
+       -4,
+       30
+      ]
+     },
+     {
+      "flash": 48.339,
+      "prevFrame": 48.305,
+      "chirp": 48.3296,
+      "r": 0.743,
+      "offsetMs": -9,
+      "offsetRangeMs": [
+       -9,
+       25
+      ]
+     }
+    ]
+   },
+   "bytes": 26868239,
+   "audioLostReported": false
+  },
+  {
+   "minute": 134.8,
+   "world": "Blueprint Cathedral (shader pack)",
+   "seconds": 63,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.01,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 34,
+   "maxIntervalAfterStartupMs": 36,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 36,
+   "videoDuration": 59.977,
+   "audioDuration": 60,
+   "audioMeanDb": -21.5,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.993,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -3,
+    "maxAbsOffsetMs": 17,
+    "pairs": [
+     {
+      "flash": 12.31,
+      "prevFrame": 12.276,
+      "chirp": 12.2983,
+      "r": 0.722,
+      "offsetMs": -12,
+      "offsetRangeMs": [
+       -12,
+       22
+      ]
+     },
+     {
+      "flash": 24.31,
+      "prevFrame": 24.276,
+      "chirp": 24.3262,
+      "r": 0.709,
+      "offsetMs": 16,
+      "offsetRangeMs": [
+       16,
+       50
+      ]
+     },
+     {
+      "flash": 36.309,
+      "prevFrame": 36.276,
+      "chirp": 36.3077,
+      "r": 0.711,
+      "offsetMs": -1,
+      "offsetRangeMs": [
+       -1,
+       32
+      ]
+     },
+     {
+      "flash": 48.309,
+      "prevFrame": 48.276,
+      "chirp": 48.2921,
+      "r": 0.72,
+      "offsetMs": -17,
+      "offsetRangeMs": [
+       -17,
+       16
+      ]
+     }
+    ]
+   },
+   "bytes": 28171748,
+   "audioLostReported": false
+  },
+  {
+   "minute": 183,
+   "world": "Fractal Biosphere",
+   "seconds": 63.9,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.01,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 44,
+   "maxIntervalAfterStartupMs": 63,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 63,
+   "videoDuration": 59.976,
+   "audioDuration": 60,
+   "audioMeanDb": -25.4,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.994,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": -38,
+    "maxAbsOffsetMs": 74,
+    "pairs": [
+     {
+      "flash": 12.328,
+      "prevFrame": 12.296,
+      "chirp": 12.2891,
+      "r": 0.728,
+      "offsetMs": -39,
+      "offsetRangeMs": [
+       -39,
+       -7
+      ]
+     },
+     {
+      "flash": 24.345,
+      "prevFrame": 24.295,
+      "chirp": 24.2706,
+      "r": 0.75,
+      "offsetMs": -74,
+      "offsetRangeMs": [
+       -74,
+       -24
+      ]
+     },
+     {
+      "flash": 36.31,
+      "prevFrame": 36.277,
+      "chirp": 36.2985,
+      "r": 0.805,
+      "offsetMs": -11,
+      "offsetRangeMs": [
+       -11,
+       22
+      ]
+     },
+     {
+      "flash": 48.31,
+      "prevFrame": 48.277,
+      "chirp": 48.28,
+      "r": 0.763,
+      "offsetMs": -30,
+      "offsetRangeMs": [
+       -30,
+       3
+      ]
+     }
+    ]
+   },
+   "bytes": 37607661,
+   "audioLostReported": false
+  },
+  {
+   "minute": 204.3,
+   "world": "Fractal Biosphere",
+   "seconds": 63.9,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.01,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 46,
+   "maxIntervalAfterStartupMs": 44,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 46,
+   "videoDuration": 59.977,
+   "audioDuration": 60,
+   "audioMeanDb": -22.8,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.993,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": 4,
+    "maxAbsOffsetMs": 18,
+    "pairs": [
+     {
+      "flash": 12.313,
+      "prevFrame": 12.279,
+      "chirp": 12.3204,
+      "r": 0.709,
+      "offsetMs": 7,
+      "offsetRangeMs": [
+       7,
+       41
+      ]
+     },
+     {
+      "flash": 24.312,
+      "prevFrame": 24.279,
+      "chirp": 24.3019,
+      "r": 0.706,
+      "offsetMs": -10,
+      "offsetRangeMs": [
+       -10,
+       23
+      ]
+     },
+     {
+      "flash": 36.312,
+      "prevFrame": 36.279,
+      "chirp": 36.3299,
+      "r": 0.699,
+      "offsetMs": 18,
+      "offsetRangeMs": [
+       18,
+       51
+      ]
+     },
+     {
+      "flash": 48.312,
+      "prevFrame": 48.278,
+      "chirp": 48.3114,
+      "r": 0.721,
+      "offsetMs": -1,
+      "offsetRangeMs": [
+       -1,
+       33
+      ]
+     }
+    ]
+   },
+   "bytes": 38709994,
+   "audioLostReported": false
+  },
+  {
+   "minute": 225.6,
+   "world": "Fractal Biosphere",
+   "seconds": 63.9,
+   "video": {
+    "codec": "vp9",
+    "width": 1280,
+    "height": 720
+   },
+   "audio": {
+    "codec": "opus",
+    "sampleRate": 48000,
+    "layout": "stereo"
+   },
+   "fps": 30.01,
+   "longGaps": 0,
+   "gapsAt": [],
+   "startupMaxMs": 45,
+   "maxIntervalAfterStartupMs": 39,
+   "frameIntervalMedianMs": 33,
+   "frameIntervalMaxMs": 45,
+   "videoDuration": 59.979,
+   "audioDuration": 60,
+   "audioMeanDb": -22.5,
+   "longestSilenceMs": 0,
+   "pilotGapMs": 0,
+   "changingFrames": 0.993,
+   "sync": {
+    "markers": 4,
+    "chirps": 4,
+    "meanOffsetMs": 16,
+    "maxAbsOffsetMs": 23,
+    "pairs": [
+     {
+      "flash": 12.315,
+      "prevFrame": 12.281,
+      "chirp": 12.3382,
+      "r": 0.747,
+      "offsetMs": 23,
+      "offsetRangeMs": [
+       23,
+       57
+      ]
+     },
+     {
+      "flash": 24.314,
+      "prevFrame": 24.28,
+      "chirp": 24.3197,
+      "r": 0.721,
+      "offsetMs": 6,
+      "offsetRangeMs": [
+       6,
+       40
+      ]
+     },
+     {
+      "flash": 36.314,
+      "prevFrame": 36.28,
+      "chirp": 36.3331,
+      "r": 0.713,
+      "offsetMs": 19,
+      "offsetRangeMs": [
+       19,
+       53
+      ]
+     },
+     {
+      "flash": 48.313,
+      "prevFrame": 48.279,
+      "chirp": 48.3291,
+      "r": 0.694,
+      "offsetMs": 16,
+      "offsetRangeMs": [
+       16,
+       50
+      ]
+     }
+    ]
+   },
+   "bytes": 38752882,
+   "audioLostReported": false
+  }
+ ],
+ "errors": [],
+ "settled": [
+  {
+   "minute": 25.2,
+   "segment": "Stellar Forge",
+   "heapAfterGcMB": 10.4,
+   "rssMB": {
+    "node": 179,
+    "browser": 134,
+    "gpu": 402,
+    "renderer": 220,
+    "other": 209
+   }
+  },
+  {
+   "minute": 47.4,
+   "segment": "Blueprint Cathedral (shader pack)",
+   "heapAfterGcMB": 7.2,
+   "rssMB": {
+    "node": 181,
+    "browser": 130,
+    "gpu": 368,
+    "renderer": 222,
+    "other": 209
+   }
+  },
+  {
+   "minute": 69.9,
+   "segment": "Fractal Biosphere",
+   "heapAfterGcMB": 10.8,
+   "rssMB": {
+    "node": 183,
+    "browser": 137,
+    "gpu": 379,
+    "renderer": 209,
+    "other": 209
+   }
+  },
+  {
+   "minute": 92.5,
+   "segment": "Stellar Forge",
+   "heapAfterGcMB": 10.6,
+   "rssMB": {
+    "node": 184,
+    "browser": 136,
+    "gpu": 407,
+    "renderer": 230,
+    "other": 209
+   }
+  },
+  {
+   "minute": 161.5,
+   "segment": "Blueprint Cathedral (shader pack)",
+   "heapAfterGcMB": 9.3,
+   "rssMB": {
+    "node": 198,
+    "browser": 133,
+    "gpu": 372,
+    "renderer": 238,
+    "other": 209
+   }
+  }
+ ],
+ "samples": [
+  {
+   "minute": 0.7,
+   "segment": "Stellar Forge",
+   "shown": null,
+   "idle": false,
+   "heapMB": 7.3,
+   "nodes": 472,
+   "listeners": 40,
+   "documents": 1,
+   "frames": 1,
+   "playerFps": 39.2,
+   "family": "stellar-forge",
+   "remote": false,
+   "quality": 0,
+   "drawCalls": 20,
+   "geometries": 29,
+   "textures": 19,
+   "programs": 32,
+   "updateMs": 1.78,
+   "gpuMs": 11.55,
+   "transport": null,
+   "workerRendered": null,
+   "workerSemantic": null,
+   "construct": null,
+   "rms": 0.0331,
+   "audioClockRate": null,
+   "notice": "",
+   "cpuPercent": null,
+   "rssMB": {
+    "node": 171,
+    "browser": 102,
+    "gpu": 387,
+    "renderer": 222,
+    "other": 208
+   },
+   "events": {
+    "produced": 5,
+    "accepted": 5,
+    "outbox": 0,
+    "postFailures": 0
+   }
+  },
+  {
+   "minute": 24.9,
+   "segment": "Stellar Forge",
+   "shown": null,
+   "idle": false,
+   "heapMB": 10,
+   "nodes": 524,
+   "listeners": 87,
+   "documents": 1,
+   "frames": 1,
+   "playerFps": 42.6,
+   "family": "stellar-forge",
+   "remote": false,
+   "quality": 0,
+   "drawCalls": 23,
+   "geometries": 29,
+   "textures": 19,
+   "programs": 32,
+   "updateMs": 1.68,
+   "gpuMs": 10.52,
+   "transport": null,
+   "workerRendered": null,
+   "workerSemantic": null,
+   "construct": null,
+   "rms": 0.0634,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 54.9,
+    "GPU": 11.3,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 179,
+    "browser": 134,
+    "gpu": 403,
+    "renderer": 242,
+    "other": 209
+   },
+   "events": {
+    "produced": 55,
+    "accepted": 53,
+    "outbox": 2,
+    "postFailures": 1
+   }
+  },
+  {
+   "minute": 47.1,
+   "segment": "Blueprint Cathedral (shader pack)",
+   "shown": null,
+   "idle": false,
+   "heapMB": 7.6,
+   "nodes": 460,
+   "listeners": 74,
+   "documents": 2,
+   "frames": 2,
+   "playerFps": 60,
+   "family": "machine-cathedral",
+   "remote": true,
+   "quality": 0,
+   "drawCalls": 13,
+   "geometries": 22,
+   "textures": 16,
+   "programs": 21,
+   "updateMs": 0.11,
+   "gpuMs": 4.48,
+   "transport": {
+    "inFlight": 0,
+    "sent": 3888,
+    "acknowledged": 3888,
+    "skippedHere": 14,
+    "latencyMs": 0.8,
+    "maxQueue": 0,
+    "semantic": 132
+   },
+   "workerRendered": 3886,
+   "workerSemantic": 132,
+   "construct": null,
+   "rms": 0.043,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 56.9,
+    "GPU": 22.9,
+    "network.mojom.NetworkService": 0.2,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 181,
+    "browser": 130,
+    "gpu": 369,
+    "renderer": 231,
+    "other": 209
+   },
+   "events": {
+    "produced": 104,
+    "accepted": 104,
+    "outbox": 0,
+    "postFailures": 1
+   }
+  },
+  {
+   "minute": 69.6,
+   "segment": "Fractal Biosphere",
+   "shown": null,
+   "idle": true,
+   "heapMB": 11,
+   "nodes": 527,
+   "listeners": 61,
+   "documents": 1,
+   "frames": 1,
+   "playerFps": 60.4,
+   "family": "fractal-biosphere",
+   "remote": false,
+   "quality": 0,
+   "drawCalls": 25,
+   "geometries": 32,
+   "textures": 15,
+   "programs": 21,
+   "updateMs": 0.88,
+   "gpuMs": 10.61,
+   "transport": null,
+   "workerRendered": null,
+   "workerSemantic": null,
+   "construct": null,
+   "rms": 0.0288,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 63.1,
+    "GPU": 16.4,
+    "network.mojom.NetworkService": 0.2,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 183,
+    "browser": 137,
+    "gpu": 381,
+    "renderer": 222,
+    "other": 209
+   },
+   "events": {
+    "produced": 106,
+    "accepted": 106,
+    "outbox": 0,
+    "postFailures": 1
+   }
+  },
+  {
+   "minute": 92.2,
+   "segment": "Stellar Forge",
+   "shown": null,
+   "idle": false,
+   "heapMB": 14.5,
+   "nodes": 1154,
+   "listeners": 145,
+   "documents": 1,
+   "frames": 1,
+   "playerFps": 42,
+   "family": "stellar-forge",
+   "remote": false,
+   "quality": 0,
+   "drawCalls": 23,
+   "geometries": 29,
+   "textures": 19,
+   "programs": 32,
+   "updateMs": 1.88,
+   "gpuMs": 10.94,
+   "transport": null,
+   "workerRendered": null,
+   "workerSemantic": null,
+   "construct": null,
+   "rms": 0.0649,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 57.1,
+    "GPU": 12.3,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 184,
+    "browser": 136,
+    "gpu": 408,
+    "renderer": 254,
+    "other": 209
+   },
+   "events": {
+    "produced": 152,
+    "accepted": 152,
+    "outbox": 0,
+    "postFailures": 1
+   }
+  },
+  {
+   "minute": 161.1,
+   "segment": "Blueprint Cathedral (shader pack)",
+   "shown": null,
+   "idle": false,
+   "heapMB": 10.1,
+   "nodes": 1145,
+   "listeners": 129,
+   "documents": 2,
+   "frames": 2,
+   "playerFps": 60.1,
+   "family": "machine-cathedral",
+   "remote": true,
+   "quality": 0,
+   "drawCalls": 13,
+   "geometries": 22,
+   "textures": 16,
+   "programs": 21,
+   "updateMs": 0.17,
+   "gpuMs": 4.5,
+   "transport": {
+    "inFlight": 0,
+    "sent": 3687,
+    "acknowledged": 3687,
+    "skippedHere": 16,
+    "latencyMs": 0.9,
+    "maxQueue": 0,
+    "semantic": 136
+   },
+   "workerRendered": 3676,
+   "workerSemantic": 136,
+   "construct": null,
+   "rms": 0.0284,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 47.7,
+    "GPU": 20.3,
+    "network.mojom.NetworkService": 0.2,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 198,
+    "browser": 133,
+    "gpu": 373,
+    "renderer": 248,
+    "other": 209
+   },
+   "events": {
+    "produced": 304,
+    "accepted": 304,
+    "outbox": 0,
+    "postFailures": 1
+   }
+  },
+  {
+   "minute": 226.3,
+   "segment": "Fractal Biosphere",
+   "shown": null,
+   "idle": true,
+   "heapMB": 15.2,
+   "nodes": 603,
+   "listeners": 97,
+   "documents": 1,
+   "frames": 1,
+   "playerFps": 60.3,
+   "family": "fractal-biosphere",
+   "remote": false,
+   "quality": 0,
+   "drawCalls": 25,
+   "geometries": 32,
+   "textures": 15,
+   "programs": 21,
+   "updateMs": 0.74,
+   "gpuMs": 12.56,
+   "transport": null,
+   "workerRendered": null,
+   "workerSemantic": null,
+   "construct": null,
+   "rms": 0.0331,
+   "audioClockRate": 1,
+   "notice": "",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 64.2,
+    "GPU": 16.5,
+    "network.mojom.NetworkService": 0.2,
+    "audio.mojom.AudioService": 0.5
+   },
+   "rssMB": {
+    "node": 197,
+    "browser": 143,
+    "gpu": 384,
+    "renderer": 241,
+    "other": 210
+   },
+   "events": {
+    "produced": 304,
+    "accepted": 304,
+    "outbox": 0,
+    "postFailures": 1
+   }
+  }
+ ]
+}

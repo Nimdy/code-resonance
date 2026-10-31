@@ -14,7 +14,7 @@
 // (public/worlds/labels.js).
 // A frame is a function of the graph, the recipe and the performance clock; an unchanged frame is a copy of the last one.
 import {roleOf} from './model.js';
-import {publicTitle,GENERIC_TITLE,generatedName} from './labels.js';
+import {publicTitle,GENERIC_TITLE,generatedName,textScale} from './labels.js';
 
 const SQRT3=Math.sqrt(3),WIDTH=1.06,PLINTH=.42,STOREY=.34,CAP=16,RISE=.2,MAX_ARCS=280;
 const DEFAULT={primary:'#5b8def',secondary:'#45c4ae',accent:'#f0a35e',highlight:'#e8eef8',deep:'#070a12',haze:'#17223a',warning:'#ef5139',valid:'#e8d37d'};
@@ -86,8 +86,9 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
       if(t.x<x0)x0+=(t.x-x0)*k;if(t.x>x1)x1+=(t.x-x1)*k;if(t.z<z0)z0+=(t.z-z0)*k;if(t.z>z1)z1+=(t.z-z1)*k;
       const ht=heightOf(t.storeys)+mastOf(t.storeys);if(ht>top)top+=(ht-top)*k;}
     if(!list.length){x0=x1=z0=z1=0;}
-    // Rows further back stand higher, up to an eighth of the frame however deep the site.
-    const left=w*.07,right=w*.93,ground=h*(text?.7:.74),ceiling=h*(text?.27:.12),depth=z1-z0;
+    // Rows further back stand higher, up to an eighth of the frame however deep the site. A portrait frame (a vertical
+    // clip) keeps the skyline inside the area Reels, Shorts and TikTok leave clear: under the header, above the bottom fifth.
+    const portrait=h>w,left=w*.07,right=w*.93,ground=h*(portrait?.6:text?.7:.74),ceiling=h*(portrait?(text?.34:.2):text?.27:.12),depth=z1-z0;
     const rise=Math.min(depth*RISE*(ground-ceiling)/(top+depth*RISE+.4),h*.125);
     const u=Math.min((right-left)/(x1-x0+WIDTH+1.4),(ground-ceiling-rise)/(top+.4),h*.13),k=depth?rise/depth:0;
     return {u,ox:(left+right)/2-(x0+x1)/2*u,ground,back:ground-rise,left,right,z0,z1,x:t=>(left+right)/2+(t.x-(x0+x1)/2)*u,base:t=>ground-(z1-t.z)*k};
@@ -152,7 +153,7 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
   // Dependencies as arcs hanging from the ground line: the links between districts first and brighter.
   function arcs(g,o,L,f,pos){
     const {pal}=L,edges=[...(o.edges?.values?.()||[])].filter(e=>e.kind==='depends'&&pos.has(e.a)&&pos.has(e.b)&&e.a!==e.b);
-    const deep=Math.max(8,Math.min(f.ground*.32,o.h*(o.text?.86:.96)-f.ground-6)),hot=[];let n=0;
+    const deep=Math.max(8,Math.min(f.ground*.32,o.h*(o.h>o.w?.74:o.text?.86:.96)-f.ground-6)),hot=[];let n=0;
     for(const cross of [true,false]){
       g.beginPath();
       for(const e of edges){if(!!e.cross!==cross||n>=MAX_ARCS)continue;const a=pos.get(e.a),b=pos.get(e.b),d=Math.max(4,deep*Math.sqrt(Math.abs(a.x-b.x)/(f.right-f.left)));
@@ -164,6 +165,7 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
     return n;
   }
   function text(g,o,L,list){
+    if(o.h>o.w)return textPortrait(g,o,L,list);
     const {pal}=L,k=o.k||1,x=o.w*.07,right=o.w*.93,top=o.h*.085;
     const links=[...(o.edges?.values?.()||[])].filter(e=>e.kind==='depends').length;
     const c=captions(list,{groups:o.groups,recipe:o.recipe,links});
@@ -182,6 +184,28 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
       g.fillText(`and ${c.districts.length-rows.length} more ${c.districts.length-rows.length===1?'district':'districts'}`,lx+16*k,top+rows.length*20*k);}
     g.textAlign='left';g.font=`400 ${Math.round(11*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.5));
     g.fillText('Each tower is a file and its storeys are symbols · arcs below are dependencies, brighter between districts',x,o.h*.955);
+    return c;
+  }
+  // A portrait frame: the same words stacked in the safe area (under the top 12 %, inside the side margins): the title,
+  // the counts, then the districts under them; the legend just above the bottom fifth.
+  function textPortrait(g,o,L,list){
+    const {pal}=L,k=o.k||1,x=o.w*.06,right=o.w*.9,top=o.h*.12+18*k,width=right-x;
+    const links=[...(o.edges?.values?.()||[])].filter(e=>e.kind==='depends').length;
+    const c=captions(list,{groups:o.groups,recipe:o.recipe,links});
+    g.textBaseline='alphabetic';g.textAlign='left';
+    g.font=`600 ${Math.round(10.5*k)}px ${FONT}`;g.letterSpacing=`${(2.2*k).toFixed(1)}px`;g.fillStyle=css(mix(pal.highlight,pal.deep,.4));g.fillText(c.kicker,x,top);
+    g.letterSpacing='0px';g.font=`600 ${Math.round(24*k)}px ${FONT}`;g.fillStyle=css(pal.highlight);g.fillText(truncate(g,c.title,width),x,top+30*k);
+    g.font=`400 ${Math.round(12.5*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.35));g.fillText(truncate(g,c.stats,width),x,top+52*k);
+    const rows=c.districts.slice(0,c.districts.length>4?3:4),y0=top+82*k;
+    rows.forEach((d,i)=>{const y=y0+i*20*k,group=o.groups?.get(d.id);
+      g.fillStyle=css(L.colour(group));g.fillRect(x,y-8*k,8*k,8*k);
+      g.textAlign='left';g.font=`500 ${Math.round(12*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.12));const name=truncate(g,d.name,width*.45);g.fillText(name,x+16*k,y);
+      const nw=g.measureText(name).width;g.font=`400 ${Math.round(11*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.5));g.fillText(truncate(g,d.role,width*.3),x+22*k+nw,y);
+      g.textAlign='right';g.font=`400 ${Math.round(12*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.4));g.fillText(`${d.files} ${d.files===1?'file':'files'}`,right,y);});
+    if(c.districts.length>rows.length){g.textAlign='left';g.font=`400 ${Math.round(12*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.45));
+      g.fillText(`and ${c.districts.length-rows.length} more ${c.districts.length-rows.length===1?'district':'districts'}`,x+16*k,y0+rows.length*20*k);}
+    g.textAlign='left';g.font=`400 ${Math.round(11*k)}px ${FONT}`;g.fillStyle=css(mix(pal.highlight,pal.deep,.5));
+    g.fillText(truncate(g,'Each tower is a file, its storeys are symbols',width),x,o.h*.8-24*k);g.fillText(truncate(g,'Arcs below are dependencies, brighter between districts',width),x,o.h*.8-8*k);
     return c;
   }
   function render(g,o,list){
@@ -217,7 +241,8 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
   // loading).
   function draw(g,o){
     stats.frames++;
-    const k=clamp(Math.min(o.w/1280,o.h/720),.6,2),view={...o,k,text:!!o.nodes&&o.labels!=='off'&&o.w>=560&&o.h>=300};
+    // A portrait frame's words are sized by its width (labels.js textScale).
+    const portrait=o.h>o.w,k=portrait?clamp(textScale(o.w,o.h),.6,2.4):clamp(Math.min(o.w/1280,o.h/720),.6,2),view={...o,k,text:!!o.nodes&&o.labels!=='off'&&(portrait?o.w>=360&&o.h>=640:o.w>=560&&o.h>=300)};
     const list=o.nodes?towers(o.nodes,o.now,o):[],scale=o.scale||1,next=signature(view,list);
     const W=Math.max(1,Math.round(o.w*scale)),H=Math.max(1,Math.round(o.h*scale));
     if(!layer||layer.width!==W||layer.height!==H)layer=canvas(W,H),key='';

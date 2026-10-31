@@ -31,3 +31,11 @@ test('Receiver drops inserted text from legacy document.change events',()=>{
   assert(!JSON.stringify(ev).includes('pasted-value'));
   assert.equal(ev.changes[0].insertedChars,32);
 });
+test('Commands of the v10 languages\' toolchains are classified too',()=>{
+  const cases={'./gradlew test':'test','mvn clean verify':'test','swift test':'test','xcodebuild test -scheme App':'test','ctest':'test','bin/rails test':'test',
+    'rake spec':'test','php artisan test':'test','vendor/bin/phpunit':'test','./vendor/bin/pest':'test','cargo check':'typecheck','go vet ./...':'lint',
+    'rubocop':'lint','phpstan analyse':'lint','swiftlint':'lint','clang-tidy a.cpp':'lint','./gradlew build':'build','swift build':'build','ninja':'build',
+    'javac Main.java':'build','g++ -o a a.cpp':'build','go fmt ./...':'format','rustfmt src/main.rs':'format','dotnet format':'format',
+    'composer install':'install','gem install rails':'install','dotnet restore':'install','ruby app.rb':'run','php -S localhost:8000':'run','java -jar a.jar':'run','swift run':'run'};
+  for(const [line,expected] of Object.entries(cases))assert.equal(classifyCommand(line),expected,line);
+});
