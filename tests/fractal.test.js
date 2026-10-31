@@ -42,17 +42,23 @@ test('Adding the preview changes no existing identity (the generator fingerprint
   assert.equal(h(recipe.FAMILIES.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
   const q=project('scores',{modules:40,classes:30,tests:10});assert.deepEqual(recipe.generate(q,{now:0}).familyScores,recipe.familyScores(recipe.traitsOf(q),recipe.generate(q,{now:0}).projectSeed,0));
 });
-test('The preview\'s catalogue covers every value its generator draws; tuning offers it without digital life',()=>{
+test('The preview\'s catalogue covers every value its generator draws; tuning offers it with the digital life group',()=>{
   const cat=catalog.PREVIEWS[ID];assert(cat&&cat.preview);assert.equal(catalog.FAMILIES[ID],undefined,'not a base for declarative packs');
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11,ui:seed%4,groups:1+seed%9}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
-    for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
+    // (the generator draws no life for the preview: a stored or generated identity has it only once it is tuned on)
+    for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish'||p.startsWith('life.'))continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);}
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the digital life group, the same values as the three families offer
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')),Object.keys(catalog.LIFE));for(const k of Object.keys(catalog.LIFE))assert.equal(spec[k].group,'life');
   const tuned=recipe.update(r,{type:'tune',values:{'fractal.form':'box','fractal.power':6}},project('tune'),0);
   assert.deepEqual([tuned.genome.fractal.form,tuned.genome.fractal.power],['box',6]);
+  // turned on by a tuning (as the Visual Studio does for an identity without life), and off again
+  const living=recipe.update(r,{type:'tune',values:{'life.enabled':true,'life.density':.6}},project('tune'),0);
+  assert.deepEqual(living.genome.life,{enabled:true,density:.6});assert.equal(r.genome.life,undefined);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'fractal.power':13}},project('tune'),0),/power/);
 });
 test('Each project draws its own universe: the formula and its parameters, not only the colours, from its own stream',async()=>{

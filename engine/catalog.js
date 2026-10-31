@@ -107,7 +107,8 @@ const LIFE={
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 // Preview families: built in, chosen only explicitly (the Visual Studio, the render lab's --family), never by the
-// family scoring, and not yet a base for declarative packs (their parameters may still change). No digital life yet.
+// family scoring, and not yet a base for declarative packs (their parameters may still change). Fractal Continuum offers
+// digital life (the same life.* values as the three); the others none yet.
 const PREVIEWS={
   'synaptic-storm':{name:'Synaptic Storm (preview)',preview:true,parameters:{
     'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
@@ -139,7 +140,9 @@ const PREVIEWS={
     'motion.sync':n(0,1,'how tightly the spontaneous pulses lock to the beat'),
     'camera.personality':e(['orbit','glide','pole'],'camera behaviour (pole: looking down the symmetry axis)'),'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,1.2,'elevation'),
     'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
-    'agents.form':e(['signal'],'agent form: a signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    'agents.form':e(['signal'],'agent form: a signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length'),
+    // digital life (public/worlds/life/fractal.js): motes of light on the surface, the same values as the three's
+    ...LIFE},
     effects:['emerge','seed','unfold','erode','thread','decohere','coherence-wave','recohere','refine','bloom','glow','deepen'],
     unlocks:['stardust','inner-light','corona','echoes']},
   'temporal-terrain':{name:'Temporal Terrain (preview)',preview:true,parameters:{

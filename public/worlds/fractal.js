@@ -33,6 +33,9 @@ import {THREE,clamp,lerp,smooth,hash,rand} from './core.js';
 import {createFormula,massAt,unfoldAt,detailCap,rotation,layoutConfig,layoutAt,regionSlots,regionWeights,swellAt,kappaOf,spontaneous,R0,MAX_IT,MIN_IT} from './fractal-forms.js';
 import {touchesAt,touchGain} from './touch.js';
 import {presence} from '../providers.js';
+import {createFractalGrammar,toDir as lifeDir,toMap as lifeMap,ALT0 as LIFE_ALT0,ALT as LIFE_ALT,FIELD as LIFE_FIELD,MOTE,SKIMMER,EMBER} from './life/fractal.js';
+import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {u01,MODE as LIFE_MODE} from './life/sim.js';
 const TAU=Math.PI*2,WS=10,BLOOM_GAP=240000,DWELL=4500,MOTES=360,BURST=3200,MAX_THREADS=480,TSEG=10,MAX_FX=4000;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers).
 const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
@@ -46,6 +49,9 @@ const FRAC_SCALE=QUALITY.map(q=>q.scale);
 const SW=128;
 export function createFamily(ctx){
   const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P=G.palette||{};
+  // Digital life (life/fractal.js): only when the recipe has it on. Off, nothing below differs from the world without it
+  // (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
   const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
   const atm=G.atmosphere||{},mtl=G.material||{},mot=G.motion||{},cam=G.camera||{},geo=G.geometry||{},LT=G.light||{},MU=G.music||{};
   const col=(c,d)=>new THREE.Color(typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)?c:d);
@@ -137,6 +143,11 @@ export function createFamily(ctx){
     uOcc:{value:clamp(num(mtl.occlusion,1),.4,1.8)},uTrapK:{value:clamp(num(mtl.trap,.5),0,1)},uSheen:{value:clamp(num(mtl.sheen,.4),0,1)},uRim:{value:clamp(num(mtl.rim,.7),0,1.6)},
     uGlow:{value:GLOW},uInner:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.6)},uBeat:{value:0},uTime:{value:0},uBreath:{value:0},uQ:{value:0},
     uTch:{value:L4(4)},uTchC:{value:L4(4)},uWav:{value:L4(6)},uWavC:{value:L4(6)},uWavK:{value:L4(6)},uLast:{value:L4(4)},uStress:{value:0},uHaloK:{value:clamp(num(atm.halo,.7),0,1.6)},uHaloC:{value:V3(pal.highlight.clone().lerp(pal.primary,.5),.5)}};
+  // Life on: the light the life pools in the relief (an octahedral map of directions like the swell table's, rebuilt
+  // from the ecosystem at each tick; r: where motes gather and embers rest, g: the threads they keep using).
+  const LLN=64,llData=LIFE?new Uint8Array(LLN*LLN*4):null,llTex=LIFE?keep(new THREE.DataTexture(llData,LLN,LLN,THREE.RGBAFormat,THREE.UnsignedByteType)):null;
+  if(LIFE){llTex.magFilter=llTex.minFilter=THREE.LinearFilter;llTex.wrapS=llTex.wrapT=THREE.ClampToEdgeWrapping;llTex.generateMipmaps=false;llTex.needsUpdate=true;
+    Object.assign(R,{uLifeL:{value:llTex},uLifeK:{value:new THREE.Vector4(0,0,0,0)},uLifeC:{value:V3(pal.accent.clone().lerp(pal.highlight,.3),1)}});}
   // Loops over the event slots are written out with constant indices (plain reads of each uniform).
   const unroll=(n,body)=>Array.from({length:n},(_,k)=>`{${body(k)}}`).join('\n');
   // The estimator of the drawn form (shared by the coarse pass and the full pass): the region's swell, the decoherence.
@@ -158,7 +169,7 @@ vec3 rayDir(vec2 uv){vec4 a=uInvVP*vec4(uv*2.-1.,-1.,1.),b=uInvVP*vec4(uv*2.-1.,
   const FS=`precision highp float;varying vec2 vUv;
 uniform mat4 uVP;uniform vec3 uKey,uKeyC,uFillC,uRimC,uRimDir,uHi,uAcc,uWarn,uValid,uHaloC;
 uniform float uEpsK,uOcc,uTrapK,uSheen,uRim,uGlow,uInner,uShim,uBeat,uTime,uBreath,uQ,uStress,uHaloK,uShK,uHueD,uHueR,uIri,uSwN;uniform int uAOn,uShN;
-uniform vec4 uTch[4],uTchC[4],uWav[6],uWavC[6],uWavK[6],uLast[4];
+uniform vec4 uTch[4],uTchC[4],uWav[6],uWavC[6],uWavK[6],uLast[4];${LIFE?'\nuniform sampler2D uLifeL;uniform vec4 uLifeK;uniform vec3 uLifeC;':''}
 ${MAP}
 float h31(vec3 p){p=fract(p*vec3(.1031,.1030,.0973));p+=dot(p,p.yxz+33.33);return fract((p.x+p.y)*p.z);}
 // (forward differences from the hit's own distance d0: three more evaluations instead of four)
@@ -220,7 +231,10 @@ vec3 shade(vec3 p,vec3 rd,float t,out float aoOut){
   // inner light: what verified milestones leave in their regions, and the unlock everywhere
   vec3 u=normalize(p);float il=uInner*.1;${unroll(4,k=>`vec4 Lr=uLast[${k}];if(Lr.w>0.)il+=Lr.w*exp((dot(u,Lr.xyz)-1.)/.1)*.3;`)}
   em+=uAcc*il*cre*cre*(.7+.3*uBreath)*2.;
-  // decoherence: static crackles in the warning colour, the region dims
+${LIFE?`  // digital life: where the motes gather and rest, and along the threads they keep using, their light pools in the
+  // relief around them (mostly in the crevices), in their own light turned toward the region's hue
+  {vec4 LL=texture2D(uLifeL,oct(u));float lg=LL.r*uLifeK.x+LL.g*uLifeK.y;if(lg>.002){vec3 lc=mix(uLifeC,normalize(base+1e-4)*1.6,.35);em+=lc*lg*uLifeK.w*(.08+cre*2.6+ridge*.3)*(.3+.7*ao);}}
+`:''}  // decoherence: static crackles in the warning colour, the region dims
   float dim=0.;vec3 qd=p/sw.a;${unroll(2,k=>`vec4 A=uDecA[${k}];if(A.x>0.){vec4 D=uDec[${k}];vec3 e2=qd-D.xyz;float w2=exp(-dot(e2,e2)/(D.w*D.w));
     float st=step(.8,h31(floor(p*140.)+floor(uTime*15.)*7.13));em+=uWarn*A.z*w2*(st*(.4+cre*1.4)+cre*.35*(.6+.4*sin(uTime*29.+p.x*40.)));dim=max(dim,w2*A.z);}`)}
   c*=1.-.45*dim;
@@ -412,6 +426,152 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
         // echoes (unlocked): far soft glows of the form's light in a few seeded directions
         if(uEcho>0.){for(int k=0;k<3;k++){vec3 e=normalize(vec3(sin(uSeed.x+float(k)*2.1),.25*sin(uSeed.y+float(k)),cos(uSeed.x+float(k)*2.1)));c+=uAcc*uEcho*.05*exp(-(1.-dot(d,e))*30.);}}
         gl_FragColor=vec4(c,1.);}`}));
+  // ---- Digital life: motes of light on the surface (life/fractal.js; only when the recipe has life on) ----------------
+  // The ecosystem lives on a map of the sphere of directions (life/fractal.js): each inhabitant is drawn along its
+  // direction at its altitude above the surface as drawn at that moment. The vertex shader traces that point itself (the
+  // outermost point along the direction at the inhabitant's altitude from the form: sphere tracing toward the
+  // estimator's offset surface, with the region's swell, at the drawn recursion), so the life rides the relief as the
+  // form unfolds, swells, breathes and blooms, and each point tests its own visibility against the fractal's depth
+  // (hidden behind the relief, as the sites are). Presentation only reads the ecosystem.
+  //  motes     soft points in the light's colour turned toward their region's hue: dim while they drift, brighter in a
+  //            gathering's halo; a fine tapered thread behind those that carry a site's light or seek a site (a
+  //            recovered one in the valid colour);
+  //  skimmers  short tapered streaks in the rim's light, in loose flocks;
+  //  embers    larger, dimmer, warmer glows close to the surface;
+  //  surface   where motes gather and embers rest, and along the threads they keep using, their light pools in the
+  //            relief (the shading pass reads llTex, rebuilt at each tick).
+  // Followers (quality: how many) sit on the leader's own recorded path; quality never changes the ecosystem. Two draw
+  // calls (threads and streaks, points) and one texture lookup per shaded pixel.
+  let lifeStatsNow={drawn:0,followers:0,trailSegments:0,drawCalls:0},updateLife=()=>{};
+  function onLifeParams(){}
+  function lifeStats(){return {...lifeStatsNow};}
+  if(LIFE){
+    const grammar=createFractalGrammar(recipe);LIFE.create(grammar);
+    const CAP=grammar.capacity,MAXP=4,MAXR=6;
+    // per quality (0 best .. 3 least): mote and skimmer followers, thread and streak segments
+    const MOTEF=[2,1,1,0],SKIMF=[2,1,0,0],TSEG=[4,3,2,2],SSEG=[3,2,2,1];
+    const C3=(c,k=1)=>[c.r*k,c.g*k,c.b*k];
+    const cMote=C3(pal.accent.clone().lerp(pal.highlight,.15)),cCarry=C3(pal.accent,1.05),cValid=C3(pal.valid),cSkim=C3(pal.highlight.clone().lerp(rimCol,.55)),cEmber=C3(pal.accent.clone().lerp(pal.primary,.4));
+    const NP=CAP*MAXP,NR=CAP*MAXR;
+    const pDir=new Float32Array(NP*3),pL=new Float32Array(NP*4),pC=new Float32Array(NP*4);
+    const attr=(a,n)=>{const x=new THREE.BufferAttribute(a,n);x.setUsage(THREE.DynamicDrawUsage);return x;};
+    const iattr=(a,n)=>{const x=new THREE.InstancedBufferAttribute(a,n);x.setUsage(THREE.DynamicDrawUsage);return x;};
+    const pGeo=keep(new THREE.BufferGeometry());pGeo.setAttribute('position',attr(pDir,3));pGeo.setAttribute('aL',attr(pL,4));pGeo.setAttribute('aC',attr(pC,4));pGeo.setDrawRange(0,0);
+    // threads and streaks: one quad per segment (along 0..1, side -1..1), expanded across the segment on screen
+    const rA=new Float32Array(NR*4),rB=new Float32Array(NR*4),rCA=new Float32Array(NR*3),rCB=new Float32Array(NR*3),rW=new Float32Array(NR*3);
+    const rGeo=keep(new THREE.InstancedBufferGeometry());
+    rGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array([0,-1,0,0,1,0,1,-1,0,1,1,0]),3));rGeo.setIndex([0,2,1,1,2,3]);
+    rGeo.setAttribute('iA',iattr(rA,4));rGeo.setAttribute('iB',iattr(rB,4));rGeo.setAttribute('iCA',iattr(rCA,3));rGeo.setAttribute('iCB',iattr(rCB,3));rGeo.setAttribute('iW',iattr(rW,3));rGeo.instanceCount=0;
+    // (uLifeP: x the margin a pit is bridged by (fractal units), y the smallest size in pixels at 1080 lines, z the largest)
+    const lifeU={...R,uFrac:CU.uFrac,uFracSize:CU.uFracSize,uPx:U.uPx,uRes:U.uRes,uLifeP:{value:new THREE.Vector4(.04,2.2,7,0)}};
+    const LIFE_VS=`${MAP}
+uniform float uPx,uWSg;uniform vec2 uRes;uniform sampler2D uFrac;uniform vec2 uFracSize;uniform vec4 uLifeP;
+// along direction u at altitude h above the drawn surface, closed over its pits: sphere tracing from outside to the
+// outermost point within uLifeP.x of the form (the estimator's offset surface, with the region's swell), then back down
+// by the rest of that margin, so a pit narrower than about twice the margin is bridged and the life rides the relief
+// rather than dropping into every hole; a ray that slips through the form (w: 0) is not drawn
+vec4 lifeAt(vec3 u,float h){float H=max(h,uLifeP.x),s=swellOf(u).a,r=uRB+H;for(int i=0;i<30;i++){float d=fdeN(u*(r/s),uIt)*s-H;if(d<2e-4)break;r-=max(d*${fc.fudge.toFixed(3)},1e-4);if(r<.03)break;}
+  r-=H-h;return vec4(u*r*uWSg,step(uRB*.4,r));}
+// hidden behind the relief: the fractal's own hit distance at the point's pixel, with a small tolerance
+float lifeVis(vec4 clip,vec3 mv){vec2 uv=clip.xy/clip.w*.5+.5;float tf=texelFetch(uFrac,clamp(ivec2(uv*uFracSize),ivec2(0),ivec2(uFracSize)-1),0).a,ts=length(mv)/uWSg;return tf>0.?1.-smoothstep(.02,.07,ts-tf):1.;}
+float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*.5/max(w,.05);}`;
+    const lifeMat=(vertexShader,fragmentShader)=>keep(new THREE.ShaderMaterial({uniforms:lifeU,vertexShader,fragmentShader,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending}));
+    // points: position the direction; aL altitude, size (fractal units: the core's diameter; the sprite holds a halo
+    // around it), how much the region's hue turns it; aC colour
+    const pMat=lifeMat(`${LIFE_VS}attribute vec4 aL,aC;varying vec3 vC;
+      void main(){vec3 u=normalize(position);vec4 P=lifeAt(u,aL.x);vec4 mv=viewMatrix*vec4(P.xyz,1.);gl_Position=projectionMatrix*mv;
+        float vis=lifeVis(gl_Position,mv.xyz)*P.w,fl=uLifeP.y*uPx,sz=clamp(lifePx(aL.y,-mv.z),fl,uLifeP.z*uPx);gl_PointSize=sz*4.;
+        vec3 reg=normalize(swellOf(u).rgb+1e-4)*1.73,c=aC.rgb*mix(vec3(1.),reg,aL.z);
+        vC=c*aC.a*vis*clamp(fl*1.6/sz,.3,1.);if(vis<.01||aC.a<=0.)gl_Position=vec4(0.,0.,2.,1.);}`,
+      `varying vec3 vC;void main(){vec2 d=gl_PointCoord*2.-1.;float r=dot(d,d);if(r>1.)discard;gl_FragColor=vec4((vC*(exp(-r*11.)*1.4+exp(-r*2.4)*.3)+vec3(dot(vC,vec3(.3,.5,.2)))*exp(-r*34.)*.7)*(1.-r),1.);}`);
+    // segments: iA, iB the ends (direction, altitude); iCA, iCB their light; iW width (fractal units), its taper at both ends
+    const rMat=lifeMat(`${LIFE_VS}attribute vec4 iA,iB;attribute vec3 iCA,iCB,iW;varying vec3 vC;varying float vS;
+      void main(){vec3 ua=normalize(iA.xyz),ub=normalize(iB.xyz);vec4 pa=lifeAt(ua,iA.w),pb=lifeAt(ub,iB.w),ma=viewMatrix*vec4(pa.xyz,1.),mb=viewMatrix*vec4(pb.xyz,1.);
+        vec4 ca=projectionMatrix*ma,cb=projectionMatrix*mb;if(ca.w<.05||cb.w<.05||pa.w*pb.w<.5){gl_Position=vec4(0.,0.,2.,1.);vC=vec3(0.);vS=0.;return;}
+        vec2 sa=ca.xy/ca.w*uRes*.5,sb=cb.xy/cb.w*uRes*.5,d=sb-sa;float L=length(d);vec2 nr=L>1e-3?vec2(-d.y,d.x)/L:vec2(0.,1.);
+        float t=position.x;vec4 c=t<.5?ca:cb;vec3 mv=t<.5?ma.xyz:mb.xyz,u=t<.5?ua:ub;float fl=uLifeP.y*uPx,px=clamp(lifePx(iW.x,c.w),fl*.75,uLifeP.z*uPx*.6)*mix(iW.y,iW.z,t);
+        float vis=lifeVis(c,mv);c.xy+=nr*position.y*px/uRes*c.w;gl_Position=c;vS=position.y;
+        vC=mix(iCA,iCB,t)*mix(vec3(1.),normalize(swellOf(u).rgb+1e-4)*1.73,.4)*vis*clamp(fl*1.3/max(px,1e-3),.3,1.);}`,
+      `varying vec3 vC;varying float vS;void main(){gl_FragColor=vec4(vC*exp(-vS*vS*2.8),1.);}`);
+    add(new THREE.Mesh(rGeo,rMat),2);add(new THREE.Points(pGeo,pMat),2);
+    // The surface's light: each texel's place on the map (fixed), the gatherings splatted on the map's grid at each tick
+    const GN=64,llX=new Float32Array(LLN*LLN),llZ=new Float32Array(LLN*LLN),llIn=new Uint8Array(LLN*LLN),gat=new Float32Array(GN*GN),gtmp=new Float32Array(GN*GN);
+    {const u=[0,0,0],m=[0,0,0];for(let y=0;y<LLN;y++)for(let x=0;x<LLN;x++){const q=y*LLN+x;octDecode((x+.5)/LLN*2-1,(y+.5)/LLN*2-1,u);lifeMap(u,m);llX[q]=m[0];llZ[q]=m[2];llIn[q]=Math.hypot(m[0],m[2])<LIFE_FIELD?1:0;}}
+    const blur3=(a,t,n)=>{for(let j=0;j<n;j++){const o=j*n;t[o]=(3*a[o]+a[o+1])/4;for(let i=1;i<n-1;i++)t[o+i]=(a[o+i-1]+2*a[o+i]+a[o+i+1])/4;t[o+n-1]=(a[o+n-2]+3*a[o+n-1])/4;}
+      for(let i=0;i<n;i++){a[i]=(3*t[i]+t[n+i])/4;for(let j=1;j<n-1;j++){const q=j*n+i;a[q]=(t[q-n]+2*t[q]+t[q+n])/4;}const q=(n-1)*n+i;a[q]=(t[q-n]+3*t[q])/4;}};
+    const bil=(a,n,x,y)=>{if(x<0)x=0;else if(x>n-1.001)x=n-1.001;if(y<0)y=0;else if(y>n-1.001)y=n-1.001;const i=x|0,j=y|0,u=x-i,v=y-j,o=j*n+i;return (a[o]*(1-u)+a[o+1]*u)*(1-v)+(a[o+n]*(1-u)+a[o+n+1]*u)*v;};
+    function buildLight(eco){
+      const F0=eco.field.min[0],G0=eco.field.min[1],sx=GN/(eco.field.max[0]-F0),sz=GN/(eco.field.max[1]-G0),NX=eco.field.nx,fs=NX/GN,T=eco.field.data;gat.fill(0);
+      for(let e=0;e<eco.capacity;e++){if(!eco.alive[e])continue;const s=eco.sp[e],m=eco.mode[e];
+        const w=(s===MOTE?(m===LIFE_MODE.orbit?1:eco.carry[e]?.25:0):s===EMBER?(m===LIFE_MODE.settle?.6:.2):0)*Math.min(1,eco.fade[e]);if(w<=0)continue;
+        const gx=(eco.px[e]-F0)*sx-.5,gz=(eco.pz[e]-G0)*sz-.5;if(gx<0||gz<0||gx>=GN-1||gz>=GN-1)continue;const i=gx|0,j=gz|0,u=gx-i,v=gz-j,o=j*GN+i;
+        gat[o]+=w*(1-u)*(1-v);gat[o+1]+=w*u*(1-v);gat[o+GN]+=w*(1-u)*v;gat[o+GN+1]+=w*u*v;}
+      blur3(gat,gtmp,GN);blur3(gat,gtmp,GN);
+      const b8=x=>x<=0?0:x>=1?255:(x*255+.5)|0;
+      for(let q=0;q<LLN*LLN;q++){if(!llIn[q]){llData[q*4]=0;llData[q*4+1]=0;continue;}
+        const gx=(llX[q]-F0)*sx-.5,gz=(llZ[q]-G0)*sz-.5;llData[q*4]=b8(1-Math.exp(-bil(gat,GN,gx,gz)/1.1));
+        llData[q*4+1]=b8(Math.max(0,bil(T,NX,(llX[q]-F0)*sx*fs-.5,(llZ[q]-G0)*sz*fs-.5)-.35)/2.5);}
+      llTex.needsUpdate=true;
+    }
+    // The point `lag` ticks behind the presented position along the entity's recorded path (as in Stellar Forge).
+    let pS=0,pW1=0,pHead=0,pK=10,pT=3;
+    function pathPrep(eco,alpha){pK=eco.K;pT=eco.TRAIL_EVERY;const N=eco.tick;pS=N-1+alpha;pW1=pT*Math.floor((N-1)/pT)+1;pHead=eco.trailHead;}
+    function pathAt(eco,e,P,lag,out){
+      const K=pK,o=e*K,t=pS-lag,k1=pW1<pS-1e-6?1:2,t1=pW1-pT*(k1-1),ring=k=>o+((pHead-k+1+K*4)%K);
+      if(t>=t1){const u=(pS-t)/Math.max(1e-6,pS-t1),q=ring(k1);out[0]=P[0]+(eco.tx[q]-P[0])*u;out[1]=P[1]+(eco.ty[q]-P[1])*u;out[2]=P[2]+(eco.tz[q]-P[2])*u;return out;}
+      const j=(t1-t)/pT,f=Math.floor(j);let k=k1+f,w=j-f;if(k>=K){k=K;w=0;}
+      const a=ring(k),b=ring(Math.min(K,k+1));out[0]=eco.tx[a]+(eco.tx[b]-eco.tx[a])*w;out[1]=eco.ty[a]+(eco.ty[b]-eco.ty[a])*w;out[2]=eco.tz[a]+(eco.tz[b]-eco.tz[a])*w;return out;
+    }
+    const upload=(geo,name,n)=>{const a=geo.attributes[name];a.clearUpdateRanges();a.addUpdateRange(0,n*a.itemSize);a.needsUpdate=true;};
+    let lightEco=null,lightTick=-1;
+    const hide=()=>{pGeo.setDrawRange(0,0);rGeo.instanceCount=0;R.uLifeK.value.set(0,0,0,0);lifeStatsNow={drawn:0,followers:0,trailSegments:0,drawCalls:2};};
+    const D=[0,0,0],P3=[0,0,0],P4=[0,0,0],P5=[0,0,0];
+    updateLife=i=>{
+      const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
+      if(lightEco!==eco||lightTick!==eco.tick){buildLight(eco);lightEco=eco;lightTick=eco.tick;}
+      // the music as the form shows it (musicLook: all 1 without music): the light the life pools in the relief, the
+      // inhabitants' light, size and traces
+      const M=musicLook(eco,v),gk=clamp(i.overrides.intensity??1,.4,1.3)*GLOW;
+      R.uLifeK.value.set(1.1,.35,0,v.fadeIn*M.life*gk*.8);
+      const q=clamp(Math.round(i.quality||0),0,3),alpha=v.alpha,tv=i.tview,seed=eco.seed,S=eco.sites,nS=S.count;
+      pathPrep(eco,alpha);let np=0,nr=0,nf=0,nd=0;
+      const point=(x,y,z,c,b,size,tint)=>{if(np>=NP||b<=.002)return;lifeDir(x,z,D);const o=np*3,o4=np*4;pDir[o]=D[0];pDir[o+1]=D[1];pDir[o+2]=D[2];
+        pL[o4]=LIFE_ALT0+Math.max(0,y)*LIFE_ALT;pL[o4+1]=size*M.size;pL[o4+2]=tint;pL[o4+3]=0;pC[o4]=c[0];pC[o4+1]=c[1];pC[o4+2]=c[2];pC[o4+3]=b;np++;};
+      // a soft thread through `n` samples of the path over `span` ticks: light and width taper to both ends; it keeps
+      // the inhabitant's present altitude (only its way across the surface shows, never a climb as a streak of rain)
+      const prof=u=>{const s=Math.sin(Math.PI*Math.pow(u,.7));return s>0?s:0;};
+      const thread=(e,P,n,span,c,bright,width)=>{let x0=P[0],z0=P[2],w0=0;const y0=P[1];lifeDir(x0,z0,D);let d0=[D[0],D[1],D[2]];
+        for(let k=1;k<=n;k++){const u=k/n;pathAt(eco,e,P,span*u,P5);const p1=prof(u),w1=p1*bright;lifeDir(P5[0],P5[2],D);
+          if(nr<NR){const a=nr*4,c3=nr*3;rA[a]=d0[0];rA[a+1]=d0[1];rA[a+2]=d0[2];rA[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;rB[a]=D[0];rB[a+1]=D[1];rB[a+2]=D[2];rB[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;
+            rCA[c3]=c[0]*w0;rCA[c3+1]=c[1]*w0;rCA[c3+2]=c[2]*w0;rCB[c3]=c[0]*w1;rCB[c3+1]=c[1]*w1;rCB[c3+2]=c[2]*w1;rW[c3]=width;rW[c3+1]=.3+.7*(w0/Math.max(bright,1e-6));rW[c3+2]=.3+.7*p1;nr++;}
+          x0=P5[0];z0=P5[2];w0=w1;d0=[D[0],D[1],D[2]];}};
+      const mix3=(a,b,k,o)=>{o[0]=a[0]+(b[0]-a[0])*k;o[1]=a[1]+(b[1]-a[1])*k;o[2]=a[2]+(b[2]-a[2])*k;return o;},C=[0,0,0];
+      for(let e=0;e<eco.capacity;e++){
+        const vis=lifeVisibility(eco,e,v);if(vis<=.003)continue;
+        const s=eco.sp[e],m=eco.mode[e];lifePosition(eco,e,alpha,P3);
+        // a disturbed place (a decohering region's edge) dims the life around it
+        const dist=Math.min(1,eco.sample(2,P3[0],P3[2])/1.2),gen=eco.gen[e],h=u01(seed,e,gen,31);
+        let br=vis*(1-.55*dist)*M.bright*gk;nd++;
+        if(s===MOTE){
+          const k=eco.tgt[e],site=k>=0&&k<nS,rev=site?S.state(k)?.revive||0:0,carry=eco.carry[e]>0;
+          mix3(cMote,carry?cCarry:cValid,carry?.55:m===LIFE_MODE.seek?Math.min(1,rev*1.4):0,C);
+          const b=m===LIFE_MODE.orbit?1.9:m===LIFE_MODE.seek?1.3:m===LIFE_MODE.rest?.3:m===LIFE_MODE.disperse?.7:.8;
+          point(P3[0],P3[1],P3[2],C,br*b*(.75+.5*h),m===LIFE_MODE.orbit?.0088:.0074,.12);
+          if((m===LIFE_MODE.seek||carry)&&TSEG[q])thread(e,P3,TSEG[q],(18+10*h)*M.trail,C,br*(carry?1.1:.75),.0034);
+          const F=MOTEF[q];for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:.3,lag:.75}))break;point(P4[0],P4[1],P4[2],C,br*b*.45,.006,.12);nf++;}
+        }else if(s===SKIMMER){
+          if(SSEG[q])thread(e,P3,SSEG[q],(7+5*h)*M.trail,cSkim,br*1.2,.0042);
+          point(P3[0],P3[1],P3[2],cSkim,br*.55,.0062,.4);
+          const F=SKIMF[q];for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:.22,lag:.6}))break;point(P4[0],P4[1],P4[2],cSkim,br*.35,.005,.4);nf++;}
+        }else{
+          point(P3[0],P3[1],P3[2],cEmber,br*(m===LIFE_MODE.settle?.5:.32)*(.7+.6*h),.016+.008*h,.5);
+        }
+      }
+      pGeo.setDrawRange(0,np);upload(pGeo,'position',np);upload(pGeo,'aL',np);upload(pGeo,'aC',np);
+      rGeo.instanceCount=nr;for(const nm of ['iA','iB','iCA','iCB','iW'])upload(rGeo,nm,nr);
+      lifeStatsNow={drawn:nd,followers:nf,trailSegments:nr,points:np,drawCalls:2,sites:nS};
+    };
+  }
   // ---- Structure -----------------------------------------------------------------------------------------------------
   let lay={regions:[],sites:[]},layKey='',layFrom=-Infinity,layUntil=Infinity,siteIdx=new Map(),regionIdx=new Map(),threads=[],weights=[];
   const radCache=new Map();
@@ -644,6 +804,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     else burstMat.uniforms.uBK.value=0;
     burstMat.uniforms.uSc.value=gsNow*WS;
     const fxn=updateAgents(i);fx.commit(fxn);
+    if(LIFE)updateLife(i);
     const atmo=clamp(i.overrides.atmosphere??1,0,2);moteMat.uniforms.uDust.value=.07*clamp(num(atm.particles,.8),0,1.6)*atmo*(1+.8*(i.unlocks[0]?.level||0));
     motes.geometry.setDrawRange(0,Math.round(MOTES*(qi>=3?.4:qi>=2?.65:1)));
     bgU.uStress.value=stressNow;bgU.uBloom.value=bloomNow;bgU.uDustK.value=(i.unlocks[0]?.level||0)*atmo;bgU.uCorona.value=i.unlocks[2]?.level||0;bgU.uEcho.value=i.unlocks[3]?.level||0;
@@ -757,5 +918,5 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     composeA.nodes=sitePos.filter(Boolean).slice(0,64).map(p=>({pos:new THREE.Vector3(...p)}));
     const att=i?ctx.director.attentionAt(i.t,1):null;composeA.active.pos.copy((att&&attentionPoint(att)?.pos)||composeA.center);return composeA;}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
-    compose:{camera,scene,anchors:composeAnchors}};
+    compose:{camera,scene,anchors:composeAnchors},...(LIFE?{lifeStats,onLifeParams}:{})};
 }
