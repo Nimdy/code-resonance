@@ -1,9 +1,11 @@
 'use strict';
-// The parameter catalogue's ranges are rendered at both ends: for each built-in family, a declarative pack sets every
-// catalogue parameter to its minimum (then its maximum; first / last enum value, false / true), and the Lumen Recipes
-// recording is rendered with it. Each must render without page errors and without a black or blown-out frame.
+// The parameter catalogue's ranges are rendered at both ends: for each built-in family (the six of engine/catalog.js
+// FAMILIES), a declarative pack sets every catalogue parameter to its minimum (then its maximum; first / last enum
+// value, false / true), and the Lumen Recipes recording is rendered with it. Each must render without page errors and
+// without a black or blown-out frame.
 //
-// node visual/catalogue.qual.js
+// node visual/catalogue.qual.js [--families a,b] [--tag name]
+// --families: some families only; --tag: results in catalogue-qualification-<tag>.json instead of the main file.
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
@@ -12,6 +14,9 @@ const packs=require(path.join(REPO,'engine/packs'));
 const catalog=require(path.join(REPO,'engine/catalog'));
 const {lumen}=require('./datasets');
 const OUT=path.join(__dirname,'..','results','visual');
+const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
+const FAMILIES=arg('families',null)?arg('families').split(','):Object.keys(catalog.FAMILIES),TAG=arg('tag',null);
+for(const f of FAMILIES)if(!Object.hasOwn(catalog.FAMILIES,f))throw new Error(`unknown family ${f}`);
 const {checks,check}=checker();const measurements={};
 function extreme(spec,end){
   switch(spec.type){case 'number':case 'integer':return end?spec.max:spec.min;case 'enum':return end?spec.values.at(-1):spec.values[0];
@@ -21,7 +26,7 @@ function extreme(spec,end){
   const browser=await launch();
   try{
     measurements.renderer=await rendererOf(browser);
-    for(const [family,cat] of Object.entries(catalog.FAMILIES))for(const end of [0,1]){
+    for(const family of FAMILIES)for(const end of [0,1]){const cat=catalog.FAMILIES[family];
       const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'cr-catalogue-'));lumen(tmp);const dir=path.join(tmp,'lumen');
       const id=`qual.${family}-${end?'max':'min'}`,src=path.join(tmp,'pack');fs.mkdirSync(src);
       const overrides=Object.fromEntries(Object.entries(cat.parameters).map(([k,s])=>[k,extreme(s,end)]));
@@ -41,6 +46,6 @@ function extreme(spec,end){
       fs.rmSync(tmp,{recursive:true,force:true});
     }
   }finally{await browser.close();}
-  fs.writeFileSync(path.join(OUT,'catalogue-qualification.json'),JSON.stringify({at:new Date().toISOString(),renderer:measurements.renderer,checks,measurements},null,2));
+  fs.writeFileSync(path.join(OUT,`catalogue-qualification${TAG?`-${TAG}`:''}.json`),JSON.stringify({at:new Date().toISOString(),renderer:measurements.renderer,families:FAMILIES,checks,measurements},null,2));
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);process.exitCode=checks.every(c=>c.pass)?0:1;
 })().catch(e=>{console.error(e);process.exitCode=1;});
