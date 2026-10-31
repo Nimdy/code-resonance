@@ -525,7 +525,8 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     const upload=(geo,name,n)=>{const a=geo.attributes[name];a.clearUpdateRanges();a.addUpdateRange(0,n*a.itemSize);a.needsUpdate=true;};
     let lightEco=null,lightTick=-1;
     const hide=()=>{pGeo.setDrawRange(0,0);rGeo.instanceCount=0;R.uLifeK.value.set(0,0,0,0);lifeStatsNow={drawn:0,followers:0,trailSegments:0,points:0,drawCalls:2};};
-    const D=[0,0,0],P3=[0,0,0],P4=[0,0,0],P5=[0,0,0];
+    const D=[0,0,0],D0=[0,0,0],P3=[0,0,0],P4=[0,0,0],P5=[0,0,0],C=[0,0,0];
+    const mix3=(a,b,k,o)=>{o[0]=a[0]+(b[0]-a[0])*k;o[1]=a[1]+(b[1]-a[1])*k;o[2]=a[2]+(b[2]-a[2])*k;return o;};
     updateLife=i=>{
       const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
       if(lightEco!==eco||lightTick!==eco.tick){buildLight(eco);lightEco=eco;lightTick=eco.tick;}
@@ -540,12 +541,11 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
       // a soft thread through `n` samples of the path over `span` ticks: light and width taper to both ends; it keeps
       // the inhabitant's present altitude (only its way across the surface shows, never a climb as a streak of rain)
       const prof=u=>{const s=Math.sin(Math.PI*Math.pow(u,.7));return s>0?s:0;};
-      const thread=(e,P,n,span,c,bright,width)=>{let x0=P[0],z0=P[2],w0=0;const y0=P[1];lifeDir(x0,z0,D);let d0=[D[0],D[1],D[2]];
+      const thread=(e,P,n,span,c,bright,width)=>{let w0=0;const y0=P[1];lifeDir(P[0],P[2],D0);
         for(let k=1;k<=n;k++){const u=k/n;pathAt(eco,e,P,span*u,P5);const p1=prof(u),w1=p1*bright;lifeDir(P5[0],P5[2],D);
-          if(nr<NR){const a=nr*4,c3=nr*3;rA[a]=d0[0];rA[a+1]=d0[1];rA[a+2]=d0[2];rA[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;rB[a]=D[0];rB[a+1]=D[1];rB[a+2]=D[2];rB[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;
+          if(nr<NR){const a=nr*4,c3=nr*3;rA[a]=D0[0];rA[a+1]=D0[1];rA[a+2]=D0[2];rA[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;rB[a]=D[0];rB[a+1]=D[1];rB[a+2]=D[2];rB[a+3]=LIFE_ALT0+Math.max(0,y0)*LIFE_ALT;
             rCA[c3]=c[0]*w0;rCA[c3+1]=c[1]*w0;rCA[c3+2]=c[2]*w0;rCB[c3]=c[0]*w1;rCB[c3+1]=c[1]*w1;rCB[c3+2]=c[2]*w1;rW[c3]=width;rW[c3+1]=.3+.7*(w0/Math.max(bright,1e-6));rW[c3+2]=.3+.7*p1;nr++;}
-          x0=P5[0];z0=P5[2];w0=w1;d0=[D[0],D[1],D[2]];}};
-      const mix3=(a,b,k,o)=>{o[0]=a[0]+(b[0]-a[0])*k;o[1]=a[1]+(b[1]-a[1])*k;o[2]=a[2]+(b[2]-a[2])*k;return o;},C=[0,0,0];
+          w0=w1;D0[0]=D[0];D0[1]=D[1];D0[2]=D[2];}};
       for(let e=0;e<eco.capacity;e++){
         const vis=lifeVisibility(eco,e,v);if(vis<=.003)continue;
         const s=eco.sp[e],m=eco.mode[e];lifePosition(eco,e,alpha,P3);
