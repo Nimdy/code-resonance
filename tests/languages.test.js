@@ -50,8 +50,10 @@ def two(a,
 `;
 test('The registry picks an adapter per language; unsupported files yield no structure',()=>{
   assert.equal(adapterFor('src/a.tsx').id,'typescript');assert.equal(adapterFor('svc/api.py').id,'python');
-  assert.equal(adapterFor('main.go'),null);
-  assert.deepEqual(analyze('main.go','package main\nfunc main(){}\n').symbols,[]);
+  assert.deepEqual(['main.go','src/lib.rs','A.java','A.kt','b.kts','A.cs','A.swift','a.c','a.h','a.cpp','a.hpp','a.php','a.rb','go.mod','Cargo.toml','composer.json','package.json'].map(f=>adapterFor(f).id),
+    ['go','rust','java','kotlin','kotlin','csharp','swift','cfamily','cfamily','cfamily','cfamily','php','ruby','manifest','manifest','manifest','manifest']);
+  assert.equal(adapterFor('init.lua'),null);
+  assert.deepEqual(analyze('init.lua','function f() end\n').symbols,[]);
   assert.deepEqual([languageOf('a.tsx'),languageOf('a.py'),languageOf('a.rs'),languageOf('a.css'),languageOf('Makefile')],['tsx','py','rs','css','other']);
 });
 test('Python: classes, methods, nested functions, decorated routes, fields and imports',()=>{

@@ -51,7 +51,9 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   terminal commands reduced to a local *category* (test, build, lint, typecheck, install, git, run; never the command
   text), and Git commits.
 - **Interprets meaning, not volume.** A TypeScript/JavaScript AST diff recognises components, routes, classes,
-  functions, methods, variables and imports (Python and manifests partly; other languages at file level). Inserting
+  functions, methods, variables and imports; dependency-free scanners do the same for Python, Go, Rust, Java, Kotlin,
+  C#, Swift, C/C++, PHP and Ruby (types, members, framework routes with a literal path, and imports resolved through
+  go.mod, Cargo.toml, composer.json or the package's folders); other languages count at file level. Inserting
   lines or re-running green tests earns nothing; removing code counts once a test run validates it; recovering a
   failing suite is a milestone.
 - **Represents AI agents honestly.** Agents are a CAST in the project's world (name, seat, voice): Claude, Cursor,

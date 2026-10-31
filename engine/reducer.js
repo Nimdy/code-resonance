@@ -1,7 +1,7 @@
 'use strict';
 const {sha} = require('../receiver/protocol');
 const {analyze,diff} = require('./semantic');
-const {languageOf} = require('./languages');
+const {languageOf,packageTargets} = require('./languages');
 const {makeIntent,activityOf,nextAgentState} = require('./intents');
 const {groupOf,dirOf,newLayout,placeModule,removeModule} = require('./layout');
 const {presence,catalogued} = require('./providers');
@@ -9,9 +9,17 @@ const {presence,catalogued} = require('./providers');
 // v7: canonical performance intents, agent lifecycle, language adapters (Python), module language categories.
 // v8: CAST seats from the provider catalog; writer rings; agent.collision when two providers share a file or district.
 // v9: agent.collision only between catalogued providers, and its cue adds no progress (weight 0, like every agent cue).
-const INTERPRETATION_VERSION=9;
+// v10: language adapters for Go, Rust, Java, Kotlin, C#, Swift, C/C++, PHP and Ruby; deeper Python (Protocol/ABC, typed
+//      aliases, Django and Flask routes); go.mod/Cargo.toml/composer.json packages; each language's test-file convention.
+const INTERPRETATION_VERSION=10;
 const RENAME_WINDOW_MS=60000;
-const TEST_FILE=/(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+// Test files: test folders anywhere and *.test / *.spec scripts, plus (v10) each language's own convention. Every form
+// added in v10 is limited to that language's extensions, so a JS/TS file is a test exactly when it was before.
+const TEST_FILE=new RegExp([String.raw`(?:^|\/)(?:test|tests|__tests__|spec|e2e)\/`,String.raw`\.(?:test|spec)\.[cm]?[jt]sx?$`,
+  String.raw`_test\.go$`,String.raw`(?:^|\/)(?:test_[^/]*|[^/]+_test|conftest)\.py$`,String.raw`(?:^|\/)benches\/(?:[^/]+\/)*[^/]+\.rs$`,
+  String.raw`(?:^|\/)src\/\w+Test\/(?:[^/]+\/)*[^/]+\.(?:java|kts?)$`,String.raw`[^/]Tests?\.cs$`,String.raw`(?:^|\/)[^/]+\.Tests?\/(?:[^/]+\/)*[^/]+\.cs$`,
+  String.raw`_(?:spec|test)\.rb$`,String.raw`[^/]Test\.php$`,String.raw`(?:^|\/)Tests\/(?:[^/]+\/)*[^/]+\.swift$`,String.raw`[^/]Tests?\.swift$`,
+  String.raw`_(?:unit)?test\.(?:c|cc|cpp|cxx)$`].join('|'));
 const SNAPSHOT_CREDIT_CAP=6;
 const CHAPTER_UNIT=12;
 const AGENT_ATTRIBUTION_MS=60000;
@@ -433,36 +441,67 @@ function closeBatch(state,cues,clock=Math.max(0,...cues.map(c=>c.ts))) {
 // Relative imports resolve to a known file (with or without extension, or a folder's index file).
 // The index is cached outside the persisted state and rebuilt when the set of files changes.
 const moduleIndexes=new WeakMap();
-function resolveModule(state,target){
+function moduleIndex(state){
   const files=Object.keys(state.docs);let cached=moduleIndexes.get(state);
   if(!cached||cached.docs!==state.docs||cached.size!==files.length){
     const index=new Map();for(const file of files){index.set(file.replace(/\.[^.]+$/,''),file);const m=file.match(/^(.*)\/(?:index\.[^.]+|__init__\.pyi?)$/);if(m&&!index.has(m[1]))index.set(m[1],file);}
-    cached={index,docs:state.docs,size:files.length};moduleIndexes.set(state,cached);
+    cached={index,dirs:null,docs:state.docs,size:files.length};moduleIndexes.set(state,cached);
   }
-  return cached.index.get(target)||null;
+  return cached;
 }
-// Workspace packages declared by package.json files in the project (monorepos), cached like the module index.
+function resolveModule(state,target){return moduleIndex(state).index.get(target)||null;}
+// Imports that name their extensions (v10 adapters) resolve exactly: the path plus one of them.
+function resolveFile(state,target,ext){for(const e of ext){const f=target+e;if(Object.prototype.hasOwnProperty.call(state.docs,f))return f;}return null;}
+// A package directory (a Go package, a Java/Kotlin package, a C# namespace, a Swift module) stands for one of its files
+// with those extensions: the one named after the directory (store/store.go), else the first in path order, preferring
+// files that are not tests. The edge then lands on a real module of that package.
+function resolveDir(state,dir,ext){
+  const c=moduleIndex(state);
+  if(!c.dirs){c.dirs=new Map();for(const f of Object.keys(state.docs)){const k=f.lastIndexOf('/'),d=k<0?'':f.slice(0,k);let l=c.dirs.get(d);if(!l)c.dirs.set(d,l=[]);l.push(f);}for(const l of c.dirs.values())l.sort();}
+  const d=dir==='.'?'':dir,all=(c.dirs.get(d)||[]).filter(f=>!ext||ext.some(e=>f.endsWith(e)));
+  const files=all.some(f=>!TEST_FILE.test(f))?all.filter(f=>!TEST_FILE.test(f)):all,base=d.slice(d.lastIndexOf('/')+1);
+  return files.find(f=>f.slice(f.lastIndexOf('/')+1).replace(/\.[^.]+$/,'')===base)||files[0]||null;
+}
+// Workspace packages declared by package.json files in the project (monorepos), cached like the module index; since v10
+// also go.mod modules, Cargo.toml crates and composer.json PSR-4 prefixes (each with its `kind`).
 const packageIndexes=new WeakMap();
 function workspacePackages(state){
   const files=Object.keys(state.docs);let cached=packageIndexes.get(state);
   if(!cached||cached.docs!==state.docs||cached.size!==files.length||cached.version!==state.stats.raw){
-    const list=[];for(const f of files){const m=state.docs[f].analysis.manifest;if(m)list.push(m);}
+    const list=[];for(const f of files){const m=state.docs[f].analysis.manifest;if(Array.isArray(m))list.push(...m);else if(m)list.push(m);}
     list.sort((a,b)=>b.name.length-a.name.length);cached={list,docs:state.docs,size:files.length,version:state.stats.raw};packageIndexes.set(state,cached);
   }
   return cached.list;
 }
+const listOf=x=>x==null?[]:Array.isArray(x)?x:[x];
 // An import's project file: its target, else an adapter's fallback, else a candidate path that exists in the project,
-// else (for a bare specifier) the workspace package that declares that name.
+// else a package directory, else (for a bare specifier) the workspace package that declares that name.
 function resolveImport(state,imp){
-  for(const t of [imp.target,imp.alt,imp.candidate])if(t){const file=resolveModule(state,t);if(file)return file;}
+  const ext=Array.isArray(imp.ext)?imp.ext:null;
+  for(const t of [imp.target,...listOf(imp.alt),...listOf(imp.candidate)])if(t){const file=ext?resolveFile(state,t,ext):resolveModule(state,t);if(file)return file;}
+  for(const d of listOf(imp.dir))if(typeof d==='string'){const file=resolveDir(state,d,ext);if(file)return file;}
+  if(imp.manifest)return resolvePackage(state,imp);
   if(!imp.target&&imp.spec&&!imp.spec.startsWith('.')){
     for(const p of workspacePackages(state)){
-      if(imp.spec!==p.name&&!imp.spec.startsWith(p.name+'/'))continue;
+      if(p.kind||(imp.spec!==p.name&&!imp.spec.startsWith(p.name+'/')))continue;
       const sub=imp.spec.slice(p.name.length+1),base=p.dir==='.'?'':p.dir+'/';
       const tries=sub?[base+sub,base+'src/'+sub]:[base+'src/index',base+'index',base+'src/main',base+'main'];
       for(const t of tries){const file=resolveModule(state,t);if(file)return file;}
       return null;
     }
+  }
+  return null;
+}
+// A package declared by a manifest of the import's kind: the longest declared name its path starts with, mapped by
+// that kind's layout (engine/languages packageTargets).
+function resolvePackage(state,imp){
+  const name=typeof imp.pkg==='string'?imp.pkg:imp.spec;if(typeof name!=='string')return null;
+  for(const p of workspacePackages(state)){
+    if(p.kind!==imp.manifest||(name!==p.name&&!name.startsWith(p.name+'/')))continue;
+    const t=packageTargets(p,name.slice(p.name.length+1));
+    for(const x of t.paths){const file=resolveFile(state,x,t.ext);if(file)return file;}
+    for(const d of t.dirs){const file=resolveDir(state,d,t.ext);if(file)return file;}
+    return null;
   }
   return null;
 }
