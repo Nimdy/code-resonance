@@ -725,7 +725,8 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     const cellMat=glow(`${COMMON}attribute vec4 cP,cA,cC,cS;varying vec2 vQ;varying vec3 vC,vCal;varying float vBl,vPx,vE,vSd,vSh,vTh;
       void main(){
         vec4 vc=viewMatrix*vec4(cP.xyz,1.);float z=max(-vc.z,.1),k=ppu(z),R=cP.w,cc=coc(z),cw=cc/k;
-        float H=min(R+cw,260.*uPx/k);vc.xy+=position.xy*H;vQ=position.xy*H/R;vPx=R*k;vBl=cc/(R*k+cc);
+        // (a cell nearer than its cap is drawn at the cap, whole, never clipped; it fades out before the lens anyway)
+        float H=R+cw,f=min(1.,170.*uPx/k/H);vc.xy+=position.xy*H*f;vQ=position.xy*H/R;vPx=R*k*f;vBl=cc/(R*k+cc);
         vec3 dv=mat3(viewMatrix)*cA.xyz;vTh=atan(dv.y,dv.x);
         vC=cC.rgb;vCal=cS.yzw;vSd=cS.x;vSh=cA.w;vE=cC.w*nearFade(z)*pow(R*k/(R*k+cc),1.5);
         gl_Position=projectionMatrix*vc;}`,
@@ -737,7 +738,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
         return exp(-e*e/(w*w))*smoothstep(1.,.55,t)*smoothstep(.05,.16,r)*(1.-.45*t);}
       // a process and the branch it forks into part way out (the fork only near its process: most pixels skip it)
       float branch(vec2 q,float r,float th,float a,float L,float w0,float bend,float side,float at){
-        float d=th-a;d=mod(d+PI,2.*PI)-PI;if(abs(d)>1.1||r>L*1.05)return 0.;float p=proc(r,th,a,L,w0,bend);
+        float d=th-a-bend*.5;d=mod(d+PI,2.*PI)-PI;if(abs(d)>.9||r>L*1.05)return 0.;float p=proc(r,th,a,L,w0,bend);
         float fa=a+bend*at*at,fx=cos(fa)*L*at,fy=sin(fa)*L*at;vec2 o=q-vec2(fx,fy);return p+.7*proc(length(o),atan(o.y,o.x),fa+.55*side,L*(1.-at)*.85,w0*.6,.35*side);}
       void main(){vec2 q=vQ;float r=length(q);if(r>1.12)discard;float th=atan(q.y,q.x),b=vBl,s=vSd*40.,det=smoothstep(3.,18.,vPx)*(1.-b);vec3 c;
         if(vSh<.5){// an astrocyte: a small glassy body, nine fine branching processes, beaded and dissolving into a fine
@@ -745,8 +746,8 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
           float body=exp(-r*r*120.)*.5+exp(-pow((r-.08)*38.,2.))*.3,halo=exp(-r*r*5.)*.08,pr=0.,foot=0.;
           if(det>.01){for(int k=0;k<9;k++){float fk=float(k),h=fract(sin(fk*12.99+s)*437.58),a=s+fk*.6981+.4*(h-.5)+.16*sin(uV*.19+fk*1.9+s),bd=.28*sin(s*3.1+fk*2.3);
               float tw=max(0.,cos(a-vTh)),L=.32+.38*h+.3*tw;
-              float p=branch(q,r,th,a,L,.038,bd,h>.5?1.:-1.,.3+.2*h)+.6*proc(r,th,a+.3*(h-.5),L*.55,.022,-bd);
-              pr+=p*(.55+.45*h)*(.55+.45*vn(vec2(r*16.,fk*3.7+s)));
+              float p=branch(q,r,th,a,L,.038,bd,h>.5?1.:-1.,.3+.2*h);if(p>.002)p+=.6*proc(r,th,a+.3*(h-.5),L*.55,.022,-bd);
+              if(p>.002)pr+=p*(.55+.45*h)*(.55+.45*vn(vec2(r*16.,fk*3.7+s)));
               float ta=a+bd;vec2 tp=vec2(cos(ta),sin(ta))*L*.92;foot+=tw*tw*tw*exp(-dot(q-tp,q-tp)*1400.);}
             pr+=web(q*6.5+s)*smoothstep(.8,.15,r)*.22*smoothstep(.0,.25,pr+.05);}
           float far=exp(-r*r*9.)*.35+exp(-r*r*60.)*.35;
