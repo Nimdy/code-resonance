@@ -83,6 +83,14 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-dims{color:var(--text-1)}
 .ws-output .out-rate{color:var(--text-3)}
 .ws-output .out-profile-note{font-size:13px;color:var(--text-3);line-height:1.42}
+/* Where it is written: a file on disk, or memory until it stops (the same cards as the profiles) */
+.ws-output .out-dest-field{display:grid;gap:8px;min-width:0;padding-top:4px}
+.ws-output .out-dest-meta{font-size:12.5px;color:var(--text-3)}
+.ws-output .out-dest[aria-checked="true"] .out-dest-meta{color:var(--text-2)}
+.ws-output .out-dest .out-profile-head strong{min-width:0}
+.ws-output .out-dest .out-tag{flex:none;white-space:nowrap}
+.ws-output .out-fact-v code.out-file{font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46ch}
+.ws-output .out-kept .callout-actions{flex-wrap:wrap}
 /* The OBS presentation: not a recording profile, the way to the OBS view below */
 .ws-output .out-obs-link{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-2);
   border:1px dashed var(--line-3);background:transparent;color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}

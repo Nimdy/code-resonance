@@ -35,9 +35,11 @@ has not been run on Windows, on macOS or from a Remote-WSL, SSH or container win
 - **Platforms:** only the environments above. Visual pack isolation was probed in Chromium only.
 - **Long sessions:** no multi-hour soak has completed with the final code, and no multi-hour real development session
   has been recorded (the longest runs: 110 minutes locally and one hour in CI, both before the flagship worlds).
-- **Recording** keeps the file in the browser's memory until you stop: about 60 MB a minute at 720p and 90 MB at
-  1080p. Use OBS for anything longer than about half an hour. At 1080p the built-in worlds need a capable GPU; on
-  software rendering they record at a few frames a second. Details: [RECORDING.md](RECORDING.md).
+- **Recording** kept in memory (the default) holds the file in the browser's memory until you stop: about 60 MB a
+  minute at 720p and 90 MB at 1080p, so for anything longer than about half an hour choose *Record to a file on disk*
+  (Chrome or Edge: written to disk as it records, bounded by disk, kept through a crash; qualified headless only, and
+  not with the real Save dialog on Windows) or use OBS. At 1080p the built-in worlds need a capable GPU; on software
+  rendering they record at a few frames a second. Details: [RECORDING.md](RECORDING.md).
 - **Listening and viewing:** the owner has reviewed the application, its worlds, the digital-life films and the
   creative direction. No one else has, and whether the music stays pleasant through hours of work is not established.
 - **Interpretation:** TypeScript and JavaScript are analysed with the TypeScript compiler; Python, Go, Rust, Java,
@@ -111,8 +113,10 @@ Center, which also shows a paired browser this receiver's data directory.
 
 ## Recordings, exports and films
 
-- **Record**, the **Audio** (WAV) and **Performance data** (JSON) exports and an Artist Studio **Export** (zip) are
-  saved by the browser to its downloads folder. Code Resonance keeps no copy and no library.
+- **Record** (kept in memory), the **Audio** (WAV) and **Performance data** (JSON) exports and an Artist Studio
+  **Export** (zip) are saved by the browser to its downloads folder; **Record to a file on disk** writes the file you
+  chose (its working file stays in the browser's own storage only until it is copied there, or, after a crash, until
+  you save or discard it in Record & Broadcast). Code Resonance keeps no copy and no library.
 - **Home Last night** is a sped-up replay of a scored highlight window (default 4×; 16× when the window is long),
   chosen from the last 24 hours of the project's recording (the whole history only if nothing there scores). It is
   not a film and does not use Playwright.
@@ -125,8 +129,9 @@ Center, which also shows a paired browser this receiver's data directory.
   `receiver-auth.json`) is removed when the film ends, fails or is stopped with Ctrl-C or SIGTERM. Direct
   `qualification/visual/film.js` still defaults to `qualification/results/visual/`. First time:
   `cd qualification && npm ci`.
-- **Record** is live (what the stage shows now, held in the browser's memory). If you run an overnight CAST session,
-  capture lives in the journal; use OBS if you want a live picture of the stage for hours. Last night and `npm run film`
+- **Record** is live (what the stage shows now, in the browser's memory or written to disk as it records). If you run
+  an overnight CAST session, capture lives in the journal; use OBS if you want a live picture of the stage for hours
+  (a recording to disk is bounded by disk, but live recordings were measured for minutes only). Last night and `npm run film`
   read the recorded performance, not a WebM from Record.
 
 ## Backup

@@ -19,14 +19,20 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 | Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
 | Visual Packs | `#/packs` | My creations; installed packs grouped as imported creations and looks, shader packs and full coded worlds; install (zip or folder), review, approve, revoke, remove, inspect; creator documentation |
 | Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code / Cursor / Codex hooks, More agents (one tab each for Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose: observed activity, what the hooks send, add or remove after review), CAST catalog, other agents |
-| Record & Broadcast | `#/output` | Recording profiles (720p, 1080p, **Vertical** 1080 × 1920, stage size) and state, the OBS browser source, exports, the `npm run film` command and the **vertical clip** command next to it (not a live record) |
+| Record & Broadcast | `#/output` | Recording profiles (720p, 1080p, **Vertical** 1080 × 1920, stage size), where a recording is written (**a file on disk** or memory) and state, interrupted recordings to save or discard, the OBS browser source, exports, the `npm run film` command and the **vertical clip** command next to it (not a live record) |
 | Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics, documentation (including the 0.7.0 campaign runbook) |
 | Performance Stage | `#/stage` | The immersive stage: live/replay, labels, world, sound, record, full screen |
 
 **Record & Broadcast** in detail: the monitor shows the stage exactly as it is recorded, with the recorder under it.
 The recording profile is saved for every window; **Vertical** records the stage upright at 1080 × 1920 for Reels,
 Shorts and TikTok (every world frames portraits, its words inside the platforms' safe area; the slot shows it with
-bars at the sides; the browser saves WebM). Under **Export and replay**, the **Deterministic film** card gives two
+bars at the sides; the browser saves WebM). **Where it is written** is this browser's choice: *Record to a file on
+disk* (recommended for long sessions: Record opens the browser's Save dialog, the recording is written to disk as it
+is recorded and copied into your file, seekable, when you stop; the recorder shows the bytes on disk and the file) or
+*Keep in memory, download when stopped* (the default). A browser without the File System Access API, or a page on a
+network address, shows why the first is unavailable. A recording to disk that a crash or a closed tab interrupted is
+offered under the recorder (**Save to a file…** or **Discard**) in any window opened afterwards. See
+[RECORDING.md](RECORDING.md#recording-to-a-file-on-disk). Under **Export and replay**, the **Deterministic film** card gives two
 commands once the project has a public title: `npm run film -- --project <id>` (the whole highlight, 16:9 WebM) and
 `npm run film -- --project <id> --vertical` (a 30-second 9:16 MP4 around the night's key moment, with an end card
 carrying the public title); without a public title it asks for one, for both. The page cannot render films itself
@@ -80,7 +86,8 @@ engine, as every window must, and shares the receiver's state.
 | Packs and approvals | receiver `<data>/packs/<id>/`, `<data>/packs/trust.json` | installed files, digest-bound approvals |
 | Temporary preview | the window's memory (and `POST /api/recipe/preview`, which never writes) | a family or parameter being tried; the Artist Studio's working copy |
 | Session runtime | the window's engine | sound on, live/replay, playhead, recording |
-| This device | the browser's `localStorage` | rendering quality; the pairing key and a few conveniences (last view, OBS URL options, the Artist Studio's last composition and export author), listed in [SECURITY.md](../SECURITY.md) |
+| This device | the browser's `localStorage` | rendering quality, where recordings are written (disk or memory); the pairing key and a few conveniences (last view, OBS URL options, the Artist Studio's last composition and export author), listed in [SECURITY.md](../SECURITY.md) |
+| A recording to disk | the browser's private file storage for the page (`code-resonance-recordings/`) | the working file while recording, until it is copied into the chosen file; an interrupted one until it is saved or discarded |
 | Extension-owned | VS Code settings (`resonance.*`) | capture options: read-only here, as *reported* by the extension |
 
 Every receiver document has a schema and a `revision`, is validated on write and on read, and is written atomically.
@@ -136,7 +143,9 @@ See [SECURITY.md](../SECURITY.md) and [packs/security.md](packs/security.md).
   preview blocks recording, as a Visual Studio preview does: a recording shows what is saved.
 - An atmospheric layer is labelled a screen-space field; a layer's depth (behind, integrated, in front) is the order it
   is really drawn in, and the layer stack is listed in that order.
-- Recordings are saved by the browser to its downloads folder; Code Resonance keeps no video library.
+- Recordings kept in memory are saved by the browser to its downloads folder; recordings to disk go to the file you
+  chose. Code Resonance keeps no video library (a working file of a recording to disk lives in the browser only until
+  it is saved or discarded).
 - Agent chips on the Stage use CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi, Gemini, Copilot, Droid,
   Goose and the others in [AGENTS.md](AGENTS.md)), never vendor marks. Providers that share one of the eight seats
   share a colour and voice; their chips name them. A meeting of two providers is `agent.collision` only when the journal
