@@ -115,7 +115,8 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
     // ---- Derived habitat data (a pure function of the ecosystem's sites and data; recomputed when they change) ------
     let idsRef=null,dataRef=null,nR=0,nP=0,kSpeed=1,left=-12,right=12,prof=null,AW0=0;
     const RK=new Int16Array(64),PK=new Int16Array(64),PR=new Int16Array(64),PO=new Int16Array(64),CAPP=new Float32Array(64);
-    const RAP=new Float64Array(64),AP=new Float64Array(64),STR=new Float32Array(64),W=new Float64Array(64),streamTo=new Int16Array(64),streamT=new Int32Array(64);
+    const RAP=new Float64Array(64),AP=new Float64Array(64),APk=new Float64Array(64),NOV=new Float32Array(64),STR=new Float32Array(64),W=new Float64Array(64),streamTo=new Int16Array(64),streamT=new Int32Array(64);
+    let LURE=0;   // how strongly a new or freshly nourished range draws grazers off their pastures (0: none)
     // The land's rate and the fields' carriage per field row (semi-Lagrangian along z: row j takes from row j - 1).
     let rows=null,rowsK=NaN,NXf=0,NZf=0,chf=1,FZ0f=0;
     function ensure(api){
@@ -156,14 +157,14 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
       ensure(api);carry(api);
       const S=api.sites,c=api.cond,P=api.params;
       if((E2=api.ecology===2)){GA=api.felt(GRAZER,'gather');EXP=api.felt(GRAZER,'explore');ACT=api.felt(GRAZER,'activity');}else{GA=1;EXP=1;ACT=c.activity;}
-      let feed=0;
-      for(let n=0;n<nR;n++){const k=RK[n],st=S.state(k);if(!st){RAP[n]=0;STR[k]=0;continue;}STR[k]=st.stress;
+      let feed=0;LURE=0;
+      for(let n=0;n<nR;n++){const k=RK[n],st=S.state(k);if(!st){RAP[n]=0;STR[k]=0;continue;}STR[k]=st.stress;LURE=Math.max(LURE,(st.novelty+.6*st.nourish)*(1-st.stress));
         let a=S.w[k]*(1+2*st.novelty+1.2*Math.min(2,st.lasting)+.9*st.nourish)*(.6+.5*Math.min(1.5,api.sample(CH.energy,S.x[k],S.z[k])));
         a*=1/(1+(S.visits[k]/18)**2)*(1-.95*st.stress)*c.attract*P.attraction*(E2?api.shiftOf(k):1);RAP[n]=Math.max(0,a);}
-      for(let p=0;p<nP;p++){const k=PK[p],kr=PR[p],st=kr>=0?S.state(kr):null,str=st?st.stress:0;STR[k]=str;
+      for(let p=0;p<nP;p++){const k=PK[p],kr=PR[p],st=kr>=0?S.state(kr):null,str=st?st.stress:0;STR[k]=str;NOV[p]=st?st.novelty:0;
         const cap=CAPP[p]*(E2?GA:1);if(str<.3)feed+=cap;
-        let a=S.w[k]*(st?1+1.4*st.novelty+.8*Math.min(2,st.lasting)+.8*st.nourish:1)*(.6+.6*Math.min(1.5,api.sample(CH.energy,S.x[k],S.z[k])));
-        a*=1/(1+(S.visits[k]/cap)**3)*(1-.95*str)*c.attract*P.attraction*(E2?api.shiftOf(k):1);AP[p]=Math.max(0,a);}
+        let a=S.w[k]*(st?1+2.6*st.novelty+.9*Math.min(2,st.lasting)+1.4*st.nourish:1)*(.6+.6*Math.min(1.5,api.sample(CH.energy,S.x[k],S.z[k])));
+        a*=1/(1+(S.visits[k]/cap)**3)*(1-.95*str)*c.attract*P.attraction*(E2?api.shiftOf(k):1);AP[p]=APk[k]=Math.max(0,a);}
       // How many grazers are awake: as many as the pastures carry (grazer slots come first: the slot is its rank). The
       // state says who sleeps (ia[i * 2 + 1]: 1 asleep), so the world reads it from the ecosystem alone.
       AW=Math.round(1.4*feed);const ia=api.ia;for(let i=0;i<api.capacity;i++){if(api.sp[i]!==GRAZER)break;ia[i*2+1]=i>=AW?1:0;}
@@ -174,10 +175,10 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
         if(src<0||src>=64||t>STREAM)continue;if(t<streamT[src]){streamT[src]=t;streamTo[src]=api.tgt[i];}}
     }
     // A pasture to graze (a weighted draw from the entity's own random stream); nearer is better, a little more so
-    // across the land than along it (the herds walk along the valleys).
+    // across the land than along it (the herds walk along the valleys), and a new range is worth a longer walk.
     function choosePasture(api,i,avoid){
       const S=api.sites,x=api.px[i],z=api.pz[i],reach=E2?28*Math.sqrt(EXP):28;let total=0;
-      for(let p=0;p<nP;p++){const k=PK[p];let a=AP[p]/(1+hyp(S.x[k]-x,(S.z[k]-z)*.5)/reach);if(k===avoid||k===api.tgt[i])a*=.08;W[p]=a;total+=a;}
+      for(let p=0;p<nP;p++){const k=PK[p];let a=AP[p]/(1+hyp(S.x[k]-x,(S.z[k]-z)*.5)/(reach*(1+2*NOV[p])));if(k===avoid||k===api.tgt[i])a*=.08;W[p]=a;total+=a;}
       if(total<=0)return -1;let u=api.random(i,7)*total;for(let p=0;p<nP;p++){u-=W[p];if(u<=0)return PK[p];}return PK[nP-1];
     }
     function chooseRange(api,i){
@@ -240,9 +241,13 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
           const q=api.tgt[i];
           if(m===MODE.seek){if(q<0)return MODE.explore;if(STR[q]>.35)return MODE.explore;return -1;}
           if(m===MODE.orbit){if(q<0)return MODE.explore;if(STR[q]>.25)return MODE.disperse;
-            // fed: on to another pasture (or roaming), carrying this one's influence for a while
-            if(api.en[i]>=1){api.carry[i]=Math.round(10*HZ);api.en[i]=.7;api.ia[i*2]=q;
-              const s=streamTo[q];let n=s>=0&&s!==q&&STR[s]<.3&&api.random(i,11)<FOLLOW?s:choosePasture(api,i,q);
+            // fed: on to another pasture (or roaming), carrying this one's influence for a while; the herd leaving after
+            // follows whoever left just before, unless the pasture it would choose itself is far better. A new or freshly
+            // nourished range draws grazers away before they are fed (they come to see).
+            const lure=api.en[i]<1&&LURE>0&&api.modeT[i]>3*HZ&&api.random(i,13)<.006*LURE;
+            if(api.en[i]>=1||lure){api.carry[i]=Math.round((lure?5:10)*HZ);api.en[i]=Math.min(api.en[i],.7);api.ia[i*2]=q;
+              const own=choosePasture(api,i,q),s=streamTo[q];let n=own;
+              if(!lure&&s>=0&&s!==q&&STR[s]<.3&&api.random(i,11)<FOLLOW&&(own<0||APk[s]>=.5*APk[own]))n=s;
               if(n>=0&&n!==q&&api.random(i,12)<.75){api.tgt[i]=n;return MODE.seek;}return MODE.explore;}
             return -1;}
           return -1;}
