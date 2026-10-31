@@ -77,7 +77,8 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     page.on('console',m=>{if(m.type()==='error')errors.push({minute:+minuteNow().toFixed(1),error:m.text().slice(0,300)});});
     await page.addInitScript(TAP);
     await recipe(SEGMENTS[0][1].action);
-    await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}`);await page.waitForFunction(()=>!!window.__qual);
+    // The page pairs itself with the receiver's key (as the link npm start prints does): the soak changes worlds and recipes.
+    await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}${svc.pairing?`#pair=${svc.pairing}`:''}`);await page.waitForFunction(()=>!!window.__qual);
     await page.waitForTimeout(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
     let segment=-1,cpuBefore=null,lastSample=0,clockBefore=null;started=Date.now();const END=started+HOURS*3600000*SCALE;const done=new Set();
