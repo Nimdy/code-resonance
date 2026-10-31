@@ -83,6 +83,14 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-dims{color:var(--text-1)}
 .ws-output .out-rate{color:var(--text-3)}
 .ws-output .out-profile-note{font-size:13px;color:var(--text-3);line-height:1.42}
+/* Where it is written: a file on disk, or memory until it stops (the same cards as the profiles) */
+.ws-output .out-dest-field{display:grid;gap:8px;min-width:0;padding-top:4px}
+.ws-output .out-dest-meta{font-size:12.5px;color:var(--text-3)}
+.ws-output .out-dest[aria-checked="true"] .out-dest-meta{color:var(--text-2)}
+.ws-output .out-dest .out-profile-head strong{min-width:0}
+.ws-output .out-dest .out-tag{flex:none;white-space:nowrap}
+.ws-output .out-fact-v code.out-file{font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46ch}
+.ws-output .out-kept .callout-actions{flex-wrap:wrap}
 /* The OBS presentation: not a recording profile, the way to the OBS view below */
 .ws-output .out-obs-link{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;border-radius:var(--r-2);
   border:1px dashed var(--line-3);background:transparent;color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
@@ -141,6 +149,7 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-kind details.disclosure{border-top:0;padding-top:0}
 .ws-output .out-kind details.disclosure>.disclosure-body{gap:10px;padding-top:6px}
 .ws-output .out-cmds{display:grid;gap:6px}
+.ws-output .out-cmd-label{font-size:13px;color:var(--text-2);line-height:1.4}.ws-output .out-cmd-label:not(:first-child){margin-top:6px}
 .ws-output a.btn{color:var(--text-1);text-decoration:none}
 .ws-output a.btn[aria-disabled="true"]{opacity:.42;pointer-events:none}
 /* A narrow column (the rail at 1280-1440 px): the action goes under its description, so the title keeps one line. */
@@ -153,7 +162,7 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 @media (max-width:1280px){.ws-output .out-readout{padding:2px 12px}.ws-output .out-readouts{grid-template-columns:repeat(4,minmax(66px,auto))}}
 @media (max-width:1100px){.ws-output .out-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"mon" "side" "exp" "obs";grid-template-rows:none}
   .ws-output .out-rail{display:contents}.ws-output .out-side{grid-area:side}.ws-output .out-export{grid-area:exp}
-  .ws-output .out-profiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .ws-output .out-profiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:900px){.ws-output .out-readouts{margin-left:0;grid-template-columns:repeat(4,minmax(56px,auto))}.ws-output .out-readout:first-child{padding-left:0;border-left:0}}
 @media (max-width:900px){.ws-output .out-lastline-where{display:none}}
 @media (max-width:700px){.ws-output .out-profiles{grid-template-columns:1fr}.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(56px,auto))}}

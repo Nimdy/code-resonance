@@ -18,27 +18,35 @@ function fakeVscode(dir,{remoteName,settings={}}={}){
   const vscode={
     version:'1.99.0',env:{remoteName,openExternal:async()=>true},Uri:{parse:s=>({toString:()=>s})},
     StatusBarAlignment:{Left:1},DiagnosticSeverity:{Error:0,Warning:1},RelativePattern:class{constructor(b,p){this.base=b;this.pattern=p;}},
+    ProgressLocation:{Window:10,Notification:15},
     window:{createStatusBarItem:()=>({show(){},dispose(){}}),showWarningMessage:async()=>'Start Capture',showInformationMessage:async()=>{},showQuickPick:async()=>null,
+      createOutputChannel:()=>({appendLine(){},dispose(){}}),withProgress:async(o,fn)=>fn(),
       registerUriHandler:h=>{uriHandlers.push(h);return {dispose(){}};}},
     commands:{registerCommand:(id,fn)=>{commands.set(id,fn);return {dispose(){}};},executeCommand:async(...args)=>{executed.push(args);}},
     workspace:{isTrusted:true,workspaceFolders:[{uri:folderUri,name:'my-secret-folder',index:0}],
       getConfiguration:section=>{assert.equal(section,'resonance');return {get:(k,d)=>Object.hasOwn(config,k)?config[k]:d};},
       onDidChangeConfiguration:onConfig,onDidChangeTextDocument:none,onDidSaveTextDocument:none,onDidCreateFiles:none,onDidDeleteFiles:none,onDidRenameFiles:none,
-      createFileSystemWatcher:()=>({onDidChange:none,onDidCreate:none,onDidDelete:none,dispose(){}}),findFiles:async()=>[],getWorkspaceFolder:()=>null,fs:{readFile:async()=>Buffer.alloc(0)}},
+      createFileSystemWatcher:()=>({onDidChange:none,onDidCreate:none,onDidDelete:none,dispose(){}}),findFiles:async()=>[],getWorkspaceFolder:()=>null,fs:{readFile:async()=>Buffer.alloc(0)},
+      registerTextDocumentContentProvider:()=>({dispose(){}})},
     tasks:{onDidStartTask:none,onDidEndTaskProcess:none},languages:{onDidChangeDiagnostics:none,getDiagnostics:()=>[]},extensions:{getExtension:()=>undefined}
   };
   // A configuration change event as VS Code delivers it: the listener asks which sections it touched.
   const change=(patch,section='resonance')=>{Object.assign(config,patch);onConfig.fire({affectsConfiguration:s=>s===section||section.startsWith(`${s}.`)});};
   return {vscode,config,change,executed,uriHandlers,commands,onConfig};
 }
-// Loads a fresh copy of extension.js wired to the fake API; the outbox records instead of delivering.
+// Loads a fresh copy of extension.js wired to the fake API; the outbox records instead of delivering, and the receiver
+// host only records what it was asked (no port is probed, no receiver started, no data directory read).
 function loadExtension(t,dir,opts){
-  const fake=fakeVscode(dir,opts),sent=[],outboxes=[];
-  class RecordingOutbox{constructor(o){this.port=o.port;this.online=true;outboxes.push(this);}async start(){}enqueue(e){sent.push(JSON.parse(JSON.stringify(e)));return true;}async close(){this.closed=true;}}
+  const fake=fakeVscode(dir,opts),sent=[],outboxes=[],ensured=[];
+  class RecordingOutbox{constructor(o){this.port=o.port;this.authFile=o.authFile;this.online=true;outboxes.push(this);}async start(){}enqueue(e){sent.push(JSON.parse(JSON.stringify(e)));return true;}async close(){this.closed=true;}}
+  const realHost=require('../extension/receiver-host');
+  const fakeHost={...realHost,dataDir:()=>path.join(dir,'data'),findRuntime:()=>null,bundled:()=>null,
+    ensureReceiver:async o=>{ensured.push({port:o.port,dir:o.dir,start:o.start});return {status:'absent',port:o.port};}};
   const load=Module._load;
   Module._load=function(request,parent,isMain){
     if(request==='vscode')return fake.vscode;
     if(request==='./outbox'&&parent?.filename===EXTENSION)return {DurableOutbox:RecordingOutbox};
+    if(request==='./receiver-host'&&parent?.filename===EXTENSION)return fakeHost;
     return load.call(this,request,parent,isMain);
   };
   delete require.cache[EXTENSION];
@@ -49,7 +57,7 @@ function loadExtension(t,dir,opts){
   ext.activate(context);
   t.after(()=>ext.deactivate());
   const run=id=>fake.commands.get(id)();
-  return {...fake,ext,context,sent,outboxes,run,kinds:()=>sent.map(e=>e.kind)};
+  return {...fake,ext,context,sent,outboxes,ensured,run,kinds:()=>sent.map(e=>e.kind)};
 }
 const REPORTED=['extensionVersion','remote','includeHidden','captureDocumentContents','captureTerminalCommands','capturePromptText','shareProjectName','baselineFileLimit','receiverPort'];
 test('workspace.started reports the extension version, remote and every capture setting (values only, no paths)',async t=>{
@@ -61,6 +69,8 @@ test('workspace.started reports the extension version, remote and every capture 
     capturePromptText:false,shareProjectName:true,baselineFileLimit:120,receiverPort:4199});
   assert.equal(VERSION,'0.7.2');assert.equal(started.name,'my-secret-folder');
   assert.equal(x.outboxes[0].port,4199,'the reported port is the one the capture delivers to');
+  assert.deepEqual(x.ensured,[{port:4199,dir:path.join(dir,'data'),start:true}],'starting capture looks for (or starts) a receiver on that port, in the data directory');
+  assert.equal(x.outboxes[0].authFile,path.join(dir,'data','receiver-auth.json'),'the outbox reads the token of that data directory');
   const meta=JSON.stringify(started.meta);assert(!meta.includes('my-secret-folder')&&!meta.includes(dir),'no folder name or path in the reported settings');
 });
 test('Local window: remote is an empty string; shareProjectName off drops the name but still reports the setting',async t=>{

@@ -1,5 +1,211 @@
 # Changelog
 
+## Unreleased
+
+Interpretation **10** (9 in 0.7.2: the language adapters and the larger agent catalog): on its first start the receiver
+rebuilds each project's derived files once from its journal. No existing identity changes: recipe traits still count only the v9 language categories, and every JS/TS file
+keeps its v9 structure and test flag. The extension's part (below) reaches VS Code with a rebuilt VSIX.
+
+- **Record to a file on disk:** Record & Broadcast offers *Record to a file on disk* (recommended for long sessions)
+  beside *Keep in memory, download when stopped* (the default, unchanged), a choice kept by this browser. Record opens
+  the browser's Save dialog; a worker (`public/recording-worker.js`) then writes each chunk the recorder delivers, in
+  place, to a working file in the browser's private file storage through a synchronous access handle, so memory stays
+  flat, the length is bounded by disk and a crash or a closed tab keeps everything written (a writable stream on the
+  chosen file writes to a temporary copy that Chromium deletes when the page crashes: measured). When it stops, the
+  working file is copied into the chosen file and made seekable on the way (`public/webm.js`: the Segment's and every
+  Cluster's size, a SeekHead, the duration, Cues), then deleted. An interrupted recording is offered by any window
+  opened afterwards (**Save to a file…** or **Discard**); each working file is held by its own Web Lock while a window
+  writes or saves it. The recorder shows the bytes on disk and the file; a browser without the File System Access API,
+  or a page on a network address, says why the choice is unavailable. No receiver write path (two more static files
+  are served). Measured in headless Chromium for three minutes (`qualification/results/memory/memory-record-disk.json`):
+  kept in memory, the browser process grew with the file one for one (+46 MB for a 46 MB file at 720p, +37 MB for 35 MB
+  at 1080 × 1920); written to disk, +0 and +3 MB, the working file on disk growing with every chunk; saved in 0.4-0.5 s
+  as seekable files of 181 s. A renderer crashed at 61.9 s left all 16.6 MB written, saved as a seekable 60.9 s file; a
+  1 GB recording was indexed and saved in 5.1 s. Checked by `tests/webm.test.js`, `tests/record-to-disk.test.js`, the Output interface suite and
+  `qualification/visual/record-disk.qual.js`; not verified with the real Save dialog on Windows or for hours.
+- **Recorder:** a recording whose recorder stops by itself (a recorder error, or a chunk that cannot be written to
+  disk) is saved too, once, however many finishes ask for it; before, a recorder error dropped the file. Record &
+  Broadcast draws Record's state again once a press is answered (the busy state enabled it even if another window had
+  started recording meanwhile).
+- **Output interface suite:** the two-window Record race and the crash take-over wait on what the windows show (both
+  idle with the recorder lock free before a round; both presses answered before judging it; each window's own log of
+  when it recorded), stop a late recording before the next round, and press again a round whose presses were not
+  simultaneous. The failures under load were the test's: a fixed two-second watch, while a first Record on a software
+  renderer can take longer (3.3 and 7.2 s for a first round with `npm test` running alongside), and a press whose timer
+  fires late in a busy window finds its button already disabled (4.8 s late in a loaded run of the previous checks,
+  which failed 51/53 while every round had exactly one recording); the lock never let two windows record. The control
+  (lock bypassed) now measures what it was meant to: two windows recording at once (it read 0 before, its watch ending
+  before either had started). The new checks passed 62/62 unloaded and in three loaded runs.
+- **Soak:** the first local three-hour soak completed, 7/11 (`qualification/results/soak/soak-3h-amd-playwright.json`).
+  Events, sound, packs, GPU objects, the receiver restart and page errors passed. The page heap, the renderer process,
+  the Construct's frame rate and two recording starts (one 0.4 s interval each) failed. The soak's project
+  grows all along, and experiments with fresh browsers at its sizes traced most of that to the project's size: the
+  Construct about 15 draw calls per file, and staying loaded once shown. The renderer's growth was Playwright's DevTools
+  connection (docs/QUALIFICATION.md, *Three-hour soak*). `visual/soak.qual.js` now uses the lean driver and waits for
+  the project's first view. It records the heap after a collection at the end of every world's turn and the
+  Construct's own counts. It ends with a control, every world again in a fresh browser on the same project; the memory
+  and frame-rate checks are held to that control. A rerun with it passed 10/11: memory and frame rates within the
+  control after three hours. Its one failure is the recording start again. From the second hour on, the soak's
+  "Stellar Forge" had been Ember Observatory (a look stays when its own family is chosen again): the held starts were
+  the soaks' four recordings of Ember Observatory, every one of them. 20 focused takes, Ember Observatory included,
+  have not reproduced it.
+  The harness now removes the look for Stellar Forge and records Ember Observatory in its own segment.
+
+- **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
+  enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with
+  its music after a click, in any of the six world families, the Construct or Monolith, at 1×, 4× or 16×; it also
+  plays on a phone. `npm run site` (`scripts/build-site.js`, Node only) starts a receiver in-process on a temporary
+  copy of the recording (a free loopback port), exports every read-only answer the Stage needs for a replay to
+  `site/api/` with a manifest, and copies the player beside them; the same recording builds the same files byte for
+  byte (3.5 MB). The static mode (`public/web-demo/`, included only in the site's page) answers `/api/*` from those
+  files, keeps every `POST` inert, stubs the change feed and leaves out what needs a receiver (Control Center, live
+  mode, pairing, saving). `.github/workflows/pages.yml` builds and deploys it on pushes to `main` and by hand, never on
+  pull requests; the owner sets *Settings › Pages › Source: GitHub Actions* once. Checked by `tests/web-demo.test.js`
+  and, in a real browser, `qualification/site/web-demo.qual.js`. [docs/WEB-DEMO.md](docs/WEB-DEMO.md).
+- **Temporal Terrain (preview):** a sixth built-in world family, chosen only explicitly (Visual Studio, marked *In
+  design*; the render lab's `--family temporal-terrain`; the web demo), never by the family scores: `RECIPE_VERSION`
+  stays 4 and every existing identity is unchanged. The project's history as a contour landscape: the present is the
+  lit front edge, the past recedes toward the horizon on a logarithmic scale; subsystems are ranges in their own hues
+  (placed from the middle outward in order of birth), files ridges running back from their birth, their height from
+  their symbols, with luminous anti-aliased contour lines over a dark relief. Agents survey as lights in their CAST
+  colour and shape and raise the ground where they edit; tests sweep a scan; a failure opens a fault that stays as a
+  scar for exactly as long as the files were stressed; recovery heals it; commits leave survey lines and stakes;
+  verified milestones leave beacons and, with the director's token and a four-minute gap, earn a sunrise.
+  `public/worlds/terrain-layout.js` keeps the land as rows of fixed moments (a pyramid of levels, each row computed once
+  while it stays in its level), `terrain-glsl.js` draws it. The host gives a built-in world that asks for them a
+  replay's recorded windows (`onHistory`), so the land behind a seek is the whole recorded history, as when played from
+  the start. `tests/terrain.test.js`; design, stills and GPU time in
+  [docs/worlds/temporal-terrain.md](docs/worlds/temporal-terrain.md).
+- **Relative URLs in the player:** its dynamic module imports (`public/app.js`, the Visual, Artist and Packs
+  workspaces) and the workspaces' stylesheets (`public/ui/dom.js`) are relative, so the page works under any path. The
+  receiver serves the same files at the same URLs as before.
+- **The extension alone is enough.** The VSIX now carries the receiver (receiver, engine, player, Control Center,
+  vendored three.js and TypeScript, hook adapters: about 2.9 MB, 170 files). When capture starts or the Stage opens and
+  no receiver answers on `resonance.receiverPort`, the extension starts it: a separate, detached process bound to
+  `127.0.0.1`, run with VS Code's own runtime (VS Code's Electron with `ELECTRON_RUN_AS_NODE=1` on the desktop, the VS
+  Code Server's `node` in WSL/SSH windows), logging to `logs/receiver.log` in the data directory. Every window reuses
+  it through the token proof, and two windows starting at once start one (a lock file). A receiver that already
+  answers (`npm start` or `npm run up` in a checkout, another window) is always used and never replaced or stopped;
+  another program on the port, or a receiver of the same data directory on another port, means nothing is started and
+  the extension says why. A newer extension replaces the receiver an older one started; an older one keeps using a
+  newer receiver. New commands: *Receiver Status*, *Stop Receiver*, *Show Receiver Log*, *Open Control Center (Pairing
+  Link)*; new setting `resonance.startReceiver` (on). The **Code Resonance** Output channel records each decision.
+  `npm run up`, `npm start` and the repository's flows are unchanged.
+- **Agents from the extension.** *CR › Connect an AI agent…* adds or removes the observe-only Claude Code, Cursor or
+  Codex hooks for the workspace through the receiver's own plan and apply (the Control Center's rules), after showing
+  the exact change in a diff editor. The receiver the extension starts keeps the hook adapters in `hooks/` in the data
+  directory, a path that survives extension updates, and the hook entries it writes name that path.
+- **Marketplace and Open VSX, prepared:** icon, banner, links, keywords and a README written for the extension's page;
+  the VSIX manifest now follows vsce (its identity `Id` is the extension name with the publisher apart, where it was
+  `publisher.name`; tags, gallery flags, links, branding, changelog and icon assets; a content type for every file
+  extension). Not published: the steps are in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+- **The extension honours `RESONANCE_DATA`** in VS Code's environment, like the receiver, the hooks and the command-line
+  tools (it always read `~/.code-resonance` before).
+- Qualification: `qualification/vscode/bundled.js` runs the VSIX's own extension folder in a real VS Code with no
+  receiver running (two windows, isolated profile, a free port).
+- **Languages:** dependency-free adapters for Go, Rust, Java, Kotlin, C#, Swift, C and C++ (headers too), PHP and
+  Ruby, over a shared lexer that blanks strings and comments in place (`engine/languages/scan.js`). Each recognises its
+  types, members, functions and globals, and framework routes with a literal path: net/http (Go 1.22 patterns) and
+  gin/echo/chi/fiber; axum, actix and rocket; Spring, Micronaut, JAX-RS and Ktor; ASP.NET attributes and minimal APIs;
+  Vapor; Crow; Laravel, Slim and Symfony; Rails and Sinatra. A construct a scanner cannot read reliably yields no
+  symbol; each adapter's header says what it leaves out.
+- **Imports between modules:** Go import paths under a go.mod module resolve to a file of the package directory (the one
+  named after it, never a `_test.go`); Rust `mod`/`use` follow the 2018 module rules, and Cargo.toml crate names link a
+  workspace; Java and Kotlin packages resolve by folder (src/main/java beside src/main/kotlin); C# namespaces are
+  candidate folders only; `#include` resolves beside the file and in the enclosing include/ folders; PHP `use` through
+  composer.json PSR-4 prefixes; Ruby `require_relative`; Swift `import` to Sources/<Module>.
+- **Deeper Python:** Protocol and ABC classes are interfaces; TypedDict, `X: TypeAlias`, `type X =` and NewType are
+  types; Django `path()`/`re_path()` (urls.py or urlpatterns), Flask `add_url_rule`, FastAPI `add_api_route` and
+  Starlette `Route()` are routes, and a route decorated inside an app factory is a route. 555 of the 574 files of the
+  Python 3.12 standard library analyse exactly as before; the other 19 differ only by these kinds.
+- **Tests as validation:** each language's convention marks its test files (`_test.go`, Rust `benches/`, `src/*Test/`
+  for Java and Kotlin, `*Tests.cs` and `*.Tests/`, `_spec.rb`, `*Test.php`, Swift `Tests/`, `_test.cc`, `test_*.py`,
+  `*_test.py`, `conftest.py`).
+- **Language mix:** `languageOf` adds java, kt, cs, swift, c, cpp, php and rb; the performance view passes them to packs
+  instead of `other`.
+- **Extension:** `SOURCE_GLOB` covers every analysed file type plus go.mod and Cargo.toml (one flat brace group, as VS
+  Code globs do not nest braces); the command classifier knows the new toolchains' test, build, lint, typecheck,
+  format, install and run commands.
+- **Not verified:** Rust, Kotlin and Swift were checked on fixtures only (no real code in those languages was available);
+  the glob was checked against the glob parser of the installed VS Code server, not in a running VS Code.
+- **Fractal Continuum (preview), a precious finish instead of "gum":** the owner found the preview read as one soft
+  purple, evenly lit, rounded by the swell and coated in white sparkle. Each subsystem's region now takes its own hue on
+  the identity's harmony (`palette.scheme`: an arc from the surface's hue toward the light's hue, or 150°/120° for split
+  and triad, never through the olive band between amber and green), turned darker toward the depth colour in the
+  crevices, lighter along the arc on the ridges and further at grazing angles. The light is a hard key from the side
+  with a soft shadow traced toward it (6 steps at quality 0, 4 at quality 1, two taps at 2 and 3), occlusion deep enough
+  to blacken the crevices, a dim fill that takes the surface's colour, a back light in the light's hue on the rims;
+  exposed surfaces and orbit-trap ridges are glassy and metallic, the depths matte. The swell's amplitude halves as the
+  recursion unfolds (it no longer shears the fine structure), normals are taken over two pixels and the finest
+  recursion drawn stays above two pixels (no sub-pixel sugar), and glints are rare, coloured and denser where a region
+  holds more files. Every behaviour, the recipes and their pinned outputs are unchanged; GPU time per frame at
+  1920×1080 on the AMD iGPU stays where it was (Lumen's 14 lab stills 15.6–19.9 ms after, 15.5–20.5 ms before). Stills
+  and numbers: `docs/worlds/fractal-continuum.md`; `tests/fractal.test.js` pins the region hues, the swell and the
+  shadow per quality.
+- **More agents (observe-only hooks).** Gemini CLI, Qwen Code, GitHub Copilot (CLI and VS Code's Copilot harness),
+  Factory Droid, Grok Build and goose now have adapters (`scripts/hooks/<tool>.js`, one shared runtime) and installers:
+  `npm run hooks:gemini|qwen|copilot|droid|grok|goose -- <project>`, or Connections › *More agents*. Each adapter was
+  written from its tool's hook documentation (cited in its header, checked 2026-10-30) and tested against those
+  documented payloads only; **no real session of these tools was run**. The rules are the same as for Claude Code,
+  Cursor and Codex: paths that pass the extension's filters, tool names, command categories, prompt and reply lengths
+  and fingerprints; never prompt text, replies, command lines, tool arguments, edit strings or file contents; nothing on
+  stdout, always exit 0, the token only to a receiver that proves it holds it. No installer registers an event that
+  can deny, block or rewrite (`BeforeTool`, `PreToolUse`, `PermissionRequest`, `preToolUse`, …). None of these payloads
+  documents a shell exit code, so their commands show a category and, at most, *failed*. Copilot and Grok Build name no
+  files, and Droid only for `Create`. The research matrix (which tools document what, and why Kimi, Cline, Windsurf,
+  Kiro, Augment, Junie, OpenCode, Amp, Continue, Roo Code, Aider and Zed have no adapter yet) is in
+  [docs/AGENTS.md](docs/AGENTS.md).
+- **CAST catalog.** New providers: `gemini` Gemini (seat 5), `copilot` Copilot (6), `droid` Droid (7), `goose` Goose (3).
+  These names are for `scripts/event.js --provider`: `opencode` OpenCode (4), `cline` Cline (6), `windsurf` Windsurf (3),
+  `amp` Amp (7), `kiro` Kiro (5), `augment` Augment (4), `junie` Junie (6), `aider` Aider (7). The worlds and the score
+  have eight seats (colour, signal shape, voice), so these providers share a seat with Claude, Cursor, Codex, Grok, Qwen
+  or Kimi. Those six keep their seats, names and colours. A chip names its provider, and sessions are numbered per chip.
+  Uncatalogued ids still read *Agent* and hash into seats 6–7. The Stage, hover cards, Home's *Last night*, the
+  Control Center and `npm run doctor`, which now lists the agents it observed, all show the new names.
+- **Interpretation impact (part of version 10).** The reducer reads `presence()` for an agent's seat and
+  counts collisions only between catalogued providers. A journal whose events name one of the twelve new ids is
+  interpreted differently once its projection is rebuilt. Its agent's voice is the catalogued seat, where it used to
+  be a hash into 6 or 7, so its colour, shape and pan can change. Its edits can now form an `agent.collision` with
+  another catalogued provider. Its chips read the product name instead of *Agent*. Projections built before this change
+  keep their old reading until the interpretation version changes, which the language-adapter work does with version 10.
+- **Receiver.** `/api/integrations/<tool>/plan|apply` for each new tool, behind the control capability, with the same
+  review-then-write flow. Every folder on a nested hook path (`.github/copilot`, `.grok/hooks`,
+  `.agents/plugins/…/hooks`) is refused if it is a link, not only the last folder. `GET /api/integrations` lists the
+  tools with their observed projects (and the adapter path only with a capability). Providers with an adapter are
+  *first-party*.
+- **Connections.** A *More agents* section with one tab per tool. Each tab shows its observed activity per project
+  (marked when the events did not come through its hook), what the hooks send and never send, the file and the events
+  installed, the trust rule and a link to the tool's documentation. The same plan, review, write and remove flow is
+  there too. The overview strip has a seventh channel. *Other agents* no longer lists providers that have their own
+  section. The page is checked at 1920×1080 and 1280×720.
+- **Known limit.** Copilot (and Grok Build, Devin) also read the repository's Claude Code hook files. With Claude Code's
+  hooks installed, a Copilot session in that project can also appear as Claude.
+- **Vertical clips (9:16):** `npm run film -- --project <id> --vertical` (or `--aspect 9:16`) renders the night's best
+  moment for Instagram Reels, YouTube Shorts and TikTok: 1080 × 1920, `--duration` seconds of film (default 30) at the
+  highlight's speed, centred on its key moment (of the moments that made the night score, the one whose clip scores
+  highest by the same rules; `engine/highlight.js` `clip`), opening on the title card and ending on a 3-second end card
+  with the public title and *Code Resonance*, the music faded in (1 s) and out (2.5 s). H.264 and AAC in MP4
+  (`last-night-vertical.mp4`; the bundled ffmpeg-static 6.0 has libx264 and aac), or `--format webm`. The film's
+  public-title gate and `--copy` apply unchanged. The wrapper also passes `--world` and `--family` through, and the
+  renderer can now film Monolith (`--world city`).
+- **Portrait framing:** every world frames a frame taller than it is wide (Stellar Forge sees the galaxy from higher
+  with the core centred, Machine Cathedral stands back and fits the city's width, Fractal Biosphere centres its anchor,
+  the Construct fills the width, Monolith stacks its words); Fractal Biosphere, Synaptic Storm, Fractal Continuum and
+  visual packs get the host's rule (the field of view kept across the width; a pack that frames portraits itself sets
+  `framesPortrait: true`). Words in a portrait are sized by the short side
+  and kept inside the area the platforms leave clear (under the top 12 %, above the bottom 20 %, side margins):
+  `public/worlds/labels.js` `textScale`, `safeArea`, `portraitPlaces`. Landscape output is unchanged: films rendered
+  with the default arguments by 0.7.2 and by this change give byte-identical frames (the page's JPEG frames and every
+  decoded video frame of the WebM, in five worlds); the WebM files differ only through the music, whose offline render
+  already differs by at most one 16-bit step in about 1 % of samples between two runs of 0.7.2. Landscape labels are
+  pinned by a test.
+- **Control Center:** Record & Broadcast offers a **Vertical** recording profile (1080 × 1920, 8 Mbit/s; also in
+  Settings; the receiver accepts `recording.profile: "vertical"`), and the Deterministic film card shows the vertical
+  clip command next to the film's, behind the same public-title gate.
+- Tests: `tests/vertical.test.js` (portrait words and safe area, landscape labels unchanged, the clip window, the
+  wrapper's arguments, MP4 encoding, the host's portrait rule); the Output interface suite records a vertical file and
+  checks the page at 1920 × 1080. Not verified: uploads to the platforms themselves.
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the

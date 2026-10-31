@@ -1,0 +1,45 @@
+name: Bug report
+description: Something does not work as the documentation says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please do not paste source code, file paths, prompts, or anything from `~/.code-resonance`; describe them instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. npm run up
+        2. ...
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The product version (package.json, or `npm run doctor` while the receiver runs) and the extension version.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: OS (and WSL2 if used), browser, GPU if known, VS Code version.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Capture (extension), Receiver, Stage / worlds, Music, Control Center, Recording / films, OBS, Agent hooks, Visual packs, Docs, Other]
+  - type: textarea
+    id: doctor
+    attributes:
+      label: npm run doctor output
+      description: Optional. Check it for anything private before pasting.
+      render: text

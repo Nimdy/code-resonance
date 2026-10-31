@@ -2,11 +2,18 @@
 // Soak: the live player, with sound, for hours, while a synthetic session streams events in real time through the
 // receiver's real ingestion API. Every hour: the three built-in families, a world pack (Cymatic Field), a shader pack
 // (Blueprint Cathedral), a declarative pack (Ember Observatory) and the Construct, a 12-minute pause in the session
-// (idle), and three one-minute recordings measured from the files. Once, mid-run, the receiver is stopped for 15 s and
-// started again on the same port (events produced meanwhile are retried, as the extension's outbox does).
+// (idle), and four one-minute recordings measured from the files (Stellar Forge, both packs and Ember Observatory).
+// Once, mid-run, the receiver is stopped for 15 s and started again on the same port (events produced meanwhile are
+// retried, as the extension's outbox does).
 // Every minute: page heap, DOM nodes, listeners, documents, the player's frame rate, the world's GPU objects and
 // timings, the pack transport, the sound level, the CPU of every browser process, the memory of the whole process
-// tree, and the events produced, accepted and stored (none may be lost).
+// tree, and the events produced, accepted and stored (none may be lost). At the end of each world's turn, the page heap
+// after a forced collection.
+// The session's project grows for the whole soak, so its later hours show a larger project, not only a longer run: at
+// the end, every world is measured again in this browser and then in a fresh browser on the same project, and the
+// frame rates and the memory after a collection are compared with that fresh browser (the control).
+// The browser is driven by visual/lean.js: under Playwright the renderer keeps every fetched project view for DevTools
+// (docs/QUALIFICATION.md, Renderer memory), which made the renderer's memory unreadable here.
 //
 // node visual/soak.qual.js [--hours 3] [--gpu amd] [--scale 1] [--viewport 1920x1080] [--quality 0-3] [--mechanism]
 //                          [--record-size 720p|1080p|stage] [--out results/soak]
@@ -18,7 +25,8 @@
 const path=require('node:path');
 const fs=require('node:fs');
 const os=require('node:os');
-const {REPO,launch,rendererOf,processMemory,checker,adminPost}=require('./harness');
+const {REPO,rendererOf,processMemory,checker,adminPost}=require('./harness');
+const {launchLean}=require('./lean');
 const {createService}=require(path.join(REPO,'receiver/server'));
 const {sha}=require(path.join(REPO,'receiver/protocol'));
 const packs=require(path.join(REPO,'engine/packs'));
@@ -29,14 +37,19 @@ const [VW,VH]=arg('viewport','1920x1080').split('x').map(Number),QUALITY=arg('qu
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','soak')));
 const {checks,check}=checker();
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-// The hour's programme (minutes): what the player shows, when the session pauses, when it records.
-const SEGMENTS=[[0,{world:'living',action:{type:'family',family:'stellar-forge'},label:'Stellar Forge'}],[12,{world:'living',action:{type:'family',family:'halcyon.cymatic-field'},label:'Cymatic Field (world pack)',remote:true}],
+// The hour's programme (minutes): what the player shows, when the session pauses, when it records. A look stays when
+// its own family is chosen again (Ember Observatory is drawn over Stellar Forge): Stellar Forge removes it too.
+const SEGMENTS=[[0,{world:'living',action:[{type:'family',family:'stellar-forge'},{type:'pack',pack:null}],label:'Stellar Forge'}],[12,{world:'living',action:{type:'family',family:'halcyon.cymatic-field'},label:'Cymatic Field (world pack)',remote:true}],
   [24,{world:'living',action:{type:'pack',pack:'northlight.blueprint-cathedral'},label:'Blueprint Cathedral (shader pack)',remote:true}],[36,{world:'living',action:{type:'family',family:'fractal-biosphere'},label:'Fractal Biosphere'}],
   [48,{world:'construct',label:'Construct'}],[54,{world:'living',action:{type:'pack',pack:'northlight.ember-observatory'},label:'Ember Observatory (declarative)'}]];
-const IDLE=[40,52],RECORD_AT=[3,15,27],RESTART_AT=Math.min(90,HOURS*60/2);
+const IDLE=[40,52],RECORD_AT=[3,15,27,57],RESTART_AT=Math.min(90,HOURS*60/2);
 const TAP=`(()=>{const orig=AudioNode.prototype.connect;window.__taps=[];
 AudioNode.prototype.connect=function(dest,...r){if(dest instanceof AudioDestinationNode){const a=this.context.createAnalyser();a.fftSize=2048;orig.call(this,a);window.__taps.push(a);}return orig.call(this,dest,...r);};
 window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32Array(a.fftSize);a.getFloatTimeDomainData(b);for(const v of b){s+=v*v;n++;}}return n?Math.sqrt(s/n):0;};})();`;
+const CONSOLE_ERRORS=`(()=>{const e=console.error;console.error=function(...a){try{window.__leanErrors.push(a.map(String).join(' ').slice(0,300));}catch{}return e.apply(this,a);};})();`;
+const FPS=()=>new Promise(r=>{let k=0;const s=performance.now();const f=()=>{k++;performance.now()-s<2000?requestAnimationFrame(f):r(k/((performance.now()-s)/1000));};requestAnimationFrame(f);});
+// The page heap after a forced collection (MB).
+async function collected(cdp){await cdp.send('HeapProfiler.collectGarbage');await wait(300);const {metrics}=await cdp.send('Performance.getMetrics');return +(metrics.find(x=>x.name==='JSHeapUsedSize').value/1048576).toFixed(1);}
 (async()=>{
   fs.mkdirSync(OUT,{recursive:true});
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-soak-')),recDir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-soak-rec-'));
@@ -51,6 +64,8 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
         if(r.status!==202)throw new Error(`HTTP ${r.status}`);outbox.splice(0,batch.length);accepted+=batch.length;}catch{postFailures++;return;}}
   }
   outbox.push(ev('workspace.started',{name:'soak-session'}));await deliver();await svc.flush();
+  // The project's first view is written after its journal: the page opens on it.
+  for(let i=0;i<240&&!(await fetch(`${url}/api/project?id=${projectId}`)).ok;i++)await wait(250);
   const produce=setInterval(()=>{
     if(paused)return;const tick=n;
     if(tick%7===0||!modules.length)modules.push({name:`m${file++}`,lines:[]});
@@ -65,28 +80,31 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     void deliver();
   },3000);
   const recipe=action=>adminPost(svc,`/api/recipe?id=${projectId}`,{action}).then(r=>r.ok);
-  const browser=await launch(GPU);const samples=[],recordings=[],events=[];let restart=null,started=Date.now();
+  let browser=await launchLean(GPU);const samples=[],recordings=[],events=[],settled=[];let restart=null,control=null,started=Date.now();
   // Programme time in minutes (real minutes unless --scale).
   const minuteNow=()=>(Date.now()-started)/60000/SCALE;
   try{
     const renderer=await rendererOf(browser);
     if(GPU==='amd'&&!/AMD|Radeon/i.test(renderer))throw new Error(`Requested the AMD GPU but got ${renderer}`);
     const browserCdp=await browser.newBrowserCDPSession();
-    const page=await browser.newPage({viewport:{width:VW,height:VH},acceptDownloads:true});const errors=[];
-    page.on('pageerror',e=>errors.push({minute:+minuteNow().toFixed(1),error:String(e).slice(0,300)}));
-    page.on('console',m=>{if(m.type()==='error')errors.push({minute:+minuteNow().toFixed(1),error:m.text().slice(0,300)});});
-    await page.addInitScript(TAP);
-    await recipe(SEGMENTS[0][1].action);
-    await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}`);await page.waitForFunction(()=>!!window.__qual);
-    await page.waitForTimeout(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
+    const page=await browser.newPage({viewport:{width:VW,height:VH}});const errors=[];
+    // Page errors and the player's console errors, kept in the page (the lean driver enables no Runtime or Log domain).
+    await page.addInitScript(CONSOLE_ERRORS);await page.addInitScript(TAP);
+    const collectErrors=async pg=>{const all=await pg.errors();for(const e of all.slice(errors.length))errors.push({minute:+minuteNow().toFixed(1),error:String(e).slice(0,300)});};
+    for(const a of [SEGMENTS[0][1].action].flat())await recipe(a);
+    // The page pairs itself with the receiver's key (as the link npm start prints does): the soak changes worlds and recipes.
+    await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}${svc.pairing?`#pair=${svc.pairing}`:''}`);await page.waitForFunction(()=>!!window.__qual);
+    await wait(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
     const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
     let segment=-1,cpuBefore=null,lastSample=0,clockBefore=null;started=Date.now();const END=started+HOURS*3600000*SCALE;const done=new Set();
     while(Date.now()<END){
       const minute=minuteNow(),inHour=minute%60,hour=Math.floor(minute/60);
       // Programme.
       const seg=SEGMENTS.reduce((s,[at],i)=>inHour>=at?i:s,0),key=`${hour}:${seg}`;
-      if(!done.has(key)){done.add(key);segment=seg;const s=SEGMENTS[seg][1];
-        if(s.action)await page.evaluate(a=>window.__qual.action(a),s.action);await page.evaluate(w=>window.__qual.setWorld(w),s.world);
+      if(!done.has(key)){done.add(key);
+        if(segment>=0)settled.push({minute:+minute.toFixed(1),segment:SEGMENTS[segment][1].label,heapAfterGcMB:await collected(cdp),rssMB:processMemory()});
+        segment=seg;const s=SEGMENTS[seg][1];
+        for(const a of [s.action||[]].flat())await page.evaluate(x=>window.__qual.action(x),a);await page.evaluate(w=>window.__qual.setWorld(w),s.world);
         events.push({minute:+minute.toFixed(1),event:`world: ${s.label}`});}
       const idle=inHour>=IDLE[0]&&inHour<IDLE[1];if(idle!==paused){paused=idle;events.push({minute:+minute.toFixed(1),event:idle?'session paused (idle)':'session resumed'});}
       for(const at of RECORD_AT){const k=`rec:${hour}:${at}`;if(inHour>=at&&!done.has(k)){done.add(k);
@@ -94,7 +112,7 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
         const [download]=await Promise.all([page.waitForEvent('download',{timeout:120000}).catch(()=>null),(async()=>{await page.evaluate(async size=>{if(size)window.__qual.setRecordSize(size);await window.__qual.record();window.__qual.pilot(true);},RECORD_SIZE);
           for(let i=0;i<4;i++){await wait(12000);await page.evaluate(()=>window.__qual.marker(300));}await wait(12000);await page.evaluate(()=>window.__qual.stop());})()]);
         const player=await page.evaluate(()=>window.__qual.recording().last);
-        if(download)await download.saveAs(file);
+        if(download){await download.saveAs(file);await download.delete();}
         const a=download?media.analyse(file):null,s=download?media.markers(file):null,c=download?media.continuity(file):null;
         recordings.push({minute:+minuteNow().toFixed(1),world:SEGMENTS[segment][1].label,seconds:+((Date.now()-began)/1000).toFixed(1),video:a?.video||null,audio:a?.audio||null,fps:a?.fps,longGaps:a?.longGaps,gapsAt:a?.gapsAt||[],startupMaxMs:a?.startupMaxMs??null,maxIntervalAfterStartupMs:a?.maxIntervalAfterStartupMs??null,frameIntervalMedianMs:a?.frameInterval?.median??null,
           frameIntervalMaxMs:a?.frameInterval?.max,videoDuration:a?.videoDuration,audioDuration:a?.audioDuration,audioMeanDb:a?.audioMeanDb,longestSilenceMs:a?.longestSilenceMs,pilotGapMs:c?.longestGapMs??null,changingFrames:a?.changingFrames,
@@ -115,30 +133,48 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
         const {metrics}=await cdp.send('Performance.getMetrics');const m=Object.fromEntries(metrics.map(x=>[x.name,x.value]));
         const {processInfo}=await browserCdp.send('SystemInfo.getProcessInfo');const cpu={};for(const p of processInfo)cpu[p.type]=(cpu[p.type]||0)+p.cpuTime;
         const cpuPct=cpuBefore?Object.fromEntries(Object.keys(cpu).map(k=>[k,+(((cpu[k]-(cpuBefore.v[k]||0))/((Date.now()-cpuBefore.t)/1000))*100).toFixed(1)])):null;cpuBefore={v:cpu,t:Date.now()};
-        const fps=await page.evaluate(()=>new Promise(r=>{let k=0;const s=performance.now();const f=()=>{k++;performance.now()-s<2000?requestAnimationFrame(f):r(k/((performance.now()-s)/1000));};requestAnimationFrame(f);}));
-        const w=await page.evaluate(()=>({world:window.__qual.world(),stats:window.__qual.stats(),rms:window.__rms(),clock:window.__qual.audioClock(),selected:document.querySelector('[data-world].active')?.dataset.world||null}));
+        const fps=await page.evaluate(FPS);await collectErrors(page);
+        // The Construct's own counts while it shows (the living world's, kept while it is hidden, would be stale).
+        const w=await page.evaluate(()=>{const world=window.__qual.world(),construct=world.selectedWorld==='construct';
+          return {world,stats:construct?null:window.__qual.stats(),construct:construct?window.__constructStats?.()||null:null,rms:window.__rms(),clock:window.__qual.audioClock(),selected:document.querySelector('[data-world].active')?.dataset.world||null};});
         // The music's audio clock against the wall clock: about 1 while sound is actually produced (0 when the audio device
         // stalls, which a level probe inside the audio graph does not show).
         const clockRate=clockBefore&&w.clock!==null?+((w.clock-clockBefore.audio)/((Date.now()-clockBefore.wall)/1000)).toFixed(3):null;clockBefore={audio:w.clock,wall:Date.now()};
-        const st=w.stats||{},t=st.transport||null;
+        const st=w.stats||w.construct||{},t=st.transport||null;
         const sample={minute:+minuteNow().toFixed(1),segment:SEGMENTS[segment][1].label,shown:w.selected,idle:paused,heapMB:+(m.JSHeapUsedSize/1048576).toFixed(1),nodes:m.Nodes,listeners:m.JSEventListeners,documents:m.Documents,frames:m.Frames,
           playerFps:+fps.toFixed(1),family:st.family||null,remote:w.world.remote,quality:st.quality??null,drawCalls:st.drawCalls??null,geometries:st.geometries??null,textures:st.textures??null,programs:st.programs??null,
           updateMs:st.updateMs??null,gpuMs:st.gpuMs??null,transport:t?{inFlight:t.inFlight,sent:t.sent,acknowledged:t.acknowledged,skippedHere:t.skippedHere,latencyMs:t.latencyMs,maxQueue:t.maxQueue,semantic:t.semantic}:null,
-          workerRendered:st.rendered??null,workerSemantic:st.semantic??null,rms:+w.rms.toFixed(4),audioClockRate:clockRate,notice:w.world.notice||'',cpuPercent:cpuPct,rssMB:processMemory(),
+          workerRendered:st.rendered??null,workerSemantic:st.semantic??null,construct:w.construct?{buildings:w.construct.buildings,tiers:w.construct.tiers,links:w.construct.links,drawCalls:w.construct.drawCalls,quality:w.construct.quality,detail:w.construct.detail,drawMs:w.construct.drawMs}:null,rms:+w.rms.toFixed(4),audioClockRate:clockRate,notice:w.world.notice||'',cpuPercent:cpuPct,rssMB:processMemory(),
           events:{produced:n,accepted,outbox:outbox.length,postFailures}};
         samples.push(sample);console.log(JSON.stringify(sample));
       }
       await wait(1000);
     }
+    clearInterval(produce);paused=true;await deliver();await svc.flush();await collectErrors(page);
+    // ---- Control: every world once more in this browser, then in a fresh browser on the same (final) project. The
+    // Construct first: once shown it stays loaded, so both pages then hold it for the worlds after it.
+    const CONTROL=[4,0,1,2,3,5].map(i=>SEGMENTS[i][1]),SETTLE=Math.round(Math.max(20000,Math.min(60000,600000*SCALE)));
+    const visit=async(pg,c)=>{const out=[];for(const s of CONTROL){for(const a of [s.action||[]].flat())await pg.evaluate(x=>window.__qual.action(x),a);await pg.evaluate(w=>window.__qual.setWorld(w),s.world);await wait(SETTLE);
+      out.push({world:s.label,fps:+(await pg.evaluate(FPS)).toFixed(1),heapAfterGcMB:await collected(c),rssMB:processMemory()});console.log('control',JSON.stringify(out.at(-1)));}return out;};
+    control={settleMs:SETTLE,longLived:await visit(page,cdp)};await collectErrors(page);
+    await browser.close();browser=await launchLean(GPU);
+    {const fresh=await browser.newPage({viewport:{width:VW,height:VH}});await fresh.addInitScript(CONSOLE_ERRORS);await fresh.addInitScript(TAP);
+      await fresh.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}${svc.pairing?`#pair=${svc.pairing}`:''}`);await fresh.waitForFunction(()=>!!window.__qual);
+      await wait(5000);await fresh.evaluate(()=>document.getElementById('soundBtn').click());const c=await fresh.context().newCDPSession();await c.send('Performance.enable');
+      control.fresh=await visit(fresh,c);for(const e of await fresh.errors())errors.push({minute:+minuteNow().toFixed(1),error:`fresh browser: ${String(e).slice(0,280)}`});}
     // ---- Verdict.
-    clearInterval(produce);paused=true;await deliver();await svc.flush();
     const journal=fs.readFileSync(path.join(dir,'projects',fs.readdirSync(path.join(dir,'projects')).find(p=>fs.existsSync(path.join(dir,'projects',p,'events.jsonl'))),'events.jsonl'),'utf8').trim().split('\n').map(l=>JSON.parse(l).id);
     const stored=new Set(journal);
     check('events: every event produced was accepted and stored exactly once (including across the receiver restart)',stored.size===n&&journal.length===n&&outbox.length===0,
       `${n} produced, ${accepted} accepted, ${journal.length} stored (${stored.size} distinct), ${postFailures} failed posts retried`);
     const hourly=k=>Array.from({length:HOURS},(_,h)=>samples.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s[k]).filter(v=>v!==null&&v!==undefined));
     const mean=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null,first=k=>mean(hourly(k)[0]),last=k=>mean(hourly(k).at(-1));
-    check('memory: the page heap does not grow hour over hour (last hour within 25 % of the first)',last('heapMB')<=first('heapMB')*1.25+5,hourly('heapMB').map(h=>(mean(h)??0).toFixed(1)).join(' → ')+' MB (hourly means)');
+    // The project grows all along: the page that ran the whole soak is held to a fresh browser on the final project.
+    const pairs=control.longLived.map((x,i)=>({world:x.world,long:x,fresh:control.fresh[i]}));
+    check('memory: after a forced collection, the page that ran the whole soak holds no more than a fresh browser on the same project (page heap within 25 % + 10 MB; renderer and GPU processes within 25 % + 50 MB)',
+      pairs.every(p=>p.long.heapAfterGcMB<=p.fresh.heapAfterGcMB*1.25+10&&['renderer','gpu'].every(k=>p.long.rssMB[k]<=p.fresh.rssMB[k]*1.25+50)),
+      pairs.map(p=>`${p.world.split(' ')[0]} heap ${p.long.heapAfterGcMB}/${p.fresh.heapAfterGcMB}, renderer ${p.long.rssMB.renderer}/${p.fresh.rssMB.renderer}, gpu ${p.long.rssMB.gpu}/${p.fresh.rssMB.gpu} MB`).join('; ')+
+      ` (soak/fresh); hourly means, not collected: ${hourly('heapMB').map(h=>(mean(h)??0).toFixed(1)).join(' → ')} MB`);
     check('memory: DOM nodes and listeners stay bounded',last('nodes')<=first('nodes')*1.3+300&&last('listeners')<=first('listeners')*1.3+100,
       `nodes ${hourly('nodes').map(h=>Math.round(mean(h)??0)).join(' → ')}; listeners ${hourly('listeners').map(h=>Math.round(mean(h)??0)).join(' → ')}`);
     const rssHour=k=>Array.from({length:HOURS},(_,h)=>mean(samples.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60&&s.rssMB).map(s=>s.rssMB[k]))??0);
@@ -147,8 +183,10 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const bySegment={};for(const s of samples){(bySegment[s.segment]??=[]).push(s);}
     // Each world's frame rate in the first and the last hour it was shown (hours without samples of it are skipped).
     const decay=Object.entries(bySegment).map(([seg,xs])=>{const hours=Array.from({length:HOURS},(_,h)=>mean(xs.filter(s=>s.minute>=h*60&&s.minute<(h+1)*60).map(s=>s.playerFps))).filter(v=>v!==null);return {seg,hours};});
-    check('frame rate: no decay over time (each world\'s last-hour frame rate at least 80 % of its first-hour rate)',decay.every(d=>d.hours.length<2||d.hours.at(-1)>=d.hours[0]*.8),
-      decay.map(d=>`${d.seg} ${d.hours.map(v=>v.toFixed(0)).join('→')}`).join('; '));
+    // A world's frame rate falls with the project's size (the Construct draws each storey: docs/CONSTRUCT.md), so time is
+    // measured against a fresh browser on the final project; the hourly rates are reported.
+    check('frame rate: no decay over time (each world at the end at least 80 % of its frame rate in a fresh browser on the same project)',pairs.every(p=>p.long.fps>=p.fresh.fps*.8),
+      pairs.map(p=>`${p.world.split(' ')[0]} ${p.long.fps}/${p.fresh.fps}`).join('; ')+` fps (soak/fresh); hourly: ${decay.map(d=>`${d.seg} ${d.hours.map(v=>v.toFixed(0)).join('→')}`).join('; ')}`);
     const gpu=Object.entries(bySegment).map(([seg,xs])=>{const g=xs.map(s=>s.geometries).filter(v=>v!==null),t=xs.map(s=>s.textures).filter(v=>v!==null);return {seg,geometries:g.length?[g[0],Math.max(...g),g.at(-1)]:null,textures:t.length?[t[0],Math.max(...t),t.at(-1)]:null};});
     check('GPU objects: geometries and textures stay bounded per world (not growing with time)',gpu.every(x=>!x.geometries||x.geometries[2]<=x.geometries[0]*1.5+50),
       gpu.filter(x=>x.geometries).map(x=>`${x.seg}: geometries ${x.geometries.join('/')} textures ${x.textures?.join('/')} (first/max/last)`).join('; '));
@@ -164,16 +202,15 @@ window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32A
     const recOk=r=>r.video&&r.audio&&r.audioDuration>=r.videoDuration-2&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&(MECH?
       r.maxIntervalAfterStartupMs!==null&&r.maxIntervalAfterStartupMs<=Math.max(500,2.5*r.frameIntervalMedianMs)&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=250+r.frameIntervalMedianMs:
       r.longGaps===0&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=125);
-    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(recOk),
+    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=RECORD_AT.length*HOURS&&recordings.every(recOk),
       recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, sound ${r.audioDuration}/${r.videoDuration} s${r.audioLostReported?' (loss reported to the user)':''}, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
     check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
       restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),
       restart?`intents ${restart.intentsBefore} → ${restart.intentsAfter}; down ${Math.round(restart.downMs/1000)} s; world ${restart.worldBefore.selectedWorld}/${restart.worldBefore.family} → ${restart.worldAfter.selectedWorld}/${restart.worldAfter.family}`:'no restart');
-    // The browser logs every non-2xx request as a console error (a 404 for the project before its first interpretation,
-    // refused requests while the receiver was down): counted, not errors of the player.
-    const network=errors.filter(e=>/^Failed to load resource/.test(e.error)),real=errors.filter(e=>!/^Failed to load resource/.test(e.error));
-    check('no page errors in the whole soak',!real.length,real.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||`none (${network.length} failed requests logged by the browser)`);
-    fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,viewport:`${VW}x${VH}`,quality:QUALITY===null?'auto':Number(QUALITY),thresholds:MECH?'mechanism':'full',gpu:GPU||'swiftshader',renderer,checks,restart,events,recordings,errors,samples},null,1));
+    // Uncaught errors, rejected promises and the player's console errors, in both browsers (failed requests, such as those
+    // refused while the receiver was down, are the browser's own log, which the lean driver does not read).
+    check('no page errors in the whole soak',!errors.length,errors.slice(0,3).map(e=>`${e.minute}m ${e.error}`).join(' | ')||'none');
+    fs.writeFileSync(path.join(OUT,`soak-${HOURS}h${SCALE!==1?`-scale${SCALE}`:''}${GPU?`-${GPU}`:''}.json`),JSON.stringify({at:new Date().toISOString(),hours:HOURS,scale:SCALE,viewport:`${VW}x${VH}`,quality:QUALITY===null?'auto':Number(QUALITY),thresholds:MECH?'mechanism':'full',gpu:GPU||'swiftshader',renderer,driver:'lean',checks,restart,control,events,recordings,errors,settled,samples},null,1));
   }finally{clearInterval(produce);await browser.close();await svc.stop().catch(()=>{});fs.rmSync(dir,{recursive:true,force:true});fs.rmSync(recDir,{recursive:true,force:true});}
   console.log(`${checks.filter(c=>c.pass).length}/${checks.length} checks passed`);
   process.exitCode=checks.every(c=>c.pass)?0:1;

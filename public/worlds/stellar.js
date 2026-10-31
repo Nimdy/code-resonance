@@ -1411,19 +1411,24 @@ export function createFamily(ctx){
     const R=Math.max(10,galR);
     // The galaxy's coverage of the frame stays the same across fields of view and aspect ratios.
     const kd=clamp(num(cam.distance,1),.6,1.6)*(.3249*1.7778)/(tanHalf*clamp(aspect,1.2,2.4));
-    const kc=ARR==='cluster'?1.9:1;const h=R*1.03*kd*kc,z=R*(.27+.15*clamp(num(cam.elevation,.4),.05,.9))*kd*kc;
+    const kc=ARR==='cluster'?1.9:1;let h=R*1.03*kd*kc,z=R*(.27+.15*clamp(num(cam.elevation,.4),.05,.9))*kd*kc;
+    // A portrait frame (a vertical clip): the galaxy seen from higher over the disc (about 22° more), far enough that the
+    // disc's central 85 % fills the width; the core centred.
+    const portrait=aspect<1;
+    if(portrait){const el=Math.atan2(.27+.15*clamp(num(cam.elevation,.4),.05,.9),1.03)+.38,d=R*.85*kc*clamp(num(cam.distance,1),.6,1.6)/(tanHalf*aspect);h=d*Math.cos(el);z=d*Math.sin(el);}
     const drift=clamp(num(cam.drift,.7),0,1.6);
     const az=cam.personality==='drifting'?baseAz+Math.sin(i.tview/170)*.3*drift*motion:baseAz+i.tview*TAU/1100*motion*(.5+.5*drift);
     const toward=new THREE.Vector3(Math.cos(az),0,Math.sin(az)),right=new THREE.Vector3(Math.sin(az),0,-Math.cos(az));
     // The core sits on the right third, a little above centre; the near arm leaves the frame at the bottom.
-    const pitch=Math.atan2(z,h)+Math.atan(.3*tanHalf);
+    const pitch=portrait?Math.atan2(z,h):Math.atan2(z,h)+Math.atan(.3*tanHalf);
     const dolly=R*.09*Math.sin(i.tview*TAU/150)*motion*(.4+.6*drift);
-    const lat=.24*tanHalf*aspect*Math.hypot(h,z);
+    const lat=portrait?0:.24*tanHalf*aspect*Math.hypot(h,z);
     const C=toward.clone().multiplyScalar(h).addScaledVector(right,-(lat+dolly));C.y=z;
     let distance=z/Math.sin(pitch),elev=pitch;
     let target=C.clone().addScaledVector(toward,-distance*Math.cos(pitch));target.y=0;
-    const frameSubject=(pos,radius,k)=>{const d=Math.max(6,radius/tanHalf*1.1);
-      target.lerp(tmp2.copy(pos).addScaledVector(right,-d*tanHalf*aspect*.12),k);distance=lerp(distance,d,k);elev=lerp(elev,Math.max(pitch,.3),k);};
+    // What changed fills the frame's narrower side (its height; the width of a portrait frame), off centre in landscape.
+    const frameSubject=(pos,radius,k)=>{const d=portrait?Math.max(6,radius/(tanHalf*aspect)*1.1):Math.max(6,radius/tanHalf*1.1);
+      target.lerp(tmp2.copy(pos).addScaledVector(right,portrait?0:-d*tanHalf*aspect*.12),k);distance=lerp(distance,d,k);elev=lerp(elev,Math.max(pitch,.3),k);};
     const att=ctx.director.attentionAt(i.t,2);const since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;
     let k=0;
     if(att&&since<13){const a=attentionSubject(att,i);if(a){k=smooth(since/1.6)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1);frameSubject(a.pos,a.radius,k);}}
@@ -1504,6 +1509,6 @@ export function createFamily(ctx){
     const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&bodies.has(a.fileId));
     const at=att&&(i.t-att.at)/ctx.speed()/1000<30?attentionSubject(att,i)?.pos:busy?homeSys(bodies.get(busy.fileId))?.pos:null;composeA.active.pos.copy(at||composeA.center);
     return composeA;}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+  return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
     compose:{camera,scene,anchors:composeAnchors},...(LIFE?{lifeStats,onLifeParams}:{})};
 }

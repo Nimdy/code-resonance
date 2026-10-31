@@ -26,8 +26,8 @@
 // Preview families (PREVIEWS, engine/catalog.js PREVIEWS): built-in worlds still being designed, chosen only explicitly
 // (the Visual Studio, the render lab's --family) exactly as a pack is. They are never scored and never drawn: FAMILIES
 // alone drives the family scores and their random draws, and a preview's genome and palette come from its own streams,
-// so adding one changes no existing identity (tests/recipe.test.js, tests/synaptic.test.js and tests/fractal.test.js
-// pin that). Taking one into the automatic choice later is a new generator version with its own scoring stream.
+// so adding one changes no existing identity (tests/recipe.test.js, tests/synaptic.test.js, tests/fractal.test.js and
+// tests/terrain.test.js pin that). Taking one into the automatic choice later is a new generator version with its own scoring stream.
 //
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
@@ -47,8 +47,9 @@ const RECIPE_VERSION=4;      // generator: bump when the same inputs would produ
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
 const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
-const PREVIEWS=['synaptic-storm','fractal-continuum'];
-const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)','fractal-continuum':'Fractal Continuum (preview)'};
+const PREVIEWS=['synaptic-storm','fractal-continuum','temporal-terrain'];
+const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)','fractal-continuum':'Fractal Continuum (preview)',
+  'temporal-terrain':'Temporal Terrain (preview)'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -143,7 +144,21 @@ function fractalPalette(r,family,traits){
   return {scheme,hue:round(hue,1),primary:hsl(hue,sat,between(r,.34,.42)),secondary:hsl(hue+between(r,-24,24),sat*.9,.2),accent:hsl(glow,.88,.62),
     highlight:hsl(hue+8,.32,.84),deep:hsl(hue+10,.5,between(r,.016,.03)),haze:hsl(hue+14,.42,.12),warning:hsl(warn,.85,.58),valid:hsl(pick(r,[168,178,150,190]),.62,.7)};
 }
-const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette};
+// Temporal Terrain (preview): luminous contour lines over a dark relief under a night sky. The lines' first hue (teal,
+// cyan, azure, violet, rose, amber or jade), whether the present's lamps contrast with it (warm on cool, cool on warm)
+// and the rock's tint are the identity's own, from its own stream. A fault stays red to magenta, at least 40 degrees
+// from the lamps' colour: never gold.
+function terrainPalette(r,family,traits){
+  const scheme=weighted(r,[['complementary',3],['analogous',2],['split',1]]);
+  const hue=pick(r,[186,196,176,206,218,264,284,328,346,30,40,162])+between(r,-6,6),cool=hue>=150&&hue<=300;
+  const lamp=cool?pick(r,[34,40,28,44]):pick(r,[190,200,182]),rock=hue+pick(r,[-18,12,24]),sky=pick(r,[222,232,246,212])+between(r,-6,6);
+  const sat=between(r,.6,.82)*(1-.12*clamp(traits.tests*2));
+  const dist=h=>{const d=Math.abs((((h-lamp)%360)+360)%360);return Math.min(d,360-d);};
+  const warn=[356,350,8,342].find(h=>dist(h)>=40)??326;
+  return {scheme,hue:round(hue,1),primary:hsl(hue,sat,.6),secondary:hsl(rock,.2,between(r,.12,.17)),accent:hsl(lamp,.92,.62),highlight:hsl(hue+6,.32,.86),
+    deep:hsl(sky,.55,between(r,.018,.03)),haze:hsl(sky+8,.38,between(r,.1,.14)),warning:hsl(warn,.88,.57),valid:hsl(pick(r,[160,172,150,186]),.68,.66)};
+}
+const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette,'temporal-terrain':terrainPalette};
 // ---- Family genomes: the structural language of each universe -------------------------------------------------------
 const GENOMES={
   'stellar-forge'(r,t){
@@ -243,6 +258,25 @@ const GENOMES={
         'subsystem.connected':'thread','validation.failed':'decohere','validation.passed':'coherence-wave','validation.recovered':'recohere',
         'refactor.validated':'refine','milestone.achieved':'bloom','repository.checkpoint':'glow','world.expanded':'deepen'}
     };
+  },
+  // Preview (chosen only explicitly). The project's size at generation sets how closely files stand across a range (so
+  // a project of 17 files and one of 450 both fill the land), symbols per file how high the ridges rise, coupling how
+  // high the ranges' plateaus, tests how finely the contours are spaced; many subsystems favour the map view.
+  'temporal-terrain'(r,t){
+    return {
+      time:{scale:between(r,34,52),depth:between(r,54,66)},
+      relief:{height:round(between(r,.85,1.15)*(.92+.16*clamp((t.depth||0)/10))),massif:round(clamp(between(r,.75,1.1)+.3*clamp(t.crossDensity||0),.3,1.8)),
+        detail:between(r,.75,1.2),spacing:round(clamp(200/Math.max(8,(t.modules||0)+2*Math.max(1,t.districts||1)),.3,9))},
+      contour:{interval:round(between(r,.8,1.05)*(1-.14*clamp((t.tests||0)*3))),index:pick(r,[4,5,5]),width:between(r,.95,1.25),glow:between(r,.9,1.2)},
+      material:{rock:between(r,.65,1),sheen:between(r,.2,.55),cut:between(r,.85,1.2)},
+      atmosphere:{mist:between(r,.55,1.05),haze:between(r,.55,1),motes:between(r,.4,1)},
+      motion:{breath:pick(r,[2,4,4,8]),light:between(r,.4,1),shimmer:round(between(r,.55,1)*(.85+.3*clamp((t.agentShare||0)*2))),drift:between(r,.4,1)},
+      camera:{personality:weighted(r,[['survey',3],['valley',2],['map',(t.districts||0)>=8?2:1]]),distance:between(r,.95,1.08),elevation:between(r,.3,.6),fov:pick(r,[30,34,38]),drift:between(r,.4,1)},
+      agents:{form:'surveyor',trail:between(r,.6,1.4)},
+      effects:{'subsystem.created':'range','module.created':'peak','structure.created':'uplift','structure.removed':'erode',
+        'subsystem.connected':'road','validation.failed':'fault','validation.passed':'scan','validation.recovered':'heal',
+        'refactor.validated':'terrace','milestone.achieved':'sunrise','repository.checkpoint':'survey','world.expanded':'horizon'}
+    };
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
@@ -251,7 +285,8 @@ const AMBIENT={
   'fractal-biosphere':{base:['spores','sway','nutrient-flow','light-shafts','breathing-glow'],unlocks:['fireflies','blossom-drift','canopy-veins','bioluminescent-tide']},
   'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']},
   'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
-  'fractal-continuum':{base:['breathing','light-drift','shimmer','resonance','motes'],unlocks:['stardust','inner-light','corona','echoes']}
+  'fractal-continuum':{base:['breathing','light-drift','shimmer','resonance','motes'],unlocks:['stardust','inner-light','corona','echoes']},
+  'temporal-terrain':{base:['light-path','mist','shimmer','flow','motes'],unlocks:['dawn','lanterns','stars','aurora']}
 };
 function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);

@@ -1,0 +1,21 @@
+name: Idea or request
+description: A world, a sound, an agent or language to support, or a workflow that should be easier.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What you would like to see or hear, and the moment in your work where it would matter.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options: [A world or a look, Music, Support for a language, Support for an AI agent, Recording / sharing, Control Center, Other]
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: For a language or an agent, a link to its documentation (an agent needs a documented hook or event mechanism to be observed).

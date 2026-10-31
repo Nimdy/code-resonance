@@ -4,7 +4,7 @@
 //
 // node visual/film.js --data <receiver-data> --project <id> [--from ms] [--to ms] [--speed 2] [--fps 30]
 //        [--style ambient] [--width 1920 --height 1080] [--out results/visual/film.webm] [--stills t1,t2,...]
-//        [--world living|construct] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
+//        [--world living|construct|city] [--recipe recipe.json | --family stellar-forge] [--tail seconds] [--labels cinematic]
 //        [--note "text shown on every frame"] [--pack <dir> (install and approve a visual pack in --data first)]
 //        [--look <pack id> (apply a declarative or shader pack)] [--gpu auto|amd|nvidia|off (hardware GPU; omit or off for SwiftShader)]
 //        [--gpu-fallback (npm run film, when it detected the GPU itself: a browser that reports a software renderer renders
@@ -13,6 +13,10 @@
 //        [--copy (render from a temporary copy of --data: the data directory's recipes are never changed)]
 //        [--music '{"mood":.7,"space":.8,"mix":{"perc":0}}' (the composed score's performance profile; absent = as composed)]
 //        [--score 2|3 (play this score instead of the one the rendered recipe asks for: comparisons only)]
+//        [--end-card seconds (the last seconds show the end card: the public title and Code Resonance)]
+//        [--title-card (the living world's title card opens the film, wherever in the performance it starts)]
+//        [--fade-in seconds --fade-out seconds (the music faded in at the start and out at the end)]
+// --out ending in .mp4 encodes H.264 and AAC in MP4 (what Reels, Shorts and TikTok take); otherwise VP9 and Opus in WebM.
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
 // The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly; so is
 // the music it was rendered with (<out>.music.json) when --music or --score chose it.
@@ -31,6 +35,10 @@ const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual','fi
 const fps=Number(arg('fps',30)),speed=Number(arg('speed',1)),width=Number(arg('width',1920)),height=Number(arg('height',1080)),style=arg('style','ambient');
 const world=arg('world','living'),labels=arg('labels','cinematic'),tail=Number(arg('tail',0));
 const musicArg=arg('music',null),scoreArg=arg('score',null);
+const endCard=Number(arg('end-card',0)),fadeIn=Number(arg('fade-in',0)),fadeOut=Number(arg('fade-out',0)),MP4=/\.mp4$/i.test(OUT);
+for(const [k,v] of [['end-card',endCard],['fade-in',fadeIn],['fade-out',fadeOut]])if(!Number.isFinite(v)||v<0)throw new Error(`--${k} takes seconds`);
+// Files written next to the film: <out without its extension><suffix>.
+const beside=suffix=>OUT.replace(/\.(webm|mp4)$/i,'')+suffix;
 if(musicArg!==null){let v;try{v=JSON.parse(musicArg);}catch{throw new Error('--music must be a JSON object, e.g. \'{"mood":.7}\'');}if(!v||typeof v!=='object'||Array.isArray(v))throw new Error('--music must be a JSON object');}
 if(scoreArg!==null&&!['2','3'].includes(scoreArg))throw new Error('--score must be 2 or 3');
 const GPUS=['auto','amd','nvidia','off'],gpu=arg('gpu',null),gpuFallback=process.argv.includes('--gpu-fallback');
@@ -79,15 +87,19 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
     await page.goto(`http://127.0.0.1:${svc.port}/?film=1&world=${world}&labels=${labels}&style=${style}&project=${arg('project')}${musicQuery}`);
     await page.waitForFunction(()=>!!window.__film);
     const info=await page.evaluate(([project,speed,note])=>window.__film.open({project,speed,note}),[arg('project'),speed,arg('note','')]);
-    if(!info.webgl)throw new Error('WebGL unavailable; the Construct cannot render');
-    if(info.recipe)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.recipe.json',JSON.stringify(info.recipe,null,1));
+    // Monolith (--world city) is drawn in 2D: only the WebGL worlds need WebGL.
+    if(!info.webgl&&world!=='city')throw new Error('WebGL unavailable; the Construct cannot render');
+    if(info.recipe)fs.writeFileSync(beside('.recipe.json'),JSON.stringify(info.recipe,null,1));
     console.log(`world ${info.world}${info.recipe?` · ${info.recipe.familyName} (${info.recipe.source}, variant ${info.recipe.variant})`:''}`);
     // The music the page's clock reads (the recipe's score, or --score; the --music profile): the soundtrack uses the same.
     const music={scoreVersion:info.music?.scoreVersion===3?3:2,profile:info.music?.profile||null};
     console.log(`music ${music.scoreVersion===3?'composed score (v3)':'classic score (v2)'}${music.profile?` · profile ${JSON.stringify(music.profile)}`:''}`);
-    if(musicArg!==null||scoreArg!==null)fs.writeFileSync(OUT.replace(/\.webm$/,'')+'.music.json',JSON.stringify({style,...music},null,1));
+    if(musicArg!==null||scoreArg!==null)fs.writeFileSync(beside('.music.json'),JSON.stringify({style,...music},null,1));
     const from=Number(arg('from',info.start)),to=Math.min(Number(arg('to',info.end)),info.end)+tail*1000;
     const seconds=(to-from)/1000/speed;
+    // The end card (vertical clips): its last --end-card seconds show the public title and Code Resonance over the world.
+    if(endCard>0)await page.evaluate(([at,speed])=>window.__film.endCard({at,speed}),[to-Math.min(endCard,seconds)*1000*speed,speed]);
+    if(process.argv.includes('--title-card'))await page.evaluate(t=>window.__film.titleCard(t),from);
     console.log(`performance ${new Date(from).toISOString()} .. ${new Date(to).toISOString()} (${((to-from)/60000).toFixed(1)} min) -> film ${seconds.toFixed(1)} s at ${speed}x`);
     // Music first: its bars give the section (and so the light) for every moment of the film. Stills skip it unless --sections.
     const stillsOnly=!!arg('stills')&&!process.argv.includes('--sections');
@@ -119,12 +131,16 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
       for(const t of stills){
         const at=from+t;await page.evaluate(x=>window.__film.seek(x),at-6000*speed);
         let img;for(let x=at-6000*speed;x<=at;x+=frameMs)img=await page.evaluate(([x,dt])=>window.__film.frame(x,dt),[x,1/fps]);
-        const file=OUT.replace(/\.webm$/,'')+`-${String(Math.round(t/1000)).padStart(5,'0')}s.jpg`;fs.writeFileSync(file,Buffer.from(img.split(',')[1],'base64'));console.log('still',file);
+        const file=beside(`-${String(Math.round(t/1000)).padStart(5,'0')}s.jpg`);fs.writeFileSync(file,Buffer.from(img.split(',')[1],'base64'));console.log('still',file);
       }
     }else{
-      const wavFile=OUT.replace(/\.webm$/,'.wav');fs.writeFileSync(wavFile,Buffer.from(audio.wav,'base64'));
+      const wavFile=beside('.wav');fs.writeFileSync(wavFile,Buffer.from(audio.wav,'base64'));
+      // The music faded in and out (a clip that starts and ends mid-phrase); none by default.
+      const fades=[fadeIn>0?`afade=t=in:st=0:d=${fadeIn}`:null,fadeOut>0?`afade=t=out:st=${Math.max(0,seconds-fadeOut).toFixed(3)}:d=${fadeOut}`:null].filter(Boolean);
+      const codec=MP4?['-c:v','libx264','-preset','medium','-crf','18','-profile:v','high','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart']:
+        ['-c:v','libvpx-vp9','-b:v','6M','-deadline','good','-cpu-used','4','-row-mt','1','-pix_fmt','yuv420p','-c:a','libopus','-b:a','160k'];
       enc=cp.spawn(ffmpeg,['-y','-loglevel','error','-f','image2pipe','-framerate',String(fps),'-c:v','mjpeg','-i','-','-i',wavFile,
-        '-c:v','libvpx-vp9','-b:v','6M','-deadline','good','-cpu-used','4','-row-mt','1','-pix_fmt','yuv420p','-c:a','libopus','-b:a','160k','-shortest',OUT],{stdio:['pipe','inherit','inherit']});
+        ...codec,...(fades.length?['-af',fades.join(',')]:[]),'-shortest',OUT],{stdio:['pipe','inherit','inherit']});
       const keyframes=(arg('keyframes')||'').split(',').filter(Boolean).map(Number);
       await page.evaluate(x=>window.__film.seek(x),from);
       const total=Math.ceil(seconds*fps);
@@ -133,7 +149,7 @@ const {sha}=require(path.join(REPO,'receiver/protocol'));
         const img=await page.evaluate(([x,dt])=>window.__film.frame(x,dt),[t,1/fps]);
         const buf=Buffer.from(img.split(',')[1],'base64');
         if(!enc.stdin.write(buf))await new Promise(r=>enc.stdin.once('drain',r));written++;
-        const second=i/fps;if(keyframes.some(k=>Math.abs(k-second)<.5/fps))fs.writeFileSync(OUT.replace(/\.webm$/,'')+`-frame-${String(Math.round(second)).padStart(4,'0')}s.jpg`,buf);
+        const second=i/fps;if(keyframes.some(k=>Math.abs(k-second)<.5/fps))fs.writeFileSync(beside(`-frame-${String(Math.round(second)).padStart(4,'0')}s.jpg`),buf);
         if(i%(fps*10)===0)console.log(`frame ${i}/${total} (${(i/total*100).toFixed(0)}%) ${JSON.stringify(await page.evaluate(()=>window.__film.stats()))}`);
       }
       enc.stdin.end();await new Promise((res,rej)=>enc.on('close',c=>c===0?res():rej(new Error(`ffmpeg exit ${c}`))));

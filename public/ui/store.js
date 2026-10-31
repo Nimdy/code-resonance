@@ -2,8 +2,9 @@
 // preferences, presets, recipes, packs, evidence); this store mirrors it, refreshes it when the receiver announces a
 // change (GET /api/changes, server-sent events), and resolves the *effective* configuration the engine plays:
 //   URL pins (OBS bookmarks: ?world= ?style= ?labels=) > project preference > global setting > built-in default.
-// Session state (sound, recording, playhead) lives in the engine; device state (quality) in localStorage; previews in
-// memory only. Nothing here is a second copy that could drift: every write goes to the receiver and comes back.
+// Session state (sound, recording, playhead) lives in the engine; device state (quality, where recordings go) in
+// localStorage; previews in memory only. Nothing here is a second copy that could drift: every write goes to the
+// receiver and comes back.
 import {STYLES,TEMPO_MIN,TEMPO_MAX,resolveMusic,engineOptions,pinOf} from './music-profile.js';
 const P=window.ResonancePlayer;
 const params=new URLSearchParams(location.search);
@@ -90,6 +91,7 @@ export function effective(id=state.selected){
   const recipe=here?ps.recipe:null,own=recipe?.overrides?.labels||null;
   const labels=pins.labels||(P.overlay?'stream':own||s.stage?.labels||'cinematic');
   return {music,world,labels,captions:pins.captions??(s.stage?.captions!==false),quality:state.device.quality||'auto',profile:s.recording?.profile||'720p',
+    recordTo:state.device.recordTo==='disk'?'disk':'memory',
     sources:{world:pins.world?'url':pref.world?'project':'global',...ms,
       labels:pins.labels?'url':P.overlay?'obs':own?'project':'global',captions:pins.captions!==null&&pins.captions!==undefined?'url':'global'}};
 }
@@ -107,6 +109,8 @@ export function applyEffective({force=false}={}){
   if(!pins.quality)push('quality',e.quality,v=>P.setQuality(v));
   // The recording size cannot change during a recording: it is applied once the recording ends.
   if(!P.record.active)push('profile',e.profile,v=>P.record.setSize(v));
+  // Where recordings go (this device's choice): also applied once a recording ends.
+  if(!P.record.active)push('recordTo',e.recordTo,v=>P.record.setTarget(v));
 }
 function applyInterface(){const m=state.settings?.interface?.motion||'system';if(m==='system')delete document.documentElement.dataset.motion;else document.documentElement.dataset.motion=m;}
 // A music preview (Music Studio): flat keys as stored (style, texture, mood, mix, …), heard from the next bar, in this

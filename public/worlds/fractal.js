@@ -5,8 +5,9 @@
 //                            Mandelbulb, a Julia bulb, a Mandelbox, a kaleidoscopic crystal) and its parameters
 //                            (fractal-forms.js), and the live code at t (files, symbols) how far its recursion has
 //                            unfolded: an empty project is a smooth seed, each file and symbol unfolds it further
-//  - subsystem (district) -> a region of the surface around its own direction, tinted its own shade, swelling outward
-//                            with its files
+//  - subsystem (district) -> a region of the surface around its own direction, in its own hue on the identity's
+//                            harmony (palette.scheme), swelling outward with its files (more gently once the form is
+//                            intricate, so the swell never smears its fine structure)
 //  - file (module)        -> a site of light on its region's surface (traced to the surface with the JS twin of the
 //                            estimator): its size from its symbols, its light from its state
 //  - dependency           -> a faint thread of light arcing from the importing file's site to the imported one's
@@ -38,8 +39,9 @@ const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0',
 const C_HUMAN=8,C_GROW=9,C_VALID=10,C_BLOOM=11,C_WARN=12,C_SPONT=13;
 const LIGHT=new Set(['reading','searching','researching']);
 // Quality levels (the host also drops MSAA at 1 and resolution at 2 and 3): march steps, the hit tolerance in pixels,
-// occlusion taps, the most recursions drawn. Films always render at 0.
-const QUALITY=[{steps:220,eps:1,ao:3,cap:MAX_IT,scale:.6},{steps:170,eps:1,ao:2,cap:12,scale:.54},{steps:120,eps:1.2,ao:2,cap:10,scale:.5},{steps:84,eps:1.5,ao:1,cap:8.5,scale:.45}];
+// occlusion taps, the key light's shadow trace (steps; 0: two taps toward the light), the most recursions drawn. Films
+// always render at 0.
+const QUALITY=[{steps:220,eps:1,ao:3,sh:6,cap:MAX_IT,scale:.6},{steps:170,eps:1,ao:2,sh:4,cap:12,scale:.54},{steps:120,eps:1.2,ao:2,sh:0,cap:10,scale:.5},{steps:84,eps:1.5,ao:1,sh:0,cap:8.5,scale:.45}];
 const FRAC_SCALE=QUALITY.map(q=>q.scale);
 const SW=128;
 export function createFamily(ctx){
@@ -59,34 +61,67 @@ export function createFamily(ctx){
   const GLOW=clamp(num(mtl.glow,1),.4,1.8),SWELL=lc.swell,RES=clamp(num(mot.resonance,.9),.1,2.2),SYNC=clamp(num(mot.sync,.55),0,1);
   const disposables=[];const keep=x=>{disposables.push(x);return x;};
   const add=(o,order=0)=>{o.frustumCulled=false;o.renderOrder=order;scene.add(o);return o;};
-  // ---- The swell table: each direction's swell factor (alpha) and region tint (rgb), half float, octahedral (a direction
+  // ---- The swell table: each direction's swell factor (alpha) and region colour (rgb), half float, octahedral (a direction
   // maps to the table without trigonometry); rewritten only when the regions' weights change ----------------------------
   const swData=new Uint16Array(SW*SW*4),swTex=keep(new THREE.DataTexture(swData,SW,SW,THREE.RGBAFormat,THREE.HalfFloatType));
   swTex.wrapS=swTex.wrapT=THREE.ClampToEdgeWrapping;swTex.minFilter=swTex.magFilter=THREE.LinearFilter;swTex.generateMipmaps=false;
-  const toHalf=THREE.DataUtils.toHalfFloat;for(let k=0;k<SW*SW;k++){swData[k*4]=swData[k*4+1]=swData[k*4+2]=swData[k*4+3]=toHalf(1);}swTex.needsUpdate=true;
-  // A region's own shade: the surface hue turned a little, lighter or darker, as a multiplier of the albedo.
-  const tintOf=id=>{const h=hash(`tint/${id}`),c=pal.primary.clone(),hsl={};c.getHSL(hsl);c.setHSL((hsl.h+(rand(h)-.5)*.11+1)%1,clamp(hsl.s*(.8+.45*rand(h+1)),0,1),clamp(hsl.l*(.82+.4*rand(h+2)),.05,.7));
-    return [c.r/Math.max(.02,pal.primary.r),c.g/Math.max(.02,pal.primary.g),c.b/Math.max(.02,pal.primary.b)].map(x=>clamp(x,.4,2.2));};
+  const toHalf=THREE.DataUtils.toHalfFloat;for(let k=0;k<SW*SW;k++){swData[k*4]=toHalf(pal.primary.r);swData[k*4+1]=toHalf(pal.primary.g);swData[k*4+2]=toHalf(pal.primary.b);swData[k*4+3]=toHalf(1);}swTex.needsUpdate=true;
+  // ---- The identity's harmony (palette.scheme): the hues its regions take, and how depth and the light turn them --------
+  // The harmony's far pole (in degrees from the surface's hue): the light's hue for analogous and complementary (the
+  // opposite hue when the light stands near), 150 and 120 degrees for split and triad (both sides). Region k takes a hue
+  // on the arc from the surface's hue toward the far pole (SEQF[k] of the arc's span: the first region the surface's own
+  // hue; a negative share toward the other side), its own saturation and lightness drawn from its id: a family of jewel
+  // tones. The far pole itself is the light's: it colours the rim, the glints, the sites. An arc never crosses the band
+  // between amber and green (a dark yellow reads as olive): it turns the other way round the wheel, or stops short.
+  const hslS=c=>{const h={};c.getHSL(h,THREE.SRGBColorSpace);return h;};
+  const Hp=hslS(pal.primary),Ha=hslS(pal.accent),Hs=hslS(pal.secondary),H0=Hp.h*360;
+  const turn=(a,b)=>((b-a)%1+1.5)%1-.5,toA=turn(Hp.h,Ha.h)*360,wrapD=x=>((x%360)+360)%360;
+  const OLIVE=[48,100],inOlive=h=>{h=wrapD(h);return h>OLIVE[0]&&h<OLIVE[1];};
+  // how far (degrees) one can go from the surface's hue in direction d before the olive band, less a margin for the turns
+  const room=d=>{for(let x=1;x<=180;x++)if(inOlive(H0+d*x))return Math.max(0,x-44);return 180;};
+  const far=P.scheme==='triad'?120:P.scheme==='split'?150:P.scheme==='analogous'?(Math.abs(toA)>=12?toA:30):(Math.abs(toA)>=90?toA:180);
+  let dirP=far<0?-1:1;const want=P.scheme==='analogous'?clamp(Math.abs(far),28,40):P.scheme==='triad'?110:P.scheme==='split'?100:100;
+  if(room(dirP)<want*.6&&room(-dirP)>room(dirP))dirP=-dirP;
+  const spanP=Math.min(want,room(dirP)),spanM=Math.min(P.scheme==='triad'||P.scheme==='split'?want:want*.6,room(-dirP));
+  const SEQF=[0,1,-1,.5,-.5,.75,.25,-.75,.9,-.25];
+  const regionHSL=r=>{const h=hash(`tint/${r.id}`),f=SEQF[r.k%SEQF.length],off=f>=0?dirP*spanP*f:-dirP*spanM*(-f);
+    const hue=wrapD(H0+off+(rand(h)-.5)*8)/360;
+    return {h:hue,s:clamp(Hp.s*1.05+.05+.16*(rand(h+1)-.4),.34,.68),l:clamp(Hp.l*(.64+.44*rand(h+2)),.15,.48)};};
+  // Depth and light turn the hue (radians): ridges and grazing angles along the arc toward the far pole, the crevices the
+  // other way (the palette's depth colour, at least 12 degrees), unless that way lies the olive band.
+  const DEG=Math.PI/180,dS=Math.max(12,Math.abs(turn(Hp.h,Hs.h)*360)),dD=inOlive(H0-dirP*dS)?dirP:-dirP;
+  const HUE_D=dD*dS*DEG,HUE_R=dirP*14*DEG,IRI=dirP*Math.min(38,room(dirP)+30)*DEG;
+  const rimCol=new THREE.Color().setHSL(wrapD(H0+(inOlive(H0+far)?dirP*Math.min(Math.abs(far),room(dirP)+44):far))/360,.5,.6,THREE.SRGBColorSpace);
+  const tmpC=new THREE.Color();
   let swSig='',swShape='';
   // Each region's kernel at every texel, kept for its exact width (up to 64 regions): while a project grows its regions'
   // weights change far more often than their widths, and then only the swell is summed again (the tints stay).
   const swK=new Map(),SWK_MAX=64;
   // The octahedral map's inverse (y up), as the shader's oct() encodes it.
   function octDecode(px,pz,out){let x=px,y=1-Math.abs(px)-Math.abs(pz),z=pz;const t=Math.max(-y,0);x+=x>=0?-t:t;z+=z>=0?-t:t;const l=Math.hypot(x,y,z)||1;out[0]=x/l;out[1]=y/l;out[2]=z/l;return out;}
-  function swellTable(regions,weights){
-    const sig=regions.map((r,k)=>`${r.id}:${Math.round(weights[k]*128)}:${Math.round(kappaOf(r)*256)}`).join(',');if(sig===swSig)return;swSig=sig;
-    const shape=regions.map(r=>`${r.id}|${kappaOf(r)}|${r.dir}`).join(','),cache=regions.length<=SWK_MAX;
+  // (rgb: the region's colour, linear, blended with its neighbours' over a narrow seam (hue, saturation and lightness:
+  // neighbouring hues on the harmony's arc meet in the hue between them) and the surface's own colour where no region
+  // reaches; alpha: the swell factor at the current swell amplitude `amp`)
+  function swellTable(regions,weights,amp){
+    const sig=`${Math.round(amp*512)}|`+regions.map((r,k)=>`${r.id}:${Math.round(weights[k]*128)}:${Math.round(kappaOf(r)*256)}`).join(',');if(sig===swSig)return;swSig=sig;
+    const shape=regions.map(r=>`${r.id}|${r.k}|${kappaOf(r)}|${r.dir}`).join(','),cache=regions.length<=SWK_MAX;
     if(cache&&shape===swShape){
       const Ks=regions.map(r=>swK.get(r.id));
-      for(let i=0;i<SW*SW;i++){let s=0;for(let k=0;k<regions.length;k++)s+=weights[k]*Ks[k][i];swData[i*4+3]=toHalf(1+SWELL*Math.min(1,s));}
+      for(let i=0;i<SW*SW;i++){let s=0;for(let k=0;k<regions.length;k++)s+=weights[k]*Ks[k][i];swData[i*4+3]=toHalf(1+amp*Math.min(1,s));}
       swTex.needsUpdate=true;return;}
     swShape=shape;for(const id of swK.keys())if(!regions.some(r=>r.id===id))swK.delete(id);
-    const tints=regions.map(r=>tintOf(r.id)),Ks=cache?regions.map(r=>{let K=swK.get(r.id);if(!K){K=new Float64Array(SW*SW);swK.set(r.id,K);}return K;}):null,u=[0,0,0];
+    const hs=regions.map(regionHSL),Ks=cache?regions.map(r=>{let K=swK.get(r.id);if(!K){K=new Float64Array(SW*SW);swK.set(r.id,K);}return K;}):null,u=[0,0,0];
+    // (hues as offsets from the surface's hue, so a blend never goes the long way round)
+    const ho=hs.map(c=>turn(Hp.h,c.h)),s0=clamp(Hp.s*1.05+.06,.34,.74),wk=new Float64Array(regions.length);
     for(let y=0;y<SW;y++){for(let x=0;x<SW;x++){octDecode((x+.5)/SW*2-1,(y+.5)/SW*2-1,u);
-        let s=0,tw=0,tr=0,tg=0,tb=0;for(let k=0;k<regions.length;k++){const R=regions[k],c=u[0]*R.dir[0]+u[1]*R.dir[1]+u[2]*R.dir[2],K=Math.exp((c-1)/kappaOf(R));s+=weights[k]*K;if(Ks)Ks[k][y*SW+x]=K;
-          const w=Math.exp((c-1)/(kappaOf(R)*.6));tw+=w;tr+=w*tints[k][0];tg+=w*tints[k][1];tb+=w*tints[k][2];}
-        const a=Math.min(1,tw),o=(y*SW+x)*4,n=Math.max(tw,1e-6);
-        swData[o]=toHalf(1+(tr/n-1)*a);swData[o+1]=toHalf(1+(tg/n-1)*a);swData[o+2]=toHalf(1+(tb/n-1)*a);swData[o+3]=toHalf(1+SWELL*Math.min(1,s));}}
+        let s=0,tw=0,wm=0;for(let k=0;k<regions.length;k++){const R=regions[k],c=u[0]*R.dir[0]+u[1]*R.dir[1]+u[2]*R.dir[2],K=Math.exp((c-1)/kappaOf(R));s+=weights[k]*K;if(Ks)Ks[k][y*SW+x]=K;
+          const w=Math.exp((c-1)/(kappaOf(R)*.25));wk[k]=w;tw+=w;wm=Math.max(wm,w);}
+        // (each region's weight sharpened against the strongest: a narrow seam between two regions)
+        let n=0,hh=0,ss=0,ll=0;const cov=Math.min(1,tw);
+        for(let k=0;k<regions.length;k++){const w=Math.pow(wk[k]/Math.max(wm,1e-12),8)*cov;n+=w;hh+=w*ho[k];ss+=w*hs[k].s;ll+=w*hs[k].l;}
+        const w0=1-cov;n+=w0;ss+=w0*s0;ll+=w0*Hp.l;n=Math.max(n,1e-9);
+        tmpC.setHSL(((Hp.h+hh/n)%1+1)%1,ss/n,ll/n,THREE.SRGBColorSpace);
+        const o=(y*SW+x)*4;swData[o]=toHalf(tmpC.r);swData[o+1]=toHalf(tmpC.g);swData[o+2]=toHalf(tmpC.b);swData[o+3]=toHalf(1+amp*Math.min(1,s));}}
     swTex.needsUpdate=true;}
   // ---- The fractal: a raymarched distance estimator in three passes into its own targets (a coarse cone march, the march,
   // the shading), at a share of the scene's resolution, then a composite into the scene that writes depth (signals and
@@ -96,8 +131,9 @@ export function createFamily(ctx){
   const R={BS:{value:fc.S??-2},BROT:{value:M3(fc.rot||rotation(0,0))},KR1:{value:M3(fc.rot1||rotation(0,0))},KR2:{value:M3(fc.rot2||rotation(0,0))},FIT:{value:MAX_IT+1},TWON:{value:formula.twist.tw||formula.twist.sp?1:0},uDecOn:{value:0},uCoarse:{value:null},uCSteps:{value:120},uConeK:{value:4},uInvVP:{value:new THREE.Matrix4()},uVP:{value:new THREE.Matrix4()},uCamF:{value:new THREE.Vector3(0,0,8)},uWSg:{value:WS},uRB:{value:R0*1.04*(1+SWELL)},
     uPix:{value:.001},uEpsK:{value:.8},uSteps:{value:200},uAOn:{value:5},uIt:{value:6},TWC:{value:new THREE.Vector2(Math.cos(formula.twist.tw),Math.sin(formula.twist.tw))},
     SPC:{value:new THREE.Vector2(Math.cos(formula.twist.sp),Math.sin(formula.twist.sp))},uSw:{value:swTex},uDec:{value:L4(2)},uDecA:{value:L4(2)},
-    uKey:{value:new THREE.Vector3(.4,.8,.3).normalize()},uKeyC:{value:new THREE.Vector3(3.1,2.9,2.65)},uFillC:{value:V3(pal.highlight,.22)},uRimC:{value:V3(pal.highlight,.7)},
-    uAlb:{value:V3(pal.primary)},uAlb2:{value:V3(pal.secondary)},uHi:{value:V3(pal.highlight)},uAcc:{value:V3(pal.accent,1.3)},uWarn:{value:V3(pal.warning,1.2)},uValid:{value:V3(pal.valid,1.2)},
+    uKey:{value:new THREE.Vector3(.4,.8,.3).normalize()},uKeyC:{value:new THREE.Vector3(2.55,2.45,2.35)},uFillC:{value:V3(pal.highlight,.1)},uRimC:{value:V3(rimCol,.9)},
+    uRimDir:{value:new THREE.Vector3(0,0,-1)},uShN:{value:6},uShK:{value:9},uHueD:{value:HUE_D},uHueR:{value:HUE_R},uIri:{value:IRI},uSwN:{value:SWELL},
+    uHi:{value:V3(pal.highlight)},uAcc:{value:V3(pal.accent,1.3)},uWarn:{value:V3(pal.warning,1.2)},uValid:{value:V3(pal.valid,1.2)},
     uOcc:{value:clamp(num(mtl.occlusion,1),.4,1.8)},uTrapK:{value:clamp(num(mtl.trap,.5),0,1)},uSheen:{value:clamp(num(mtl.sheen,.4),0,1)},uRim:{value:clamp(num(mtl.rim,.7),0,1.6)},
     uGlow:{value:GLOW},uInner:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.6)},uBeat:{value:0},uTime:{value:0},uBreath:{value:0},uQ:{value:0},
     uTch:{value:L4(4)},uTchC:{value:L4(4)},uWav:{value:L4(6)},uWavC:{value:L4(6)},uWavK:{value:L4(6)},uLast:{value:L4(4)},uStress:{value:0},uHaloK:{value:clamp(num(atm.halo,.7),0,1.6)},uHaloC:{value:V3(pal.highlight.clone().lerp(pal.primary,.5),.5)}};
@@ -120,35 +156,56 @@ float mapS(vec3 p,float s){return mapK(p,uIt,s);}
 float mapA(vec3 p,float s){return mapK(p,max(${MIN_IT.toFixed(1)},uIt-1.),s);}
 vec3 rayDir(vec2 uv){vec4 a=uInvVP*vec4(uv*2.-1.,-1.,1.),b=uInvVP*vec4(uv*2.-1.,1.,1.);return normalize(b.xyz/b.w-a.xyz/a.w);}`;
   const FS=`precision highp float;varying vec2 vUv;
-uniform mat4 uVP;uniform vec3 uKey,uKeyC,uFillC,uRimC,uAlb,uAlb2,uHi,uAcc,uWarn,uValid,uHaloC;
-uniform float uEpsK,uOcc,uTrapK,uSheen,uRim,uGlow,uInner,uShim,uBeat,uTime,uBreath,uQ,uStress,uHaloK;uniform int uAOn;
+uniform mat4 uVP;uniform vec3 uKey,uKeyC,uFillC,uRimC,uRimDir,uHi,uAcc,uWarn,uValid,uHaloC;
+uniform float uEpsK,uOcc,uTrapK,uSheen,uRim,uGlow,uInner,uShim,uBeat,uTime,uBreath,uQ,uStress,uHaloK,uShK,uHueD,uHueR,uIri,uSwN;uniform int uAOn,uShN;
 uniform vec4 uTch[4],uTchC[4],uWav[6],uWavC[6],uWavK[6],uLast[4];
 ${MAP}
 float h31(vec3 p){p=fract(p*vec3(.1031,.1030,.0973));p+=dot(p,p.yxz+33.33);return fract((p.x+p.y)*p.z);}
 // (forward differences from the hit's own distance d0: three more evaluations instead of four)
 vec3 normalAt(vec3 p,float h,float s,float d0){vec3 g;for(int k=0;k<3;k++){vec3 o=vec3(0.);o[k]=h;g[k]=mapS(p+o,s);}return normalize(g-d0);}
+// a hue turn (radians) about the grey axis
+vec3 hueRot(vec3 c,float a){const vec3 k=vec3(.57735027);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.-ca);}
+// The key light's shadow: a sphere trace toward the light from just off the surface; the closest approach over the
+// distance travelled softens its edge (penumbra uShK). Without steps (quality 2, 3): two taps toward the light.
+float shadowAt(vec3 p,vec3 n,float s,float e){
+  if(uShN<=0){float a=clamp(min(mapA(p+uKey*.05,s)/.05,mapA(p+uKey*.16,s)/.16)*1.1+.1,0.,1.);return a*a*(3.-2.*a);}
+  vec3 o=p+n*e*1.5;float res=1.,t=.004+e;
+  for(int i=0;i<16;i++){if(i>=uShN)break;float h=mapS(o+uKey*t,s);res=min(res,uShK*h/t);if(res<.02)break;t+=clamp(h*${(fc.fudge).toFixed(3)},.004,.16);if(t>1.4)break;}
+  res=clamp(res,0.,1.);return res*res*(3.-2.*res);}
 vec3 shade(vec3 p,vec3 rd,float t,out float aoOut){
-  vec4 sw=swellOf(p),trap;float e=max(t*uPix*uEpsK,1e-5),s=sw.a,d0=mapT(p,s,trap);vec3 n=normalAt(p,e*.6,s,d0);
-  // occlusion: the estimator along the normal at growing distances; the first, closest tap also says whether the point
-  // is a ridge (open: brighter, as the reference's fine relief) or a pore (closed: darker)
-  float ao=0.,w=1.,cav=1.;for(int i=0;i<5;i++){if(i>=uAOn)break;float h=.006+.006*float(i*i+i),dd=i==0?mapS(p+n*h,s):mapA(p+n*h,s);if(i==0)cav=clamp(dd/h,0.,2.);ao+=(h-dd)*w;w*=.62;}
-  ao=clamp(1.-ao*8.*uOcc,0.,1.);float ot=clamp(pow(clamp(trap.x,0.,1.),.35)*1.15,0.,1.);ao*=mix(1.,.35+.65*ot,clamp(uOcc*.7,0.,1.));aoOut=ao;
+  vec4 sw=swellOf(p),trap;float e=max(t*uPix*uEpsK,1e-5),s=sw.a,d0=mapT(p,s,trap);vec3 n=normalAt(p,e*2.,s,d0);
+  // occlusion: the estimator along the normal at growing distances, deep in the crevices; the second tap (a few pixels
+  // out, the first where there is only one) also says whether the point is a ridge (open) or a pore (closed)
+  float ao=0.,w=1.,cav=1.;for(int i=0;i<5;i++){if(i>=uAOn)break;float h=.006+.006*float(i*i+i),dd=i==0?mapS(p+n*h,s):mapA(p+n*h,s);if(i<2)cav=clamp(dd/h,0.,2.);ao+=(h-dd)*w;w*=.62;}
+  ao=clamp(1.-ao*10.*uOcc,0.,1.);float ot=clamp(pow(clamp(trap.x,0.,1.),.35)*1.15,0.,1.);ao*=mix(1.,.15+.85*ot,clamp(uOcc*.8,0.,1.));aoOut=ao;
   float ridge=clamp((cav-1.)*.6,0.,.6),pore=clamp(1.-cav,0.,1.);
-  // colour: the recursion's orbit (traps) between the surface's own shade and its depth colour, the region's tint
-  float tk=uTrapK*(.55*smoothstep(.0,.6,trap.y)+.45*smoothstep(.1,.9,sqrt(trap.x)));
-  vec3 alb=mix(uAlb2,uAlb,clamp(.4+.8*tk,0.,1.))*sw.rgb;alb=mix(alb,uHi*.6,(smoothstep(.75,1.,trap.z)*.2*uTrapK+ridge*.18));alb*=1.-.45*pore;
-  // light: a sculpting key above and beside the camera, a sky fill, a little bounce from below, a rim on the silhouette.
-  // The key reads the lobes' large shape (the normal of the form with three recursions: smooth lobes) as much as the fine
-  // relief, and two taps toward the light shade what the lobes hide from it (a soft shadow)
-  float itL=min(uIt,3.5),hm=.03;vec3 nM=normalize(vec3(mapK(p+vec3(hm,0.,0.),itL,s),mapK(p+vec3(0.,hm,0.),itL,s),mapK(p+vec3(0.,0.,hm),itL,s))-mapK(p,itL,s));
-  float sh=clamp(min(mapA(p+uKey*.05,s)/.05,mapA(p+uKey*.16,s)/.16)*1.1+.1,0.,1.);sh=sh*sh*(3.-2.*sh);
-  vec3 hal=normalize(uKey-rd);float nk=dot(n,uKey),nkM=dot(nM,uKey),dif=mix(clamp(nkM*.85+.15,0.,1.),clamp(nk*.9+.1,0.,1.),.45)*mix(.25,1.,sh),sky=.6+.4*mix(nM.y,n.y,.5),bnc=clamp(-n.y*.5+.15,0.,1.);
-  float fre=pow(clamp(1.+dot(rd,n),0.,1.),3.),spe=pow(clamp(dot(n,hal),0.,1.),28.)*clamp(nk,0.,1.);
-  vec3 lin=uKeyC*dif*(.3+.7*ao)+uFillC*sky*ao*ao*1.2+uFillC*bnc*ao*.35+vec3(.006);
-  vec3 c=alb*lin+uRimC*fre*ao*uRim*(.7+.3*ridge)+uKeyC*spe*uSheen*ao*(.4+.25*ridge);
-  // ambient glints on the beat: sparse points of light fixed on the surface, a few pixels wide at any distance
-  if(uShim>0.&&uQ<2.5){float lv=floor(log2(e*2.5)),cs=exp2(lv);vec3 g=floor(p/cs);float hs=h31(g+lv*17.);
-    if(hs>.9965){float tw=.5+.5*sin(uTime*(1.7+hs*3.)+hs*90.);c+=uHi*pow(tw,6.)*(.3+.7*uBeat)*uShim*ao*1.8*smoothstep(.5,1.,dot(n,-rd))*ridge;}}
+  // colour: the region's own hue (its subsystem, sw.rgb), turned by the recursion's orbit (traps): the depths toward the
+  // palette's depth side, darker and denser, the ridges along the arc toward the far pole, lighter; grazing angles turn
+  // further (iridescence)
+  float tk=uTrapK*(.55*smoothstep(.0,.6,trap.y)+.45*smoothstep(.1,.9,sqrt(trap.x)))+(1.-uTrapK)*.5;
+  vec3 base=sw.rgb,deep=hueRot(base,uHueD)*.32,bright=hueRot(base,uHueR)*1.3;float lb=dot(deep,vec3(.2126,.7152,.0722));deep=max(mix(vec3(lb),deep,1.35),0.);
+  vec3 alb=mix(deep,base,smoothstep(.05,.5,tk));alb=mix(alb,bright,clamp(smoothstep(.5,1.,tk)*.8+ridge*.5,0.,1.));alb*=1.-.6*pore;
+  float nv=clamp(dot(n,-rd),0.,1.),fr=1.-nv;alb=max(hueRot(alb,uIri*fr*fr),0.);
+  // light: a hard key from the side and above (its shadow traced), a dim fill the crevices lose (taking the surface's
+  // colour again where less light reaches), a back light in the far pole's hue on the silhouette. Materials: glassy,
+  // metallic ridges and exposed surfaces (a sharp highlight tinted by their colour, a soft reflection at grazing angles),
+  // matte depths
+  float nl=dot(n,uKey),sh=nl>0.?shadowAt(p,n,s,e):0.,dif=clamp(nl,0.,1.)*sh;
+  float sky=.55+.45*n.y,bnc=clamp(-n.y*.6+.2,0.,1.);
+  vec3 lin=uKeyC*dif*(.4+.6*ao)+uFillC*(sky+bnc*.5)*ao*ao*(.5+alb*3.);
+  float gl=clamp(ridge*.8+smoothstep(.45,.9,tk)*.6+smoothstep(.55,1.,ao)*.4,0.,1.)*ao;
+  vec3 hal=normalize(uKey-rd);float nh=clamp(dot(n,hal),0.,1.),shin=mix(28.,128.,gl);
+  float spe=pow(nh,shin)*(shin+8.)*.016*(.5+uSheen)*(.06+.94*gl)*dif;
+  vec3 sc=mix(vec3(1.),normalize(bright+1e-4)*1.73,.35+.4*gl);
+  // (glassy: a studio's soft reflection, the key's side bright, at grazing angles more)
+  vec3 rf=reflect(rd,n);float env=smoothstep(-.1,.9,dot(rf,uRimDir))*pow(fr,3.)*gl*ao,fe=(.04+.96*pow(fr,5.))*(.35+.65*gl)*ao*(rf.y>-.3?1.:.3);
+  vec3 envK=uKeyC*.22*smoothstep(-.3,.9,dot(rf,uKey))*fe;
+  float rim=pow(fr,3.)*clamp(dot(n,uRimDir)*.8+.2,0.,1.)*ao;
+  vec3 c=alb*lin+sc*(uKeyC*spe+envK)+uRimC*(rim*uRim*(.5+.7*gl)+env*.6);
+  // ambient glints on the beat: rare points of light where a glassy ridge catches the key, in the region's colour, more
+  // of them where a region holds more files (its swell), a few pixels wide at any distance
+  if(uShim>0.&&uQ<2.5){float lv=floor(log2(e*3.)),cs=exp2(lv);vec3 g=floor(p/cs);float hs=h31(g+lv*17.),rw=clamp((s-1.)/max(uSwN,1e-3),0.,1.);
+    if(hs>.9994-.0024*rw){float tw=.5+.5*sin(uTime*(1.7+hs*3.)+hs*90.);c+=mix(normalize(bright+1e-4)*2.2,uHi,.3)*pow(tw,6.)*(.3+.7*uBeat)*uShim*ao*3.*smoothstep(.55,.95,nh)*sh*(.4+gl);}}
   // events on the surface
   float cre=1.-ao;cre*=cre;vec3 em=vec3(0.);
   ${unroll(4,k=>`vec4 C=uTchC[${k}];if(C.w>0.){vec4 T=uTch[${k}];float d=length(p-T.xyz),a=T.w;
@@ -380,7 +437,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
   }
   function rebuild(){layKey='';swSig='';}
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
-  let info={t:0,tsec:0,tview:0,overrides:{},agents:[]},itNow=MIN_IT,itDraw=MIN_IT,gsNow=1,massNow=0;
+  let info={t:0,tsec:0,tview:0,overrides:{},agents:[]},itNow=MIN_IT,itDraw=MIN_IT,gsNow=1,massNow=0,swNow=SWELL;
   const sitePos=[],siteSurf=[],siteBase=[];   // world positions of the sprites; fractal-space surface points (events), before the swell
   const waves=[],decoheres=[],recoheres=[],glows=[],blooms=[],deepens=[];
   const push=(list,x,max=6)=>{list.push(x);if(list.length>max)list.shift();};
@@ -391,7 +448,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
   // A site's surface point (fractal space) at the current frame: its radius at the drawn recursion, the region's swell.
   // (siteBase: the same point before the region's swell, where the decoherence field lives)
   function surfacePoint(s,out,base){const n0=Math.floor(itDraw),f=itDraw-n0,r0=radiusAt(s.id,s.dir,n0),r1=radiusAt(s.id,s.dir,Math.min(MAX_IT,n0+1)),r=lerp(r0,r1,f);
-    base[0]=s.dir[0]*r;base[1]=s.dir[1]*r;base[2]=s.dir[2]*r;const k=r*swellAt(s.dir,lay.regions,weights,SWELL);out[0]=s.dir[0]*k;out[1]=s.dir[1]*k;out[2]=s.dir[2]*k;return out;}
+    base[0]=s.dir[0]*r;base[1]=s.dir[1]*r;base[2]=s.dir[2]*r;const k=r*swellAt(s.dir,lay.regions,weights,swNow);out[0]=s.dir[0]*k;out[1]=s.dir[1]*k;out[2]=s.dir[2]*k;return out;}
   // JS twin of the shader's decoherence (the sprite follows the displaced surface).
   function decohereAt(q,fields){let x=0,y=0,z=0;for(const F of fields){const e0=q[0]-F.c[0],e1=q[1]-F.c[1],e2=q[2]-F.c[2],w=Math.exp(-(e0*e0+e1*e1+e2*e2)/(F.r*F.r));
     x+=F.a*w*Math.sin(q[1]*11+F.ph);y+=F.a*w*Math.sin(q[2]*13+F.ph*1.3);z+=F.a*w*Math.sin(q[0]*9+F.ph*.7);}return [x,y,z];}
@@ -561,7 +618,10 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     massNow=massAt(model,i.t,sp);itNow=unfoldAt(fc,massNow);
     const [,hpx]=ctx.pipeline.size,camD=Math.max(1e-3,camera.position.length()/(gsNow*WS)-R0*.9),foot=camD*2*Math.tan(camera.fov*Math.PI/360)/Math.max(1,hpx*q.scale);
     itDraw=Math.min(itNow,q.cap,detailCap(fc,foot));
-    weights=regionWeights(model,i.t,lay.regions,sp);swellTable(lay.regions,weights);
+    // the swell: a region grows with its files, the more gently the further the form has unfolded, so its fine detail
+    // is magnified and sheared less (a smooth seed may bulge; an intricate form keeps its structure)
+    swNow=SWELL*(1-.5*smooth((itNow-MIN_IT-1)/4));R.uSwN.value=swNow;
+    weights=regionWeights(model,i.t,lay.regions,sp);swellTable(lay.regions,weights,swNow);
     // breathing on the bars, the bloom's inflation
     const reactive=clamp(num(MU.reactivity,.6),0,1),tempo=tempoOf(i),breathS=Math.max(2,num(mot.breath,4))*4*60/tempo,breath=.5+.5*Math.sin(i.tview/breathS*TAU);
     touches=touchList(i);
@@ -573,7 +633,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     if(fc.form==='box'){R.BROT.value.set(...rotation(fc.twist*.55+twist*.5,fc.twist*.4+twist*.35));R.BS.value=fc.S-twist*.18;}
     if(fc.form==='kifs'){R.KR1.value.set(...rotation(.06+fc.twist*.32+twist*.45,.04+fc.twist*.22+twist*.3));R.KR2.value.set(...rotation(-.03-fc.twist*.14-twist*.2,.08+fc.twist*.26+twist*.4));}
     R.TWON.value=formula.twist.tw||formula.twist.sp||twist?1:0;R.TWC.value.set(Math.cos(formula.twist.tw+twist),Math.sin(formula.twist.tw+twist));R.SPC.value.set(Math.cos(formula.twist.sp+twist*.5),Math.sin(formula.twist.sp+twist*.5));
-    fracScale=q.scale;R.uIt.value=itDraw;R.FIT.value=Math.floor(itDraw)+2;R.uSteps.value=q.steps;R.uEpsK.value=q.eps;R.uAOn.value=q.ao;R.uQ.value=i.quality||0;R.uTime.value=i.tview;
+    fracScale=q.scale;R.uIt.value=itDraw;R.FIT.value=Math.floor(itDraw)+2;R.uSteps.value=q.steps;R.uEpsK.value=q.eps;R.uAOn.value=q.ao;R.uShN.value=q.sh;R.uQ.value=i.quality||0;R.uTime.value=i.tview;
     R.uBeat.value=i.beat*num(MU.beatPulse,.4)*reactive;R.uBreath.value=breath;R.uInner.value=i.unlocks[1]?.level||0;R.uStress.value=stressNow;
     eventUniforms(i);
     // the burst
@@ -596,7 +656,10 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     // the key light: above and to the side of the camera, circling slowly (ambient)
     camera.getWorldDirection(fwd);rightV.crossVectors(fwd,camera.up).normalize();upV.crossVectors(rightV,fwd).normalize();
     const la=(i?.tview||0)*.035*clamp(num(mot.light,.6),0,1.6)+rand(seed+3)*TAU;
-    R.uKey.value.copy(upV).multiplyScalar(.75).addScaledVector(rightV,-.62+.3*Math.sin(la)).addScaledVector(fwd,-.3+.18*Math.cos(la)).normalize();
+    // (from the side and above, a little toward the camera: lit ridges against deep shade on the far side)
+    R.uKey.value.copy(upV).multiplyScalar(.7).addScaledVector(rightV,-.72+.22*Math.sin(la)).addScaledVector(fwd,-.26+.12*Math.cos(la)).normalize();
+    // the back light: behind the form on the other side, for the rim
+    R.uRimDir.value.copy(fwd).multiplyScalar(.75).addScaledVector(rightV,.55).addScaledVector(upV,.2).normalize();
     bgU.uInv.value.copy(camera.projectionMatrixInverse).premultiply(camera.matrixWorld);bgU.uCam.value.copy(camera.position);}
   function background(){return background_;}
   function grade(i){
@@ -606,8 +669,8 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
     const tint=new THREE.Vector3(1,1,1);if(sec==='tension')tint.set(1.03,.98,.99);else if(sec==='resolve')tint.set(.98,1.01,1.03);
     tint.lerp(new THREE.Vector3(.95,.96,1.06),stressNow*.5);
     return {tonemap:'agx',bloom:clamp(num(LT.bloom,1),.3,2)*.7*(1+.6*bloomNow+.1*(i.activity||0)),threshold:clamp(num(LT.bloomThreshold,.65),.5,.9)*1.25,
-      exposure:(1+(clamp(num(LT.exposure,1.05),.4,2.2)-1)*.5)*1.12*(1-.1*stressNow)*(1+.14*bloomNow+ex)*(sec==='breath'?.97:sec==='lift'?1.03:1),
-      contrast:clamp(num(LT.contrast,1),.85,1.3)*1.04,saturation:1.05*(1-.25*stressNow),vignette:num(LT.vignette,.3)*1.2,grain:num(LT.grain,.025)*.5,
+      exposure:(1+(clamp(num(LT.exposure,1.05),.4,2.2)-1)*.5)*1.08*(1-.1*stressNow)*(1+.14*bloomNow+ex)*(sec==='breath'?.97:sec==='lift'?1.03:1),
+      contrast:clamp(num(LT.contrast,1),.85,1.3)*1.1,saturation:1.06*(1-.25*stressNow),vignette:num(LT.vignette,.3)*1.2,grain:num(LT.grain,.025)*.5,
       flash:flash*inten,tint,aberration:.0015,bloomTint:{x:1,y:.95,z:.9},streak:.05};
   }
   // ---- Camera: the whole form framed, close to the surface for what changed, a pull-back for the bloom ----------------
@@ -636,7 +699,7 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
   const lerpAngle=(a,b,k)=>{let d=b-a;while(d>Math.PI)d-=TAU;while(d<-Math.PI)d+=TAU;return a+d*k;};
   // How directly the camera already faces a direction: a close-up waits until it does (it never cuts through the form).
   function facing(d){const p=camera.position,l=p.length()||1;return smooth((p.x*d[0]+p.y*d[1]+p.z*d[2])/l*1.6-.3);}
-  function regionPoint(r){const n0=Math.floor(itDraw),rr=radiusAt(`r:${r.id}`,r.dir,n0)*swellAt(r.dir,lay.regions,weights,SWELL)*gsNow*WS;return new THREE.Vector3(...r.dir).multiplyScalar(rr);}
+  function regionPoint(r){const n0=Math.floor(itDraw),rr=radiusAt(`r:${r.id}`,r.dir,n0)*swellAt(r.dir,lay.regions,weights,swNow)*gsNow*WS;return new THREE.Vector3(...r.dir).multiplyScalar(rr);}
   function attentionPoint(c){const s=c.subject||{};
     const fid=s.fileId&&siteIdx.has(s.fileId)?s.fileId:null;
     if(fid){const q=siteSurf[siteIdx.get(fid)];if(q){const r=Math.hypot(...q);return {pos:new THREE.Vector3(...q).multiplyScalar(gsNow*WS),dir:q.map(x=>x/r)};}}

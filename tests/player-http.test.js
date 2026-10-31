@@ -10,7 +10,9 @@ const projectId=sha('viewer-security');
 function engine(js,search,fetch=()=>new Promise(()=>{})){
   const any=new Proxy(function(){},{get:(_,k)=>k==='then'||typeof k==='symbol'?undefined:any,apply:()=>any,construct:()=>any});
   const window={ResonanceMusic:function(){return any;},ResonanceRecording:any,ResonanceScore:any};
-  runInNewContext(js,{window,document:{getElementById:()=>any,body:{dataset:{},classList:any},documentElement:{dataset:{}}},location:{search,hash:'',pathname:'/'},
+  // The engine's modules (worlds, portrait rules) are not loaded here: each import() is refused, as the engine expects of
+  // a failed one (a sandbox without module loading would otherwise report every attempt).
+  runInNewContext(js.replace(/\bimport\(/g,'__import('),{__import:()=>Promise.reject(new Error('no modules in this test')),window,document:{getElementById:()=>any,body:{dataset:{},classList:any},documentElement:{dataset:{}}},location:{search,hash:'',pathname:'/'},
     URLSearchParams,localStorage:{getItem:()=>null,setItem(){},removeItem(){}},addEventListener(){},setInterval(){},setTimeout,clearTimeout,requestAnimationFrame(){},
     queueMicrotask,fetch,console,performance,devicePixelRatio:1},{filename:'app.js'});
   return window.ResonancePlayer;

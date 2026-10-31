@@ -41,6 +41,12 @@ interface; read them for complete examples of instancing, shaders, labels and la
 | `onDelta(delta, start, end)` / `onCue(cue, t)` | | as the timeline plays | rarely needed: `sdk.model` already applies them |
 | `stats()` | | by the player and the tests | a flat object of counts |
 
+**Portrait frames** (vertical clips, 9:16): in a frame taller than it is wide (`sdk.camera.aspect < 1`) the host keeps
+your `cameraGoal`'s field of view across the frame's width, so what you framed for a landscape frame's height fills
+the portrait's width. A world that frames portraits itself (reading `sdk.camera.aspect`) says so with a property
+`framesPortrait: true` on the object it returns, and the host leaves its goal as it is. Labels in a portrait frame are
+placed by the host inside the platforms' safe area ([RECORDING.md](../RECORDING.md#vertical-clips-916)).
+
 ## The `frame`
 
 `{t, tsec, tview, dt, beat, barPhase, mood, energy, activity, phase, unlocks, agents, overrides, quality}`

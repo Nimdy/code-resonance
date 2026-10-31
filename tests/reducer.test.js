@@ -168,8 +168,8 @@ test('Only catalogued providers collide: unspecified, external-agent, a demo or 
     assert(last.length&&last.every(c=>c.detail.agentId!==Object.values(s.agents).find(a=>a.provider==='claude-code').id),`${other}: the last writer still attributes`);
   }
 });
-test('Interpretation v9 is current; two apply() runs of a collision journal match',()=>{
-  assert.equal(INTERPRETATION_VERSION,9);
+test('Interpretation v10 is current; two apply() runs of a collision journal match',()=>{
+  assert.equal(INTERPRETATION_VERSION,10);
   function run(){
     let n=0;const ev=(kind,extras={})=>({v:1,kind,id:`det-event-${++n}`,ts:1741100000000+n*1000,projectId,sessionId:'session1',origin:'test',...extras});
     const state=newState(projectId);state.salt='det-salt';state.createdAt=0;
@@ -202,7 +202,7 @@ test('Project name labels the local project list but never enters the recorded p
   apply(state,e('workspace.started',{}));
   assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
 });
-test('Rebuild v8 to v9 from a journal is byte-stable; two providers on the same files keep the progress and chapter of one',async t=>{
+test('Rebuild v9 to v10 from a journal is byte-stable; two providers on the same files keep the progress and chapter of one',async t=>{
   const fs=require('node:fs/promises'),path=require('node:path');
   const {tempDir,startService}=require('./helpers');
   const dir=tempDir(t,'cr-cast-rebuild-');
@@ -234,17 +234,32 @@ test('Rebuild v8 to v9 from a journal is byte-stable; two providers on the same 
   await s.service.stop();
   const read=async p=>JSON.parse(await fs.readFile(path.join(dir,'projects',sha(p),'state.json'),'utf8'));
   const state=await read(id),alone=await read(solo);
-  assert.equal(state.interpretationVersion,9);
+  assert.equal(state.interpretationVersion,10);
   assert.equal(Object.values(alone.agents).length,2,'two Claude sessions');
   assert.equal(state.performance.progress,alone.performance.progress);
   assert.equal(state.performance.chapter,alone.performance.chapter);
   assert.equal(state.performance.chapter,2);
   const stateFile=path.join(dir,'projects',sha(id),'state.json');
-  state.interpretationVersion=8;await fs.writeFile(stateFile,JSON.stringify(state));
+  state.interpretationVersion=9;await fs.writeFile(stateFile,JSON.stringify(state));
   await fs.rm(perf,{force:true});
   s=await start();await s.flush(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
-  assert.equal((await read(id)).interpretationVersion,9);
+  assert.equal((await read(id)).interpretationVersion,10);
   await s.rebuild(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
+});
+test('Providers catalogued with their hook adapters are a CAST voice: their seat, and collisions with the others',()=>{
+  // gemini shares seat 5 with kimi (its chip tells them apart); before it was catalogued it hashed into seat 6 or 7 and
+  // was not a second provider in a collision.
+  const state=newState(projectId);state.salt='cast-salt';
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'claude-code',agent:'A',tool:'Edit'}}));
+  apply(state,e('agent.tool.completed',{file:'src/a.ts',meta:{provider:'gemini',agent:'G',tool:'Edit'}}));
+  const collisions=drainIntents(state).filter(i=>i.type==='agent.collision');
+  assert.equal(collisions.length,1);assert.deepEqual(collisions[0].detail.providers,['claude-code','gemini']);
+  assert.deepEqual(Object.values(state.agents).map(a=>[a.provider,a.voice]).sort(),[['claude-code',0],['gemini',5]]);
+  const seats={copilot:6,droid:7,goose:3,qwen:4,grok:3};
+  for(const [provider,seat] of Object.entries(seats)){
+    const s=newState(projectId);apply(s,e('agent.session.started',{meta:{provider,agent:'x'}}));
+    assert.equal(Object.values(s.agents)[0].voice,seat,provider);
+  }
 });

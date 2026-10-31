@@ -178,9 +178,9 @@ export function massAt(model,t,speed=1){
   for(const s of model.symbols.values())m+=.25*ease(s);
   return m;
 }
-// How many recursions the pixels can hold at a pixel footprint (fractal units): detail stays above about 1.5 pixels, so
-// the form unfolds further as the camera comes closer instead of turning to noise.
-export function detailCap(cfg,footprint){return Math.max(MIN_IT+1,Math.log(R0/Math.max(1e-6,1.5*footprint))/Math.log(cfg.lod||2)+1);}
+// How many recursions the pixels can hold at a pixel footprint (fractal units): detail stays above about 2 pixels, so
+// the form unfolds further as the camera comes closer instead of turning to noise (finer, it only sparkles).
+export function detailCap(cfg,footprint){return Math.max(MIN_IT+1,Math.log(R0/Math.max(1e-6,2*footprint))/Math.log(cfg.lod||2)+1);}
 export function unfoldAt(cfg,mass){return clamp(MIN_IT+(.95*cfg.detail*Math.log2(1+Math.max(0,mass)))*(cfg.itK||1),MIN_IT,MAX_IT-.001);}
 // ---- Layout: regions and sites ----------------------------------------------------------------------------------------
 // Slot k's direction: a fixed sequence (seeded per identity) whose first slots stand far apart, kept to the band the

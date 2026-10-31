@@ -13,7 +13,7 @@ const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.ar
 const OUT=path.resolve(arg('out',path.join(REPO,'qualification','results','lab','ui-previews'))),[W,H]=arg('size','1920x1080').split('x').map(Number);
 const GPU=process.argv.includes('--gpu');
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const FAMILIES=['fractal-continuum','synaptic-storm'];
+const FAMILIES=['fractal-continuum','synaptic-storm','temporal-terrain'];
 (async()=>{
   fs.mkdirSync(OUT,{recursive:true});
   const env=await createEnvironment();

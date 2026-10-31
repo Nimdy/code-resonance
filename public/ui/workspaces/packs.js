@@ -290,7 +290,7 @@ export default {mount(view,{store,player:P,navigate,params}){
   }
   // A creation's layers and what each reacts to, in the Artist Studio's words (shared with its README).
   let words=globalThis.ResonanceCompositionText||null;
-  if(!words)import('/composition-text.js').then(()=>{words=globalThis.ResonanceCompositionText;renderInspector(true);renderMine();}).catch(()=>{});
+  if(!words)import('../../composition-text.js').then(()=>{words=globalThis.ResonanceCompositionText;renderInspector(true);renderMine();}).catch(()=>{});
   function compositionBlock(p){
     const c=p.composition;if(!words)return h('p',{class:'faint small',text:'Loading…'});
     const maps=c.layers.reduce((n,l)=>n+l.mappings.length,0)+c.mappings.length;

@@ -7,9 +7,11 @@ quick start: the [README](../README.md).
 
 | You want to | Read |
 |---|---|
+| See and hear it first, in the browser, with nothing installed | [Web demo](WEB-DEMO.md) |
 | Install it, pair a browser, capture, hear, record, stream; fix a setup problem | [Getting started](FIRST-RUN.md) |
 | Run one overnight CAST session and a later OBS night (README hero is the 70 s Pulse CAST film) | [0.7.0 campaign](campaign-0.7.md) |
 | Know where data lives, back up, update, roll back, read diagnostics; what is supported and what is not | [Operations](OPERATIONS.md) |
+| Publish the VS Code extension on the Marketplace and Open VSX | [Publishing](PUBLISHING.md) |
 | Understand the architecture, the versions, the HTTP API; extend it; run focused checks | [Developer guide](../ARCHITECTURE.md) |
 | Compose your own look | [Artist Studio](ARTIST-STUDIO.md) |
 | Understand and tune the music | [Music](MUSIC.md) |
@@ -26,7 +28,7 @@ quick start: the [README](../README.md).
   Studio](ARTIST-STUDIO.md), [the Construct](CONSTRUCT.md), and the Visual Pack SDK: [overview](packs/README.md),
   [manifest](packs/manifest.md), [World API](packs/world-api.md), [determinism](packs/determinism.md),
   [performance](packs/performance.md), [parameter catalogue](packs/catalogue.md), [SDK 1.2 and 1.1](packs/migration.md).
-- **Developing:** [the developer guide](../ARCHITECTURE.md), [one engine, many views](CONTROL-CENTER.md#one-engine-many-views),
+- **Developing:** [contributing](../CONTRIBUTING.md), [the developer guide](../ARCHITECTURE.md), [one engine, many views](CONTROL-CENTER.md#one-engine-many-views),
   [digital life's determinism contract](LIFE.md#determinism), [how a composition is
   rendered](ARTIST-STUDIO.md#how-a-composition-is-rendered), the pack [World API](packs/world-api.md) and
   [determinism](packs/determinism.md) rules, [the repository workflow](../REPOSITORY.md).
@@ -51,7 +53,7 @@ SDK pages. It shows them as text without images, and a link to a document it doe
 
 ## Versions
 
-The product version (0.7.2) is not the version of the interpretation (9), the score, the Visual Recipe
+The product version (0.7.2) is not the version of the interpretation (10), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
 The last published GitHub Release before the 0.7 series is 0.6.0 (`v0.6.0`).

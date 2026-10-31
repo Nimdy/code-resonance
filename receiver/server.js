@@ -27,12 +27,14 @@ const proof=require('./proof');
 const claudeHooks=require('../scripts/hooks/install-claude-code');
 const cursorHooks=require('../scripts/hooks/install-cursor');
 const codexHooks=require('../scripts/hooks/install-codex');
+// The hook installers after those three (Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build, goose).
+const moreHooks=require('../scripts/hooks/registry');
 const VERSION=require('../package.json').version;
 const EXTENSION=require('../extension/package.json');
 const REPO=path.resolve(__dirname,'..');
 const PUBLIC=path.join(REPO,'public');
 const FILENAMES=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/style.css','style.css'],['/music.js','music.js'],['/score.js','score.js'],
-  ['/providers.js','providers.js'],['/construct.js','construct.js'],['/recording.js','recording.js'],['/composition.js','composition.js'],['/composition-text.js','composition-text.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
+  ['/providers.js','providers.js'],['/construct.js','construct.js'],['/recording.js','recording.js'],['/recording-worker.js','recording-worker.js'],['/webm.js','webm.js'],['/composition.js','composition.js'],['/composition-text.js','composition-text.js'],['/vendor/three.module.min.js','vendor/three.module.min.js']]);
 // The Control Center's modules: one optional folder level, lowercase names (the pattern alone keeps requests inside public/ui).
 const UI_FILE=/^\/ui\/(?:[a-z0-9-]+\/)?[a-z0-9-]+\.(?:js|css|svg)$/;
 // Windows opens a device for these names (with any extension, before Windows 11): never a file the receiver serves.
@@ -41,7 +43,7 @@ const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 const pageCsp=styles=>`default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src ${styles}; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`;
 // Documentation the Control Center links to, served as inert text: a fixed list, never a path taken from the request.
 const DOCS=new Map([...['packs/README.md','packs/manifest.md','packs/world-api.md','packs/determinism.md','packs/performance.md','packs/security.md','packs/migration.md',
-  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','campaign-0.7.md','ARTIST-STUDIO.md','MUSIC.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
+  'packs/catalogue.md','FIRST-RUN.md','OBS.md','RECORDING.md','WSL.md','OPERATIONS.md','campaign-0.7.md','ARTIST-STUDIO.md','MUSIC.md','AGENTS.md'].map(n=>[n,path.join(REPO,'docs',n)]),['SECURITY.md',path.join(REPO,'SECURITY.md')]]);
 // The isolated frame executable visual packs run in (sandbox="allow-scripts" gives it an opaque origin): it may load only
 // the public world modules and blob: URLs it creates from code the player hands it, and it can reach no network at all.
 // Pack code runs in a worker the frame starts from a blob URL (worker-src blob:); the worker inherits this policy.
@@ -54,7 +56,8 @@ const INERT=type=>({'Content-Type':type,'Cache-Control':'no-store','X-Content-Ty
 // Administrative (mutating) routes: a control capability (receiver/control.js) is required before anything else is read.
 const ADMIN=new Set(['/api/recipe','/api/recipe/preview','/api/packs/trust','/api/packs/import','/api/packs/install','/api/packs/discard','/api/packs/remove',
   '/api/settings','/api/preferences','/api/presets','/api/integrations/claude/plan','/api/integrations/claude/apply',
-  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/integrations/codex/plan','/api/integrations/codex/apply','/api/compositions']);
+  '/api/integrations/cursor/plan','/api/integrations/cursor/apply','/api/integrations/codex/plan','/api/integrations/codex/apply','/api/compositions',
+  ...moreHooks.flatMap(t=>[`/api/integrations/${t.INFO.slug}/plan`,`/api/integrations/${t.INFO.slug}/apply`])]);
 // Coded errors of the modules → HTTP status; anything uncoded is a receiver failure (500).
 const STATUS={invalid:400,'invalid-json':400,'pack-unavailable':409,'invalid-archive':400,'unsafe-path':400,'too-large':400,'too-many-files':400,'not-found':404,stale:409,changed:409,'invalid-pack':422,'pending-limit':429};
 const LOOPBACK_HOSTS=['127.0.0.1','::1','localhost'];
@@ -181,19 +184,22 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
   let dir;try{dir=await fs.realpath(projectPath);}catch{throw coded('invalid','projectPath does not exist',{key:'projectPath'});}
   if(!(await fs.stat(dir)).isDirectory())throw coded('invalid','projectPath is not a directory',{key:'projectPath'});
   if(path.parse(dir).root===dir)throw coded('invalid','projectPath cannot be the root of a file system',{key:'projectPath'});
-  // The home directory is not a project: its .claude, .cursor and .codex hold the user-level settings and hooks, which
-  // run in every workspace. Compared after resolving both, so a link to it or a path that ends there is refused too.
+  // The home directory is not a project: its .claude, .cursor, .codex, .gemini, .qwen, .factory, .grok and .agents hold
+  // user-level settings and hooks, which run in every workspace. Compared after resolving both, so a link to it or a
+  // path that ends there is refused too.
   const home=await fs.realpath(os.homedir()).catch(()=>path.resolve(os.homedir()));
   if(path.relative(home,dir)==='')throw coded('invalid','projectPath cannot be your home directory: hooks there apply to every workspace, so choose the project folder',{key:'projectPath'});
   const data=await fs.realpath(dataDir).catch(()=>dataDir),rel=path.relative(data,dir);
   if(!rel||(rel!=='..'&&!rel.startsWith('..'+path.sep)&&!path.isAbsolute(rel)))throw coded('invalid','projectPath cannot be inside the receiver\'s data directory',{key:'projectPath'});
   const file=path.join(dir,folder,name);
-  // Only the project's own folder and file, never one a link points to (a cloned repository can contain links): the
+  // Only the project's own folders and file, never one a link points to (a cloned repository can contain links): the
   // plan would show, and apply overwrite, whatever is at the other end (the receiver's token, another settings file).
-  // Windows junctions are reported as symbolic links too. Anything but a regular file (a FIFO would block) is refused.
-  for(const [p,kind] of [[path.dirname(file),'directory'],[file,'file']]){
-    let st=null;try{st=await fs.lstat(p);}catch(e){if(e.code!=='ENOENT')throw e;}
-    if(st&&(st.isSymbolicLink()||(kind==='directory'?!st.isDirectory():!st.isFile())))throw coded('invalid',`${kind==='file'?`${folder}/${name}`:folder} is a link or not a ${kind}: only a regular file inside the project is edited`,{key:'projectPath'});
+  // Every folder on the way is checked (.github/copilot, .agents/plugins/…/hooks), not only the last one. Windows
+  // junctions are reported as symbolic links too. Anything but a regular file (a FIFO would block) is refused.
+  const parts=folder.split('/'),steps=parts.map((_,i)=>[parts.slice(0,i+1).join('/'),'directory']).concat([[`${folder}/${name}`,'file']]);
+  for(const [rel,kind] of steps){
+    let st=null;try{st=await fs.lstat(path.join(dir,...rel.split('/')));}catch(e){if(e.code!=='ENOENT')throw e;}
+    if(st&&(st.isSymbolicLink()||(kind==='directory'?!st.isDirectory():!st.isFile())))throw coded('invalid',`${rel} is a link or not a ${kind}: only a regular file inside the project is edited`,{key:'projectPath'});
     if(!st)break;
   }
   let buf=null;try{buf=await fs.readFile(file);}catch(e){if(e.code!=='ENOENT')throw e;}
@@ -206,6 +212,11 @@ async function hookPlan(dataDir,{projectPath,action}={}, {folder,name,merge,unme
 async function claudePlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.claude',name:'settings.local.json',merge:claudeHooks.merge,unmerge:claudeHooks.unmerge});}
 async function cursorPlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.cursor',name:'hooks.json',merge:cursorHooks.merge,unmerge:cursorHooks.unmerge});}
 async function codexPlan(dataDir,body){return hookPlan(dataDir,body,{folder:'.codex',name:'hooks.json',merge:codexHooks.merge,unmerge:codexHooks.unmerge});}
+// Every hook flow by its route's slug: the three above, then each installer of the registry (its INFO.file).
+const PLANS=new Map([['claude',claudePlan],['cursor',cursorPlan],['codex',codexPlan],...moreHooks.map(t=>{
+  const file=t.INFO.file,folder=path.posix.dirname(file),name=path.posix.basename(file);
+  return [t.INFO.slug,(dataDir,body)=>hookPlan(dataDir,body,{folder,name,merge:t.merge,unmerge:t.unmerge})];})]);
+const PLAN_ROUTE=/^\/api\/integrations\/([a-z]+)\/(plan|apply)$/;
 function createService(options={}) {
   const dataDir=path.resolve(options.dataDir||process.env.RESONANCE_DATA||path.join(os.homedir(),'.code-resonance'));
   const intervalMs=Number(options.sortIntervalMs)||1000;
@@ -404,7 +415,7 @@ function createService(options={}) {
       capabilities:control.count(),...(authorized?{dataDir}:{})};
   }
   async function integrations(authorized){
-    const vscode=[],claude=[],cursorProjects=[],codexProjects=[];
+    const vscode=[],claude=[],cursorProjects=[],codexProjects=[],more=new Map(moreHooks.map(t=>[t.INFO.slug,[]]));
     for(const p of await listProjects()){
       const doc=await evidence.get(p.id);if(!doc||doc.building)continue;
       // The demonstration (scripts/demo.js) sends workspace events too, but no editor was involved.
@@ -412,9 +423,10 @@ function createService(options={}) {
       const a=doc.agents['claude-code'];if(a)claude.push({projectId:p.id,name:p.name,lastAt:a.lastAt,events:a.events});
       const c=doc.agents.cursor;if(c)cursorProjects.push({projectId:p.id,name:p.name,lastAt:c.lastAt,events:c.events});
       const x=doc.agents.codex;if(x)codexProjects.push({projectId:p.id,name:p.name,lastAt:x.lastAt,events:x.events});
+      for(const t of moreHooks){const a=doc.agents[t.INFO.provider];if(a)more.get(t.INFO.slug).push({projectId:p.id,name:p.name,lastAt:a.lastAt,events:a.events,source:a.source});}
     }
     const settings=Object.entries(EXTENSION.contributes?.configuration?.properties||{}).map(([id,s])=>({id,type:s.type,default:s.default,description:s.description}));
-    const firstParty=id=>id==='claude-code'||id==='cursor'||id==='codex';
+    const adapters=new Set(['claude-code','cursor','codex',...moreHooks.map(t=>t.INFO.provider)]),firstParty=id=>adapters.has(id);
     return {vscode:{projects:vscode,latestVersion:EXTENSION.version,install:{package:'npm run package:vsix',install:`code --install-extension code-resonance-${EXTENSION.version}.vsix`},
         settings,openSettingsUri:`vscode://${EXTENSION.publisher}.${EXTENSION.name}/settings`},
       claude:{projects:claude,events:[...claudeHooks.EVENTS],captured:CLAUDE_CAPTURED,excluded:CLAUDE_EXCLUDED,...(authorized?{adapter:claudeHooks.adapter}:{}),
@@ -423,6 +435,10 @@ function createService(options={}) {
         command:'npm run hooks:cursor -- /path/to/project'},
       codex:{projects:codexProjects,events:[...codexHooks.EVENTS],captured:CODEX_CAPTURED,excluded:CODEX_EXCLUDED,...(authorized?{adapter:codexHooks.adapter}:{}),
         command:'npm run hooks:codex -- /path/to/project'},
+      // The other tools with an observe-only adapter: one entry each, in the registry's order (the page lists them so).
+      agents:moreHooks.map(t=>{const i=t.INFO;return {slug:i.slug,name:i.name,provider:i.provider,display:providers.presence(i.provider).display,file:i.file,docs:i.docs,
+        projects:more.get(i.slug),events:[...t.EVENTS],captured:[...i.captured],excluded:[...i.excluded],trust:i.trust,commit:i.commit,
+        ...(authorized?{adapter:t.adapter}:{}),command:`npm run hooks:${i.slug} -- /path/to/project`};}),
       generic:{endpoint:'POST /v1/events',cli:'node scripts/event.js --kind <kind> --root <project dir> [--provider <name>] [--tool <name>]'},
       providers:Object.values(providers.PROVIDERS).map(p=>({id:p.id,display:p.display,chip:p.chip,seat:p.seat,adapter:firstParty(p.id)?'first-party':'generic'}))};
   }
@@ -595,9 +611,10 @@ function createService(options={}) {
           evidence:evidence.compact(await evidence.get(p.id))})))});return;
       }
       if(req.method==='GET'&&pathname==='/api/integrations'){response(res,200,await integrations(control.read(req,expectedOrigins).ok));return;}
-      if(req.method==='POST'&&(pathname==='/api/integrations/claude/plan'||pathname==='/api/integrations/claude/apply'||pathname==='/api/integrations/cursor/plan'||pathname==='/api/integrations/cursor/apply'||pathname==='/api/integrations/codex/plan'||pathname==='/api/integrations/codex/apply')){
+      const planRoute=req.method==='POST'?PLAN_ROUTE.exec(pathname):null;
+      if(planRoute&&PLANS.has(planRoute[1])){
         const body=await readBody(req,res,8192);if(!body)return;
-        const planOf=pathname.includes('/codex/')?codexPlan:pathname.includes('/cursor/')?cursorPlan:claudePlan;
+        const planOf=PLANS.get(planRoute[1]);
         try{
           if(pathname.endsWith('/plan')){response(res,200,await planOf(dataDir,body));return;}
           const plan=await planOf(dataDir,body);
