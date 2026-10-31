@@ -22,9 +22,11 @@ test('The habitat is a pure function of the model and the time, standing where t
   const row=new Float32Array(L.LANES*8);L.rowAt(L.prepare(m),t+L.EASE,L.EASE,cfg,{Xc:0,Xh:G.RN/kx},row,()=>[0,0,0],[0,0,0]);
   for(let j=0;j<L.LANES;j+=7)assert(Math.abs(h.data.prof[j]-row[j*4])<1e-3);
   assert.equal(h.data.speed,1);assert(h.sites.length<=64);
-  // a wide land is compressed into the frame; more than 64 places keep the ranges and the strongest pastures
+  // a wide land is compressed into the frame; more than 64 places keep the ranges and the strongest pastures, and
+  // pastures closer than PASTURE_GAP across the land are one place (the strongest)
   const big=createModel({speed:1,tempo:92});big.reset(graph(30,5),T0);const hb=grammar.habitat(big,t);
-  assert.equal(hb.sites.length,64);assert.equal(hb.sites.filter(s=>s.kind===1).length,24);assert(hb.data.kx<1);
+  assert(hb.sites.length<=64);assert.equal(hb.sites.filter(s=>s.kind===1).length,24);assert(hb.data.kx<1);
+  const px=hb.sites.filter(s=>s.kind===0).map(s=>s.x).sort((a,b)=>a-b);assert(px.length>10);for(let k=1;k<px.length;k++)assert(px[k]-px[k-1]>=G.PASTURE_GAP-1e-9);
   for(const s of hb.sites)assert(Math.abs(s.x)<=G.RN*.9+1e-6,'inside the frame');
   // cheap enough to run after every recorded window
   const t0=performance.now();for(let k=0;k<20;k++)grammar.habitat(m,t+k*1000);assert((performance.now()-t0)/20<4,'habitat under 4 ms');

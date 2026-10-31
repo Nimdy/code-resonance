@@ -43,7 +43,7 @@ export const CAPACITY=720,TRAIL_K=10;
 export const RN=130,Z0=-6,Z1=126,YMAX=16;
 export const SPEED_MAX=1.5;
 // Where the sites stand (depth behind the front edge, height above the ground).
-export const PASTURE_Z=3.2,RANGE_Z=9,RANGE_Y=8;
+export const PASTURE_Z=3.2,RANGE_Z=9,RANGE_Y=8,PASTURE_GAP=3;
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const r3=x=>Math.round(x*1000)/1000;
 const hyp=(a,b)=>Math.sqrt(a*a+b*b);
@@ -71,8 +71,11 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
         const w=f.alive*(.35+.3*Math.log2(1+f.n))*(1+1.6*rc)*(f.stress>.2?.35:1)*(f.valid>.3?1.12:1);
         if(w>.02)pastures.push({id:`${f.id}#p`,range:r.id,x:r3(f.x*kx),y:.4,z:PASTURE_Z,r:r3(clamp(sig*kx*1.15,1.1,5.5)),w:r3(w),kind:0});}
       ranges.push({id:r.id,x:r3(r.c*kx),y:RANGE_Y,z:RANGE_Z,r:r3(clamp(r.w*kx*.22,2.5,16)),w:r3((.5+.3*Math.log2(1+r.files.length))*(1+rec)*Math.min(1,r.nb)),kind:1});}
+    // (pastures closer than PASTURE_GAP across the land are one place: the strongest of them is kept, so a dense range
+    // offers room to graze rather than a crowd of overlapping pastures)
     const by=(a,b)=>b.w-a.w||(a.id<b.id?-1:a.id>b.id?1:0);
-    const keepR=ranges.sort(by).slice(0,24),keepP=pastures.sort(by).slice(0,64-keepR.length);
+    const keepR=ranges.sort(by).slice(0,24),keepP=[];
+    for(const p of pastures.sort(by)){if(keepP.length>=64-keepR.length)break;if(!keepP.some(q=>Math.abs(q.x-p.x)<PASTURE_GAP))keepP.push(p);}
     const rangeOf={};for(const p of keepP)rangeOf[p.id]=p.range;
     const sites=[...keepR,...keepP.map(({range,...p})=>p)];
     return {sites,data:{speed:Number.isFinite(model.speed)&&model.speed>0?model.speed:1,kx:r3(kx),left:r3(R.left*kx),right:r3(R.right*kx),prof,stress,rangeOf}};
@@ -96,12 +99,12 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
         seek:1.3,orbit:1.2,orbitRadius:.8,orbitSpeed:.18,orbitJitter:.6,orbitBand:0,curiosity:0,
         trail:.45,deposit:.006,carryDeposit:.014,energyDeposit:.004,flow:.7,push:.008,avoid:2.6,wander:.55,wanderJitter:.4,
         crowd:13,satiate:.0018,metabolism:.0008,restBelow:.12,restRecover:.0024,disturbBelow:.3,
-        life:[120,300],fade:5,respawn:[2,8],yMin:.1,yMax:1.2,yHold:2,yRest:.15,congestion:.002,congestionAbove:8,
+        life:[120,300],fade:5,respawn:[2,8],yMin:.1,yMax:1.2,yHold:2,yRest:.15,congestion:.001,congestionAbove:12,
         respond:{current:1,gather:1.25,explore:1.1,activity:.8,cohesion:1,turb:.8}},
       {name:'swift',share:.26,radius:4.2,sepRadius:1.1,maxSpeed:4,minSpeed:1.5,maxForce:4,mass:.7,drag:.05,sep:1.3,ali:1.35,coh:.95,
         seek:1,orbit:.9,orbitRadius:1.1,orbitSpeed:.42,orbitJitter:.5,orbitBand:.45,curiosity:0,
         trail:0,deposit:0,carryDeposit:0,energyDeposit:0,flow:0,push:0,avoid:1.6,wander:.6,wanderJitter:.45,
-        crowd:24,satiate:.0015,metabolism:.0005,restBelow:-1,disturbBelow:.28,
+        crowd:24,satiate:.0015,metabolism:.0005,restBelow:-1,disturbBelow:.45,
         life:[60,180],fade:2.5,respawn:[1,5],yMin:4,yMax:15,yHold:.25,
         respond:{cohesion:1.6,activity:1.25,turb:1.4,explore:1.3,gather:1.1}},
       {name:'gleaner',share:.18,radius:2.4,sepRadius:1.5,maxSpeed:.8+1.2*R0,minSpeed:.03,maxForce:1.5,mass:1.6,drag:.25,sep:1.8,ali:.1,coh:0,
