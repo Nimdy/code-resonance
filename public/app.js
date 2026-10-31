@@ -580,13 +580,16 @@
   // The labels and captions give way to it as it fades in (drawn through `fading`).
   let endCard=null;
   const endAlpha=t=>endCard&&t>=endCard.at?Math.min(1,(t-endCard.at)/endCard.speed/800):0;
-  function fading(g2,w,h,t,draw){const a=endAlpha(t);if(!a){draw(g2);return;}if(a>=1)return;
+  // In turn, not crossed: the words are gone (by 0.36 s of film) before the title is more than faint, so the two never
+  // read over each other halfway through the fade.
+  const wordsAlpha=a=>Math.max(0,1-a/.45),titleAlpha=a=>Math.min(1,Math.max(0,(a-.35)/.65));
+  function fading(g2,w,h,t,draw){const a=1-wordsAlpha(endAlpha(t));if(!a){draw(g2);return;}if(a>=1)return;
     const layer=document.createElement('canvas');layer.width=w;layer.height=h;draw(layer.getContext('2d'));g2.save();g2.globalAlpha=1-a;g2.drawImage(layer,0,0);g2.restore();}
   function drawEndCard(g2,w,h,t){
     if(!endCard||t<endCard.at)return;
     const a=endAlpha(t),k=frameRules?frameRules.textScale(w,h):w/1920,s=frameRules?frameRules.safeArea(w,h):{x0:0,y0:0,x1:w,y1:h};
     const r=living?.recipe||recipe,title=typeof r?.title==='string'&&r.title.trim()?r.title.trim():null,cx=(s.x0+s.x1)/2,cy=s.y0+(s.y1-s.y0)*.44,maxW=(s.x1-s.x0)*.92;
-    g2.save();g2.fillStyle=`rgba(4,6,12,${(.66*a).toFixed(3)})`;g2.fillRect(0,0,w,h);g2.globalAlpha=a;g2.textAlign='center';g2.textBaseline='middle';
+    g2.save();g2.fillStyle=`rgba(4,6,12,${(.66*a).toFixed(3)})`;g2.fillRect(0,0,w,h);g2.globalAlpha=titleAlpha(a);g2.textAlign='center';g2.textBaseline='middle';
     g2.shadowColor='rgba(0,0,0,.7)';g2.shadowBlur=20*k;
     if(title){g2.fillStyle='rgba(248,246,240,.97)';fitFont(g2,200,64*k,title,maxW);g2.fillText(title,cx,cy);
       g2.fillStyle='rgba(232,238,248,.55)';g2.fillRect(cx-28*k,cy+52*k,56*k,Math.max(1,1.5*k));}
