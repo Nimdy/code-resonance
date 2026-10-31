@@ -229,7 +229,8 @@ is the altitude above the surface. Why this chart:
   poles or the octahedral map's folds across the southern hemisphere;
 - arcs from the pole keep their length; across them the map stretches by θ / sin θ: 1 at the pole, 1.57 at the
   equator, 2.66 at 35° south. An equal-area chart (Lambert's) would stretch the equator by 2 (and 35° south by 4.7)
-  for equal cell areas; a conformal one (stereographic) keeps shapes but shrinks the regions at 35° south 4.7 times;
+  for equal cell areas; a conformal one (stereographic) keeps shapes but shrinks the regions at 35° south 4.7 times.
+  A gathering's orbit is corrected for the stretch (a circle on the surface, not on the map);
 - the regions lie between 35° south and 70° north, and the life is held within **135° of the pole** (85 % of the
   surface): it is steered back from there, the current turns back before it, and a site beyond it (a file far down its
   region's spiral) is never chosen, so nothing reaches the seam. The southern polar cap is uninhabited.
@@ -242,7 +243,7 @@ swells, breathes and blooms under its life.
 - **Motes** (60 %): ride the surface's current and the trails, choose an active site (strength, novelty, nourishment,
   lasting conditions, the energy work and gatherings leave there, the trails to it, and a gathering already circling
   it: winner-take-more up to what a site carries; never a strained site; nearer is better), circle it in a slow halo at
-  their own radius and height and feed, then leave carrying its light (a stronger trail). Those leaving the same site
+  their own radius and height (a circle on the surface) and feed, then leave carrying its light (a stronger trail). Those leaving the same site
   follow the one who left before them, so threads of light run from site to site.
 - **Skimmers** (22 %): small flocks skimming the relief (separation, alignment, cohesion), drawn along the motes'
   trails and toward the energy of the gatherings; a flock grown too large splits.
@@ -262,9 +263,9 @@ through the driver (site conditions and field deposits; nothing is ever placed):
 
 | Intent | The life |
 |---|---|
-| `validation.failed` | The file's site is strained: a void opens over it (reach 2.4 site radii + 1.6 map units, about the world's decohering region); everything is pushed out while the strain lasts and the motes wait at its edge (in the test habitat: 20 % of the life inside it, against the same ecosystem without the failure) |
-| `validation.recovered` | The strain is cleared and for about 25 s the repaired site draws the motes back (14 motes within its reach before, 43 ten seconds after); they travel to it in the valid colour |
-| `structure.modified`, an agent's tool use on a file | A small perturbation and energy at the file's site: the active site draws a gathering (3.2 times the visits of the same site without the work) |
+| `validation.failed` | The file's site is strained: a void opens over it (reach 2.4 site radii + 1.6 map units, about the world's decohering region); everything is pushed out while the strain lasts and the motes wait at its edge (in the test habitat: 7 % of the life inside it, against the same ecosystem without the failure) |
+| `validation.recovered` | The strain is cleared and for about 25 s the repaired site draws the motes back (8 motes within its reach before, 51 ten seconds after); they travel to it in the valid colour |
+| `structure.modified`, an agent's tool use on a file | A small perturbation and energy at the file's site: the active site draws the motes (2.4 times as many travelling to it or circling it as to the same site without the work) |
 | `module.created`, `structure.created`, `validation.passed`, `repository.checkpoint` | Nourishment |
 | `subsystem.created` | Novelty at the new region: explorers come to see |
 | `milestone.achieved` (verified) | A lasting attractor at its region (a new generation inherits it) |
@@ -317,8 +318,8 @@ carry them). Tested in Node:
   prepared in the background, handed over at its anchor) equals a far seek, and the new generation inherits the
   verified milestone's lasting attractor.
 - `tests/life-fractal-ecology.test.js`: ecology 2 is deterministic and neutral at music 0; the share of motes gathered
-  follows the music's `gather` (correlation 0.72 at music 1, 0.81 at 2) and the share travelling its `explore` (0.47,
-  0.68).
+  follows the music's `gather` (correlation 0.78 at music 1, 0.84 at 2) and the share travelling its `explore` (0.65,
+  0.71).
 
 ### Cost
 
@@ -351,8 +352,10 @@ a tick. Presentation: the world's update at a fixed moment 1.15–1.25 ms with l
 
 - An artistic review with the owner, on films of whole sessions rather than stills.
 - **The chart's stretch**: across the arcs from the pole the map stretches by up to 1.57 at the equator (2.66 at 35°
-  south), so a gathering's halo there is an ellipse up to 1.57 times taller than wide on the surface; steering
-  corrected by the chart's metric is not done.
+  south). A gathering's orbit is drawn out to the map ellipse that the stretch turns back into a circle on the surface
+  (between 60° and 110° from the pole a halo's spread east-west against north-south went from 0.71 to 0.86 of a
+  circle; separation and the orbit's tangential drive still act on the map); travel, flocks and the fields'
+  diffusion still see the stretch.
 - **The limb**: inhabitants at their altitude seen edge-on gather along the silhouette into a fringe of light.
 - **Bright identities**: on a light, glittering crystal (Lumen's generated identity) the motes over the lit faces read
   less than over its dark side and on the darker bulbs.

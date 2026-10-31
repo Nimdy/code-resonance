@@ -8,7 +8,8 @@
 // is an azimuthal equidistant map of that sphere around the form's pole (y up: the bulbs' axis of symmetry): the
 // direction at colatitude θ and longitude φ is the point (K θ cos φ, K θ sin φ), and the plane's height y is the
 // altitude above the surface. Arcs from the pole keep their length; across them the map stretches by θ / sin θ (1 at
-// the pole, 1.57 at the equator), the price of one chart over almost the whole surface. The south pole, which the map
+// the pole, 1.57 at the equator), the price of one chart over almost the whole surface (a gathering's orbit is corrected
+// for it: a circle on the surface). The south pole, which the map
 // tears open into its rim, is never inhabited: the life is held within SOFT (135 degrees of the pole: 85 % of the
 // surface; the regions lie between 35 degrees south and 70 north), so nothing crosses the seam. Regions and sites keep
 // their directions, so the habitat sits still in the map whatever the form does (it unfolds, swells, breathes,
@@ -202,6 +203,12 @@ export function createFractalGrammar(recipe){
         if(s===MOTE){
           // a recovered site draws the explorers around it back (the repaired region fills again)
           if(m===MODE.explore)for(let q=0;q<nRev;q++){const k=revived[q],ex=S.x[k]-x,ez=S.z[k]-z,d=hyp(ex,ez);if(d<9&&d>S.r[k]*1.5){const c=1.1*REV[k]*(1-d/9)/d;f[0]+=ex*c;f[2]+=ez*c;}}
+          // a gathering's halo is a circle on the surface, not on the map: across the arcs from the pole the map
+          // stretches by theta / sin(theta), so the orbit the simulation keeps (a circle on the map, around the site at
+          // the mote's own radius) is drawn out to the ellipse that the stretch turns back into a circle
+          if(m===MODE.orbit){const k=api.tgt[i];if(k>=0){const sx=S.x[k],sz=S.z[k],ro=hyp(sx,sz);if(ro>.5){
+            const ex=x-sx,ez=z-sz,d=hyp(ex,ez);if(d>1e-3){const sp=api.species[MOTE],R0=S.r[k]*sp.orbitRadius*(1+sp.orbitJitter*(api.fa[i*2]-.5)*2);
+              const st=stretch(sx,sz),b=(-ex*sz+ez*sx)/(ro*d),a2=1-b*b,se=1/Math.sqrt(a2+b*b/(st*st)),c=R0*(se-1)*1.2*sp.orbit/d;f[0]+=ex*c;f[2]+=ez*c;}}}}
           // seekers swim against the current, and close to their site come in to it (its pull outweighs the trail they
           // followed there)
           if(m===MODE.seek){api.flowAt(x,y,z,fl);const c0=.33*api.params.environment;f[0]-=fl[0]*c0;f[2]-=fl[2]*c0;

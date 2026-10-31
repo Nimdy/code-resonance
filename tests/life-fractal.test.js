@@ -56,16 +56,18 @@ test('The life stays on the inhabited surface, in its altitude band; lifecycles 
   run(f,3000);assert.equal(f.digest(),e.digest(),'same inputs, same state');
   const snap=e.snapshot();run(e,200);const d1=e.digest();e.restore(snap);run(e,200);assert.equal(e.digest(),d1,'restore gives the same future');
 });
-test('Motes gather at active sites: a site being worked on (energy, nourishment) draws a gathering that circles it',async()=>{
+test('Motes gather at active sites: a site being worked on (energy, nourishment) draws motes to it and a gathering circles it',async()=>{
   const {eco,life}=await setup();const a=eco(),b=eco();const both=n=>{run(a,n);run(b,n);};both(600);
   // the least visited file site within the life's reach
   const S=a.sites;let k=-1;for(let s=0;s<S.count;s++)if(S.kind[s]!==1&&Math.hypot(S.x[s],S.z[s])<life.SOFT-2&&(k<0||S.visits[s]<S.visits[k]))k=s;const id=S.ids[k];
+  // motes travelling to it or circling it (what a site holds is bounded: visits saturate, the draw does not)
+  const drawn=e=>{let n=0;for(let i=0;i<e.capacity;i++)if(e.alive[i]&&e.sp[i]===life.MOTE&&(e.mode[i]===1||e.mode[i]===2)&&e.tgt[i]===k)n++;return n;};
   // edits on one file: a small perturbation and nourishment every few seconds, as the driver gives them
   let na=0,nb=0,circ=0;
   for(let t=0;t<40;t++){a.influence({kind:'pulse',site:id,amount:.6});a.influence({kind:'nourish',site:id,amount:.4});both(40);
-    if(t>=10){na+=a.sites.visits[k];nb+=b.sites.visits[k];for(let i=0;i<a.capacity;i++)if(a.alive[i]&&a.sp[i]===life.MOTE&&a.mode[i]===2&&a.tgt[i]===k)circ++;}}
-  console.log(`# visits at the active site: ${na.toFixed(0)}, without the work ${nb.toFixed(0)} (circling ${circ})`);
-  assert(na>nb*2+20,`the active site draws a gathering: ${na.toFixed(0)} vs ${nb.toFixed(0)}`);assert(circ>60,'they circle it');
+    if(t>=10){na+=drawn(a);nb+=drawn(b);for(let i=0;i<a.capacity;i++)if(a.alive[i]&&a.sp[i]===life.MOTE&&a.mode[i]===2&&a.tgt[i]===k)circ++;}}
+  console.log(`# motes drawn to the active site: ${na}, without the work ${nb} (circling ${circ})`);
+  assert(na>nb*1.8+50,`the active site draws the motes: ${na} vs ${nb}`);assert(circ>60,'they circle it');
 });
 test('A failing run opens a void over its site and the motes wait at its edge; after the recovery they come back within seconds',async()=>{
   const {eco,life}=await setup();const e=eco(),c=eco();const both=n=>{run(e,n);run(c,n);};both(900);
