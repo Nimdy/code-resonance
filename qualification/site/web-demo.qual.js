@@ -2,7 +2,7 @@
 // The web demo (npm run site) as a visitor meets it: the built site served as GitHub Pages serves a project site (under
 // /code-resonance/, so every URL it uses must be relative), opened in a real browser, one browser at a time.
 // - Desktop: the landing loads with no failed request, no request outside the site and no page error; Start turns the
-//   music on (an AudioContext running) and the replay advances; each world (the five families, the Construct,
+//   music on (an AudioContext running) and the replay advances; each world (the six families, the Construct,
 //   Monolith) is chosen with the landing's own buttons, renders a picture that is not blank (measured on the
 //   screenshot) while the replay keeps advancing.
 // - Phone (390x844, touch): no horizontal scrolling, the controls fit the screen, Start plays, a world is chosen with
@@ -77,7 +77,8 @@ async function picture(analyser,png){
       await wait(SETTLE);
       const landing=await state(page);
       await page.screenshot({path:path.join(OUT,'desktop-landing.jpg'),type:'jpeg',quality:85});
-      check('landing: the Stage opens on the replay of the recording in a flagship world',landing.mode==='replay'&&landing.world==='living'&&['stellar-forge','fractal-biosphere','machine-cathedral'].includes(landing.family)&&landing.title==='Lumen Recipes',
+      // The world is the recording's generated identity (generator 5 may choose any of the six built-in families).
+      check('landing: the Stage opens on the replay of the recording in a built-in world family',landing.mode==='replay'&&landing.world==='living'&&['stellar-forge','fractal-biosphere','machine-cathedral','synaptic-storm','fractal-continuum','temporal-terrain'].includes(landing.family)&&landing.title==='Lumen Recipes',
         `${landing.family}, "${landing.title}", ready in ${ready} ms`);
       check('landing: the replay plays silently behind the introduction',landing.playing&&!landing.sound&&landing.now>landing.start,`${Math.round((landing.now-landing.start)/1000)} s in`);
       check('landing: no AudioContext runs before the click',!landing.audio.includes('running'),JSON.stringify(landing.audio));
