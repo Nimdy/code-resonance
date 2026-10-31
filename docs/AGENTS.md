@@ -103,8 +103,9 @@ Any other id is shown as *Agent*. The Control Center names it by the id it repor
   `.claude/settings.json` and `.claude/settings.local.json`. Grok Build reads `.claude/settings.json` and
   `.cursor/hooks.json`. Devin reads `.claude/settings*.json`. With Claude Code's hooks installed (in
   `.claude/settings.local.json`), a Copilot session in that project also runs the Claude Code adapter, with Copilot's
-  VS Code-compatible (snake_case) payload. Those events can be attributed to Claude. The Cursor adapter ignores Grok's
-  camelCase payload, so it produces no events from it.
+  VS Code-compatible (snake_case) payload. Those events can be attributed to Claude. Which payload Grok Build sends to
+  hooks in Claude Code's or Cursor's files is not documented. If it is Grok's own camelCase shape, the Claude Code
+  and Cursor adapters make no events of it.
 - **goose's plugin folder** follows the Open Plugins layout (`.agents/plugins`). Another agent that discovers project
   plugins there would run the adapter too, and its events would read as goose if the payload has the same shape.
 - **Copilot** shows tools and categories but no files. **Grok Build** shows tools by name only. **Droid** names files

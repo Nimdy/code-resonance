@@ -179,8 +179,8 @@ test('goose payloads become privacy-preserving, valid events',t=>{
   // The documented tool-event example, then write and edit with their documented `path`.
   const shell=goose.translate({event:'PostToolUse',session_id:'abc-123',matcher_context:'shell',tool_name:'shell',tool_input:{command:`rg TODO ${CMD_SECRET}`},working_dir:root,tool_call_id:'t1'});
   assert.equal(shell[0].meta.tool,'Bash');assert.equal(shell[0].meta.exitCode,undefined);assert.equal(shell[0].meta.result,undefined);
-  const test=goose.translate({event:'PostToolUse',session_id:'abc-123',tool_name:'shell',tool_input:{command:'npm test'},working_dir:root});
-  assert.equal(test[0].meta.category,'test');
+  const tests=goose.translate({event:'PostToolUse',session_id:'abc-123',tool_name:'shell',tool_input:{command:'npm test'},working_dir:root});
+  assert.equal(tests[0].meta.category,'test');
   const write=goose.translate({event:'PostToolUse',session_id:'abc-123',tool_name:'write',tool_input:{path:path.join(root,'src/new.rs'),content:SECRET},working_dir:root});
   assert.deepEqual(kinds(write),['agent.tool.completed','agent.file.modified']);assert.equal(write[1].file,'src/new.rs');
   const edit=goose.translate({event:'PostToolUse',session_id:'abc-123',tool_name:'edit',tool_input:{path:'src/lib.rs',before:SECRET,after:SECRET},working_dir:root});
@@ -192,7 +192,7 @@ test('goose payloads become privacy-preserving, valid events',t=>{
   assert.equal(stop[0].kind,'agent.response.completed');assert.equal(stop[0].meta.length,`Done. ${SECRET}`.length);assert.equal(end[0].kind,'agent.session.ended');
   const env=goose.translate({event:'PostToolUse',session_id:'abc-123',tool_name:'write',tool_input:{path:path.join(root,'.env'),content:SECRET},working_dir:root});
   assert.equal(env[0].file,undefined);assert.equal(env.length,1);
-  const all=[...start,...prompt,...shell,...test,...write,...edit,...failed,...stop,...end,...env];
+  const all=[...start,...prompt,...shell,...tests,...write,...edit,...failed,...stop,...end,...env];
   assert.deepEqual(leaks(all,SECRET,CMD_SECRET,'hunter2','rg TODO'),[]);valid(all);
   for(const x of [{event:'PreToolUse',session_id:'abc-123',tool_name:'shell',tool_input:{command:'sudo rm'}},{event:'AfterFileEdit',session_id:'abc-123',matcher_context:'src/a.rs'},
     {event:'PostToolUse',session_id:'abc-123',tool_name:'write'},{event:'UserPromptSubmit',session_id:'abc-123'},{event:'Stop'},{hook_event_name:'Stop',session_id:'abc-123'},null])
