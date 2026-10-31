@@ -72,7 +72,8 @@ async function bundledReceiver(t){
   return {data,port};
 }
 test('The bundled receiver writes hook entries naming the stable path; the extension adds and removes them through its plan and apply',async t=>{
-  const {data,port}=await bundledReceiver(t),project=temp(t,'cr-hooks-project-');
+  // The receiver resolves the project's real path (on Windows a temp folder may come as an 8.3 short name, RUNNER~1).
+  const {data,port}=await bundledReceiver(t),project=fs.realpathSync.native(temp(t,'cr-hooks-project-'));
   const stableAdapter=path.join(data,'hooks','scripts','hooks','claude-code.js'),command=`node ${JSON.stringify(stableAdapter)}`;
   assert(fs.existsSync(stableAdapter),'the launcher prepared the stable copy');
   const file=path.join(project,'.claude','settings.local.json');
