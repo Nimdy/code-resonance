@@ -1,0 +1,1923 @@
+{
+  "at": "2026-10-31T05:07:44.266Z",
+  "browser": "chrome-headless-shell (lean driver), SwiftShader",
+  "minutes": 3,
+  "every": 10,
+  "runs": [
+    {
+      "label": "memory-720p",
+      "target": "memory",
+      "size": "720p",
+      "minutes": 3,
+      "idle": {
+        "t": 0,
+        "elapsedS": 0,
+        "frames": 0,
+        "deliveredMB": 0,
+        "writtenMB": null,
+        "heldMB": 0,
+        "opfsFileMB": 0,
+        "heap": {
+          "used": 11.3,
+          "total": 14.9
+        },
+        "rss": {
+          "renderer": 188,
+          "browser": 100,
+          "gpu": 224,
+          "other": 151,
+          "total": 663
+        }
+      },
+      "saveMs": 147,
+      "last": {
+        "mimeType": "video/webm;codecs=vp9,opus",
+        "durationMs": 181468,
+        "frames": 2550,
+        "presented": 2550,
+        "bytes": 50775753,
+        "audio": true,
+        "audioLost": false,
+        "audioLostMs": 0,
+        "reason": "stopped",
+        "size": "1280x720",
+        "slowWarning": true,
+        "target": "memory",
+        "file": "code-resonance-36bf9b09d6-1793423451945.webm",
+        "at": 1793423451945
+      },
+      "file": {
+        "size": 50775753,
+        "sizeMB": 48.4,
+        "duration": null,
+        "decodedTo": 181.24,
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "audio": "opus",
+        "maxVolumeDb": -15.9,
+        "decodeErrors": [],
+        "seek": null
+      },
+      "workingFileAfterSave": [],
+      "errors": [],
+      "samples": [
+        {
+          "t": 10,
+          "elapsedS": 10,
+          "frames": 149,
+          "deliveredMB": 2.3,
+          "writtenMB": null,
+          "heldMB": 2.3,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 9,
+            "total": 14.4
+          },
+          "rss": {
+            "renderer": 372,
+            "browser": 105,
+            "gpu": 233,
+            "other": 211,
+            "total": 921
+          }
+        },
+        {
+          "t": 20,
+          "elapsedS": 20,
+          "frames": 295,
+          "deliveredMB": 4.9,
+          "writtenMB": null,
+          "heldMB": 4.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 382,
+            "browser": 108,
+            "gpu": 238,
+            "other": 211,
+            "total": 939
+          }
+        },
+        {
+          "t": 30,
+          "elapsedS": 30,
+          "frames": 434,
+          "deliveredMB": 7.6,
+          "writtenMB": null,
+          "heldMB": 7.6,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 8.9,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 388,
+            "browser": 112,
+            "gpu": 241,
+            "other": 211,
+            "total": 952
+          }
+        },
+        {
+          "t": 40,
+          "elapsedS": 40,
+          "frames": 552,
+          "deliveredMB": 9.9,
+          "writtenMB": null,
+          "heldMB": 9.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 12.2,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 393,
+            "browser": 114,
+            "gpu": 241,
+            "other": 211,
+            "total": 959
+          }
+        },
+        {
+          "t": 50,
+          "elapsedS": 50,
+          "frames": 669,
+          "deliveredMB": 11.9,
+          "writtenMB": null,
+          "heldMB": 11.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.1,
+            "total": 19.1
+          },
+          "rss": {
+            "renderer": 392,
+            "browser": 117,
+            "gpu": 241,
+            "other": 211,
+            "total": 961
+          }
+        },
+        {
+          "t": 60,
+          "elapsedS": 61,
+          "frames": 785,
+          "deliveredMB": 14.2,
+          "writtenMB": null,
+          "heldMB": 14.2,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 12.2,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 385,
+            "browser": 118,
+            "gpu": 241,
+            "other": 211,
+            "total": 955
+          }
+        },
+        {
+          "t": 70,
+          "elapsedS": 71,
+          "frames": 917,
+          "deliveredMB": 16.7,
+          "writtenMB": null,
+          "heldMB": 16.7,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.4,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 386,
+            "browser": 119,
+            "gpu": 240,
+            "other": 211,
+            "total": 956
+          }
+        },
+        {
+          "t": 81,
+          "elapsedS": 81,
+          "frames": 1063,
+          "deliveredMB": 19.2,
+          "writtenMB": null,
+          "heldMB": 19.2,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.2,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 390,
+            "browser": 123,
+            "gpu": 241,
+            "other": 211,
+            "total": 965
+          }
+        },
+        {
+          "t": 91,
+          "elapsedS": 91,
+          "frames": 1210,
+          "deliveredMB": 22,
+          "writtenMB": null,
+          "heldMB": 22,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.6,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 389,
+            "browser": 126,
+            "gpu": 240,
+            "other": 211,
+            "total": 966
+          }
+        },
+        {
+          "t": 101,
+          "elapsedS": 101,
+          "frames": 1358,
+          "deliveredMB": 24.8,
+          "writtenMB": null,
+          "heldMB": 24.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.9,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 389,
+            "browser": 127,
+            "gpu": 241,
+            "other": 211,
+            "total": 968
+          }
+        },
+        {
+          "t": 111,
+          "elapsedS": 111,
+          "frames": 1505,
+          "deliveredMB": 27.8,
+          "writtenMB": null,
+          "heldMB": 27.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 14.7,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 396,
+            "browser": 130,
+            "gpu": 241,
+            "other": 211,
+            "total": 978
+          }
+        },
+        {
+          "t": 121,
+          "elapsedS": 121,
+          "frames": 1653,
+          "deliveredMB": 30.8,
+          "writtenMB": null,
+          "heldMB": 30.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 16.3,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 402,
+            "browser": 133,
+            "gpu": 241,
+            "other": 211,
+            "total": 987
+          }
+        },
+        {
+          "t": 131,
+          "elapsedS": 131,
+          "frames": 1802,
+          "deliveredMB": 33.5,
+          "writtenMB": null,
+          "heldMB": 33.5,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 15.6,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 400,
+            "browser": 136,
+            "gpu": 241,
+            "other": 211,
+            "total": 988
+          }
+        },
+        {
+          "t": 141,
+          "elapsedS": 141,
+          "frames": 1950,
+          "deliveredMB": 36.5,
+          "writtenMB": null,
+          "heldMB": 36.5,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 9.1,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 400,
+            "browser": 139,
+            "gpu": 241,
+            "other": 211,
+            "total": 991
+          }
+        },
+        {
+          "t": 151,
+          "elapsedS": 151,
+          "frames": 2100,
+          "deliveredMB": 39.4,
+          "writtenMB": null,
+          "heldMB": 39.4,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.8,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 402,
+            "browser": 142,
+            "gpu": 241,
+            "other": 211,
+            "total": 996
+          }
+        },
+        {
+          "t": 161,
+          "elapsedS": 161,
+          "frames": 2246,
+          "deliveredMB": 42.3,
+          "writtenMB": null,
+          "heldMB": 42.3,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 14.2,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 401,
+            "browser": 145,
+            "gpu": 241,
+            "other": 211,
+            "total": 998
+          }
+        },
+        {
+          "t": 171,
+          "elapsedS": 171,
+          "frames": 2397,
+          "deliveredMB": 45.1,
+          "writtenMB": null,
+          "heldMB": 45.1,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.4,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 405,
+            "browser": 148,
+            "gpu": 241,
+            "other": 211,
+            "total": 1005
+          }
+        },
+        {
+          "t": 181,
+          "elapsedS": 181,
+          "frames": 2549,
+          "deliveredMB": 48.2,
+          "writtenMB": null,
+          "heldMB": 48.2,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 15.7,
+            "total": 26.6
+          },
+          "rss": {
+            "renderer": 403,
+            "browser": 151,
+            "gpu": 241,
+            "other": 211,
+            "total": 1006
+          }
+        }
+      ],
+      "growth": {
+        "minutes": 2.85,
+        "fileMBPerMin": 16.1,
+        "rendererMBPerMin": 10.9,
+        "browserMBPerMin": 16.1,
+        "totalMBPerMin": 29.8,
+        "heapMBPerMin": 2.4,
+        "fromIdle": {
+          "renderer": 215,
+          "browser": 51,
+          "gpu": 17,
+          "total": 343,
+          "heap": 4.4
+        }
+      }
+    },
+    {
+      "label": "disk-720p",
+      "target": "disk",
+      "size": "720p",
+      "minutes": 3,
+      "idle": {
+        "t": 0,
+        "elapsedS": 0,
+        "frames": 0,
+        "deliveredMB": 0,
+        "writtenMB": null,
+        "heldMB": 0,
+        "opfsFileMB": 0,
+        "heap": {
+          "used": 9.1,
+          "total": 13.9
+        },
+        "rss": {
+          "renderer": 186,
+          "browser": 100,
+          "gpu": 229,
+          "other": 149,
+          "total": 664
+        }
+      },
+      "saveMs": 402,
+      "last": {
+        "mimeType": "video/webm;codecs=vp9,opus",
+        "durationMs": 181364,
+        "frames": 2664,
+        "presented": 2664,
+        "bytes": 53019361,
+        "audio": true,
+        "audioLost": false,
+        "audioLostMs": 0,
+        "reason": "stopped",
+        "size": "1280x720",
+        "slowWarning": true,
+        "target": "disk",
+        "file": "picked-code-resonance-36bf9b09d6-1793423461898.webm",
+        "saving": null,
+        "at": 1793423643981,
+        "seekable": true
+      },
+      "file": {
+        "size": 53019361,
+        "sizeMB": 50.6,
+        "duration": 181.12,
+        "decodedTo": 181.11,
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "audio": "opus",
+        "maxVolumeDb": -14.7,
+        "decodeErrors": [],
+        "seek": {
+          "at": 90.56,
+          "ok": true,
+          "ms": 40
+        }
+      },
+      "workingFileAfterSave": [],
+      "errors": [],
+      "samples": [
+        {
+          "t": 10,
+          "elapsedS": 10,
+          "frames": 149,
+          "deliveredMB": 2.3,
+          "writtenMB": 2.3,
+          "heldMB": 0,
+          "opfsFileMB": 2.3,
+          "heap": {
+            "used": 9.1,
+            "total": 13.6
+          },
+          "rss": {
+            "renderer": 376,
+            "browser": 105,
+            "gpu": 235,
+            "other": 208,
+            "total": 924
+          }
+        },
+        {
+          "t": 20,
+          "elapsedS": 20,
+          "frames": 297,
+          "deliveredMB": 5.2,
+          "writtenMB": 5.2,
+          "heldMB": 0,
+          "opfsFileMB": 5.2,
+          "heap": {
+            "used": 11,
+            "total": 18.6
+          },
+          "rss": {
+            "renderer": 395,
+            "browser": 109,
+            "gpu": 239,
+            "other": 208,
+            "total": 951
+          }
+        },
+        {
+          "t": 30,
+          "elapsedS": 30,
+          "frames": 443,
+          "deliveredMB": 8,
+          "writtenMB": 8,
+          "heldMB": 0,
+          "opfsFileMB": 8,
+          "heap": {
+            "used": 9.1,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 406,
+            "browser": 112,
+            "gpu": 243,
+            "other": 208,
+            "total": 969
+          }
+        },
+        {
+          "t": 40,
+          "elapsedS": 40,
+          "frames": 591,
+          "deliveredMB": 10.9,
+          "writtenMB": 10.9,
+          "heldMB": 0,
+          "opfsFileMB": 10.9,
+          "heap": {
+            "used": 9.1,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 406,
+            "browser": 115,
+            "gpu": 243,
+            "other": 208,
+            "total": 972
+          }
+        },
+        {
+          "t": 50,
+          "elapsedS": 50,
+          "frames": 738,
+          "deliveredMB": 13.5,
+          "writtenMB": 13.5,
+          "heldMB": 0,
+          "opfsFileMB": 13.5,
+          "heap": {
+            "used": 11.1,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 394,
+            "browser": 105,
+            "gpu": 243,
+            "other": 208,
+            "total": 950
+          }
+        },
+        {
+          "t": 60,
+          "elapsedS": 60,
+          "frames": 884,
+          "deliveredMB": 16.3,
+          "writtenMB": 16.3,
+          "heldMB": 0,
+          "opfsFileMB": 16.3,
+          "heap": {
+            "used": 12,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 390,
+            "browser": 104,
+            "gpu": 242,
+            "other": 208,
+            "total": 944
+          }
+        },
+        {
+          "t": 70,
+          "elapsedS": 70,
+          "frames": 1030,
+          "deliveredMB": 19.1,
+          "writtenMB": 19.1,
+          "heldMB": 0,
+          "opfsFileMB": 19.1,
+          "heap": {
+            "used": 11.4,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 398,
+            "browser": 106,
+            "gpu": 242,
+            "other": 208,
+            "total": 954
+          }
+        },
+        {
+          "t": 80,
+          "elapsedS": 81,
+          "frames": 1176,
+          "deliveredMB": 21.8,
+          "writtenMB": 21.8,
+          "heldMB": 0,
+          "opfsFileMB": 21.8,
+          "heap": {
+            "used": 9.2,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 404,
+            "browser": 110,
+            "gpu": 242,
+            "other": 208,
+            "total": 964
+          }
+        },
+        {
+          "t": 90,
+          "elapsedS": 91,
+          "frames": 1323,
+          "deliveredMB": 24.2,
+          "writtenMB": 24.2,
+          "heldMB": 0,
+          "opfsFileMB": 24.2,
+          "heap": {
+            "used": 12.4,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 393,
+            "browser": 105,
+            "gpu": 242,
+            "other": 208,
+            "total": 948
+          }
+        },
+        {
+          "t": 100,
+          "elapsedS": 101,
+          "frames": 1471,
+          "deliveredMB": 27.1,
+          "writtenMB": 27.1,
+          "heldMB": 0,
+          "opfsFileMB": 27.1,
+          "heap": {
+            "used": 10.7,
+            "total": 18.6
+          },
+          "rss": {
+            "renderer": 394,
+            "browser": 105,
+            "gpu": 242,
+            "other": 208,
+            "total": 949
+          }
+        },
+        {
+          "t": 111,
+          "elapsedS": 111,
+          "frames": 1619,
+          "deliveredMB": 30,
+          "writtenMB": 30,
+          "heldMB": 0,
+          "opfsFileMB": 30,
+          "heap": {
+            "used": 16,
+            "total": 26.6
+          },
+          "rss": {
+            "renderer": 401,
+            "browser": 105,
+            "gpu": 241,
+            "other": 208,
+            "total": 955
+          }
+        },
+        {
+          "t": 121,
+          "elapsedS": 121,
+          "frames": 1767,
+          "deliveredMB": 33,
+          "writtenMB": 33,
+          "heldMB": 0,
+          "opfsFileMB": 33,
+          "heap": {
+            "used": 14.5,
+            "total": 26.6
+          },
+          "rss": {
+            "renderer": 410,
+            "browser": 107,
+            "gpu": 242,
+            "other": 208,
+            "total": 967
+          }
+        },
+        {
+          "t": 131,
+          "elapsedS": 131,
+          "frames": 1915,
+          "deliveredMB": 35.9,
+          "writtenMB": 35.9,
+          "heldMB": 0,
+          "opfsFileMB": 35.9,
+          "heap": {
+            "used": 13.6,
+            "total": 26.9
+          },
+          "rss": {
+            "renderer": 416,
+            "browser": 109,
+            "gpu": 242,
+            "other": 209,
+            "total": 976
+          }
+        },
+        {
+          "t": 141,
+          "elapsedS": 141,
+          "frames": 2064,
+          "deliveredMB": 38.8,
+          "writtenMB": 38.8,
+          "heldMB": 0,
+          "opfsFileMB": 38.8,
+          "heap": {
+            "used": 13.4,
+            "total": 26.9
+          },
+          "rss": {
+            "renderer": 408,
+            "browser": 108,
+            "gpu": 241,
+            "other": 209,
+            "total": 966
+          }
+        },
+        {
+          "t": 151,
+          "elapsedS": 151,
+          "frames": 2214,
+          "deliveredMB": 41.4,
+          "writtenMB": 41.4,
+          "heldMB": 0,
+          "opfsFileMB": 41.4,
+          "heap": {
+            "used": 16.3,
+            "total": 26.9
+          },
+          "rss": {
+            "renderer": 409,
+            "browser": 105,
+            "gpu": 242,
+            "other": 209,
+            "total": 965
+          }
+        },
+        {
+          "t": 161,
+          "elapsedS": 161,
+          "frames": 2363,
+          "deliveredMB": 44.3,
+          "writtenMB": 44.3,
+          "heldMB": 0,
+          "opfsFileMB": 44.3,
+          "heap": {
+            "used": 12.3,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 406,
+            "browser": 105,
+            "gpu": 241,
+            "other": 209,
+            "total": 961
+          }
+        },
+        {
+          "t": 171,
+          "elapsedS": 171,
+          "frames": 2514,
+          "deliveredMB": 47.2,
+          "writtenMB": 47.2,
+          "heldMB": 0,
+          "opfsFileMB": 47.2,
+          "heap": {
+            "used": 15.6,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 415,
+            "browser": 108,
+            "gpu": 241,
+            "other": 209,
+            "total": 973
+          }
+        },
+        {
+          "t": 181,
+          "elapsedS": 181,
+          "frames": 2663,
+          "deliveredMB": 50.4,
+          "writtenMB": 50.4,
+          "heldMB": 0,
+          "opfsFileMB": 50.4,
+          "heap": {
+            "used": 16.3,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 405,
+            "browser": 105,
+            "gpu": 241,
+            "other": 209,
+            "total": 960
+          }
+        }
+      ],
+      "growth": {
+        "minutes": 2.85,
+        "fileMBPerMin": 16.9,
+        "rendererMBPerMin": 10.2,
+        "browserMBPerMin": 0,
+        "totalMBPerMin": 12.6,
+        "heapMBPerMin": 2.5,
+        "fromIdle": {
+          "renderer": 219,
+          "browser": 5,
+          "gpu": 12,
+          "total": 296,
+          "heap": 7.2
+        }
+      }
+    },
+    {
+      "label": "memory-vertical",
+      "target": "memory",
+      "size": "vertical",
+      "minutes": 3,
+      "idle": {
+        "t": 0,
+        "elapsedS": 0,
+        "frames": 0,
+        "deliveredMB": 0,
+        "writtenMB": null,
+        "heldMB": 0,
+        "opfsFileMB": 0,
+        "heap": {
+          "used": 9.8,
+          "total": 12.1
+        },
+        "rss": {
+          "renderer": 188,
+          "browser": 99,
+          "gpu": 226,
+          "other": 151,
+          "total": 664
+        }
+      },
+      "saveMs": 253,
+      "last": {
+        "mimeType": "video/webm;codecs=vp9,opus",
+        "durationMs": 182217,
+        "frames": 1348,
+        "presented": 1348,
+        "bytes": 38351023,
+        "audio": true,
+        "audioLost": false,
+        "audioLostMs": 0,
+        "reason": "stopped",
+        "size": "1080x1920",
+        "slowWarning": true,
+        "target": "memory",
+        "file": "code-resonance-36bf9b09d6-1793423837498.webm",
+        "at": 1793423837498
+      },
+      "file": {
+        "size": 38351023,
+        "sizeMB": 36.6,
+        "duration": null,
+        "decodedTo": 181.9,
+        "video": {
+          "codec": "vp9",
+          "width": 1080,
+          "height": 1920
+        },
+        "audio": "opus",
+        "maxVolumeDb": -14.8,
+        "decodeErrors": [],
+        "seek": null
+      },
+      "workingFileAfterSave": [],
+      "errors": [],
+      "samples": [
+        {
+          "t": 10,
+          "elapsedS": 10,
+          "frames": 73,
+          "deliveredMB": 1.8,
+          "writtenMB": null,
+          "heldMB": 1.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 9.5,
+            "total": 14.1
+          },
+          "rss": {
+            "renderer": 513,
+            "browser": 104,
+            "gpu": 268,
+            "other": 209,
+            "total": 1094
+          }
+        },
+        {
+          "t": 20,
+          "elapsedS": 20,
+          "frames": 139,
+          "deliveredMB": 3.9,
+          "writtenMB": null,
+          "heldMB": 3.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 8.3,
+            "total": 14.1
+          },
+          "rss": {
+            "renderer": 523,
+            "browser": 106,
+            "gpu": 272,
+            "other": 209,
+            "total": 1110
+          }
+        },
+        {
+          "t": 30,
+          "elapsedS": 30,
+          "frames": 214,
+          "deliveredMB": 5.8,
+          "writtenMB": null,
+          "heldMB": 5.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 8.6,
+            "total": 13.1
+          },
+          "rss": {
+            "renderer": 525,
+            "browser": 108,
+            "gpu": 273,
+            "other": 209,
+            "total": 1115
+          }
+        },
+        {
+          "t": 40,
+          "elapsedS": 40,
+          "frames": 289,
+          "deliveredMB": 7.9,
+          "writtenMB": null,
+          "heldMB": 7.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.6,
+            "total": 17.6
+          },
+          "rss": {
+            "renderer": 531,
+            "browser": 110,
+            "gpu": 273,
+            "other": 209,
+            "total": 1123
+          }
+        },
+        {
+          "t": 50,
+          "elapsedS": 51,
+          "frames": 363,
+          "deliveredMB": 9.8,
+          "writtenMB": null,
+          "heldMB": 9.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.6,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 533,
+            "browser": 113,
+            "gpu": 273,
+            "other": 209,
+            "total": 1128
+          }
+        },
+        {
+          "t": 60,
+          "elapsedS": 61,
+          "frames": 438,
+          "deliveredMB": 11.8,
+          "writtenMB": null,
+          "heldMB": 11.8,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 11.7,
+            "total": 17.6
+          },
+          "rss": {
+            "renderer": 529,
+            "browser": 114,
+            "gpu": 273,
+            "other": 209,
+            "total": 1125
+          }
+        },
+        {
+          "t": 71,
+          "elapsedS": 71,
+          "frames": 513,
+          "deliveredMB": 14,
+          "writtenMB": null,
+          "heldMB": 14,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 8.7,
+            "total": 17.6
+          },
+          "rss": {
+            "renderer": 533,
+            "browser": 116,
+            "gpu": 273,
+            "other": 209,
+            "total": 1131
+          }
+        },
+        {
+          "t": 81,
+          "elapsedS": 81,
+          "frames": 588,
+          "deliveredMB": 15.9,
+          "writtenMB": null,
+          "heldMB": 15.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.4,
+            "total": 17.6
+          },
+          "rss": {
+            "renderer": 533,
+            "browser": 119,
+            "gpu": 273,
+            "other": 210,
+            "total": 1135
+          }
+        },
+        {
+          "t": 91,
+          "elapsedS": 91,
+          "frames": 663,
+          "deliveredMB": 17.9,
+          "writtenMB": null,
+          "heldMB": 17.9,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 8.7,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 532,
+            "browser": 120,
+            "gpu": 273,
+            "other": 210,
+            "total": 1135
+          }
+        },
+        {
+          "t": 101,
+          "elapsedS": 101,
+          "frames": 739,
+          "deliveredMB": 20.1,
+          "writtenMB": null,
+          "heldMB": 20.1,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 9.2,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 533,
+            "browser": 123,
+            "gpu": 273,
+            "other": 210,
+            "total": 1139
+          }
+        },
+        {
+          "t": 111,
+          "elapsedS": 111,
+          "frames": 815,
+          "deliveredMB": 22,
+          "writtenMB": null,
+          "heldMB": 22,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.5,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 536,
+            "browser": 125,
+            "gpu": 273,
+            "other": 210,
+            "total": 1144
+          }
+        },
+        {
+          "t": 121,
+          "elapsedS": 121,
+          "frames": 890,
+          "deliveredMB": 24.2,
+          "writtenMB": null,
+          "heldMB": 24.2,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.6,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 535,
+            "browser": 126,
+            "gpu": 273,
+            "other": 210,
+            "total": 1144
+          }
+        },
+        {
+          "t": 131,
+          "elapsedS": 131,
+          "frames": 965,
+          "deliveredMB": 26.2,
+          "writtenMB": null,
+          "heldMB": 26.2,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 12.2,
+            "total": 17.9
+          },
+          "rss": {
+            "renderer": 535,
+            "browser": 129,
+            "gpu": 273,
+            "other": 210,
+            "total": 1147
+          }
+        },
+        {
+          "t": 141,
+          "elapsedS": 141,
+          "frames": 1041,
+          "deliveredMB": 28.4,
+          "writtenMB": null,
+          "heldMB": 28.4,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 15,
+            "total": 25.9
+          },
+          "rss": {
+            "renderer": 541,
+            "browser": 132,
+            "gpu": 273,
+            "other": 210,
+            "total": 1156
+          }
+        },
+        {
+          "t": 151,
+          "elapsedS": 151,
+          "frames": 1117,
+          "deliveredMB": 30.3,
+          "writtenMB": null,
+          "heldMB": 30.3,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 14.3,
+            "total": 25.9
+          },
+          "rss": {
+            "renderer": 546,
+            "browser": 134,
+            "gpu": 273,
+            "other": 210,
+            "total": 1163
+          }
+        },
+        {
+          "t": 162,
+          "elapsedS": 162,
+          "frames": 1194,
+          "deliveredMB": 32.4,
+          "writtenMB": null,
+          "heldMB": 32.4,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.7,
+            "total": 25.9
+          },
+          "rss": {
+            "renderer": 545,
+            "browser": 136,
+            "gpu": 273,
+            "other": 210,
+            "total": 1164
+          }
+        },
+        {
+          "t": 172,
+          "elapsedS": 172,
+          "frames": 1271,
+          "deliveredMB": 34.4,
+          "writtenMB": null,
+          "heldMB": 34.4,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 10.9,
+            "total": 25.9
+          },
+          "rss": {
+            "renderer": 548,
+            "browser": 138,
+            "gpu": 273,
+            "other": 210,
+            "total": 1169
+          }
+        },
+        {
+          "t": 182,
+          "elapsedS": 182,
+          "frames": 1347,
+          "deliveredMB": 36.5,
+          "writtenMB": null,
+          "heldMB": 36.5,
+          "opfsFileMB": 0,
+          "heap": {
+            "used": 14.4,
+            "total": 26.1
+          },
+          "rss": {
+            "renderer": 547,
+            "browser": 141,
+            "gpu": 273,
+            "other": 210,
+            "total": 1171
+          }
+        }
+      ],
+      "growth": {
+        "minutes": 2.8666666666666667,
+        "fileMBPerMin": 12.1,
+        "rendererMBPerMin": 11.9,
+        "browserMBPerMin": 12.9,
+        "totalMBPerMin": 26.9,
+        "heapMBPerMin": 1.7,
+        "fromIdle": {
+          "renderer": 359,
+          "browser": 42,
+          "gpu": 47,
+          "total": 507,
+          "heap": 4.6
+        }
+      }
+    },
+    {
+      "label": "disk-vertical",
+      "target": "disk",
+      "size": "vertical",
+      "minutes": 3,
+      "idle": {
+        "t": 0,
+        "elapsedS": 0,
+        "frames": 0,
+        "deliveredMB": 0,
+        "writtenMB": null,
+        "heldMB": 0,
+        "opfsFileMB": 0,
+        "heap": {
+          "used": 10,
+          "total": 14.6
+        },
+        "rss": {
+          "renderer": 190,
+          "browser": 99,
+          "gpu": 231,
+          "other": 151,
+          "total": 671
+        }
+      },
+      "saveMs": 498,
+      "last": {
+        "mimeType": "video/webm;codecs=vp9,opus",
+        "durationMs": 181987,
+        "frames": 1263,
+        "presented": 1263,
+        "bytes": 36277699,
+        "audio": true,
+        "audioLost": false,
+        "audioLostMs": 0,
+        "reason": "stopped",
+        "size": "1080x1920",
+        "slowWarning": true,
+        "target": "disk",
+        "file": "picked-code-resonance-36bf9b09d6-1793423846847.webm",
+        "saving": null,
+        "at": 1793424030232,
+        "seekable": true
+      },
+      "file": {
+        "size": 36277699,
+        "sizeMB": 34.6,
+        "duration": 181.67,
+        "decodedTo": 181.66,
+        "video": {
+          "codec": "vp9",
+          "width": 1080,
+          "height": 1920
+        },
+        "audio": "opus",
+        "maxVolumeDb": -15,
+        "decodeErrors": [],
+        "seek": {
+          "at": 90.835,
+          "ok": true,
+          "ms": 59
+        }
+      },
+      "workingFileAfterSave": [],
+      "errors": [],
+      "samples": [
+        {
+          "t": 10,
+          "elapsedS": 10,
+          "frames": 68,
+          "deliveredMB": 1.6,
+          "writtenMB": 1.6,
+          "heldMB": 0,
+          "opfsFileMB": 1.6,
+          "heap": {
+            "used": 9.8,
+            "total": 14.4
+          },
+          "rss": {
+            "renderer": 518,
+            "browser": 104,
+            "gpu": 262,
+            "other": 209,
+            "total": 1093
+          }
+        },
+        {
+          "t": 20,
+          "elapsedS": 20,
+          "frames": 137,
+          "deliveredMB": 3.8,
+          "writtenMB": 3.8,
+          "heldMB": 0,
+          "opfsFileMB": 3.8,
+          "heap": {
+            "used": 8.5,
+            "total": 18.6
+          },
+          "rss": {
+            "renderer": 537,
+            "browser": 107,
+            "gpu": 268,
+            "other": 209,
+            "total": 1121
+          }
+        },
+        {
+          "t": 30,
+          "elapsedS": 30,
+          "frames": 206,
+          "deliveredMB": 5.6,
+          "writtenMB": 5.6,
+          "heldMB": 0,
+          "opfsFileMB": 5.6,
+          "heap": {
+            "used": 9.9,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 543,
+            "browser": 110,
+            "gpu": 269,
+            "other": 209,
+            "total": 1131
+          }
+        },
+        {
+          "t": 40,
+          "elapsedS": 40,
+          "frames": 276,
+          "deliveredMB": 7.7,
+          "writtenMB": 7.7,
+          "heldMB": 0,
+          "opfsFileMB": 7.7,
+          "heap": {
+            "used": 8.1,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 550,
+            "browser": 111,
+            "gpu": 270,
+            "other": 209,
+            "total": 1140
+          }
+        },
+        {
+          "t": 50,
+          "elapsedS": 51,
+          "frames": 347,
+          "deliveredMB": 9.5,
+          "writtenMB": 9.5,
+          "heldMB": 0,
+          "opfsFileMB": 9.5,
+          "heap": {
+            "used": 9.3,
+            "total": 18.9
+          },
+          "rss": {
+            "renderer": 539,
+            "browser": 105,
+            "gpu": 270,
+            "other": 209,
+            "total": 1123
+          }
+        },
+        {
+          "t": 60,
+          "elapsedS": 61,
+          "frames": 416,
+          "deliveredMB": 11.4,
+          "writtenMB": 11.4,
+          "heldMB": 0,
+          "opfsFileMB": 11.4,
+          "heap": {
+            "used": 11.4,
+            "total": 18.9
+          },
+          "rss": {
+            "renderer": 540,
+            "browser": 106,
+            "gpu": 269,
+            "other": 210,
+            "total": 1125
+          }
+        },
+        {
+          "t": 70,
+          "elapsedS": 71,
+          "frames": 486,
+          "deliveredMB": 13.2,
+          "writtenMB": 13.2,
+          "heldMB": 0,
+          "opfsFileMB": 13.2,
+          "heap": {
+            "used": 10.4,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 535,
+            "browser": 105,
+            "gpu": 269,
+            "other": 210,
+            "total": 1119
+          }
+        },
+        {
+          "t": 81,
+          "elapsedS": 81,
+          "frames": 557,
+          "deliveredMB": 15.3,
+          "writtenMB": 15.1,
+          "heldMB": 0,
+          "opfsFileMB": 15.3,
+          "heap": {
+            "used": 9.4,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 538,
+            "browser": 107,
+            "gpu": 269,
+            "other": 209,
+            "total": 1123
+          }
+        },
+        {
+          "t": 91,
+          "elapsedS": 91,
+          "frames": 628,
+          "deliveredMB": 17.2,
+          "writtenMB": 17.2,
+          "heldMB": 0,
+          "opfsFileMB": 17.2,
+          "heap": {
+            "used": 9.5,
+            "total": 18.6
+          },
+          "rss": {
+            "renderer": 546,
+            "browser": 109,
+            "gpu": 270,
+            "other": 209,
+            "total": 1134
+          }
+        },
+        {
+          "t": 101,
+          "elapsedS": 101,
+          "frames": 698,
+          "deliveredMB": 19,
+          "writtenMB": 19,
+          "heldMB": 0,
+          "opfsFileMB": 19.2,
+          "heap": {
+            "used": 10.7,
+            "total": 18.4
+          },
+          "rss": {
+            "renderer": 550,
+            "browser": 111,
+            "gpu": 269,
+            "other": 209,
+            "total": 1139
+          }
+        },
+        {
+          "t": 111,
+          "elapsedS": 111,
+          "frames": 767,
+          "deliveredMB": 21,
+          "writtenMB": 21,
+          "heldMB": 0,
+          "opfsFileMB": 21,
+          "heap": {
+            "used": 12,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 537,
+            "browser": 106,
+            "gpu": 269,
+            "other": 209,
+            "total": 1121
+          }
+        },
+        {
+          "t": 121,
+          "elapsedS": 121,
+          "frames": 839,
+          "deliveredMB": 23.1,
+          "writtenMB": 23.1,
+          "heldMB": 0,
+          "opfsFileMB": 23.1,
+          "heap": {
+            "used": 10.1,
+            "total": 18.1
+          },
+          "rss": {
+            "renderer": 539,
+            "browser": 106,
+            "gpu": 269,
+            "other": 209,
+            "total": 1123
+          }
+        },
+        {
+          "t": 131,
+          "elapsedS": 131,
+          "frames": 910,
+          "deliveredMB": 24.8,
+          "writtenMB": 24.8,
+          "heldMB": 0,
+          "opfsFileMB": 24.8,
+          "heap": {
+            "used": 16.3,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 554,
+            "browser": 108,
+            "gpu": 269,
+            "other": 209,
+            "total": 1140
+          }
+        },
+        {
+          "t": 141,
+          "elapsedS": 141,
+          "frames": 981,
+          "deliveredMB": 26.7,
+          "writtenMB": 26.7,
+          "heldMB": 0,
+          "opfsFileMB": 26.9,
+          "heap": {
+            "used": 8.8,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 551,
+            "browser": 106,
+            "gpu": 269,
+            "other": 210,
+            "total": 1136
+          }
+        },
+        {
+          "t": 151,
+          "elapsedS": 151,
+          "frames": 1050,
+          "deliveredMB": 28.7,
+          "writtenMB": 28.7,
+          "heldMB": 0,
+          "opfsFileMB": 28.7,
+          "heap": {
+            "used": 12.1,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 554,
+            "browser": 108,
+            "gpu": 269,
+            "other": 210,
+            "total": 1141
+          }
+        },
+        {
+          "t": 161,
+          "elapsedS": 162,
+          "frames": 1120,
+          "deliveredMB": 30.7,
+          "writtenMB": 30.7,
+          "heldMB": 0,
+          "opfsFileMB": 30.7,
+          "heap": {
+            "used": 12.6,
+            "total": 26.4
+          },
+          "rss": {
+            "renderer": 560,
+            "browser": 109,
+            "gpu": 269,
+            "other": 209,
+            "total": 1147
+          }
+        },
+        {
+          "t": 171,
+          "elapsedS": 172,
+          "frames": 1190,
+          "deliveredMB": 32.5,
+          "writtenMB": 32.5,
+          "heldMB": 0,
+          "opfsFileMB": 32.5,
+          "heap": {
+            "used": 15.2,
+            "total": 26.6
+          },
+          "rss": {
+            "renderer": 561,
+            "browser": 112,
+            "gpu": 269,
+            "other": 209,
+            "total": 1151
+          }
+        },
+        {
+          "t": 182,
+          "elapsedS": 182,
+          "frames": 1262,
+          "deliveredMB": 34.5,
+          "writtenMB": 34.3,
+          "heldMB": 0,
+          "opfsFileMB": 34.5,
+          "heap": {
+            "used": 10.2,
+            "total": 26.6
+          },
+          "rss": {
+            "renderer": 554,
+            "browser": 107,
+            "gpu": 269,
+            "other": 209,
+            "total": 1139
+          }
+        }
+      ],
+      "growth": {
+        "minutes": 2.8666666666666667,
+        "fileMBPerMin": 11.5,
+        "rendererMBPerMin": 12.6,
+        "browserMBPerMin": 1,
+        "totalMBPerMin": 16,
+        "heapMBPerMin": 0.1,
+        "fromIdle": {
+          "renderer": 364,
+          "browser": 8,
+          "gpu": 38,
+          "total": 468,
+          "heap": 0.2
+        }
+      }
+    },
+    {
+      "label": "crash",
+      "how": "renderer crash (Page.crash)",
+      "before": {
+        "elapsedS": 61.9,
+        "writtenBytes": 16636802,
+        "deliveredBytes": 16636802
+      },
+      "leftOnDisk": {
+        "bytes": 16636802,
+        "probe": {
+          "size": 16636802,
+          "sizeMB": 15.9,
+          "duration": null,
+          "decodedTo": 60.9,
+          "video": {
+            "codec": "vp9",
+            "width": 1280,
+            "height": 720
+          },
+          "audio": "opus",
+          "maxVolumeDb": -14.4,
+          "decodeErrors": [
+            "frame=    0 fps=0.0 q=-0.0 size=N/A time=00:00:03.39 bitrate=N/A speed= 308x    \rframe=  746 fps=0.0 q=-0.0 size=N/A time=00:00:54.33 bitrate=N/A speed= 106x    \r[matroska,webm @ 0xeb6d9c0] File ended prematurely at pos. 16636802 (0xfddb82)"
+          ],
+          "seek": null
+        }
+      },
+      "offered": {
+        "name": "code-resonance-36bf9b09d6-1793424036072.webm",
+        "bytes": 16636802,
+        "lastModified": 1793424099841,
+        "startedAt": 1793424036072
+      },
+      "saved": {
+        "file": "picked-code-resonance-36bf9b09d6-1793424036072.webm",
+        "seekable": true,
+        "durationMs": 60900,
+        "bytes": 16637075
+      },
+      "savedProbe": {
+        "size": 16637075,
+        "sizeMB": 15.9,
+        "duration": 60.9,
+        "decodedTo": 60.9,
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "audio": "opus",
+        "maxVolumeDb": -14.4,
+        "decodeErrors": [],
+        "seek": {
+          "at": 30.45,
+          "ok": true,
+          "ms": 40
+        }
+      },
+      "errors": []
+    },
+    {
+      "label": "close",
+      "how": "tab closed (Target.closeTarget)",
+      "before": {
+        "elapsedS": 27.3,
+        "writtenBytes": 6597344,
+        "deliveredBytes": 6597344
+      },
+      "leftOnDisk": {
+        "bytes": 6848738,
+        "probe": {
+          "size": 6848738,
+          "sizeMB": 6.5,
+          "duration": null,
+          "decodedTo": 27.01,
+          "video": {
+            "codec": "vp9",
+            "width": 1280,
+            "height": 720
+          },
+          "audio": "opus",
+          "maxVolumeDb": -18.6,
+          "decodeErrors": [
+            "frame=    1 fps=0.0 q=-0.0 size=N/A time=00:00:03.34 bitrate=N/A speed= 288x    \r[matroska,webm @ 0x1e7439c0] File ended prematurely at pos. 6848738 (0x6880e2)"
+          ],
+          "seek": null
+        }
+      },
+      "offered": {
+        "name": "code-resonance-36bf9b09d6-1793424115585.webm",
+        "bytes": 6848738,
+        "lastModified": 1793424145113,
+        "startedAt": 1793424115585
+      },
+      "saved": {
+        "file": "picked-code-resonance-36bf9b09d6-1793424115585.webm",
+        "seekable": true,
+        "durationMs": 27013,
+        "bytes": 6848905
+      },
+      "savedProbe": {
+        "size": 6848905,
+        "sizeMB": 6.5,
+        "duration": 27.01,
+        "decodedTo": 27.01,
+        "video": {
+          "codec": "vp9",
+          "width": 1280,
+          "height": 720
+        },
+        "audio": "opus",
+        "maxVolumeDb": -18.6,
+        "decodeErrors": [],
+        "seek": {
+          "at": 13.505,
+          "ok": true,
+          "ms": 86
+        }
+      },
+      "errors": []
+    },
+    {
+      "label": "copy",
+      "bytes": 1085510601,
+      "sizeMB": 1035.2,
+      "putMs": 57712,
+      "saveMs": 5074,
+      "MBps": 204,
+      "last": {
+        "mimeType": "video/webm",
+        "durationMs": 3872516,
+        "bytes": 1085523149,
+        "audio": true,
+        "audioLost": false,
+        "audioLostMs": 0,
+        "reason": "interrupted",
+        "recovered": true,
+        "target": "disk",
+        "seekable": true,
+        "size": "1280x720",
+        "file": "picked-code-resonance-copytest-1793424257136.webm",
+        "at": 1793424320023
+      },
+      "savedOnDisk": 1085523149,
+      "duration": "01:04:32.52",
+      "seek": {
+        "at": 1936.3,
+        "ok": true,
+        "ms": 65
+      },
+      "errors": [],
+      "note": "run separately (2026-10-31T05:23:04.204Z): in the first run its setup fetch was refused by the page policy; the source is a 1-minute memory-720p recording of that run"
+    }
+  ],
+  "copyError": "Error: TypeError: Failed to fetch\n    at <anonymous>:2:95\n    at Object.evaluate (/home/nimda/projects/solonerds-projects/code-resonance/.claude/worktrees/record-to-disk/qualification/visual/lean.js:53:37)\n    at async copyRun (/home/nimda/projects/solonerds-projects/code-resonance/.claude/worktrees/record-to-disk/qualification/visual/record-disk.qual.js:159:5)\n    at async /home/nimda/projects/solonerds-projects/code-resonance/.claude/worktrees/record-to-disk/qualification/visual/record-disk.qual.js:182:78"
+}
