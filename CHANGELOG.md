@@ -4,8 +4,11 @@
 
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
-  receiver keeps everything in its data folder and serves the browser, recordings go to your disk, and nothing goes to
-  the internet. The README's *At a glance* points at it, and SECURITY.md says it in words too.
+  receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the
+  internet. The README's *At a glance* points at it, and SECURITY.md says it in words too. The data folder's label
+  says "receiver data stored here" and points to SECURITY.md for erasing: deleting the folder does not erase the
+  extension's outbox, a browser's storage or the recordings, films and exports you saved (a review caught "delete it
+  to erase all"). SECURITY.md's *Erasing data* now names those last ones too.
 - **The release download:** the README names the VSIX on the latest release and how to check it: its SHA-256 in
   `SHA256SUMS.txt`, or a build of the release's tag, which with the same Node version is the same file byte for byte
   (the packager writes fixed timestamps; 0.8.0 checked in two checkouts and against the download).
