@@ -781,7 +781,10 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
       for(let s=0;s<n;s++){if(sNi[s]<0)continue;const dx=ex-S.x[s],dy=ey-S.y[s],dz=ez-S.z[s],R=S.r[s]*3,d2=dx*dx+dy*dy+dz*dz;if(d2>=R*R)continue;
         const u=1-Math.sqrt(d2)/R,ws=u*u*(3-2*u);out[0]+=sDr[s*3]*ws;out[1]+=sDr[s*3+1]*ws;out[2]+=sDr[s*3+2]*ws;w+=ws;}
       if(w>1){out[0]/=w;out[1]/=w;out[2]/=w;}return out;}
-    lifeHide=()=>{cells.commit(0);dots.commit(0);lifeStatsNow={drawn:0,followers:0,tails:0,drawCalls:2};};
+    // (only the part of each buffer written this frame is uploaded)
+    const upload=(geo,names,n)=>{for(const k of names){const a=geo.attributes[k];a.clearUpdateRanges();a.addUpdateRange(0,n*a.itemSize);a.needsUpdate=true;}};
+    const commit=(nc,nd)=>{cells.geometry.instanceCount=nc;cells.n=nc;upload(cells.geometry,['cP','cA','cC','cS'],nc);dots.geometry.setDrawRange(0,nd);dots.n=nd;upload(dots.geometry,['position','pC','pS'],nd);};
+    lifeHide=()=>{commit(0,0);lifeStatsNow={drawn:0,followers:0,tails:0,drawCalls:2};};
     lifeUpdate=i=>{
       const v=i.life,eco=v&&v.eco;if(!eco||v.restoring||!net)return lifeHide();
       const k=frameScale(net.radius),ik=1/k,q=Math.min(3,Math.max(0,i.quality|0)),alpha=v.alpha,tv=i.tview,sp=ctx.speed(),t=i.t,S=eco.sites,nS=S.count,seed=eco.seed;
@@ -791,10 +794,10 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
         sDr[s*3]=wv[0]-npos[ni*3];sDr[s*3+1]=wv[1]-npos[ni*3+1];sDr[s*3+2]=wv[2]-npos[ni*3+2];sW[s]=Math.min(1,S.visits[s]/14);}
       // a firing's calcium wave at distance d from the soma of neuron ni (gold into out, whatever caused the firing:
       // ambient life never takes an agent's colour; its strength returned)
-      const wave=(ni,d,out)=>{const x=firesNow?.[ni];out[0]=out[1]=out[2]=0;if(!x)return 0;let e=0;
-        for(const [tf,s0] of [[x.t1,x.s1,x.c1],[x.t2,x.s2,x.c2]]){if(!(tf>-Infinity)||s0<=0)continue;const ag=(t-tf)/1000/sp;if(ag<0||ag>6)continue;
-          const f=Math.min(1,s0)*Math.min(1,s0)*Math.exp(-Math.pow((ag*3.2-d)/1.1,2))*Math.exp(-ag*.8);if(f<.01)continue;e+=f;}
-        e=Math.min(1.5,e);out[0]=CAL.r*e;out[1]=CAL.g*e;out[2]=CAL.b*e;return e;};
+      const pulse=(tf,s0,d)=>{if(!(tf>-Infinity)||s0<=0)return 0;const ag=(t-tf)/1000/sp;if(ag<0||ag>6)return 0;const k=Math.min(1,s0);
+        return k*k*Math.exp(-Math.pow((ag*3.2-d)/1.1,2))*Math.exp(-ag*.8);};
+      const wave=(ni,d,out)=>{const x=firesNow?.[ni];out[0]=out[1]=out[2]=0;if(!x)return 0;
+        let e=pulse(x.t1,x.s1,d)+pulse(x.t2,x.s2,d);if(e<.01)return 0;e=Math.min(1.5,e);out[0]=CAL.r*e;out[1]=CAL.g*e;out[2]=CAL.b*e;return e;};
       let nc=0,nd=0,nf=0,nt=0;const W3=[0,0,0];
       const dot=(x,y,z,r,g,b,a,size,rim)=>{if(nd>=dots.capacity)dots.ensure(nd+1);dots.write('position',nd,x,y,z);dots.write('pC',nd,r,g,b,a);dots.write('pS',nd,size,rim);nd++;};
       for(let e=0;e<eco.capacity;e++){
@@ -830,7 +833,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
         cells.write('cP',nc,x,y,z,R);cells.write('cA',nc,ox,oy,oz,s===GLIA?0:1+act);cells.write('cC',nc,C.r*g,C.g*g,C.b*g,1);
         cells.write('cS',nc,u01(seed,e,eco.gen[e],73),(W3[0]+pal.primary.r*.07*en*settled)*cal,(W3[1]+pal.primary.g*.07*en*settled)*cal,(W3[2]+pal.primary.b*.07*en*settled)*cal);nc++;
       }
-      cells.commit(nc);dots.commit(nd);
+      commit(nc,nd);
       lifeStatsNow={drawn:nc+nd-nf-nt,followers:nf,tails:nt,drawCalls:2,cells:nc,sites:nS,scale:+k.toFixed(3)};
     };
   }

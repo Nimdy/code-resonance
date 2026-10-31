@@ -10,15 +10,19 @@
 // Populations (species):
 //  glia       astrocytes: slow star-shaped cells that tile the network. Each chooses a neuron (its weight, the energy
 //             and nourishment around it, how few glia it holds already), settles in a domain of its own beside one of
-//             the neuron's synapses or branch roots (a seeded anchor of the neuron, the habitat's data), stays for a
-//             minute or more and moves on carrying the neuron's influence (a stronger trail). They keep their distance
-//             from each other (separation: they tile, never crowd), drift a little with the tide, withdraw from an
-//             inhibited region and come back after a recovery;
+//             the neuron's synapses or branch roots (a seeded anchor of the neuron, the habitat's data) and moves on
+//             seldom (never because it is fed; less where the neuron is nourished, new or lasting), carrying the
+//             neuron's influence (a stronger trail). They keep their distance from each other (separation: they tile,
+//             never crowd), drift a little with the tide, withdraw from an inhibited region and come back after a
+//             recovery;
 //  vesicles   neuromodulator vesicles: small glassy bubbles riding the tide in loose clouds (alignment, cohesion), that
 //             gather where a neuron is active (energy, nourishment), swirling in small clouds around its synapses, and
 //             leave fed in streams that carry the gathering's influence to the next neuron; they flee disturbance first;
-//  microglia  the network's sentinels: few, motile, following the trails others leave and drawn to the edge of a
-//             disturbed region, where they hold and survey it without entering; they part the vesicles' clouds.
+//  microglia  the network's sentinels: few, motile, following the trails others leave; within SENSE site radii of an
+//             inhibited neuron they come to the edge of its sphere and circle it slowly, never inside; they part the
+//             vesicles' clouds.
+// Carrying capacity: only as many of each are awake as the neurons can host (hostable); the others are dormant, outside
+// every field, and wake as neurons appear.
 // The tide (the macro current): the neuromodulator tide of the network: a slow circulation about the network's heart, a
 // slow in- and outflow (a period of TIDE seconds, turned by the climate's swing), a few broad eddies and a vertical
 // swell. Static parts are tabulated per field cell when the habitat changes; per tick only the phases change.

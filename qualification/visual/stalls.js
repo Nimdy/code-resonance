@@ -24,6 +24,9 @@ const SRC=path.resolve(arg('dataset')),FAMILY=arg('family'),GPU=arg('gpu',null),
 const TASK_MS=Number(arg('task-ms',40)),SPEED=Number(arg('speed',2)),QUALITY=arg('quality','auto'),IDLE=Number(arg('idle',30)),LONG=Number(arg('long',100)),HIDE=(arg('hide','')||'').split(',').filter(Boolean).map(Number);
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','stalls'))),TAG=arg('tag',`${FAMILY}-${W}x${H}-q${QUALITY}${HIDE.length?`-hide${HIDE.join('.')}`:''}`);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+// Other browsers' hardware GPU processes alive now (ANGLE on GL: the same GPU): GPU timer results include the time the
+// GPU spends on their work, so every sample records them (ours excluded).
+function otherGpuProcesses(){let n=0;for(const d of fs.readdirSync('/proc')){if(!/^\d+$/.test(d))continue;try{const c=fs.readFileSync(`/proc/${d}/cmdline`,'utf8');if(c.includes('--type=gpu-process')&&c.includes('--use-angle=gl'))n++;}catch{}}return Math.max(0,n-1);}
 const pct=(a,p)=>{const s=a.filter(Number.isFinite).sort((x,y)=>x-y);return s.length?+s[Math.min(s.length-1,Math.floor(p*(s.length-1)))].toFixed(2):null;};
 // In the page, before any of its code: frame callbacks timed, WebGL calls timed (the slowest per frame; any over 20 ms
 // listed), GPU timer results and disjoint flags as the player reads them, the scene the world renders (to hide passes).
@@ -71,7 +74,7 @@ const TAKE=hide=>{const P=window.__probe,v=window.__view,st=window.ResonancePlay
       const t0=Date.now();let part='replay',liveAt=null;
       for(;;){await wait(500);const x=await page.evaluate(TAKE,HIDE);x.t=Date.now()-t0;
         for(const f of x.frames)frames.push([...f,part]);calls.push(...x.calls);gpu.push(...x.gpu);disjoint.push(...x.disjoint);
-        samples.push({t:x.t,pageMs:x.pageMs,part,perf:x.perf,quality:x.quality,gpuMs:x.gpuMs,focus:x.focus,canvas:x.canvas,mem:processMemory()});
+        samples.push({t:x.t,pageMs:x.pageMs,part,perf:x.perf,quality:x.quality,gpuMs:x.gpuMs,focus:x.focus,canvas:x.canvas,mem:processMemory(),otherGpu:otherGpuProcesses()});
         if(part==='replay'&&!x.playing&&x.perf>=x.end&&x.t>5000){part='idle';liveAt=x.t;await page.evaluate(()=>window.ResonancePlayer.setMode('live'));}
         else if(part==='idle'&&x.t-liveAt>=IDLE*1000)break;
         if(x.t>20*60000)throw new Error('the replay did not end in 20 minutes');}
@@ -96,7 +99,7 @@ const TAKE=hide=>{const P=window.__probe,v=window.__view,st=window.ResonancePlay
   report.summary={callbacks:all,frames:frames.length,fps:+(frames.length/((frames.at(-1)[0]-frames[0][0])/1000)).toFixed(1),intervalMs:{p50:pct(iv,.5),p95:pct(iv,.95),p99:pct(iv,.99),max:pct(iv,1)},
     longFrames:long.length,callbackMs:{p50:pct(cb,.5),p95:pct(cb,.95),max:pct(cb,1)},gpuMs:{n:g.length,p50:pct(g,.5),p95:pct(g,.95),p99:pct(g,.99),max:pct(g,1)},
     disjoint:disjoint.length,slowGlCalls:calls.length,qualityLevels:[...new Set(samples.map(s=>s.quality))],canvas:samples.at(-1)?.canvas,
-    memMb:{first:samples[0]?.mem,last:samples.at(-1)?.mem}};
+    memMb:{first:samples[0]?.mem,last:samples.at(-1)?.mem},otherGpuSeconds:samples.filter(x=>x.otherGpu>0).length/2};
   // compact series for correlation: per player frame [ts, callback ms]; per GPU timer result [read at, ms]
   report.series={frames:frames.map(f=>[+f[0].toFixed(1),f[1]]),gpu};
   report.long=long;report.calls=calls;report.gpuTop=gpu.slice().sort((a,b)=>b[1]-a[1]).slice(0,12);report.samples=samples;
