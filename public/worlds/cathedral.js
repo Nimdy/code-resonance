@@ -947,9 +947,10 @@ export function createFamily(ctx){
     if(!Number.isFinite(aMin)){aMin=-.3;aMax=.3;near=10;}
     let hf=(aMax-aMin)*1.06;let aim=(aMin+aMax)/2;const lim=.22*hf;aim=clamp(aim,-lim,lim);hf=Math.max(hf,2*Math.max(aim-aMin,aMax-aim)*1.04);
     const aBot=-(Math.atan2(Cy,near)+.38*Math.max(aTop,.05));
-    const vNeed=(aTop-aBot)/.9,vH=2*Math.atan(Math.tan(hf/2)/aspect);let vf=portrait?clamp(Math.max(vNeed,vH),.16,1.15):clamp(Math.max(vNeed,Math.min(vH,vNeed*1.4)),.16,.95);
-    // A wide, low city is cropped at the sides rather than left floating in empty water. A portrait frame fits the city's
-    // width: the spires stand under its top fifth (clear of the platforms' interface), the reflections fill the water below.
+    const vNeed=(aTop-aBot)/.9,vH=2*Math.atan(Math.tan(hf/2)/aspect);let vf=portrait?clamp(Math.max(vNeed,vH*.8),.16,1.15):clamp(Math.max(vNeed,Math.min(vH,vNeed*1.4)),.16,.95);
+    // A wide, low city is cropped at the sides rather than left floating in empty water. A portrait frame fits most of the
+    // city's width (its outer tenths may leave the frame): the spires stand under its top fifth (clear of the platforms'
+    // interface), the reflections fill the water below.
     const pitchTop=aTop+(portrait?.2:.08)*vf-vf/2,pitchMid=(aTop+aBot)/2;const pitch=portrait?Math.min(pitchTop,pitchMid):vf>vNeed*1.02?lerp(pitchTop,Math.min(pitchMid,pitchTop),.4):pitchMid;
     // With room to spare across the frame, centre the city (the moon need only stay well inside the frame).
     {const hfa=2*Math.atan(Math.tan(vf/2)*aspect);if(hfa>hf*1.02){const mid=(aMin+aMax)/2;aim=clamp(mid,-.36*hfa,.36*hfa);}}

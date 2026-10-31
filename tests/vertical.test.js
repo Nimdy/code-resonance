@@ -183,7 +183,10 @@ test('worlds that do not frame portraits themselves keep their field of view acr
   const p=portraitGoal(goal,9/16),half=x=>Math.tan(x*Math.PI/360);
   assert(Math.abs(half(p.fov)*9/16-half(34))<1e-9,'the width sees what the landscape height saw');
   assert.equal(p.distance,10);assert.equal(portraitGoal({...goal,fov:undefined},9/16).fov,portraitGoal({...goal,fov:36},9/16).fov);
-  for(const f of ['biosphere','stellar','cathedral']){const src=fs.readFileSync(path.join(__dirname,'..','public','worlds',`${f}.js`),'utf8');assert.match(src,/framesPortrait:true/,f);}
+  for(const f of ['stellar','cathedral']){const src=fs.readFileSync(path.join(__dirname,'..','public','worlds',`${f}.js`),'utf8');assert.match(src,/framesPortrait:true/,f);}
+  // Fractal Biosphere composes a portrait as a square frame and lets the host widen the view (its camera then stays in
+  // front of the giant far organisms).
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname,'..','public','worlds','biosphere.js'),'utf8'),/framesPortrait/);
 });
 test('the recorder and the Control Center offer Vertical 1080 × 1920, and the receiver saves it as a profile',()=>{
   const root=path.join(__dirname,'..');

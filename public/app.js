@@ -577,10 +577,14 @@
   function fitFont(g2,weight,size,text,maxW){const f=px=>`${weight} ${Math.max(1,Math.round(px))}px Inter, "Segoe UI", system-ui, sans-serif`;g2.font=f(size);const m=g2.measureText(text).width;if(m>maxW)g2.font=f(Math.floor(size*maxW/m));}
   // The end card of a vertical clip (npm run film -- --vertical): from `at` (performance time) the world dims and the public
   // title and "Code Resonance" stand over it, centred in the safe area. Only the recipe's approved public title is drawn.
+  // The labels and captions give way to it as it fades in (drawn through `fading`).
   let endCard=null;
+  const endAlpha=t=>endCard&&t>=endCard.at?Math.min(1,(t-endCard.at)/endCard.speed/800):0;
+  function fading(g2,w,h,t,draw){const a=endAlpha(t);if(!a){draw(g2);return;}if(a>=1)return;
+    const layer=document.createElement('canvas');layer.width=w;layer.height=h;draw(layer.getContext('2d'));g2.save();g2.globalAlpha=1-a;g2.drawImage(layer,0,0);g2.restore();}
   function drawEndCard(g2,w,h,t){
     if(!endCard||t<endCard.at)return;
-    const a=Math.min(1,(t-endCard.at)/endCard.speed/800),k=frameRules?frameRules.textScale(w,h):w/1920,s=frameRules?frameRules.safeArea(w,h):{x0:0,y0:0,x1:w,y1:h};
+    const a=endAlpha(t),k=frameRules?frameRules.textScale(w,h):w/1920,s=frameRules?frameRules.safeArea(w,h):{x0:0,y0:0,x1:w,y1:h};
     const r=living?.recipe||recipe,title=typeof r?.title==='string'&&r.title.trim()?r.title.trim():null,cx=(s.x0+s.x1)/2,cy=s.y0+(s.y1-s.y0)*.44,maxW=(s.x1-s.x0)*.92;
     g2.save();g2.fillStyle=`rgba(4,6,12,${(.66*a).toFixed(3)})`;g2.fillRect(0,0,w,h);g2.globalAlpha=a;g2.textAlign='center';g2.textBaseline='middle';
     g2.shadowColor='rgba(0,0,0,.7)';g2.shadowBlur=20*k;
@@ -906,13 +910,13 @@
         // Composite the stage with the caption layer so the film carries the narration.
         const src=bitmap||(selectedWorld==='living'&&living?$('world'):selectedWorld==='construct'&&construct?$('construct'):canvas),out=document.createElement('canvas');out.width=src.width;out.height=src.height;
         const g2=out.getContext('2d');g2.drawImage(src,0,0);bitmap?.close();
-        if(selectedWorld==='living'&&living){living.drawOverlay(g2,out.width,out.height);
+        if(selectedWorld==='living'&&living){fading(g2,out.width,out.height,t,g=>living.drawOverlay(g,out.width,out.height));
           // A film can carry a persistent note (e.g. that a fixture is supplemental or a family was chosen by hand).
           if(filmNote){if(out.height>out.width&&frameRules){const k=frameRules.textScale(out.width,out.height),sa=frameRules.safeArea(out.width,out.height);g2.save();g2.globalAlpha=.72;fitFont(g2,500,15*k,filmNote,sa.x1-sa.x0);g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,sa.x0,sa.y0+44*k);g2.restore();}
             else{const k=out.width/1920;g2.globalAlpha=.72;g2.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g2.textAlign='left';g2.fillStyle='#e8eef8';g2.shadowColor='rgba(0,0,0,.8)';g2.shadowBlur=8*k;g2.fillText(filmNote,40*k,44*k);g2.globalAlpha=1;g2.shadowBlur=0;}}
           drawEndCard(g2,out.width,out.height,t);
           return out.toDataURL('image/jpeg',.92);}
-        drawCaption(g2,out.width,out.height,t);
+        fading(g2,out.width,out.height,t,g=>drawCaption(g,out.width,out.height,t));
         drawEndCard(g2,out.width,out.height,t);
         return out.toDataURL('image/jpeg',.92);
       },
