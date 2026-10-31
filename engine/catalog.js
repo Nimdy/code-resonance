@@ -107,7 +107,9 @@ const LIFE={
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 // Preview families: built in, chosen only explicitly (the Visual Studio, the render lab's --family), never by the
-// family scoring, and not yet a base for declarative packs (their parameters may still change). No digital life yet.
+// family scoring, and not yet a base for declarative packs (their parameters may still change). Temporal Terrain offers
+// the digital-life group (its grammar: public/worlds/life/terrain.js), so it can be turned on with a tuning; the
+// generator does not add life to a preview identity.
 const PREVIEWS={
   'synaptic-storm':{name:'Synaptic Storm (preview)',preview:true,parameters:{
     'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
@@ -159,6 +161,7 @@ const PREVIEWS={
     effects:['range','peak','uplift','erode','road','fault','scan','heal','terrace','sunrise','survey','horizon'],
     unlocks:['dawn','lanterns','stars','aurora']}
 };
+PREVIEWS['temporal-terrain'].parameters={...PREVIEWS['temporal-terrain'].parameters,...LIFE};
 for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.

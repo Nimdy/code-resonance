@@ -52,7 +52,8 @@ test('The preview\'s catalogue covers every value its generator draws; the palet
   const spacing=[];
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11,ui:seed%4,groups:1+seed%9}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
-    for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
+    // (the digital-life group is offered for a tuning; the generator does not add life to a preview identity)
+    for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish'||p.startsWith('life.'))continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);
     const P=r.genome.palette;assert(dh(hue(P.warning),hue(P.accent))>=35,`seed ${seed}: the fault ${P.warning} stays away from the lamps ${P.accent}`);
@@ -61,7 +62,11 @@ test('The preview\'s catalogue covers every value its generator draws; the palet
   // the files' spacing follows the project's size at generation: a large project's files stand closer
   const at=n=>spacing.filter(([m])=>Math.abs(m-n)<10).map(x=>x[1]);assert(Math.max(...at(450))<Math.min(...at(30)));
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the flagships' digital-life group, tunable on the preview (the generator adds none: a tuning turns it on)
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());assert.equal(r.genome.life,undefined);
+  const living=recipe.update(r,{type:'tune',values:{'life.enabled':true,'life.ecology':2}},project('tune'),0);assert.deepEqual(living.genome.life,{enabled:true,ecology:2});
+  assert.deepEqual(recipe.update(living,{type:'tune-reset'},project('tune'),0).genome.life,undefined,'reset removes it again');
   const tuned=recipe.update(r,{type:'tune',values:{'camera.personality':'map','contour.interval':1.2}},project('tune'),0);
   assert.deepEqual([tuned.genome.camera.personality,tuned.genome.contour.interval],['map',1.2]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'contour.index':9}},project('tune'),0),/index/);
