@@ -201,7 +201,7 @@
       if(!release)throw new Error('this working file is in use in another window');
       let worker;
       try{worker=new Worker(workerUrl());}catch(e){release();throw e;}
-      let written=0,failure=null,onfail=null,closing=null,saving=null,opened,closed,progressed=null;
+      let written=0,failure=null,onfail=null,closing=null,saving=null,opened,closed,progressed=null,dead=null;
       const fail=why=>{if(failure)return;failure=why;onfail?.(why);};
       const ready=new Promise((res,rej)=>{opened={res,rej};});
       worker.onmessage=e=>{const m=e.data||{};
@@ -210,7 +210,9 @@
         else if(m.op==='failed'){written=m.bytes;fail(m.error);}
         else if(m.op==='progress')progressed?.(m.done,m.total);
         else if(m.op==='closed'){written=m.bytes;closed?.(m);}};
-      worker.onerror=e=>{e.preventDefault?.();const why=`the recording worker failed (${e.message||'unknown error'})`;opened.rej(new Error(why));fail(why);closed?.({bytes:written,index:null,error:why});};
+      // A worker that dies (out of memory, a crash of its own) ends the recording; what it wrote stays as an interrupted
+      // recording.
+      worker.onerror=e=>{e.preventDefault?.();const why=`the recording worker failed (${e.message||'unknown error'})`;dead=why;opened.rej(new Error(why));fail(why);closed?.({bytes:written,index:null,error:why});};
       worker.postMessage({op:'open',name});
       try{await Promise.race([ready,new Promise((_,rej)=>setTimeout(()=>rej(new Error('the recording worker did not answer')),15000))]);}
       catch(e){worker.terminate();await remove(name).catch(()=>{});release();throw e;}
@@ -218,7 +220,8 @@
         get written(){return written;},get failure(){return failure;},set onfail(f){onfail=f;},
         write(blob){if(!failure&&!closing)worker.postMessage({op:'write',blob});},
         // Everything written, the file closed (and, given `dest`, copied into it by the worker): the worker's answer.
-        close(dest=null,progress=null){progressed=progress;return closing||=new Promise(res=>{closed=m=>{closed=null;worker.terminate();res(m);};worker.postMessage({op:'close',dest});});},
+        close(dest=null,progress=null){progressed=progress;return closing||=dead?Promise.resolve({bytes:written,index:null,error:dead}):
+          new Promise(res=>{closed=m=>{closed=null;worker.terminate();res(m);};worker.postMessage({op:'close',dest});});},
         // Into the chosen file, then the working file deleted (once, however many callers ask). The worker copies it;
         // if it may not write the chosen file, the page does.
         save(dest,progress){return saving||=(async()=>{
