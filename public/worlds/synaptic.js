@@ -442,6 +442,7 @@ export function createFamily(ctx){
     term.commit(axons.length);
     U.uAxK.value=clamp(Math.sqrt(90/Math.max(1,axons.length)),.3,1);
     adjacency=neuronList.map(()=>[]);for(const a of axons){if(!adjacency[a.si].includes(a.di))adjacency[a.si].push(a.di);if(!adjacency[a.di].includes(a.si))adjacency[a.di].push(a.si);}
+    axonPair=new Map();routes=new Map();for(const a of axons){const k=`${a.si}>${a.di}`;if(!axonPair.has(k))axonPair.set(k,a);}
     soma.ensure(neuronList.length);neuronList.forEach((_,i)=>soma.write('sN',i,i));soma.commit(neuronList.length);
   }
   function rebuild(){built.cheap='';built.key='';}
@@ -452,7 +453,7 @@ export function createFamily(ctx){
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0,overrides:{},agents:[]};
   let somaR=new Float32Array(0),npos=new Float32Array(0),nseed=new Float32Array(0);
-  const waves=[],misfires=[],resyncs=[],storms=[],potentiations=[],expands=[];
+  const waves=[],misfires=[],resyncs=[],storms=[],potentiations=[],expands=[],meetings=[];
   const push=(list,x,max=6)=>{list.push(x);if(list.length>max)list.shift();};
   const tempoOf=i=>Math.max(40,i.mood?.tempo||92);
   // JS twin of the shader's drift.
@@ -596,12 +597,38 @@ export function createFamily(ctx){
       const r=waiting?(somaR[ni]||1)*3+7:(somaR[ni]||1)*2.6+3.5,w=p.busy?.32:.07;out[0]+=Math.cos(ph+tv*w)*r;out[1]+=2+Math.sin(tv*.4+ph)*.8;out[2]+=Math.sin(ph+tv*w)*r;return out;}
     const r=Math.max(10,net.radius)*.55;out[0]=net.center[0]+Math.cos(ph+tv*.05)*r;out[1]=net.center[1]+4;out[2]=net.center[2]+Math.sin(ph+tv*.05)*r;return out;}
   const ga=[0,0,0],gb=[0,0,0];
-  // From the goal before the latest change (a state, an edit landing, its dwell ending) to this one over 1.8 s, along a
-  // lifted arc: a signal travelling the network.
+  // The neuron an agent's goal is at: the one whose branch it works on, else its home's; -1 when it circles the network.
+  function goalNeuron(p,t){const w=workOf(p,t);if(w){const ni=neuronIdx.get(fileList[fileIdx.get(w)].neuron.id);return ni??-1;}
+    const h=p.home?fileIdx.get(p.home):undefined;return h!==undefined?neuronIdx.get(fileList[h].neuron.id)??-1:-1;}
+  // The shortest path through the axon graph between two neurons (at most ROUTE_HOPS hops; null otherwise): breadth
+  // first over the adjacency in its own (structural) order, so a pure function of the structure. Cached per structure.
+  const ROUTE_HOPS=4;let axonPair=new Map(),routes=new Map();
+  function routeOf(na,nb){if(na<0||nb<0||na===nb)return null;const key=na*65536+nb;if(routes.has(key))return routes.get(key);
+    const prev=new Map([[na,-1]]),depth=new Map([[na,0]]),q=[na];
+    for(let h=0;h<q.length&&!prev.has(nb);h++){const n=q[h];if(depth.get(n)>=ROUTE_HOPS)continue;for(const m of adjacency[n]||[])if(!prev.has(m)){prev.set(m,n);depth.set(m,depth.get(n)+1);q.push(m);}}
+    let out=null;if(prev.has(nb)){out=[];for(let n=nb;n>=0;n=prev.get(n))out.unshift(n);}
+    routes.set(key,out);return out;}
+  // A route's fibres as a polyline (the axons' own curves, with or against their direction), sampled once per frame.
+  let legsT=null;const legs=new Map();
+  function legsOf(route){if(legsT!==info.t){legs.clear();legsT=info.t;}const key=route.join('>');let L=legs.get(key);if(L)return L;const pts=[];
+    for(let h=0;h+1<route.length;h++){const f=axonPair.get(`${route[h]}>${route[h+1]}`),a=f||axonPair.get(`${route[h+1]}>${route[h]}`);if(!a)continue;
+      for(let j=0;j<=8;j++)pts.push(curve(a,f?j/8:1-j/8));}
+    let len=0;for(let j=1;j<pts.length;j++)len+=dist3(pts[j-1],pts[j]);L={pts,len};legs.set(key,L);return L;}
+  // The point at arclength s along ga -> the fibres -> out.
+  function along(L,s,out){const P=L.pts;let x=ga;for(let j=0;j<=P.length;j++){const y=j<P.length?P[j]:out.slice(),d=dist3(x,y);if(s<=d||j===P.length){const u=d>1e-6?Math.min(1,s/d):1;
+      for(let c=0;c<3;c++)out[c]=x[c]+(y[c]-x[c])*u;return out;}s-=d;x=y;}return out;}
+  // From the goal before the latest change (a state, an edit landing, its dwell ending) to this one: along the axon
+  // pathways between their neurons when the graph joins them (at conduction speed, 1.8 to 4.5 s), otherwise over 1.8 s
+  // along a lifted arc: a signal travelling the network.
+  const TRAVEL=1800,TRAVEL_MAX=4500;
   function agentAt(id,t,tv,out){const a=ctx.agents.presence(id,t);if(!a)return null;goalOf(a,tv,out,t);
     const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
-    if(t-tc<1800*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const k=smooth((t-tc)/(1800*sp));goalOf(prev,tv,ga,tc-1);const lift=Math.sin(k*Math.PI)*Math.min(14,dist3(ga,out)*.3);
-      for(let c=0;c<3;c++)out[c]=lerp(ga[c],out[c],k);out[1]+=lift;}}
+    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){goalOf(prev,tv,ga,tc-1);
+      const route=routeOf(goalNeuron(prev,tc-1),goalNeuron(a,t));
+      if(route){const L=legsOf(route),P=L.pts,total=(P.length?dist3(ga,P[0])+L.len+dist3(P[P.length-1],out):dist3(ga,out)),T=clamp(total/VA*1000*1.4,TRAVEL,TRAVEL_MAX)*sp;
+        if(t-tc<T&&P.length){along(L,smooth((t-tc)/T)*total,out);return a;}}
+      if(t-tc<TRAVEL*sp){const k=smooth((t-tc)/(TRAVEL*sp)),lift=Math.sin(k*Math.PI)*Math.min(14,dist3(ga,out)*.3);
+        for(let c=0;c<3;c++)out[c]=lerp(ga[c],out[c],k);out[1]+=lift;}}}
     return a;}
   function updateAgents(i,n){
 const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1);const seen=new Set(),head=[0,0,0],q=[0,0,0],site=[0,0,0];
@@ -616,6 +643,15 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
           n=fxPoint(n,q,c,alpha*Math.sin(f*Math.PI)*1.1,4.5,8);}
         n=fxPoint(n,site,c,alpha*(.6+.4*Math.pow(1-((i.t/(60000/tempoOf(i)))%1),3)),14,9);}}
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
+    // agent.collision: each agent's signal, in its colour, runs in toward the neuron from its own side along one line
+    // (seeded by the event) over 1.2 s, trailing; where they meet at the branch, a ring in both colours spreads and fades
+    for(const mt of near(meetings,i,4200)){if(!siteOf(mt.fileId,site))continue;const a0=(i.t-mt.at)/1000/sp,h=rand(hash(`${mt.at}/${mt.fileId}`))*TAU,P=mt.providers.length?mt.providers:['a','b'];
+      const k=smooth(a0/1.2),cols=P.map(pv=>agentCol[presence(pv).seat%8]),fade=1-smooth((a0-2.6)/1.6);
+      P.forEach((pv,j)=>{const ang=h+j*TAU/P.length,d=7*(1-k),c=cols[j];
+        for(let tr=5;tr>=0;tr--){const dd=Math.min(7,d+tr*.55*(1-k*.6));q[0]=site[0]+Math.cos(ang)*dd;q[1]=site[1]+Math.sin(ang*1.7)*dd*.3+.4;q[2]=site[2]+Math.sin(ang)*dd;
+          n=fxPoint(n,q,c,(tr?.5*(1-tr/6):1.4)*fade*mt.s*(a0<1.25?1:.35),tr?4+2*(6-tr)/6:24,tr?8:seatOf({provider:pv})<6?seatOf({provider:pv}):6);}});
+      if(a0>=1.1){const b=a0-1.1,c0=cols[0],c1=cols[1%cols.length],mix={r:(c0.r+c1.r)/2,g:(c0.g+c1.g)/2,b:(c0.b+c1.b)/2};
+        n=fxPoint(n,site,mix,1.8*Math.exp(-b*2.2)*mt.s,20+60*smooth(b/1.4),9);n=fxPoint(n,site,{r:1,g:1,b:1},1.2*Math.exp(-b*4)*mt.s,10,8);}}
     return n;
   }
   // ---- Effects: recorded intents only -----------------------------------------------------------------------------------
@@ -633,7 +669,10 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
       case 'storm':case 'consolidate':{const full=cmd.tier>=3&&stormAllowed(cmd.at);push(storms,{at,files,s,full,grand:full&&cmd.tier>=4,refactor:cmd.effect==='consolidate'},4);break;}
       case 'potentiate':push(potentiations,{at,files,s});break;
       case 'expand':push(expands,{at,s});break;
-      default:break;// growth (neurogenesis, sprout, arborize, prune, axon-link) is drawn from the model's own times
+      // two agents on one file (agent.collision; the director gives it the family's integration look): two signals
+      // meeting at that neuron. Growth (axon-link for a real connection) is drawn from the model's own times.
+      case 'axon-link':if(cmd.intent==='agent.collision'&&subj.fileId)push(meetings,{at,fileId:subj.fileId,providers:(cmd.detail?.providers||[]).slice(0,4),s},4);break;
+      default:break;// growth (neurogenesis, sprout, arborize, prune) is drawn from the model's own times
     }
   }
   // ---- Digital life: the network's glia and vesicles (life/synaptic.js; only when the recipe has life on) ------------
@@ -875,7 +914,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();NS.dispose();FS.dispose();}
   // After a seek: no transient survives (lasting myelin comes back from the director's record).
-  function onPrime(){for(const l of [waves,misfires,resyncs,storms,potentiations,expands])l.length=0;agentState.clear();mySig='';}
+  function onPrime(){for(const l of [waves,misfires,resyncs,storms,potentiations,expands,meetings])l.length=0;agentState.clear();mySig='';}
   // Composition anchors (layers.js): the clusters, the neurons, the work, the network's rim. Read-only.
   const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
   function composeAnchors(i){if(!net)return composeA;composeA.center.set(...net.center);composeA.extent=Math.max(6,net.radius);composeA.boundary.radius=net.radius*1.1;composeA.boundary.y=net.center[1];
