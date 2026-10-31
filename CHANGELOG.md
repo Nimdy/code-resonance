@@ -38,14 +38,18 @@ keeps its v9 structure and test flag. The extension's part (below) reaches VS Co
   before either had started). The new checks passed 62/62 unloaded and in three loaded runs.
 - **Soak:** the first local three-hour soak completed, 7/11 (`qualification/results/soak/soak-3h-amd-playwright.json`).
   Events, sound, packs, GPU objects, the receiver restart and page errors passed. The page heap, the renderer process,
-  the Construct's frame rate and two Stellar Forge recording starts (one 0.4 s interval each) failed. The soak's project
+  the Construct's frame rate and two recording starts (one 0.4 s interval each) failed. The soak's project
   grows all along, and experiments with fresh browsers at its sizes traced most of that to the project's size: the
   Construct about 15 draw calls per file, and staying loaded once shown. The renderer's growth was Playwright's DevTools
-  connection. Still open: a page live for a while is about 16 % slower in the Construct than a fresh one, and the
-  0.3-0.4 s starts come and go (none in 18 focused takes) (docs/QUALIFICATION.md, *Three-hour soak*). `visual/soak.qual.js` now uses the lean driver
-  and waits for the project's first view. It records the heap after a collection at the end of every world's turn and
-  the Construct's own counts. It ends with a control, every world again in a fresh browser on the same project; the
-  memory and frame-rate checks are held to that control.
+  connection (docs/QUALIFICATION.md, *Three-hour soak*). `visual/soak.qual.js` now uses the lean driver and waits for
+  the project's first view. It records the heap after a collection at the end of every world's turn and the
+  Construct's own counts. It ends with a control, every world again in a fresh browser on the same project; the memory
+  and frame-rate checks are held to that control. A rerun with it passed 10/11: memory and frame rates within the
+  control after three hours. Its one failure is the recording start again. From the second hour on, the soak's
+  "Stellar Forge" had been Ember Observatory (a look stays when its own family is chosen again): the held starts were
+  the soaks' four recordings of Ember Observatory, every one of them. 20 focused takes, Ember Observatory included,
+  have not reproduced it.
+  The harness now removes the look for Stellar Forge and records Ember Observatory in its own segment.
 
 - **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
   enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with

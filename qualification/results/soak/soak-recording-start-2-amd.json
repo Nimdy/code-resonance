@@ -1,0 +1,262 @@
+{
+ "note": "Scratch experiments after the three-hour rerun: 10-second recordings at the default 720p, the lean driver, the AMD GPU, 1920x1080, Stellar Forge first unless stated; startupMaxMs is the longest frame interval in the recording's start-up; longTasks are the page's long tasks from the record call (ms after it). None held (the soak's holds were 335-406 ms).",
+ "at": "2026-10-31",
+ "runs": [
+  {
+   "what": "another world recorded first (each sequence in a new browser), 201 events, no live events",
+   "events": 201,
+   "rows": [
+    {
+     "seq": "stellar,blueprint,stellar",
+     "world": "stellar",
+     "startupMaxMs": 64,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 69,
+     "fps": 29.92
+    },
+    {
+     "seq": "stellar,blueprint,stellar",
+     "world": "blueprint",
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 35,
+     "fps": 30.06
+    },
+    {
+     "seq": "stellar,blueprint,stellar",
+     "world": "stellar",
+     "startupMaxMs": 75,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 85,
+     "fps": 29.31
+    },
+    {
+     "seq": "stellar,cymatic,stellar",
+     "world": "stellar",
+     "startupMaxMs": 66,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 69,
+     "fps": 29.04
+    },
+    {
+     "seq": "stellar,cymatic,stellar",
+     "world": "cymatic",
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 34,
+     "fps": 30.1
+    },
+    {
+     "seq": "stellar,cymatic,stellar",
+     "world": "stellar",
+     "startupMaxMs": 70,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 93,
+     "fps": 28.9
+    },
+    {
+     "seq": "stellar,fractal,stellar",
+     "world": "stellar",
+     "startupMaxMs": 60,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 66,
+     "fps": 29.36
+    },
+    {
+     "seq": "stellar,fractal,stellar",
+     "world": "fractal",
+     "startupMaxMs": 35,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 36,
+     "fps": 30.06
+    },
+    {
+     "seq": "stellar,fractal,stellar",
+     "world": "stellar",
+     "startupMaxMs": 81,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 82,
+     "fps": 28.43
+    }
+   ]
+  },
+  {
+   "what": "the Construct shown first, 2,300 events, no live events",
+   "events": 2300,
+   "rows": [
+    {
+     "seq": "stellar,construct:show,stellar,stellar",
+     "world": "stellar",
+     "heapMB": 33.5,
+     "longTasks": [
+      {
+       "atMs": 23,
+       "ms": 125
+      }
+     ],
+     "startupMaxMs": 59,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 71,
+     "fps": 29.8
+    },
+    {
+     "seq": "stellar,construct:show,stellar,stellar",
+     "world": "construct",
+     "shown": true
+    },
+    {
+     "seq": "stellar,construct:show,stellar,stellar",
+     "world": "stellar",
+     "heapMB": 33.5,
+     "longTasks": [
+      {
+       "atMs": 3,
+       "ms": 86
+      }
+     ],
+     "startupMaxMs": 76,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 79,
+     "fps": 29.28
+    },
+    {
+     "seq": "stellar,construct:show,stellar,stellar",
+     "world": "stellar",
+     "heapMB": 33.5,
+     "longTasks": [
+      {
+       "atMs": 2,
+       "ms": 160
+      }
+     ],
+     "startupMaxMs": 79,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 76,
+     "fps": 29.58
+    }
+   ]
+  },
+  {
+   "what": "Ember Observatory three times, at 2,300 and then 201 events, no live events",
+   "rows": [
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 24.8,
+     "longTasks": [],
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 35,
+     "fps": 30.06
+    },
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 24.8,
+     "longTasks": [],
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 59,
+     "fps": 29.89
+    },
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 24.8,
+     "longTasks": [
+      {
+       "atMs": 18,
+       "ms": 138
+      }
+     ],
+     "startupMaxMs": 62,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 59,
+     "fps": 29.81
+    },
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 35.6,
+     "longTasks": [],
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 35,
+     "fps": 30.06
+    },
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 35.6,
+     "longTasks": [],
+     "startupMaxMs": 34,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 74,
+     "fps": 29.58
+    },
+    {
+     "seq": "ember,ember,ember",
+     "world": "ember",
+     "heapMB": 35.6,
+     "longTasks": [
+      {
+       "atMs": 21,
+       "ms": 121
+      }
+     ],
+     "startupMaxMs": 75,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 72,
+     "fps": 29.62
+    }
+   ]
+  },
+  {
+   "what": "the soak's hour: the Construct 60 s, Ember Observatory 120 s, then Stellar Forge chosen (the look stays) 180 s before each recording, the session posting every 3 s",
+   "rows": [
+    {
+     "seq": "construct:show:60,ember:show:120,stellar::180,stellar::180",
+     "world": "construct",
+     "shown": true
+    },
+    {
+     "seq": "construct:show:60,ember:show:120,stellar::180,stellar::180",
+     "world": "ember",
+     "shown": true
+    },
+    {
+     "seq": "construct:show:60,ember:show:120,stellar::180,stellar::180",
+     "world": "stellar",
+     "events": 2588,
+     "heapMB": 48.1,
+     "longTasks": [
+      {
+       "atMs": 6,
+       "ms": 84
+      }
+     ],
+     "startupMaxMs": 58,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 61,
+     "fps": 30.04
+    },
+    {
+     "seq": "construct:show:60,ember:show:120,stellar::180,stellar::180",
+     "world": "stellar",
+     "events": 2731,
+     "heapMB": 48.1,
+     "longTasks": [
+      {
+       "atMs": 22,
+       "ms": 68
+      }
+     ],
+     "startupMaxMs": 68,
+     "gapsAt": [],
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 29.91
+    }
+   ]
+  }
+ ]
+}

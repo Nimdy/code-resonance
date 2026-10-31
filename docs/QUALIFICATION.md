@@ -356,7 +356,7 @@ the recorded track showed worse: Chrome's recorder then produced no file at all.
 ended or muted, the music's audio clock not advancing, digital silence while the music is audible) and finishes and saves
 the recording at once with the reason. A device-less audio context for the recording (`sinkId: none`) was tried and
 rejected: in this environment it stalled with the sound server too. Qualification runs now use Chromium's own audio
-output, never the host's sound server.
+output, never the host's sound server (removing `PULSE_SERVER` may not be enough here: *Three-hour soak*).
 
 **On slow machines** (CI's 4-vCPU software renderer, and this machine limited to 2-4 cores): built-in worlds render on
 the player's main thread and present 6-14 fps there; recordings of them keep about half of those frames (copying the
@@ -1083,8 +1083,18 @@ Failed:
 |---|---|
 | Page heap, hour over hour | 25.3 → 53.6 → 68.6 MB (hourly means, not collected) |
 | Processes, hour over hour | renderer 399 → 570 → 612 MB (node 248 → 272 → 299 and the GPU process 385 → 413 → 432, within the threshold) |
-| Frame rate, hour over hour | the Construct 60 → 50 → 42 fps; Stellar Forge 43 → 48 → 48, Fractal Biosphere and the three packs steady (48-60) |
-| Recordings | two of nine, Stellar Forge at minutes 64 and 124, started with one 406 and 389 ms frame interval (at 0.14 s; at most 80 ms after it). The other seven had no gap; the sound was complete in all nine; markers within 18-40 ms |
+| Frame rate, hour over hour | the Construct 60 → 50 → 42 fps; "Stellar Forge" 43 → 48 → 48 (Ember Observatory from the second hour, below), Fractal Biosphere and the three packs steady (48-60) |
+| Recordings | two of nine, at minutes 64 and 124 (labelled Stellar Forge; Ember Observatory, below), started with one 406 and 389 ms frame interval (at 0.14 s; at most 80 ms after it). The other seven had no gap; the sound was complete in all nine; markers within 18-40 ms |
+
+**What the soak called Stellar Forge after the first hour was Ember Observatory.** The soak chose each hour's Stellar
+Forge with the family action, right after Ember Observatory. Ember Observatory is a look drawn over Stellar Forge, and a
+look stays when its own family is chosen again: in Visual, choosing Stellar Forge under it says Stellar Forge is
+already the project's identity, and *None* removes the look. So from minute 60 on, the segment labelled Stellar Forge
+showed Ember Observatory: 20 draw calls instead of 23, 31 programs instead of 32, and no digital life (0.2 ms of update
+a frame instead of 1.8). Both held recordings were of it, and so were the rerun's control "Stellar Forge" (below) and
+the second Stellar Forge visit of the 15-minute experiment (36 WebGL draws a frame instead of 39). The player behaves as
+designed. The harness now removes the look when it chooses Stellar Forge, and records Ember Observatory in its own
+segment.
 
 The session's project grows for the whole soak (144 files at the end of the first hour, 279 at the second, 414 at
 the end). An hour-over-hour comparison therefore compares a longer run *and* a larger project. Three experiments
@@ -1115,7 +1125,7 @@ separated them. All used the lean driver and the AMD GPU at 1920×1080; their re
   at the default 720p, a CPU profile over each start. 18 takes in all, every one with a start-up interval of 61-81 ms:
   - two takes each at 201 and 6,333 events;
   - six takes at 201 events, before and after the page showed Ember Observatory, Cymatic Field, the Construct and
-    Fractal Biosphere;
+    Fractal Biosphere (the take after Ember Observatory recorded Ember Observatory: the look stayed);
   - eight takes at 6,333 events while the session posted every 3 s.
 
   The start's only long task is the world resizing to the recording's size (three.js `setSize`, 23-138 ms).
@@ -1125,13 +1135,15 @@ separated them. All used the lean driver and the AMD GPU at 1920×1080; their re
   15 minutes held 7.5 MB more than a fresh one. The renderer's growth to 612 MB is mostly Playwright's DevTools
   connection keeping every fetched project view (*Renderer memory* above); under the lean driver it stayed at
   280-335 MB.
-- *Frame rate.* The Construct's cost grows with the project, as designed. A page that has been live for a while is
-  also about 16 % slower in the Construct than a fresh page at the same draw count; the cause is not established.
-- *Recording start.* The 0.3-0.4 s first interval is intermittent. It affected three of the five Stellar Forge
-  recordings in the two soaks that came after the page's first, and none of the 18 focused takes. The second soak (a
-  compressed run under the lean driver, below) had one at 311 ms in a page 10 minutes old, with about 150 events. So
-  it needs neither hours, nor a large project, nor Playwright. The cause is not established. The picture holds its
-  first frame for that long; the sound is unaffected.
+- *Frame rate.* The Construct's cost grows with the project, as designed. In the 15-minute experiment a page that had
+  been live for a while was also about 16 % slower in the Construct than a fresh page at the same draw count. The
+  rerun's control did not reproduce that after three hours (43.5 fps against 41.9, below), so it is not established.
+- *Recording start.* In the two full soaks the held recordings are the four of Ember Observatory (minutes 64 and 124 in
+  each, after six minutes of it and three more once the soak chose "Stellar Forge"). None of the other 14 held. Focused
+  takes have not reproduced it (recording-start experiments after the rerun, below). The compressed run's 311 ms is
+  another case: that recording started as the programme switched worlds, and the player keeps the last frame until
+  the new world draws. The cause of the soak's holds is not established. The picture holds its first frame for
+  0.3-0.4 s; the sound is unaffected.
 
 **The harness now** uses the lean driver. It waits for the project's first view before opening the page (the lean
 driver starts faster, and the page asked for a project that did not exist yet). It records the page heap after a
@@ -1150,7 +1162,53 @@ Construct had 17.5/12.2 MB and 60.3/60.0 fps, and Stellar Forge 17.1/12.3 MB and
 failed:
 - DOM nodes, 485 → 841 → 1,145 over "hours" of three minutes: the interface still filling. Not monotonic; 603 at the
   end.
-- The recording above.
+- A Stellar Forge recording with one 311 ms interval at 0.23 s. The programme started it the moment it switched worlds
+  (the one-minute recordings delay a programme of three-minute hours), and the player keeps the last frame until the
+  new world draws.
+
+**The rerun** with that harness (`b628318`), otherwise as the first run, 2026-10-31: **10/11**. Its raw file is in the
+review folder, which is not tracked (`qualification/results/films/reach-0.8/soak-lean/`).
+
+- Events: 6,333 of 6,333 stored exactly once, across the receiver restart at minute 90 (down 15 s, three refused posts
+  retried; intents 1,817 → 1,843; the world rebuilt during the outage came back).
+- Memory against the control (the soak's browser / the fresh one, after a forced collection): page heap 51.4-59.0 MB /
+  43.3-48.7 MB, renderer 278-305 / 241-266 MB, GPU process 394-450 / 350-411 MB. All within the threshold. The heap
+  after each world's turn follows the project and the Construct: 10.9 MB after the first Stellar Forge turn, 36.9 after
+  the first Construct turn (minute 54), 63.0 after the last.
+- Frame rate against the control: the Construct 43.5 / 41.9 fps, "Stellar Forge" (Ember Observatory, above)
+  45.9 / 44.6, Ember Observatory 44.7 / 44.0, Fractal Biosphere and the two packs 60 / 60. The Construct's hourly
+  60 → 43 → 36 fps is therefore the project's size, not the page's age.
+- DOM nodes 879 → 964 → 921, listeners 114 → 128 → 130. Processes hour over hour: node 217 → 246 → 287 MB, browser
+  133 → 135 → 135, renderer 287 → 330 → 363, GPU 387 → 421 → 422. GPU objects constant per world. The music's audio
+  clock at 0.996-1.001× real time, 0 of 170 samples silent. No pack stopped, 1.5 ms at most per pack frame. No page
+  errors in either browser.
+- Failed: the recordings. Seven of nine had no gap. Ember Observatory at minutes 64 and 124 (labelled Stellar Forge)
+  started with one 335 and one 398 ms interval (at 0.01 and 0.14 s). The sound was complete in all nine; markers
+  within 17-76 ms.
+
+**Recording-start experiments after the rerun** (`soak-recording-start-2-amd.json`): 10-second recordings at 720p, the
+lean driver, the AMD GPU at 1920×1080. 20 recordings, every start-up interval 34-81 ms:
+- nine in pages that had first recorded Blueprint Cathedral, Cymatic Field or Fractal Biosphere (201 events);
+- three of Stellar Forge after the Construct had been shown (2,300 events, page heap 33.5 MB);
+- six of Ember Observatory, at 2,300 and 201 events;
+- two as in the soak's hour: the Construct for a minute, Ember Observatory for two, then Stellar Forge chosen (the look
+  stays) for three more before each, with the session posting every 3 s (2,588 events, page heap 48 MB).
+
+The start's only long task is still the world's resize to the recording's size (66-169 ms in these profiles). None of
+the experiments had a page an hour old, one-minute recordings with markers, or the soak's sampling over CDP every
+minute.
+
+**The harness since then** removes the look when it chooses Stellar Forge (its Stellar Forge has its digital life), and
+records Ember Observatory at minute 57, four recordings an hour. A compressed check of it (`--hours 2 --scale 0.05`)
+passed 9/11. Stellar Forge kept its digital life throughout (geometries 29/29/29), and in the control Stellar Forge
+and Ember Observatory were distinct (41.9 / 41.2 and 44.1 / 42.9 fps). Its two failures were the sound. This machine's
+sound server stalled again during it (WSLg's PulseAudio: `pactl` timed out) and the browser's audio clock stopped.
+The player finished one recording after 39 s with the reason; the last two produced no file (the loss reported).
+
+Whether the harness's browser was using that server is not established. The harness removes `PULSE_SERVER`, but
+libpulse's default socket here (`$XDG_RUNTIME_DIR/pulse/native`) is a link to WSLg's. Browsers started during the stall
+fell back to their own output, and their clocks ran at 0.995-1.005× real time, with or without `PULSE_SERVER` and
+`XDG_RUNTIME_DIR`. A browser started while the server was healthy has not been checked.
 
 ## Not verified
 
@@ -1166,10 +1224,8 @@ failed:
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
-- A completed multi-hour soak with the lean driver (local runs reached 110 and 24 minutes, CI one hour, all under
-  Playwright, whose DevTools connection inflated the renderer; the growth they showed is explained under *Renderer
-  memory*; a three-hour run under Playwright completed later, 7/11: *Three-hour soak*), and multi-hour real development
-  sessions.
+- Multi-hour real development sessions. (A three-hour soak with the lean driver has completed, 10/11, after one under
+  Playwright, 7/11: *Three-hour soak*. A recording start late in the soak, held 0.3-0.4 s, is not explained.)
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - AI agents other than Claude Code.

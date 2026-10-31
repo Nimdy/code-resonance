@@ -2,8 +2,9 @@
 // Soak: the live player, with sound, for hours, while a synthetic session streams events in real time through the
 // receiver's real ingestion API. Every hour: the three built-in families, a world pack (Cymatic Field), a shader pack
 // (Blueprint Cathedral), a declarative pack (Ember Observatory) and the Construct, a 12-minute pause in the session
-// (idle), and three one-minute recordings measured from the files. Once, mid-run, the receiver is stopped for 15 s and
-// started again on the same port (events produced meanwhile are retried, as the extension's outbox does).
+// (idle), and four one-minute recordings measured from the files (Stellar Forge, both packs and Ember Observatory).
+// Once, mid-run, the receiver is stopped for 15 s and started again on the same port (events produced meanwhile are
+// retried, as the extension's outbox does).
 // Every minute: page heap, DOM nodes, listeners, documents, the player's frame rate, the world's GPU objects and
 // timings, the pack transport, the sound level, the CPU of every browser process, the memory of the whole process
 // tree, and the events produced, accepted and stored (none may be lost). At the end of each world's turn, the page heap
@@ -36,11 +37,12 @@ const [VW,VH]=arg('viewport','1920x1080').split('x').map(Number),QUALITY=arg('qu
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','soak')));
 const {checks,check}=checker();
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-// The hour's programme (minutes): what the player shows, when the session pauses, when it records.
-const SEGMENTS=[[0,{world:'living',action:{type:'family',family:'stellar-forge'},label:'Stellar Forge'}],[12,{world:'living',action:{type:'family',family:'halcyon.cymatic-field'},label:'Cymatic Field (world pack)',remote:true}],
+// The hour's programme (minutes): what the player shows, when the session pauses, when it records. A look stays when
+// its own family is chosen again (Ember Observatory is drawn over Stellar Forge): Stellar Forge removes it too.
+const SEGMENTS=[[0,{world:'living',action:[{type:'family',family:'stellar-forge'},{type:'pack',pack:null}],label:'Stellar Forge'}],[12,{world:'living',action:{type:'family',family:'halcyon.cymatic-field'},label:'Cymatic Field (world pack)',remote:true}],
   [24,{world:'living',action:{type:'pack',pack:'northlight.blueprint-cathedral'},label:'Blueprint Cathedral (shader pack)',remote:true}],[36,{world:'living',action:{type:'family',family:'fractal-biosphere'},label:'Fractal Biosphere'}],
   [48,{world:'construct',label:'Construct'}],[54,{world:'living',action:{type:'pack',pack:'northlight.ember-observatory'},label:'Ember Observatory (declarative)'}]];
-const IDLE=[40,52],RECORD_AT=[3,15,27],RESTART_AT=Math.min(90,HOURS*60/2);
+const IDLE=[40,52],RECORD_AT=[3,15,27,57],RESTART_AT=Math.min(90,HOURS*60/2);
 const TAP=`(()=>{const orig=AudioNode.prototype.connect;window.__taps=[];
 AudioNode.prototype.connect=function(dest,...r){if(dest instanceof AudioDestinationNode){const a=this.context.createAnalyser();a.fftSize=2048;orig.call(this,a);window.__taps.push(a);}return orig.call(this,dest,...r);};
 window.__rms=()=>{let s=0,n=0;for(const a of window.__taps){const b=new Float32Array(a.fftSize);a.getFloatTimeDomainData(b);for(const v of b){s+=v*v;n++;}}return n?Math.sqrt(s/n):0;};})();`;
@@ -89,7 +91,7 @@ async function collected(cdp){await cdp.send('HeapProfiler.collectGarbage');awai
     // Page errors and the player's console errors, kept in the page (the lean driver enables no Runtime or Log domain).
     await page.addInitScript(CONSOLE_ERRORS);await page.addInitScript(TAP);
     const collectErrors=async pg=>{const all=await pg.errors();for(const e of all.slice(errors.length))errors.push({minute:+minuteNow().toFixed(1),error:String(e).slice(0,300)});};
-    await recipe(SEGMENTS[0][1].action);
+    for(const a of [SEGMENTS[0][1].action].flat())await recipe(a);
     // The page pairs itself with the receiver's key (as the link npm start prints does): the soak changes worlds and recipes.
     await page.goto(`${url}/?project=${projectId}&world=living&qual=1${QUALITY===null?'':`&quality=${QUALITY}&adapt=0`}${svc.pairing?`#pair=${svc.pairing}`:''}`);await page.waitForFunction(()=>!!window.__qual);
     await wait(5000);await page.evaluate(()=>document.getElementById('soundBtn').click());
@@ -102,7 +104,7 @@ async function collected(cdp){await cdp.send('HeapProfiler.collectGarbage');awai
       if(!done.has(key)){done.add(key);
         if(segment>=0)settled.push({minute:+minute.toFixed(1),segment:SEGMENTS[segment][1].label,heapAfterGcMB:await collected(cdp),rssMB:processMemory()});
         segment=seg;const s=SEGMENTS[seg][1];
-        if(s.action)await page.evaluate(a=>window.__qual.action(a),s.action);await page.evaluate(w=>window.__qual.setWorld(w),s.world);
+        for(const a of [s.action||[]].flat())await page.evaluate(x=>window.__qual.action(x),a);await page.evaluate(w=>window.__qual.setWorld(w),s.world);
         events.push({minute:+minute.toFixed(1),event:`world: ${s.label}`});}
       const idle=inHour>=IDLE[0]&&inHour<IDLE[1];if(idle!==paused){paused=idle;events.push({minute:+minute.toFixed(1),event:idle?'session paused (idle)':'session resumed'});}
       for(const at of RECORD_AT){const k=`rec:${hour}:${at}`;if(inHour>=at&&!done.has(k)){done.add(k);
@@ -152,7 +154,7 @@ async function collected(cdp){await cdp.send('HeapProfiler.collectGarbage');awai
     // ---- Control: every world once more in this browser, then in a fresh browser on the same (final) project. The
     // Construct first: once shown it stays loaded, so both pages then hold it for the worlds after it.
     const CONTROL=[4,0,1,2,3,5].map(i=>SEGMENTS[i][1]),SETTLE=Math.round(Math.max(20000,Math.min(60000,600000*SCALE)));
-    const visit=async(pg,c)=>{const out=[];for(const s of CONTROL){if(s.action)await pg.evaluate(a=>window.__qual.action(a),s.action);await pg.evaluate(w=>window.__qual.setWorld(w),s.world);await wait(SETTLE);
+    const visit=async(pg,c)=>{const out=[];for(const s of CONTROL){for(const a of [s.action||[]].flat())await pg.evaluate(x=>window.__qual.action(x),a);await pg.evaluate(w=>window.__qual.setWorld(w),s.world);await wait(SETTLE);
       out.push({world:s.label,fps:+(await pg.evaluate(FPS)).toFixed(1),heapAfterGcMB:await collected(c),rssMB:processMemory()});console.log('control',JSON.stringify(out.at(-1)));}return out;};
     control={settleMs:SETTLE,longLived:await visit(page,cdp)};await collectErrors(page);
     await browser.close();browser=await launchLean(GPU);
@@ -200,7 +202,7 @@ async function collected(cdp){await cdp.send('HeapProfiler.collectGarbage');awai
     const recOk=r=>r.video&&r.audio&&r.audioDuration>=r.videoDuration-2&&r.pilotGapMs!==null&&r.pilotGapMs<=20&&r.sync&&r.sync.markers>=4&&(MECH?
       r.maxIntervalAfterStartupMs!==null&&r.maxIntervalAfterStartupMs<=Math.max(500,2.5*r.frameIntervalMedianMs)&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=250+r.frameIntervalMedianMs:
       r.longGaps===0&&r.sync.maxAbsOffsetMs!==null&&r.sync.maxAbsOffsetMs<=125);
-    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=3*HOURS&&recordings.every(recOk),
+    check('recordings: every one-minute recording has video and sound, no picture or sound gaps, and markers in sync',recordings.length>=RECORD_AT.length*HOURS&&recordings.every(recOk),
       recordings.map(r=>`${r.world.split(' ')[0]}@${Math.round(r.minute)}m: ${r.fps} fps, sound ${r.audioDuration}/${r.videoDuration} s${r.audioLostReported?' (loss reported to the user)':''}, gaps ${r.longGaps}, pilot gap ${r.pilotGapMs} ms, sync max ${r.sync?.maxAbsOffsetMs} ms`).join('; '));
     check('receiver restart: nothing stopped, the world rebuilt during the outage came back, and new events arrived',restart&&restart.intentsAfter>restart.intentsBefore&&restart.outboxAfterRestart===0&&
       restart.worldAfter.selectedWorld===restart.worldBefore.selectedWorld&&restart.worldAfter.remote===restart.worldBefore.remote&&!/stopped/.test(restart.worldAfter.notice),

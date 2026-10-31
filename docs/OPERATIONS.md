@@ -33,9 +33,12 @@ has not been run on Windows, on macOS or from a Remote-WSL, SSH or container win
 ## Current limitations
 
 - **Platforms:** only the environments above. Visual pack isolation was probed in Chromium only.
-- **Long sessions:** one three-hour soak has completed (7/11; [QUALIFICATION.md](QUALIFICATION.md#three-hour-soak-pr-30)):
-  no event lost, sound and packs steady. The Construct slows as a project grows (about 15 draw calls per file), and
-  more in a page live for hours. No multi-hour real development session has been recorded.
+- **Long sessions:** two three-hour soaks have completed (7/11, then 10/11 with a fresh-browser control;
+  [QUALIFICATION.md](QUALIFICATION.md#three-hour-soak-pr-30)): no event lost, sound and packs steady, and after three
+  hours the page's memory and frame rates within those of a fresh browser on the same project. The Construct slows as
+  a project grows (about 15 draw calls per file). In the soaks, recordings of Ember Observatory late in the run began
+  with the first frame held for 0.3-0.4 s (the sound unaffected); the cause is not established. No multi-hour real
+  development session has been recorded.
 - **Recording** kept in memory (the default) holds the file in the browser's memory until you stop: about 60 MB a
   minute at 720p and 90 MB at 1080p, so for anything longer than about half an hour choose *Record to a file on disk*
   (Chrome or Edge: written to disk as it records, bounded by disk, kept through a crash; qualified headless only, and
