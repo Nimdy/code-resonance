@@ -2,7 +2,7 @@
 // cinematic camera rig, effect resource pools and a 2D overlay for labels. Every animation reads the performance clock
 // passed in by the caller; nothing here reads wall-clock time, so a film renders identically on any machine.
 import * as THREE from '../vendor/three.module.min.js';
-import {clampBox} from './labels.js';
+import {clampBox,isPortrait,portraitPlaces} from './labels.js';
 export {THREE};
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const lerp=(a,b,t)=>a+(b-a)*t;
@@ -205,6 +205,7 @@ export function createOverlay(){
   const items=[];
   const project=(camera,v,w,h)=>{const p=v.clone().project(camera);return {x:(p.x*.5+.5)*w,y:(-p.y*.5+.5)*h,visible:p.z<1&&p.z>-1};};
   function draw(g,w,h,list,scale=1){
+    if(isPortrait(w,h))return drawPortrait(g,w,h,list);
     g.save();g.textBaseline='middle';
     for(const it of list){
       const a=clamp(it.alpha);if(a<=.01)continue;g.globalAlpha=a;
@@ -249,6 +250,67 @@ export function createOverlay(){
         g.font=`500 ${Math.round(16*scale)}px ${FONT}`;g.fillStyle='rgba(214,224,240,.82)';g.fillText(it.sub||'',48*scale,y0+78*scale);
         if(it.right){g.textAlign='right';g.fillText(it.right,w-48*scale,y0+40*scale);}
         if(it.right2){g.textAlign='right';g.fillText(it.right2,w-48*scale,y0+78*scale);}
+      }
+    }
+    g.restore();
+  }
+  // A portrait frame (vertical clips): the same words at the portrait size (by the short side), inside the safe area
+  // that Reels, Shorts and TikTok leave clear (labels.js portraitPlaces); a line wider than the safe area is drawn smaller.
+  function drawPortrait(g,w,h,list){
+    const P=portraitPlaces(w,h),s=P.safe,k=P.k;
+    const font=(weight,size,text,maxW)=>{g.font=`${weight} ${Math.round(size)}px ${FONT}`;const m=g.measureText(text).width;if(m>maxW)g.font=`${weight} ${Math.max(1,Math.floor(size*maxW/m))}px ${FONT}`;};
+    const keep=(x,y,bw,bh)=>({x:Math.max(s.x0,Math.min(s.x1-bw,x)),y:Math.max(s.y0,Math.min(s.y1-bh,y))});
+    g.save();g.textBaseline='middle';
+    for(const it of list){
+      const a=clamp(it.alpha);if(a<=.01)continue;g.globalAlpha=a;g.letterSpacing='0px';
+      if(it.kind==='banner'){
+        g.textAlign='center';g.fillStyle='rgba(250,246,238,.95)';g.shadowColor='rgba(0,0,0,.7)';g.shadowBlur=24*k;font(300,46*k,it.text,P.maxW);g.fillText(it.text,P.cx,P.banner.y);
+        if(it.sub){const sub=it.sub.toUpperCase();g.letterSpacing=`${(2*k).toFixed(1)}px`;font(500,17*k,sub,P.maxW);g.fillStyle='rgba(225,232,245,.8)';g.fillText(sub,P.cx,P.banner.sub);}
+        g.shadowBlur=0;continue;
+      }
+      if(it.kind==='title'){
+        g.textAlign='left';g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=18*k;font(200,58*k,it.text,P.maxW);g.fillStyle='rgba(248,246,240,.96)';g.fillText(it.text,s.x0,P.title.y);
+        const sub=(it.sub||'').toUpperCase();if(sub&&15*k>=11){font(500,15*k,sub,P.maxW);g.fillStyle='rgba(220,228,240,.78)';g.fillText(sub,s.x0+3*k,P.title.sub);}g.shadowBlur=0;continue;
+      }
+      if(it.kind==='caption'){
+        g.textAlign='center';g.shadowColor='rgba(4,6,12,.95)';g.shadowBlur=18*k;font(500,27*k,it.text,P.maxW);g.fillStyle='#eef3fb';g.fillText(it.text,P.cx,P.caption.y);g.shadowBlur=0;continue;
+      }
+      if(it.kind==='callout'&&Number.isFinite(it.tx)){
+        // A leader straight up (or down) from the point to the words centred over it.
+        const x=it.x,y=it.y,ly=y+it.dy*k;g.strokeStyle=it.color||'rgba(235,240,250,.7)';g.lineWidth=1.4*k;g.beginPath();g.moveTo(x,y);g.lineTo(x,ly);g.stroke();
+        g.fillStyle=it.color||'#fff';g.beginPath();g.arc(x,y,3*k,0,Math.PI*2);g.fill();
+        g.textAlign='left';font(500,17*k,it.text,P.maxW);const m=g.measureText(it.text).width;
+        let sw=0;if(it.sub){g.font=`500 ${Math.round(12*k)}px ${FONT}`;sw=Math.min(P.maxW,g.measureText(it.sub.toUpperCase()).width);font(500,17*k,it.text,P.maxW);}
+        const bw=Math.max(m,sw),c=keep(x-bw/2,it.ty-10*k,bw,(it.sub?28:18)*k),tx=c.x,ty=c.y+10*k;
+        g.shadowColor='rgba(0,0,0,.85)';g.shadowBlur=8*k;g.fillStyle=it.textColor||'rgba(244,247,252,.95)';g.fillText(it.text,tx,ty);
+        if(it.sub){font(500,12*k,it.sub.toUpperCase(),P.maxW);g.fillStyle='rgba(210,220,236,.75)';g.fillText(it.sub.toUpperCase(),tx,ty+18*k);}
+        g.shadowBlur=0;continue;
+      }
+      if(it.kind==='callout'||it.kind==='chip'||it.kind==='label'){
+        const x=it.x,y=it.y,lx=x+(it.dx??46)*k,ly=y+(it.dy??-46)*k;
+        if(it.kind==='callout'){g.strokeStyle=it.color||'rgba(235,240,250,.7)';g.lineWidth=1.2*k;g.beginPath();g.moveTo(x,y);g.lineTo(lx,ly);g.lineTo(lx+18*k,ly);g.stroke();
+          g.fillStyle=it.color||'#fff';g.beginPath();g.arc(x,y,3*k,0,Math.PI*2);g.fill();}
+        const size=it.kind==='label'?15:it.kind==='chip'?14:17;
+        g.textAlign='left';font(it.kind==='callout'?500:600,size*k,it.text,P.maxW-(it.kind==='chip'?(it.dot?30:16)*k:0));
+        let tx=it.kind==='callout'?lx+24*k:x+(it.dx??14)*k,ty=it.kind==='callout'?ly:y+(it.dy??0)*k;
+        if(it.kind==='chip'){
+          const m=g.measureText(it.text).width,r=11*k,boxW=m+16*k+(it.dot?14*k:0),boxH=r*2;
+          const c=keep(tx-8*k,ty-r,boxW,boxH);tx=c.x+8*k;ty=c.y+r;
+          g.fillStyle='rgba(8,10,18,.55)';g.beginPath();g.roundRect(c.x,c.y,boxW,boxH,r);g.fill();
+          if(it.dot){g.fillStyle=it.dot;g.beginPath();g.arc(tx,ty,4*k,0,Math.PI*2);g.fill();}
+        }else{
+          const m=g.measureText(it.text).width,c=keep(tx,ty-10*k,m,(it.sub?28:18)*k);tx=c.x;ty=c.y+10*k;
+        }
+        g.shadowColor='rgba(0,0,0,.85)';g.shadowBlur=8*k;g.fillStyle=it.textColor||'rgba(244,247,252,.95)';g.fillText(it.text,tx+(it.kind==='chip'&&it.dot?12*k:0),ty);
+        if(it.sub){font(500,12*k,it.sub.toUpperCase(),P.maxW);g.fillStyle='rgba(210,220,236,.75)';g.fillText(it.sub.toUpperCase(),tx,ty+18*k);}
+        g.shadowBlur=0;continue;
+      }
+      if(it.kind==='lower-third'){
+        // The band at the bottom of the safe area, its lines stacked (a portrait frame has no room for a right column).
+        const y0=P.lowerThird.y0,x=s.x0+12*k,mw=P.maxW-24*k;g.fillStyle='rgba(6,8,14,.55)';g.fillRect(0,y0,w,s.y1-y0);g.textAlign='left';
+        font(600,22*k,it.text,mw);g.fillStyle='rgba(246,248,252,.96)';g.fillText(it.text,x,y0+34*k);
+        g.fillStyle='rgba(214,224,240,.82)';const lines=[it.sub,it.right,it.right2].filter(Boolean).slice(0,3);
+        lines.forEach((l,n)=>{font(500,16*k,l,mw);g.fillText(l,x,y0+(68+28*n)*k);});
       }
     }
     g.restore();

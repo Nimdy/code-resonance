@@ -918,7 +918,7 @@ export function createFamily(ctx){
   const estab={C:new THREE.Vector3(),T:new THREE.Vector3(),S:new THREE.Vector3(),fov:24,L:40,yaw:0,pitch:0,near:20};
   const camE=new THREE.Vector3();
   function establish(i){
-    const C=cam,motion=i.overrides?.motion??1,aspect=Math.min(camera.aspect||16/9,2.4);
+    const C=cam,motion=i.overrides?.motion??1,aspect=Math.min(camera.aspect||16/9,2.4),portrait=aspect<1;
     const otw=orreryTower&&towers.get(orreryTower);const S=estab.S.copy(otw?otw.pos:(orreryAt||centre));
     const top=otw?otw.top:1,roofTop=otw?otw.roofTop:2;const hA=top+.6*Math.max(roofTop-top,.4);
     const mx=Math.cos(moonAz),mz=Math.sin(moonAz),px=-mz,pz=mx;
@@ -928,7 +928,8 @@ export function createFamily(ctx){
     for(const d of districts.values()){if(!d.standing)continue;const dx=d.centre.x-S.x,dz=d.centre.z-S.z;back=Math.max(back,-(dx*mx+dz*mz)+d.radius);const lat=dx*px+dz*pz;latMin=Math.min(latMin,lat-d.radius);latMax=Math.max(latMax,lat+d.radius);}
     const lens=Math.sqrt(34/clamp(C.fov||34,20,60))*(C.distance||1);
     let tallTop=2;for(const tw of tallOrder().slice(0,4))tallTop=Math.max(tallTop,tw.roofTop);
-    const L0=Math.max(back+2+extent*.3,extent*3.1*lens,tallTop*4.6*lens,32);
+    // A portrait frame (a vertical clip) stands further back, so the city's width fits it with the same long lens.
+    const L0=Math.max(back+2+extent*.3,extent*3.1*lens,tallTop*4.6*lens,32)*(portrait?1.4:1);
     const e0=clamp(((C.elevation??.4)-.15)/.65);const Cy0=Math.max(.45,L0*Math.tan(.022+.04*e0+.045*smooth((extent-16)/45)));
     // The moon's elevation from the undisturbed standpoint (the idle sway and glide then move the spire across it).
     moonEl=clamp(Math.atan2(hA-Cy0,L0),.035,.2);moonDir.set(Math.cos(moonAz)*Math.cos(moonEl),Math.sin(moonEl),Math.sin(moonAz)*Math.cos(moonEl));
@@ -946,9 +947,10 @@ export function createFamily(ctx){
     if(!Number.isFinite(aMin)){aMin=-.3;aMax=.3;near=10;}
     let hf=(aMax-aMin)*1.06;let aim=(aMin+aMax)/2;const lim=.22*hf;aim=clamp(aim,-lim,lim);hf=Math.max(hf,2*Math.max(aim-aMin,aMax-aim)*1.04);
     const aBot=-(Math.atan2(Cy,near)+.38*Math.max(aTop,.05));
-    const vNeed=(aTop-aBot)/.9,vH=2*Math.atan(Math.tan(hf/2)/aspect);let vf=clamp(Math.max(vNeed,Math.min(vH,vNeed*1.4)),.16,.95);
-    // A wide, low city is cropped at the sides rather than left floating in empty water.
-    const pitchTop=aTop+.08*vf-vf/2,pitchMid=(aTop+aBot)/2;const pitch=vf>vNeed*1.02?lerp(pitchTop,Math.min(pitchMid,pitchTop),.4):pitchMid;
+    const vNeed=(aTop-aBot)/.9,vH=2*Math.atan(Math.tan(hf/2)/aspect);let vf=portrait?clamp(Math.max(vNeed,vH),.16,1.15):clamp(Math.max(vNeed,Math.min(vH,vNeed*1.4)),.16,.95);
+    // A wide, low city is cropped at the sides rather than left floating in empty water. A portrait frame fits the city's
+    // width: the spires stand under its top fifth (clear of the platforms' interface), the reflections fill the water below.
+    const pitchTop=aTop+(portrait?.2:.08)*vf-vf/2,pitchMid=(aTop+aBot)/2;const pitch=portrait?Math.min(pitchTop,pitchMid):vf>vNeed*1.02?lerp(pitchTop,Math.min(pitchMid,pitchTop),.4):pitchMid;
     // With room to spare across the frame, centre the city (the moon need only stay well inside the frame).
     {const hfa=2*Math.atan(Math.tan(vf/2)*aspect);if(hfa>hf*1.02){const mid=(aMin+aMax)/2;aim=clamp(mid,-.36*hfa,.36*hfa);}}
     estab.yaw=moonAz+aim;estab.pitch=pitch;estab.fov=THREE.MathUtils.radToDeg(vf);estab.L=L;estab.near=near;
@@ -1236,12 +1238,14 @@ export function createFamily(ctx){
   // Attention: the camera glides toward the subject but never into the city (it stops outside every precinct); the
   // long lens narrows to frame the subject.
   function pushTo(P,r,k,amt,fovK=.8){const C0=estab.C;const dx=P.x-C0.x,dz=P.z-C0.z,dist=Math.max(1e-3,Math.hypot(dx,dz));
-    let fe=estab.fov*fovK;const want=Math.max(r/Math.tan(THREE.MathUtils.degToRad(fe)/2)*1.2,4);let travel=Math.max(0,dist-want)*amt;
+    // The subject fits the frame's narrower side (its height; the width of a portrait frame).
+    const S=camera.aspect<1?camera.aspect:1;
+    let fe=estab.fov*fovK;const want=Math.max(r/(Math.tan(THREE.MathUtils.degToRad(fe)/2)*S)*1.2,4);let travel=Math.max(0,dist-want)*amt;
     const ux=dx/dist,uz=dz/dist;let safe=travel;
     for(const d of districts.values()){const ox=d.centre.x-C0.x,oz=d.centre.z-C0.z;const along=ox*ux+oz*uz;const lat=Math.abs(ox*uz-oz*ux);const R=d.radius+1.2;
       if(lat<R&&along>0){const entry=along-Math.sqrt(R*R-lat*lat);safe=Math.min(safe,Math.max(0,entry));}}
     travel=Math.min(travel,safe);const left=dist-travel;
-    fe=clamp(THREE.MathUtils.radToDeg(2*Math.atan(r*1.25/Math.max(1,left))),estab.fov*.5,estab.fov*fovK);
+    fe=clamp(THREE.MathUtils.radToDeg(2*Math.atan(r*1.25/(Math.max(1,left)*S))),estab.fov*.5,estab.fov*fovK);
     gE.set(C0.x+ux*travel,lerp(C0.y,Math.max(.5,Math.min(C0.y,P.y*.6)),amt*.6),C0.z+uz*travel);gC.lerp(gE,k);gT.lerp(P,k);return lerp(0,fe-estab.fov,k);}
   function cameraGoal(i){
     gC.copy(estab.C);gT.copy(estab.T);let dfov=0;const sp=ctx.speed();
@@ -1254,7 +1258,7 @@ export function createFamily(ctx){
     // The rig's target always sits a fixed distance along the line of sight, so the camera glides on a steady path
     // (it never swings through the city while the target and the distance settle at different rates).
     const dx=gT.x-gC.x,dy=gT.y-gC.y,dz=gT.z-gC.z,len=Math.max(1e-3,Math.hypot(dx,dy,dz)),D=Math.max(6,estab.L*.5);
-    goal.target.set(gC.x+dx/len*D,gC.y+dy/len*D,gC.z+dz/len*D);goal.distance=D;goal.azimuth=Math.atan2(-dz,-dx);goal.elevation=Math.asin(clamp(-dy/len,-1,1));goal.fov=clamp(estab.fov+dfov,8,60);return goal;
+    goal.target.set(gC.x+dx/len*D,gC.y+dy/len*D,gC.z+dz/len*D);goal.distance=D;goal.azimuth=Math.atan2(-dz,-dx);goal.elevation=Math.asin(clamp(-dy/len,-1,1));goal.fov=clamp(estab.fov+dfov,8,camera.aspect<1?70:60);return goal;
   }
   function subjectOf(c){const s=c.subject||{};
     if(s.fileId&&towers.has(s.fileId)){const a=towers.get(s.fileId);if(s.targetId&&towers.has(s.targetId)){const b=towers.get(s.targetId);return {pos:a.pos.clone().lerp(b.pos,.5).setY(Math.max(a.top,b.top)*.6),radius:a.pos.distanceTo(b.pos)*.6+2};}
@@ -1306,7 +1310,7 @@ export function createFamily(ctx){
     const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&towers.has(a.fileId));
     const at=att&&(i.t-att.at)/ctx.speed()/1000<30?subjectOf(att)?.pos:busy?towers.get(busy.fileId).pos.clone().setY(towers.get(busy.fileId).top*.6):null;composeA.active.pos.copy(at||composeA.center);
     return composeA;}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+  return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
     compose:{camera,scene,anchors:composeAnchors},
     ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }

@@ -9,7 +9,7 @@ import {createModel} from './model.js';
 import {createDirector} from './director.js';
 import {createAgents} from './agents.js';
 import {createHistory} from './history.js';
-import {composeLabels,labelStrings,LABEL_MODES,generatedName} from './labels.js';
+import {composeLabels,labelStrings,LABEL_MODES,generatedName,isPortrait,safeArea,textScale} from './labels.js';
 import {createSdk,validateWorld} from './sdk.js';
 import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
@@ -89,6 +89,14 @@ export function hoverFacts({model,agents,agentColor=null},id,i){
     check:check&&{state:check.state,ago:i.t-check.at},edit:edit&&{by:edit.by,ago:i.t-edit.at}};
 }
 // Public labels never receive the project folder name: titles come only from the recipe's approved public title.
+// A portrait frame (a vertical clip) for a world that does not frame portraits itself (framesPortrait): its field of view
+// is kept across the frame's short side, the width, so what the world framed for the height of a landscape frame fills
+// the width, with sky and ground above and below it. 36° is the camera's own field of view (a goal without one keeps it).
+export function portraitGoal(goal,aspect){
+  if(!(aspect>0&&aspect<1))return goal;
+  const fov=Number.isFinite(goal.fov)&&goal.fov>0?goal.fov:36,wide=2*Math.atan(Math.tan(fov*Math.PI/360)/aspect)*180/Math.PI;
+  return {...goal,fov:Math.min(100,wide)};
+}
 export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,recipe,labels='cinematic',quality=0,adaptive=true,level:startLevel=null,families={},extension=null,assets={}}={}){
   const known=id=>!!(families[id]||BUILTIN[id]);
   if(!recipe||!known(recipe.family))throw new Error('A visual recipe with a known family is required');
@@ -112,7 +120,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const camera=new THREE.PerspectiveCamera(36,16/9,.1,4000);
   const rig=createCameraRig(camera);
   const model=createModel({speed});
-  let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,info=null,selected=null,ext=null;
+  let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,titleFrom=null,info=null,selected=null,ext=null;
   // After a reset, prime or new epoch the world still holds the frame before it: the first intent brings it up to date at
   // the intent's time, so an effect is placed as it is in continuous play (a seek then an event before the next frame).
   let stale=true;
@@ -188,14 +196,17 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function labelItems(i){
     // On the artist canvas the title card names the canvas, not the family whose identity the recipe keeps.
     return composeLabels({mode,recipe:compositionOf(current)?.base==='canvas'?{...current,familyName:'Artist canvas'}:current,info:i,commands:director.commands,agentName:a=>agents.name(a),world,toScreen:pos=>overlay.project(camera,pos,size[0],size[1]),
-      size,speed:speedK,origin:pinnedStart??startedAt,selected});
+      size,speed:speedK,origin:titleFrom??pinnedStart??startedAt,selected});
   }
   let lastLabels=[];
   function drawOverlay(g,w,h){if(!info)return;const items=labelItems(info);lastLabels=items;g.save();overlay.draw(g,w,h,items,w/1920);if(info.life?.restoring)drawRestoring(g,w,h,info.life.progress);g.restore();}
   // While the ecosystem is being rebuilt for a moment far from the last one, the world says so (its inhabitants are
   // hidden meanwhile: never a stale population shown as if it were this moment's).
-  function drawRestoring(g,w,h,p){const k=w/1920;g.save();g.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g.textAlign='right';g.fillStyle='rgba(232,238,248,.78)';
+  function drawRestoring(g,w,h,p){if(isPortrait(w,h))return drawRestoringPortrait(g,w,h,p);const k=w/1920;g.save();g.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g.textAlign='right';g.fillStyle='rgba(232,238,248,.78)';
     g.shadowColor='rgba(0,0,0,.8)';g.shadowBlur=8*k;g.fillText(`Restoring the ecosystem for this moment · ${Math.round(p*100)} %`,w-40*k,h-40*k);g.restore();}
+  // In a portrait frame: under the top of the safe area, at the portrait size.
+  function drawRestoringPortrait(g,w,h,p){const k=textScale(w,h),s=safeArea(w,h);g.save();g.font=`500 ${Math.round(15*k)}px Inter, "Segoe UI", system-ui, sans-serif`;g.textAlign='right';g.textBaseline='middle';g.fillStyle='rgba(232,238,248,.78)';
+    g.shadowColor='rgba(0,0,0,.8)';g.shadowBlur=8*k;g.fillText(`Restoring the ecosystem for this moment · ${Math.round(p*100)} %`,s.x1,s.y0+16*k);g.restore();}
   // Explorer: a selected structure draws the view a little toward it (the world's own goal, eased by the same rig).
   const EXPLORE_PULL=.35;
   // ---- Frame ----------------------------------------------------------------------------------------------------
@@ -225,6 +236,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
     if(selected&&mode==='explorer'){const s=world.inspect?.(selected,info);if(s?.position&&goal?.target)goal={...goal,target:goal.target.clone().lerp(s.position,EXPLORE_PULL)};}
     // A composition's global mappings bend the world's own camera goal within bounds; its layers follow the camera.
     if(layers)layers.camera(goal,info);
+    if(camera.aspect<1&&!world.framesPortrait)goal=portraitGoal(goal,camera.aspect);
     rig.update(dt,goal,{snap:snapCamera,omega:goal.omega||.9});snapCamera=false;
     // The artist's layers never take the world down: should the layer pass itself fail, layers stop until the
     // composition changes (each layer's own failures are isolated inside the runtime).
@@ -291,6 +303,8 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
       if(same&&lifeDriver&&lifeOn(next)&&bare(next,true)===bare(current,true)){current=next;director.setIntensity(next.overrides?.intensity??1);world.onLifeParams?.(next.genome.life);return;}
       await load(next);},
     setLabels(m){if(LABEL_MODES.includes(m))mode=m;},
+    // The title card from this performance time instead of the performance's start (a vertical clip opens on it).
+    setTitleFrom(t){titleFrom=Number.isFinite(t)?t:null;},
     // The viewer's quality choice: a fixed level (0 full … 3 lowest), and whether live playback may lower it further.
     setQuality(q,adapt){governor.configure({floor:q!==null&&q!==undefined&&Number.isFinite(Number(q))?Number(q):undefined,adaptive:typeof adapt==='boolean'?!film&&adapt:undefined});level=governor.level;applyLevel();},
     // Auto's state for the player: the level, the measured frame rate, and whether no level makes WebGL usable here.

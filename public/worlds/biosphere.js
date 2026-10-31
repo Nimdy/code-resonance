@@ -261,7 +261,8 @@ export function createFamily(ctx){
     const list=orgList.filter(o=>o.removed>=1e5);if(!list.length){comp=null;return;}
     const BEAUTY={coral:1.5,'crystal-tree':1.25,fern:.6,kelp:.25,mycelial:.3},mass=o=>{const S=Sof0(o);return Math.pow(o.height*S,1.6)*Math.sqrt(o.radius*S+.6)*(BEAUTY[o.species]||1);};
     const A=list.reduce((a,o)=>!a||mass(o)>mass(a)?o:a,null),SA=Sof0(A),HA=A.height*SA,RA=A.radius*SA;
-    const xa0=list.length>1?.36:.18,base=rand(seed)*6.283;let best=null,bs=-Infinity;
+    // Landscape: the anchor on a third. Portrait (a vertical clip): the anchor centred, filling the width.
+    const xa0=aspect<1?0:list.length>1?.36:.18,base=rand(seed)*6.283;let best=null,bs=-Infinity;
     for(let j=0;j<24;j++)for(const s of [-1,1]){
       const phi=base+j*Math.PI/12,V=[Math.cos(phi),Math.sin(phi)],R=[-V[1],V[0]],xa=s*xa0;
       const dA=Math.max(HA*.5/(tanV*.8),RA*1.15/(tanH*(1-Math.abs(xa)*.8)),1.6+HA*.6)*num(CAM.distance,1);
@@ -812,7 +813,9 @@ export function createFamily(ctx){
     const motion=i.overrides?.motion??1,drift=(.3+.9*num(CAM.drift,.7))*motion,crane=CAM.personality==='crane';
     let target,distance,az,el;
     if(comp){const v=viewOf(clamp(Sof(comp.A)/Sof0(comp.A),.75,1.3));target=v.target;distance=v.distance;az=v.az;el=v.el;}
-    else{target=centre.clone().setY(canopyH*.5);distance=Math.max(6,extent*1.6/tanV*.4);az=rand(seed)*6.283;el=.08;}
+    // The narrower side of the frame fits what is framed (the height in landscape, the width in a portrait frame).
+    const tanS=camera.aspect<1?tanV*camera.aspect:tanV;
+    if(!comp){target=centre.clone().setY(canopyH*.5);distance=Math.max(6,extent*1.6/tanS*.4);az=rand(seed)*6.283;el=.08;}
     // Idle: a slow, composed breath (minutes per cycle), never a constant drift.
     az+=(.05*Math.sin(i.tview/83)+.02*Math.sin(i.tview/37+1))*drift;distance*=1+.03*Math.sin(i.tview/61)*drift;el+=(crane?.03:.012)*Math.sin(i.tview/97)*drift;
     const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity,hold=att&&att.tier>=3?16:12;
@@ -820,7 +823,7 @@ export function createFamily(ctx){
     if(since<hold&&att){const ev=eventView(att,tanV);if(ev){camState.view=`${att.intent} +${since.toFixed(1)}s`;const k=smooth(1-Math.max(0,since-(hold-5))/5)*smooth(since/.8+.35)*Math.min(1,(i.overrides?.intensity??1)+.4);
       target.lerp(ev.target,k);distance=lerp(distance,ev.distance,k);let da=ev.az-az;while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;az+=da*k;el=lerp(el,ev.el,k);}}
     else{const busy=i.agents.find(a=>a.display==='tool'&&a.fileId&&forest?.anchors.has(a.fileId));
-      if(busy){const a=forest.anchors.get(busy.fileId),o=orgList[a.org];target.lerp(scaled(o,a.tip),.25);distance=lerp(distance,Math.min(distance,Math.max(6,rOf(o)*2/tanV)),.25);}}
+      if(busy){const a=forest.anchors.get(busy.fileId),o=orgList[a.org];target.lerp(scaled(o,a.tip),.25);distance=lerp(distance,Math.min(distance,Math.max(6,rOf(o)*2/tanS)),.25);}}
     camState.focus=distance;
     return {target,distance,azimuth:az,elevation:el,fov,omega:since<hold&&att?.tier>=3?.75:.5};
   }
@@ -930,7 +933,7 @@ export function createFamily(ctx){
     const att=i?ctx.director.attentionAt(i.t,1):null,busy=i?.agents?.find(a=>a.display==='tool'&&a.fileId&&forest.anchors.has(a.fileId));
     const at=att&&(i.t-att.at)/ctx.speed()/1000<30?subjectOf(att)?.pos:busy?anchorPos(busy.fileId):null;composeA.active.pos.copy(at||composeA.center);
     return composeA;}
-  return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
+  return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
     compose:{camera,scene,anchors:composeAnchors},
     ...(life?{lifeStats:life.stats,onLifeParams(){}}:{})};
 }
