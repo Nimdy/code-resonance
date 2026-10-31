@@ -9,36 +9,46 @@ the covered region lose coherence; a verified milestone can earn a rare fractal 
 **Status.** This is a preview: a working prototype family (`public/worlds/fractal.js`, `public/worlds/fractal-forms.js`)
 that a project can choose explicitly in the Visual Studio (marked *Preview*) or with the render lab's `--family`. It is
 never chosen automatically, and adding it changed no existing identity (see [Selection and compatibility](#selection-and-compatibility)).
-Nobody has reviewed it artistically yet. Everything below marked *prototype* is implemented; *planned* is not.
+The owner watched it live and found it read as "gum" (one soft purple, even soft light, shapes rounded by the swell, a
+white sugar of sparkle); the finish described here (0.7.x, *Unreleased*) answers that: each region its own hue on the
+identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
+swell, rare coloured glints. It has not been reviewed artistically since. Everything below marked *prototype* is
+implemented; *planned* is not.
 
 ![One project, four universes](fractal-continuum-universes.jpg)
 
 *Lumen Recipes (17 files in 6 subsystems at its end) as four identities of the same project: its generated identity, a
-kaleidoscopic crystal (top left), and the variants 1 to 3 of the Visual Studio's regenerate: a copper Mandelbulb, a jade
-Mandelbulb, a rose Mandelbox. Each is a different formula or different parameters, from the identity's own stream. Every
-still on this page: GPU (AMD Radeon iGPU through WSL2 D3D12), rendered at 1920×1080 (the fractal itself at 0.6 of that,
-quality 0, see [Performance](#performance)), shown at 960×540.*
+violet kaleidoscopic crystal (top left), and the variants 1 to 3 of the Visual Studio's regenerate: a copper Mandelbulb,
+a jade Mandelbulb, a rose crystal of the Menger-like kind (a high `fractal.shape`; earlier versions of this page called it
+a Mandelbox, the recipe says `kifs`). Each is a different formula or different parameters, from the identity's own
+stream, and each region takes its own hue on the identity's harmony. Every still on this page: GPU (AMD Radeon iGPU
+through WSL2 D3D12), rendered at 1920×1080 (the fractal itself at 0.6 of that, quality 0, see
+[Performance](#performance)), shown at 960×540.*
 
 | | |
 |---|---|
 | ![A large project](fractal-continuum-excalidraw.jpg) | ![Unfolding with the project](fractal-continuum-unfolding.jpg) |
-| Excalidraw (450 files, 9 subsystems), its generated identity: a twisted Mandelbulb of power 8, the files' 450 sites of light on its subsystems' regions | Lumen over its recording (2 %, 15 %, 40 %, the end): the crystal's recursion unfolds as files and symbols arrive; at 40 % the first verified milestone blooms |
+| Excalidraw (450 files, 9 subsystems), its generated identity: a twisted Mandelbulb of power 8 in sapphire, indigo and teal regions, the files' 450 sites of light on them | Lumen over its recording (2 %, 15 %, 40 %, the end): the crystal's recursion unfolds as files and symbols arrive; at 40 % the first verified milestone blooms |
 | ![An agent's edit](fractal-continuum-agent.jpg) | ![A failing test run](fractal-continuum-failure.jpg) |
 | Claude's first recorded edit (0.5 s on): its signal (rose four-point spark) at the edited site, the surface lit in its colour around it | A failing run, 6 s on, up close: the covered region decoheres (it jumps out of shape 12 times a second), static crackles in the warning colour, the region dims |
 | ![The earned bloom](fractal-continuum-bloom.jpg) | ![A passing run](fractal-continuum-wave.jpg) |
 | The first verified milestone (a recovery), 2 s on: the form twists through its recursion and inflates, a white-gold shell runs over it, a burst of light leaves the surface | A passing run, 3 s on: the coherence wave sweeps the form in the valid colour (this one also earned a milestone 62 s after the first: a local unfolding, not a bloom) |
 | ![A commit](fractal-continuum-commit.jpg) | ![Idle](fractal-continuum-idle.jpg) |
-| A commit that names no files: a warm glow rises from the crevices of the whole form | 90 s after the last event: the form breathing, the key light circling, the camera drifting in toward one region |
+| A commit that names no files: a warm glow rises from the crevices of the whole form | 90 s after the last event: the form breathing, the key light circling (glints where it catches the facets), the camera drifting in toward one region |
 
 ![Tuned toward the reference](fractal-continuum-reference.jpg)
 
 *Lumen tuned toward the owner's reference image (formula Mandelbulb, power 8, no twist, teal surface, `camera.personality`
-pole). The camera here is in the close-up of an event at the end of the recording, not at the pole: an attention
+pole: `--tune '{"fractal.form":"bulb","fractal.power":8,"fractal.twist":0,"palette.primary":"#33828e","camera.personality":"pole"}'
+--at 1`): its regions teal, azure, blue and violet on the arc from the surface's hue away from the gold light, the gold
+on the rims. The camera here is in the close-up of an event at the end of the recording, not at the pole: an attention
 close-up overrides the pole view (see [Known gaps](#known-gaps)).*
 
 *All stills: `qualification/visual/lab.js --dataset lumen --family fractal-continuum --gpu amd --size 1920x1080 --events
---after 2,6 --touch --idle 90` (and `--at`, `--variant`, `--dataset excalidraw`), the passing run and the tuned still
-from the same film path at the recorded intent's time.*
+--after 2,6 --touch --idle 90 --at 1` (and `--at 0.02,0.15,0.4,1`, `--variant 1` to `3`, `--dataset excalidraw`); the
+passing run on the same film path 3 s after the first recorded `validation.passed`; the tuned still as above. In a
+sandboxed shell where ANGLE's GL backend finds no usable X display, the same GPU is reached through `--use-angle=gl-egl`
+with `DISPLAY` and `WAYLAND_DISPLAY` unset (the renderer string still reads D3D12 AMD Radeon).*
 
 ## Mapping: what drives what
 
@@ -49,8 +59,8 @@ as such.
 |---|---|---|
 | The project's traits at generation (`engine/recipe.js` `traitsOf`) | The **universe**: `fractal.form` (Mandelbulb for interface-heavy and hub-centred code, Julia bulb for function-heavy code, Mandelbox for classes, types and coupled subsystems, kaleidoscopic crystal for tested, widely branching code; a seeded share), `fractal.power` (the bulbs' n-fold branching, from the number of subsystems), `fractal.twist` (raised by cross-subsystem coupling), `fractal.shape`, `fractal.julia`, `fractal.detail` (symbols per file) | From the identity's own stream: two projects (or two variants) are two universes |
 | Live code at *t*: `model.modules`, `model.symbols` (`born`, `removed`) | How far the recursion has **unfolded**: 2.5 + 0.95 × detail × log₂(1 + files + symbols / 4) iterations (fractional, blended), each file and symbol eased in over 2.6 s | An empty project is a smooth seed; by the formula Lumen goes from about 4 to 6.8 iterations over its recording, Excalidraw's 450 files reach about 11.4 (the level of detail may draw fewer, see [Determinism](#determinism)) |
-| Subsystem: `model.districts` (creation `order`, `role`) | A **region** of the surface around its own direction (slot *k* of a fixed, seeded sequence whose first slots stand far apart), with its own shade of the surface colour | A region never moves; `role` is named in labels only |
-| A region's live files | The region **swells** outward (up to `geometry.swell`, log-scaled against the largest region) | The radial swell keeps the surface's detail |
+| Subsystem: `model.districts` (creation `order`, `role`) | A **region** of the surface around its own direction (slot *k* of a fixed, seeded sequence whose first slots stand far apart), in its **own hue**: region *k* takes a share of the arc from the surface's hue toward the harmony's far pole (see [Visual grammar](#visual-grammar)), with its own saturation and lightness from its id | A region never moves and keeps its hue; `role` is named in labels only |
+| A region's live files | The region **swells** outward (up to `geometry.swell`, log-scaled against the largest region), the amplitude halved as the recursion unfolds from 3.5 to 7.5 iterations | The radial swell keeps the surface's detail; a gentler one shears it less (an intricate form keeps its structure, a smooth seed may bulge) |
 | File: `model.modules` | A **site of light** on its region's surface: a direction on a golden spiral around the region's (index *j* in creation order), traced to the surface with the JS twin of the estimator | A file never moves on its spiral; its size from its live symbols; fades in at birth, out at removal |
 | File state (`stateAt`): draft, committed, validated, stressed | Site light: pale, the light's colour, the light's colour toward valid, flickering in the warning colour | Stressed also drives decoherence (below) |
 | Dependency: `model.links` (`a` imports `b`) | A faint **thread** of light arcing from the importing file's site to the imported one's (lifted more between regions) | One per pair of sites, at most 480 |
@@ -73,18 +83,36 @@ as such.
   light of sites and events (warm on a cool surface or cool on a warm one, or the surface's own family), `highlight`
   rims and glints, `deep` and `haze` the void (kept dark), `warning` failure (red to magenta, at least 40° of hue away
   from the light: never the light's colour, never gold), `valid` tests.
-- **Surface**: a matte sculpted surface. Occlusion from three taps of the estimator along the normal and the orbit trap;
-  the closest tap also marks ridges (slightly lighter, as the reference's fine relief) and pores (darker). The key light
-  sits above and beside the camera and reads both the fine normal and the lobes' large shape (the normal of the same
-  form with three recursions), and two taps toward the light shade what the lobes hide from it (a soft shadow). A sky
-  fill, a little bounce, a rim on the silhouette, a low sheen. Colour follows the recursion's orbit (traps) between the
-  surface's own colour and its depth colour, and each region's shade.
+- **Harmony** (`palette.scheme`, in `fractal.js`): the far pole is the light's hue for analogous and complementary (the
+  opposite hue when the light stands near the surface's), 150° for split and 120° for triad. Regions take hues on the arc
+  from the surface's hue toward it: region *k* the share `[0, 1, −1, ½, −½, ¾, ¼, −¾, 0.9, −¼]` of the arc (the first
+  region the surface's own hue; a negative share toward the other side, 0.6 of the span for analogous and complementary,
+  the full span to the other pole for split and triad), ±4° from its id, the span 28–40° (analogous), 100°
+  (complementary, split) or 110° (triad). An arc never crosses the band between amber and green (48–100°, where a dark
+  yellow reads as olive): it turns the other way round the wheel, or stops 44° short of the band. Neighbouring regions
+  meet in a narrow seam, in the hue between theirs. The far pole itself stays the light's: rims, glints, sites, events.
+  Lumen (violet, gold light) gets violet, crimson, magenta, rose, indigo and azure regions with gold rims; a teal surface
+  with a gold light turns toward azure, blue and violet; a jade one toward teal.
+- **Surface** (a jewel, not a clay): colour from the region's hue turned by the recursion's orbit (traps): the depths
+  darker, denser and turned toward the palette's depth side, the ridges lighter and turned along the arc toward the far
+  pole, grazing angles turned further (iridescence, up to 38°). Occlusion from three taps of the estimator along the
+  normal and the orbit trap, deep enough that crevices go almost black; the second tap (a few pixels out) marks ridges
+  and pores. A hard key from the side and above, a little toward the camera (Lambert, no wrap), with a soft shadow
+  traced toward it (sphere tracing, the penumbra from the closest approach; 6 steps at quality 0, 4 at quality 1, two
+  taps at 2 and 3); a dim fill that the crevices lose and that takes the surface's colour again where less light reaches;
+  a back light in the far pole's hue on the silhouette. Materials: exposed surfaces and orbit-trap ridges are glassy and
+  metallic (a sharp highlight tinted by their own colour, a soft reflection at grazing angles), the depths matte. The
+  normal is taken over two pixels and the finest recursion drawn stays above two pixels, so the relief does not turn into
+  a white sugar of sub-pixel highlights.
+- **Glints** (ambient): rare points of light where a glassy facet catches the key, in the region's colour, twinkling on
+  the beat, more of them in a region that holds more files.
 - **Sites**: jewel-like points of light with a soft pool around them (additive); each tests its own visibility against
   the fractal's depth with a small tolerance, so its light spills over the relief around it.
 - **Atmosphere** (never code): the void with a faint haze behind the form, a soft halo hugging the silhouette, a little
   dust.
-- **Grade**: AgX, bloom from a high threshold (only light blooms, not the surface), a faint streak; strain desaturates
-  and cools, a bloom lifts exposure. The recipe's finish (Cinematic by default) applies on top.
+- **Grade**: AgX, a little more contrast and saturation than the other worlds (jewel tones), bloom from a high threshold
+  (only light blooms, not the surface), a faint streak; strain desaturates and cools, a bloom lifts exposure. The
+  recipe's finish (Cinematic by default) applies on top.
 
 ## Layout
 
@@ -100,8 +128,10 @@ Pure functions of the recipe, the model and the time (`fractal-forms.js`, no THR
    project's size at generation) × √j; its radius traced from outside along that direction at the drawn recursion,
    cached per file and integer recursion (the fractional level blends the two neighbours), scaled exactly by the
    region's swell. A ray that slips through the form tries six turned directions.
-4. **Swell and tint**: an octahedral table (128²) of each direction's swell and region shade, rewritten only when the
-   regions' weights change; the shader looks it up per ray (every few steps), the JS evaluates the same kernels exactly.
+4. **Swell and colour**: an octahedral table (128²) of each direction's swell and region colour, rewritten only when the
+   regions' weights or the swell amplitude change (the colours only when the regions themselves do); the shader looks
+   it up per ray (every few steps), the JS evaluates the same kernels exactly (sites sit on the swollen surface at the
+   same amplitude).
 5. **Framing**: the whole form fills about 80 % of the frame height; a recorded event the director gives attention to
    is seen up close (the camera turns to face the event's site first, then comes in until about the form's radius
    fills the frame); an agent's edit in a medium close-up; the full bloom pulls back 25 %.
@@ -109,8 +139,8 @@ Pure functions of the recipe, the model and the time (`fractal-forms.js`, no THR
 ## Idle behaviour
 
 With no input for 20 minutes or 20 hours the form stays alive, never like a screensaver: it breathes on 2, 4 or 8 bars
-(`motion.breath`, a 0.6 % scale), the key light circles slowly (`motion.light`), sparse glints on the ridges twinkle and
-swell on the beat (`motion.shimmer`), each site pulses spontaneously on the **beat grid** with a seeded probability per
+(`motion.breath`, a 0.6 % scale), the key light circles slowly (`motion.light`), rare glints in the regions' colours
+twinkle where a facet catches it and swell on the beat (`motion.shimmer`), each site pulses spontaneously on the **beat grid** with a seeded probability per
 beat (rarer per site in a large project), its pulse running down its real threads, and the camera orbits, glides or
 turns around the pole (`camera.personality`). Every 190 s, while nothing happens, the camera drifts in toward the next
 region and back out. Nothing grows and nothing is labelled while idle.
@@ -181,22 +211,34 @@ swell table, the layout) hold pure functions of their keys. After a seek, transi
 inner light comes back from the director's record. Two things also follow the camera, as the host's camera rig follows
 the frames: the level of detail (how many recursions the pixels can hold at the camera's distance) and the fractal's
 share of the resolution (smaller when it fills the frame). Films seek and warm up before each still, as for every world.
+The finish keeps this: region hues come from the region's id and creation order, the swell amplitude from the unfolding
+at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
+and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
 
 ## Performance
 
 The fractal renders into its own targets at a share of the scene's resolution (0.6 at quality 0), in three passes drawn
 right before its composite (inside the scene's frame, so the host's GPU timer counts them): a coarse cone march at half
 that resolution (each cone of four pixels' radius stops where it touches the form, or proves the pixels around it miss
-it), the march from there into a float target (over-relaxed sphere tracing), and the shading. The composite upsamples
+it), the march from there into a float target (over-relaxed sphere tracing), and the shading (with the key light's
+shadow trace: about 1–1.3 ms of a frame at 6 steps, 2–2.5 ms at 10, measured on Lumen; paid for by dropping the old
+large-shape normal and by the two-pixel detail threshold). The composite upsamples
 it into the scene (Catmull-Rom on the colour, bilinear on the coverage) and writes its depth, so sites, threads and
 signals hide behind the form. When the form fills the frame the share drops to as little as 0.8 of the quality's.
 
-| GPU time per frame (lab `gpuMs`; AMD Radeon iGPU, WSL2 D3D12; 1920×1080, quality 0) | Range |
-|---|---|
-| Lumen, the brief's 13 stills (events at 2 s and 6 s, touches, idle 90 s) and 4 moments of its recording | 15.1–20.3 ms |
-| Excalidraw (450 sites), the end and idle 90 s | 19.3–20.9 ms |
-| Self (92 files), three moments; the highest is a close-up filling the frame | 16.3–25.1 ms |
-| Lumen, variants 1 to 3 at the end (two bulbs, a box; close-ups) | 19.2–22.4 ms |
+| GPU time per frame (lab `gpuMs`; AMD Radeon iGPU, WSL2 D3D12; 1920×1080, quality 0), the same stills before and after the finish | Before | After |
+|---|---|---|
+| Lumen (crystal), 14 stills: events at 2 s and 6 s, touch, idle 90 s, the end | 15.5–20.5 ms (mean 18.0) | 15.6–19.9 ms (mean 17.6) |
+| Lumen variant 3 (rose crystal), the same 14 | 17.2–23.6 ms (mean 18.6) | 14.8–18.9 ms (mean 17.1) |
+| Excalidraw (bulb, 450 sites), the end and idle 90 s | 18.7–19.0 ms | 17.6–18.4 ms |
+| Self (bulb, 92 files), 6 stills; the highest a close-up filling the frame | 17.1–24.1 ms (mean 19.3) | 16.9–22.0 ms (mean 18.9) |
+| Self tuned to a Mandelbox (`fractal.form` box), 6 stills; the highest the end, a close-up | 17.5–32.1 ms (mean 22.2) | 19.4–32.7 ms (mean 23.0) |
+| Lumen, variants 1 and 2 at the end (bulbs, close-ups), after only | | 21.0, 22.0 ms |
+
+Each value is the host's moving average after the lab's 4 s of warm-up (one reading per still; run-to-run noise on this
+machine is about ±1 ms). Held at one moment for 60 more frames: Lumen's end 18.7 → 18.9 ms, its failure close-up
+21.3 → 21.2 ms, idle 17.2 → 17.0 ms, Self's close-up 24.2 → 23.7 ms. The real player at fixed qualities (Lumen at 8×,
+one reading): 17.8 → 18.1 ms at 0, 13.9 → 13.3 at 1, 7.3 → 6.7 at 2, 3.8 → 3.5 at 3.
 
 SwiftShader (no `--gpu`, 960×540): the world compiles and draws (lab still, no GPU timer there). CPU: lab `updateMs`
 0.2–1.1 ms on Lumen, 1.4–2.2 ms on Excalidraw. Draw calls in the lab: 8–9.
@@ -208,15 +250,15 @@ passes, 44–61 ms. The share costs sharpness: up close the surface is visibly s
 
 | Quality | What changes |
 |---|---|
-| 0 | MSAA 4× (host), share 0.6, three occlusion taps, all recursions the pixels can hold |
-| 1 | No MSAA (host), share 0.54, two taps, at most 12 recursions |
-| 2 | 75 % resolution (host), share 0.5, two taps, at most 10 recursions; less dust |
-| 3 | 55 % resolution (host), share 0.45, one tap, at most 8.5 recursions, no glints; less dust |
+| 0 | MSAA 4× (host), share 0.6, three occlusion taps, a 6-step shadow trace, all recursions the pixels can hold |
+| 1 | No MSAA (host), share 0.54, two taps, a 4-step shadow trace, at most 12 recursions |
+| 2 | 75 % resolution (host), share 0.5, two taps, two shadow taps, at most 10 recursions; less dust |
+| 3 | 55 % resolution (host), share 0.45, one tap, two shadow taps, at most 8.5 recursions, no glints; less dust |
 
-Films always render at quality 0. Live playback at Auto (1920×1080, AMD iGPU): 53.9 fps, frame time p95 33.3 ms,
-47.7 fps in close-ups, 17.4 ms GPU per frame, Auto at the top level; the OBS overlay page the same
-([QUALIFICATION.md](../QUALIFICATION.md#preview-worlds-acceptance-films-and-live-measurements-pr-28)). Not yet
-measured: OBS on a GPU, long soak.
+Films always render at quality 0. Live playback at Auto (1920×1080, AMD iGPU), before the finish: 53.9 fps, frame time
+p95 33.3 ms, 47.7 fps in close-ups, 17.4 ms GPU per frame, Auto at the top level; the OBS overlay page the same
+([QUALIFICATION.md](../QUALIFICATION.md#preview-worlds-acceptance-films-and-live-measurements-pr-28)). Not measured
+again after the finish (only the fixed-quality readings above). Not yet measured: OBS on a GPU, long soak.
 
 ## Selection and compatibility
 
@@ -235,7 +277,12 @@ measured: OBS on a GPU, long soak.
 ## Known gaps
 
 - **Sharpness**: the fractal is drawn at 0.6 of the resolution (0.48 when it fills the frame) and upsampled; the finest
-  relief is softer than a full-resolution render, and the crystal's sharp vertices still sparkle at pixel scale.
+  relief is softer than a full-resolution render. The crystal's small facets still glitter where the key's highlight
+  falls on them (tinted by their region, no longer a white coat over the whole form).
+- **Region hues on screen**: a region's hue is fixed, but the camera usually sees two or three regions; an identity
+  whose harmony is narrow (analogous) stays within about 40° of its surface's hue by design.
+- **A Mandelbox late in a large project** is the costliest form (32 ms in Self's end close-up, before and after the
+  finish); no default identity of the datasets tried draws one.
 - **The pole view** (`camera.personality` pole, the reference's pose) gives way to event close-ups and the idle drift,
   which turn the camera toward their region.
 - **Sites on very rough surfaces** can be hidden by the relief around them (a visibility test with a small tolerance);

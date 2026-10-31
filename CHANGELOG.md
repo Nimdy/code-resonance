@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **Fractal Continuum (preview), a precious finish instead of "gum":** the owner found the preview read as one soft
+  purple, evenly lit, rounded by the swell and coated in white sparkle. Each subsystem's region now takes its own hue on
+  the identity's harmony (`palette.scheme`: an arc from the surface's hue toward the light's hue, or 150°/120° for split
+  and triad, never through the olive band between amber and green), turned darker toward the depth colour in the
+  crevices, lighter along the arc on the ridges and further at grazing angles. The light is a hard key from the side
+  with a soft shadow traced toward it (6 steps at quality 0, 4 at quality 1, two taps at 2 and 3), occlusion deep enough
+  to blacken the crevices, a dim fill that takes the surface's colour, a back light in the light's hue on the rims;
+  exposed surfaces and orbit-trap ridges are glassy and metallic, the depths matte. The swell's amplitude halves as the
+  recursion unfolds (it no longer shears the fine structure), normals are taken over two pixels and the finest
+  recursion drawn stays above two pixels (no sub-pixel sugar), and glints are rare, coloured and denser where a region
+  holds more files. Every behaviour, the recipes and their pinned outputs are unchanged; GPU time per frame at
+  1920×1080 on the AMD iGPU stays where it was (Lumen's 14 lab stills 15.6–19.9 ms after, 15.5–20.5 ms before). Stills
+  and numbers: `docs/worlds/fractal-continuum.md`; `tests/fractal.test.js` pins the region hues, the swell and the
+  shadow per quality.
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the
