@@ -233,7 +233,7 @@ vec3 shade(vec3 p,vec3 rd,float t,out float aoOut){
   em+=uAcc*il*cre*cre*(.7+.3*uBreath)*2.;
 ${LIFE?`  // digital life: where the motes gather and rest, and along the threads they keep using, their light pools in the
   // relief around them (mostly in the crevices), in their own light turned toward the region's hue
-  {vec4 LL=texture2D(uLifeL,oct(u));float lg=LL.r*uLifeK.x+LL.g*uLifeK.y;if(lg>.002){vec3 lc=mix(uLifeC,normalize(base+1e-4)*1.6,.35);em+=lc*lg*uLifeK.w*(.08+cre*2.6+ridge*.3)*(.3+.7*ao);}}
+  {vec4 LL=texture2D(uLifeL,oct(u));float lg=LL.r*uLifeK.x+LL.g*uLifeK.y;if(lg>.002){vec3 lc=mix(uLifeC,normalize(base+1e-4)*1.6,.35);em+=lc*lg*uLifeK.w*(.2+cre*2.4+ridge*.45)*(.35+.65*ao);}}
 `:''}  // decoherence: static crackles in the warning colour, the region dims
   float dim=0.;vec3 qd=p/sw.a;${unroll(2,k=>`vec4 A=uDecA[${k}];if(A.x>0.){vec4 D=uDec[${k}];vec3 e2=qd-D.xyz;float w2=exp(-dot(e2,e2)/(D.w*D.w));
     float st=step(.8,h31(floor(p*140.)+floor(uTime*15.)*7.13));em+=uWarn*A.z*w2*(st*(.4+cre*1.4)+cre*.35*(.6+.4*sin(uTime*29.+p.x*40.)));dim=max(dim,w2*A.z);}`)}
