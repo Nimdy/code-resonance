@@ -114,7 +114,8 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
         respond:{current:1,activity:.4,turb:.5,cohesion:.5,explore:.5,gather:.6}}];
     // Between species: grazers part around the gleaners, gleaners keep apart from the herds.
     const RELATIONS=[[null,null,{avoid:.3,radius:1.6}],null,[{avoid:.6,radius:2.2},null,null]];
-    const GZ=SPECIES_SPEC[0],OLD=.8,HOME=22,GL0=28,GL1=95,SW1=32,VALLEY=.55,curiosity=.02,swiftCuriosity=.012,STREAM=8*HZ,FOLLOW=.7;
+    // (the grazers' slots come first: the simulation gives species 0 the first floor(capacity x share) slots)
+    const GQ=Math.floor(capacity*SPECIES_SPEC[0].share),GZ=SPECIES_SPEC[0],OLD=.8,HOME=22,GL0=28,GL1=95,SW1=32,VALLEY=.55,curiosity=.02,swiftCuriosity=.012,STREAM=8*HZ,FOLLOW=.7;
     // ---- Derived habitat data (a pure function of the ecosystem's sites and data; recomputed when they change) ------
     let idsRef=null,dataRef=null,nR=0,nP=0,kSpeed=1,left=-12,right=12,prof=null,AW0=0;
     const RK=new Int16Array(64),PK=new Int16Array(64),PR=new Int16Array(64),PO=new Int16Array(64),CAPP=new Float32Array(64);
@@ -171,11 +172,11 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
       // How many grazers are awake: as many as the pastures of the structure carry (grazer slots come first: the slot is
       // its rank); a fault or the music never puts them to sleep, only a smaller land does. The state says who sleeps
       // (ia[i * 2 + 1]: 1 asleep), so the world reads it from the ecosystem alone.
-      AW=AW0;void feed;const ia=api.ia;for(let i=0;i<api.capacity;i++){if(api.sp[i]!==GRAZER)break;ia[i*2+1]=i>=AW?1:0;}
+      AW=AW0;void feed;const ia=api.ia;for(let i=0;i<GQ;i++)ia[i*2+1]=i>=AW?1:0;
       // Streams: who left each pasture most recently, and for where (the herd leaving after follows). A seeker keeps the
       // pasture it left (ia[i * 2]); its time on the way is its time in the mode.
       streamTo.fill(-1);streamT.fill(1<<30);
-      for(let i=0;i<api.capacity;i++){if(api.sp[i]!==GRAZER)break;if(!api.alive[i]||api.mode[i]!==MODE.seek)continue;const src=ia[i*2],t=api.modeT[i];
+      for(let i=0;i<GQ;i++){if(!api.alive[i]||api.mode[i]!==MODE.seek)continue;const src=ia[i*2],t=api.modeT[i];
         if(src<0||src>=64||t>STREAM)continue;if(t<streamT[src]){streamT[src]=t;streamTo[src]=api.tgt[i];}}
     }
     // A pasture to graze (a weighted draw from the entity's own random stream); nearer is better, a little more so
