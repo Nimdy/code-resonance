@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // Builds the VS Code extension VSIX with Node only (no bash/zip, no vsce), so packaging works on Windows, Linux and CI
-// alike. Since 0.8 the VSIX carries everything the receiver needs at run time under extension/runtime/ (the receiver,
+// alike. The VSIX also carries everything the receiver needs at run time, under extension/runtime/ (the receiver,
 // engine, sdk, the player and Control Center, the vendored three.js and TypeScript, the hook adapters, the pack schema
 // and templates, the documents the Control Center serves), laid out as in this repository, so the extension can start
 // the receiver itself (extension/receiver-host.js). Nothing from tests/ or qualification/. The manifest carries what

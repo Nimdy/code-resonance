@@ -10,6 +10,7 @@ quick start: the [README](../README.md).
 | Install it, pair a browser, capture, hear, record, stream; fix a setup problem | [Getting started](FIRST-RUN.md) |
 | Run one overnight CAST session and a later OBS night (README hero is the 70 s Pulse CAST film) | [0.7.0 campaign](campaign-0.7.md) |
 | Know where data lives, back up, update, roll back, read diagnostics; what is supported and what is not | [Operations](OPERATIONS.md) |
+| Publish the VS Code extension on the Marketplace and Open VSX | [Publishing](PUBLISHING.md) |
 | Understand the architecture, the versions, the HTTP API; extend it; run focused checks | [Developer guide](../ARCHITECTURE.md) |
 | Compose your own look | [Artist Studio](ARTIST-STUDIO.md) |
 | Understand and tune the music | [Music](MUSIC.md) |

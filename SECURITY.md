@@ -22,6 +22,26 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 - The receiver binds to loopback by default and refuses other interfaces unless `RESONANCE_ALLOW_REMOTE=1`. Requests need a localhost `Host` header; cross-origin requests are refused (DNS-rebinding protection).
 - Ingestion (`/v1/*` except `GET /v1/challenge`) requires the bearer token in `~/.code-resonance/receiver-auth.json` (mode 0600), compared in constant time. `GET /v1/challenge?nonce=<32 hex>&v=2` returns HMAC-SHA256 of that token over `cr-challenge-v2|<port>|<nonce>`, for the port the request arrived on, never the token itself (without `v=2`, the 0.7.1 form, HMAC-SHA256 over the nonce alone, for extensions installed before; no current client accepts it).
 - **Every program that sends the token proves the receiver first.** The extension's outbox and its *Open Code Stage* pairing, `npm run up`, `npm run pair`, the Claude Code, Cursor and Codex hooks, `scripts/event.js` and `npm run demo` ask the challenge before they send `Authorization`, and send it only if the answer is the HMAC for the port they connected to (one client implementation, `extension/proof.js`; the receiver re-exports it). They never follow a redirect, so a process on one port cannot pass by sending the client to, or relaying the answer of, a real receiver on another port. The outbox verifies once per receiver connection and again after any failed delivery or a changed port; the hooks and the CLIs verify once per run. A process that only mimics `/health` (even with a planted `receiver-auth.json`) never receives `Authorization`: the hooks spool silently and exit 0, the outbox keeps its batches queued (*CR queued (receiver not verified)*), the CLIs exit with an error, as when the receiver is down. The outbox also re-verifies when the token in `receiver-auth.json` changes. **Limit:** a proof speaks for the occupant at the moment it answered. A process that takes the port in the moment between a receiver stopping and the outbox's next delivery (every 2 s), without a delivery failing in between, would receive that delivery; a failed delivery (the receiver stopped, the port closed) always forces a new proof.
+- **The extension starts a process.** When capture starts or the Stage opens (never on its own at activation) and
+  nothing answers on `resonance.receiverPort`, the extension starts the receiver it carries in the VSIX: a separate,
+  detached process running as you, with VS Code's own runtime (`process.execPath`; on the desktop VS Code's Electron
+  with `ELECTRON_RUN_AS_NODE=1`, in a WSL/SSH window the VS Code Server's `node`), from the files inside the installed
+  extension. It is the same receiver as `npm start`, with the same boundaries: it binds `127.0.0.1` only (it never
+  inherits `RESONANCE_ALLOW_REMOTE`, nor `NODE_OPTIONS` or VS Code's own variables), uses the same token and pairing
+  key in the same data directory, and writes its output to `logs/receiver.log` there (mode 0600; its pairing link is
+  never printed). A process that already answers on the port is never replaced and, unless it proves it holds the
+  token, never sent anything; nothing is started while a receiver of the same data directory answers on another port.
+  Starts are serialised across windows by `bundled-receiver.lock`; the running one is described in
+  `bundled-receiver.json` (process id, port, version, files). It stops when the extension writes
+  `bundled-receiver.stop` naming its instance (outside Windows, a SIGTERM to the recorded process is the fallback after
+  20 s); the extension never stops a receiver it did not start. `resonance.startReceiver` off turns this off.
+- **Agent hooks from the extension.** *CR › Connect an AI agent…* plans and applies through the receiver's own routes
+  (the same rules as the Control Center, below), after showing the exact change in a diff editor. For the control
+  capability those routes need, the extension reads the pairing key from `receiver-auth.json`, as it reads the token,
+  and sends it only to a receiver that first proved it holds the token. The adapters that the entries written by the
+  extension's receiver run are copies in `hooks/` in the data directory (files 0600, folders 0700), refreshed by a newer
+  extension and never by an older one: they run as you, with the same trust as the extension that wrote them, and
+  anyone who can change them can already read the token next to them.
 - **Administrative changes** (settings, project preferences, presets, recipes, Artist Studio compositions, pack
   import/install/approval/removal, the Claude Code, Cursor and Codex hooks) need a **control capability** (`X-Resonance-Capability`). `POST /api/session` issues one only to a
   request from the loopback socket (a LAN client of a receiver started with `RESONANCE_ALLOW_REMOTE=1` gets none,
@@ -83,7 +103,7 @@ Receivers older than v0.3 stored typed text. Since v0.3 the receiver drops inser
 
 ## Erasing data
 
-Stop the extension and receiver, then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key; paired browsers then need the new link). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Artist Studio compositions belong to no project: deleting a project's folder leaves them in `~/.code-resonance/compositions.json` (delete them in the Artist Studio, or that file for all of them). A browser's own storage for the receiver's address is cleared with its site data. Nothing is copied anywhere else.
+Stop the extension and receiver (*CR › Receiver status › Stop Receiver* for the one the extension started), then delete `~/.code-resonance/projects/<hash>/` for one project, or `~/.code-resonance/` for everything (including the receiver token and pairing key, the receiver's log in `logs/` and the hook adapters in `hooks/`; paired browsers then need the new link, and agent hooks that point there stop reporting until you remove them). Also clear the extension's outbox in VS Code's global storage (`.../globalStorage/zerobandwidth.code-resonance/outbox`) and any agent spool in `~/.code-resonance/spool/`. Artist Studio compositions belong to no project: deleting a project's folder leaves them in `~/.code-resonance/compositions.json` (delete them in the Artist Studio, or that file for all of them). A browser's own storage for the receiver's address is cleared with its site data. Nothing is copied anywhere else.
 
 ## Reporting a vulnerability
 

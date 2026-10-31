@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+- **The extension alone is enough.** The VSIX now carries the receiver (receiver, engine, player, Control Center,
+  vendored three.js and TypeScript, hook adapters: about 2.9 MB, 170 files). When capture starts or the Stage opens and
+  no receiver answers on `resonance.receiverPort`, the extension starts it: a separate, detached process bound to
+  `127.0.0.1`, run with VS Code's own runtime (VS Code's Electron with `ELECTRON_RUN_AS_NODE=1` on the desktop, the VS
+  Code Server's `node` in WSL/SSH windows), logging to `logs/receiver.log` in the data directory. Every window reuses
+  it through the token proof, and two windows starting at once start one (a lock file). A receiver that already
+  answers (`npm start` or `npm run up` in a checkout, another window) is always used and never replaced or stopped;
+  another program on the port, or a receiver of the same data directory on another port, means nothing is started and
+  the extension says why. A newer extension replaces the receiver an older one started; an older one keeps using a
+  newer receiver. New commands: *Receiver Status*, *Stop Receiver*, *Show Receiver Log*, *Open Control Center (Pairing
+  Link)*; new setting `resonance.startReceiver` (on). The **Code Resonance** Output channel records each decision.
+  `npm run up`, `npm start` and the repository's flows are unchanged.
+- **Agents from the extension.** *CR › Connect an AI agent…* adds or removes the observe-only Claude Code, Cursor or
+  Codex hooks for the workspace through the receiver's own plan and apply (the Control Center's rules), after showing
+  the exact change in a diff editor. The receiver the extension starts keeps the hook adapters in `hooks/` in the data
+  directory, a path that survives extension updates, and the hook entries it writes name that path.
+- **Marketplace and Open VSX, prepared:** icon, banner, links, keywords and a README written for the extension's page;
+  the VSIX manifest now follows vsce (its identity `Id` is the extension name with the publisher apart, where it was
+  `publisher.name`; tags, gallery flags, links, branding, changelog and icon assets; a content type for every file
+  extension). Not published: the steps are in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+- **The extension honours `RESONANCE_DATA`** in VS Code's environment, like the receiver, the hooks and the command-line
+  tools (it always read `~/.code-resonance` before).
+- Qualification: `qualification/vscode/bundled.js` runs the VSIX's own extension folder in a real VS Code with no
+  receiver running (two windows, isolated profile, a free port).
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the
