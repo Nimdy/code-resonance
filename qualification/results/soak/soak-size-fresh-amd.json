@@ -1,0 +1,209 @@
+[
+ {
+  "events": 2163,
+  "modules": 144,
+  "viewKB": 315,
+  "timelineKB": 584,
+  "worlds": [
+   {
+    "label": "Stellar Forge",
+    "fps": 38.7,
+    "heapMB": 14.4,
+    "heapAfterGcMB": 9.8,
+    "rssMB": {
+     "node": 197,
+     "browser": 101,
+     "gpu": 388,
+     "renderer": 205,
+     "other": 210
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.49,
+    "updateMs": 2.08,
+    "structure": {
+     "nodes": 784,
+     "edges": 774
+    }
+   },
+   {
+    "label": "Construct",
+    "fps": 60,
+    "heapMB": 36.9,
+    "heapAfterGcMB": 32.9,
+    "rssMB": {
+     "node": 198,
+     "browser": 101,
+     "gpu": 408,
+     "renderer": 237,
+     "other": 210
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.49,
+    "updateMs": 2.08,
+    "structure": {
+     "nodes": 784,
+     "edges": 774
+    }
+   },
+   {
+    "label": "Cymatic Field (world pack)",
+    "fps": 60.2,
+    "heapMB": 30,
+    "heapAfterGcMB": 28.1,
+    "rssMB": {
+     "node": 201,
+     "browser": 102,
+     "gpu": 350,
+     "renderer": 225,
+     "other": 210
+    },
+    "family": "halcyon.cymatic-field",
+    "gpuMs": 6.61,
+    "updateMs": 0.05,
+    "structure": {
+     "nodes": 784,
+     "edges": 774
+    }
+   }
+  ],
+  "errors": []
+ },
+ {
+  "events": 4281,
+  "modules": 279,
+  "viewKB": 424,
+  "timelineKB": 1150,
+  "worlds": [
+   {
+    "label": "Stellar Forge",
+    "fps": 38,
+    "heapMB": 13.1,
+    "heapAfterGcMB": 10.9,
+    "rssMB": {
+     "node": 261,
+     "browser": 101,
+     "gpu": 388,
+     "renderer": 210,
+     "other": 209
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.61,
+    "updateMs": 2.07,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1389
+    }
+   },
+   {
+    "label": "Construct",
+    "fps": 54,
+    "heapMB": 75.6,
+    "heapAfterGcMB": 53,
+    "rssMB": {
+     "node": 261,
+     "browser": 101,
+     "gpu": 407,
+     "renderer": 265,
+     "other": 209
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.6,
+    "updateMs": 1.95,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1389
+    }
+   },
+   {
+    "label": "Cymatic Field (world pack)",
+    "fps": 60,
+    "heapMB": 43.2,
+    "heapAfterGcMB": 43,
+    "rssMB": {
+     "node": 266,
+     "browser": 101,
+     "gpu": 351,
+     "renderer": 242,
+     "other": 210
+    },
+    "family": "halcyon.cymatic-field",
+    "gpuMs": 5.63,
+    "updateMs": 0.06,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1389
+    }
+   }
+  ],
+  "errors": []
+ },
+ {
+  "events": 6333,
+  "modules": 414,
+  "viewKB": 429,
+  "timelineKB": 1690,
+  "worlds": [
+   {
+    "label": "Stellar Forge",
+    "fps": 38.7,
+    "heapMB": 16.5,
+    "heapAfterGcMB": 11.9,
+    "rssMB": {
+     "node": 245,
+     "browser": 101,
+     "gpu": 388,
+     "renderer": 211,
+     "other": 209
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.64,
+    "updateMs": 1.8,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1397
+    }
+   },
+   {
+    "label": "Construct",
+    "fps": 52.8,
+    "heapMB": 57.6,
+    "heapAfterGcMB": 48.3,
+    "rssMB": {
+     "node": 245,
+     "browser": 101,
+     "gpu": 408,
+     "renderer": 259,
+     "other": 209
+    },
+    "family": "stellar-forge",
+    "gpuMs": 11.64,
+    "updateMs": 1.8,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1397
+    }
+   },
+   {
+    "label": "Cymatic Field (world pack)",
+    "fps": 60.3,
+    "heapMB": 45.4,
+    "heapAfterGcMB": 44.5,
+    "rssMB": {
+     "node": 252,
+     "browser": 102,
+     "gpu": 352,
+     "renderer": 246,
+     "other": 209
+    },
+    "family": "halcyon.cymatic-field",
+    "gpuMs": 6.94,
+    "updateMs": 0.06,
+    "structure": {
+     "nodes": 1400,
+     "edges": 1397
+    }
+   }
+  ],
+  "errors": []
+ }
+]

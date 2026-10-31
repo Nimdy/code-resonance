@@ -1,0 +1,2040 @@
+{
+ "note": "Stellar Forge, 10 s recordings at the default 720p, lean driver, AMD GPU, 1920x1080; a CPU profile over each start (the three longest tasks).",
+ "fresh": [
+  {
+   "events": 201,
+   "modules": 11,
+   "rows": [
+    {
+     "take": 1,
+     "startupMaxMs": 65,
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 29.93,
+     "longTasks": [
+      {
+       "atMs": 10103,
+       "ms": 72
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 99,
+       "ms": 23,
+       "self": [
+        "12ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "1ms (garbage collector) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms captureStream :0",
+        "1ms locate sim.js:177",
+        "1ms (anon) three.module.min.js:6",
+        "1ms bindVertexArray :0",
+        "1ms get tick sim.js:469",
+        "1ms pilot music.js:533",
+        "1ms uniform2fv :0",
+        "1ms build stellar.js:279",
+        "1ms update present.js:45",
+        "1ms start :0"
+       ],
+       "inclusive": [
+        "24ms (root) :0",
+        "19ms paint app.js:612",
+        "18ms renderAt app.js:501",
+        "13ms setSize three.module.min.js:6",
+        "13ms applyLevel host.js:117",
+        "13ms resize host.js:323",
+        "5ms render host.js:229",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms (garbage collector) :0",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371"
+       ]
+      },
+      {
+       "startMs": 51,
+       "ms": 9,
+       "self": [
+        "1ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms sample sim.js:157",
+        "1ms texSubImage2D :0",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms level music.js:234",
+        "1ms buildGrid sim.js:149",
+        "1ms (anon) app.js:718",
+        "1ms (anon) music.js:225",
+        "1ms (anon) recording.js:114",
+        "1ms steer stellar.js:159",
+        "1ms getBoundingClientRect :0",
+        "1ms frameKeyOf driver.js:179",
+        "1ms locate sim.js:177"
+       ],
+       "inclusive": [
+        "10ms (root) :0",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "5ms paint app.js:612",
+        "2ms update driver.js:371",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "1ms (program) :0",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6",
+        "1ms render three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 288,
+       "ms": 5,
+       "self": [
+        "1ms (program) :0",
+        "1ms frameKeyOf driver.js:179",
+        "1ms evolve sim.js:197",
+        "1ms follower present.js:25",
+        "1ms build stellar.js:279",
+        "1ms point stellar.js:1208",
+        "1ms stats recording.js:99",
+        "1ms step sim.js:328",
+        "0ms so three.module.min.js:6",
+        "0ms paint app.js:612"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "4ms paint app.js:612",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "2ms update driver.js:371",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms (program) :0",
+        "1ms frameKeyOf driver.js:179",
+        "1ms liveKeyOf driver.js:180",
+        "1ms evolve sim.js:197",
+        "1ms follower present.js:25"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 2,
+     "startupMaxMs": 77,
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 27.19,
+     "longTasks": [
+      {
+       "atMs": 5,
+       "ms": 131
+      },
+      {
+       "atMs": 10184,
+       "ms": 97
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 28,
+       "ms": 138,
+       "self": [
+        "129ms setSize three.module.min.js:6",
+        "1ms getBoundingClientRect :0",
+        "1ms (program) :0",
+        "1ms decide sim.js:293",
+        "1ms passageChords score.js:363",
+        "1ms update driver.js:371",
+        "1ms createOscillator :0",
+        "1ms follower present.js:25",
+        "1ms ribbon stellar.js:1212",
+        "1ms current stellar.js:106",
+        "1ms evolve sim.js:197",
+        "1ms update stellar.js:1317",
+        "1ms steer stellar.js:159",
+        "1ms update three.module.min.js:6"
+       ],
+       "inclusive": [
+        "139ms (root) :0",
+        "136ms paint app.js:612",
+        "136ms renderAt app.js:501",
+        "129ms setSize three.module.min.js:6",
+        "129ms applyLevel host.js:117",
+        "129ms resize host.js:323",
+        "7ms render host.js:229",
+        "3ms update driver.js:371",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "2ms update stellar.js:1317",
+        "2ms updateMatter stellar.js:1190",
+        "1ms getBoundingClientRect :0",
+        "1ms (program) :0"
+       ]
+      },
+      {
+       "startMs": 352,
+       "ms": 6,
+       "self": [
+        "1ms step sim.js:328",
+        "1ms drawElements :0",
+        "1ms blur3 stellar.js:273",
+        "1ms (garbage collector) :0",
+        "1ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms follower present.js:25",
+        "1ms evolve sim.js:197"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "5ms paint app.js:612",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms drawElements :0",
+        "1ms Wa.render three.module.min.js:6",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 18,
+       "ms": 5,
+       "self": [
+        "1ms build stellar.js:279",
+        "1ms (program) :0",
+        "1ms steer stellar.js:159",
+        "1ms (anon) :1",
+        "1ms render three.module.min.js:6",
+        "1ms updateMatter stellar.js:1190",
+        "1ms (garbage collector) :0",
+        "1ms current stellar.js:106"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "4ms paint app.js:612",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms (program) :0",
+        "1ms steer stellar.js:159",
+        "1ms (anon) :1",
+        "1ms (anon) :0"
+       ]
+      }
+     ]
+    }
+   ],
+   "errors": []
+  },
+  {
+   "events": 6333,
+   "modules": 414,
+   "rows": [
+    {
+     "take": 1,
+     "startupMaxMs": 62,
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 28.59,
+     "longTasks": [
+      {
+       "atMs": 17,
+       "ms": 50
+      },
+      {
+       "atMs": 10093,
+       "ms": 94
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 90,
+       "ms": 61,
+       "self": [
+        "44ms setSize three.module.min.js:6",
+        "6ms (program) :0",
+        "1ms update stellar.js:1317",
+        "1ms updateMatter stellar.js:1190",
+        "1ms evolve sim.js:197",
+        "1ms step sim.js:328",
+        "1ms build stellar.js:279",
+        "1ms getBoundingClientRect :0",
+        "1ms Po three.module.min.js:6",
+        "1ms (anon) three.module.min.js:6",
+        "1ms createOscillator :0",
+        "1ms multiplyMatrices three.module.min.js:6",
+        "1ms startRecording app.js:712",
+        "1ms position present.js:12"
+       ],
+       "inclusive": [
+        "62ms (root) :0",
+        "54ms paint app.js:612",
+        "54ms renderAt app.js:501",
+        "44ms setSize three.module.min.js:6",
+        "44ms applyLevel host.js:117",
+        "44ms resize host.js:323",
+        "9ms render host.js:229",
+        "6ms (program) :0",
+        "5ms update stellar.js:1317",
+        "3ms updateMatter stellar.js:1190",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "1ms renderGalaxy stellar.js:363"
+       ]
+      },
+      {
+       "startMs": 62,
+       "ms": 23,
+       "self": [
+        "6ms (program) :0",
+        "6ms (garbage collector) :0",
+        "2ms follower present.js:25",
+        "1ms getBoundingClientRect :0",
+        "1ms step sim.js:328",
+        "1ms build stellar.js:279",
+        "1ms current stellar.js:106",
+        "1ms requestAnimationFrame :0",
+        "1ms claim recording.js:111",
+        "1ms Gl.updateMultisampleRenderTarget three.module.min.js:6",
+        "1ms bindVertexArray :0",
+        "1ms (anon) recording.js:114",
+        "1ms ribbon stellar.js:1212",
+        "1ms (anon) music.js:225"
+       ],
+       "inclusive": [
+        "24ms (root) :0",
+        "10ms paint app.js:612",
+        "8ms render host.js:229",
+        "8ms renderAt app.js:501",
+        "6ms (program) :0",
+        "6ms (garbage collector) :0",
+        "3ms updateMatter stellar.js:1190",
+        "3ms update stellar.js:1317",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "2ms render three.module.min.js:6",
+        "2ms render core.js:145",
+        "2ms follower present.js:25"
+       ]
+      },
+      {
+       "startMs": 170,
+       "ms": 5,
+       "self": [
+        "5ms (garbage collector) :0",
+        "1ms (program) :0"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "5ms (garbage collector) :0",
+        "1ms (program) :0"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 2,
+     "startupMaxMs": 63,
+     "maxIntervalAfterStartupMs": 64,
+     "fps": 28.2,
+     "longTasks": [
+      {
+       "atMs": 23,
+       "ms": 131
+      },
+      {
+       "atMs": 10218,
+       "ms": 100
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 53,
+       "ms": 131,
+       "self": [
+        "129ms setSize three.module.min.js:6",
+        "1ms (program) :0",
+        "1ms resize host.js:323",
+        "1ms updateMatter stellar.js:1190",
+        "1ms texImage2D :0",
+        "1ms setTransform :0"
+       ],
+       "inclusive": [
+        "132ms (root) :0",
+        "131ms renderAt app.js:501",
+        "131ms paint app.js:612",
+        "130ms resize host.js:323",
+        "129ms setSize three.module.min.js:6",
+        "129ms applyLevel host.js:117",
+        "2ms render host.js:229",
+        "1ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms texImage2D :0",
+        "1ms texImage2D three.module.min.js:6",
+        "1ms U three.module.min.js:6",
+        "1ms Gl.setupRenderTarget three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 205,
+       "ms": 8,
+       "self": [
+        "2ms step sim.js:328",
+        "2ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms derive sim.js:167",
+        "1ms requestAnimationFrame :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms start :0",
+        "1ms passageChords score.js:363"
+       ],
+       "inclusive": [
+        "9ms (root) :0",
+        "6ms paint app.js:612",
+        "6ms render host.js:229",
+        "6ms renderAt app.js:501",
+        "4ms stepOnce driver.js:343",
+        "4ms update driver.js:371",
+        "4ms step sim.js:328",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms build stellar.js:279",
+        "1ms derive sim.js:167",
+        "1ms requestAnimationFrame :0",
+        "1ms start :0"
+       ]
+      },
+      {
+       "startMs": 25,
+       "ms": 6,
+       "self": [
+        "1ms build stellar.js:279",
+        "1ms (program) :0",
+        "1ms setValue three.module.min.js:6",
+        "1ms (garbage collector) :0",
+        "1ms updateMatrixWorld three.module.min.js:6",
+        "1ms prof stellar.js:1211",
+        "1ms current stellar.js:106",
+        "1ms step sim.js:328",
+        "1ms follower present.js:25",
+        "1ms request :0"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "5ms paint app.js:612",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms render three.module.min.js:6",
+        "1ms render core.js:145",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms (program) :0",
+        "1ms setValue three.module.min.js:6"
+       ]
+      }
+     ]
+    }
+   ],
+   "errors": []
+  }
+ ],
+ "afterOtherWorlds": [
+  {
+   "events": 201,
+   "modules": 11,
+   "rows": [
+    {
+     "take": 1,
+     "before": "stellar",
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 61,
+     "fps": 26.73,
+     "longTasks": [
+      {
+       "atMs": 27,
+       "ms": 85
+      },
+      {
+       "atMs": 10164,
+       "ms": 96
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 89,
+       "ms": 85,
+       "self": [
+        "77ms setSize three.module.min.js:6",
+        "2ms (garbage collector) :0",
+        "1ms build stellar.js:279",
+        "1ms so three.module.min.js:6",
+        "1ms (program) :0",
+        "1ms dispatchEvent three.module.min.js:6",
+        "1ms steer stellar.js:159",
+        "1ms getBoundingClientRect :0",
+        "1ms current stellar.js:106",
+        "1ms step sim.js:328",
+        "1ms mix sim.js:47",
+        "0ms blendFunc :0",
+        "0ms renderAt app.js:501",
+        "0ms resize app.js:288"
+       ],
+       "inclusive": [
+        "85ms (root) :0",
+        "83ms paint app.js:612",
+        "82ms renderAt app.js:501",
+        "77ms setSize three.module.min.js:6",
+        "77ms applyLevel host.js:117",
+        "77ms resize host.js:323",
+        "5ms render host.js:229",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "2ms (garbage collector) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 54,
+       "ms": 10,
+       "self": [
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms build stellar.js:279",
+        "1ms update three.module.min.js:6",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms ribbon stellar.js:1212",
+        "1ms (anon) music.js:225",
+        "1ms perfNow app.js:169",
+        "1ms update driver.js:371",
+        "1ms get locks :0",
+        "1ms (garbage collector) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms (anon) three.module.min.js:6",
+        "1ms toggle :0"
+       ],
+       "inclusive": [
+        "11ms (root) :0",
+        "7ms paint app.js:612",
+        "7ms renderAt app.js:501",
+        "6ms render host.js:229",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "2ms (program) :0",
+        "2ms render three.module.min.js:6",
+        "2ms update driver.js:371",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6",
+        "1ms pipeline.render.time host.js:259",
+        "1ms render core.js:145"
+       ]
+      },
+      {
+       "startMs": 194,
+       "ms": 6,
+       "self": [
+        "1ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms sysRadius stellar-layout.js:31",
+        "1ms get state app.js:907",
+        "1ms follower present.js:25",
+        "1ms build stellar.js:279",
+        "1ms current stellar.js:106",
+        "1ms fillRect :0",
+        "1ms uniform3f :0",
+        "1ms steer stellar.js:159",
+        "0ms MediaRecorder :0",
+        "0ms get active recording.js:54"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "4ms paint app.js:612",
+        "2ms update stellar.js:1317",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "1ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms start recording.js:61",
+        "1ms startRecording app.js:712",
+        "1ms sysRadius stellar-layout.js:31",
+        "1ms layoutState stellar-layout.js:52"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 2,
+     "before": "stellar",
+     "startupMaxMs": 66,
+     "maxIntervalAfterStartupMs": 64,
+     "fps": 30.09,
+     "longTasks": [
+      {
+       "atMs": 5,
+       "ms": 133
+      },
+      {
+       "atMs": 10167,
+       "ms": 98
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 28,
+       "ms": 144,
+       "self": [
+        "129ms setSize three.module.min.js:6",
+        "4ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms ribbon stellar.js:1212",
+        "1ms uniform3fv :0",
+        "1ms follower present.js:25",
+        "1ms isTypeSupported :0",
+        "1ms setValue three.module.min.js:6",
+        "1ms step sim.js:328",
+        "1ms update present.js:45",
+        "1ms updateEvents stellar.js:1277",
+        "1ms steer stellar.js:159",
+        "1ms setSize core.js:135",
+        "1ms current stellar.js:106"
+       ],
+       "inclusive": [
+        "144ms (root) :0",
+        "139ms renderAt app.js:501",
+        "139ms paint app.js:612",
+        "130ms applyLevel host.js:117",
+        "130ms resize host.js:323",
+        "129ms setSize three.module.min.js:6",
+        "9ms render host.js:229",
+        "4ms (program) :0",
+        "4ms update stellar.js:1317",
+        "3ms updateMatter stellar.js:1190",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms (anon) three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 19,
+       "ms": 5,
+       "self": [
+        "2ms (program) :0",
+        "1ms resize recording.js:60",
+        "1ms updateMatter stellar.js:1190",
+        "1ms so three.module.min.js:6",
+        "1ms at sim.js:178",
+        "1ms evolve sim.js:197",
+        "1ms build stellar.js:279"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "3ms render host.js:229",
+        "3ms renderAt app.js:501",
+        "3ms paint app.js:612",
+        "2ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms resize recording.js:60",
+        "1ms startRecording app.js:712",
+        "1ms toggleRecord app.js:676",
+        "1ms so three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 392,
+       "ms": 5,
+       "self": [
+        "1ms (program) :0",
+        "1ms update stellar.js:1317",
+        "1ms build stellar.js:279",
+        "1ms step sim.js:328",
+        "1ms follower present.js:25",
+        "1ms bindTexture :0",
+        "1ms (garbage collector) :0",
+        "1ms current stellar.js:106"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "4ms paint app.js:612",
+        "2ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms follower present.js:25",
+        "1ms bindTexture :0",
+        "1ms bindTexture three.module.min.js:6"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 3,
+     "before": "northlight.ember-observatory",
+     "startupMaxMs": 70,
+     "maxIntervalAfterStartupMs": 59,
+     "fps": 29.56,
+     "longTasks": [
+      {
+       "atMs": 18,
+       "ms": 121
+      },
+      {
+       "atMs": 10163,
+       "ms": 103
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 38,
+       "ms": 124,
+       "self": [
+        "119ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "1ms update three.module.min.js:6",
+        "1ms configure musical.js:54",
+        "1ms updateShell main.js:105",
+        "1ms postMessage :0",
+        "0ms renderAt app.js:501",
+        "0ms resize app.js:288"
+       ],
+       "inclusive": [
+        "124ms (root) :0",
+        "121ms paint app.js:612",
+        "120ms renderAt app.js:501",
+        "119ms setSize three.module.min.js:6",
+        "119ms applyLevel host.js:117",
+        "119ms resize host.js:323",
+        "2ms (program) :0",
+        "1ms update three.module.min.js:6",
+        "1ms Vt three.module.min.js:6",
+        "1ms render three.module.min.js:6",
+        "1ms pipeline.render.time host.js:259",
+        "1ms render core.js:145",
+        "1ms render host.js:229",
+        "1ms configure musical.js:54"
+       ]
+      },
+      {
+       "startMs": 180,
+       "ms": 7,
+       "self": [
+        "4ms (garbage collector) :0",
+        "3ms (program) :0",
+        "1ms compose three.module.min.js:6"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "4ms (garbage collector) :0",
+        "3ms (program) :0",
+        "1ms compose three.module.min.js:6",
+        "1ms updateMatrix three.module.min.js:6",
+        "1ms updateMatrixWorld three.module.min.js:6",
+        "1ms render three.module.min.js:6",
+        "1ms drawBackdrop core.js:173",
+        "1ms pipeline.render.time host.js:259",
+        "1ms render core.js:145",
+        "1ms render host.js:229",
+        "1ms renderAt app.js:501",
+        "1ms paint app.js:612"
+       ]
+      },
+      {
+       "startMs": 200,
+       "ms": 2,
+       "self": [
+        "1ms (program) :0",
+        "1ms expression score.js:453",
+        "1ms setValue three.module.min.js:6"
+       ],
+       "inclusive": [
+        "2ms (root) :0",
+        "1ms (program) :0",
+        "1ms render host.js:229",
+        "1ms renderAt app.js:501",
+        "1ms paint app.js:612",
+        "1ms expression score.js:453",
+        "1ms at musical.js:46",
+        "1ms frameInfo host.js:224",
+        "1ms setValue three.module.min.js:6",
+        "1ms (anon) three.module.min.js:6",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Xt three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 4,
+     "before": "halcyon.cymatic-field",
+     "startupMaxMs": 81,
+     "maxIntervalAfterStartupMs": 74,
+     "fps": 29.28,
+     "longTasks": [
+      {
+       "atMs": 3,
+       "ms": 131
+      },
+      {
+       "atMs": 10157,
+       "ms": 105
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 20,
+       "ms": 138,
+       "self": [
+        "128ms setSize three.module.min.js:6",
+        "1ms follower present.js:25",
+        "1ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms (anon) home.js:291",
+        "1ms step sim.js:328",
+        "1ms drawBuffers :0",
+        "1ms at sim.js:178",
+        "1ms current stellar.js:106",
+        "1ms resize host.js:323",
+        "1ms texParameteri :0",
+        "1ms evolve sim.js:197",
+        "1ms updateEvents stellar.js:1277",
+        "1ms buildGrid sim.js:149"
+       ],
+       "inclusive": [
+        "139ms (root) :0",
+        "136ms paint app.js:612",
+        "136ms renderAt app.js:501",
+        "129ms resize host.js:323",
+        "128ms setSize three.module.min.js:6",
+        "128ms applyLevel host.js:117",
+        "7ms render host.js:229",
+        "3ms update stellar.js:1317",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms updateMatter stellar.js:1190",
+        "1ms follower present.js:25",
+        "1ms (program) :0"
+       ]
+      },
+      {
+       "startMs": 410,
+       "ms": 5,
+       "self": [
+        "1ms build stellar.js:279",
+        "1ms fsPass stellar.js:127",
+        "1ms copy three.module.min.js:6",
+        "1ms pathAt stellar.js:1181",
+        "1ms step sim.js:328",
+        "1ms evolve sim.js:197",
+        "1ms drawImage :0",
+        "1ms mix sim.js:47",
+        "1ms getBoundingClientRect :0"
+       ],
+       "inclusive": [
+        "6ms paint app.js:612",
+        "6ms (root) :0",
+        "5ms renderAt app.js:501",
+        "5ms render host.js:229",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms fsPass stellar.js:127",
+        "1ms renderGalaxy stellar.js:363",
+        "1ms afterCamera stellar.js:1381",
+        "1ms copy three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 1243,
+       "ms": 5,
+       "self": [
+        "1ms getBoundingClientRect :0",
+        "1ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms mix sim.js:47",
+        "1ms updateMatter stellar.js:1190",
+        "1ms climateStep driver.js:244",
+        "1ms viewport :0",
+        "1ms setTransform :0",
+        "1ms build stellar.js:279"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "5ms paint app.js:612",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms getBoundingClientRect :0",
+        "1ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms mix sim.js:47",
+        "1ms u01 sim.js:51",
+        "1ms climateStep driver.js:244"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 5,
+     "before": "construct",
+     "startupMaxMs": 72,
+     "maxIntervalAfterStartupMs": 64,
+     "fps": 29.56,
+     "longTasks": [
+      {
+       "atMs": 17,
+       "ms": 135
+      },
+      {
+       "atMs": 10192,
+       "ms": 100
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 47,
+       "ms": 143,
+       "self": [
+        "130ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms evolve sim.js:197",
+        "1ms getBoundingClientRect :0",
+        "1ms (anon) three.module.min.js:6",
+        "1ms decide sim.js:293",
+        "1ms (garbage collector) :0",
+        "1ms starRadius stellar-layout.js:75",
+        "1ms step sim.js:328",
+        "1ms captureStream :0",
+        "1ms derive sim.js:167",
+        "1ms Gl.setupRenderTarget three.module.min.js:6",
+        "1ms paramKeyOf driver.js:184"
+       ],
+       "inclusive": [
+        "144ms (root) :0",
+        "140ms paint app.js:612",
+        "139ms renderAt app.js:501",
+        "130ms setSize three.module.min.js:6",
+        "130ms applyLevel host.js:117",
+        "130ms resize host.js:323",
+        "9ms render host.js:229",
+        "4ms update driver.js:371",
+        "4ms step sim.js:328",
+        "4ms stepOnce driver.js:343",
+        "3ms update stellar.js:1317",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 358,
+       "ms": 5,
+       "self": [
+        "1ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms clock sim.js:326",
+        "1ms ribbon stellar.js:1212",
+        "1ms (anon) three.module.min.js:6",
+        "1ms bil stellar.js:276",
+        "1ms build stellar.js:279",
+        "1ms drawImage :0",
+        "1ms steer stellar.js:159"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "5ms paint app.js:612",
+        "4ms renderAt app.js:501",
+        "4ms render host.js:229",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms resize app.js:288",
+        "1ms clock sim.js:326"
+       ]
+      },
+      {
+       "startMs": 368,
+       "ms": 5,
+       "self": [
+        "1ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms isTypeSupported :0",
+        "1ms ribbon stellar.js:1212",
+        "1ms evolve sim.js:197",
+        "1ms Vt three.module.min.js:6",
+        "1ms step sim.js:328"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "3ms render host.js:229",
+        "3ms renderAt app.js:501",
+        "3ms paint app.js:612",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms isTypeSupported :0",
+        "1ms (anon) recording.js:12",
+        "1ms supported recording.js:9"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 6,
+     "before": "fractal-biosphere",
+     "startupMaxMs": 70,
+     "maxIntervalAfterStartupMs": 64,
+     "fps": 29.98,
+     "longTasks": [
+      {
+       "atMs": 20,
+       "ms": 133
+      },
+      {
+       "atMs": 10222,
+       "ms": 104
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 67,
+       "ms": 133,
+       "self": [
+        "130ms setSize three.module.min.js:6",
+        "1ms follower present.js:25",
+        "1ms (program) :0",
+        "1ms digest sim.js:456",
+        "1ms setValue three.module.min.js:6",
+        "0ms resize app.js:288"
+       ],
+       "inclusive": [
+        "133ms (root) :0",
+        "133ms paint app.js:612",
+        "132ms renderAt app.js:501",
+        "130ms setSize three.module.min.js:6",
+        "130ms applyLevel host.js:117",
+        "130ms resize host.js:323",
+        "2ms render host.js:229",
+        "1ms follower present.js:25",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms digest sim.js:456",
+        "1ms digest driver.js:444",
+        "1ms stats host.js:325"
+       ]
+      },
+      {
+       "startMs": 43,
+       "ms": 9,
+       "self": [
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms follower present.js:25",
+        "1ms current stellar.js:106",
+        "1ms build stellar.js:279",
+        "1ms sample sim.js:157",
+        "1ms requestAnimationFrame :0",
+        "1ms musicLook present.js:64",
+        "1ms blur3 stellar.js:273",
+        "1ms render host.js:229"
+       ],
+       "inclusive": [
+        "9ms (root) :0",
+        "8ms paint app.js:612",
+        "7ms render host.js:229",
+        "7ms renderAt app.js:501",
+        "4ms updateMatter stellar.js:1190",
+        "4ms update stellar.js:1317",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "2ms (program) :0",
+        "2ms build stellar.js:279",
+        "1ms follower present.js:25",
+        "1ms current stellar.js:106",
+        "1ms derive sim.js:167"
+       ]
+      },
+      {
+       "startMs": 222,
+       "ms": 8,
+       "self": [
+        "2ms step sim.js:328",
+        "1ms (program) :0",
+        "1ms endQuery :0",
+        "1ms (garbage collector) :0",
+        "1ms build stellar.js:279",
+        "1ms setFromProjectionMatrix three.module.min.js:6",
+        "1ms start :0",
+        "1ms steer stellar.js:159",
+        "1ms updateMatter stellar.js:1190",
+        "1ms clock sim.js:326",
+        "1ms evolve sim.js:197",
+        "1ms getBoundingClientRect :0"
+       ],
+       "inclusive": [
+        "9ms (root) :0",
+        "6ms paint app.js:612",
+        "6ms render host.js:229",
+        "6ms renderAt app.js:501",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "1ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms endQuery :0",
+        "1ms (garbage collector) :0",
+        "1ms build stellar.js:279",
+        "1ms setFromProjectionMatrix three.module.min.js:6"
+       ]
+      }
+     ]
+    }
+   ],
+   "errors": []
+  }
+ ],
+ "liveEvents": [
+  {
+   "events": 6473,
+   "modules": 423,
+   "rows": [
+    {
+     "take": 1,
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 62,
+     "fps": 29.5,
+     "longTasks": [
+      {
+       "atMs": 4,
+       "ms": 82
+      },
+      {
+       "atMs": 10147,
+       "ms": 103
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 75,
+       "ms": 83,
+       "self": [
+        "77ms setSize three.module.min.js:6",
+        "1ms build stellar.js:279",
+        "1ms (anon) three.module.min.js:6",
+        "1ms createBiquadFilter :0",
+        "1ms paint app.js:612",
+        "1ms steer stellar.js:159",
+        "1ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms current stellar.js:106",
+        "1ms updateMatter stellar.js:1190",
+        "0ms renderGalaxy stellar.js:363"
+       ],
+       "inclusive": [
+        "83ms (root) :0",
+        "82ms paint app.js:612",
+        "81ms renderAt app.js:501",
+        "77ms setSize three.module.min.js:6",
+        "77ms applyLevel host.js:117",
+        "77ms resize host.js:323",
+        "4ms render host.js:229",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms build stellar.js:279",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms (anon) three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 63,
+       "ms": 8,
+       "self": [
+        "2ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms f three.module.min.js:6",
+        "1ms bindVertexArray :0",
+        "1ms upload three.module.min.js:6",
+        "1ms bufferSubData :0",
+        "1ms (anon) recording.js:114",
+        "1ms steer stellar.js:159",
+        "1ms current stellar.js:106",
+        "1ms digest sim.js:456",
+        "1ms updateMatter stellar.js:1190"
+       ],
+       "inclusive": [
+        "9ms (root) :0",
+        "6ms renderAt app.js:501",
+        "6ms paint app.js:612",
+        "5ms render host.js:229",
+        "2ms render three.module.min.js:6",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms render core.js:145",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6",
+        "1ms fsPass stellar.js:127",
+        "1ms renderGalaxy stellar.js:363"
+       ]
+      },
+      {
+       "startMs": 176,
+       "ms": 8,
+       "self": [
+        "2ms (program) :0",
+        "1ms build stellar.js:279",
+        "1ms captureStream :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms render three.module.min.js:6",
+        "1ms evolve sim.js:197",
+        "1ms steer stellar.js:159",
+        "1ms step sim.js:328",
+        "1ms setRect main.js:44",
+        "0ms stats recording.js:99",
+        "0ms get active recording.js:54",
+        "0ms start :0"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "4ms paint app.js:612",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "2ms step sim.js:328",
+        "2ms stepOnce driver.js:343",
+        "2ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms start recording.js:61",
+        "1ms startRecording app.js:712",
+        "1ms captureStream :0"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 2,
+     "startupMaxMs": 64,
+     "maxIntervalAfterStartupMs": 86,
+     "fps": 28.29,
+     "longTasks": [
+      {
+       "atMs": 16,
+       "ms": 134
+      },
+      {
+       "atMs": 10178,
+       "ms": 97
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 48,
+       "ms": 145,
+       "self": [
+        "130ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "2ms step sim.js:328",
+        "1ms build stellar.js:279",
+        "1ms updateMatter stellar.js:1190",
+        "1ms starRadius stellar-layout.js:75",
+        "1ms current stellar.js:106",
+        "1ms drawImage :0",
+        "1ms getBoundingClientRect :0",
+        "1ms sitesTick stellar.js:132",
+        "1ms splat sim.js:180",
+        "1ms captureStream :0",
+        "1ms follower present.js:25",
+        "1ms useProgram :0"
+       ],
+       "inclusive": [
+        "145ms (root) :0",
+        "142ms paint app.js:612",
+        "141ms renderAt app.js:501",
+        "130ms setSize three.module.min.js:6",
+        "130ms applyLevel host.js:117",
+        "130ms resize host.js:323",
+        "11ms render host.js:229",
+        "5ms update stellar.js:1317",
+        "4ms step sim.js:328",
+        "4ms stepOnce driver.js:343",
+        "4ms update driver.js:371",
+        "4ms updateMatter stellar.js:1190",
+        "2ms (program) :0",
+        "2ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 2733,
+       "ms": 6,
+       "self": [
+        "1ms (program) :0",
+        "1ms go three.module.min.js:6",
+        "1ms ribbon stellar.js:1212",
+        "1ms steer stellar.js:159",
+        "1ms starRadius stellar-layout.js:75",
+        "1ms build stellar.js:279",
+        "1ms derive sim.js:167",
+        "1ms follower present.js:25",
+        "1ms updateMatter stellar.js:1190",
+        "1ms requestAnimationFrame :0"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "5ms paint app.js:612",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "3ms update stellar.js:1317",
+        "2ms updateMatter stellar.js:1190",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms (program) :0",
+        "1ms go three.module.min.js:6",
+        "1ms upload three.module.min.js:6",
+        "1ms (anon) three.module.min.js:6",
+        "1ms renderBufferDirect three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 340,
+       "ms": 5,
+       "self": [
+        "2ms (program) :0",
+        "1ms follower present.js:25",
+        "1ms resize app.js:288",
+        "1ms evolve sim.js:197",
+        "1ms step sim.js:328",
+        "1ms build stellar.js:279",
+        "1ms set three.module.min.js:6",
+        "1ms upload three.module.min.js:6"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "4ms paint app.js:612",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "2ms update stellar.js:1317",
+        "2ms (program) :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms follower present.js:25",
+        "1ms resize app.js:288",
+        "1ms evolve sim.js:197",
+        "1ms build stellar.js:279"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 3,
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 88,
+     "fps": 28.85,
+     "longTasks": [
+      {
+       "atMs": 4,
+       "ms": 125
+      },
+      {
+       "atMs": 10178,
+       "ms": 94
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 43,
+       "ms": 124,
+       "self": [
+        "122ms setSize three.module.min.js:6",
+        "1ms querySelector :0",
+        "1ms renderbufferStorage :0",
+        "1ms pathAt stellar.js:1181",
+        "1ms starRadius stellar-layout.js:75"
+       ],
+       "inclusive": [
+        "125ms (root) :0",
+        "124ms renderAt app.js:501",
+        "124ms paint app.js:612",
+        "122ms setSize three.module.min.js:6",
+        "122ms applyLevel host.js:117",
+        "122ms resize host.js:323",
+        "2ms render host.js:229",
+        "1ms update stellar.js:1317",
+        "1ms querySelector :0",
+        "1ms placeStage main.js:34",
+        "1ms trackStage main.js:50",
+        "1ms renderbufferStorage :0",
+        "1ms D three.module.min.js:6",
+        "1ms N three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 188,
+       "ms": 9,
+       "self": [
+        "1ms build stellar.js:279",
+        "1ms step sim.js:328",
+        "1ms (program) :0",
+        "1ms self.write core.js:340",
+        "1ms captureStream :0",
+        "1ms go three.module.min.js:6",
+        "1ms getBoundingClientRect :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms decide sim.js:293",
+        "1ms sitesTick stellar.js:132",
+        "1ms (garbage collector) :0",
+        "1ms evolve sim.js:197",
+        "1ms buildGrid sim.js:149",
+        "1ms g stellar.js:896"
+       ],
+       "inclusive": [
+        "10ms (root) :0",
+        "8ms paint app.js:612",
+        "7ms render host.js:229",
+        "7ms renderAt app.js:501",
+        "4ms step sim.js:328",
+        "4ms stepOnce driver.js:343",
+        "4ms update driver.js:371",
+        "3ms update stellar.js:1317",
+        "2ms updateMatter stellar.js:1190",
+        "1ms build stellar.js:279",
+        "1ms (anon) stellar.js:894",
+        "1ms syncBodies stellar.js:872",
+        "1ms (program) :0",
+        "1ms self.write core.js:340"
+       ]
+      },
+      {
+       "startMs": 344,
+       "ms": 5,
+       "self": [
+        "1ms (program) :0",
+        "1ms u01 sim.js:51",
+        "1ms getBoundingClientRect :0",
+        "1ms barState score.js:443",
+        "1ms pathAt stellar.js:1181",
+        "1ms withTechnique host.js:60",
+        "1ms build stellar.js:279",
+        "1ms blur3 stellar.js:273"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "4ms paint app.js:612",
+        "4ms render host.js:229",
+        "4ms renderAt app.js:501",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms u01 sim.js:51",
+        "1ms step sim.js:328",
+        "1ms getBoundingClientRect :0",
+        "1ms resize app.js:288"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 4,
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 87,
+     "fps": 29.27,
+     "longTasks": [
+      {
+       "atMs": 1,
+       "ms": 129
+      },
+      {
+       "atMs": 10201,
+       "ms": 107
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 32,
+       "ms": 129,
+       "self": [
+        "127ms setSize three.module.min.js:6",
+        "1ms follower present.js:25",
+        "1ms (program) :0",
+        "1ms getBoundingClientRect :0",
+        "1ms setValue three.module.min.js:6"
+       ],
+       "inclusive": [
+        "130ms (root) :0",
+        "129ms renderAt app.js:501",
+        "129ms paint app.js:612",
+        "127ms setSize three.module.min.js:6",
+        "127ms applyLevel host.js:117",
+        "127ms resize host.js:323",
+        "2ms render host.js:229",
+        "1ms follower present.js:25",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms setPixelRatio three.module.min.js:6",
+        "1ms getBoundingClientRect :0",
+        "1ms placeStage main.js:34"
+       ]
+      },
+      {
+       "startMs": 182,
+       "ms": 8,
+       "self": [
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms updateMatter stellar.js:1190",
+        "1ms updateRemnants stellar.js:1000",
+        "1ms derive sim.js:167",
+        "1ms evolve sim.js:197",
+        "1ms build stellar.js:279",
+        "1ms text dom.js:22",
+        "1ms getBoundingClientRect :0",
+        "1ms current stellar.js:106",
+        "1ms splat sim.js:180"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "5ms paint app.js:612",
+        "4ms step sim.js:328",
+        "4ms stepOnce driver.js:343",
+        "4ms update driver.js:371",
+        "2ms (program) :0",
+        "2ms update stellar.js:1317",
+        "1ms updateMatter stellar.js:1190",
+        "1ms derive sim.js:167",
+        "1ms updateRemnants stellar.js:1000",
+        "1ms evolve sim.js:197",
+        "1ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 195,
+       "ms": 8,
+       "self": [
+        "5ms (garbage collector) :0",
+        "2ms (program) :0",
+        "1ms follower present.js:25",
+        "1ms bindFramebuffer three.module.min.js:6",
+        "1ms drawImage :0"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "5ms (garbage collector) :0",
+        "2ms (program) :0",
+        "2ms renderAt app.js:501",
+        "2ms paint app.js:612",
+        "1ms render host.js:229",
+        "1ms follower present.js:25",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms bindFramebuffer three.module.min.js:6",
+        "1ms Gl.updateMultisampleRenderTarget three.module.min.js:6",
+        "1ms render three.module.min.js:6",
+        "1ms drawBackdrop core.js:173",
+        "1ms pipeline.render.time host.js:259"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 5,
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 29.16,
+     "longTasks": [
+      {
+       "atMs": 14,
+       "ms": 106
+      },
+      {
+       "atMs": 10152,
+       "ms": 97
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 59,
+       "ms": 111,
+       "self": [
+        "102ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "2ms build stellar.js:279",
+        "1ms updateMatter stellar.js:1190",
+        "1ms step sim.js:328",
+        "1ms pathAt stellar.js:1181",
+        "1ms text dom.js:22",
+        "1ms b three.module.min.js:6",
+        "1ms steer stellar.js:159",
+        "1ms evolve sim.js:197",
+        "1ms isTypeSupported :0",
+        "1ms current stellar.js:106",
+        "1ms (anon) three.module.min.js:6"
+       ],
+       "inclusive": [
+        "112ms (root) :0",
+        "109ms renderAt app.js:501",
+        "109ms paint app.js:612",
+        "102ms setSize three.module.min.js:6",
+        "102ms applyLevel host.js:117",
+        "102ms resize host.js:323",
+        "7ms render host.js:229",
+        "3ms updateMatter stellar.js:1190",
+        "3ms update stellar.js:1317",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms (program) :0",
+        "2ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 671,
+       "ms": 8,
+       "self": [
+        "2ms (program) :0",
+        "1ms follower present.js:25",
+        "1ms getBoundingClientRect :0",
+        "1ms build stellar.js:279",
+        "1ms evolve sim.js:197",
+        "1ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms ribbon stellar.js:1212",
+        "1ms clockTime format.js:8"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "6ms paint app.js:612",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "3ms update stellar.js:1317",
+        "2ms updateMatter stellar.js:1190",
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms follower present.js:25",
+        "1ms getBoundingClientRect :0",
+        "1ms resize app.js:288",
+        "1ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 185,
+       "ms": 7,
+       "self": [
+        "4ms (garbage collector) :0",
+        "1ms (program) :0",
+        "1ms ribbon stellar.js:1212",
+        "1ms configure musical.js:54",
+        "1ms drawImage :0"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "4ms (garbage collector) :0",
+        "2ms renderAt app.js:501",
+        "2ms paint app.js:612",
+        "1ms (program) :0",
+        "1ms ribbon stellar.js:1212",
+        "1ms updateMatter stellar.js:1190",
+        "1ms update stellar.js:1317",
+        "1ms render host.js:229",
+        "1ms configure musical.js:54",
+        "1ms setMood host.js:289",
+        "1ms drawImage :0",
+        "1ms drawFit app.js:556",
+        "1ms composeFrame app.js:539"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 6,
+     "startupMaxMs": 71,
+     "maxIntervalAfterStartupMs": 104,
+     "fps": 29.03,
+     "longTasks": [
+      {
+       "atMs": 20,
+       "ms": 128
+      },
+      {
+       "atMs": 10180,
+       "ms": 99
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 47,
+       "ms": 136,
+       "self": [
+        "125ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms getBoundingClientRect :0",
+        "1ms updateMatter stellar.js:1190",
+        "1ms steer stellar.js:159",
+        "1ms replaceChildren :0",
+        "1ms setup three.module.min.js:6",
+        "1ms createGain :0",
+        "1ms build stellar.js:279",
+        "1ms evolve sim.js:197",
+        "1ms derive sim.js:167",
+        "1ms captureStream :0",
+        "1ms bufferSubData :0"
+       ],
+       "inclusive": [
+        "136ms (root) :0",
+        "132ms paint app.js:612",
+        "132ms renderAt app.js:501",
+        "125ms setSize three.module.min.js:6",
+        "125ms applyLevel host.js:117",
+        "125ms resize host.js:323",
+        "7ms render host.js:229",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms update stellar.js:1317",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "1ms getBoundingClientRect :0"
+       ]
+      },
+      {
+       "startMs": 197,
+       "ms": 8,
+       "self": [
+        "4ms (garbage collector) :0",
+        "2ms (program) :0",
+        "1ms showWorldCanvas app.js:494",
+        "1ms toArray three.module.min.js:6",
+        "1ms ribbon stellar.js:1212"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "4ms (garbage collector) :0",
+        "2ms (program) :0",
+        "2ms renderAt app.js:501",
+        "2ms paint app.js:612",
+        "1ms render host.js:229",
+        "1ms showWorldCanvas app.js:494",
+        "1ms toArray three.module.min.js:6",
+        "1ms so three.module.min.js:6",
+        "1ms Lo three.module.min.js:6",
+        "1ms (anon) three.module.min.js:6",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Wt three.module.min.js:6",
+        "1ms Ht three.module.min.js:6"
+       ]
+      },
+      {
+       "startMs": 512,
+       "ms": 5,
+       "self": [
+        "1ms ribbon stellar.js:1212",
+        "1ms get three.module.min.js:6",
+        "1ms spawn stellar.js:209",
+        "1ms (program) :0",
+        "1ms steer stellar.js:159",
+        "1ms build stellar.js:279",
+        "1ms updateMatter stellar.js:1190",
+        "1ms drawImage :0"
+       ],
+       "inclusive": [
+        "5ms (root) :0",
+        "5ms renderAt app.js:501",
+        "5ms paint app.js:612",
+        "4ms render host.js:229",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms ribbon stellar.js:1212",
+        "1ms get three.module.min.js:6",
+        "1ms setRenderTarget three.module.min.js:6",
+        "1ms fsPass stellar.js:127",
+        "1ms renderGalaxy stellar.js:363"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 7,
+     "startupMaxMs": 81,
+     "maxIntervalAfterStartupMs": 84,
+     "fps": 28.01,
+     "longTasks": [
+      {
+       "atMs": 24,
+       "ms": 82
+      },
+      {
+       "atMs": 10131,
+       "ms": 100
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 82,
+       "ms": 88,
+       "self": [
+        "78ms setSize three.module.min.js:6",
+        "2ms (program) :0",
+        "2ms build stellar.js:279",
+        "1ms step sim.js:328",
+        "1ms renderBufferDirect three.module.min.js:6",
+        "1ms Gl.setupRenderTarget three.module.min.js:6",
+        "1ms evolve sim.js:197",
+        "1ms postMessage :0",
+        "1ms sample sim.js:157",
+        "1ms splat sim.js:180",
+        "1ms ribbon stellar.js:1212",
+        "1ms update stellar.js:1317",
+        "1ms derive sim.js:167"
+       ],
+       "inclusive": [
+        "88ms (root) :0",
+        "86ms renderAt app.js:501",
+        "86ms paint app.js:612",
+        "78ms setSize three.module.min.js:6",
+        "78ms applyLevel host.js:117",
+        "78ms resize host.js:323",
+        "8ms render host.js:229",
+        "3ms update stellar.js:1317",
+        "3ms updateMatter stellar.js:1190",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms (program) :0",
+        "2ms build stellar.js:279"
+       ]
+      },
+      {
+       "startMs": 53,
+       "ms": 6,
+       "self": [
+        "1ms (program) :0",
+        "1ms isTypeSupported :0",
+        "1ms (garbage collector) :0",
+        "1ms clock sim.js:326",
+        "1ms build stellar.js:279",
+        "1ms follower present.js:25",
+        "1ms setValue three.module.min.js:6",
+        "1ms step sim.js:328",
+        "1ms bil stellar.js:276"
+       ],
+       "inclusive": [
+        "6ms (root) :0",
+        "3ms render host.js:229",
+        "3ms renderAt app.js:501",
+        "3ms paint app.js:612",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms build stellar.js:279",
+        "1ms isTypeSupported :0",
+        "1ms (anon) recording.js:12",
+        "1ms supported recording.js:9"
+       ]
+      },
+      {
+       "startMs": 185,
+       "ms": 6,
+       "self": [
+        "5ms (garbage collector) :0",
+        "2ms (program) :0"
+       ],
+       "inclusive": [
+        "7ms (root) :0",
+        "5ms (garbage collector) :0",
+        "2ms (program) :0"
+       ]
+      }
+     ]
+    },
+    {
+     "take": 8,
+     "startupMaxMs": 61,
+     "maxIntervalAfterStartupMs": 63,
+     "fps": 29.16,
+     "longTasks": [
+      {
+       "atMs": 13,
+       "ms": 131
+      },
+      {
+       "atMs": 10191,
+       "ms": 98
+      }
+     ],
+     "tasks": [
+      {
+       "startMs": 46,
+       "ms": 130,
+       "self": [
+        "126ms setSize three.module.min.js:6",
+        "1ms (program) :0",
+        "1ms steer stellar.js:159",
+        "1ms sample sim.js:157",
+        "1ms resize host.js:323",
+        "1ms blended stellar-layout.js:70",
+        "1ms texSubImage2D :0",
+        "1ms setTransform :0",
+        "1ms build stellar.js:279"
+       ],
+       "inclusive": [
+        "131ms (root) :0",
+        "130ms renderAt app.js:501",
+        "130ms paint app.js:612",
+        "127ms resize host.js:323",
+        "126ms setSize three.module.min.js:6",
+        "126ms applyLevel host.js:117",
+        "4ms render host.js:229",
+        "2ms update stellar.js:1317",
+        "1ms (program) :0",
+        "1ms steer stellar.js:159",
+        "1ms step sim.js:328",
+        "1ms stepOnce driver.js:343",
+        "1ms update driver.js:371",
+        "1ms sample sim.js:157"
+       ]
+      },
+      {
+       "startMs": 196,
+       "ms": 8,
+       "self": [
+        "2ms (program) :0",
+        "1ms step sim.js:328",
+        "1ms stats recording.js:99",
+        "1ms update present.js:45",
+        "1ms evolve sim.js:197",
+        "1ms follower present.js:25",
+        "1ms current stellar.js:106",
+        "1ms beginQuery :0",
+        "1ms start :0",
+        "1ms buildGrid sim.js:149",
+        "1ms blur3 stellar.js:273"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "5ms render host.js:229",
+        "5ms renderAt app.js:501",
+        "5ms paint app.js:612",
+        "3ms step sim.js:328",
+        "3ms stepOnce driver.js:343",
+        "3ms update driver.js:371",
+        "2ms (program) :0",
+        "2ms updateMatter stellar.js:1190",
+        "2ms update stellar.js:1317",
+        "1ms stats recording.js:99",
+        "1ms get state app.js:907",
+        "1ms updateShell main.js:105",
+        "1ms (anon) main.js:195"
+       ]
+      },
+      {
+       "startMs": 208,
+       "ms": 8,
+       "self": [
+        "5ms (garbage collector) :0",
+        "2ms (program) :0",
+        "1ms starRadius stellar-layout.js:75",
+        "1ms follower present.js:25",
+        "1ms measureText :0"
+       ],
+       "inclusive": [
+        "8ms (root) :0",
+        "5ms (garbage collector) :0",
+        "2ms (program) :0",
+        "2ms render host.js:229",
+        "2ms renderAt app.js:501",
+        "2ms paint app.js:612",
+        "1ms update stellar.js:1317",
+        "1ms starRadius stellar-layout.js:75",
+        "1ms updateLayout stellar.js:827",
+        "1ms follower present.js:25",
+        "1ms updateMatter stellar.js:1190",
+        "1ms measureText :0",
+        "1ms draw core.js:207"
+       ]
+      }
+     ]
+    }
+   ],
+   "errors": []
+  }
+ ]
+}

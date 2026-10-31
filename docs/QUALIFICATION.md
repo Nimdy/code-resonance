@@ -1064,6 +1064,94 @@ words). **Open:** the long frames above. Fractal Continuum's site lights on the 
 browser launches (the form itself is the same; within one browser frames are bit-identical; also before these
 changes); cause not established.
 
+## Three-hour soak (PR #30)
+
+`visual/soak.qual.js --hours 3 --gpu amd` on PR #30's tree (`d8cfca5`), 1920×1080, auto quality, the AMD integrated
+GPU (ANGLE → D3D12 under WSL2), 2026-10-31, as the harness then was (Playwright). The first local run to reach its
+three hours. Raw: `qualification/results/soak/soak-3h-amd-playwright.json`. **7/11.**
+
+Passed: 6,333 of 6,333 events stored exactly once, across the receiver restart at minute 90 (down 15 s, one refused
+post retried; the world rebuilt during the outage came back, intents 1,815 → 1,840). DOM nodes 853 → 975 → 976 and
+listeners 124 → 148 → 146 (hourly means). GPU objects constant per world (Stellar Forge: geometries 29/29/28). The
+music's audio clock at 0.990-1.001× real time, 0 of 170 samples silent. No pack stopped, 1.3 ms at most per pack
+frame. No page errors (41 failed requests in the browser's log: 404s before the first view and refusals during the
+outage).
+
+Failed:
+
+| Check | Measured |
+|---|---|
+| Page heap, hour over hour | 25.3 → 53.6 → 68.6 MB (hourly means, not collected) |
+| Processes, hour over hour | renderer 399 → 570 → 612 MB (node 248 → 272 → 299 and the GPU process 385 → 413 → 432, within the threshold) |
+| Frame rate, hour over hour | the Construct 60 → 50 → 42 fps; Stellar Forge 43 → 48 → 48, Fractal Biosphere and the three packs steady (48-60) |
+| Recordings | two of nine, Stellar Forge at minutes 64 and 124, started with one 406 and 389 ms frame interval (at 0.14 s; at most 80 ms after it). The other seven had no gap; the sound was complete in all nine; markers within 18-40 ms |
+
+The session's project grows for the whole soak (144 files at the end of the first hour, 279 at the second, 414 at
+the end). An hour-over-hour comparison therefore compares a longer run *and* a larger project. Three experiments
+separated them. All used the lean driver and the AMD GPU at 1920×1080; their results are in `qualification/results/soak/`.
+
+- **Fresh browsers at the soak's sizes** (`soak-size-fresh-amd.json`): the soak's session replayed into a new receiver
+  up to its event count at the end of each hour (2,163, 4,281 and 6,333 events), then a new browser for each.
+  - Stellar Forge: 38-39 fps; heap after a forced collection 9.8, 10.9 and 11.9 MB.
+  - The Construct: 60.0, 54.0 and 52.8 fps.
+  - Cymatic Field, shown after the Construct (which stays loaded once shown, as every world does): 28.1, 43.0 and
+    44.5 MB.
+  - The renderer: 205-266 MB.
+
+  So the page heap follows the project and the Construct, loaded at minute 48. The first hour's mean is mostly from
+  before the Construct was loaded.
+- **A long-lived page against a fresh one** (`soak-live-vs-fresh-amd.json`): the same session ten times faster (one tick
+  every 300 ms) for 15 minutes, 6,369 events and 417 files, with the soak's rotation of worlds. Then the same project
+  in a new browser.
+  - The Construct: 43.6 fps against 52.0, at 6,016 and 6,139 WebGL draw calls a frame.
+  - Heap with the Construct loaded, after a collection: 57.4 MB against 49.9.
+  - The renderer: 280-335 MB against 214-269.
+
+  The CPU profiles of the two are alike: three.js's work per object (fog uniforms, matrices, buffer binding). The
+  Construct makes about 15 draw calls per file, shadows included: 3,411 a frame at 2,163 events, 6,000-6,400 from
+  4,500 events on. It is the world kept "unchanged for comparison" ([CONSTRUCT.md](CONSTRUCT.md#status)); Machine
+  Cathedral is its instanced successor (8 draw calls at 450 files).
+- **The start of a recording** (`soak-recording-start-amd.json`): a new browser, Stellar Forge, 10-second recordings
+  at the default 720p, a CPU profile over each start. 18 takes in all, every one with a start-up interval of 61-81 ms:
+  - two takes each at 201 and 6,333 events;
+  - six takes at 201 events, before and after the page showed Ember Observatory, Cymatic Field, the Construct and
+    Fractal Biosphere;
+  - eight takes at 6,333 events while the session posted every 3 s.
+
+  The start's only long task is the world resizing to the recording's size (three.js `setSize`, 23-138 ms).
+
+**Reading.**
+- *Memory.* No leak is shown. The page heap's growth is the project plus the Construct staying loaded. A page live for
+  15 minutes held 7.5 MB more than a fresh one. The renderer's growth to 612 MB is mostly Playwright's DevTools
+  connection keeping every fetched project view (*Renderer memory* above); under the lean driver it stayed at
+  280-335 MB.
+- *Frame rate.* The Construct's cost grows with the project, as designed. A page that has been live for a while is
+  also about 16 % slower in the Construct than a fresh page at the same draw count; the cause is not established.
+- *Recording start.* The 0.3-0.4 s first interval is intermittent. It affected three of the five Stellar Forge
+  recordings in the two soaks that came after the page's first, and none of the 18 focused takes. The second soak (a
+  compressed run under the lean driver, below) had one at 311 ms in a page 10 minutes old, with about 150 events. So
+  it needs neither hours, nor a large project, nor Playwright. The cause is not established. The picture holds its
+  first frame for that long; the sound is unaffected.
+
+**The harness now** uses the lean driver. It waits for the project's first view before opening the page (the lean
+driver starts faster, and the page asked for a project that did not exist yet). It records the page heap after a
+forced collection at the end of every world's turn, and the Construct's own counts while it shows (it reported the
+hidden living world's before). At the end it adds a **control**: every world, the Construct first, measured again in the
+soak's browser and then in a fresh browser on the same project, 60 s each. The memory check holds the soak's browser
+to the fresh one (page heap after a collection within 25 % + 10 MB, renderer and GPU processes within 25 % + 50 MB),
+and so does the frame-rate check (each world at least 80 %). The hour-over-hour figures are still reported. The
+page-error check reads uncaught errors, rejections and the player's console errors in both browsers; the browser's
+own log of failed requests is no longer read. The other eight checks are unchanged: events, DOM, processes hour over
+hour (node, renderer and GPU within 25 % + 50 MB), GPU objects, sound, packs, recordings and the restart.
+
+A compressed run checked the harness (`--hours 3 --scale 0.05`, about 20 minutes; `soak-3h-scale0.05-amd.json`):
+**9/11**. The control ran in both browsers, and memory and frame rates were within it everywhere. For example, the
+Construct had 17.5/12.2 MB and 60.3/60.0 fps, and Stellar Forge 17.1/12.3 MB and 42.3/46.6 fps (soak/fresh). Two checks
+failed:
+- DOM nodes, 485 → 841 → 1,145 over "hours" of three minutes: the interface still filling. Not monotonic; 603 at the
+  end.
+- The recording above.
+
 ## Not verified
 
 > Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI
@@ -1078,9 +1166,10 @@ changes); cause not established.
 - OBS Studio itself (the overlay was verified in Chromium; OBS's CEF and its audio capture were not).
 - Human listening and viewing evaluation. Metrics show the audio is clean, varied and responsive; whether it is
   enjoyable for hours needs people to listen.
-- A completed multi-hour soak with the final code and the lean driver (local runs reached 110 and 24 minutes, CI one
-  hour, all under Playwright, whose DevTools connection inflated the renderer; the growth they showed is explained
-  under *Renderer memory*), and multi-hour real development sessions.
+- A completed multi-hour soak with the lean driver (local runs reached 110 and 24 minutes, CI one hour, all under
+  Playwright, whose DevTools connection inflated the renderer; the growth they showed is explained under *Renderer
+  memory*; a three-hour run under Playwright completed later, 7/11: *Three-hour soak*), and multi-hour real development
+  sessions.
 - Rename detection in a real editor session: interpretation v6 keeps a renamed file's identity and plot (explicit
   rename events, or a delete and create with matching symbols); this is unit-tested, not exercised in a recording.
 - AI agents other than Claude Code.
