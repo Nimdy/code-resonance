@@ -26,6 +26,7 @@ public/         the player, served by the receiver:
                   musical expression, Artist Studio layers (layers*.js, canvas.js), the pack frame and worker, the
                   Visual Pack SDK (sdk.js); life/ the digital-life simulation
   ui/             the Control Center and the Performance Stage: shell, store, one module per workspace
+  web-demo/       the web demo's static mode and landing (only in the site npm run site builds; docs/WEB-DEMO.md)
 sdk/            the performance-frame contract; project identity shared with hooks and CLIs
 scripts/        receiver tools (doctor, pair), VSIX packager, demo, generic event CLI, visual pack CLI (pack.js),
                 Claude Code, Cursor and Codex hooks (hooks/)

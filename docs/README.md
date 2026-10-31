@@ -7,6 +7,7 @@ quick start: the [README](../README.md).
 
 | You want to | Read |
 |---|---|
+| See and hear it first, in the browser, with nothing installed | [Web demo](WEB-DEMO.md) |
 | Install it, pair a browser, capture, hear, record, stream; fix a setup problem | [Getting started](FIRST-RUN.md) |
 | Run one overnight CAST session and a later OBS night (README hero is the 70 s Pulse CAST film) | [0.7.0 campaign](campaign-0.7.md) |
 | Know where data lives, back up, update, roll back, read diagnostics; what is supported and what is not | [Operations](OPERATIONS.md) |

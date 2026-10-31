@@ -118,7 +118,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   let presetPreview=null,wantedRoute=params?.length?params:null,nameOf=null,thumbRun=0,proposing=false,proposed=null;
   const presetErrors=new Map();
   // Subsystem names come from the same generator the worlds use (loaded with the world host, already cached by the engine).
-  import('/worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
+  import('../../worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
   const shown=()=>candidate||saved;
   const shownSpec=()=>candidate?candidateSpec:savedSpec?.tunable||null;
   const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||PREVIEW_FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;

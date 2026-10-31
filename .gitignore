@@ -12,6 +12,8 @@ data/
 .env
 .env.*
 coverage/
+# The web demo (npm run site): built from public/ and the public recording, deployed by .github/workflows/pages.yml
+/site/
 playwright-report/
 test-results/
 # Local render output: lab stills, films and their audio and recipes, interface-suite screenshots (rendered on demand)

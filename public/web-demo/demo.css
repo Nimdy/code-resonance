@@ -1,0 +1,61 @@
+/* The web demo's landing (public/web-demo/demo.js): the Stage's own visual language, scoped to the site's page
+   (html[data-web-demo], set by static-api.js). Nothing here is ever loaded by the application itself. */
+/* ---- What needs a receiver of your own is not offered here ---- */
+html[data-web-demo] .stage-back,
+html[data-web-demo] .mode-toggle,
+html[data-web-demo] .stage-worlds:not(.wd-worlds),
+html[data-web-demo] .stage-top button[aria-label="Open in a new window"]{display:none!important}
+/* ---- The introduction, over the world (which replays silently behind it) ---- */
+.wd-intro{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(3,4,8,.5),rgba(3,4,8,.18) 70%,transparent)}
+.wd-intro[hidden]{display:none!important}
+.wd-intro-card{pointer-events:auto;width:min(560px,100%);display:grid;gap:16px;padding:26px 28px 22px;border-radius:var(--r-4);
+  background:rgba(8,10,16,.82);border:1px solid var(--line-2);backdrop-filter:blur(14px);box-shadow:var(--shadow-2)}
+.wd-mark{display:flex;align-items:center;gap:12px;color:var(--accent)}
+.wd-mark .eyebrow{color:var(--accent)}
+.glyph{display:inline-flex;align-items:center;gap:3px;height:22px;transform:skew(-15deg);flex:none}
+.glyph i{display:block;width:4px;height:12px;border:1px solid var(--accent);background:rgba(117,237,255,.15)}
+.glyph i:nth-child(2){height:21px;background:rgba(117,237,255,.55)}.glyph i:nth-child(3){height:16px}
+.wd-title{font-size:26px;line-height:1.2;font-weight:640;letter-spacing:-.02em;color:#f2f5fa}
+.wd-text{font-size:15px;line-height:1.55;color:var(--text-2)}
+.wd-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wd-start{min-width:220px}
+.wd-privacy{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-3)}
+.wd-links{display:flex;gap:8px;font-size:13.5px;color:var(--text-3)}
+/* While the introduction is open, it is the only control: the Stage's own appear once it is closed. */
+body.wd-intro-open .stage-chrome-ui .stage-top,body.wd-intro-open .stage-chrome-ui .stage-bottom{opacity:0;pointer-events:none}
+/* ---- The top bar: the site's name and links ---- */
+.wd-brand{display:flex;align-items:center;gap:10px;color:#eef2f8;text-decoration:none!important;padding:4px 8px 4px 4px;border-radius:var(--r-2);min-width:0}
+.wd-brand:hover{background:rgba(255,255,255,.06)}
+.wd-brand .glyph{margin-left:6px}
+.wd-brand-text{display:grid;line-height:1.2}
+.wd-brand-text strong{font-size:14px;font-weight:620;white-space:nowrap}
+.wd-brand-text span{font-size:12px;color:rgba(222,230,242,.66);white-space:nowrap}
+.wd-links-top a.btn{text-decoration:none}
+/* ---- The worlds: the five families, the Construct and Monolith ---- */
+.wd-worlds .btn{gap:6px}
+.wd-tag{font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--warn);opacity:.9}
+.wd-worlds .btn[aria-busy]{opacity:.7;cursor:progress}
+.wd-world-select{display:none;background:rgba(8,10,16,.72);height:30px;max-width:100%}
+/* ---- Narrow screens (phones): a menu of worlds instead of seven buttons; the introduction stays readable ---- */
+@media (max-width:1180px){.wd-brand-text span{display:none}}
+@media (max-width:900px){
+  .wd-worlds{display:none!important}.wd-world-select{display:block;flex:1 1 120px;min-width:0}
+  .wd-links-top{order:4}
+  .wd-brand .glyph{display:none}
+  .wd-brand-text strong{font-size:13px}
+}
+@media (max-width:560px){
+  .wd-intro{place-items:end center}
+  .wd-intro-card{padding:20px 18px 18px;gap:12px}
+  .wd-title{font-size:21px}
+  .wd-text{font-size:14px}
+  .wd-start{min-width:0;flex:1 1 100%}
+  .wd-quiet{flex:1 1 100%}
+  .wd-brand{display:none}
+  .wd-links-top .btn span{font-size:12px}
+  /* One row for the world menu, sound (its icon) and record */
+  html[data-web-demo] .transport-row.second .grow{display:none}
+  html[data-web-demo] .stage-sound span{display:none}
+  html[data-web-demo] .stage-sound{width:34px;padding:0}
+}

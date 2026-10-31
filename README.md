@@ -8,6 +8,10 @@ interprets it in the background. The player draws each project as a generative w
 develops as the software does: structure grows, failures bring tension, fixes resolve it, verified milestones leave
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
+**Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
+player, with its music, in any of the five worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
+is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
+
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
 *An 8-second loop; click it for the 70-second CAST film (MP4). Pulse, a real project, rendered by the player in
