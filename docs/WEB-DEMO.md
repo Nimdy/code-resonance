@@ -26,8 +26,10 @@ in the demo lasts until the page is closed. To watch your own project: [Getting 
 1. The recording is copied into a temporary data directory (`/tmp/cr-site-*`, removed afterwards) and a receiver is
    started on it in the same process, on a free loopback port (never 4174). It interprets the journal as it would on
    your machine.
-2. The recording gets its public title, *Lumen Recipes*, the way the Visual Studio gives one (a recipe has none until
-   someone names it).
+2. The recording gets the world it opens on, Stellar Forge, and its public title, *Lumen Recipes*, the way the Visual
+   Studio gives them (a recipe has no title until someone names it). Generator 5 alone would choose Temporal Terrain
+   for this recording; choosing Stellar Forge keeps the genome the demo has served since 0.8.0
+   (`DEMO_FAMILY` in `scripts/build-site.js`).
 3. Every answer the Stage reads for a replay is fetched from that receiver and written to `site/api/`, with
    `site/api/index.json`, which maps each request (its path and its query parameters, sorted) to its file:
 

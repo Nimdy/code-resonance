@@ -13,8 +13,10 @@
   by itself, and choosing a family, regenerating or going back to automatic is a new identity, as before. Over a
   synthetic corpus of 2,000 projects generator 5 chooses Stellar Forge 29.3 %, Synaptic Storm 15.8 %, Fractal
   Biosphere 15.6 %, Fractal Continuum 13.9 %, Machine Cathedral 13.3 %, Temporal Terrain 12.2 % (generator 4: Stellar
-  Forge 53.4 %); Excalidraw becomes a Synaptic Storm, Lumen Recipes and Code Resonance itself Temporal Terrains, so
-  the web demo, rebuilt, opens on Temporal Terrain ([docs/WORLDS.md](docs/WORLDS.md#from-data-to-identity)).
+  Forge 53.4 %); Excalidraw becomes a Synaptic Storm, Lumen Recipes and Code Resonance itself Temporal Terrains
+  ([docs/WORLDS.md](docs/WORLDS.md#from-data-to-identity)). The web demo keeps opening on Stellar Forge
+  (`scripts/build-site.js` chooses it for the recording, as an author would; the genome is the one it has served since
+  0.8.0) and offers the other five a click away.
 - **Graduation:** the three are families of the catalogue (their parameters frozen, a base for declarative and shader
   looks; the pack schema's shader `base` lists them), `/api/catalog` lists six families and no preview, and the Visual
   Studio shows them as worlds of their own: no *In design* pill, two curated looks each (*Storm front*, *Glass cortex*;
