@@ -265,7 +265,7 @@ test('Packs: import (ZIP and folder) into quarantine, install unapproved, approv
   assert.equal(listed.trusted,false);assert.equal(listed.usedBy,0);assert.equal(listed.readme,true);
   assert(Object.keys(listed.parameters).length&&Object.keys(listed.parameters).every(k=>k.startsWith('params.')),'world parameters');
   const catalog=await get('/api/catalog');
-  assert.deepEqual(Object.keys(catalog.families).sort(),['fractal-biosphere','machine-cathedral','stellar-forge']);
+  assert.deepEqual(Object.keys(catalog.families),['stellar-forge','fractal-biosphere','machine-cathedral','synaptic-storm','fractal-continuum','temporal-terrain']);
   assert.deepEqual(catalog.packFamilies['halcyon.cymatic-field'].parameters,listed.parameters);assert(catalog.families['stellar-forge'].parameters['geometry.spiralArms']);
   const readme=await fetch(`${base}/api/packs/readme?id=halcyon.cymatic-field`);
   assert.equal(readme.status,200);assert.match(readme.headers.get('content-type'),/^text\/plain/);assert.match(readme.headers.get('content-security-policy'),/sandbox/);

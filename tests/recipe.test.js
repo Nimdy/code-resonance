@@ -105,7 +105,7 @@ test('Choosing "automatic" returns to the identity the code would generate, keep
 });
 test('Generated identities are pinned: generator v4, what v4 keeps from v3, what v3 keeps from v2, and what v2 keeps from v1 (genome fingerprints)',()=>{
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
-  assert.equal(recipe.RECIPE_VERSION,4);
+  assert.equal(recipe.RECIPE_VERSION,5);
   const v4=['stellar-forge','fractal-biosphere','machine-cathedral'].map(f=>recipe.generate(p,{family:f,now:0}).genome);
   assert.equal(h(v4),'d27fb424f09b9362');
   // v4 only added three values, drawn from no random stream: without them every genome is exactly v3's (key order too).
@@ -128,7 +128,7 @@ test('Generator v4: new identities get the cinematic finish, the composed score 
   const tiny={projectId:'v4-tiny-00000001',graph:{nodes:[{id:'m',type:'module',counts:{}}],edges:[]},stats:{}};
   const grown={...tiny,graph:{nodes:Array.from({length:30},(_,i)=>({id:`m${i}`,type:'module',counts:{class:3}})),edges:[]}};
   const fresh=recipe.generate(tiny,{now:0});
-  assert.equal(fresh.recipeVersion,4);assert.equal(fresh.genome.technique.finish,'cinematic');assert.equal(fresh.genome.music.score,3);assert.equal(fresh.genome.life.ecology,2);
+  assert.equal(fresh.recipeVersion,5);assert.equal(fresh.genome.technique.finish,'cinematic');assert.equal(fresh.genome.music.score,3);assert.equal(fresh.genome.life.ecology,2);
   // A provisional identity saved by generator v3 is redrawn as v3: it stays without the v4 values (and says so).
   const v3=recipe.generate(tiny,{now:0,version:3});
   assert.equal(v3.recipeVersion,3);assert.equal(v3.genome.technique,undefined);assert.equal(v3.genome.music.score,undefined);assert.equal(v3.genome.life.ecology,undefined);
@@ -142,7 +142,7 @@ test('Generator v4: new identities get the cinematic finish, the composed score 
   // A look over an older identity keeps its generator; a new identity (family, regenerate, automatic) is drawn with v4.
   assert.equal(recipe.update(v3,{type:'pack',pack:null},tiny,0).genome.technique,undefined);
   for(const a of [{type:'family',family:'machine-cathedral'},{type:'regenerate'},{type:'regenerate',keepFamily:true},{type:'automatic'}]){
-    const r=recipe.update(v3,a,tiny,0);assert.equal(r.recipeVersion,4,a.type);assert.equal(r.genome.technique.finish,'cinematic',a.type);assert.equal(r.genome.music.score,3,a.type);}
+    const r=recipe.update(v3,a,tiny,0);assert.equal(r.recipeVersion,5,a.type);assert.equal(r.genome.technique.finish,'cinematic',a.type);assert.equal(r.genome.music.score,3,a.type);}
   // The deliberate upgrade is a tune: exact values, locked, and the older generator stays on record.
   const up=recipe.update(v3,{type:'tune',values:{'technique.finish':'cinematic','life.ecology':2,'music.score':3}},tiny,0);
   assert.deepEqual([up.genome.technique.finish,up.genome.life.ecology,up.genome.music.score,up.recipeVersion,up.locked],['cinematic',2,3,3,true]);
