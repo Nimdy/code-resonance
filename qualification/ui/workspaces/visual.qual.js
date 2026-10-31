@@ -51,9 +51,10 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     const imgOf=ids=>A.evaluate(ids=>ids.filter(id=>document.querySelector(`.vs-card[data-card="${id}"] .vs-thumb img`)),ids);
     const thumbs=await until(async()=>(await imgOf(['fractal-biosphere','stellar-forge','machine-cathedral'])).length===3,60000,500);
     check('built-in families show thumbnails rendered from this project',thumbs,await A.evaluate(()=>[...document.querySelectorAll('.vs-thumb img')].map(x=>x.alt).slice(0,3).join(' | ')));
-    // The preview worlds are rendered after the three (a raymarched world may take a while in software).
-    const previews=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
-    check('the preview worlds show thumbnails rendered from this project too',previews,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
+    // The graduated worlds are rendered after the three (a raymarched world may take a while in software).
+    const graduated=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
+    check('Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too',graduated,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
+    check('no world card carries an "In design" pill (no preview world is left)',await A.evaluate(()=>![...document.querySelectorAll('.vs-card .pill')].some(p=>/In design/.test(p.textContent))));
     const r0=await recipe();measurements.initial={family:r0.family,revision:r0.revision,source:r0.source};
     check('the page shows the saved identity at first',(await badge(A))==='Saved identity'&&(await A.textContent('.vs-family'))===r0.familyName,`${r0.familyName}, revision ${r0.revision}`);
     await shot(A,'saved-1440');

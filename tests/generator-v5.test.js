@@ -140,3 +140,44 @@ test('Over a spread of projects each of the six families is chosen and none domi
   t.diagnostic(`generator 5, projects 5000-5999: ${pct(Object.fromEntries(Object.entries(other).map(([f,n])=>[f,n*2])))}`);
   for(const f of recipe.FAMILIES){const n=other[f]||0;assert(n/1000>=.06&&n/1000<=.37,`${f}: ${n} of 1000`);}
 });
+test('Graduated worlds work as the flagships do: curated looks apply, declarative and shader looks are drawn over them, compositions take them as a base',t=>{
+  const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+  const packs=require('../engine/packs'),Composition=require('../public/composition.js');
+  const {project}=syntheticProject(3),r0=recipe.generate(project,{now:0});
+  // The Visual Studio's curated looks (two per world): the family, then the tuning, as a preview applies them.
+  const src=fs.readFileSync(path.join(__dirname,'../public/ui/workspaces/visual.js'),'utf8');
+  const curated=Function(`return ${src.match(/const CURATED=([\s\S]*?);\n/)[1]}`)();
+  const perFamily={};for(const c of curated)perFamily[c.payload.family]=(perFamily[c.payload.family]||0)+1;
+  assert.deepEqual(perFamily,Object.fromEntries(recipe.FAMILIES.map(f=>[f,2])),'two curated looks per built-in world');
+  for(const c of curated.filter(x=>recipe.GRADUATED.includes(x.payload.family))){
+    const r=recipe.applyActions(r0,[{type:'family',family:c.payload.family},{type:'pack',pack:null},{type:'tune',values:c.payload.tuning}],project,0);
+    assert.equal(r.family,c.payload.family);for(const [k,v] of Object.entries(c.payload.tuning))assert.deepEqual(catalog.get(r.genome,k),v,`${c.name}: ${k}`);}
+  // A declarative look and a shader look over each graduated world (installed in a temporary data directory).
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-graduated-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const write=(name,manifest,files={})=>{const d=path.join(dir,'src',name);fs.mkdirSync(d,{recursive:true});fs.writeFileSync(path.join(d,'pack.json'),JSON.stringify(manifest));
+    for(const [f,c] of Object.entries(files))fs.writeFileSync(path.join(d,f),c);return d;};
+  const OVERRIDES={'synaptic-storm':{'material.glow':[1.2,1.5],'atmosphere.haze':.4},'fractal-continuum':{'fractal.form':'kifs','material.rim':1.3},'temporal-terrain':{'contour.interval':[.5,.7],'camera.personality':'map'}};
+  for(const f of recipe.GRADUATED){
+    const id=`test.${f}-look`;
+    packs.install(write(id,{schema:'code-resonance.pack.v1',id,name:`${f} look`,version:'1.0.0',kind:'declarative',sdk:'^1.0',declarative:{base:f,overrides:OVERRIDES[f]}}),dir);
+    const sid=`test.${f}-shader`;
+    packs.install(write(sid,{schema:'code-resonance.pack.v1',id:sid,name:`${f} shader`,version:'1.0.0',kind:'shader',sdk:'^1.0',shader:{base:f,background:'bg.frag',uniforms:{uInk:{type:'number',min:0,max:1}}}},
+      {'bg.frag':'precision highp float;uniform float uInk;out vec4 o;void main(){o=vec4(vec3(uInk*.1),1.);}'}),dir);
+  }
+  const reg=packs.createRegistry(dir).snapshot();
+  for(const f of recipe.GRADUATED){
+    const look=recipe.update(r0,{type:'pack',pack:`test.${f}-look`},project,0,reg);
+    assert.equal(look.family,f);assert.equal(look.pack.id,`test.${f}-look`);
+    for(const [k,v] of Object.entries(OVERRIDES[f])){const x=catalog.get(look.genome,k);Array.isArray(v)?assert(x>=v[0]&&x<=v[1],`${f} ${k}=${x}`):assert.equal(x,v);}
+    assert.equal(look.genome.life,undefined,'a look is its author\'s: no digital life added');assert.equal(look.genome.technique?.finish,undefined);
+    // Its shader look is drawn over the same family and offers its uniforms for tuning.
+    const sh=recipe.update(r0,{type:'pack',pack:`test.${f}-shader`},project,0,reg);
+    assert.equal(sh.family,f);assert.equal(sh.pack.kind,'shader');assert(Object.hasOwn(recipe.tunable(sh,reg),'uniforms.uInk'));
+  }
+  // An Artist Studio composition over each graduated world: valid, and applying it moves the project to that world.
+  for(const f of recipe.GRADUATED){
+    assert.deepEqual(Composition.validate({name:'Over it',base:f,finish:'cinematic',layers:[]}),[],f);
+    const r=recipe.update(r0,{type:'composition',composition:{name:'Over it',base:f,finish:'clean',layers:[]}},project,0);
+    assert.equal(r.family,f);assert.equal(r.composition.base,f);assert.equal(r.genome.technique.finish,'clean');
+  }
+});

@@ -76,7 +76,7 @@
       "technique": {"$ref": "#/$defs/technique"},
       "composition": {"type": "object", "maxProperties": 32, "description": "An Artist Studio composition (SDK 1.2): procedural layers, mappings and finish, data only. The receiver validates it against the composition model (public/composition.js): allowlisted layer types and signals, bounded values, the rendering budget."}}},
     "shader": {"type": "object", "required": ["base"], "additionalProperties": false, "properties": {
-      "base": {"enum": ["stellar-forge", "fractal-biosphere", "machine-cathedral"]},
+      "base": {"enum": ["stellar-forge", "fractal-biosphere", "machine-cathedral", "synaptic-storm", "fractal-continuum", "temporal-terrain"]},
       "background": {"$ref": "#/$defs/file", "description": "A fragment shader replacing the family's background (sky, nebula)."},
       "post": {"type": "array", "maxItems": 4, "items": {"$ref": "#/$defs/file"}, "description": "Full-screen passes applied to the HDR scene before bloom and grade."},
       "effects": {"$ref": "#/$defs/file", "description": "An ES module with procedural effects (createEffects(sdk))."},
