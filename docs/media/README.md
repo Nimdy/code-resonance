@@ -1,5 +1,11 @@
 # Media
 
+## Data flow (0.8.0)
+
+| File | What it is |
+|---|---|
+| `data-flow.svg` | Where the data goes, for the README's *Local-first and private* and SECURITY.md: the extension and the agent hooks send only to the receiver on `127.0.0.1`, its data folder, the browser and recordings, and no connection to the internet. It has its own dark background, so it reads on light and dark pages. Plain SVG (text, rectangles, lines), edited by hand. Every claim in it is from SECURITY.md and was checked against the code on 2026-10-31: the extension, the hooks and the player send only to `127.0.0.1`, and the only other addresses in the runtime code are links and documentation references |
+
 ## CAST film (0.7.0 README hero)
 
 Cut on 2026-10-28 from `qualification/results/films/last-night.webm` (gitignored): a 70 s render of **Pulse**, a real
