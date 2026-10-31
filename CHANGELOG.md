@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
+  enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with
+  its music after a click, in any of the five world families, the Construct or Monolith, at 1×, 4× or 16×; it also
+  plays on a phone. `npm run site` (`scripts/build-site.js`, Node only) starts a receiver in-process on a temporary
+  copy of the recording (a free loopback port), exports every read-only answer the Stage needs for a replay to
+  `site/api/` with a manifest, and copies the player beside them; the same recording builds the same files byte for
+  byte (3.5 MB). The static mode (`public/web-demo/`, included only in the site's page) answers `/api/*` from those
+  files, keeps every `POST` inert, stubs the change feed and leaves out what needs a receiver (Control Center, live
+  mode, pairing, saving). `.github/workflows/pages.yml` builds and deploys it on pushes to `main` and by hand, never on
+  pull requests; the owner sets *Settings › Pages › Source: GitHub Actions* once. Checked by `tests/web-demo.test.js`
+  and, in a real browser, `qualification/site/web-demo.qual.js`. [docs/WEB-DEMO.md](docs/WEB-DEMO.md).
+- **Relative URLs in the player:** its dynamic module imports (`public/app.js`, the Visual, Artist and Packs
+  workspaces) and the workspaces' stylesheets (`public/ui/dom.js`) are relative, so the page works under any path. The
+  receiver serves the same files at the same URLs as before.
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the
