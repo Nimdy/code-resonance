@@ -26,6 +26,9 @@
 import {THREE,NOISE,clamp,lerp,smooth,hash,rand} from './core.js';
 import {layoutConfig,createLayout,dendriteTree,slotDirection,spontaneous} from './synaptic-layout.js';
 import {presence} from '../providers.js';
+import {createSynapticGrammar,createAnchors,frameScale,dormant as lifeDormant,GLIA,VESICLE,MICROGLIA} from './life/synaptic.js';
+import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {u01,MODE as LIFE_MODE} from './life/sim.js';
 const TAU=Math.PI*2,TW=128,NT=5,FT=5,NONE=-1e5,FAR=1e6;
 const MAX_AXONS=720,MAX_FX=6000,MOTES=1800,STORM_GAP=240000,DWELL=4500;
 // A synaptic terminal's bell, in axon radii. The far tissue's fibres.
@@ -104,6 +107,9 @@ vec4 ribbon(vec3 a,vec3 b,vec3 ta,vec3 tb,float ra,float rb,float ca,float cb,ou
 `;
 export function createFamily(ctx){
   const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P=G.palette||{};
+  // Digital life (life/synaptic.js): only when the recipe has it on. Off, nothing below differs from the world without
+  // it (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
   const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
   const atm=G.atmosphere||{},mtl=G.material||{},mot=G.motion||{},cam=G.camera||{},LT=G.light||{},MU=G.music||{};
   const col=(c,d)=>new THREE.Color(typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)?c:d);
@@ -122,6 +128,8 @@ export function createFamily(ctx){
     uTrans:{value:.5+.9*clamp(num(mtl.translucency,.65),0,1)},uGlowK:{value:clamp(num(mtl.glow,1),.4,1.8)},uVd:{value:VD},uVa:{value:VA},uBreath:{value:0},uBeat:{value:0},uMyelin:{value:0},uQ:{value:0},uAxK:{value:1},
     uSoma:{value:V3(pal.primary)},uMem:{value:V3(pal.secondary)},uSpark:{value:V3(pal.accent,1.6)},uHi:{value:V3(pal.highlight)},uWarn:{value:V3(pal.warning)},uValid:{value:V3(pal.valid)},
     uCol:{value:COLS},uN:{value:null},uF:{value:null}};
+  // Life on: the neurons answer their inhabitants (NE.z: the life gathered at a neuron, 0..1). Empty without life.
+  const LG={mem:LIFE?'*(1.+.6*NE.z)':'',dend:LIFE?'*(1.+.45*NE.z*near)':'',vary:LIFE?'varying float vLg;':'',term:LIFE?'vLg=nT(xA.y,4).z;':'',cleft:LIFE?'*(1.+3.*vLg)':''};
   const disposables=[];const keep=x=>{disposables.push(x);return x;};
   const add=(o,order=0)=>{o.frustumCulled=false;o.renderOrder=order;scene.add(o);return o;};
   const glow=(vertexShader,fragmentShader,extra={})=>keep(new THREE.ShaderMaterial({uniforms:{...U,...extra},vertexShader,fragmentShader,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending}));
@@ -200,7 +208,7 @@ export function createFamily(ctx){
       inner+=uValid*FD.w*.22*near;
       inner=mix(inner,uWarn*.3+uMem*.12,stress*.75)*(1.-.45*stress);
       float dim=(1.-.7*NC.z)*ND.y;
-      vCol=inner*dim;vPulse=p*dim;vMemC=uMem*dim*(.55+.45*near)*(1.-.35*stress);vE=e*life;vBl=bl;vCrk=stress;vD=d;
+      vCol=inner*dim${LG.dend};vPulse=p*dim;vMemC=uMem*dim*(.55+.45*near)*(1.-.35*stress)${LG.dend};vE=e*life;vBl=bl;vCrk=stress;vD=d;
       vSeed=fract(ND.z+sin(dot(sA.xyz,vec3(12.9898,78.233,37.719)))*43758.5453);vW=wpx;vWb=wb;vR=r;vGold=(.55+.7*near)*dim*(1.-stress);vEnd=1e6;}`,TUBE_FS);
   add(new THREE.Mesh(dend.geometry,dendMat),2);
   // ---- Axons: cubic curves between neurons, evaluated on the GPU from the neurons' live positions -----------------------
@@ -243,7 +251,7 @@ export function createFamily(ctx){
       float a1=age(NB.x),a2=age(NB.w);vFl=abs(NB.y)*step(0.,a1)*exp(-a1*3.)+abs(NC.x)*step(0.,a2)*exp(-a2*3.)+NC.w*.8+NE.y*.4;
       vAr=a1;vRs=abs(NB.y)*step(0.,a1);vRc=colOf(NB.z);vSt=NE.x;vSd=ND.z;
       vNuc=mix(uSoma*uGlowK,colOf(NB.z),clamp(abs(NB.y)*step(0.,a1)*exp(-a1*1.5)*.7,0.,.7))*(.85+.25*uBreath+.3*uBeat);
-      vNuc=mix(vNuc,uWarn*.45+uMem*.1,NE.x*.7);vMemS=uMem;
+      vNuc=mix(vNuc,uWarn*.45+uMem*.1,NE.x*.7);vMemS=uMem${LG.mem};
       vE=ND.y*(1.-.7*NC.z)*vK*vK*nearFade(z);
       gl_Position=projectionMatrix*vc;}`,
     `uniform float uTrans,uV,uQ;uniform vec3 uHi,uWarn,uSpark;varying vec2 vQ;varying float vBl,vFl,vAr,vRs,vSt,vE,vK,vSd,vPx;varying vec3 vNuc,vMemS,vRc;
@@ -273,7 +281,7 @@ export function createFamily(ctx){
   // ---- Synaptic terminals: where each axon ends, a glass bell of vesicles facing a cup on the receiving branch across
   // the cleft; the spike's arrival is a spark jumping the gap (billboards along the axon's last stretch, on the GPU) ----
   const term=instancedBuffersOf(sq,{xA:4,xB:4,xC:4,xD:4});
-  const termMat=glow(`${COMMON}${AXON}attribute vec4 xA,xB,xC,xD;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;
+  const termMat=glow(`${COMMON}${AXON}attribute vec4 xA,xB,xC,xD;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;${LG.vary}
     void main(){
       vec3 p0,p1,p2,e;float L;vec4 SD,DD;axonPts(xA,xB,xC,p0,p1,p2,e,L,SD,DD);
       float life=min(SD.x,DD.x)*(1.-smoothstep(0.,1.6,age(xD.y)))*smoothstep(.85,1.,smoothstep(0.,2.4,age(xD.x)));
@@ -287,9 +295,9 @@ export function createFamily(ctx){
       vec4 NB=nT(xA.x,1),NC=nT(xA.x,2);
       float a1=age(NB.x)-Ls/uVa,a2=age(NB.w)-Ls/uVa,s1=NB.y>0.?NB.y*step(0.,a1)*exp(-a1*3.):0.,s2=NC.x>0.?NC.x*step(0.,a2)*exp(-a2*3.):0.;
       vSp=max(s1,s2)+NC.w*.4;vRel=s1>=s2?a1:a2;vSpC=mix(uSpark,colOf(s1>=s2?NB.z:NC.y),.45);
-      float dim=(1.-.6*NC.z)*min(SD.y,DD.y);vMemT=uMem*1.1*dim;vE=life*dim*(Rb*k/(Rb*k+cc))*nearFade(z);
+      float dim=(1.-.6*NC.z)*min(SD.y,DD.y);vMemT=uMem*1.1*dim;vE=life*dim*(Rb*k/(Rb*k+cc))*nearFade(z);${LG.term}
       gl_Position=projectionMatrix*vc;}`,
-    `uniform float uV,uQ,uTrans;uniform vec3 uSpark,uHi;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;
+    `uniform float uV,uQ,uTrans;uniform vec3 uSpark,uHi;varying vec2 vQ;varying float vE,vBl,vSp,vPx,vSd,vRel,vFl;varying vec3 vMemT,vSpC;${LG.vary}
     ${FRAG_NOISE}
     // a glass wall: a faint body, bright where the line of sight grazes it; a rim seen at an angle
     float wall(float y,float rho,float aa){float v=y/max(rho,1e-3);return smoothstep(1.+aa,1.-aa,v)*(.12+.9*exp(-pow((v-.9)*6.,2.)));}
@@ -300,7 +308,7 @@ export function createFamily(ctx){
       float rho2=mix(.92,.3,smoothstep(0.,1.,(x-.25)/1.55)),post=smoothstep(.25-aa,.25+aa,x)*smoothstep(1.8+aa,1.8-aa,x);
       vec3 c=vMemT*(wall(y,rho,aa)*pre+wall(y,rho2,aa)*post*.85)*uTrans+mix(vMemT,uSpark,.35)*rim(q,-.25,rx,.9,b)*.8+vMemT*rim(q,.25,rx,.94,b)*.6;
       // the cleft: a faint warm glow at rest; when a spike arrives a spark jumps the gap
-      c+=uSpark*exp(-x*x*18.-y*y*2.5)*.12;
+      c+=uSpark*exp(-x*x*18.-y*y*2.5)*.12${LG.cleft};
       if(vSp>.002){float yy=q.y-.12*sin(x*17.+uV*37.+s)*exp(-max(vRel,0.)*2.);
         c+=vSpC*vSp*(exp(-yy*yy*60.)*smoothstep(.4,.2,abs(x))*2.2+exp(-(x*x+q.y*q.y)*7.)*2.+exp(-(x*x*2.+q.y*q.y*.6)*1.2)*.5);}
       if(det>.01){
@@ -539,7 +547,7 @@ export function createFamily(ctx){
     neuronList.forEach((n,ni)=>{const x=fires[ni];
       const life=n.ghost?1:clamp(n.files.reduce((m,id)=>{const mm=model.modules.get(id);return Math.max(m,mm?smooth((t-model.bornAt(mm))/(1800*sp))*(model.alive(mm,t)?1:0):0);},0));
       NS.set(ni,0,npos[ni*3],npos[ni*3+1],npos[ni*3+2],somaR[ni]);NS.set(ni,1,S(x.t1),x.s1,x.c1,S(x.t2));NS.set(ni,2,x.s2,x.c2,inhib[ni],Math.min(1.4,glowN[ni]));
-      NS.set(ni,3,life,n.ghost?.34+.3*(i.unlocks[3]?.level||0):1,nseed[ni],n.ghost?0:myelin.get(n.cluster)||0);NS.set(ni,4,stressN[ni],Math.min(1,potN[ni]),0,0);});
+      NS.set(ni,3,life,n.ghost?.34+.3*(i.unlocks[3]?.level||0):1,nseed[ni],n.ghost?0:myelin.get(n.cluster)||0);NS.set(ni,4,stressN[ni],Math.min(1,potN[ni]),LIFE?lifeGlow[ni]||0:0,0);});
     // Axons: spikes' heads, synaptic sparks; the imported branch feels the synapse.
     const syn=new Map();let fxn=0;const pa=[0,0,0],pb=[0,0,0];
     for(const a of axons){const L=Math.max(1e-3,dist3(neuronWorld(a.si,pa),endOf(a,pb))),Ls=L*1.12,x=fires[a.si];
@@ -549,7 +557,7 @@ export function createFamily(ctx){
         else if(fr>=1&&s>0){const aa=(ag-Ls/VA);if(aa<.7){const p=curve(a,1),f=1-aa/.7;fxn=fxPoint(fxn,p,COLS[C_STORM],k*f*f*1.6,16*f+4,9);}
           const at=tf+Ls/VA*1000*sp,prev=syn.get(a.ti);if(!prev||prev[0]<at)syn.set(a.ti,[at,Math.min(1,k)]);}}}
     for(let fi=0;fi<F;fi++){if(fileList[fi].ghost)continue;const x=syn.get(fi);FS.set(fi,3,x?S(x[0]):NONE,x?x[1]:0,fileSym[fi],fileValid[fi]);}
-    NS.commit();FS.commit();lastStats={fires:fires.filter(x=>x.t1>-Infinity).length};
+    NS.commit();FS.commit();lastStats={fires:fires.filter(x=>x.t1>-Infinity).length};if(LIFE)firesNow=fires;
     return fxn;
   }
   const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
@@ -628,6 +636,146 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
       default:break;// growth (neurogenesis, sprout, arborize, prune, axon-link) is drawn from the model's own times
     }
   }
+  // ---- Digital life: the network's glia and vesicles (life/synaptic.js; only when the recipe has life on) ------------
+  // The ecosystem lives in the network's own frame (world units, scaled by frameScale for a network larger than the
+  // ecosystem's bounds): drawn at eco / frameScale(the network's radius), carried by the drift of the neurons they live
+  // beside (each inhabitant takes the drift of the somas within reach, weighted by nearness: continuous as it moves).
+  // Presentation only reads the ecosystem and the world's own state:
+  //  glia       astrocytes: billboarded glass cells, a small bright-rimmed body and six fine processes that flex slowly,
+  //             those facing the synapse it works beside reaching farther and ending in an endfoot; far away a soft
+  //             star of light. When its neuron fires, a calcium wave crosses the glia around it: they light up in the
+  //             firing's colour as the wave passes them (outward from the soma, a few units a second);
+  //  vesicles   tiny glass bubbles (a membrane rim, a golden core) and, at the best qualities, a follower or two on
+  //             their own recorded path; a fed vesicle leaving a neuron draws a fading tail (the influence it carries);
+  //  microglia  pale amoeboid cells, their pseudopods along their motion, granules inside, holding at the edge of an
+  //             inhibited region.
+  // The world answers its inhabitants: a neuron's membrane and the clefts of its synapses brighten a little with the
+  // inhabitants gathered there (the site's visits). Everything is scaled by the view's fade (restores, generations).
+  // Two draw calls (cells, points), additive like the rest of the network.
+  let lifeUpdate=()=>{},lifeHide=()=>{},lifeStatsNow={drawn:0,followers:0,tails:0,drawCalls:0},firesNow=null,lifeGlow=new Float32Array(0);
+  // The life gathered at each neuron (its site's visits, all species), before the state is written: the neurons answer.
+  function lifeGlowAt(i){const v=i.life,eco=v&&v.eco;if(lifeGlow.length<neuronList.length)lifeGlow=new Float32Array(neuronList.length*2);lifeGlow.fill(0);
+    if(!eco||v.restoring)return;const S=eco.sites;for(let s=0;s<S.count;s++){const ni=neuronIdx.get(S.ids[s]);if(ni!==undefined)lifeGlow[ni]=Math.min(1,S.visits[s]/16)*v.fadeIn;}}
+  function lifeStats(){return {...lifeStatsNow};}
+  function onLifeParams(){}
+  if(LIFE){
+    const grammar=createSynapticGrammar({layout});LIFE.create(grammar);
+    const CAP=grammar.capacity,anchors=createAnchors(),MODE_ORBIT=LIFE_MODE.orbit,MODE_REST=LIFE_MODE.rest;
+    // per quality (0 best .. 3 none): vesicle followers, tail points of a fed vesicle
+    const VFOL=[2,1,1,0],TAIL=[5,4,3,0];
+    const cells=instancedBuffersOf(sq,{cP:4,cA:4,cC:4,cS:4});cells.ensure(CAP);
+    const dots=pointBuffersOf({pC:4,pS:2},CAP*4);
+    const cellMat=glow(`${COMMON}attribute vec4 cP,cA,cC,cS;varying vec2 vQ;varying vec3 vC,vCal;varying float vBl,vPx,vE,vSd,vSh,vTh;
+      void main(){
+        vec4 vc=viewMatrix*vec4(cP.xyz,1.);float z=max(-vc.z,.1),k=ppu(z),R=cP.w,cc=coc(z),cw=cc/k;
+        float H=min(R+cw,260.*uPx/k);vc.xy+=position.xy*H;vQ=position.xy*H/R;vPx=R*k;vBl=cc/(R*k+cc);
+        vec3 dv=mat3(viewMatrix)*cA.xyz;vTh=atan(dv.y,dv.x);
+        vC=cC.rgb;vCal=cS.yzw;vSd=cS.x;vSh=cA.w;vE=cC.w*nearFade(z)*pow(R*k/(R*k+cc),1.5);
+        gl_Position=projectionMatrix*vc;}`,
+      `uniform float uV,uQ;uniform vec3 uHi,uSpark;varying vec2 vQ;varying vec3 vC,vCal;varying float vBl,vPx,vE,vSd,vSh,vTh;${FRAG_NOISE}
+      const float PI=3.14159265;
+      // a fine process leaving the body at angle a, curving by \`bend\` toward its tip at length L, tapering
+      float proc(float r,float th,float a,float L,float w0,float bend){float t=r/L;if(t>1.)return 0.;
+        float d=th-a-bend*t*t;d=mod(d+PI,2.*PI)-PI;if(abs(d)>1.4)return 0.;float w=w0*(1.-.8*t)+.012;float e=r*sin(abs(d));
+        return exp(-e*e/(w*w))*smoothstep(1.,.55,t)*smoothstep(.05,.16,r)*(1.-.45*t);}
+      // a process and the branch it forks into part way out (the fork only near its process: most pixels skip it)
+      float branch(vec2 q,float r,float th,float a,float L,float w0,float bend,float side,float at){
+        float d=th-a;d=mod(d+PI,2.*PI)-PI;if(abs(d)>1.1||r>L*1.05)return 0.;float p=proc(r,th,a,L,w0,bend);
+        float fa=a+bend*at*at,fx=cos(fa)*L*at,fy=sin(fa)*L*at;vec2 o=q-vec2(fx,fy);return p+.7*proc(length(o),atan(o.y,o.x),fa+.55*side,L*(1.-at)*.85,w0*.6,.35*side);}
+      void main(){vec2 q=vQ;float r=length(q);if(r>1.12)discard;float th=atan(q.y,q.x),b=vBl,s=vSd*40.,det=smoothstep(3.,18.,vPx)*(1.-b);vec3 c;
+        if(vSh<.5){// an astrocyte: a small glassy body, nine fine branching processes, beaded and dissolving into a fine
+          // spongy fuzz at their ends; those toward its synapse reach farther, ending in endfeet
+          float body=exp(-r*r*120.)*.5+exp(-pow((r-.08)*38.,2.))*.3,halo=exp(-r*r*5.)*.08,pr=0.,foot=0.;
+          if(det>.01){for(int k=0;k<9;k++){float fk=float(k),h=fract(sin(fk*12.99+s)*437.58),a=s+fk*.6981+.4*(h-.5)+.16*sin(uV*.19+fk*1.9+s),bd=.28*sin(s*3.1+fk*2.3);
+              float tw=max(0.,cos(a-vTh)),L=.32+.38*h+.3*tw;
+              float p=branch(q,r,th,a,L,.038,bd,h>.5?1.:-1.,.3+.2*h)+.6*proc(r,th,a+.3*(h-.5),L*.55,.022,-bd);
+              pr+=p*(.55+.45*h)*(.55+.45*vn(vec2(r*16.,fk*3.7+s)));
+              float ta=a+bd;vec2 tp=vec2(cos(ta),sin(ta))*L*.92;foot+=tw*tw*tw*exp(-dot(q-tp,q-tp)*1400.);}
+            pr+=web(q*6.5+s)*smoothstep(.8,.15,r)*.22*smoothstep(.0,.25,pr+.05);}
+          float far=exp(-r*r*9.)*.35+exp(-r*r*60.)*.35;
+          c=vC*mix(far,body+halo+pr*.8+foot*.6,det)+vCal*mix(far*1.4,pr*1.2+body+halo*2.+foot*1.4,det);}
+        else{// a microglial cell: a small elongated body and fine wandering processes (ramified, surveying); activated at a
+          // disturbance it rounds up and draws its processes in
+          float act=clamp(vSh-1.,0.,1.),a=th-vTh,cs=cos(vTh),sn=sin(vTh);vec2 u=vec2(q.x*cs+q.y*sn,-q.x*sn+q.y*cs);
+          float ex=mix(.17,.24,act),ey=mix(.09,.21,act),edge=1.+.12*act*sin(3.*th+s+uV*.4),bd=length(u/vec2(ex,ey))/edge;
+          float body=exp(-bd*bd*1.6)*.6+exp(-pow((bd-.9)*5.,2.))*.25*act,pr=0.;
+          if(det>.01)for(int k=0;k<5;k++){float fk=float(k),h=fract(sin(fk*7.31+s)*913.7),pa=vTh+(k<2?fk*PI:fk*1.3+h)+.3*sin(uV*.27+fk*2.1+s);
+            pr+=branch(q,r,th,pa,(.45+.4*h)*(1.-.75*act),.035,1.1*(h-.5),h>.5?1.:-1.,.35+.3*h);}
+          float far=exp(-r*r*12.)*.4;
+          c=vC*mix(far,body+pr*.8,det)+vCal*mix(far,body*.8+pr,det);}
+        gl_FragColor=vec4(c*vE,1.);}`);
+    add(new THREE.Mesh(cells.geometry,cellMat),3);
+    const dotMat=glow(`${COMMON}attribute vec4 pC;attribute vec2 pS;varying vec3 vC;varying float vB,vPx,vRim;
+      void main(){vec4 vp=viewMatrix*vec4(position,1.);float z=max(-vp.z,.1),s=pS.x*ppu(z)*2.,cc=coc(z);
+        gl_PointSize=clamp(max(s,1.5*uPx)+cc,1.,80.);vB=cc/(s+cc);vPx=s;vRim=pS.y;vC=pC.rgb*pC.a*nearFade(z)*pow(max(s,1.5*uPx)/(max(s,1.5*uPx)+cc),1.4);
+        gl_Position=projectionMatrix*vp;}`,
+      `uniform vec3 uMem,uHi;varying vec3 vC;varying float vB,vPx,vRim;void main(){vec2 q=gl_PointCoord*2.-1.;float r=length(q);if(r>1.)discard;
+        float det=smoothstep(4.,12.,vPx)*(1.-vB);
+        // a glass bubble up close: a membrane rim, a golden core, a highlight; far away a soft point
+        vec2 hl=q-vec2(-.3,.32);float glass=exp(-pow((r-.78)*7.,2.))*vRim,core=exp(-r*r*9.),spec=exp(-dot(hl,hl)*40.);
+        vec3 c=mix(vC*(exp(-r*r*5.)*1.2),uMem*glass*length(vC)*.9+vC*core*.8+uHi*spec*.35*length(vC),det);
+        gl_FragColor=vec4(mix(c,vC*smoothstep(1.,.75,r)*.5,vB),1.);}`);
+    add(new THREE.Points(dots.geometry,dotMat),4);
+    const CAL=pal.accent.clone().lerp(pal.primary,.4).multiplyScalar(1.2),vPal=[pal.secondary.clone().lerp(pal.highlight,.12),pal.accent.clone().lerp(pal.primary,.25),pal.highlight.clone().lerp(pal.secondary,.55).lerp(pal.primary,.12)];
+    const P3=[0,0,0],P4=[0,0,0],A3=[0,0,0],D3=[0,0,0],sNi=new Int32Array(64),sDr=new Float32Array(64*3),sW=new Float32Array(64),wv=[0,0,0];
+    // the drift of the neurons an inhabitant lives beside (eco position e, world units): weighted by nearness
+    function driftAt(eco,ex,ey,ez,k,out){const S=eco.sites,n=S.count;let w=0;out[0]=out[1]=out[2]=0;
+      for(let s=0;s<n;s++){if(sNi[s]<0)continue;const dx=ex-S.x[s],dy=ey-S.y[s],dz=ez-S.z[s],R=S.r[s]*3,d2=dx*dx+dy*dy+dz*dz;if(d2>=R*R)continue;
+        const u=1-Math.sqrt(d2)/R,ws=u*u*(3-2*u);out[0]+=sDr[s*3]*ws;out[1]+=sDr[s*3+1]*ws;out[2]+=sDr[s*3+2]*ws;w+=ws;}
+      if(w>1){out[0]/=w;out[1]/=w;out[2]/=w;}return out;}
+    lifeHide=()=>{cells.commit(0);dots.commit(0);lifeStatsNow={drawn:0,followers:0,tails:0,drawCalls:2};};
+    lifeUpdate=i=>{
+      const v=i.life,eco=v&&v.eco;if(!eco||v.restoring||!net)return lifeHide();
+      const k=frameScale(net.radius),ik=1/k,q=Math.min(3,Math.max(0,i.quality|0)),alpha=v.alpha,tv=i.tview,sp=ctx.speed(),t=i.t,S=eco.sites,nS=S.count,seed=eco.seed;
+      const M=musicLook(eco,v),MB=M.bright,MS=M.size,MT=M.trail;
+      // each site's neuron, its drift (the world's own) and how many gather there
+      for(let s=0;s<nS;s++){const ni=neuronIdx.get(S.ids[s]);sNi[s]=ni===undefined?-1:ni;if(ni===undefined)continue;neuronWorld(ni,wv);
+        sDr[s*3]=wv[0]-npos[ni*3];sDr[s*3+1]=wv[1]-npos[ni*3+1];sDr[s*3+2]=wv[2]-npos[ni*3+2];sW[s]=Math.min(1,S.visits[s]/14);}
+      // a firing's calcium wave at distance d from the soma of neuron ni (gold into out, whatever caused the firing:
+      // ambient life never takes an agent's colour; its strength returned)
+      const wave=(ni,d,out)=>{const x=firesNow?.[ni];out[0]=out[1]=out[2]=0;if(!x)return 0;let e=0;
+        for(const [tf,s0] of [[x.t1,x.s1,x.c1],[x.t2,x.s2,x.c2]]){if(!(tf>-Infinity)||s0<=0)continue;const ag=(t-tf)/1000/sp;if(ag<0||ag>6)continue;
+          const f=Math.min(1,s0)*Math.min(1,s0)*Math.exp(-Math.pow((ag*3.2-d)/1.1,2))*Math.exp(-ag*.8);if(f<.01)continue;e+=f;}
+        e=Math.min(1.5,e);out[0]=CAL.r*e;out[1]=CAL.g*e;out[2]=CAL.b*e;return e;};
+      let nc=0,nd=0,nf=0,nt=0;const W3=[0,0,0];
+      const dot=(x,y,z,r,g,b,a,size,rim)=>{if(nd>=dots.capacity)dots.ensure(nd+1);dots.write('position',nd,x,y,z);dots.write('pC',nd,r,g,b,a);dots.write('pS',nd,size,rim);nd++;};
+      for(let e=0;e<eco.capacity;e++){
+        const vis=lifeVisibility(eco,e,v);if(vis<=.003||lifeDormant(eco,e))continue;
+        const s=eco.sp[e];lifePosition(eco,e,alpha,P3);driftAt(eco,P3[0],P3[1],P3[2],k,D3);
+        const x=P3[0]*ik+D3[0],y=P3[1]*ik+D3[1],z=P3[2]*ik+D3[2];
+        const kt=eco.tgt[e],site=kt>=0&&kt<nS&&sNi[kt]>=0,ni=site?sNi[kt]:-1,m=eco.mode[e];
+        const dist=Math.min(1,eco.sample(2,P3[0],P3[2])/1.2),en=Math.min(1,eco.sample(1,P3[0],P3[2])/2);
+        const h0=u01(seed,e,eco.gen[e],71);
+        if(s===VESICLE){
+          // brighter where it gathers and where the neuron is nourished; the calcium wave of its neuron's firing passes it too
+          let ca=0;if(site){const dx=x-(npos[ni*3]+sDr[kt*3]),dy=y-(npos[ni*3+1]+sDr[kt*3+1]),dz=z-(npos[ni*3+2]+sDr[kt*3+2]);ca=wave(ni,Math.sqrt(dx*dx+dy*dy+dz*dz),W3);}
+          const g=(m===MODE_ORBIT?1.25:m===MODE_REST?.45:.8)*(1+.5*en)*(1-.5*dist)*(.75+.5*h0)*vis*MB,C=vPal[VESICLE],sz=(.06+.04*h0)*MS;
+          dot(x,y,z,C.r*g+W3[0]*.9,C.g*g+W3[1]*.9,C.b*g+W3[2]*.9,.5,sz,1);
+          const F=VFOL[q];for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:.45,lag:.7}))break;
+            dot(P4[0]*ik+D3[0],P4[1]*ik+D3[1],P4[2]*ik+D3[2],C.r*g,C.g*g,C.b*g,.22,sz*(.6+.3*u01(seed,e,eco.gen[e],72+f)),1);nf++;}
+          // a fed vesicle carries the gathering's influence: a fading tail along its own path
+          if(eco.carry[e]>0&&TAIL[q]){const n=Math.round(TAIL[q]*Math.min(1.6,MT)),K=eco.K,hd=eco.trailHead,o=e*K;
+            for(let j=1;j<=n&&j<K;j++){const qq=o+((hd-j+1+K*4)%K),f=1-j/(n+1);dot(eco.tx[qq]*ik+D3[0],eco.ty[qq]*ik+D3[1],eco.tz[qq]*ik+D3[2],C.r*g,C.g*g,C.b*g,.24*f*f,sz*(.5+.5*f),0);nt++;}}
+          continue;}
+        // glia and microglia: cells, oriented toward the synapse they work beside (glia) or along their motion (microglia)
+        let ox=0,oy=0,oz=0;
+        if(s===GLIA&&anchors.of(eco,e,A3)){ox=A3[0]*ik+D3[0]-x;oy=A3[1]*ik+D3[1]-y;oz=A3[2]*ik+D3[2]-z;}
+        else if(site&&s===GLIA){ox=npos[ni*3]+sDr[kt*3]-x;oy=npos[ni*3+1]+sDr[kt*3+1]-y;oz=npos[ni*3+2]+sDr[kt*3+2]-z;}
+        else{ox=eco.vx[e];oy=eco.vy[e];oz=eco.vz[e];}
+        let ca=0;W3[0]=W3[1]=W3[2]=0;
+        if(site){const dx=x-(npos[ni*3]+sDr[kt*3]),dy=y-(npos[ni*3+1]+sDr[kt*3+1]),dz=z-(npos[ni*3+2]+sDr[kt*3+2]);ca=wave(ni,Math.sqrt(dx*dx+dy*dy+dz*dz),W3);}
+        const settled=m===MODE_ORBIT?1:0,C=vPal[s===GLIA?GLIA:MICROGLIA];
+        const g=(s===GLIA?.3+.15*settled:.32)*(1-.55*dist)*(.8+.4*h0)*vis*MB,cal=(s===GLIA?.8:.4)*vis;
+        // the glia's own light rises a little with the energy where they work (gold), and with the wave; a microglial
+        // cell is activated (rounds up) where the field is disturbed
+        const R=(s===GLIA?1+.35*h0:.75+.25*h0)*MS,act=s===GLIA?0:Math.min(.999,Math.max(0,(eco.sample(2,P3[0],P3[2])-.08)*2.2));
+        cells.write('cP',nc,x,y,z,R);cells.write('cA',nc,ox,oy,oz,s===GLIA?0:1+act);cells.write('cC',nc,C.r*g,C.g*g,C.b*g,1);
+        cells.write('cS',nc,u01(seed,e,eco.gen[e],73),(W3[0]+pal.primary.r*.07*en*settled)*cal,(W3[1]+pal.primary.g*.07*en*settled)*cal,(W3[2]+pal.primary.b*.07*en*settled)*cal);nc++;
+      }
+      cells.commit(nc);dots.commit(nd);
+      lifeStatsNow={drawn:nc+nd-nf-nt,followers:nf,tails:nt,drawCalls:2,cells:nc,sites:nS,scale:+k.toFixed(3)};
+    };
+  }
   // ---- Frame -------------------------------------------------------------------------------------------------------------
   function update(i){
     info=i;const sp=ctx.speed();U.uT.value=i.tsec;U.uV.value=i.tview;U.uSpeed.value=sp;U.uQ.value=i.quality||0;
@@ -643,7 +791,9 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     const q=i.quality||0,atmo=clamp(i.overrides.atmosphere??1,0,2);
     dend.geometry.instanceCount=realSegs+(q>=3?0:q>=2?ghostSegs>>1:ghostSegs);
     motes.geometry.setDrawRange(0,Math.round(MOTES*clamp(PARTICLES*atmo,0,2)/2*(q>=3?.35:q>=2?.55:1)));
+    if(LIFE)lifeGlowAt(i);
     const spikes=writeState(i);placeSynapses();fxCount=updateAgents(i,spikes);fx.commit(fxCount);
+    if(LIFE)lifeUpdate(i);
     moteMat.uniforms.uNet.value.set(net.center[0],net.center[1],net.center[2],Math.max(14,net.radius));moteMat.uniforms.uGlial.value=i.unlocks[0]?.level||0;
     bgU.uStress.value=stressNow;bgU.uStorm.value=stormNow;bgU.uTide.value=i.unlocks[1]?.level||0;bgU.uHazeK.value=clamp(num(atm.haze,.75),0,1.6)*atmo;
     bgU.uWebK.value=GHOSTS*atmo*(1+.5*(i.unlocks[3]?.level||0));
@@ -733,5 +883,5 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     composeA.nodes=net.neurons.slice(0,64).map(n=>({pos:new THREE.Vector3(...n.pos)}));
     const att=i?ctx.director.attentionAt(i.t,1):null;composeA.active.pos.copy((att&&attentionPos(att))||composeA.center);return composeA;}
   return {rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,
-    compose:{camera,scene,anchors:composeAnchors}};
+    compose:{camera,scene,anchors:composeAnchors},...(LIFE?{lifeStats,onLifeParams}:{})};
 }
