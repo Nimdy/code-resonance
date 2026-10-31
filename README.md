@@ -53,8 +53,8 @@ The three flagship worlds, finishes, music influence and the Artist Studio, from
 | ![Finishes](docs/media/finishes.jpg) | ![Music influence](docs/media/music-influence.jpg) | ![Aurora Loom](docs/media/artist-aurora-loom.jpg) |
 | **Finishes.** Clean, Cinematic (the default for new identities) and Dreamlike: the same moment, the same camera. | **Music influence** 0, 1 and 2: how much the score moves the digital life; the same performance, the same framing. | **Aurora Loom**, a composition built entirely in the Artist Studio's interface, over the artist canvas. |
 
-The three newest worlds (previews until generator 5; now chosen automatically too, not yet reviewed artistically, their
-digital life still to come):
+The three newest worlds (previews until generator 5; now chosen automatically too and inhabited by digital life of
+their own; not yet reviewed artistically):
 
 | | | |
 |---|---|---|

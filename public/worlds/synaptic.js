@@ -1,4 +1,4 @@
-// Synaptic Storm (preview): the software as an immense living neural network. Design brief: docs/worlds/synaptic-storm.md.
+// Synaptic Storm: the software as an immense living neural network. Design brief: docs/worlds/synaptic-storm.md.
 //
 // Data -> image (nothing here is decoration that claims engineering work):
 //  - subsystem (district) -> a cluster of glassy neurons, laid out by a force layout over the real cross-subsystem

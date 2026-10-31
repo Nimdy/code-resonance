@@ -222,10 +222,14 @@ mirror canals), files are towers whose storeys are their symbols; the largest la
 An immense living neural network: subsystems are clusters of glassy neurons laid out by their real dependencies, files
 their dendrite branches, symbols the boutons, dependencies the axons and tracts between them. Agents are signals in
 their provider's colour and shape, and the neuron whose file an agent edits fires; tests sweep activation waves,
-failures misfire, recovery resynchronises, and a verified milestone can earn a rare synaptic storm. A preview until
-generator 5, which graduated it: scored for the automatic choice, a base for packs, two curated looks; adding it changed
-no existing identity, and it has not been reviewed artistically. Design brief, stills and what remains:
-[worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`, `synaptic-layout.js`).
+failures misfire, recovery resynchronises, and a verified milestone can earn a rare synaptic storm. Agents travel the
+axons between neurons, and two on one file meet as two signals. Its digital life, behind the recipe's `life` values (on
+for new identities): astrocytes settled beside the synapses, vesicles on a slow neuromodulator tide that gather at
+active synapses, and microglia at an inhibited neuron's edge; life withdraws from a failing run's neurons and returns
+after the recovery. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically. Design brief,
+stills and what remains: [worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`,
+`synaptic-layout.js`, `life/synaptic.js`).
 
 ### Fractal Continuum
 
@@ -255,10 +259,13 @@ where code grew fast. Agents survey the land as lights in their provider's colou
 they edit; tests sweep a scan, a failure opens a fault that stays as a scar for as long as the files were stressed,
 recovery heals it, commits leave survey lines and stakes, and a verified milestone can earn a rare sunrise and a beacon.
 A replay's land is its whole recorded history, also after a seek (the host hands built-in worlds that ask for them the
-recorded windows). A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
-two curated looks; adding it changed no existing identity, and it has not been reviewed artistically or watched in motion
-by a person. Design brief, stills, measured GPU time and what remains: [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`,
-`terrain-layout.js`, `terrain-glsl.js`).
+recorded windows). Its digital life, behind the recipe's `life` values (on for new identities): grazers that graze
+the pastures of the present against the flow of time and shelter from a fault, swifts over the present and gleaners on
+the receding paths. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically or watched in
+motion by a person. Design brief, stills, measured GPU time and what remains:
+[worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`, `terrain-layout.js`,
+`terrain-glsl.js`, `life/terrain.js`).
 
 The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
 previewed and applied like any preset; the graduated worlds' six are new and have not been reviewed artistically) and

@@ -1,4 +1,4 @@
-// Temporal Terrain (preview): the project's history as a contour landscape. Design brief: docs/worlds/temporal-terrain.md.
+// Temporal Terrain: the project's history as a contour landscape. Design brief: docs/worlds/temporal-terrain.md.
 //
 // Data -> image (nothing here is decoration that claims engineering work):
 //  - time                 -> depth: the present is the front edge (a lit cut through the land), the past recedes toward

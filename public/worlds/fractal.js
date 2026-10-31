@@ -1,4 +1,4 @@
-// Fractal Continuum (preview): the software as an evolving 3D fractal universe. Design brief: docs/worlds/fractal-continuum.md.
+// Fractal Continuum: the software as an evolving 3D fractal universe. Design brief: docs/worlds/fractal-continuum.md.
 //
 // Data -> image (nothing here is decoration that claims engineering work):
 //  - the project          -> one raymarched, distance-estimated fractal; the code's character picks its universe (a
