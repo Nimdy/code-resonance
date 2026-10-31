@@ -3,8 +3,10 @@
 // profile saved by the receiver and applied by the engine (mouse and keyboard), real recordings started and stopped
 // from this page, the top bar and the Stage (one recorder: every control shows the same state, a second window is told
 // another one records), the files checked with ffmpeg (WebM, VP9 + Opus, the profile's dimensions, sound present; the
-// vertical profile's 1080 × 1920 too, its middle frame saved as output-vertical.jpg to look at), the film and vertical
-// clip commands behind the public-title gate,
+// vertical profile's 1080 × 1920 too, its middle frame saved as output-vertical.jpg to look at), recording to a file on
+// disk (the Save dialog answered with a file of the page's private storage: the same FileSystemFileHandle API, which
+// headless Chromium cannot show a dialog for), its honest message where the browser lacks the API, and an interrupted
+// recording kept through a crash and saved, the film and vertical clip commands behind the public-title gate,
 // the OBS URL options loaded as real overlays (no controls, no private names), the audio and data exports.
 // Usage: node qualification/ui/workspaces/output.qual.js        Results: qualification/results/ui/output.json + PNGs
 const path=require('node:path');
@@ -21,13 +23,28 @@ const checks=[],measurements={};
 function check(name,pass,detail=''){checks.push({name,pass:!!pass,detail:String(detail)});console.log(`${pass?'PASS':'FAIL'}  ${name}${detail?` — ${detail}`:''}`);}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,ms=15000,step=200){const t=Date.now();for(;;){const v=await fn();if(v)return v;if(Date.now()-t>ms)return v;await wait(step);}}
+// How long a state may take to appear on a loaded machine (a first Record starts the sound and the recorder on a software
+// renderer). Waits end as soon as the state is there; only a state that never comes costs this long.
+const SLOW=45000;
+// The browser's Save dialog, answered: a file in the page's private storage (headless Chromium shows no dialog; the
+// handle is a real FileSystemFileHandle, written through the same createWritable()).
+const PICKER=()=>{window.showSaveFilePicker=async o=>{window.__pickerCalls=(window.__pickerCalls||0)+1;const d=await navigator.storage.getDirectory();return d.getFileHandle(`picked-${o.suggestedName}`,{create:true});};};
+// A file of the page's private storage, downloaded (to read it with ffmpeg).
+const fetchOpfs=async(page,name,to)=>{const dl=page.waitForEvent('download',{timeout:60000});
+  await page.evaluate(async name=>{const f=await (await (await navigator.storage.getDirectory()).getFileHandle(name)).getFile();const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.append(a);a.click();a.remove();},name);
+  const d=await dl;await d.saveAs(to);return to;};
 // The file as a player would see it: container, streams, dimensions and whether the sound carries signal.
 function probe(file){
   const head=fs.readFileSync(file).subarray(0,4).toString('hex'),size=fs.statSync(file).size;
   if(!ffmpeg)return {ebml:head==='1a45dfa3',size,tool:'none'};
   const r=cp.spawnSync(ffmpeg,['-hide_banner','-i',file,'-af','volumedetect','-f','null','-'],{encoding:'utf8',timeout:120000});
   const err=r.stderr||'',video=/Stream #\S+.*Video: (\w+).*?, (\d+)x(\d+)/.exec(err),audio=/Stream #\S+.*Audio: (\w+)/.exec(err),max=/max_volume: (-?[\d.]+|-inf) dB/.exec(err);
-  return {ebml:head==='1a45dfa3',size,tool:'ffmpeg',video:video?{codec:video[1],width:+video[2],height:+video[3]}:null,audio:audio?{codec:audio[1]}:null,maxVolumeDb:max?(max[1]==='-inf'?-Infinity:+max[1]):null};
+  const dur=/Duration: (\d+):(\d+):([\d.]+)/.exec(err);
+  // The whole file is decoded: a damaged block or a cut-off element would say so here (the demuxer's and decoders'
+  // messages; the null output's own timestamp notes are about ffmpeg's output, not the file).
+  const decodeErrors=err.split('\n').filter(l=>/\[(matroska|vp8|vp9|libvpx|opus|libopus)[^\]]*\].*(error|invalid|corrupt|prematurely)|Error while decoding|Invalid data found/i.test(l)).length;
+  return {decodeErrors,ebml:head==='1a45dfa3',size,tool:'ffmpeg',video:video?{codec:video[1],width:+video[2],height:+video[3]}:null,audio:audio?{codec:audio[1]}:null,maxVolumeDb:max?(max[1]==='-inf'?-Infinity:+max[1]):null,
+    durationS:dur?(+dur[1])*3600+(+dur[2])*60+(+dur[3]):null};
 }
 (async()=>{
   await fsp.mkdir(OUT,{recursive:true});
@@ -68,18 +85,18 @@ function probe(file){
     // ---- A 720p recording through this page; observed on the top bar, the Stage and a second window ---------------
     const download=page.waitForEvent('download',{timeout:60000});
     await page.click('#outRecordBtn');
-    check('Record starts the recording',await until(async()=>(await state()).active,10000),'');
+    check('Record starts the recording',await until(async()=>(await state()).active,SLOW),'');
     check('the top bar shows the same recording',await until(()=>page.evaluate(()=>document.getElementById('recordBtn').getAttribute('aria-pressed')==='true'&&/Stop/.test(document.getElementById('recordBtn').textContent)),3000));
     check('the profile cannot change while recording',await page.evaluate(()=>[...document.querySelectorAll('[data-profile]')].every(b=>b.disabled)));
     const page2=await ctx.newPage();watch(page2,'second');
     await page2.goto(`${url}/?project=${sample}#/output`);await page2.waitForSelector('#outRecordBtn');
-    const other=await until(()=>page2.evaluate(()=>{const b=document.getElementById('outRecordBtn');return b.disabled&&/Recording in another window/.test(b.textContent)&&document.getElementById('recordBtn').disabled;}),8000);
+    const other=await until(()=>page2.evaluate(()=>{const b=document.getElementById('outRecordBtn');return b.disabled&&/Recording in another window/.test(b.textContent)&&document.getElementById('recordBtn').disabled;}),20000);
     check('a second window shows “Recording in another window” and cannot start a second recording',other,await page2.textContent('#outRecordBtn'));
     await page.evaluate(()=>{location.hash='#/stage';});
     const onStage=await until(()=>page.evaluate(()=>{const b=document.getElementById('stageRecordBtn');return b&&b.getAttribute('aria-pressed')==='true'&&/Stop/.test(b.textContent);}),5000);
     check('the Stage page shows the same recording',onStage);
     await page.evaluate(()=>{location.hash='#/output';});await page.waitForSelector('#outRecordBtn');
-    await until(async()=>(await state()).stats.elapsedMs>=3500,8000);
+    await until(async()=>(await state()).stats.elapsedMs>=3500,SLOW);
     const during=await page.evaluate(()=>({pressed:document.getElementById('outRecordBtn').getAttribute('aria-pressed'),label:document.getElementById('outRecordBtn').textContent,
       elapsed:document.getElementById('outElapsed').textContent,size:document.getElementById('outSize').textContent,frames:document.getElementById('outFrames').textContent,bytes:document.getElementById('outBytes').textContent,sound:document.getElementById('outSound').textContent}));
     check('this page shows the live recording state (elapsed, size, frames, data, sound)',during.pressed==='true'&&/Stop/.test(during.label)&&during.elapsed!=='00:00'&&during.size==='1280×720'&&/\d/.test(during.frames)&&/B$/.test(during.bytes)&&during.sound==='Music',JSON.stringify(during));
@@ -107,9 +124,9 @@ function probe(file){
     check('1080p is still chosen and applied after a reload',after,`engine=${(await state()).size}`);
     const download2=page.waitForEvent('download',{timeout:60000});
     await page.click('#recordBtn');
-    const fromTop=await until(()=>page.evaluate(()=>document.getElementById('outRecordBtn').getAttribute('aria-pressed')==='true'),8000);
+    const fromTop=await until(()=>page.evaluate(()=>document.getElementById('outRecordBtn').getAttribute('aria-pressed')==='true'),SLOW);
     check('a recording started from the top bar shows on this page',fromTop);
-    await until(async()=>(await state()).stats.elapsedMs>=3200,8000);
+    await until(async()=>(await state()).stats.elapsedMs>=3200,SLOW);
     await page.click('#outRecordBtn');
     const file2=await download2.catch(()=>null);
     if(file2){const saved=path.join(OUT,'output-1080p.webm');await file2.saveAs(saved);const p=probe(saved);measurements.rec1080=p;
@@ -121,7 +138,7 @@ function probe(file){
     check('choosing Vertical saves it and applies it to the engine',vert,`settings=${(await settings()).recording.profile} engine=${(await state()).size}`);
     check('Vertical shows its real output dimensions',(await page.textContent('#outDims')).includes('1080 × 1920'),await page.textContent('#outDims'));
     const download4=page.waitForEvent('download',{timeout:60000});
-    await page.click('#outRecordBtn');await until(async()=>(await state()).stats.elapsedMs>=3200,10000);
+    await page.click('#outRecordBtn');await until(async()=>(await state()).stats.elapsedMs>=3200,SLOW);
     await page.click('#outRecordBtn');
     const file4=await download4.catch(()=>null);
     if(file4){const saved=path.join(OUT,'output-vertical.webm');await file4.saveAs(saved);const p=probe(saved);measurements.recVertical=p;
@@ -135,12 +152,76 @@ function probe(file){
     await page.goto(`${url}/?qual=1&project=${sample}#/output`);await page.waitForSelector('#outRecordBtn');
     await page.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:20000});
     const download3=page.waitForEvent('download',{timeout:60000});
-    await page.click('#outRecordBtn');await until(async()=>(await state()).stats.elapsedMs>=2500,10000);
+    await page.click('#outRecordBtn');await until(async()=>(await state()).stats.elapsedMs>=2500,SLOW);
     await page.evaluate(()=>window.__qual.breakRecordingAudio());
     const file3=await download3.catch(()=>null);
-    const early=await until(()=>page.evaluate(()=>{const t=document.getElementById('outLast').textContent;return /Finished early/.test(t)&&/Recording finished early \(the sound stopped/.test(t)?t:'';}),8000);
+    const early=await until(()=>page.evaluate(()=>{const t=document.getElementById('outLast').textContent;return /Finished early/.test(t)&&/Recording finished early \(the sound stopped/.test(t)?t:'';}),20000);
     check('when the sound is lost the file is saved early and the page shows the engine\u2019s message',!!file3&&early&&!(await state()).active,String(early).slice(0,160));
     await page.screenshot({path:path.join(OUT,'output-sound-lost-1440.png')});
+    // ---- Record to a file on disk ---------------------------------------------------------------------------------
+    // Where the browser lacks the File System Access API (here: removed before the page runs), the choice says why and
+    // the recording stays in memory.
+    {const nd=await ctx.newPage();watch(nd,'no-fsa');await nd.addInitScript(()=>{window.showSaveFilePicker=undefined;});
+      await nd.goto(`${url}/?project=${sample}#/output`);await nd.waitForSelector('[data-dest="disk"]');
+      const why=await until(()=>nd.evaluate(()=>{const d=document.querySelector('[data-dest="disk"]'),m=document.querySelector('[data-dest="memory"]'),t=document.getElementById('outDestHelp').textContent;
+        return d.disabled&&m.getAttribute('aria-checked')==='true'&&/no File System Access API/.test(t)?{text:t,meta:d.textContent}:null;}),10000);
+      await nd.click('[data-dest="disk"]',{force:true}).catch(()=>{});
+      const still=await nd.evaluate(()=>window.ResonancePlayer.record.target==='memory'&&document.querySelector('[data-dest="memory"]').getAttribute('aria-checked')==='true');
+      check('without the File System Access API, “Record to a file on disk” is unavailable and says why (memory stays chosen)',!!why&&still&&/Chrome or Edge/.test(why.text)&&/kept in memory until you stop/.test(why.text),why?why.text:'not shown');
+      await nd.close();}
+    await page.addInitScript(PICKER);await page.evaluate(PICKER);
+    const opfs=()=>page.evaluate(async()=>{const out=[];try{const d=await (await navigator.storage.getDirectory()).getDirectoryHandle('code-resonance-recordings');for await(const [n] of d.entries())out.push(n);}catch{}return out;});
+    await until(()=>page.evaluate(()=>window.ResonancePlayer.state.recording.disk.ok===true),20000);
+    await page.click('[data-dest="disk"]');
+    const chosen=await until(()=>page.evaluate(()=>{const d=JSON.parse(localStorage.getItem('code-resonance-device-v1')||'{}');
+      return d.recordTo==='disk'&&window.ResonancePlayer.record.target==='disk'&&document.querySelector('[data-dest="disk"]').getAttribute('aria-checked')==='true'&&/to disk/.test(document.getElementById('outState').textContent);}),5000);
+    check('“Record to a file on disk” is chosen for this browser (saved in its storage, applied to the engine)',chosen,await page.textContent('#outState'));
+    await page.click('#outRecordBtn');
+    const diskOn=await until(async()=>(await state()).active,SLOW);
+    const w1=await until(async()=>{const s=(await state()).stats;return s.written>0&&s;},SLOW);await wait(3500);
+    const w2=await page.evaluate(()=>({...window.ResonancePlayer.state.recording.stats,file:window.ResonancePlayer.state.recording.file,label:document.getElementById('outBytesLabel').textContent,
+      shown:document.getElementById('outBytes').textContent,fact:document.getElementById('outFile').textContent,picker:window.__pickerCalls}));
+    check('Record asks for the file (the Save dialog), then writes to disk as it records: bytes on disk grow, none held in memory',
+      diskOn&&w2.picker===1&&w2.target==='disk'&&w1&&w2.written>w1.written&&w2.held===0&&w2.label==='On disk'&&/B$/.test(w2.shown)&&w2.fact===w2.file&&/^picked-code-resonance-.*\.webm$/.test(w2.file),
+      JSON.stringify({written:[w1&&w1.written,w2.written],held:w2.held,label:w2.label,shown:w2.shown,file:w2.file,picker:w2.picker}));
+    check('while it records, its working file is not offered as an interrupted recording',(await page.evaluate(()=>window.ResonancePlayer.record.refreshKept().then(k=>k.length)))===0&&(await opfs()).length===1);
+    await page.screenshot({path:path.join(OUT,'output-disk-1440.png')});
+    await page.click('#outRecordBtn');
+    const savedDisk=await until(()=>page.evaluate(()=>{const l=window.ResonancePlayer.state.recording.last;return l&&l.target==='disk'&&!l.saving&&(l.file||l.kept)?l:null;}),60000);
+    const line=await page.textContent('#outLastLine');
+    if(savedDisk?.file){const p=probe(await fetchOpfs(page,savedDisk.file,path.join(OUT,'output-disk.webm')));measurements.recDisk={...p,file:savedDisk.file,seekable:savedDisk.seekable,recordedMs:savedDisk.durationMs};
+      check('stopping copies it into the chosen file: a seekable WebM (its duration known), 1280 × 720, VP9 + Opus with the music',
+        savedDisk.seekable&&p.ebml&&(p.tool==='none'?p.size>50000:p.video?.width===1280&&p.video?.height===720&&p.audio?.codec==='opus'&&p.durationS>2&&p.maxVolumeDb>-60)&&/Saved/.test(line)&&/in the file you chose/.test(line),
+        `${JSON.stringify(p)} · ${line}`);
+      check('the working file is deleted once the chosen file is saved',(await opfs()).length===0,JSON.stringify(await opfs()));}
+    else check('stopping copies it into the chosen file: a seekable WebM (its duration known), 1280 × 720, VP9 + Opus with the music',false,JSON.stringify(savedDisk)+' '+line);
+    // A window that crashes while recording to disk: the next one offers what it wrote, which saves to a playable file.
+    {const cr=await ctx.newPage();watch(cr,'crashing');await cr.addInitScript(PICKER);
+      await cr.goto(`${url}/?qual=1&project=${sample}#/output`);await cr.waitForSelector('#outRecordBtn');
+      await cr.waitForFunction(()=>window.ResonancePlayer.state.model&&window.ResonancePlayer.record.target==='disk'&&window.ResonancePlayer.state.recording.disk.ok===true,null,{timeout:SLOW});
+      await until(()=>cr.evaluate(()=>{const b=document.getElementById('outRecordBtn');return !b.disabled&&b.textContent.trim()==='Record';}),SLOW);
+      await cr.click('#outRecordBtn');
+      const before=await until(async()=>{const s=await cr.evaluate(()=>window.ResonancePlayer.state.recording.stats);return s.active&&s.written>500000&&s.elapsedMs>6000?s:null;},SLOW);
+      const crashed=cr.waitForEvent('crash',{timeout:15000}).then(()=>true,()=>false);
+      void (await ctx.newCDPSession(cr)).send('Page.crash').catch(()=>{});
+      const didCrash=await crashed;
+      const offered=await until(()=>page.evaluate(()=>{const k=window.ResonancePlayer.state.recording.kept;return k.length===1&&document.querySelector('[data-kept-save]')?k[0]:null;}),30000);
+      check('after a crash while recording to disk, another window offers the interrupted recording (Save or Discard)',didCrash&&!!offered&&offered.bytes>=(before?.written||1),
+        JSON.stringify({didCrash,writtenBeforeCrash:before?.written,kept:offered}));
+      await page.screenshot({path:path.join(OUT,'output-kept-1440.png')});
+      if(offered){await page.click('[data-kept-save]');
+        const rec=await until(()=>page.evaluate(()=>{const r=window.ResonancePlayer.state.recording;return !r.kept.length&&!r.keptBusy&&r.last?.recovered?r.last:null;}),60000);
+        if(rec){const p=probe(await fetchOpfs(page,rec.file,path.join(OUT,'output-recovered.webm')));measurements.recRecovered={...p,file:rec.file,seekable:rec.seekable,elapsedBeforeCrashMs:Math.round(before.elapsedMs)};
+          // Everything written before the crash is in it (the last second or so was still in the browser's encoder,
+          // which delivers a chunk a second); the whole file decodes without an error.
+          check('the interrupted recording saves to a playable, seekable file of everything written before the crash',rec.seekable&&p.ebml&&offered.bytes>=before.written&&
+            (p.tool==='none'?p.size>50000:!!p.video&&!!p.audio&&p.decodeErrors===0&&p.durationS>=2&&p.durationS<=before.elapsedMs/1000+2)&&(await opfs()).length===0,
+            `${JSON.stringify(p)} · ${before.written} bytes written by ${(before.elapsedMs/1000).toFixed(1)} s, ${offered.bytes} kept`);}
+        else check('the interrupted recording saves to a playable, seekable file of everything written before the crash',false,'not saved');}
+      await cr.close().catch(()=>{});
+      for(let i=errors.length-1;i>=0;i--)if(/^crashing: .*(crash|Target closed|Target crashed)/i.test(errors[i]))errors.splice(i,1);}
+    await page.click('[data-dest="memory"]');
+    check('back to keeping recordings in memory (this browser’s choice)',await until(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('code-resonance-device-v1')||'{}').recordTo==='memory'&&window.ResonancePlayer.record.target==='memory'),5000));
     // ---- OBS: every option yields a URL that loads an overlay with no controls and no private names ------------------
     const obsUrl=()=>page.textContent('#obsUrl code');
     const world=await page.evaluate(()=>window.ResonancePlayer.state.world),style=await page.evaluate(()=>window.ResonancePlayer.state.sound.options.style);
@@ -209,80 +290,106 @@ function probe(file){
     // ---- One recorder, atomically: two windows press Record at the same instant, many times -------------------------
     // Both windows' buttons are enabled when pressed (neither has heard the other announce a recording, so the
     // announcements cannot decide); the browser's recorder lock lets exactly one start, and the other says why.
+    // Every wait is on what the windows show, never a fixed time: a round starts once both are idle and the lock is free,
+    // and is judged once both presses have settled (the button's busy state ends when Record has answered: a first Record
+    // on a loaded software renderer can take many seconds). Each window logs when its recording starts and stops, so "at
+    // most one at a time" is read from those intervals (one machine, one clock) as well as from polling. A round whose
+    // presses were not simultaneous (one button already disabled when pressed, as a window under load fired its press
+    // late) proves nothing about the lock: it is not counted and is pressed again, up to as many retries as rounds.
     const ROUNDS=Math.max(1,Number(process.env.CR_RECORD_RACE_ROUNDS)||20);
-    const racers=[];for(const label of ['race-a','race-b']){const p=await ctx.newPage();watch(p,label);
+    const LOG=()=>{window.__recLog=[];let was=window.ResonancePlayer.state.recording.active;
+      window.ResonancePlayer.on(t=>{if(!t.has('recording'))return;const a=window.ResonancePlayer.state.recording.active;if(a!==was){was=a;window.__recLog.push({active:a,t:Date.now()});}});};
+    const openRacer=async label=>{const p=await ctx.newPage();watch(p,label);
       await p.goto(`${url}/?qual=1&project=${sample}#/output`);await p.waitForSelector('#outRecordBtn');
-      await p.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:20000});racers.push(p);}
+      await p.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:SLOW});await p.evaluate(LOG);return p;};
+    const racers=[await openRacer('race-a'),await openRacer('race-b')];
     const policies=await Promise.all(racers.map(p=>p.evaluate(()=>window.ResonancePlayer.record.lockPolicy)));
     check('the recorder lock is the browser’s Web Locks (not announcements alone)',policies.every(x=>x==='web-locks'),policies.join(','));
-    const ready=p=>p.evaluate(()=>{const b=document.getElementById('outRecordBtn');return !b.disabled&&b.textContent.trim()==='Record'&&!window.ResonancePlayer.state.recording.active;});
-    const rounds=[];
-    for(let i=0;i<ROUNDS;i++){
-      const free=await until(async()=>(await ready(racers[0]))&&(await ready(racers[1])),15000,100);
-      if(!free){rounds.push({i,error:'a window did not become ready'});break;}
-      const before=await Promise.all(racers.map(p=>p.evaluate(()=>({id:window.ResonancePlayer.state.notices.at(-1)?.id||0,sound:window.ResonancePlayer.state.sound.enabled}))));const seen=before.map(b=>b.id);
-      // The same wall-clock instant in both windows (one machine, one clock); each reports whether its button was
-      // enabled when it pressed it and what Record answered.
-      const at=Date.now()+400;
-      const presses=await Promise.all(racers.map(p=>p.evaluate(at=>new Promise(resolve=>{
-        setTimeout(()=>{const b=document.getElementById('outRecordBtn'),enabled=!b.disabled,t=Date.now();b.click();resolve({enabled,t});},Math.max(0,at-Date.now()));}),at)));
-      // Watch both windows for two seconds: how many record at once, at most.
-      let maxActive=0,winner=-1;const t0=Date.now();
-      while(Date.now()-t0<2000){const act=await Promise.all(racers.map(p=>p.evaluate(()=>window.ResonancePlayer.state.recording.active)));
-        maxActive=Math.max(maxActive,act.filter(Boolean).length);if(winner<0)winner=act.indexOf(true);await wait(100);}
-      const loser=winner===0?1:0;
-      const told=winner>=0?await until(()=>racers[loser].evaluate(seen=>window.ResonancePlayer.state.notices.some(n=>n.id>seen&&/Another window of this browser is already recording/.test(n.text)),seen[loser]),3000):false;
-      const loserSound=winner>=0?await racers[loser].evaluate(()=>window.ResonancePlayer.state.sound.enabled):null;
-      rounds.push({i,enabled:presses.map(p=>p.enabled),spreadMs:Math.abs(presses[0].t-presses[1].t),maxActive,winner,told:!!told,loserSound,loserSoundBefore:winner>=0?before[loser].sound:null});
-      if(winner>=0){const dl=racers[winner].waitForEvent('download',{timeout:30000}).catch(()=>null);await racers[winner].click('#outRecordBtn');await dl;}
+    // Idle: Record enabled and not answering a press, no recording here, and (asked of the browser) no window holds the lock.
+    const idle=p=>p.evaluate(async()=>{const b=document.getElementById('outRecordBtn');return !b.disabled&&!b.hasAttribute('aria-busy')&&b.textContent.trim()==='Record'&&!window.ResonancePlayer.state.recording.active&&(await window.ResonanceRecording.held())===false;});
+    const settled=p=>p.evaluate(()=>!document.getElementById('outRecordBtn').hasAttribute('aria-busy'));
+    const activeOf=pages=>Promise.all(pages.map(p=>p.evaluate(()=>window.ResonancePlayer.state.recording.active)));
+    // Stops whatever records in these windows (a late start must not wedge the next round) and waits until all are idle.
+    async function recover(pages){
+      for(const p of pages)if(await p.evaluate(()=>window.ResonancePlayer.state.recording.active)){const dl=p.waitForEvent('download',{timeout:60000}).catch(()=>null);await p.evaluate(()=>{void window.__qual.stop();});await dl;}
+      return until(async()=>{for(const p of pages)if(!(await idle(p)))return false;return true;},SLOW,150);
     }
-    measurements.recordRace={rounds:rounds.length,wins:[rounds.filter(r=>r.winner===0).length,rounds.filter(r=>r.winner===1).length],maxSpreadMs:Math.max(...rounds.map(r=>r.spreadMs||0)),detail:rounds};
+    // The most windows recording at once, from each window's start/stop log since `from`.
+    async function overlap(pages,from){
+      const logs=await Promise.all(pages.map(p=>p.evaluate(()=>window.__recLog.slice())));
+      const ev=[];logs.forEach(l=>{for(const e of l)if(e.t>=from)ev.push(e);});ev.sort((a,b)=>a.t-b.t||(a.active?1:-1));
+      let n=0,max=0;for(const e of ev){n+=e.active?1:-1;max=Math.max(max,n);}return max;
+    }
+    // Both windows press Record at the same wall-clock instant; each reports whether its button was enabled then.
+    const pressAll=(pages,at)=>Promise.all(pages.map(p=>p.evaluate(at=>new Promise(resolve=>{
+      setTimeout(()=>{const b=document.getElementById('outRecordBtn'),enabled=!b.disabled,t=Date.now();b.click();resolve({enabled,t});},Math.max(0,at-Date.now()));}),at)));
+    // Until both presses have answered: the most windows seen recording at once while waiting, and how long it took.
+    async function watchSettle(pages){
+      let maxActive=0;const t0=Date.now();
+      for(;;){const act=await activeOf(pages);maxActive=Math.max(maxActive,act.filter(Boolean).length);
+        if((await Promise.all(pages.map(settled))).every(Boolean)||Date.now()-t0>SLOW)break;await wait(100);}
+      const act=await activeOf(pages);maxActive=Math.max(maxActive,act.filter(Boolean).length);
+      return {maxActive,active:act,settledMs:Date.now()-t0,settled:(await Promise.all(pages.map(settled))).every(Boolean)};
+    }
+    const rounds=[],skipped=[];
+    for(let attempt=0;rounds.length<ROUNDS&&attempt<ROUNDS*2;attempt++){
+      if(!(await recover(racers))){rounds.push({i:rounds.length,error:'the windows did not become idle'});break;}
+      const before=await Promise.all(racers.map(p=>p.evaluate(()=>({id:window.ResonancePlayer.state.notices.at(-1)?.id||0,sound:window.ResonancePlayer.state.sound.enabled}))));const seen=before.map(b=>b.id);
+      const at=Date.now()+400,presses=await pressAll(racers,at);
+      const w=await watchSettle(racers);
+      const spreadMs=Math.abs(presses[0].t-presses[1].t);
+      if(!presses.every(p=>p.enabled)){skipped.push({attempt,enabled:presses.map(p=>p.enabled),spreadMs});continue;}
+      const maxOverlap=await overlap(racers,at-50),winner=w.active.indexOf(true),loser=winner===0?1:0;
+      const told=winner>=0?await until(()=>racers[loser].evaluate(seen=>window.ResonancePlayer.state.notices.some(n=>n.id>seen&&/Another window of this browser is already recording/.test(n.text)),seen[loser]),10000):false;
+      const loserSound=winner>=0?await racers[loser].evaluate(()=>window.ResonancePlayer.state.sound.enabled):null;
+      rounds.push({i:rounds.length,attempt,enabled:presses.map(p=>p.enabled),spreadMs,settledMs:w.settledMs,settled:w.settled,maxActive:Math.max(w.maxActive,maxOverlap),polled:w.maxActive,logged:maxOverlap,
+        winner,active:w.active.filter(Boolean).length,told:!!told,loserSound,loserSoundBefore:winner>=0?before[loser].sound:null});
+      if(winner>=0){const dl=racers[winner].waitForEvent('download',{timeout:60000}).catch(()=>null);await racers[winner].click('#outRecordBtn');await dl;}
+    }
+    const valid=rounds.filter(r=>!r.error);
+    measurements.recordRace={rounds:valid.length,attempts:valid.length+skipped.length+(rounds.length-valid.length),notSimultaneous:skipped,wins:[valid.filter(r=>r.winner===0).length,valid.filter(r=>r.winner===1).length],
+      maxSpreadMs:Math.max(0,...valid.map(r=>r.spreadMs)),maxSettledMs:Math.max(0,...valid.map(r=>r.settledMs)),detail:rounds};
     check(`${ROUNDS} rounds of Record pressed in two windows at the same instant (both buttons enabled): exactly one recording each time`,
-      rounds.length===ROUNDS&&rounds.every(r=>r.enabled?.every(Boolean)&&r.maxActive===1&&r.winner>=0),
-      `wins ${measurements.recordRace.wins.join('/')}, press spread ≤ ${measurements.recordRace.maxSpreadMs} ms, max active ${Math.max(...rounds.map(r=>r.maxActive||0))}`+(rounds.some(r=>r.error)?` ${rounds.find(r=>r.error).error}`:''));
+      valid.length===ROUNDS&&valid.every(r=>r.enabled.every(Boolean)&&r.settled&&r.maxActive===1&&r.active===1&&r.winner>=0),
+      `wins ${measurements.recordRace.wins.join('/')}, press spread ≤ ${measurements.recordRace.maxSpreadMs} ms, presses answered within ${measurements.recordRace.maxSettledMs} ms, max active ${Math.max(0,...valid.map(r=>r.maxActive))}`+
+      `${skipped.length?`, ${skipped.length} not simultaneous (pressed again)`:''}`+(rounds.some(r=>r.error)?` ${rounds.find(r=>r.error).error}`:'')+(valid.length<ROUNDS?` only ${valid.length} rounds`:''));
     check('the window that lost the race says another window is recording, and did not start its sound',
-      rounds.length===ROUNDS&&rounds.every(r=>r.told&&r.loserSound===r.loserSoundBefore),rounds.filter(r=>!r.told||r.loserSound!==r.loserSoundBefore).map(r=>`${r.i}${r.told?'':' not told'}${r.loserSound!==r.loserSoundBefore?' sound turned on':''}`).join(',')||'every round');
+      valid.length===ROUNDS&&valid.every(r=>r.told&&r.loserSound===r.loserSoundBefore),valid.filter(r=>!r.told||r.loserSound!==r.loserSoundBefore).map(r=>`${r.i}${r.told?'':' not told'}${r.loserSound!==r.loserSoundBefore?' sound turned on':''}`).join(',')||(valid.length===ROUNDS?'every round':`only ${valid.length} rounds`));
     // The control (a measurement, not a check): the same simultaneous press in two fresh windows with the lock bypassed
-    // (their announcements alone) shows whether this race would let two through without it. The windows are closed
-    // without saving (two recorders at once is the state the lock exists to prevent).
-    {const ctl=[];for(const label of ['control-a','control-b']){const p=await ctx.newPage();watch(p,label);
-        await p.goto(`${url}/?qual=1&project=${sample}#/output`);await p.waitForSelector('#outRecordBtn');
-        await p.waitForFunction(()=>window.ResonancePlayer.state.model&&window.__qual,null,{timeout:20000});ctl.push(p);}
-      const free=await until(async()=>(await ready(ctl[0]))&&(await ready(ctl[1])),15000,100);
-      if(free){await Promise.all(ctl.map(p=>p.evaluate(()=>{window.ResonanceRecording.claim=async()=>({ok:true,policy:'announcements',release:()=>Promise.resolve()});})));
-        const at=Date.now()+400;
-        const enabled=await Promise.all(ctl.map(p=>p.evaluate(at=>new Promise(resolve=>{setTimeout(()=>{const b=document.getElementById('outRecordBtn'),e=!b.disabled;b.click();resolve(e);},Math.max(0,at-Date.now()));}),at)));
-        let maxActive=0;const t0=Date.now();
-        while(Date.now()-t0<2000){const act=await Promise.all(ctl.map(p=>p.evaluate(()=>window.ResonancePlayer.state.recording.active)));maxActive=Math.max(maxActive,act.filter(Boolean).length);await wait(100);}
-        measurements.recordRace.withoutLock={enabled,maxActive};
-        console.log(`(control) the same press with the lock bypassed: ${maxActive} window(s) recording at once`);}
+    // (their announcements alone) shows whether this race would let two through without it, once both presses have
+    // answered. The windows are closed without saving (two recorders at once is the state the lock exists to prevent).
+    {const ctl=[await openRacer('control-a'),await openRacer('control-b')];
+      if(await recover(ctl)){await Promise.all(ctl.map(p=>p.evaluate(()=>{window.ResonanceRecording.claim=async()=>({ok:true,policy:'announcements',release:()=>Promise.resolve()});})));
+        const at=Date.now()+400,presses=await pressAll(ctl,at),w=await watchSettle(ctl),logged=await overlap(ctl,at-50);
+        measurements.recordRace.withoutLock={enabled:presses.map(p=>p.enabled),maxActive:Math.max(w.maxActive,logged),settledMs:w.settledMs};
+        console.log(`(control) the same press with the lock bypassed: ${Math.max(w.maxActive,logged)} window(s) recording at once (answered within ${w.settledMs} ms)`);}
       for(const p of ctl)await p.close();}
     // ---- A crashed recorder leaves no stale lock: its renderer is killed while recording, the other window records --
     {const [a,b]=racers;
-      await until(async()=>(await ready(a))&&(await ready(b)),15000,100);
+      const ready=await recover(racers);
       await a.click('#outRecordBtn');
-      const recA=await until(()=>a.evaluate(()=>window.ResonancePlayer.state.recording.active),10000);
+      const recA=await until(async()=>(await settled(a))&&await a.evaluate(()=>window.ResonancePlayer.state.recording.active),SLOW);
       const heldBefore=await b.evaluate(()=>window.ResonancePlayer.record.heldElsewhere());
       const refused=await b.evaluate(()=>window.__qual.record());
       // Page.crash never answers (the renderer dies first): the page's crash event is what says it happened.
       const crashed=a.waitForEvent('crash',{timeout:15000}).then(()=>true,()=>false);
       const cdp=await ctx.newCDPSession(a);void cdp.send('Page.crash').catch(()=>{});
       const didCrash=await crashed;
-      const freedAfterCrash=await until(async()=>(await b.evaluate(()=>window.ResonancePlayer.record.heldElsewhere()))===false,10000);
+      const freedAfterCrash=await until(async()=>(await b.evaluate(()=>window.ResonancePlayer.record.heldElsewhere()))===false,20000);
       // What b's Record button says now (the windows' announcements: a crashed window never says it stopped).
-      measurements.recordCrash={buttonAfterCrash:(await b.textContent('#outRecordBtn')).trim(),disabledAfterCrash:await b.evaluate(()=>document.getElementById('outRecordBtn').disabled)};
+      measurements.recordCrash={readyBefore:!!ready,buttonAfterCrash:(await b.textContent('#outRecordBtn')).trim(),disabledAfterCrash:await b.evaluate(()=>document.getElementById('outRecordBtn').disabled)};
       const took=await b.evaluate(()=>window.__qual.record());
-      const recB=await until(()=>b.evaluate(()=>window.ResonancePlayer.state.recording.active),10000);
-      check('while one window records, the other cannot (its lock is held there)',recA&&heldBefore===true&&refused?.ok===false&&refused?.reason==='elsewhere',JSON.stringify({recA,heldBefore,refused:refused?.reason}));
+      const recB=await until(()=>b.evaluate(()=>window.ResonancePlayer.state.recording.active),SLOW);
+      check('while one window records, the other cannot (its lock is held there)',ready&&recA&&heldBefore===true&&refused?.ok===false&&refused?.reason==='elsewhere',JSON.stringify({ready:!!ready,recA,heldBefore,refused:refused?.reason}));
       check('a window that crashes while recording releases the lock at once: the other window records',didCrash&&freedAfterCrash&&took?.ok===true&&recB,JSON.stringify({didCrash,freedAfterCrash,took}));
       // Stopped without awaiting the page's promise across the evaluate boundary (Playwright reported it garbage
       // collected while the stop itself had settled); the page records when its stop settles and the check reads that.
       await b.evaluate(()=>{window.__stopB={};Promise.resolve(window.__qual.stop()).then(r=>{window.__stopB.settled=true;window.__stopB.result=!!r;},e=>{window.__stopB.error=String(e);});});
-      const stopB=await until(()=>b.evaluate(()=>window.__stopB?.settled&&!window.ResonancePlayer.state.recording.active?window.__stopB:null),15000);
+      const stopB=await until(()=>b.evaluate(()=>window.__stopB?.settled&&!window.ResonancePlayer.state.recording.active?window.__stopB:null),SLOW);
       check('the window that took over after the crash stops its recording normally',!!stopB?.result,JSON.stringify(stopB||await b.evaluate(()=>window.__stopB)));
       // A crashed window never announces that it stopped; the recorder lock is the evidence that it did not leave a
       // “Recording in another window” behind in the windows that remain.
-      const recovered=await until(()=>page.evaluate(()=>{const x=document.getElementById('outRecordBtn');return !x.disabled&&x.textContent.trim()==='Record';}),8000);
+      const recovered=await until(()=>page.evaluate(()=>{const x=document.getElementById('outRecordBtn');return !x.disabled&&x.textContent.trim()==='Record';}),20000);
       check('after the crash the remaining windows’ Record controls recover (no stale “recording in another window”)',recovered,(await page.textContent('#outRecordBtn')).trim());
       await a.close().catch(()=>{});await b.close();
       // The crashed renderer's own console noise is not this page's error.
