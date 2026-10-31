@@ -92,8 +92,16 @@ async function occupant(port,dir,{timeoutMs=3000}={}){
 }
 function readState(dir){const s=readJSON(path.join(dir,STATE));return s&&Number.isInteger(s.pid)&&validPort(s.port)&&typeof s.instance==='string'?s:null;}
 function alive(pid){if(!Number.isInteger(pid)||pid<=0)return false;try{process.kill(pid,0);return true;}catch(e){return e.code==='EPERM';}}
+// Whether the recorded process is still that launcher: running and, where the system shows a process's command line
+// (/proc on Linux), naming its instance (the launcher puts it in its title). A launcher that crashed leaves its state
+// file behind, and its process id may since belong to something else.
+function running(state){
+  if(!state||!alive(state.pid))return false;
+  try{return fs.readFileSync(`/proc/${state.pid}/cmdline`,'latin1').includes(state.instance);}catch{return true;}
+}
+function provablyOurs(state){try{return fs.readFileSync(`/proc/${state.pid}/cmdline`,'latin1').includes(state.instance);}catch{return false;}}
 // The receiver the extension started, if it is still running (on this port, when one is given).
-function bundled(dir,port){const s=readState(dir);return s&&alive(s.pid)&&(port===undefined||s.port===port)?s:null;}
+function bundled(dir,port){const s=readState(dir);return s&&running(s)&&(port===undefined||s.port===port)?s:null;}
 function replaceable(state,{version,runtime}){
   if(compareVersions(version,state.version)>0)return true;
   // Started from files that are gone (an older extension folder VS Code removed): its pages would no longer load.
@@ -136,14 +144,15 @@ function openLog(dir,header){
 }
 function logTail(dir,bytes=1600){try{const b=fs.readFileSync(logFile(dir));return b.subarray(Math.max(0,b.length-bytes)).toString('utf8').trim();}catch{return '';}}
 // Asks the receiver the extension started to stop (the launcher polls for this file every second), and waits until it
-// has. As a last resort, outside Windows, SIGTERM to that process (the launcher stops cleanly on it too).
+// has: its process is gone, or it removed its state file and closed the port. As a last resort, SIGTERM to that process
+// (the launcher stops cleanly on it too), only where its command line proves it is still that launcher (Linux).
 async function requestStop(dir,state,{timeoutMs=20000,log=()=>{}}={}){
   const stopFile=path.join(dir,STOP);
   await fsp.writeFile(stopFile,JSON.stringify({instance:state.instance,at:Date.now()}),{mode:0o600});
-  const gone=()=>!alive(state.pid)||readState(dir)?.instance!==state.instance;
-  const wait=async ms=>{const t0=Date.now();while(Date.now()-t0<ms){if(gone()&&await portState(state.port)==='free')return true;await sleep(200);}return false;};
+  const done=async()=>!running(state)||(readState(dir)?.instance!==state.instance&&await portState(state.port)==='free');
+  const wait=async ms=>{const t0=Date.now();while(Date.now()-t0<ms){if(await done())return true;await sleep(200);}return false;};
   let stopped=await wait(timeoutMs);
-  if(!stopped&&process.platform!=='win32'&&alive(state.pid)&&readState(dir)?.instance===state.instance){
+  if(!stopped&&provablyOurs(state)){
     log(`The receiver (process ${state.pid}) did not stop within ${Math.round(timeoutMs/1000)} s; sending it SIGTERM.`);
     try{process.kill(state.pid,'SIGTERM');}catch{}
     stopped=await wait(10000);
@@ -248,4 +257,4 @@ async function receiverStatus({port,dir}){
     elsewhere:occ.state==='free'?await elsewhere(dir,port):null};
 }
 module.exports={STATE,STOP,LOCK,dataDir,readAuth,readState,logFile,compareVersions,findRuntime,runtimeCommand,childEnv,portState,occupant,
-  alive,bundled,acquireLock,requestStop,ensureReceiver,stopReceiver,receiverStatus};
+  alive,running,bundled,acquireLock,requestStop,ensureReceiver,stopReceiver,receiverStatus};

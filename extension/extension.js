@@ -358,6 +358,12 @@ async function openStage(overlay=false,{withProject=true}={}){
 }
 // ---- Agent hooks for this workspace, through the receiver's own plan and apply (./agent-hooks.js): the exact change
 // is shown in a diff editor first and written only after the user confirms, and only if the file did not change since.
+// The hook commands in a hooks file (the planned one or the current one): every string under a "command" key.
+function hookCommands(text){
+  const out=[];const walk=v=>{if(Array.isArray(v))v.forEach(walk);else if(v&&typeof v==='object')for(const [k,x] of Object.entries(v)){if(k==='command'&&typeof x==='string')out.push(x);else walk(x);}};
+  try{walk(JSON.parse(text||'{}'));}catch{}
+  return out;
+}
 function hasNode(){
   return new Promise(resolve=>{try{require('node:child_process').execFile('node',['--version'],{timeout:5000,windowsHide:true},(err,out)=>resolve(!err&&/^v\d+/.test(String(out).trim())));}catch{resolve(false);}});
 }
@@ -390,8 +396,17 @@ async function connectAgent(){
   catch(e){void vscode.window.showWarningMessage(`Code Resonance cannot plan the ${a.label} hooks: ${e.message}`);return;}
   if(!plan.changed){void vscode.window.showInformationMessage(`Nothing to change in ${a.file}.`);return;}
   await showPlan(a,plan,action);
+  // The command the receiver planned (its adapter path), and Code Resonance entries already there for another path (for
+  // example installed from a checkout): both would run, and the agent would be reported twice.
+  const adapter=/^(?:claude|cursor|codex)$/.test(a.id)?{claude:'claude-code.js',cursor:'cursor.js',codex:'codex.js'}[a.id]:'';
+  const before=new Set(hookCommands(plan.current));
+  const planned=new Set(hookCommands(plan.next).filter(c=>c.startsWith('node ')&&c.includes(adapter)&&!before.has(c)));
+  const command=[...planned][0]||'';
+  const others=[...new Set(hookCommands(plan.current).filter(c=>c.startsWith('node ')&&/scripts[\\/]+hooks[\\/]+/.test(c)&&c.includes(adapter)&&!planned.has(c)))];
+  const stable=command.includes(agentHooks.stableRoot(DATA))||command.includes(JSON.stringify(agentHooks.stableRoot(DATA)).slice(1,-1));
   const detail=action==='install'?[`The diff shows the whole change to ${plan.file}: only the adapter's observe-only entries are added, nothing else in the file changes.`,
-    `Each entry runs node with the adapter Code Resonance keeps in ${agentHooks.stableRoot(DATA)} (the same path across updates). It never prints and always exits 0, so it cannot block or change ${a.label}.`,
+    `Each entry runs ${command||'node with the receiver\'s adapter'}${stable?' (a copy Code Resonance keeps in the data directory, at the same path across updates)':''}. It never prints and always exits 0, so it cannot block or change ${a.label}.`,
+    ...(others.length?[`This file already has Code Resonance hooks running ${others.join(', ')} (for example installed from a checkout). Remove those entries first, or ${a.label} is reported twice.`]:[]),
     ...(a.id==='claude'?[]:[`${a.file} may be committed with the project: the command is a path on this computer, so gitignore it or leave that entry out of commits.`]),
     ...(await hasNode()?[]:['Node.js was not found on the PATH here: the agent needs node on its PATH to run the hook.'])].join('\n\n')
     :`The diff shows the whole change to ${plan.file}: only Code Resonance's entries are removed.`;

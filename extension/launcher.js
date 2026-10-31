@@ -20,7 +20,8 @@ async function main(){
   const runtime=arg('runtime')&&path.resolve(arg('runtime')),data=arg('data')&&path.resolve(arg('data')),port=Number(arg('port'));
   const instance=arg('instance')||'',version=arg('version')||'';
   if(!runtime||!data||!Number.isInteger(port)||port<1||port>65535||!/^[0-9a-f]{24}$/.test(instance)){log('usage: launcher.js --runtime <dir> --data <dir> --port <port> --instance <24 hex> --version <v>');process.exit(2);}
-  process.title='code-resonance-receiver';
+  // The title names the instance: where the system shows command lines, the extension checks it before any signal.
+  process.title=`code-resonance-receiver ${instance}`;
   delete process.env.RESONANCE_ALLOW_REMOTE;
   // A stop request names one instance; one naming another (older) instance is not this process's business.
   const STATE=path.join(data,'bundled-receiver.json'),STOP=path.join(data,'bundled-receiver.stop');
