@@ -121,8 +121,9 @@ to the internet](docs/media/data-flow.svg)
   project's folder name, only a public title you choose.
 - Changing anything needs a browser you paired once with a private link; an unpaired browser can only watch, play and
   record.
-- No analytics, telemetry or remote calls. The full model, what is stored where and how to erase it:
-  [SECURITY.md](SECURITY.md).
+- No analytics, telemetry or remote calls. The full model and what is stored where: [SECURITY.md](SECURITY.md).
+  Erasing everything takes more than the receiver's folder (the extension's outbox, a browser's storage, the files you
+  saved): [SECURITY.md › Erasing data](SECURITY.md#erasing-data).
 
 ## Requirements
 
