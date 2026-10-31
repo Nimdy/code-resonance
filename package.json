@@ -20,6 +20,7 @@
     "pack": "node scripts/pack.js",
     "doctor": "node scripts/doctor.js",
     "pair": "node scripts/pair.js",
-    "film": "node scripts/film.js"
+    "film": "node scripts/film.js",
+    "site": "node scripts/build-site.js"
   }
 }
