@@ -26,7 +26,7 @@ quick start: the [README](../README.md).
   Studio](ARTIST-STUDIO.md), [the Construct](CONSTRUCT.md), and the Visual Pack SDK: [overview](packs/README.md),
   [manifest](packs/manifest.md), [World API](packs/world-api.md), [determinism](packs/determinism.md),
   [performance](packs/performance.md), [parameter catalogue](packs/catalogue.md), [SDK 1.2 and 1.1](packs/migration.md).
-- **Developing:** [the developer guide](../ARCHITECTURE.md), [one engine, many views](CONTROL-CENTER.md#one-engine-many-views),
+- **Developing:** [contributing](../CONTRIBUTING.md), [the developer guide](../ARCHITECTURE.md), [one engine, many views](CONTROL-CENTER.md#one-engine-many-views),
   [digital life's determinism contract](LIFE.md#determinism), [how a composition is
   rendered](ARTIST-STUDIO.md#how-a-composition-is-rendered), the pack [World API](packs/world-api.md) and
   [determinism](packs/determinism.md) rules, [the repository workflow](../REPOSITORY.md).
