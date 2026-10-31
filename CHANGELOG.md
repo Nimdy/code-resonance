@@ -52,6 +52,13 @@
 - **The release download:** the README names the VSIX on the latest release and how to check it: its SHA-256 in
   `SHA256SUMS.txt`, or a build of the release's tag, which with the same Node version is the same file byte for byte
   (the packager writes fixed timestamps; 0.8.0 checked in two checkouts and against the download).
+- **Fractal Continuum: the same frame whatever was played before a seek** (preview): after a seek the world read the
+  camera left from the previous moment (for its level of detail and for a close-up's dolly) before the camera rig
+  snapped to the new moment, so two sessions seeking to the same moment could render different frames
+  (`visual/worlds.qual.js` determinism on Lumen at 160 s; also at 1226b8a). Until the rig has placed the camera for the
+  new moment, the world now takes the framing distance and the direction its goal turns to; continuous play is
+  unchanged. The check passes on SwiftShader with digital life off and on; `tests/fractal-seek.test.js` (new) fails
+  without the fix. Details in [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#determinism).
 - **Fractal Continuum: digital life** (preview): motes of light living on the fractal's surface drift with its
   current, gather at the sites being worked on and leave threads of light between them; small flocks skim the relief
   and embers rest in its hollows. A failing run opens a void over its region and the motes wait at its edge; after the

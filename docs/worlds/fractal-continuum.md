@@ -388,6 +388,22 @@ The finish keeps this: region hues come from the region's id and creation order,
 at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
 and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
 
+**The camera after a seek** (fixed after 0.8.0). The world read the camera the host's rig left behind in two places: the
+level of detail (from the camera's distance, with the form's scale of the previous frame) and a close-up's dolly
+(`facing()`: the camera comes in once it already faces the event's site). After a rebuild (a seek, a new performance,
+a world switch) the rig snaps to the next goal, but both were read before that snap, from the camera of the moment
+played before. Two sessions seeking to the same moment could snap to different cameras, and the springs kept them
+apart: `visual/worlds.qual.js`'s determinism check on Lumen at 160 s rendered different frames in two sessions (the
+second first played the recording's end: `4211376e…` / `b7ee03ab…`), as the code at 1226b8a already did. Now, until the
+rig has placed the camera for this state, the level of detail is taken at the framing distance (at the identity's own
+lens, the form's scale cancelling) and the dolly at the direction the goal turns to (where the snap puts the camera);
+from the next frame on everything reads the camera as before, so continuous play is unchanged. The same check passes
+on SwiftShader at 960×540, life off and on (`c381adf7…` and `a445bef3…` in both sessions), and
+`tests/fractal-seek.test.js` drives the world as the host does (update, camera goal, rig, afterCamera; a seek rebuilds,
+snaps and refolds the director): after a close-up was played, after the recording's end, with a target small enough
+for the pixels to limit the detail, and with digital life on, every frame after the seek matches a fresh session's
+(each case failed at its first frame before the fix).
+
 ## Performance
 
 The fractal renders into its own targets at a share of the scene's resolution (0.6 at quality 0), in three passes drawn
