@@ -107,7 +107,8 @@ const LIFE={
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 // Preview families: built in, chosen only explicitly (the Visual Studio, the render lab's --family), never by the
-// family scoring, and not yet a base for declarative packs (their parameters may still change). No digital life yet.
+// family scoring, and not yet a base for declarative packs (their parameters may still change). Digital life where an
+// entry lists the LIFE group (Synaptic Storm: public/worlds/life/synaptic.js).
 const PREVIEWS={
   'synaptic-storm':{name:'Synaptic Storm (preview)',preview:true,parameters:{
     'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
@@ -120,7 +121,7 @@ const PREVIEWS={
     'motion.firingRate':n(.2,2,'spontaneous firing (always on the beat grid; work and recent events raise it)'),'motion.conduction':n(.5,1.8,'speed of the signals along dendrites and axons'),
     'motion.drift':n(0,1.5,'slow drift of the neurons'),'motion.breath':e([2,4,8],'breathing period of the glow (bars)'),'motion.sync':n(0,1,'how tightly spontaneous firing locks to the beat'),
     'camera.personality':e(['orbit','glide'],'camera behaviour'),'camera.distance':n(.7,1.4,'distance'),'camera.elevation':n(.05,.8,'elevation'),'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.5,'idle drift'),
-    'agents.form':e(['signal'],'agent form: a travelling signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    'agents.form':e(['signal'],'agent form: a travelling signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length'),...LIFE},
     effects:['neurogenesis','sprout','arborize','prune','axon-link','misfire','activation-wave','resync','consolidate','storm','potentiate','expand'],
     unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
   'fractal-continuum':{name:'Fractal Continuum (preview)',preview:true,parameters:{
