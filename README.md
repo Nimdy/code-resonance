@@ -9,8 +9,22 @@ develops as the software does: structure grows, failures bring tension, fixes re
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
 **Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
-player, with its music, in any of the six worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
+player, with its music, in any of the eight worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
 is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
+
+**At a glance**
+
+- **Your agents on stage.** Claude Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok
+  Build and goose join through observe-only hooks, each with its own colour, shape and voice; several sessions at
+  once are numbered. What each tool documents and what its adapter reads: [docs/AGENTS.md](docs/AGENTS.md).
+- **Your language.** TypeScript and JavaScript through the compiler; Python, Go, Rust, Java, Kotlin, C#, Swift, C and
+  C++, PHP and Ruby through dependency-free scanners: classes, functions, routes, imports and test files.
+- **Eight worlds.** Fractal Biosphere, Stellar Forge and Machine Cathedral; the previews Synaptic Storm, Fractal
+  Continuum and Temporal Terrain; the Construct and Monolith.
+- **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
+  music, for Reels, Shorts and TikTok. OBS takes the Stage as a browser source.
+- **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running
+  (Marketplace and Open VSX listing prepared, [not yet published](docs/PUBLISHING.md)).
 
 [![Pulse in Stellar Forge: Claude at work, Cursor editing, two agents meeting in orbit](docs/media/preview-cast.webp)](docs/media/code-resonance-cast.mp4)
 
@@ -33,6 +47,13 @@ The three flagship worlds, finishes, music influence and the Artist Studio, from
 | **Fractal Biosphere.** Each subsystem grows as an organism; milestone blooms stay, and the digital life gathers on the crowns. | **Stellar Forge.** A verified milestone, *integration validated*, leaves a nova's remnant around the subsystem that earned it. | **Machine Cathedral.** Precincts on black water; verified milestones gild the great spire and leave halo rings. |
 | ![Finishes](docs/media/finishes.jpg) | ![Music influence](docs/media/music-influence.jpg) | ![Aurora Loom](docs/media/artist-aurora-loom.jpg) |
 | **Finishes.** Clean, Cinematic (the default for new identities) and Dreamlike: the same moment, the same camera. | **Music influence** 0, 1 and 2: how much the score moves the digital life; the same performance, the same framing. | **Aurora Loom**, a composition built entirely in the Artist Studio's interface, over the artist canvas. |
+
+The three preview worlds (chosen by hand in the Visual Studio; not yet part of automatic choice, no digital life yet):
+
+| | | |
+|---|---|---|
+| ![Synaptic Storm](docs/worlds/synaptic-storm-closeup.jpg) | ![Fractal Continuum on Excalidraw](docs/worlds/fractal-continuum-excalidraw.jpg) | ![Temporal Terrain](docs/worlds/temporal-terrain-hero.jpg) |
+| **Synaptic Storm.** Subsystems are clusters of glass neurons over the real dependencies; a recovery resynchronises them. | **Fractal Continuum.** One raymarched fractal (here Excalidraw's) whose regions swell with their files, each in its own hue. | **Temporal Terrain.** The project's history as a contour landscape: the present at the front edge, the past receding. |
 
 | | |
 |---|---|
