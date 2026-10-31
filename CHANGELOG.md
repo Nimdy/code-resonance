@@ -20,7 +20,7 @@
   hidden behind the relief, and the life's light pools in the relief around its gatherings. Behind the recipe's `life`
   values: the catalogue offers the life group for Fractal Continuum (the Visual Studio and the lab can turn it on with a
   tuning); the generator draws none for it, no recipe or identity changes, and with life off the world renders exactly
-  as before. Measured on the AMD iGPU at 1920×1080: 0.4–0.8 ms of GPU time a frame at quality 0 (two draw
+  as before. Measured on the AMD iGPU at 1920×1080: about 1.2 ms of GPU time a frame at quality 0 (two draw
   calls), about 1.1–1.5 ms of CPU a simulated tick. Grammar `public/worlds/life/fractal.js`; tests `tests/life-fractal*.test.js`; design and
   measurements in [docs/worlds/fractal-continuum.md](docs/worlds/fractal-continuum.md#digital-life).
 

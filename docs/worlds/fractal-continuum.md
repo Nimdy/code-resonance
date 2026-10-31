@@ -325,20 +325,20 @@ carry them). Tested in Node:
 
 Two draw calls (threads and streaks; points) and one texture lookup per shaded pixel. GPU time per frame (the host's
 timer, its moving average after the lab's 4 s of warm-up and 90 frames held at the moment; AMD Radeon iGPU through
-WSL2 D3D12; 1920×1080, quality 0; Lumen's generated identity, a crystal; life off and on alternated, two rounds each,
-load average about 3):
+WSL2 D3D12; 1920×1080, quality 0; Lumen's generated identity, a crystal; life off and on alternated in fresh pages,
+three rounds each, load average about 4.5):
 
-| Moment | Life off | Life on | Difference |
+| Moment | Life off | Life on | Difference of the medians |
 |---|---|---|---|
-| 50 % of the recording | 17.31, 17.87 ms | 17.80, 18.22 ms | +0.4 ms |
-| The end (an event's close-up) | 19.37, 19.42 ms | 20.20, 19.68 ms | +0.5 ms |
-| 90 s after the last event | 17.18, 17.62 ms | 18.18, 18.14 ms | +0.8 ms |
+| 50 % of the recording | 18.06, 18.44, 18.26 ms | 18.80, 19.47, 19.71 ms | +1.2 ms |
+| 90 s after the last event | 18.40, 18.30, 18.77 ms | 19.74, 22.17, 19.04 ms | +1.3 ms |
 
-Not measured cleanly: qualities 1 to 3 and the other identities (the bulbs, Excalidraw). Later attempts, with other
-renders on the same GPU (load average 8 to 16), varied by up to 20 ms between rounds of the same state, so no
-difference could be read from them (their quietest rounds: +0.3 ms at 50 %, +1.4 ms idle). The lab's single readings
-on Excalidraw with life on (39–41 ms) were taken under that load and are not comparable with the 17.6–18.4 ms above
-(see [Performance](#performance)).
+An earlier version of the drawing (smaller points, before the orbits were corrected), two rounds each at load average
+about 3, added 0.4 ms (50 %), 0.5 ms (the end, an event's close-up) and 0.8 ms (idle). Not measured: the lower
+qualities (films always render at quality 0; it would take the live player at a fixed quality) and the other
+identities (the bulbs, Excalidraw): attempts while other agents rendered on the same GPU (load average 8 to 16) varied
+by up to 20 ms between rounds of the same state. The lab's single readings with life on (Excalidraw 39–41 ms, Lumen's
+events 26–46 ms) were taken under that load and are not comparable with [Performance](#performance).
 
 CPU (Node 22 on the recorded performances, continuous play at 30 fps, measured while three other agents worked on the
 same machine, load average about 9): a simulated tick 1.27 ms on average on Lumen (median 1.09, p95 1.87), 1.53 ms on
