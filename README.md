@@ -22,7 +22,8 @@ is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEM
 - **Eight worlds.** Fractal Biosphere, Stellar Forge and Machine Cathedral; the previews Synaptic Storm, Fractal
   Continuum and Temporal Terrain; the Construct and Monolith.
 - **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
-  music, for Reels, Shorts and TikTok. OBS takes the Stage as a browser source.
+  music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
+  OBS takes the Stage as a browser source.
 - **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running
   (Marketplace and Open VSX listing prepared, [not yet published](docs/PUBLISHING.md)).
 
