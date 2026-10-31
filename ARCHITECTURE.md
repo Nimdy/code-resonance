@@ -137,7 +137,7 @@ made with, and older versions stay in the code.
 
 | What | Current | Defined in | Rule |
 |---|---|---|---|
-| Product | 0.7.1 | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes. Last published GitHub Release before 0.7: `v0.6.0` |
+| Product | 0.7.2 | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes. Last published GitHub Release before 0.7: `v0.6.0` |
 | Interpretation | 9 | `engine/reducer.js` `INTERPRETATION_VERSION` | Independent of the product version. A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s; v9 counts only catalogued providers for it and gives its cue weight 0, so it adds no progress (`tests/reducer.test.js` pins that two agents keep one agent's progress and chapter) |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
 | Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |

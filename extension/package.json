@@ -2,7 +2,7 @@
   "name": "code-resonance",
   "displayName": "Code Resonance",
   "description": "Capture software development as a private local audiovisual performance with Code Resonance.",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "publisher": "zerobandwidth",
   "license": "MIT",
   "engines": {

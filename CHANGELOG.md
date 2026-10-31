@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.7.2 — 2026-10-29
+
+Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the
+receiver rebuilds each project's derived files once from its journal (below). This tag is `v0.7.2`. The VS Code
+extension is 0.7.2 (`code-resonance-0.7.2.vsix`); a receiver started before this release has no v2 token proof, so
+restart it after updating. Synaptic Storm and Fractal Continuum are previews, chosen only explicitly in the Visual
+Studio; no existing identity changes.
 
 - **License:** Code Resonance is released under the MIT License ([LICENSE](LICENSE)); it was unlicensed before. The
   included three.js (MIT) and TypeScript (Apache-2.0) keep their own licences
