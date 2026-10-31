@@ -292,7 +292,7 @@ function probe(file){
     const order=[];for(let i=0;i<8;i++){await page.keyboard.press('Tab');order.push(await page.evaluate(()=>document.activeElement.id||document.activeElement.dataset.profile||document.activeElement.textContent.trim().slice(0,24)));}
     check('the record control and the profile are reachable with Tab',order.includes('outRecordBtn')&&order.some(x=>['720p','1080p','vertical','stage'].includes(x)),order.join(' → '));
     // At 1920 × 1080 (the page's design size) nothing overflows and Record stays in the first view, with four profiles.
-    await page.setViewportSize({width:1920,height:1080});await page.waitForTimeout(800);
+    await page.setViewportSize({width:1920,height:1080});await page.evaluate(()=>{document.querySelector('.page').scrollTop=0;});await page.waitForTimeout(800);
     await page.screenshot({path:path.join(OUT,'output-idle-1920.png')});
     const wide=await page.evaluate(()=>{const p=document.querySelector('.ws-output'),b=document.getElementById('outRecordBtn').getBoundingClientRect();return {overflow:p.scrollWidth-p.clientWidth,visible:b.bottom<=innerHeight&&b.top>0,cards:document.querySelectorAll('[data-profile]').length};});
     check('at 1920 × 1080 nothing overflows sideways and Record is visible, with the four profiles',wide.overflow<=1&&wide.visible&&wide.cards===4,JSON.stringify(wide));
