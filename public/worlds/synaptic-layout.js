@@ -140,9 +140,10 @@ export function createLayout(cfg){
     return {list,pos,W};
   }
   // The network at t: clusters (position, radius, neurons), neurons (position, files and their branch slots), the file ->
-  // neuron map, the centre and the radius that frames it.
-  function networkAt(model,t){
-    const {list,pos,W}=clustersAt(model,t),clusters=[],neurons=[],fileNeuron=new Map();
+  // neuron map, the centre and the radius that frames it. `settled`: where the layout of this structure comes to rest,
+  // without the easing from the previous one (the digital life's habitat; the world draws the eased network).
+  function networkAt(model,t,settled=false){
+    const {list,pos,W}=clustersAt(model,t,settled?4:0),clusters=[],neurons=[],fileNeuron=new Map();
     for(const c of list){const p=pos.get(c.id),cl={id:c.id,pos:p,R:c.R,core:c.core,neurons:[]};clusters.push(cl);
       for(const n of c.neurons){const o=neuronOffset(c.id,n.k,cfg),x={id:n.id,cluster:c.id,k:n.k,pos:[p[0]+o[0],p[1]+o[1],p[2]+o[2]],files:n.files,slots:n.slots,live:n.live,index:neurons.length};
         neurons.push(x);cl.neurons.push(x);n.files.forEach((f,i)=>fileNeuron.set(f,{neuron:x,slot:n.slots[i]}));}}
