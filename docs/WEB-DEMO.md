@@ -1,7 +1,6 @@
 # Web demo
 
-**<https://nimdy.github.io/code-resonance/>** (live once GitHub Pages is enabled for the repository: see
-[Going live](#going-live)).
+**<https://nimdy.github.io/code-resonance/>** (deployed from `main`: see [Going live](#going-live)).
 
 A page anyone can open: the real player, in the browser, replaying a real recorded project with its music. Nothing is
 installed and nothing is sent anywhere. It opens on the Performance Stage replaying *Lumen Recipes*, a real
@@ -99,8 +98,10 @@ and `actions/deploy-pages`, on every push to `main` that changes `public/`, `eng
 `scripts/build-site.js`, the recordings or the workflow, and by hand (Actions › pages › Run workflow). It never runs on
 pull requests, and only in `Nimdy/code-resonance` (not in forks).
 
-The one step the owner does, once: **Settings › Pages › Source: GitHub Actions**. Then run the workflow by hand (or
-merge a change it watches); the site appears at <https://nimdy.github.io/code-resonance/>.
+The one step the owner does, once: **Settings › Pages › Source: GitHub Actions**. That was done on 2026-10-31, and the
+site has been live since the merge of #30 (`be1e215`). Checked then in a headless browser: the landing loaded with no
+failed request, no request outside the site and no page error, and after *Start the performance* Stellar Forge drew
+the replay of *Lumen Recipes*.
 
 ## Privacy
 

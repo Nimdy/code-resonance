@@ -9,8 +9,8 @@ develops as the software does: structure grows, failures bring tension, fixes re
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
 **Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
-player, with its music, in any of the eight worlds; nothing to install, nothing sent anywhere. *(Live once GitHub Pages
-is enabled for this repository; how it is built: [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
+player, with its music, in any of the eight worlds; nothing to install, nothing sent anywhere. *(How it is built:
+[docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
 
 **At a glance**
 
@@ -168,7 +168,7 @@ installed extension uses this receiver and never starts or replaces one while it
    `localhost` link printed under *From Windows (WSL)*. A link works once, within 15 minutes, and `npm run pair`
    prints a new one. A browser that is not paired can still watch, play and record, but changes nothing.
 3. **Load the extension in your project's window.** If `npm run up` could not install it, use *Extensions › … › Install
-   from VSIX* there and pick `code-resonance-0.7.2.vsix` from this folder. If **CR** does not appear in the status bar,
+   from VSIX* there and pick `code-resonance-0.8.0.vsix` from this folder. If **CR** does not appear in the status bar,
    run **Developer: Reload Window**.
 4. **Start capture.** Click **CR stopped** in the status bar, choose **Start Code Performance** and accept local
    capture. The workspace must be trusted. Within seconds the project appears by name, with its files, in the
@@ -198,17 +198,17 @@ symptoms and fixes, including what to do when the picture looks grainy.
 ## The VS Code extension
 
 ```bash
-npm run package:vsix          # writes code-resonance-0.7.2.vsix, with Node only (Windows, Linux, macOS)
+npm run package:vsix          # writes code-resonance-0.8.0.vsix, with Node only (Windows, Linux, macOS)
 ```
 
 The VSIX (about 3 MB) holds the extension and the receiver it starts when none answers: the receiver, engine, player,
 Control Center, vendored three.js and TypeScript and the hook adapters, nothing from `tests/` or `qualification/`.
 Publishing it to the Marketplace and Open VSX: [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
-Install the VSIX yourself, with `code --install-extension code-resonance-0.7.2.vsix`
+Install the VSIX yourself, with `code --install-extension code-resonance-0.8.0.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
---install-extension code-resonance-0.7.2.vsix`, then open your project with the same two options.
+--install-extension code-resonance-0.8.0.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
 accept local capture. The status-bar menu also stops capture, opens the Stage or the OBS view, shows the receiver's
@@ -321,7 +321,7 @@ full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.m
 
 ## Versions
 
-0.7.2 is the product version. Interpretation 9 (CAST seats, `agent.collision` between catalogued providers) is independent of it. The last published
+0.8.0 is the product version. Interpretation 10 (adapters for nine more languages, deeper Python) is independent of it. The last published
 GitHub Release before the 0.7 series was 0.6.0 (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (4), digital life's ecology (1 or 2), the
 Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older identities as they were:
 [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).

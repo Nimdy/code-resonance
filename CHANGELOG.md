@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-10-31
 
-Interpretation **10** (9 in 0.7.2: the language adapters and the larger agent catalog): on its first start the receiver
-rebuilds each project's derived files once from its journal. No existing identity changes: recipe traits still count only the v9 language categories, and every JS/TS file
-keeps its v9 structure and test flag. The extension's part (below) reaches VS Code with a rebuilt VSIX.
+Product 0.8.0, for use on your own machine; not stable. This tag is `v0.8.0`. Interpretation **10** (9 in 0.7.2: the
+language adapters and the larger agent catalog): on its first start the receiver rebuilds each project's derived files
+once from its journal. No existing identity changes: recipe traits still count only the v9 language categories, and
+every JS/TS file keeps its v9 structure and test flag. The VS Code extension is 0.8.0 (`code-resonance-0.8.0.vsix`) and
+carries the receiver: installed alone, it starts one when none answers. The web demo is live at
+<https://nimdy.github.io/code-resonance/>. Temporal Terrain joins Synaptic Storm and Fractal Continuum as a preview,
+chosen only explicitly. The extension is not published to the Marketplace or Open VSX yet
+([docs/PUBLISHING.md](docs/PUBLISHING.md)).
 
 - **Record to a file on disk:** Record & Broadcast offers *Record to a file on disk* (recommended for long sessions)
   beside *Keep in memory, download when stopped* (the default, unchanged), a choice kept by this browser. Record opens
@@ -51,10 +56,10 @@ keeps its v9 structure and test flag. The extension's part (below) reaches VS Co
   have not reproduced it.
   The harness now removes the look for Stellar Forge and records Ember Observatory in its own segment.
 
-- **Web demo:** a no-install page for GitHub Pages (<https://nimdy.github.io/code-resonance/>, live once Pages is
-  enabled) that opens on the Performance Stage replaying the public recording *Lumen Recipes* in the real player, with
-  its music after a click, in any of the six world families, the Construct or Monolith, at 1×, 4× or 16×; it also
-  plays on a phone. `npm run site` (`scripts/build-site.js`, Node only) starts a receiver in-process on a temporary
+- **Web demo:** a no-install page on GitHub Pages (<https://nimdy.github.io/code-resonance/>) that opens on the
+  Performance Stage replaying the public recording *Lumen Recipes* in the real player, with its music after a click,
+  in any of the six world families, the Construct or Monolith, at 1×, 4× or 16×; it also plays on a phone.
+  `npm run site` (`scripts/build-site.js`, Node only) starts a receiver in-process on a temporary
   copy of the recording (a free loopback port), exports every read-only answer the Stage needs for a replay to
   `site/api/` with a manifest, and copies the player beside them; the same recording builds the same files byte for
   byte (3.5 MB). The static mode (`public/web-demo/`, included only in the site's page) answers `/api/*` from those

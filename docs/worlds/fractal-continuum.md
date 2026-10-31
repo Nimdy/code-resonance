@@ -10,7 +10,7 @@ the covered region lose coherence; a verified milestone can earn a rare fractal 
 that a project can choose explicitly in the Visual Studio (marked *Preview*) or with the render lab's `--family`. It is
 never chosen automatically, and adding it changed no existing identity (see [Selection and compatibility](#selection-and-compatibility)).
 The owner watched it live and found it read as "gum" (one soft purple, even soft light, shapes rounded by the swell, a
-white sugar of sparkle); the finish described here (0.7.x, *Unreleased*) answers that: each region its own hue on the
+white sugar of sparkle); the finish described here (0.8.0) answers that: each region its own hue on the
 identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
 swell, rare coloured glints. It has not been reviewed artistically since. Everything below marked *prototype* is
 implemented; *planned* is not.
