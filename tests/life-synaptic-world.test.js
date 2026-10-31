@@ -43,6 +43,8 @@ function fingerprint(W,moments){
       for(const [k,a] of Object.entries(G.attributes)){const b=Buffer.from(a.array.buffer,a.array.byteOffset,a.array.byteLength);h2.update(`${k}:${b.toString('base64').length}:${crypto.createHash('sha1').update(b).digest('hex')}`);}}}
   return {objects:objs.length,shader,state:h2.digest('hex').slice(0,16)};
 }
+// (The scene has an agent at work on one file and no agent moving between neurons: agents' travel along the axon
+// pathways and agent.collision changed the world itself, life or not, in 1eaef6f; tests/synaptic-routes.test.js.)
 test('Life off: the world draws exactly what it drew before digital life existed (pinned on 1226b8a)',async()=>{
   const W=await world({model:await smallModel()});
   assert.deepEqual(fingerprint(W,[T0+1000,T0+4000,T0+9000]),{objects:7,shader:'da367f1aa40c4141',state:'055f69ba0740840f'});

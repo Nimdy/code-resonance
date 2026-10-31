@@ -151,7 +151,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function gpuPoll(){while(queries.length&&gl.getQueryParameter(queries[0],gl.QUERY_RESULT_AVAILABLE)){const q=queries.shift(),ns=gl.getQueryParameter(q,gl.QUERY_RESULT);gl.deleteQuery(q);
     if(!gl.getParameter(timer.GPU_DISJOINT_EXT)){const ms=ns/1e6;gpuMs=gpuMs===null?ms:gpuMs+(ms-gpuMs)*.1;}}}
   const contextFor=next=>({THREE,renderer,scene,camera,model,recipe:next,get director(){return director;},get agents(){return agents;},pipeline,film,
-    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id),life:lifeFor(next)});
+    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id),life:lifeFor(next),musicAt:T=>musical.at(T)});
   // A shader pack's slots: shared uniforms (time, beat, energy, palette, camera) plus the pack's own values.
   function extensionFor(next,ctx){
     if(!extension)return null;

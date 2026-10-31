@@ -525,6 +525,14 @@ export function createFamily(ctx){
     neuronList.forEach((n,ni)=>{const h=hash(n.id),pn=RATE*clamp(.95/Math.sqrt(real+4),.02,.14)*(.6+.8*rand(h+5))*(n.ghost?.5:1);
       const [k1,k2]=spontaneous(h,b,k=>pn*(n.ghost?1:1+1.4*actAt(k)),64),jit=k=>(1-SYNC)*rand((h^Math.imul(k|0,0x85ebca6b))>>>0)*beatMs*.5;
       for(const k of [k1,k2])if(k!==null)offer(fires[ni],k*beatMs-jit(k),spontS*(n.ghost?.7:1),C_SPONT,t);});
+    // Music: eighth-note candidates between the beats, gated by the rhythm the arrangement plays in their own bar (read
+    // at the candidate's bar, so a pulse in flight never changes), and a section's onset as a soft synchronous volley
+    // (every neuron of the project within a third of a beat). Only where the host gives the musical clock (ctx.musicAt).
+    if(ctx.musicAt&&i.music){const eMs=beatMs/2,e0=Math.floor(t/eMs),bar=beatMs*4;
+      neuronList.forEach((n,ni)=>{if(n.ghost)return;const pn=RATE*clamp(.95/Math.sqrt(real+4),.02,.14)*(.6+.8*rand(hash(n.id)+5))*.8;
+        const [e1,e2]=spontaneous(hash(`${n.id}/eighth`),e0,e=>e&1?pn*rhythmAt(Math.floor(e*eMs/bar),bar):0,32);
+        for(const e of [e1,e2])if(e!==null)offer(fires[ni],e*eMs,spontS*.75,C_SPONT,t);});
+      const ts=sectionStart(t,bar);if(ts!==null&&t-ts<6000*sp)for(let ni=0;ni<real;ni++)offer(fires[ni],ts+rand(hash(`${neuronList[ni].id}/${ts}`))*beatMs*.3,.6,C_SPONT,t);}
     for(let fi=0;fi<F;fi++){const q=fileFire[fi];if(!q)continue;const {x,travel,ni,tw}=q;
       if(x.t1>-Infinity)offer(fires[ni],x.t1+travel,Math.max(.5,x.s1),x.c1,t);if(x.t2>-Infinity)offer(fires[ni],x.t2+travel,Math.max(.5,x.s2),x.c2,t);
       if(tw>-Infinity)offer(fires[ni],tw+travel*.4,.85,C_VALID,t);}
@@ -561,6 +569,16 @@ export function createFamily(ctx){
     NS.commit();FS.commit();lastStats={fires:fires.filter(x=>x.t1>-Infinity).length};if(LIFE)firesNow=fires;
     return fxn;
   }
+  // The music per bar (ctx.musicAt: the host's musical clock, a pure function of the performance's frames): how much
+  // rhythm the arrangement plays there (the gate of the eighth notes), and which section it belongs to. Cached per bar.
+  const barMusic=new Map();
+  function musicOfBar(k,bar){const key=`${k}|${bar}`;let v=barMusic.get(key);
+    if(!v){const ex=ctx.musicAt(k*bar+bar*.5);v={rhythm:ex?Math.pow(clamp(+ex.rhythm||0),1.5):0,section:ex?ex.section:null};barMusic.set(key,v);if(barMusic.size>512)barMusic.delete(barMusic.keys().next().value);}
+    return v;}
+  const rhythmAt=(k,bar)=>musicOfBar(k,bar).rhythm;
+  // The start of the section in force at t (the first bar of the run of bars with its section), within 64 bars.
+  function sectionStart(t,bar){const b=Math.floor(t/bar),s0=musicOfBar(b,bar).section;if(s0===null||s0===undefined)return null;
+    for(let k=b-1;k>=b-64;k--)if(musicOfBar(k,bar).section!==s0)return (k+1)*bar;return null;}
   const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
   // An axon's synapse in world space, and its curve (the shader's, in JS).
   function endOf(a,out){neuronWorld(a.di,out);const R=somaR[a.di]||1;out[0]+=a.local[0]*R+a.syn[0];out[1]+=a.local[1]*R+a.syn[1];out[2]+=a.local[2]*R+a.syn[2];return out;}
@@ -914,7 +932,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();NS.dispose();FS.dispose();}
   // After a seek: no transient survives (lasting myelin comes back from the director's record).
-  function onPrime(){for(const l of [waves,misfires,resyncs,storms,potentiations,expands,meetings])l.length=0;agentState.clear();mySig='';}
+  function onPrime(){for(const l of [waves,misfires,resyncs,storms,potentiations,expands,meetings])l.length=0;agentState.clear();mySig='';barMusic.clear();}
   // Composition anchors (layers.js): the clusters, the neurons, the work, the network's rim. Read-only.
   const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
   function composeAnchors(i){if(!net)return composeA;composeA.center.set(...net.center);composeA.extent=Math.max(6,net.radius);composeA.boundary.radius=net.radius*1.1;composeA.boundary.y=net.center[1];
