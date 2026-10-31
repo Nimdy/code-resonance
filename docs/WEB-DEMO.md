@@ -98,10 +98,13 @@ and `actions/deploy-pages`, on every push to `main` that changes `public/`, `eng
 `scripts/build-site.js`, the recordings or the workflow, and by hand (Actions › pages › Run workflow). It never runs on
 pull requests, and only in `Nimdy/code-resonance` (not in forks).
 
-The one step the owner does, once: **Settings › Pages › Source: GitHub Actions**. That was done on 2026-10-31, and the
-site has been live since the merge of #30 (`be1e215`). Checked then in a headless browser: the landing loaded with no
-failed request, no request outside the site and no page error, and after *Start the performance* Stellar Forge drew
-the replay of *Lumen Recipes*.
+The one step the owner does, once: **Settings › Pages › Build and deployment › Source: GitHub Actions**, then run the
+workflow once by hand. **Not *Deploy from a branch*:** with a branch as the source, GitHub builds the repository with
+Jekyll on every push to `main` and publishes the README as the site, over the demo. That happened on 2026-10-31: the
+demo was live after #30's merge (checked in a headless browser: no failed request, no request outside the site, no
+page error, and after *Start the performance* Stellar Forge drew the replay of *Lumen Recipes*), and the next merges
+replaced it with the README. `gh api repos/Nimdy/code-resonance/pages` shows which source is set: `build_type` must be
+`workflow`, not `legacy`.
 
 ## Privacy
 
