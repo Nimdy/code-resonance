@@ -85,7 +85,7 @@ const UNITS={
   'big.rb':i=>`class T${i} < Base\n  attr_reader :a\n  def get(x)\n    x > 0 ? x : -x\n  end\nend\n\n`
 };
 const PREAMBLE={'src/main/java/Big.java':['public class Big {\n','}\n'],'Big.cs':['namespace Big {\n','}\n'],'big.php':['<?php\n','']};
-test('Every adapter honours the 160 KB cap and analyses a file just under it quickly',()=>{
+test('Every adapter honours the 160 KB cap and analyses a file just under it quickly',t=>{
   const report=[];
   for(const [file,unit] of Object.entries(UNITS)){
     const [head,tail]=PREAMBLE[file]||['',''];let body='';for(let i=0;Buffer.byteLength(head+body+unit(i)+tail)<158*1024;i++)body+=unit(i);
@@ -97,7 +97,7 @@ test('Every adapter honours the 160 KB cap and analyses a file just under it qui
     assert(ms<2000,report.at(-1));
     assert.equal(analyze(file,source+' '.repeat(4*1024)).lines,0,`${file}: over 160 KB yields nothing`);
   }
-  test.diagnostic?.(report.join('; '));
+  t.diagnostic(report.join('; '));
 });
 test('Every adapter in the registry is reachable and the TypeScript adapter still comes first',()=>{
   assert.equal(ADAPTERS[0].id,'typescript');assert.equal(ADAPTERS.at(-1).id,'manifest');

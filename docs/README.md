@@ -51,7 +51,7 @@ SDK pages. It shows them as text without images, and a link to a document it doe
 
 ## Versions
 
-The product version (0.7.2) is not the version of the interpretation (9), the score, the Visual Recipe
+The product version (0.7.2) is not the version of the interpretation (10), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
 The last published GitHub Release before the 0.7 series is 0.6.0 (`v0.6.0`).

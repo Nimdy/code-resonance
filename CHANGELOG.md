@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+Interpretation **10** (9 in 0.7.2): on its first start the receiver rebuilds each project's derived files once from its
+journal. No existing identity changes: recipe traits still count only the v9 language categories, and every JS/TS file
+keeps its v9 structure and test flag. The extension's part (below) reaches VS Code with a rebuilt VSIX.
+
+- **Languages:** dependency-free adapters for Go, Rust, Java, Kotlin, C#, Swift, C and C++ (headers too), PHP and
+  Ruby, over a shared lexer that blanks strings and comments in place (`engine/languages/scan.js`). Each recognises its
+  types, members, functions and globals, and framework routes with a literal path: net/http (Go 1.22 patterns) and
+  gin/echo/chi/fiber; axum, actix and rocket; Spring, Micronaut, JAX-RS and Ktor; ASP.NET attributes and minimal APIs;
+  Vapor; Crow; Laravel, Slim and Symfony; Rails and Sinatra. A construct a scanner cannot read reliably yields no
+  symbol; each adapter's header says what it leaves out.
+- **Imports between modules:** Go import paths under a go.mod module resolve to a file of the package directory (the one
+  named after it, never a `_test.go`); Rust `mod`/`use` follow the 2018 module rules, and Cargo.toml crate names link a
+  workspace; Java and Kotlin packages resolve by folder (src/main/java beside src/main/kotlin); C# namespaces are
+  candidate folders only; `#include` resolves beside the file and in the enclosing include/ folders; PHP `use` through
+  composer.json PSR-4 prefixes; Ruby `require_relative`; Swift `import` to Sources/<Module>.
+- **Deeper Python:** Protocol and ABC classes are interfaces; TypedDict, `X: TypeAlias`, `type X =` and NewType are
+  types; Django `path()`/`re_path()` (urls.py or urlpatterns), Flask `add_url_rule`, FastAPI `add_api_route` and
+  Starlette `Route()` are routes, and a route decorated inside an app factory is a route. 555 of the 574 files of the
+  Python 3.12 standard library analyse exactly as before; the other 19 differ only by these kinds.
+- **Tests as validation:** each language's convention marks its test files (`_test.go`, Rust `benches/`, `src/*Test/`
+  for Java and Kotlin, `*Tests.cs` and `*.Tests/`, `_spec.rb`, `*Test.php`, Swift `Tests/`, `_test.cc`, `test_*.py`,
+  `*_test.py`, `conftest.py`).
+- **Language mix:** `languageOf` adds java, kt, cs, swift, c, cpp, php and rb; the performance view passes them to packs
+  instead of `other`.
+- **Extension:** `SOURCE_GLOB` covers every analysed file type plus go.mod and Cargo.toml (one flat brace group, as VS
+  Code globs do not nest braces); the command classifier knows the new toolchains' test, build, lint, typecheck,
+  format, install and run commands.
+- **Not verified:** Rust, Kotlin and Swift were checked on fixtures only (no real code in those languages was available);
+  the glob was checked against the glob parser of the installed VS Code server, not in a running VS Code.
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the
