@@ -168,9 +168,10 @@ export function createTerrainGrammar({cfg,capacity=CAPACITY}){
         const cap=CAPP[p]*(E2?GA:1);if(str<.3)feed+=cap;
         let a=S.w[k]*(st?1+2.6*st.novelty+.9*Math.min(2,st.lasting)+1.4*st.nourish:1)*(.6+.6*Math.min(1.5,api.sample(CH.energy,S.x[k],S.z[k])));
         a*=1/(1+(S.visits[k]/cap)**3)*(1-.95*str)*c.attract*P.attraction*(E2?api.shiftOf(k):1);AP[p]=APk[k]=Math.max(0,a);}
-      // How many grazers are awake: as many as the pastures carry (grazer slots come first: the slot is its rank). The
-      // state says who sleeps (ia[i * 2 + 1]: 1 asleep), so the world reads it from the ecosystem alone.
-      AW=Math.round(1.4*feed);const ia=api.ia;for(let i=0;i<api.capacity;i++){if(api.sp[i]!==GRAZER)break;ia[i*2+1]=i>=AW?1:0;}
+      // How many grazers are awake: as many as the pastures of the structure carry (grazer slots come first: the slot is
+      // its rank); a fault or the music never puts them to sleep, only a smaller land does. The state says who sleeps
+      // (ia[i * 2 + 1]: 1 asleep), so the world reads it from the ecosystem alone.
+      AW=AW0;void feed;const ia=api.ia;for(let i=0;i<api.capacity;i++){if(api.sp[i]!==GRAZER)break;ia[i*2+1]=i>=AW?1:0;}
       // Streams: who left each pasture most recently, and for where (the herd leaving after follows). A seeker keeps the
       // pasture it left (ia[i * 2]); its time on the way is its time in the mode.
       streamTo.fill(-1);streamT.fill(1<<30);

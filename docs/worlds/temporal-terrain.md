@@ -12,8 +12,9 @@ with the rest of history; where a ridge grew, its contour lines turn and crowd.
 `terrain-glsl.js`): chosen only explicitly (the Visual Studio, marked *In design*; the render lab's `--family
 temporal-terrain`; the web demo), never by the family scores. Adding it changed no existing identity (see
 [Selection and compatibility](#selection-and-compatibility)). It has **not been reviewed artistically** and has not been
-watched in motion by a person (stills only, see [What is not done](#what-is-not-done)). Everything described here is
-implemented unless marked *planned*.
+watched in motion by a person (stills only, see [What is not done](#what-is-not-done)). It can be inhabited: its
+[digital life](#digital-life) (herds of light on the land of time) is on when the recipe's life values say so, and off
+the world is exactly as it was. Everything described here is implemented unless marked *planned*.
 
 ![Self, halfway through its session](temporal-terrain-hero.jpg)
 
@@ -79,6 +80,7 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
 | `director.lasting()` | **Monuments**: a beacon on the subject's ridge at the milestone's moment (a cairn for a validated refactor), with a pool of warm light | Lasting; they recede with the land; rebuilt after a seek |
 | `director.unlockedAt` | Dawn (the horizon and the key light warm), lanterns (small lights along the ridges in history), stars, aurora | Verified milestones only, in that order |
 | `director.activityAt`, the score (`frame.music`) | The beat shimmer's strength; whether the idle drift runs | |
+| Digital life (`genome.life`, ambient) | Grazers, swifts and gleaners on the land, their light and paths | Simulated inhabitants, never agents, files or events: see [Digital life](#digital-life) |
 
 ## Visual grammar
 
@@ -135,8 +137,8 @@ Pure functions of the recipe, the model and the time (`terrain-layout.js`, no TH
   file, or for 4.5 s after one of its edits lands; otherwise circling over its home range (higher while waiting), or
   over the land. Its trail is where it was, carried back with the land since.
 - **Its touch** (the agent's own tool event, `touch.js`, or an attributed edit landing): the ground rises under it in a
-  dome for about three seconds (the contour lines open into rings around it), rings of its colour spread from it, its
-  beam and pool brighten. An edit's touch brings the camera to a medium close-up unless a failure, a recovery or a
+  dome for about three seconds (the contour lines open into rings around it), two rings of its colour open from it over
+  about two seconds, brightest on the contour lines they cross, its beam and pool brighten. An edit's touch brings the camera to a medium close-up unless a failure, a recovery or a
   milestone-tier event holds it. Reading is quieter (0.45 of an edit).
 
 ## Events, failure, recovery and the earned sunrise
@@ -167,6 +169,93 @@ extends so its contours simply run straight; the key light travels a slow arc (`
 valleys; the contours shimmer on the score's beat grid (on each beat one contour level in four brightens, climbing the
 land beat by beat); motes drift; and the camera drifts between its vantage points (oblique, low along the land, high
 above) every 170 s (`motion.drift`). Nothing grows.
+
+## Digital life
+
+With `life.enabled` in the recipe (a tuning: the Visual Studio's *Digital life* group or the lab's `--tune`; the
+generator does not add life to a preview identity) the land is inhabited. The grammar is
+`public/worlds/life/terrain.js` on the shared simulation (`docs/LIFE.md`: the contract, determinism, checkpoints,
+generations); the world draws it. Off (or absent) the world is exactly as it was: no ecosystem, resource, uniform,
+draw call or shader text (tested).
+
+![Herds grazing after a recovery](temporal-terrain-life.jpg)
+
+*Lumen 25 s after its recovery (life on, ecology 2): herds of warm light graze on the ranges near the present, a soft
+light on the ground and the contour lines under them; the scars of the failure lie behind; flocks of swifts over the
+land at the left, faint amber gleaners in the past at the right.*
+
+| | |
+|---|---|
+| ![A herd, at full resolution](temporal-terrain-life-herds.jpg) | ![A failing run, 5 s on](temporal-terrain-life-fault.jpg) |
+| A detail of the still above at full resolution (1920×1080, uncropped pixels): grazers on the ridges behind the front edge, the contour lines paler where their light falls | A failing run, 5 s on: the herds have left the faulted ranges (red at the front) and shelter on the green range, which is not failing; the swifts scatter |
+
+*Stills: `qualification/visual/lab.js --dataset lumen --family temporal-terrain --gpu amd --events --after 5,25 --tune
+'{"life.enabled":true,"life.ecology":2}'`, AMD Radeon iGPU through WSL2 D3D12, film path, quality 0.*
+
+**The land carries what rests on it.** The ecosystem lives in the land's own frame: x where the layout places ranges
+and files (compressed when the land is wider than the frame), z the depth behind the front edge, y the height above
+the drawn ground. The moment under a point at depth z recedes at L / (τ e^(z/L)) units a second (about 1.4 at the front
+edge, ever slower behind): that is the macro current, and the music never makes it faster (the climate's current is
+taken back out). The fields lie on the land: every tick the trail, energy and disturbance are carried back with it, so
+the paths the herds wear and a fault's disturbance recede into history as the land does. In a replay faster than 1.5×
+the inhabitants live at 1.5× (they could not follow a land rushing back) and the world fades the paths it draws.
+
+**Who lives there** (720 inhabitants at most, `life.density` the share that live):
+
+- **Grazers** (56 %): herds of light on the ground. They graze the pastures of the present, each file's ridge just
+  behind the front edge, chosen by its height and how recently it changed, walking against the flow of time to stay on
+  them. Between pastures they travel in the valleys (downhill across the land's profile) toward the present; a herd
+  leaving a pasture follows whoever left it just before, unless its own choice is far better. Fed, they move on
+  carrying a stronger trail; tired, they lie down and the land carries them back until they recover; old, they let it
+  carry them into the haze, where their lives end; new ones are born at the present. Only as many are awake as the
+  land's pastures carry: on a young land the rest sleep far back, unseen, and wake as it grows.
+- **Swifts** (26 %): murmurations over the present (strong alignment and cohesion), circling over ranges where the land
+  is lit; the land does not carry them.
+- **Gleaners** (18 %): solitary slow lights of the older land. Each walks back to a depth of its own, follows the paths
+  the herds wore as they recede, settles where time runs slow and rides the land back, then wakes and walks forward.
+
+**Habitat** (a pure function of the model and the moment, after each recorded window): a site over each range's crest
+behind the front edge (the target of engineering events: a module's intents reach its range) and a pasture on each
+file's ridge, at most 64 in all (the ranges first, then the strongest pastures; pastures closer than three units across
+the land are one place); data: the land's profile across the frame (the world's own `rowAt` at that moment), the
+frame's compression, each pasture's range and the playback speed. It stands exactly where the world lays out its ranges
+and ridges (tested).
+
+**Events** act only through the driver's influences (`docs/LIFE.md`, *Engineering events*), never by placing an
+inhabitant. A failing run strains its ranges: the herds leave them (a disturbance they flee, emitted for as long as the
+strain lasts, so it lies behind the front edge as a scar receding into the past) and shelter in the valleys of the
+others; a recovery clears it and they come back within about half a minute. A new subsystem, a passing run or a commit
+nourishes its range: grazers are lured off their pastures to it (a new range is worth a longer walk) and the swifts
+circle over it. A verified milestone leaves a lasting attractor. Measured in Node on a four-range land
+(`tests/life-terrain.test.js`): 11 grazers at a struck range during its fault against 55 without it, 68 against 61 half a
+minute after the recovery; 38 at a nourished new range against 17 without.
+
+**The music** (ecology 2) reaches them as conditions, as in the flagships: grazers feel gathering and exploration most,
+swifts the music's cohesion, activity and turbulence (a murmuration tightens and loosens with it), gleaners hardly at
+all; the drawing follows `musicLook` (brightness, size, the paths' length, the light they give the land). Ecology 1 has
+its own slow climate.
+
+**What the world shows.** Grazers as soft warm lights standing on the drawn ground (the land's rows, its relief and
+the agents' domes, as the vertex shader raises them; at their layout place on the meandered ridges), brighter as they
+graze, dim as they rest; swifts as fine cool points with short tapering streaks of their flight, over the present's
+profile; gleaners as faint amber embers. Each grazer and gleaner lights the land around it (a light map drawn each frame
+and read by the land's shader: a faint glow on the ground, more on the contour lines nearby); the herds' worn paths show
+as contour lines brightened where they cross them; a nourished pasture's lines warm. Everything fades into the haze
+with its depth and with the view's `fadeIn` (generation crossfades, restoring). Quality decides the followers drawn on
+each leader's own path (grazers 2, 1, 1, 0; swifts 2, 2, 1, 0) and the streaks' segments (3, 3, 2, 1), never the state
+(tested). The camera does not follow the life.
+
+**Determinism.** As for every grammar (`docs/LIFE.md`, *Contract*): the state at a view time is the same after
+continuous play, seeks back and forth, a restored checkpoint and a fresh session, in ecology 1 and 2 (tested on a land
+laid down window by window with a failure and a recovery); snapshots give back the same future; nothing grows with time
+(fixed arrays, at most 64 sites, bounded fields: a 5-minute run is tested).
+
+**Cost.** Simulated tick: 0.55–0.7 ms in Node on Lumen (720 inhabitants, a 128×64 field), 0.89 ms mean (p95 1.02) in the
+live player while other renders shared the machine. Presentation, headless in Node on Lumen at 90 % (load average
+about 20): world update 1.5 ms with life against 0.4 without at quality 0, 1.0 ms at quality 3; the driver 0.6 ms a
+frame at 30 fps. A far seek to the end of *lumen-long* (13 days, 12 796 windows; generation 1913, 8 200 ticks) takes 6.2
+s in Node, the history pass 87 ms, each habitat on that long history 2.8 ms; seeks to 15 % and 60 %: 1.9 and 3.0 s.
+GPU: see [Performance](#performance).
 
 ## Labels and privacy
 
@@ -223,14 +312,30 @@ loops run only over the active slots.
 
 Films always render at quality 0.
 
+**With digital life** (Lumen, 1920×1080, AMD; three other agents rendered on the same GPU throughout, load average
+5–22, so GPU times moved by up to 14 ms between identical runs). The live player at 1× with Auto, 40 s each
+(`qualification/visual/life-perf.js --families temporal-terrain --tune '{"life.ecology":2}'`):
+
+| | fps mean (p05) | GPU mean (p95) | updateMs | drawMs | quality | heap | geometries / textures |
+|---|---|---|---|---|---|---|---|
+| Life off | 31.9 (28.1) | 21.8 ms (26.3) | 0.40 | 0.73 | 0, no change | 15.2 MB | 9 / 14 |
+| Life on | 29.6 (28.0) | 24.9 ms (26.5) | 1.51 | 0.73 | 0, no change | 19.3 MB | 11 / 16 |
+
+The same moments rendered by the lab off, on, off, on (`--at 0.5,0.75,1 --warm 6`), GPU ms at each: off 20.9 / 17.7 /
+23.6, on 31.5 / 23.8 / 25.0, off 26.9 / 23.0 / 24.8, on 17.1 / 17.5 / 18.9; updateMs 0.31–0.44 off, 2.06–2.49 on (15 fps:
+about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this noise; it was not isolated (see
+[What is not done](#what-is-not-done)). Life adds two draw calls (points, streaks), two texture reads per land fragment
+(the fields, the light map) and uploads a 128×64 RGBA and a 256×128 single-channel texture.
+
 ## Selection and compatibility
 
 - `engine/recipe.js` `PREVIEWS = ['synaptic-storm', 'fractal-continuum', 'temporal-terrain']`: accepted by
   `generate({family})` and the `family` action, never part of `FAMILIES`, so the family scores and their draws are
   unchanged. Its genome comes from `rng('genome', 'temporal-terrain', …)` and its palette from its own stream.
   `RECIPE_VERSION` stays 4: the generator fingerprints of `tests/recipe.test.js` hold unedited.
-- `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, not a base for declarative
-  packs. `/api/catalog` lists it under `previews`.
+- `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones and the flagships' digital-life group
+  (`life.*`), not a base for declarative packs. The generator adds no `life` to a preview identity (`RECIPE_VERSION`
+  stays 4), so a stored or new identity renders as before until life is tuned on. `/api/catalog` lists it under `previews`.
 - `public/worlds/host.js` `BUILTIN` loads it; the host remembers a replay's recorded windows from its last prime and
   hands them to a built-in world that implements `onHistory` (packs never get them). The Visual Studio lists it after the
   other previews with an *In design* pill and a thumbnail; the web demo offers it with the other worlds (eight in all).
@@ -244,8 +349,11 @@ Films always render at quality 0.
   depth 150, in the haze; the camera never travels back along the time axis (*planned*: an idle flight over history).
 - **The commit's survey line** lies right behind the front edge while it flashes: it reads across the ranges there, but
   a single file's stake is small from the default three-quarter view; the lasting dotted lines read better further back.
-- **The touch's rings** are faint next to its glow pool; the medium close-up gives way to failures, recoveries and
-  milestone-tier events (by design), so many edits are seen from afar.
+- **The touch's rings** now last about two seconds and cross the contour lines (checked in stills only, not in motion);
+  the medium close-up still gives way to failures, recoveries and milestone-tier events (by design), so many edits are
+  seen from afar.
+
+  ![An edit's rings, 1.4 s on](temporal-terrain-touch-rings.jpg)
 - **Roads** are arcs over the front edge, not paths in the land; in a dense project (Excalidraw: 32 roads) they read as a
   web. Intra-subsystem dependencies are not drawn.
 - **A ridge's birth slope** shifts by up to about two units when its row passes from one level of the pyramid to the next
@@ -254,7 +362,15 @@ Films always render at quality 0.
   and the shader compile path were exercised: nothing was rendered on the NVIDIA adapter, in OBS, on SwiftShader at
   1920×1080, or over a long soak. The web demo and Visual Studio UI suites (`qualification/site/web-demo.qual.js`,
   `qualification/ui/workspaces/visual.qual.js`) were updated for the sixth world but not run.
-- **Digital life**: none yet (no ecosystem grammar for the land); the preview offers no life parameters.
+- **Digital life**, built and tested in Node, seen in stills only: nobody has watched it move (the herds' walk against
+  the flow of time, the murmurations, the gleaners' slow rides were judged from single frames and contact sheets too
+  small to read). Its GPU cost was not isolated from the other renders on the shared GPU. At the widest framing (the
+  idle vantage points) a grazer is a few pixels, and on Excalidraw's dense massif the herds have little contrast. The
+  land's profile the herds steer by is the present's (deeper, where the land was narrower, they do not know its old
+  valleys); the paths show only through the contour lines (the fields are 2 units a cell). In replays faster than 1.5×
+  the life lags the land (its paths fade). Not run: the qualification's browser suites for life
+  (`qualification/visual/life.qual.js`), a film, a live session, the soak. The generator does not add life to the
+  preview: another track owns generator v5.
 - **Generator inclusion and graduation**: as for the other previews, a new generator version would be needed to let the
   family scores choose it, and its parameters would freeze into the catalogue with curated looks and the Artist Studio.
 </content>

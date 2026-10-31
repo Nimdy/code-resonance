@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Temporal Terrain can be inhabited:** digital life for the preview (`public/worlds/life/terrain.js`), on when the
+  recipe's life values say so (the catalogue now offers the flagships' `life.*` group on Temporal Terrain's entry only,
+  so the Visual Studio or a tuning turns it on; the generator adds none, and off the world is exactly as it was).
+  Grazers graze the pastures of the present (each file's ridge behind the front edge) against the flow of time, travel
+  in the valleys, lie down and are carried back by the land when tired, and drift into the haze when old; a fault
+  scatters them to shelter in other ranges until it heals. Swifts flock over the present; gleaners follow the herds'
+  paths as they recede through the older land. The land's rate is the macro current, and the trail, energy and
+  disturbance fields ride the land back. The world draws them on the drawn ground, with their light on the contour lines
+  around them and their paths through the lines. Determinism, behaviour and the world's life-off guarantee are tested
+  (`tests/life-terrain*.test.js`); seen in stills only, not yet in motion (`docs/worlds/temporal-terrain.md`).
+- **Temporal Terrain's touch:** an agent's edit opens two rings that last about two seconds and cross the contour lines
+  (they read faint next to its pool of light).
+
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
   receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the

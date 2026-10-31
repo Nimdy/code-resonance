@@ -406,8 +406,9 @@ export function createFamily(ctx){
       const K=eco.K,head=eco.trailHead;lmBuf.fill(0);
       for(let e=0;e<eco.capacity;e++){
         const vis0=lifeVisibility(eco,e,v);if(vis0<=.003)continue;const s=eco.sp[e];
-        if(s===GRAZER){if(eco.ia[e*2+1]===1){asleep++;continue;}awake++;}
-        lifePosition(eco,e,alpha,P3);const z=P3[2],vis=vis0*haze(z)*inten;if(vis<=.003)continue;
+        // (a grazer falling asleep fades over 4 s as it lies down; asleep, it is not drawn)
+        let doze=1;if(s===GRAZER){if(eco.ia[e*2+1]===1){doze=eco.mode[e]===4?1-Math.min(1,eco.modeT[e]/80):0;asleep++;if(doze<=0)continue;}else awake++;}
+        lifePosition(eco,e,alpha,P3);const z=P3[2],vis=vis0*haze(z)*inten*doze;if(vis<=.003)continue;
         const xl=P3[0]/kx,xd=landX(P3[0],Math.max(0,z)),m=eco.mode[e];drawn++;
         if(s===SWIFT){
           const y=ceiling(P3[0])+2+P3[1],b=vis*MB;pt(xd,y,-z,COL[1],b,4.5,8,.4*MS);
