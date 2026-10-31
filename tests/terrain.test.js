@@ -53,6 +53,7 @@ test('Its catalogue covers every value its generator draws; the palette keeps a 
   const spacing=[];
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11,ui:seed%4,groups:1+seed%9}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
+    // (the digital-life group too: generator 5 draws life for a new identity)
     for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);
@@ -62,7 +63,11 @@ test('Its catalogue covers every value its generator draws; the palette keeps a 
   // the files' spacing follows the project's size at generation: a large project's files stand closer
   const at=n=>spacing.filter(([m])=>Math.abs(m-n)<10).map(x=>x[1]);assert(Math.max(...at(450))<Math.min(...at(30)));
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the flagships' digital-life group: generator 5 draws it for a new identity, and a tuning turns it off or on
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());assert.equal(r.genome.life.enabled,true,'a new identity lives');
+  const quiet=recipe.update(r,{type:'tune',values:{'life.enabled':false}},project('tune'),0);assert.equal(quiet.genome.life.enabled,false);
+  assert.deepEqual(recipe.update(quiet,{type:'tune-reset'},project('tune'),0).genome.life,r.genome.life,'reset gives its own life back');
   const tuned=recipe.update(r,{type:'tune',values:{'camera.personality':'map','contour.interval':1.2}},project('tune'),0);
   assert.deepEqual([tuned.genome.camera.personality,tuned.genome.contour.interval],['map',1.2]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'contour.index':9}},project('tune'),0),/index/);

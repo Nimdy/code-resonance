@@ -108,8 +108,8 @@ const LIFE={
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
 // The families that graduated with generator 5 (previews until then): built in like the three, scored for the automatic
 // choice, and from now on a base for declarative and shader packs, so their parameters are frozen like every other
-// family's (added, never removed or narrowed). Their catalogues list no digital life yet: each gets the standard life.*
-// group when its world's ecosystem lands.
+// family's (added, never removed or narrowed). Each lists the standard life.* group once its world draws an ecosystem
+// (WITH_LIFE below; the grammars are public/worlds/life/<world>.js).
 const GRADUATED={
   'synaptic-storm':{name:'Synaptic Storm',parameters:{
     'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
@@ -161,6 +161,8 @@ const GRADUATED={
     effects:['range','peak','uplift','erode','road','fault','scan','heal','terrace','sunrise','survey','horizon'],
     unlocks:['dawn','lanterns','stars','aurora']}
 };
+const WITH_LIFE=['temporal-terrain'];
+for(const id of WITH_LIFE)GRADUATED[id].parameters={...GRADUATED[id].parameters,...LIFE};
 for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON};
 Object.assign(FAMILIES,GRADUATED);
 // Preview families: built in but still being designed, chosen only explicitly (the Visual Studio, the render lab's

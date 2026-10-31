@@ -145,6 +145,9 @@ export function rowAt(P,g,D,cfg,X,out,colorOf,plain=[.2,.3,.4]){
   for(let j=0;j<W;j++){const o=(W+j)*4,k=1/wt[j];out[o]*=k;out[o+1]*=k;out[o+2]*=k;}
   return out;
 }
+// Cubic B-spline weights at u into out (4).
+const WR=new Float64Array(4),WL=new Float64Array(4);
+function bsW(u,o){const v=1-u;o[0]=v*v*v/6;o[1]=(3*u*u*u-6*u*u+4)/6;o[2]=(-3*u*u*u+3*u*u+3*u+1)/6;o[3]=u*u*u/6;}
 // ---- The land over time: the rows of the present pyramid, kept while their moment stays in their level --------------
 export function createLand(cfg,{colorOf,plain}){
   const W=LANES,STRIDE=W*8,data=new Float32Array(STRIDE*ROWS),slotM=new Float64Array(ROWS).fill(NaN),slotKey=new Array(ROWS).fill('');
@@ -176,6 +179,14 @@ export function createLand(cfg,{colorOf,plain}){
       if(key!==present||upper(E,t)!==upper(E,t-EASE)){rowAt(P,t,EASE,cfg,X,data.subarray(0,STRIDE),colorOf,plain);computed++;present=key;changed=true;}
       return changed;
     },
+    // The elevation and the fine relief's amplitude (channels 0 and 1) at x and moment tp into out, in one pass: the
+    // same B-spline as sample (things standing on the land; no allocation).
+    height(x,tp,t,epoch,out){
+      const nu=ordinalOf(tp,t,epoch,lattice),i=Math.floor(nu),f=nu-i,lam=(x-X.Xc+X.Xh)/(2*X.Xh)*W-.5,j=Math.floor(lam),h=lam-j;
+      bsW(f,WR);bsW(h,WL);let e=0,r=0;
+      for(let a=0;a<4;a++){const row=ordinalRow(clamp(i-1+a,0,ROWS-1),lattice)*STRIDE;for(let b=0;b<4;b++){const o=row+clamp(j-1+b,0,W-1)*4,w=WR[a]*WL[b];e+=w*data[o];r+=w*data[o+1];}}
+      out[0]=e;out[1]=r;return out;
+    },
     // A cubic B-spline sample of channel c (0-3 A, 4-7 B) at x and moment tp, as the shader samples it.
     sample(x,tp,t,epoch,c=0){
       const nu=ordinalOf(tp,t,epoch,lattice),i=Math.floor(nu),f=nu-i,lam=(x-X.Xc+X.Xh)/(2*X.Xh)*W-.5,j=Math.floor(lam),h=lam-j;
@@ -202,6 +213,10 @@ export function reliefAt(x,z,rug=0,fine=0,warp=0){
     const f2=vnd(x/2.6+9.7,z/2.2+9.7),r2=1-Math.abs(f2[0])*2,s2=f2[0]>0?-2:2,a2=rug*.17*fine;h+=r2*a2;dx+=a2*s2*f2[1]/2.6;dz+=a2*s2*f2[2]/2.2;}
   return [h,dx,dz,w];
 }
+// The meander alone (reliefAt's fourth value) and the height alone with no fine octave (reliefAt's first with fine = 0):
+// one noise lookup each, for what is placed on the land many times a frame (digital life).
+export function meanderAt(x,z,warp){return vnd(x/47+5.3,z/38+1.7)[0]*warp;}
+export function reliefHeight(x,z,rug=0){const g=vnd(x/13,z/11),rg=1-Math.abs(g[0])*2,ra=.12+1.1*rug;return g[0]*.16+rg*ra*.55;}
 // ---- The recorded history -------------------------------------------------------------------------------------------
 // A cue into the history model; a commit's files are also kept in its commit log (the land's survey lines and stakes:
 // the model itself marks only files that were drafts).

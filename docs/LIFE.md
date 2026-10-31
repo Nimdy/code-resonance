@@ -1,7 +1,7 @@
 # Digital life
 
-The three flagship worlds can be inhabited: autonomous populations that sense, move, gather, leave traces and react
-to the world and to each other. This document is the contract: what the system is, what is deterministic and how
+The three flagship worlds can be inhabited, and so can the preview Temporal Terrain: autonomous populations that sense,
+move, gather, leave traces and react to the world and to each other. This document is the contract: what the system is, what is deterministic and how
 exactly, what changes for existing identities, and what it costs.
 
 ## The loop
@@ -48,13 +48,14 @@ live a seeded lifetime, fade out, and their slot is reused by a new generation a
 with time: no per-event spawning, fixed arrays, fixed trail length, a bounded number of sites (64) whose conditions are
 forgotten when the site disappears.
 
-## The three ecologies
+## The ecologies
 
 | World | Inhabitants | What they do | What the world shows of them |
 |---|---|---|---|
 | Fractal Biosphere (`life/biosphere.js`) | pollinators, spores, plankton colonies, drifters (about 1000) | Pollinators choose an organism's crown heads by appeal (visitors, trail, the organism's prominence, lasting milestones; winner-take-more), crowd above a threshold that scales with the crown, drain its nectar and leave in small streams for the next crown. Plankton colonies gather and move on between crowns; spores ride the gyre and settle in calm water; drifters wake where the water is disturbed. A failure opens a void around the strained organism and scatters life; a recovery lets it return. | Visited crowns and buds light up locally (the organisms' own photophores); explorers are dim and tail-less, gatherings are the brightest. |
 | Stellar Forge (`life/stellar.js`) | dust, accretion fragments, charged motes, stellar wind (about 1100) | Matter moves with the galaxy's differential rotation, density waves and eddies; systems capture fragments on eccentric bands; a failure's onset blows a system's halo out and its wind thickens, a recovery draws the matter back; a new system pulls harder for a while; verified milestones are lasting attractors. | Soft tapered ribbons and uneven beaded clumps; the gas map brightens along the streams matter keeps using (a matter map rebuilt from the state each tick). The galaxy stays the protagonist. |
 | Machine Cathedral (`life/cathedral.js`) | couriers, wardens, sparks | Routed on the city's own network (kerbs, docks, shafts on each tower's stone, galleries, spokes, channels, canal corridors, cables), never through stone. Traffic on a route deters the next traveller (congestion) or draws it (trail); shaft gates release climbers in convoys, kerb junctions admit platoons on the precinct's beat. A failure withdraws the wardens from the struck precinct; after a recovery they gather at the hub's foot and climb together. | Lanterns with their own halo shader; copings, channels and cables lit by recent traffic. |
+| Temporal Terrain, preview (`life/terrain.js`) | grazers, swifts, gleaners (720) | The land flows back with time (its rate is the macro current, and the trail, energy and disturbance fields ride the land back, so the herds' paths and a fault's disturbance recede into history). Grazers graze the pastures of the present (each file's ridge behind the front edge, by its height and how recently it changed) against that flow, travel in the valleys, follow the herd that left before them, are lured by a new or nourished range, lie down and are carried back when tired, and drift into the haze when old. A fault scatters them from the struck range to shelter in the others' valleys (the disturbance it keeps emitting recedes as a scar); a recovery brings them back. Swifts flock over the present and over lit ranges; gleaners follow the herds' receding paths through the older land and settle where time runs slow. | Soft warm lights on the drawn ground (grazing ones brighter), their light on the ground and on the contour lines around them, their paths as contour lines brightened where they cross them; fine cool swifts with short streaks; faint amber gleaners. |
 
 ## Ecology v2
 

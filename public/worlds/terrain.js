@@ -27,10 +27,13 @@
 // Every image is a function of the model (in a replay its whole recorded history, rebuilt after a seek: onHistory),
 // the recipe, the director's fold and the performance clock.
 import {THREE,clamp,lerp,smooth,hash,rand} from './core.js';
-import {LANES,LEVELS,ROWS,EASE,MAX_AGE,layoutConfig,depthOf,ageOf,levelBin,createLand,historyFrom,recordCue,rangesAt,reliefAt} from './terrain-layout.js';
+import {LANES,LEVELS,ROWS,EASE,MAX_AGE,layoutConfig,depthOf,ageOf,levelBin,createLand,historyFrom,recordCue,rangesAt,reliefAt,meanderAt,reliefHeight} from './terrain-layout.js';
 import {LAND_VS,LAND_FS,SKY_FS} from './terrain-glsl.js';
 import {touchesAt,touchGain} from './touch.js';
 import {presence} from '../providers.js';
+import {createTerrainGrammar,kxOf,GRAZER,SWIFT,GLEANER,RN as LIFE_RN,Z0 as LIFE_Z0,Z1 as LIFE_Z1,SPEED_MAX} from './life/terrain.js';
+import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {u01} from './life/sim.js';
 const TAU=Math.PI*2,SUNRISE_GAP=240000,DWELL=4500,MAX_FX=4000,MAX_RIB=3000,MAX_ROADS=32,ROAD_SEG=28,MOTES=420,BASE=7;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers).
 const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
@@ -41,6 +44,23 @@ export const QUALITY=[{nx:400,nz:230,oct:1,motes:1},{nx:330,nz:190,oct:1,motes:1
 // The harmony's shares of its span: range k takes the hue at SEQ[k] of the span around the first hue.
 const SEQ=[0,1,-1,.5,-.5,.75,-.75,.25,-.25,.9,-.9];
 const SPAN={analogous:28,complementary:48,split:64,triad:80};
+// The land's shaders with digital life (only when it is on): the vertex passes the layout x it read the land at (the
+// ecosystem's frame), the fragments read the ecosystem's fields there (life/present.js fieldTexture: r trail, g energy,
+// b disturbance, a density) and the world's light map (its own inhabitants' light, drawn each frame) and draw what the
+// life gives the land: the paths the herds wore, receding with the land, as contour lines brighter where they cross
+// them; the light of the inhabitants on the ground under them and on the contour lines around them; a nourished
+// pasture's warmth on its lines.
+// uLifeX: the frame's compression, the population's visibility (crossfades, restoring), the paths' strength (the
+// music's trail factor, fading in replays faster than the life can follow), the herds' light (the music's life factor).
+function withLife(src,kind){
+  const vary=src.replace('varying float vCrest,','varying float vLx,vCrest,');
+  if(kind==='vs')return vary.replace('vFx=fxc;','vFx=fxc;vLx=xs;');
+  return vary.replace('uniform vec3 uRock,uWarn,uValid,uHi,uSkyC;','uniform vec3 uRock,uWarn,uValid,uHi,uSkyC;uniform sampler2D uLifeF,uLifeL;uniform vec4 uLifeX;uniform vec3 uLifeC,uLifeD;')
+    .replace('col=mix(col,vFogC*1.6+uHaze*1.2+uKeyC*.008,vMist);',`{vec2 lu=vec2((vLx*uLifeX.x+${LIFE_RN.toFixed(1)})/${(2*LIFE_RN).toFixed(1)},(depth-(${LIFE_Z0.toFixed(1)}))/${(LIFE_Z1-LIFE_Z0).toFixed(1)});
+    if(uLifeX.y>0.&&lu.x>0.&&lu.x<1.&&lu.y>0.&&lu.y<1.){vec4 L=texture2D(uLifeF,lu);float tr=smoothstep(.12,.8,L.r)*uLifeX.z,hl=texture2D(uLifeL,lu).r,en=smoothstep(.08,.9,L.g);
+      col+=(uLifeC*tr*(.012+on*.45)+uLifeD*hl*(.13+on*1.5)*uLifeX.w+uAcc*en*on*.22)*uLifeX.y;}}
+  col=mix(col,vFogC*1.6+uHaze*1.2+uKeyC*.008,vMist);`);
+}
 export function createFamily(ctx){
   const {scene,camera,model,recipe}=ctx;const G=recipe.genome||{},P0=G.palette||{};
   const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
@@ -78,7 +98,11 @@ export function createFamily(ctx){
     uDeep:{value:V3(pal.deep)},uHaze:{value:V3(pal.haze)},uDawn:{value:0},uSun:{value:0},uSunX:{value:0},
     uMist:{value:clamp(num(atm.mist,.8),0,1.6)},uHazeK:{value:clamp(num(atm.haze,.8),0,1.5)},uBeat:{value:0},uBeatL:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.5)},uLant:{value:0},uStress:{value:0},
     uFx:{value:arr(8,v4)},uFxB:{value:arr(8,v4)},uFxC:{value:arr(8,v4)},uTch:{value:arr(4,v4)},uTchC:{value:arr(4,v4)},uAg:{value:arr(6,v4)},uAgC:{value:arr(6,v4)},uCm:{value:arr(16,v4)},uMn:{value:arr(8,v4)}};
-  const landMat=keep(new THREE.ShaderMaterial({uniforms:U,vertexShader:LAND_VS,fragmentShader:LAND_FS}));
+  // Digital life (life/terrain.js): only when the recipe has it on. Off, nothing below differs from the world without it
+  // (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
+  if(LIFE)Object.assign(U,{uLifeF:{value:null},uLifeL:{value:null},uLifeX:{value:new THREE.Vector4(1,0,0,1)},uLifeC:{value:V3(pal.highlight.clone().lerp(pal.accent,.45),1)},uLifeD:{value:V3(pal.highlight.clone().lerp(pal.accent,.3),1)}});
+  const landMat=keep(new THREE.ShaderMaterial({uniforms:U,vertexShader:LIFE?withLife(LAND_VS,'vs'):LAND_VS,fragmentShader:LIFE?withLife(LAND_FS,'fs'):LAND_FS}));
   // ---- The land's grid: denser near the front edge; the cut through the present first (it is nearest) -------------------
   const grids=new Map();
   function gridOf(q){let g=grids.get(q);if(g)return g;const {nx,nz}=QUALITY[q],pos=new Float32Array((nx*nz+nx*2)*3),idx=[];let v=0;
@@ -327,6 +351,89 @@ export function createFamily(ctx){
       point([x,y+4,-d],pal.highlight,(.2+.2*Math.sin(tv*.7+ph*3))*.45,1.5+1.5*r3,8);}
     lastStats={validated,stressed,roads:nr,commits:cms.length,monuments:mns.length};
   }
+  // ---- Digital life: living light on the land of time (life/terrain.js; only when the recipe has it on) --------------
+  // The ecosystem lives in the land's layout frame: each inhabitant is drawn at its layout x on the drawn (meandered)
+  // land at its depth, standing on the drawn ground (grazers and gleaners: the land's rows, its relief and the agents'
+  // domes, as the vertex shader raises them) or flying over the present's profile (swifts). The fields come into the
+  // land's shader (withLife). Three kinds of light, small beside the settlements: grazers pale and warm, brighter as
+  // they graze, dim as they rest and the land carries them back; swifts fine cool points with short streaks of their
+  // flight; gleaners faint amber embers in the past. Everything the ecosystem draws fades into the haze with its depth
+  // and is scaled by the view's fadeIn (generation crossfades, restoring). Presentation only reads the ecosystem:
+  // quality decides how many followers (bodies on the leader's own path) and streak segments are drawn, never what
+  // lives. Two draw calls (points, streaks) with the world's own light materials.
+  const lifePart=LIFE?(()=>{
+    LIFE.create(createTerrainGrammar({cfg}));
+    const FOLLOW=[[2,2,0],[1,2,0],[1,1,0],[0,0,0]],STREAK=[3,3,2,1],H2=[0,0],P3=[0,0,0],P4=[0,0,0],Q=[0,0,0];
+    const COL=[V3(pal.highlight.clone().lerp(pal.accent,.35),1),V3(pal.highlight.clone().lerp(pal.primary,.3),1),V3(pal.accent.clone().lerp(pal.warning,.12),1)];
+    const GRAZE=V3(pal.highlight.clone().lerp(pal.accent,.6),1.15);
+    const lp=pointBuffersOf({fC:4,fS:3},2048),lr=instancedBuffersOf(quad,{rA:4,rB:4,rC:4,rD:4});
+    add(new THREE.Points(lp.geometry,fxMat),5);add(new THREE.Mesh(lr.geometry,ribMat),4);
+    let ftex=null,texEco=null,texTick=-1,profRef=null,profMax=null,nP=0,nR=0;
+    // The inhabitants' light on the land: each awake grazer and gleaner a soft pool in a map over the frame, at its
+    // interpolated place, drawn into the land by its shader (uLifeL). Presentation only, rebuilt every frame.
+    const LMX=256,LMZ=128,lmBuf=new Float32Array(LMX*LMZ),lmPx=new Uint8Array(LMX*LMZ),KR=2,KW=[];
+    for(let dz=-KR;dz<=KR;dz++)for(let dx=-KR;dx<=KR;dx++)KW.push(Math.exp(-(dx*dx+dz*dz)/2.2));
+    const lmTex=new THREE.DataTexture(lmPx,LMX,LMZ,THREE.RedFormat,THREE.UnsignedByteType);lmTex.magFilter=lmTex.minFilter=THREE.LinearFilter;lmTex.needsUpdate=true;U.uLifeL.value=lmTex;
+    function glowAt(x,z,a){const i0=Math.round((x+LIFE_RN)/(2*LIFE_RN)*LMX-.5),j0=Math.round((z-LIFE_Z0)/(LIFE_Z1-LIFE_Z0)*LMZ-.5);if(i0<-KR||j0<-KR||i0>=LMX+KR||j0>=LMZ+KR)return;
+      let k=0;for(let dz=-KR;dz<=KR;dz++){const j=j0+dz;for(let dx=-KR;dx<=KR;dx++,k++){const i=i0+dx;if(i>=0&&j>=0&&i<LMX&&j<LMZ)lmBuf[j*LMX+i]+=a*KW[k];}}}
+    const statsNow={drawn:0,followers:0,trailSegments:0,drawCalls:2,awake:0,asleep:0,grazing:0};
+    function pt(x,y,z,c,a,px,shape,world){if(nP>=lp.capacity)lp.ensure(nP+1);const P=lp.arrays.position,C=lp.arrays.fC,S=lp.arrays.fS,o=nP*3,o4=nP*4;
+      P[o]=x;P[o+1]=y;P[o+2]=z;C[o4]=c.x;C[o4+1]=c.y;C[o4+2]=c.z;C[o4+3]=a;S[o]=px;S[o+1]=shape;S[o+2]=world;nP++;}
+    function seg(a,b,w,c,alpha,aa,ab){if(nR>=lr.capacity)lr.ensure(nR+1);const A=lr.arrays.rA,B=lr.arrays.rB,C=lr.arrays.rC,D=lr.arrays.rD,o=nR*4;
+      A[o]=a[0];A[o+1]=a[1];A[o+2]=a[2];A[o+3]=w;B[o]=b[0];B[o+1]=b[1];B[o+2]=b[2];B[o+3]=w*.6;C[o]=c.x;C[o+1]=c.y;C[o+2]=c.z;C[o+3]=alpha;D[o]=aa;D[o+1]=ab;D[o+2]=0;D[o+3]=0;nR++;}
+    // The present's profile across the frame, as a ceiling to fly over: the highest ground within a few lanes (swifts).
+    function ceilingOf(prof){const n=prof.length,out=new Float32Array(n);for(let j=0;j<n;j++){let m=0;for(let d=-5;d<=5;d++){const v=prof[Math.max(0,Math.min(n-1,j+d))];if(v>m)m=v;}out[j]=m;}return out;}
+    const ceiling=(x)=>{if(!profMax)return 0;const n=profMax.length,u=(x+LIFE_RN)/(2*LIFE_RN)*n-.5,j=Math.max(0,Math.min(n-2,Math.floor(u))),f=clamp(u-j);return profMax[j]+(profMax[j+1]-profMax[j])*f;};
+    // Where an ecosystem point is drawn: its layout x on the drawn land at depth z (the meander's inverse, as drawnX),
+    // and the drawn ground there (rows, relief, the agents' domes).
+    let kx=1,warp=1,tNow=0,e0=0;
+    function landX(xe,z){const xl=xe/kx;let x=xl;for(let k=0;k<2;k++)x=xl-meanderAt(x,z,warp);return x;}
+    function ground(xl,xd,z){const zc=Math.max(0,z),tp=tNow-ageOf(zc,cfg);land.height(xl,tp,tNow,e0,H2);let h=H2[0]+reliefHeight(xd,zc,clamp(H2[1],0,2));
+      for(let k=0;k<U.uNTch.value;k++){const T=U.uTch.value[k];if(!(T.w>0))continue;const dk=cfg.L*Math.log1p(Math.max(U.uNow.value-T.y,0)/(cfg.tau/1000)),rx=xd-T.x,rz=zc-dk;h+=T.w*Math.exp(-(rx*rx+rz*rz)/(T.z*T.z));}
+      return h;}
+    const hide=()=>{lp.commit(0);lr.commit(0);if(U.uLifeX)U.uLifeX.value.y=0;Object.assign(statsNow,{drawn:0,followers:0,trailSegments:0,awake:0,asleep:0,grazing:0});};
+    function update(i){
+      const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
+      if(texEco!==eco){ftex?.dispose();ftex=lifeFieldTexture(THREE,eco,{scale:[2.4,3,3,5]});texEco=eco;texTick=-1;U.uLifeF.value=ftex.texture;}
+      if(texTick!==eco.tick){ftex.update();texTick=eco.tick;}
+      const data=eco.siteData;if(data?.prof!==profRef){profRef=data?.prof||null;profMax=profRef?ceilingOf(profRef):null;}
+      const sp=ctx.speed(),M=musicLook(eco,v),q=clamp(Math.round(i.quality||0),0,3),alpha=v.alpha,tv=i.tview,inten=clamp(i.overrides.intensity??1,.4,1.3);
+      kx=kxOf(present.left,present.right);warp=U.uWarp.value;tNow=i.t;e0=ep();
+      // (the paths fade in replays faster than the life can follow the land: they would slide over its contours)
+      U.uLifeX.value.set(kx,v.fadeIn,Math.min(1,(SPEED_MAX/Math.max(sp,1e-3))**2)*Math.min(1.8,M.trail),M.life);
+      const hazeK=Math.max(U.uHazeK.value,.2),haze=z=>(1-clamp(1-Math.exp(-Math.pow(Math.max(0,z)/(Zmax*.6/hazeK),1.8))))*Math.exp(-Math.max(0,z-45)/55);
+      const MB=M.bright,MS=M.size,F=FOLLOW[q];nP=0;nR=0;let drawn=0,fol=0,awake=0,asleep=0,grazing=0;
+      const K=eco.K,head=eco.trailHead;lmBuf.fill(0);
+      for(let e=0;e<eco.capacity;e++){
+        const vis0=lifeVisibility(eco,e,v);if(vis0<=.003)continue;const s=eco.sp[e];
+        // (a grazer falling asleep fades over 4 s as it lies down; asleep, it is not drawn)
+        let doze=1;if(s===GRAZER){if(eco.ia[e*2+1]===1){doze=eco.mode[e]===4?1-Math.min(1,eco.modeT[e]/80):0;asleep++;if(doze<=0)continue;}else awake++;}
+        lifePosition(eco,e,alpha,P3);const z=P3[2],vis=vis0*haze(z)*inten*doze;if(vis<=.003)continue;
+        const xl=P3[0]/kx,xd=landX(P3[0],Math.max(0,z)),m=eco.mode[e];drawn++;
+        if(s===SWIFT){
+          const y=ceiling(P3[0])+2+P3[1],b=vis*MB;pt(xd,y,-z,COL[1],b,4.5,8,.4*MS);
+          // a short streak of its flight (its recorded path, newest first), tapering
+          const n=STREAK[q];let a=[xd,y,-z],ab=b;for(let k=1;k<=n;k++){const o=e*K+((head-k+1+K*4)%K),x2=eco.tx[o],z2=eco.tz[o],yb=ceiling(x2)+2+eco.ty[o];
+            const bb=[landX(x2,Math.max(0,z2)),yb,-z2],f=1-k/(n+1);seg(a,bb,.07,COL[1],1,ab*.55,b*f*f*.55);a=bb;ab=b*f*f;}
+          for(let f=0;f<F[1];f++){if(!lifeFollower(eco,e,f,F[1],alpha,tv,P4,{spread:.9,lag:.9}))break;pt(landX(P4[0],Math.max(0,P4[2])),ceiling(P4[0])+2+P4[1],-P4[2],COL[1],b*.6,3.5,8,.32*MS);fol++;}
+          continue;}
+        const g=ground(xl,xd,z);
+        if(s===GRAZER){
+          const old=eco.age[e]>eco.life[e]*.8,orbit=m===2,rest=m===4,carry=eco.carry[e]>0;if(orbit)grazing++;
+          const en=Math.min(1,eco.en[e]),b=vis*MB*(orbit?1.5+.6*en:carry?1.4:rest||old?.55:1.1),c=orbit?GRAZE:COL[0],y=g+.45+.35*P3[1];
+          pt(xd,y,-z,c,b,8,8,.8*MS);glowAt(P3[0],z,b*.32);
+          for(let f=0;f<F[0];f++){if(!lifeFollower(eco,e,f,F[0],alpha,tv,P4,{spread:.6,lag:.7}))break;pt(xd+(P4[0]-P3[0])/kx,y+(P4[1]-P3[1])*.3,-P4[2],c,b*.6,6,8,.6*MS);fol++;}}
+        else{// gleaners: a faint ember and its glow on the ground
+          const b=vis*MB*.55*(.75+.25*Math.sin(tv*(.6+u01(eco.seed,e,eco.gen[e],3))+u01(eco.seed,e,eco.gen[e],4)*6.28)),y=g+.5+.4*P3[1];
+          pt(xd,y,-z,COL[2],b,7,8,.8*MS);glowAt(P3[0],z,b*.7);}
+      }
+      lp.commit(nP);lr.commit(nR);
+      for(let q2=0;q2<lmBuf.length;q2++){const x=lmBuf[q2];lmPx[q2]=x<=0?0:(255*x/(1+x)+.5)|0;}lmTex.needsUpdate=true;
+      Object.assign(statsNow,{drawn,followers:fol,trailSegments:nR,awake,asleep,grazing,kx:+kx.toFixed(3)});
+    }
+    function dispose(){ftex?.dispose();ftex=null;texEco=null;lmTex.dispose();}
+    return {update,stats:()=>({...statsNow}),dispose};
+  })():null;
   function update(i){
     info=i;const sp=ctx.speed(),qi=clamp(Math.round(i.quality||0),0,3),q=QUALITY[qi];
     const [w,h]=ctx.pipeline.size;U.uPx.value=Math.max(.4,h/1080);U.uRes.value.set(w,h);U.uV.value=i.tview;U.uQ.value=i.quality||0;U.uOct.value=q.oct;
@@ -348,6 +455,7 @@ export function createFamily(ctx){
     U.uDawn.value=i.unlocks[0]?.level||0;U.uLant.value=i.unlocks[1]?.level||0;bgU.uStars.value=i.unlocks[2]?.level||0;bgU.uAurora.value=i.unlocks[3]?.level||0;
     const atmo=clamp(i.overrides.atmosphere??1,0,2);U.uMist.value=clamp(num(atm.mist,.8),0,1.6)*atmo;U.uHazeK.value=clamp(num(atm.haze,.8),0,1.5)*Math.max(.3,atmo);
     slots(i);writeScene(i);updateAgents(i);fx.commit(nFx);rib.commit(nRib);
+    if(lifePart)lifePart.update(i);
   }
   const fwd=new THREE.Vector3(),rightV=new THREE.Vector3();
   function afterCamera(i){camera.updateMatrixWorld();
@@ -448,7 +556,7 @@ export function createFamily(ctx){
     fault:+stressNow.toFixed(2),fx:nFx,ribbons:nRib,grid:QUALITY[gridQ].nx*QUALITY[gridQ].nz};}
   function rebuild(){hist=null;land.reset();cmSig='';mnSig='';}
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
-    for(const g of grids.values())g.dispose();for(const x of disposables)x.dispose?.();}
+    for(const g of grids.values())g.dispose();for(const x of disposables)x.dispose?.();lifePart?.dispose();}
   // After a seek: no transient survives (commits and monuments come back from the model and the director's record).
   function onPrime(){for(const l of [scans,faults,heals,surveys,sunrises,glows,horizons])l.length=0;agentState.clear();cmSig='';mnSig='';}
   // A replay's recorded windows (the host after a seek, or when this world loads into a replay): the land's history.
@@ -462,5 +570,5 @@ export function createFamily(ctx){
     composeA.nodes=[...files.values()].slice(0,64).map(f=>({pos:new THREE.Vector3(f.x,(crest.get(f.id)??0)+.5,-.4)}));
     const att=i?ctx.director.attentionAt(i.t,1):null;composeA.active.pos.copy((att&&attentionPoint(att))||composeA.center);return composeA;}
   return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,onHistory,onDelta,onCue,
-    compose:{camera,scene,anchors:composeAnchors}};
+    compose:{camera,scene,anchors:composeAnchors},...(lifePart?{lifeStats:lifePart.stats,onLifeParams(){}}:{})};
 }
