@@ -120,7 +120,7 @@ async function until(fn,ms=10000,step=150){const t=Date.now();for(;;){const v=aw
     const projectDir=await page.textContent('.set-project-dir');
     check('the selected project’s own folder is named (labelled as its private name)',projectDir.includes(path.join(env.dir,'projects',sha(sample)))&&/private name/.test(projectDir),projectDir);
     const rows=await page.$$eval('.set-table tbody tr',r=>r.length);
-    check('the storage table names every authority (10 kinds of configuration)',rows===10,`${rows} rows`);
+    check('the storage table names every authority (11 kinds of configuration)',rows===11,`${rows} rows`);
     check('erasing is explained as steps, with no delete button',await page.$$eval('.set-steps li',l=>l.length)>=4&&!(await page.$$eval('#set-storage button',b=>b.map(x=>x.textContent))).some(t=>/delete|erase/i.test(t)));
     await page.click('#set-storage button:has-text("Security and privacy model")');
     const sec=await until(()=>page.evaluate(()=>document.querySelector('.modal .doc-view')?.textContent.includes('Erasing data')),8000);

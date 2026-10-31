@@ -634,6 +634,37 @@
     if(world==='city')void ensureMonolith();
   }
   function setRecordSize(v){if(recording.active)return recordSize;recordSize=v==='stage'||RECORD_SIZES[v]?v:'720p';changed('recording');return recordSize;}
+  // Where a recording goes: 'memory' (kept by the browser until it stops, then downloaded: the default) or 'disk'
+  // (written to a file chosen when Record is pressed, as it is recorded: recording.js disk). A device's choice; a browser
+  // that cannot write files records in memory and says why. `diskStatus` is what this browser offers (probed once).
+  const disk=window.ResonanceRecording.disk;
+  let recordTarget='memory',recordDest=null,diskStatus=null,diskSpace=null,keptRecordings=[],keptBusy=null;
+  function setRecordTarget(v){if(recording.active)return recordTarget;recordTarget=v==='disk'?'disk':'memory';if(recordTarget==='disk')void checkDisk();changed('recording');return recordTarget;}
+  async function checkDisk(){
+    diskStatus=await disk.probe().catch(e=>({ok:false,reason:String(e?.message||e)}));
+    diskSpace=diskStatus.ok?await disk.space():null;changed('recording');return diskStatus;
+  }
+  // Interrupted recordings (a crash or a closed tab while recording to disk) that no window is writing or saving.
+  async function refreshKept(){
+    if(FILM||overlay)return keptRecordings;
+    try{keptRecordings=await disk.list();}catch{keptRecordings=[];}
+    changed('recording');return keptRecordings;
+  }
+  async function saveKept(name){
+    const k=keptRecordings.find(x=>x.name===name);if(!k||keptBusy)return {ok:false,reason:keptBusy?'busy':'gone'};
+    const picked=await disk.choose(name);
+    if(!picked.ok){if(!picked.cancelled)notify(picked.reason,'warning');return {ok:false,reason:picked.cancelled?'cancelled':'picker'};}
+    keptBusy={name,file:picked.handle.name,done:0,total:k.bytes};changed('recording');
+    try{
+      const r=await disk.save(name,picked.handle,(done,total)=>{keptBusy={name,file:picked.handle.name,done,total};changed('recording');});
+      lastRecording={mimeType:'video/webm',durationMs:Math.round(r.durationMs||0),bytes:r.bytes,audio:true,audioLost:false,audioLostMs:0,reason:'interrupted',recovered:true,target:'disk',seekable:r.seekable,
+        size:r.width&&r.height?`${r.width}x${r.height}`:'—',file:picked.handle.name,at:Date.now()};
+      notify(`Saved the interrupted recording to ${picked.handle.name} (${Math.round((r.durationMs||0)/1000)} s).`,'info');
+      return {ok:true,...r,file:picked.handle.name};
+    }catch(e){notify(`The interrupted recording could not be saved: ${e.message||e}. It is still kept in this browser.`,'error');return {ok:false,reason:String(e.message||e)};}
+    finally{keptBusy=null;await refreshKept();}
+  }
+  async function discardKept(name){try{await disk.discard(name);}catch(e){notify(`The interrupted recording could not be discarded: ${e.message||e}`,'error');}await refreshKept();}
   // One recording at a time in this browser: the recorder lock (recording.js) is taken before anything starts (the sound,
   // the recording size) and held until the recorder has stopped, however it stopped (the user, the page, a recorder
   // error); the page closing or crashing releases it. A window that loses the race is told why and starts nothing.
@@ -653,14 +684,32 @@
       const claim=await window.ResonanceRecording.claim();recordLockPolicy=claim.policy;
       if(!claim.ok){notify(claim.reason,'warning');changed('recording');return {ok:false,reason:'elsewhere',message:claim.reason};}
       recordLock=claim;
-      const started=await startRecording();
-      if(started.ok)recording.finished?.then(()=>releaseRecordLock(claim),()=>releaseRecordLock(claim));
-      else await releaseRecordLock(claim);
-      return started;
+      // To a file on disk: the file is chosen now (the browser's Save dialog, while this press counts as the user's), and
+      // its working file opened, before anything starts.
+      let sink=null,dest=null;
+      if(recordTarget==='disk'){
+        const status=diskStatus?.ok?diskStatus:await checkDisk();
+        if(!status.ok)notify(`Recording in memory: ${status.reason}`,'warning');
+        else{
+          const name=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;
+          const picked=await disk.choose(name);
+          if(!picked.ok){await releaseRecordLock(claim);notify(picked.cancelled?'Recording not started: no file was chosen.':picked.reason,picked.cancelled?'info':'warning');changed('recording');
+            return {ok:false,reason:picked.cancelled?'cancelled':'picker',message:picked.reason};}
+          try{sink=await disk.open(name);}
+          catch(e){await releaseRecordLock(claim);notify(`Recording to disk could not start: ${e.message||e}`,'error');changed('recording');return {ok:false,reason:'disk',message:String(e.message||e)};}
+          dest=picked.handle;
+        }
+      }
+      const started=await startRecording({sink});
+      // However the recorder stops (the user, the page, the sound lost, a chunk that could not be written, a recorder
+      // error), the lock is released and the recording saved, once.
+      if(started.ok){recordDest=dest;recording.finished?.then(r=>{void releaseRecordLock(claim);if(r)r.done||=saveRecording(r,r.reason);},()=>releaseRecordLock(claim));}
+      else{await releaseRecordLock(claim);if(sink)await sink.discard().catch(()=>{});}
+      return started.ok?{...started,target:sink?'disk':'memory',file:dest?.name||null}:started;
     }catch(e){await releaseRecordLock();throw e;}
     finally{recordClaiming=false;}
   }
-  async function startRecording(){
+  async function startRecording({sink=null}={}){
     if(!soundEnabled)await toggleSound().catch(e=>console.error(e));
     // A fixed size: the world renders at that size from now on (the stage shows it letterboxed). "stage": the stage's own
     // size (the canvas area, laid out whatever world is showing or loading).
@@ -674,7 +723,10 @@
     // the recording's shape (the first may still have the stage's).
     if(living?.remote){living.record(onPackFrame);const t0=performance.now(),aspect=recording.canvas.width/recording.canvas.height;
       while(!(packFrame&&Math.abs(packFrame.width/packFrame.height-aspect)<.01)&&living?.remote&&performance.now()-t0<2000)await new Promise(res=>setTimeout(res,16));}
-    const started=recording.start({audioStream:music.stream,fps:30,bitsPerSecond:bitrate,audioContext:music.ctx,musicLevel:()=>music.level(),
+    // A chunk that cannot be written to disk (the disk or the browser's storage full) ends the recording: what was
+    // written is saved.
+    if(sink)sink.onfail=why=>{void finishRecording(`it could not be written to disk (${why})`);};
+    const started=recording.start({audioStream:music.stream,fps:30,bitsPerSecond:bitrate,audioContext:music.ctx,musicLevel:()=>music.level(),sink,
       // The sound lost (an audio device lost or stalled): the browser's recorder would stall the file, so it is finished
       // and saved now, with the reason.
       audioLostListener:()=>{void finishRecording('the sound stopped: an audio device was lost or stalled');}});
@@ -697,19 +749,48 @@
   // Finish the recording and offer the file (stopped by the user, by a pack failure, or by the page).
   async function finishRecording(reason){
     if(living?.remote)living.record(null);
-    const result=await recording.stop(reason);packFrame?.close();packFrame=null;endRecordFrame();
+    const result=await recording.stop(reason);
+    if(!result){packFrame?.close();packFrame=null;endRecordFrame();if(!recordClaiming)await releaseRecordLock();changed('recording');return null;}
+    // However many ask (the user's Stop as the sound is lost, the recorder's own end), a recording is saved once.
+    return result.done||=saveRecording(result,reason);
+  }
+  async function saveRecording(result,reason){
+    packFrame?.close();packFrame=null;endRecordFrame();
     // The other windows hear that this one stopped (changed('recording')) once its lock is free.
     if(!recordClaiming)await releaseRecordLock();
     changed('recording');
-    if(!result)return null;
+    if(result.sink)return finishToDisk(result,reason);
     const file=`code-resonance-${selected.slice(0,10)||'performance'}-${Date.now()}.webm`;
     lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,presented:result.presented,bytes:result.bytes,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason:result.reason,
-      size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned,file:result.blob.size?file:null,at:Date.now()};
+      size:recording.canvas.width+'x'+recording.canvas.height,slowWarning:recordPace.warned,target:'memory',file:result.blob.size?file:null,at:Date.now()};
     if(!result.blob.size){notify(`The recording could not be saved: ${reason==='stopped'?'the browser produced no file':reason+', and the browser produced no file'}.`,'error');changed('recording');return lastRecording;}
     const url=URL.createObjectURL(result.blob),link=document.createElement('a');
     // The download holds its own reference once started: the URL (which kept the whole file in memory) goes at once.
     link.href=url;link.download=file;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
     if(reason!=='stopped')notify(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved.`,'warning');
+    changed('recording');
+    return lastRecording;
+  }
+  // A recording written to disk: its working file copied into the chosen file (made seekable), shown while it is
+  // copied. If that fails the working file stays in the browser, offered as an interrupted recording to save again.
+  async function finishToDisk(result,reason){
+    const sink=result.sink,dest=recordDest;recordDest=null;
+    if(result.reason&&result.reason!=='stopped')reason=result.reason;
+    const size=recording.canvas.width+'x'+recording.canvas.height;
+    lastRecording={mimeType:result.mimeType,durationMs:Math.round(result.durationMs),frames:result.frames,presented:result.presented,bytes:sink.written,audio:result.audio,audioLost:result.audioLost,audioLostMs:result.audioLostMs,reason,
+      size,slowWarning:recordPace.warned,target:'disk',file:null,saving:{file:dest?.name||'',done:0,total:sink.written},at:Date.now()};
+    changed('recording');
+    try{
+      if(!dest)throw new Error('no file was chosen');
+      const r=await sink.save(dest,(done,total)=>{if(lastRecording?.saving){lastRecording.saving={file:dest.name,done,total};changed('recording');}});
+      lastRecording={...lastRecording,bytes:r.bytes,seekable:r.seekable,file:dest.name,saving:null,at:Date.now()};
+      if(reason!=='stopped')notify(`Recording finished early (${reason}); ${Math.round(result.durationMs/1000)} s saved to ${dest.name}.`,'warning');
+    }catch(e){
+      await sink.keep().catch(()=>{});
+      lastRecording={...lastRecording,file:null,saving:null,kept:sink.name,error:String(e.message||e),at:Date.now()};
+      notify(`The recording could not be saved to ${dest?.name||'a file'} (${e.message||e}). It is kept in this browser: save it from Record & Broadcast.`,'error');
+      void refreshKept();
+    }
     changed('recording');
     return lastRecording;
   }
@@ -829,7 +910,8 @@
       // place in the form (the Music Studio's monitor).
       sound:{enabled:soundEnabled,error:soundError,options:{...music.options},tempo:music.tempo(),level:soundEnabled?music.level():0,
         score:soundEnabled&&music.bar?music.bar.scoreVersion||2:null,layers:soundEnabled&&music.bar?.layers?[...music.bar.layers]:null,form:soundEnabled&&music.bar?.form?{...music.bar.form}:null},
-      recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:RECORD_SIZES[recordSize]},
+      recording:{active:recording.active,size:recordSize,stats:recording.stats(),audio:recording.audio,audioLost:recording.audioLost,last:lastRecording,notice:recordNotice,supported:recording.supported(),dimensions:recordSize==='stage'?null:RECORD_SIZES[recordSize],
+        target:recordTarget,disk:diskStatus?{...diskStatus,space:diskSpace}:{ok:null,...(disk.offered().ok?{}:disk.offered())},file:recordDest?.name||null,kept:keptRecordings.slice(),keptBusy:keptBusy?{...keptBusy}:null},
       recipe,preview:previewRecipe?{recipe:previewRecipe,notice:previewNotice}:null,packs,
       worldStatus:{loading:!!livingLoading,running:!!living,remote:!!living?.remote,pack:living?.pack?{id:living.pack.id,name:living.pack.name}:null,failed:livingFailed,construct:!!construct,constructFailed,
         notice:packNotice,layerFailures:layerFailures(),stopped:stoppedPack&&stoppedPacks.has(stoppedPack.id)?{id:stoppedPack.id,name:stoppedPack.name,reason:stoppedPacks.get(stoppedPack.id)}:null},
@@ -850,7 +932,11 @@
     async peek(clientX,clientY){if(FILM||overlay||selectedWorld!=='living'||!living?.peek)return null;const p=worldPoint(clientX,clientY);return p?living.peek(p.x,p.y):null;},
     // heldElsewhere(): whether another window of this browser holds the recorder lock (null: no Web Locks here), the
     // evidence behind a "recording in another window" announcement (a crashed window never says it stopped).
-    record:{toggle:toggleRecord,setSize:setRecordSize,get active(){return recording.active;},get lockPolicy(){return recordLockPolicy||(navigator.locks?.request?'web-locks':'announcements');},
+    // setTarget('disk'|'memory'): where the next recording goes; checkDisk(): what this browser offers for 'disk';
+    // kept recordings (interrupted while recording to disk): refreshKept(), saveKept(name) (opens the Save dialog: call it
+    // from a button), discardKept(name).
+    record:{toggle:toggleRecord,setSize:setRecordSize,setTarget:setRecordTarget,get target(){return recordTarget;},checkDisk,refreshKept,saveKept,discardKept,
+      get active(){return recording.active;},get lockPolicy(){return recordLockPolicy||(navigator.locks?.request?'web-locks':'announcements');},
       async heldElsewhere(){if(recordLock||recordClaiming)return false;return window.ResonanceRecording.held();}},
     exportAudio,
     recipeAction,reloadRecipe,preview,
@@ -946,5 +1032,7 @@
     bindWorldClicks($('world').parentElement);
     // OBS browser sources allow audio without a click; a regular browser will ignore this until a gesture.
     if(overlay&&params.get('sound')==='1')toggleSound().catch(()=>{});
+    // A recording to disk that a crash or a closed tab interrupted is offered by the next window (after start-up).
+    if(!overlay)setTimeout(()=>void refreshKept(),1500);
   }
 })();

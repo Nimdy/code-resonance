@@ -75,7 +75,7 @@ export default {mount(view,{store:S,player:P,navigate}){
     onChange:q=>{S.unpin('quality');S.setDevice({quality:q});P.setQuality(q);qualityRow.status('Saved in this browser','ok');renderDevice();}});
   const qualityRow=row({id:'rowQuality',label:'Rendering quality',control:qualitySeg});
   const qualityNow=h('div',{class:'set-now'});
-  const resetBtn=button({label:'Reset this device\u2019s preferences',icon:'reset',kind:'outline',size:'sm',id:'setDeviceReset',onClick:()=>{S.unpin('quality');S.setDevice({quality:'auto'});P.setQuality('auto');renderDevice();toast('This browser\u2019s preferences are back to their defaults (quality: Auto).','ok');}});
+  const resetBtn=button({label:'Reset this device\u2019s preferences',icon:'reset',kind:'outline',size:'sm',id:'setDeviceReset',onClick:()=>{S.unpin('quality');S.setDevice({quality:'auto',recordTo:'memory'});P.setQuality('auto');renderDevice();toast('This browser\u2019s preferences are back to their defaults (quality: Auto; recordings kept in memory).','ok');}});
   const deviceSection=sec('device','This device',{scope:['device','Saved in this browser only \u00b7 it describes this machine']},
     h('div',{class:'set-split'},
       h('div',{class:'set-groups'},panel('Rendering','The living worlds and visual packs, on this machine\u2019s GPU',h('div',{class:'set-rows'},qualityRow))),
@@ -97,7 +97,7 @@ export default {mount(view,{store:S,player:P,navigate}){
       h('aside',{class:'set-aside'},
         panel('Data folder','Everything the receiver keeps, on this computer only. No accounts, no cloud, no telemetry.',h('div',{class:'panel-body'},dataPath,projectPath)),
         panel('Erasing data','Nothing is copied anywhere else',h('div',{class:'panel-body'},erase,
-          h('p',{class:'field-doc',text:'Recordings and exports are ordinary files in your downloads folder: delete them there.'}),
+          h('p',{class:'field-doc',text:'Recordings and exports are ordinary files, in your downloads folder or in the file you chose for a recording to disk: delete them there. An interrupted recording to disk stays in this browser until you save or discard it in Record & Broadcast.'}),
           h('div',{},button({label:'Security and privacy model',icon:'shield',kind:'ghost',size:'sm',onClick:()=>openDoc('SECURITY.md')})))))));
   // ---- Diagnostics -------------------------------------------------------------------------------------------------
   const caps=detect();
@@ -178,8 +178,9 @@ export default {mount(view,{store:S,player:P,navigate}){
       ['Visual packs and their approvals',`${J('packs','')} and ${J('packs','trust.json')}`,'Visual Packs'],
       ['The receiver\u2019s token (never shown here)',J('receiver-auth.json'),'npm start creates it'],
       ['What VS Code captures and shares','VS Code settings resonance.* (user or workspace)','VS Code (Connections shows what it reports)'],
-      ['This device: rendering quality, last page, remembered project','This browser\u2019s storage for this address','Settings, This device'],
-      ['Previews, the playhead, a recording in progress','This window\u2019s memory only (gone when it closes)','—']];
+      ['This device: rendering quality, where recordings go, last page, remembered project','This browser\u2019s storage for this address','Settings, This device; Record & Broadcast'],
+      ['A recording to disk while it records, or one a crash interrupted (until saved or discarded)','This browser\u2019s private file storage for this address','Record & Broadcast'],
+      ['Previews, the playhead, a recording kept in memory','This window\u2019s memory only (gone when it closes)','—']];
     authorities.replaceChildren(...rows.map(([what,where,how])=>h('tr',{},h('td',{text:what}),h('td',{},pathCode(where)),h('td',{class:'faint',text:how}))));
     erase.replaceChildren(
       h('li',{text:'Stop capture in VS Code (CODE RESONANCE: Stop Code Performance) and stop the receiver (Ctrl+C where npm start runs).'}),

@@ -142,6 +142,14 @@ let seenNotice=0;
 function showNotices(){for(const n of P.state.notices){if(n.id<=seenNotice)continue;seenNotice=n.id;
   const kind=n.kind==='error'?'error':n.kind==='warning'?'warning':'info';
   toast(n.text,kind,n.action?.world?{timeout:15000,action:{label:n.action.label,onClick:()=>P.setWorld(n.action.world)}}:{});}}
+// An interrupted recording to disk (a crash or a closed tab) is said once per page, wherever it opens; Record &
+// Broadcast shows it with its Save and Discard actions.
+let keptSaid=false;
+function announceKept(){
+  if(keptSaid||!P.state.recording.kept?.length)return;keptSaid=true;
+  if(route().id==='output')return;
+  toast('An interrupted recording to disk is kept in this browser: save it or discard it in Record & Broadcast.','warning',{timeout:15000,action:{label:'Record & Broadcast',onClick:()=>navigate('output')}});
+}
 // ---- Rendering a route ---------------------------------------------------------------------------------------------
 let token=0;
 async function render(){
@@ -184,7 +192,7 @@ async function boot(){
   root.append(nav,topbar,workspace);root.hidden=false;
   // What is under the pointer on the living world, wherever a view shows the stage (DOM, never part of a recording).
   mountHover({player:P,host,chrome});
-  store.on(t=>{updateShell(t);if(t.has('notice'))showNotices();});
+  store.on(t=>{updateShell(t);if(t.has('notice'))showNotices();if(t.has('recording'))announceKept();});
   updateShell(null);
   addEventListener('hashchange',render);
   if(!location.hash)history.replaceState(null,'',`${location.pathname}${location.search}#/home`);
