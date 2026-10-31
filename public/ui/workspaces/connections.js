@@ -467,7 +467,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     updateCli();
     const el=h('div',{class:'conn-guide conn-flow'},h('div',{class:'conn-flow-head'},h('div',{class:'conn-guide-head'},icon('terminal'),h('strong',{text:'Install or remove the hooks'})),h('span',{class:'faint small',text:'Shows the exact change first; writes nothing until you accept it.'})),
       form,
-      disclosure({summary:'Or use the command line'},h('p',{class:'faint small',text:'In the Code Resonance folder. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
+      disclosure({summary:'Or from VS Code, or the command line'},h('p',{class:'faint small',text:'In VS Code, CR › Connect an AI agent… does the same, after showing the same change. The command below runs in a checkout of Code Resonance. It adds the same hooks directly, without showing the change first (add --print to see the result instead of writing it). Removal is done here or by editing the file.'}),cli));
     return {el,result,updateCli,refresh,retarget};
   }
   const sentence=m=>{const s=String(m||'Unknown error');return s.charAt(0).toUpperCase()+s.slice(1)+(/[.!?]$/.test(s)?'':'.');};
