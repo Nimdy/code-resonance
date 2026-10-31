@@ -51,9 +51,10 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     const imgOf=ids=>A.evaluate(ids=>ids.filter(id=>document.querySelector(`.vs-card[data-card="${id}"] .vs-thumb img`)),ids);
     const thumbs=await until(async()=>(await imgOf(['fractal-biosphere','stellar-forge','machine-cathedral'])).length===3,60000,500);
     check('built-in families show thumbnails rendered from this project',thumbs,await A.evaluate(()=>[...document.querySelectorAll('.vs-thumb img')].map(x=>x.alt).slice(0,3).join(' | ')));
-    // The preview worlds are rendered after the three (a raymarched world may take a while in software).
-    const previews=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
-    check('the preview worlds show thumbnails rendered from this project too',previews,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
+    // The graduated worlds are rendered after the three (a raymarched world may take a while in software).
+    const graduated=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
+    check('Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too',graduated,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
+    check('no world card carries an "In design" pill (no preview world is left)',await A.evaluate(()=>![...document.querySelectorAll('.vs-card .pill')].some(p=>/In design/.test(p.textContent))));
     const r0=await recipe();measurements.initial={family:r0.family,revision:r0.revision,source:r0.source};
     check('the page shows the saved identity at first',(await badge(A))==='Saved identity'&&(await A.textContent('.vs-family'))===r0.familyName,`${r0.familyName}, revision ${r0.revision}`);
     await shot(A,'saved-1440');
@@ -168,7 +169,7 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     check('Essentials come first, open, with the world\'s high-value parameters',/^Essentials/.test(ess.summary.trim())&&ess.open&&ess.paths.includes('atmosphere.shafts')&&ess.paths.includes('technique.exposure'),JSON.stringify(ess));
     // Curated looks: built in, read-only, previewed like any preset and saved only by Apply.
     const curated=await A.$$eval('.vs-card.curated',els=>els.map(e=>({id:e.dataset.preset,rename:!!e.querySelector('button[aria-label^="Rename"]'),del:!!e.querySelector('button[aria-label^="Delete"]')})));
-    check('six curated looks are offered, read-only',curated.length===6&&curated.every(c=>!c.rename&&!c.del),JSON.stringify(curated));
+    check('twelve curated looks are offered (two per built-in world), read-only',curated.length===12&&curated.every(c=>!c.rename&&!c.del),JSON.stringify(curated.map(c=>c.id)));
     const rc=await recipe();
     await A.click('.vs-card[data-preset="curated:abyss"] button[aria-label^="Preview"]');await previewing(A);
     const cv=await state(A,()=>{const c=window.ResonancePlayer.state.preview.recipe;return {family:c.family,terrain:c.genome.atmosphere.terrain,glow:c.genome.material.bioluminescence};});
@@ -229,7 +230,7 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     // (as a person does: the visible switch, whose label toggles the visually hidden input)
     const setSwitch=async(page,p,on)=>{const input=page.locator(`.field[data-path="${p}"] input`).first();if((await input.isChecked())!==on)await page.locator(`.field[data-path="${p}"] .switch`).first().click();};
     r=await recipe();
-    check('a new built-in identity has digital life on (generator v4: with the musical ecology)',r.genome.life?.enabled===true&&r.genome.life.ecology===2&&r.recipeVersion===4,JSON.stringify(r.genome.life));
+    check('a new built-in identity has digital life on (generator 4 and later: with the musical ecology)',r.genome.life?.enabled===true&&r.genome.life.ecology===2&&r.recipeVersion>=4,`generator ${r.recipeVersion}: ${JSON.stringify(r.genome.life)}`);
     check('the stage runs the identity\'s ecosystem',!!(await until(async()=>(await lifeOf(A))?.grammar==='stellar-forge',30000)),JSON.stringify(await lifeOf(A)));
     check('the Digital life switch is among the Essentials, named for what it does',await A.locator('.vs-sec-ess .field[data-path="life.enabled"]').count()===1&&(await A.textContent('.vs-sec-ess .field[data-path="life.enabled"]')).includes('Digital life'));
     check('a Digital life group lists the life controls under their purpose',await A.locator('details[data-purpose="life"] .field[data-path="life.density"]').count()===1&&await A.locator('details[data-purpose="life"] .field[data-path="life.alignment"]').count()===1);

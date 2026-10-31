@@ -1,6 +1,6 @@
 {
-  "at": "2026-10-27T09:45:08.697Z",
-  "passed": 76,
+  "at": "2026-10-31T21:34:19.463Z",
+  "passed": 79,
   "failed": 0,
   "checks": [
     {
@@ -17,6 +17,16 @@
       "name": "built-in families show thumbnails rendered from this project",
       "pass": true,
       "detail": "Fractal Biosphere, rendered from this project | Stellar Forge, rendered from this project | Machine Cathedral, rendered from this project"
+    },
+    {
+      "name": "Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too",
+      "pass": true,
+      "detail": "synaptic-storm, fractal-continuum, temporal-terrain"
+    },
+    {
+      "name": "no world card carries an \"In design\" pill (no preview world is left)",
+      "pass": true,
+      "detail": ""
     },
     {
       "name": "the page shows the saved identity at first",
@@ -116,7 +126,7 @@
     {
       "name": "a subsystem name is saved",
       "pass": true,
-      "detail": "Eleoveth → Core Engine"
+      "detail": "Orara → Core Engine"
     },
     {
       "name": "after a reload the name is shown",
@@ -186,12 +196,12 @@
     {
       "name": "Essentials come first, open, with the world's high-value parameters",
       "pass": true,
-      "detail": "{\"summary\":\"Essentials91 customised\",\"open\":true,\"paths\":[\"geometry.architecture\",\"geometry.spire\",\"atmosphere.shafts\",\"atmosphere.fog\",\"material.wetness\",\"secondary.windows\",\"life.enabled\",\"technique.exposure\",\"music.reactivity\"]}"
+      "detail": "{\"summary\":\"Essentials101 customised\",\"open\":true,\"paths\":[\"geometry.architecture\",\"geometry.spire\",\"atmosphere.shafts\",\"atmosphere.fog\",\"material.wetness\",\"secondary.windows\",\"life.enabled\",\"life.music\",\"technique.exposure\",\"music.reactivity\"]}"
     },
     {
-      "name": "six curated looks are offered, read-only",
+      "name": "twelve curated looks are offered (two per built-in world), read-only",
       "pass": true,
-      "detail": "[{\"id\":\"curated:abyss\",\"rename\":false,\"del\":false},{\"id\":\"curated:reef\",\"rename\":false,\"del\":false},{\"id\":\"curated:deep-field\",\"rename\":false,\"del\":false},{\"id\":\"curated:nursery\",\"rename\":false,\"del\":false},{\"id\":\"curated:vigil\",\"rename\":false,\"del\":false},{\"id\":\"curated:evensong\",\"rename\":false,\"del\":false}]"
+      "detail": "[\"curated:abyss\",\"curated:reef\",\"curated:deep-field\",\"curated:nursery\",\"curated:vigil\",\"curated:evensong\",\"curated:storm-front\",\"curated:glass-cortex\",\"curated:teal-bulb\",\"curated:kaleidoscope\",\"curated:survey-map\",\"curated:misty-valley\"]"
     },
     {
       "name": "previewing a curated look shows its family and values",
@@ -249,9 +259,9 @@
       "detail": "revision 16"
     },
     {
-      "name": "a new built-in identity has digital life on (generator v3)",
+      "name": "a new built-in identity has digital life on (generator 4 and later: with the musical ecology)",
       "pass": true,
-      "detail": "{\"enabled\":true,\"density\":0.893,\"vitality\":0.85,\"collective\":0.87,\"environment\":1,\"trails\":1.073,\"persistence\":1,\"music\":1,\"attraction\":1,\"repulsion\":1,\"separation\":1,\"alignment\":1,\"cohesion\":1,\"current\":1,\"diffusion\":1,\"radius\":1}"
+      "detail": "generator 5: {\"enabled\":true,\"density\":0.893,\"vitality\":0.85,\"collective\":0.87,\"environment\":1,\"trails\":1.073,\"persistence\":1,\"music\":1,\"attraction\":1,\"repulsion\":1,\"separation\":1,\"alignment\":1,\"cohesion\":1,\"current\":1,\"diffusion\":1,\"radius\":1,\"ecology\":2}"
     },
     {
       "name": "the stage runs the identity's ecosystem",
@@ -276,7 +286,7 @@
     {
       "name": "the life preview saves nothing and does not reach the other window",
       "pass": true,
-      "detail": "{\"grammar\":\"stellar-forge\",\"alive\":982}"
+      "detail": "{\"grammar\":\"stellar-forge\",\"alive\":979}"
     },
     {
       "name": "Cancel brings the saved ecosystem back",
@@ -301,10 +311,15 @@
     {
       "name": "Apply saves life on and the population value",
       "pass": true,
-      "detail": "{\"enabled\":true,\"density\":0.5,\"vitality\":0.85,\"collective\":0.87,\"environment\":1,\"trails\":1.073,\"persistence\":1,\"music\":1,\"attraction\":1,\"repulsion\":1,\"separation\":1,\"alignment\":1,\"cohesion\":1,\"current\":1,\"diffusion\":1,\"radius\":1}"
+      "detail": "{\"enabled\":true,\"density\":0.5,\"vitality\":0.85,\"collective\":0.87,\"environment\":1,\"trails\":1.073,\"persistence\":1,\"music\":1,\"attraction\":1,\"repulsion\":1,\"separation\":1,\"alignment\":1,\"cohesion\":1,\"current\":1,\"diffusion\":1,\"radius\":1,\"ecology\":2}"
     },
     {
       "name": "after a reload the saved ecosystem runs",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the classic stages are the Construct and Monolith (Nexus and Nebula are retired)",
       "pass": true,
       "detail": ""
     },

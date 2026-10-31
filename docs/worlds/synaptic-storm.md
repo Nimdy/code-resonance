@@ -1,14 +1,15 @@
-# Synaptic Storm (preview)
+# Synaptic Storm
 
 An immense living neural network drawn from the project: a navy and violet void, translucent glassy neurons with
 glowing golden somas, branching dendrites and axons forming a web, synapses where a golden spark jumps the gap, motes
 and bokeh. The world exists to make the work visible, above all the agents' work: an agent is a signal travelling
 the network, and the neuron whose file it edits fires.
 
-**Status.** This is a preview: a working prototype family (`public/worlds/synaptic.js`, `public/worlds/synaptic-layout.js`)
-that a project can choose explicitly in the Visual Studio (marked *Preview*) or with the render lab's `--family`. It is
-never chosen automatically, and adding it changed no existing identity (see [Selection and compatibility](#selection-and-compatibility)).
-Nobody has reviewed it artistically yet. Everything below marked *prototype* is implemented; *planned* is not.
+**Status.** A built-in family (`public/worlds/synaptic.js`, `public/worlds/synaptic-layout.js`), a preview until generator
+5 graduated it: the family scores can choose it, it is a base for declarative and shader packs, the Visual Studio offers
+it with two curated looks and the Artist Studio composes over it. Graduating it changed no existing identity (see
+[Selection and compatibility](#selection-and-compatibility)). Nobody has reviewed it artistically yet. Everything below
+marked *prototype* is implemented; *planned* is not.
 
 ![A large project as a network](synaptic-storm-network.jpg)
 
@@ -224,16 +225,26 @@ signature walks every link; spike heads and synapse flares evaluate each axon's 
 
 ## Selection and compatibility
 
-- `engine/recipe.js` `PREVIEWS = ['synaptic-storm']`: accepted by `generate({family})` and the `family` action,
-  **never** part of `FAMILIES`, so the family scores, their random draws, automatic and a plain regenerate are exactly
-  what they were. Its genome comes from `rng('genome', 'synaptic-storm', …)` and its palette from its own stream.
-  `RECIPE_VERSION` stays 4: no existing input produces a different output (`tests/recipe.test.js` unchanged and passing).
-- `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, and not a base for
-  declarative packs (they may still change). `/api/catalog` lists it under `previews`, apart from `families`.
-- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with an *In design* pill and a
-  thumbnail rendered from the project, like the three's (no Artist Studio or look packs yet: its panel says so).
-- A recipe that chose it is stored like any user choice (locked, founded) with the v4 additions (Cinematic finish,
-  composed score).
+- **Generator 5** (`engine/recipe.js`, `RECIPE_VERSION` 5) graduated it from `PREVIEWS` into `FAMILIES` (`GRADUATED`).
+  Its score, from its own random stream (`rng('family', 'synaptic-storm', seed, variant)`) after the flagships' unchanged
+  draws: dense wiring, imports per file beyond one (0.8 at 3.5 a file), coupling between subsystems (0.8 at 1.5
+  cross-subsystem imports a file), the agents' share of the work (1.3 at 70 %) and many subsystems (0.25 at ten): the
+  world's image is the dependency graph and the agents travelling it. Excalidraw (450 files, dense and coupled) is a
+  Synaptic Storm under generator 5; over the synthetic corpus of `tests/generator-v5.test.js` it is chosen for 15.8 % of
+  projects ([WORLDS.md](../WORLDS.md#from-data-to-identity)).
+- **No existing identity changes.** Generator 4 scores the flagships alone, with the same draws: every v4 value is as
+  pinned (`tests/recipe.test.js`, and `tests/generator-v5.test.js` against the generator at 1226b8a). An identity stored
+  by generator 4 is redrawn with 4 (`generatorOf`), so it never becomes a Synaptic Storm by itself; choosing it,
+  regenerating or going back to automatic is a new identity on generator 5. A recipe that chose it before graduation is
+  served as stored (its name still says "(preview)", without digital life).
+- Its genome comes from `rng('genome', 'synaptic-storm', …)` and its palette from its own stream, as before; a new
+  identity also gets `genome.life` from `rng('life', 'synaptic-storm', …)` (enabled, ecology 2), which draws nothing
+  until the world has an ecosystem grammar.
+- `engine/catalog.js` `FAMILIES`: its parameters plus the common ones, frozen (added to, never removed or narrowed),
+  so a declarative or shader look can name it as its base. `/api/catalog` lists it under `families`; `previews` is empty.
+- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it with the flagships (thumbnail, the code's-match
+  star, two curated looks: *Storm front* and *Glass cortex*, and an Essentials group), and the Artist Studio offers it
+  as a base.
 
 ## Path to shipping
 
@@ -243,16 +254,15 @@ What remains after this prototype:
    rather than stills; a hardware-GPU pass (the stills here are software rendered).
 2. **Performance on the target machines**: GPU time at Auto on an integrated GPU and in OBS (`worlds.qual.js`,
    `recording.qual.js`), long soak; then the CPU cost on large projects (incremental signatures, spike heads on the GPU).
-3. **Qualification parity** with the three families: determinism across seeks in the browser, idle checks, privacy of
-   every label, the catalogue's extremes (`catalogue.qual.js` covers `catalog.FAMILIES` today).
+3. **Qualification parity** with the three families: `catalogue.qual.js` and `worlds.qual.js` (determinism across seeks,
+   idle, privacy of every label, resources) now cover all six families; see
+   [QUALIFICATION.md](../QUALIFICATION.md) for what was run.
 4. **Agents**: travel along the actual axon pathways between neurons (today a lifted arc), `agent.collision` as two
    signals meeting, subagents as smaller signals tethered to their parent.
 5. **Music**: rhythm-gated subdivisions and section onsets (above); a check with `life-music.js`-style measurements.
 6. **Digital life**: a grammar `public/worlds/life/synaptic.js` (glial cells and vesicles that gather at active
    synapses, drift with the neuromodulator tide, avoid inhibited regions), habitat sites from this layout, behind the
    recipe's `life` values; until then the preview draws no ecosystem and its catalogue offers no life parameters.
-7. **Generator inclusion**: making it choosable by the automatic scoring is a new generator version (5) that scores it
-   from its own random stream (for example dense cross-subsystem coupling and high agent share), so every v4 identity's
-   scores, family and values stay as pinned; stored identities never switch by themselves.
-8. **Graduation**: move it from `PREVIEWS` to `FAMILIES` only together with step 7, freeze its parameters into the
-   catalogue (then a base for declarative packs), add curated looks and Essentials, thumbnails and the Artist Studio.
+7. **Generator inclusion**: done in generator 5 (above).
+8. **Graduation**: done with generator 5: in `FAMILIES`, its parameters frozen in the catalogue (a base for packs),
+   curated looks and Essentials, the Artist Studio. The curated looks have not been reviewed artistically.

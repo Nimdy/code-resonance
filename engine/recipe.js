@@ -14,7 +14,11 @@
 // Data -> art mapping (documented, so a viewer can trace an identity back to the code):
 //  - family affinity: hub-and-spoke dependencies and service endpoints favour Stellar Forge (bodies and orbits);
 //    UI component trees and deep folder branching favour Fractal Biosphere (organisms and growth); classes, types and
-//    tests favour Machine Cathedral (engineered architecture). A seeded share keeps similar projects distinct.
+//    tests favour Machine Cathedral (engineered architecture). From generator 5 also: dense wiring, coupling between
+//    subsystems and the agents' share of the work favour Synaptic Storm (a network the work travels); many symbols per
+//    file in function-heavy code with few subsystems favour Fractal Continuum (one intricate recursive form); structure
+//    grown while the project was observed favours Temporal Terrain (a history to lay down as land). A seeded share keeps
+//    similar projects distinct.
 //  - project size sets complexity limits; dependency density sets connective atmosphere; test share sets order;
 //    agent collaboration sets how prominent agent presences are.
 //
@@ -23,11 +27,15 @@
 // overlay on its base family (parameters, palette, light, technique, effect mapping). A recipe that names a pack which
 // is no longer installed is served without it (flagged `unavailable`) and kept as stored, so reinstalling restores it.
 //
-// Preview families (PREVIEWS, engine/catalog.js PREVIEWS): built-in worlds still being designed, chosen only explicitly
-// (the Visual Studio, the render lab's --family) exactly as a pack is. They are never scored and never drawn: FAMILIES
-// alone drives the family scores and their random draws, and a preview's genome and palette come from its own streams,
-// so adding one changes no existing identity (tests/recipe.test.js, tests/synaptic.test.js, tests/fractal.test.js and
-// tests/terrain.test.js pin that). Taking one into the automatic choice later is a new generator version with its own scoring stream.
+// Families and generators: up to generator 4 the family scores choose among the three flagships (FLAGSHIPS, in that
+// order, from one random stream). Synaptic Storm, Fractal Continuum and Temporal Terrain were previews, chosen only
+// explicitly; generator 5 graduates them (GRADUATED): each is scored from its own random stream and its own signals,
+// after the three flagships' scores are drawn exactly as before, so every identity of generator 4 or earlier keeps its
+// scores, family and values (tests/recipe.test.js pins them; tests/generator-v5.test.js pins v5 and proves v4
+// unchanged). An identity stored by an earlier generator is redrawn with that generator (generatorOf), so it never
+// switches to a graduated family by itself; choosing a family, regenerating or going back to automatic is a new identity,
+// drawn with the current generator. PREVIEWS (empty now) is where a future world still being designed would wait: chosen
+// only explicitly, never scored, its genome and palette from its own streams.
 //
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
@@ -37,19 +45,27 @@ const {sha}=require('../receiver/protocol');
 const catalog=require('./catalog');
 const Composition=require('../public/composition.js');
 const RECIPE_SCHEMA='code-resonance.recipe.v1';
-const RECIPE_VERSION=4;      // generator: bump when the same inputs would produce a different genome
+const RECIPE_VERSION=5;      // generator: bump when the same inputs would produce a different genome
                              // (2: Fractal Biosphere species from the data; Machine Cathedral shafts and wetness added;
                              //  3: digital life, `life`, for the built-in families, from a separate random stream so every
                              //  v2 value is unchanged;
                              //  4: the Phase 11 defaults, drawn from no random stream so every v3 value is unchanged: the
                              //  cinematic finish `technique.finish` and the musical ecology `life.ecology` where life is
-                             //  generated, the composed score `music.score` everywhere)
+                             //  generated, the composed score `music.score` everywhere;
+                             //  5: Synaptic Storm, Fractal Continuum and Temporal Terrain graduate: scored for the automatic
+                             //  choice (each from its own random stream, after the flagships' unchanged draws), digital
+                             //  life for their new identities (its own stream, as v3 for the flagships), and one more
+                             //  trait, `grown`; every v4 value is unchanged)
 const RENDERER_VERSION=1;    // the world renderers this genome is written for
 const FOUNDING_MODULES=6;
-const FAMILIES=['stellar-forge','fractal-biosphere','machine-cathedral'];
-const PREVIEWS=['synaptic-storm','fractal-continuum','temporal-terrain'];
-const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm (preview)','fractal-continuum':'Fractal Continuum (preview)',
-  'temporal-terrain':'Temporal Terrain (preview)'};
+// The families the scores choose among, by generator: the flagships alone up to 4, all six from 5 (in this order).
+const FLAGSHIPS=['stellar-forge','fractal-biosphere','machine-cathedral'];
+const GRADUATED=['synaptic-storm','fractal-continuum','temporal-terrain'];
+const FAMILIES=[...FLAGSHIPS,...GRADUATED];
+const PREVIEWS=[];
+const familiesOf=(version=RECIPE_VERSION)=>version>=5?FAMILIES:FLAGSHIPS;
+const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum',
+  'temporal-terrain':'Temporal Terrain'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -57,7 +73,9 @@ const pick=(r,list)=>list[Math.floor(r()*list.length)%list.length];
 const between=(r,a,b)=>round(a+(b-a)*r());
 function weighted(r,entries){const total=entries.reduce((a,[,w])=>a+Math.max(0,w),0)||1;let x=r()*total;for(const [v,w] of entries){if((x-=Math.max(0,w))<0)return v;}return entries[0][0];}
 // ---- Traits: what the project data says, from the public projection only (salted ids, no paths) --------------------
-function traitsOf(project){
+// `version`: generator 5 adds `grown`, the share of the project's symbols created while it was observed (0: all of them
+// were there at its first scan; 1: it grew under observation), after the others, so a v4 identity's traits are unchanged.
+function traitsOf(project,version=RECIPE_VERSION){
   const nodes=project?.graph?.nodes||[],edges=project?.graph?.edges||[];
   const modules=nodes.filter(n=>n.type==='module'),groups=nodes.filter(n=>n.type==='group');
   const kinds={};for(const m of modules)for(const [k,n] of Object.entries(m.counts||{}))kinds[k]=(kinds[k]||0)+n;
@@ -82,11 +100,27 @@ function traitsOf(project){
     tests:round(modules.filter(m=>m.test).length/n),
     agents:Math.min(16,(project?.agents||[]).length),
     agentShare:round(stats.raw?clamp((stats.agentEvents||0)/stats.raw):0),
-    validations:{passed:stats.testsPassed||0,failed:stats.testsFailed||0}
+    validations:{passed:stats.testsPassed||0,failed:stats.testsFailed||0},
+    ...(version>=5?{grown:round(symbolTotal?clamp((stats.created||0)/symbolTotal):0)}:{})
   };
 }
 // ---- Family affinity --------------------------------------------------------------------------------------------
-function familyScores(traits,seed,variant){
+// The graduated families' affinities (generator 5), weights set by hand like the flagships' (docs/WORLDS.md, From data
+// to identity). An identity founded before generator 5 has no `grown`; regenerating it counts that signal as halfway.
+const AFFINITY_V5={
+  // A network the work travels: dense wiring (imports per file beyond one) is its axons, coupling between subsystems
+  // the tracts between its clusters, the agents' share of the work the signals travelling it, many subsystems many
+  // clusters.
+  'synaptic-storm':t=>.8*clamp((t.dependencyDensity-1)/2.5)+.8*clamp(t.crossDensity/1.5)+1.3*clamp(t.agentShare*1.4)+.25*clamp((t.districts-2)/8),
+  // One intricate recursive form: many symbols per file (how far its recursion can unfold), function-heavy, formula-like
+  // code, few subsystems (one form, few regions), little UI surface (components grow organisms instead).
+  'fractal-continuum':t=>1*clamp((t.depth-4)/8)+.9*clamp((t.functions-.45)*2.5)+.5*(1-clamp((t.districts-1)/6))+.3*(1-clamp(t.uiModules*3)),
+  // Time is the land: structure grown while the project was observed is a history to lay down (a repository indexed
+  // whole by its first scan is one massif with no past); subsystems are ranges across it, tests survey it, and no
+  // single hub stands at its centre (a land, not a star system).
+  'temporal-terrain':t=>1.4*(t.grown??.5)+.6*clamp((t.districts-1)/6)+.3*clamp(t.tests*3)+.2*(1-clamp(t.hubness*2))
+};
+function familyScores(traits,seed,variant,version=RECIPE_VERSION){
   const r=rng('family',seed,variant);
   const t=traits,size=clamp(Math.log2(1+t.modules)/9);
   const raw={
@@ -97,8 +131,10 @@ function familyScores(traits,seed,variant){
     // Engineering: classes and types, tests holding the structure in order, subsystems coupled to each other.
     'machine-cathedral':.8*clamp(t.model*3)+.7*clamp(t.tests*4)+.5*clamp(t.crossDensity*1.6)+.25*clamp(t.depth/12)
   };
-  // A seeded share: similar projects still become different universes.
-  const scores={};for(const f of FAMILIES)scores[f]=round(raw[f]+.25*r());
+  // A seeded share: similar projects still become different universes. The flagships draw theirs from one stream in
+  // their order (exactly as before generator 5); each graduated family from its own.
+  const scores={};for(const f of FLAGSHIPS)scores[f]=round(raw[f]+.25*r());
+  if(version>=5)for(const f of GRADUATED)scores[f]=round(AFFINITY_V5[f](t)+.25*rng('family',f,seed,variant)());
   return scores;
 }
 // ---- Palette: harmonious, seeded, with temperature from the data ---------------------------------------------------
@@ -121,7 +157,7 @@ function palette(r,family,traits,hues=null){
     highlight:hsl(base+offset[0]*.5,.35,.86),deep:hsl(deepHue,.55,between(r,.035,.06)),haze:hsl(deepHue+12,.5,.16),
     warning:hsl(pick(r,[8,14,355]),.85,.58),valid:hsl(pick(r,[48,165,140]),.7,.7)};
 }
-// Synaptic Storm (preview): golden somas in a navy-violet void; the membrane's hue and the somas' warmth are the
+// Synaptic Storm: golden somas in a navy-violet void; the membrane's hue and the somas' warmth are the
 // identity's own, from its own stream.
 function synapticPalette(r,family,traits){
   const scheme=weighted(r,[['complementary',3],['split',2],['analogous',1]]);
@@ -130,7 +166,7 @@ function synapticPalette(r,family,traits){
   return {scheme,hue:round(mem,1),primary:hsl(soma,.92,.58),secondary:hsl(mem,sat,.62),accent:hsl(soma+12,1,.7),highlight:hsl(soma+20,.6,.9),
     deep:hsl(mem+6,.62,between(r,.04,.065)),haze:hsl(mem+20,.5,.17),warning:hsl(pick(r,[350,6,340]),.82,.58),valid:hsl(pick(r,[160,172,186]),.66,.66)};
 }
-// Fractal Continuum (preview): a matte sculpted surface in a black void, lit by sites of light. The surface's hue (teal
+// Fractal Continuum: a matte sculpted surface in a black void, lit by sites of light. The surface's hue (teal
 // like the reference, or blue, jade, violet, copper, amber, rose) and whether its light contrasts with it (warm on cool,
 // cool on warm) or shares its family are the identity's own, from its own stream. Failure stays red-magenta, never the
 // light's colour.
@@ -144,7 +180,7 @@ function fractalPalette(r,family,traits){
   return {scheme,hue:round(hue,1),primary:hsl(hue,sat,between(r,.34,.42)),secondary:hsl(hue+between(r,-24,24),sat*.9,.2),accent:hsl(glow,.88,.62),
     highlight:hsl(hue+8,.32,.84),deep:hsl(hue+10,.5,between(r,.016,.03)),haze:hsl(hue+14,.42,.12),warning:hsl(warn,.85,.58),valid:hsl(pick(r,[168,178,150,190]),.62,.7)};
 }
-// Temporal Terrain (preview): luminous contour lines over a dark relief under a night sky. The lines' first hue (teal,
+// Temporal Terrain: luminous contour lines over a dark relief under a night sky. The lines' first hue (teal,
 // cyan, azure, violet, rose, amber or jade), whether the present's lamps contrast with it (warm on cool, cool on warm)
 // and the rock's tint are the identity's own, from its own stream. A fault stays red to magenta, at least 40 degrees
 // from the lamps' colour: never gold.
@@ -215,7 +251,7 @@ const GENOMES={
     };
     return g;
   },
-  // Preview (chosen only explicitly). Size sets how many files share a neuron, symbols per file the dendrites' reach,
+  // Size sets how many files share a neuron, symbols per file the dendrites' reach,
   // cross-subsystem coupling how tightly clusters gather, function-heavy code how much the processes wander, the agents'
   // share of the work the spontaneous firing, tests how tightly it keeps the beat.
   'synaptic-storm'(r,t){
@@ -235,7 +271,7 @@ const GENOMES={
         'refactor.validated':'consolidate','milestone.achieved':'storm','repository.checkpoint':'potentiate','world.expanded':'expand'}
     };
   },
-  // Preview (chosen only explicitly). The code's character picks the universe (the formula: a Mandelbulb for interface
+  // The code's character picks the universe (the formula: a Mandelbulb for interface
   // and hub-centred code, a Julia bulb for function-heavy code, a Mandelbox for classes and types and coupled
   // subsystems, a kaleidoscopic crystal for tested, widely branching code), the number of subsystems the bulbs' n-fold
   // branching, coupling their twist, symbols per file how far it may unfold, the project's size how closely its sites
@@ -259,7 +295,7 @@ const GENOMES={
         'refactor.validated':'refine','milestone.achieved':'bloom','repository.checkpoint':'glow','world.expanded':'deepen'}
     };
   },
-  // Preview (chosen only explicitly). The project's size at generation sets how closely files stand across a range (so
+  // The project's size at generation sets how closely files stand across a range (so
   // a project of 17 files and one of 450 both fill the land), symbols per file how high the ridges rise, coupling how
   // high the ranges' plateaus, tests how finely the contours are spaced; many subsystems favour the map view.
   'temporal-terrain'(r,t){
@@ -423,23 +459,26 @@ function retune(next,t,registry){
 // `version`: the generator to draw with (resolve keeps an identity stored before v4 on v3, without the v4 values).
 function generate(project,{seed,variant=0,family=null,pack=null,source='generated',locked=false,traits=null,now=Date.now(),registry=null,version=RECIPE_VERSION}={}){
   const s=(seed??project?.performance?.identity?.seed??parseInt(sha(project?.projectId||'').slice(0,8),16))>>>0;
-  const t=traits||traitsOf(project);
-  const scores=familyScores(t,s,variant);
-  // A preview is chosen only when asked for; the scores never include it.
-  const preview=PREVIEWS.includes(family);
-  const world=family&&!FAMILIES.includes(family)&&!preview?packFamily(registry,family):null;
-  const chosen=family&&(FAMILIES.includes(family)||preview||world)?family:FAMILIES.slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
+  const t=traits||traitsOf(project,version);
+  const scores=familyScores(t,s,variant,version);
+  // Any built-in family (and a preview) can be asked for with any generator; the scores choose only among the
+  // generator's own families (the flagships up to 4, all six from 5).
+  const own=FAMILIES.includes(family)||PREVIEWS.includes(family);
+  const world=family&&!own?packFamily(registry,family):null;
+  const chosen=family&&(own||world)?family:familiesOf(version).slice().sort((a,b)=>scores[b]-scores[a]||a.localeCompare(b))[0];
   let g=world?packGenome(world,s,variant,t):genome(chosen,s,variant,t);
   const overlay=pack?usable(registry,pack):null;
   const applied=overlay?.overlay&&overlay.overlay.base===chosen?overlay:null;
   if(applied)g=applyOverlay(g,applied.overlay,rng('pack',applied.id,s,variant),t);
-  // Digital life is part of a new built-in identity (a pack's world or look is its author's: never added to it). A
-  // stored identity keeps exactly what it had; the Visual Studio can turn life on for it (tuning `life.enabled`).
-  const builtin=!world&&!applied&&FAMILIES.includes(chosen);
+  // Digital life is part of a new built-in identity (a pack's world or look is its author's: never added to it): the
+  // flagships' from generator 3, the graduated families' from 5. A stored identity keeps exactly what it had; the Visual
+  // Studio can turn life on for it (tuning `life.enabled`).
+  const unpacked=!world&&!applied;
+  const builtin=unpacked&&(FLAGSHIPS.includes(chosen)||(version>=5&&GRADUATED.includes(chosen)));
   if(builtin)g={...g,life:lifeGenome(chosen,s,variant,version)};
   // v4: the cinematic finish is a new built-in identity's lens, never a pack's (an author's world or look keeps its own
   // grade until a finish is chosen for it); the composed score is every new identity's music.
-  if(version>=4){if(builtin||preview)g={...g,technique:{...g.technique,finish:'cinematic'}};g={...g,music:{...g.music,score:3}};}
+  if(version>=4){if(unpacked&&(FAMILIES.includes(chosen)||PREVIEWS.includes(chosen)))g={...g,technique:{...g.technique,finish:'cinematic'}};g={...g,music:{...g.music,score:3}};}
   const user=!!family||!!applied;
   return {schema:RECIPE_SCHEMA,recipeVersion:version,rendererVersion:RENDERER_VERSION,projectSeed:s,variant,
     source:user?'user':source,locked:!!locked||user,founded:user||!!locked||t.modules>=FOUNDING_MODULES,
@@ -454,8 +493,9 @@ function lifeGenome(family,seed,variant,version){
     attraction:1,repulsion:1,separation:1,alignment:1,cohesion:1,current:1,diffusion:1,radius:1,...(version>=4?{ecology:2}:{})};
 }
 // The generator a stored identity is redrawn with: one saved before v4 keeps v3 (what it was served as before v4
-// existed) and never gains a v4 value by itself; `tune` upgrades it deliberately.
-const generatorOf=stored=>stored&&!(stored.recipeVersion>=4)?3:RECIPE_VERSION;
+// existed) and never gains a v4 value by itself; one saved by v4 keeps v4, so it never moves to a family only v5 scores
+// (nor gains v5's digital life for those families); `tune` upgrades it deliberately.
+const generatorOf=stored=>!stored?RECIPE_VERSION:!(stored.recipeVersion>=4)?3:stored.recipeVersion>=5?RECIPE_VERSION:4;
 // What a stored recipe needs from the installed packs, and whether they are there.
 function availability(stored,registry){
   const missing={};
@@ -583,4 +623,4 @@ function structuralDifferences(a,b){
   walk(a.genome,b.genome,'');
   return diffs;
 }
-module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,PREVIEWS,FAMILY_NAMES,FOUNDING_MODULES,traitsOf,familyScores,generate,resolve,update,applyActions,tunable,baseValues,structuralDifferences};
+module.exports={RECIPE_SCHEMA,RECIPE_VERSION,RENDERER_VERSION,FAMILIES,FLAGSHIPS,GRADUATED,PREVIEWS,FAMILY_NAMES,FOUNDING_MODULES,familiesOf,generatorOf,traitsOf,familyScores,generate,resolve,update,applyActions,tunable,baseValues,structuralDifferences};

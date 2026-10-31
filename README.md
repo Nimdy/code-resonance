@@ -19,8 +19,9 @@ player, with its music, in any of the eight worlds; nothing to install, nothing 
   once are numbered. What each tool documents and what its adapter reads: [docs/AGENTS.md](docs/AGENTS.md).
 - **Your language.** TypeScript and JavaScript through the compiler; Python, Go, Rust, Java, Kotlin, C#, Swift, C and
   C++, PHP and Ruby through dependency-free scanners: classes, functions, routes, imports and test files.
-- **Eight worlds.** Fractal Biosphere, Stellar Forge and Machine Cathedral; the previews Synaptic Storm, Fractal
-  Continuum and Temporal Terrain; the Construct and Monolith.
+- **Eight worlds.** Six living world families the code chooses from: Fractal Biosphere, Stellar Forge and Machine
+  Cathedral, and Synaptic Storm, Fractal Continuum and Temporal Terrain (new, not yet reviewed artistically); and two
+  fixed stages, the Construct and Monolith.
 - **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
   music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
   OBS takes the Stage as a browser source.
@@ -52,7 +53,8 @@ The three flagship worlds, finishes, music influence and the Artist Studio, from
 | ![Finishes](docs/media/finishes.jpg) | ![Music influence](docs/media/music-influence.jpg) | ![Aurora Loom](docs/media/artist-aurora-loom.jpg) |
 | **Finishes.** Clean, Cinematic (the default for new identities) and Dreamlike: the same moment, the same camera. | **Music influence** 0, 1 and 2: how much the score moves the digital life; the same performance, the same framing. | **Aurora Loom**, a composition built entirely in the Artist Studio's interface, over the artist canvas. |
 
-The three preview worlds (chosen by hand in the Visual Studio; not yet part of automatic choice, no digital life yet):
+The three newest worlds (previews until generator 5; now chosen automatically too, not yet reviewed artistically, their
+digital life still to come):
 
 | | | |
 |---|---|---|
@@ -132,7 +134,7 @@ to the internet](docs/media/data-flow.svg)
 - **Node.js 20 or later** (CI uses 22) to run from this repository, and on the agents' PATH for agent hooks. The
   application has no runtime dependencies: nothing to install.
 - **A Chromium-based browser** (Chrome or Edge) for the Control Center and for recording; other browsers have not been
-  tested. **WebGL2** for the flagship worlds and the Construct, ideally with a GPU; without it the player shows
+  tested. **WebGL2** for the living worlds and the Construct, ideally with a GPU; without it the player shows
   Monolith (Canvas 2D).
 - The qualification harnesses in `qualification/` have their own dependencies (`cd qualification && npm ci`).
 
@@ -257,7 +259,8 @@ view agree ([docs/CONTROL-CENTER.md](docs/CONTROL-CENTER.md)).
 
 **Visual Studio.** Choose a world, preview it in this window, customise its parameters, choose a finish (Clean,
 Cinematic, Dreamlike) and how much the music moves its digital life, then apply. **Propose public names** fills
-subsystem aliases from each role; nothing is saved until Accept. Six curated looks and your own presets.
+subsystem aliases from each role; nothing is saved until Accept. Twelve curated looks (two per world) and your own
+presets.
 [docs/WORLDS.md](docs/WORLDS.md), [docs/LIFE.md](docs/LIFE.md).
 
 **Music Studio.** The score a project plays (the classic score, or the composed one with a one-click upgrade), its

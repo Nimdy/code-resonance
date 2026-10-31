@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- **Six worlds to choose from: generator 5.** Synaptic Storm, Fractal Continuum and Temporal Terrain graduate: the
+  family scores can choose them for a new identity, each scored from its own random stream after the flagships'
+  unchanged draws. Synaptic Storm wants dense, coupled wiring and the agents' share of the work, Fractal Continuum
+  intricate, function-heavy code in a few subsystems, Temporal Terrain a project that grew while it was observed (a new
+  trait, `grown`: the share of its symbols created since its first scan). Their new identities get digital life (its
+  own stream), which draws nothing until each world's ecosystem lands. No existing identity changes: generator 4's
+  families, order, draws and values are as pinned (`tests/recipe.test.js`; `tests/generator-v5.test.js` checks v3 and
+  v4 bit for bit against the generator before it), an identity stored by generator 4 is redrawn with 4 and never moves
+  by itself, and choosing a family, regenerating or going back to automatic is a new identity, as before. Over a
+  synthetic corpus of 2,000 projects generator 5 chooses Stellar Forge 29.3 %, Synaptic Storm 15.8 %, Fractal
+  Biosphere 15.6 %, Fractal Continuum 13.9 %, Machine Cathedral 13.3 %, Temporal Terrain 12.2 % (generator 4: Stellar
+  Forge 53.4 %); Excalidraw becomes a Synaptic Storm, Lumen Recipes and Code Resonance itself Temporal Terrains, so
+  the web demo, rebuilt, opens on Temporal Terrain ([docs/WORLDS.md](docs/WORLDS.md#from-data-to-identity)).
+- **Graduation:** the three are families of the catalogue (their parameters frozen, a base for declarative and shader
+  looks; the pack schema's shader `base` lists them), `/api/catalog` lists six families and no preview, and the Visual
+  Studio shows them as worlds of their own: no *In design* pill, two curated looks each (*Storm front*, *Glass cortex*;
+  *Teal Mandelbulb*, *Kaleidoscope crystal*; *Survey map*, *Misty valley*) and an Essentials group. The Artist Studio
+  composes over them (a composition may take one as its base). The new curated looks have not been reviewed
+  artistically.
+- **Qualification parity:** `catalogue.qual.js` renders all six families with every parameter at both ends (12/12,
+  SwiftShader); `worlds.qual.js` qualifies determinism across seeks, idle life, label privacy and resource release for
+  every family (`--families`, `--size`, `--fps`, `--tag`). Run for the three graduated worlds: 21/22. Fractal
+  Continuum fails determinism across seeks (two sessions with different seek histories render different frames on
+  Lumen at 160 s); the code before generator 5 renders the same two frames, so the defect is older and still open
+  ([QUALIFICATION.md](docs/QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Where your data goes:** a picture at the top of the README's *Local-first and private* and of SECURITY.md
   (`docs/media/data-flow.svg`): the extension and the agent hooks send only to the receiver on `127.0.0.1`, the
   receiver keeps its data in its folder and serves the browser, recordings go to your disk, and nothing goes to the

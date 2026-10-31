@@ -20,30 +20,36 @@ const FAMILIES=[
   {id:'stellar-forge',name:'Stellar Forge',line:'A galaxy: subsystems are star systems in its arms',
     why:'Scale and gravity: modules orbit their hubs, agents cross as comets, failures are storms over the affected worlds, milestones are novae that leave remnants. For large projects of many modules.'},
   {id:'machine-cathedral',name:'Machine Cathedral',line:'Needle spires on still water under a moon',
-    why:'Order and craft: subsystems are towers, live work lights their windows, links are bridges of light, failures crack the stone and recovery seals it. For tested, engineered code.'}];
-// Preview families: built in, chosen only here (never generated from the code), still being designed. Their thumbnails
-// are rendered from the project like the three's; the Artist Studio does not compose over them yet.
-const PREVIEW_FAMILIES=[
-  {id:'synaptic-storm',name:'Synaptic Storm (preview)',line:'A living neural network wired by the real dependencies',
-    why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. A preview: still changing, never chosen automatically.'},
-  {id:'fractal-continuum',name:'Fractal Continuum (preview)',line:'An evolving 3D fractal whose recursion is the code',
-    why:'The code\'s character picks the universe (a Mandelbulb, a Julia bulb, a Mandelbox or a crystal) and its branching; subsystems are regions of the surface, files sites of light on it. Growth unfolds the recursion, agents touch their files with ripples in their own colour, tests send a coherent wave of light, failures distort the region they cover, verified milestones earn a rare fractal bloom. A preview: still changing, never chosen automatically.'},
-  {id:'temporal-terrain',name:'Temporal Terrain (preview)',line:'The project\'s history as a contour landscape',
-    why:'Time is the land: the present is the lit front edge, the past recedes toward the horizon. Subsystems are ranges in their own hues, files the ridges that run back from the moment they were made, luminous contour lines crowd where code grew fast. Agents survey the land in their own colour and raise the ground where they edit; tests sweep a scan, failures open a fault that stays as a scar, commits leave survey stakes, verified milestones earn a rare sunrise and a beacon. A preview: still changing, never chosen automatically.'}];
-// Curated looks for the flagship worlds: built in, read-only, previewed and applied like a saved preset. Every path is
-// a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
+    why:'Order and craft: subsystems are towers, live work lights their windows, links are bridges of light, failures crack the stone and recovery seals it. For tested, engineered code.'},
+  {id:'synaptic-storm',name:'Synaptic Storm',line:'A living neural network wired by the real dependencies',
+    why:'Subsystems are clusters of glassy neurons, files their dendrite branches, dependencies the axons between them. Agents travel as signals in their own colour and make the neuron they edit fire; tests sweep activation waves, failures misfire, verified milestones earn a rare synaptic storm. For densely wired code and the agents working in it.'},
+  {id:'fractal-continuum',name:'Fractal Continuum',line:'An evolving 3D fractal whose recursion is the code',
+    why:'The code\'s character picks the universe (a Mandelbulb, a Julia bulb, a Mandelbox or a crystal) and its branching; subsystems are regions of the surface, files sites of light on it. Growth unfolds the recursion, agents touch their files with ripples in their own colour, tests send a coherent wave of light, failures distort the region they cover, verified milestones earn a rare fractal bloom. For intricate, function-heavy code in a few subsystems.'},
+  {id:'temporal-terrain',name:'Temporal Terrain',line:'The project\'s history as a contour landscape',
+    why:'Time is the land: the present is the lit front edge, the past recedes toward the horizon. Subsystems are ranges in their own hues, files the ridges that run back from the moment they were made, luminous contour lines crowd where code grew fast. Agents survey the land in their own colour and raise the ground where they edit; tests sweep a scan, failures open a fault that stays as a scar, commits leave survey stakes, verified milestones earn a rare sunrise and a beacon. For projects whose history was recorded from the start.'}];
+// Curated looks for the built-in worlds, two each: built in, read-only, previewed and applied like a saved preset. Every
+// path is a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[
   {id:'curated:abyss',name:'Bioluminescent abyss',line:'Deep teal water, strong inner light, fireflies in the dark.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.terrain':'abyss','material.bioluminescence':1.6,'atmosphere.lightShafts':.35,'atmosphere.fog':.9,'atmosphere.fireflies':1.2,'technique.finish':'dreamlike'}}},
   {id:'curated:reef',name:'Sunlit reef',line:'Bright shafts through violet water, translucent fronds swaying.',payload:{family:'fractal-biosphere',tuning:{'atmosphere.lightShafts':1.35,'material.bioluminescence':.8,'technique.exposure':1.15,'motion.sway':1.2,'material.translucency':.8,'technique.finish':'cinematic'}}},
   {id:'curated:deep-field',name:'Deep field',line:'Seen from farther out: a calm, cool galaxy in a dense starfield.',payload:{family:'stellar-forge',tuning:{'atmosphere.stars':1.5,'atmosphere.nebulaDensity':.5,'motion.orbitSpeed':.5,'camera.distance':1.3,'technique.saturation':.85,'technique.finish':'clean'}}},
   {id:'curated:nursery',name:'Stellar nursery',line:'Warm billowing nebulae, thick dust and bright young plasma.',payload:{family:'stellar-forge',tuning:{'atmosphere.nebula':'billowing','atmosphere.nebulaDensity':1.5,'material.plasma':1.3,'atmosphere.dust':1.4,'technique.saturation':1.3,'technique.tint':[1.12,.94,1.06],'technique.finish':'dreamlike'}}},
   {id:'curated:vigil',name:'Moonlit vigil',line:'Cold blue night, deep fog, moon rays and a mirror of water.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'night-fog','atmosphere.shafts':1.4,'atmosphere.fog':1.2,'material.wetness':1,'secondary.windows':.6,'technique.tint':[.9,.97,1.12],'technique.finish':'cinematic'}}},
-  {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0],'technique.finish':'cinematic'}}}];
+  {id:'curated:evensong',name:'Amber evensong',line:'Warm dusk haze, brass and every window glowing amber.',payload:{family:'machine-cathedral',tuning:{'atmosphere.weather':'dusk-haze','secondary.windows':1.6,'material.metal':1,'atmosphere.fog':.5,'atmosphere.shafts':.6,'technique.exposure':1.3,'technique.tint':[1.15,1,.85],'technique.lift':[.02,.01,0],'technique.finish':'cinematic'}}},
+  {id:'curated:storm-front',name:'Storm front',line:'Gold fire racing through a deep violet network, locked to the beat.',payload:{family:'synaptic-storm',tuning:{'motion.firingRate':1.6,'motion.sync':.9,'motion.conduction':1.4,'material.glow':1.4,'atmosphere.haze':1.2,'technique.finish':'dreamlike'}}},
+  {id:'curated:glass-cortex',name:'Glass cortex',line:'A clear, flat sheet of glassy neurons, sharp from near to far, firing calmly.',payload:{family:'synaptic-storm',tuning:{'space.depth':.35,'material.translucency':.95,'atmosphere.depthOfField':.25,'atmosphere.haze':.4,'motion.firingRate':.7,'technique.finish':'clean'}}},
+  {id:'curated:teal-bulb',name:'Teal Mandelbulb',line:'The reference: an eight-fold Mandelbulb in teal, seen down its axis, gold light on its rims.',payload:{family:'fractal-continuum',tuning:{'fractal.form':'bulb','fractal.power':8,'fractal.twist':0,'palette.primary':'#33828e','camera.personality':'pole','technique.finish':'cinematic'}}},
+  {id:'curated:kaleidoscope',name:'Kaleidoscope crystal',line:'A faceted crystal of mirrored recursion, glassy rims and a slow circling light.',payload:{family:'fractal-continuum',tuning:{'fractal.form':'kifs','fractal.shape':.7,'material.sheen':.5,'material.rim':1.2,'motion.light':.9,'atmosphere.halo':.6,'technique.finish':'dreamlike'}}},
+  {id:'curated:survey-map',name:'Survey map',line:'From high above: fine, bright contours like a lit chart, the mist cleared away.',payload:{family:'temporal-terrain',tuning:{'camera.personality':'map','camera.elevation':1.2,'motion.drift':0,'contour.interval':.65,'contour.glow':1.4,'atmosphere.mist':.3,'atmosphere.haze':.4,'technique.finish':'clean'}}},
+  {id:'curated:misty-valley',name:'Misty valley',line:'Low along the land toward a warm horizon, mist pooling in the valleys.',payload:{family:'temporal-terrain',tuning:{'camera.personality':'valley','motion.drift':0,'atmosphere.mist':1.4,'atmosphere.haze':1.1,'relief.height':1.25,'technique.tint':[1.08,1,.92],'technique.finish':'cinematic'}}}];
 // The few parameters that change a world the most, shown first; every other one stays under its group.
 const ESSENTIALS={
   'fractal-biosphere':['space.canopy','material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','life.enabled','life.music'],
   'stellar-forge':['geometry.arrangement','geometry.spiralArms','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed','life.enabled','life.music'],
   'machine-cathedral':['geometry.architecture','geometry.spire','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows','life.enabled','life.music'],
+  'synaptic-storm':['material.glow','motion.firingRate','space.depth','atmosphere.haze','atmosphere.ghosts','geometry.dendrites'],
+  'fractal-continuum':['fractal.form','fractal.power','fractal.twist','material.trap','material.glow','camera.personality'],
+  'temporal-terrain':['relief.height','contour.interval','contour.glow','atmosphere.mist','time.scale','camera.personality'],
   common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
@@ -77,7 +83,9 @@ const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.
 // Digital life (generator v3): an older identity has none, so its controls start from off and neutral scales.
 const LIFE_OFF={'life.enabled':false,'life.density':1,'life.vitality':1,'life.collective':1,'life.environment':1,'life.trails':1,'life.persistence':1,'life.music':1,
   'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1,'life.ecology':1};
-const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF}};
+// The graduated worlds' identities saved before generator 5 have no life either.
+const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF},
+  'synaptic-storm':{...LIFE_OFF},'fractal-continuum':{...LIFE_OFF},'temporal-terrain':{...LIFE_OFF}};
 // Parameters whose last path segment alone would not say what they are (the Essentials list them out of their group).
 const LABEL_OF={'life.enabled':'Digital life','life.music':'Music influence','life.ecology':'Ecology'};
 // Where a catalogue description says more than the control needs (the music influence explains its scale itself).
@@ -123,7 +131,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   import('../../worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
   const shown=()=>candidate||saved;
   const shownSpec=()=>candidate?candidateSpec:savedSpec?.tunable||null;
-  const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||PREVIEW_FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
+  const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
   const packOf=id=>P.state.packs.find(p=>p.id===id)||null;
   const savedWorld=()=>S.effective().world;
   const hasIdentity=d=>d.identity.length>0;
@@ -593,7 +601,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderIdentity(){
     const s=shown();if(!s)return;clear(identityBox);
     const state=s.locked?['Locked','ok','Kept as it is: never re-derived from the code']:s.founded?['Permanent','plain','Founded: the project is large enough that this identity is never re-derived']:['Provisional','warn','Re-derived from the code until the project has 6 modules'];
-    const why=FAMILIES.find(f=>f.id===s.family)?.why||PREVIEW_FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
+    const why=FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
     text(whyBox,why);whyBox.title=why;whyBox.hidden=!why;
     const tuned=s.tuning?.values?Object.keys(s.tuning.values).length:0;
     // The family, its source and the revision are in the inspector's heading; this says what can still change it: the
@@ -651,8 +659,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const cur=s.pack?.id||'';
     if(cur&&!looks.some(([id])=>id===cur))looks.push([cur,{base:s.family,kind:s.pack.kind}]);
     lookField.hidden=!looks.length;lookBox.lastChild.hidden=!!looks.length;
-    const preview=PREVIEW_FAMILIES.some(f=>f.id===s.family);lookNone.nextSibling.hidden=!looks.length&&preview;
-    if(!looks.length){text(lookNone,preview?'Look packs are drawn over the three flagship worlds; none can be made for a preview world yet.':`No look pack for ${familyName(s.family)} is installed.`);return;}
+    if(!looks.length){text(lookNone,`No look pack for ${familyName(s.family)} is installed.`);return;}
     lookSelect.setOptions([{value:'',label:'None (the family as generated)'},...looks.map(([id,l])=>{const p=packOf(id);
       return {value:id,label:`${p?.name||id} · ${l.kind==='shader'?'shader, code':'declarative'}${p&&p.executable&&!p.trusted?' · not approved':''}${!p||!p.ok?' · unavailable':''}`};})]);
     lookSelect.value=cur;
@@ -669,8 +676,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderFinish(){
     const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
     artistBtn.disabled=!builtin;
-    artistBtn.title=builtin?`Compose your own layers and reactive mappings over ${familyName(s.family)} in the Artist Studio`:'The Artist Studio composes over the three built-in worlds';
-    text(composeLine,builtin||!s?COMPOSE_LINE:'The Artist Studio composes over the three flagship worlds; not over this one yet.');
+    artistBtn.title=builtin?`Compose your own layers and reactive mappings over ${familyName(s.family)} in the Artist Studio`:'The Artist Studio composes over the built-in worlds';
+    text(composeLine,builtin||!s?COMPOSE_LINE:'The Artist Studio composes over the built-in worlds, not over a world pack.');
     finishSection.hidden=!s||!spec?.['technique.finish'];
     if(finishSection.hidden)return;
     const t=s.genome?.technique||{},finish=FINISH_LOOKS.some(f=>f.value===t.finish)?t.finish:'classic',tuned=s.tuning?.family===s.family?s.tuning.values:{};
@@ -875,12 +882,6 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
         match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
     }
-    for(const f of PREVIEW_FAMILIES){
-      const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
-        onChoose:()=>chooseFamily(f.id),choose:'Preview',
-        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('In design','warn',{title:'A preview world, still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
-    }
     for(const p of P.state.packs.filter(x=>x.kind==='world')){
       const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
       const meta=`Pack · ${p.author?.name||'unknown author'} · v${p.version}${p.executable?' · code':''}`;
@@ -935,11 +936,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!saved)return;
     renderLook();renderOverrides();renderFinish();renderParams();renderTitle();renderAliases();renderQuality();
   }
-  // ---- Thumbnails: the built-in families (the three, then the previews) rendered from this project, one at a time -------
+  // ---- Thumbnails: the built-in families rendered from this project, one at a time ----------------------------------
   async function runThumbs(){
     const run=++thumbRun;
     await new Promise(r=>setTimeout(r,700));
-    for(const f of [...FAMILIES,...PREVIEW_FAMILIES]){
+    for(const f of FAMILIES){
       if(!alive||run!==thumbRun||!saved)return;
       const key=`${projectId}:${saved.revision}:${f.id}`;if(THUMBS.has(key))continue;
       // The graph the thumbnail draws is the project's, so it waits for the project to load; nothing renders while recording.
@@ -952,7 +953,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       await new Promise(r=>setTimeout(r,80));
     }
   }
-  const thumbsWaiting=()=>saved&&[...FAMILIES,...PREVIEW_FAMILIES].some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
+  const thumbsWaiting=()=>saved&&FAMILIES.some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
   // ---- Routes: #/visual/family/<id> and #/visual/look/<packId> start a preview ---------------------------------------
   function consumeRoute(){
     if(!wantedRoute||!saved)return;const [kind,id]=wantedRoute;wantedRoute=null;

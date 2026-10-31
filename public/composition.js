@@ -1,7 +1,7 @@
 /* Code Resonance: artist compositions — the data model shared by the receiver (validation), the renderer (layers)
  * and the Artist Studio (inspector). Pure JS, usable in Node or a browser, no executable content.
  *
- * A composition is a stack of procedural layers over a base (a flagship world, or the artist canvas), with a finish
+ * A composition is a stack of procedural layers over a base (a built-in world, or the artist canvas), with a finish
  * (the cinematic look), optional world tuning (recipe paths the Visual Studio already exposes), an optional music
  * profile, and reactive mappings from deterministic signals (the score's expression, canonical engineering intents,
  * the ecosystem's state) to bounded layer parameters. Everything is an allowlisted type with clamped values; unknown
@@ -17,7 +17,7 @@
   const LIMITS={layers:8,mappings:6,globalMappings:4,name:48,budget:100,tuning:48,versions:5};
   // validate() reports the first problems only: a large crafted pack.json would otherwise list one per entry.
   const MAX_PROBLEMS=24;
-  const BASES=['fractal-biosphere','stellar-forge','machine-cathedral','canvas'];
+  const BASES=['fractal-biosphere','stellar-forge','machine-cathedral','synaptic-storm','fractal-continuum','temporal-terrain','canvas'];
   const FINISHES=['clean','cinematic','dreamlike'];
   // Depth is where a layer is drawn: behind the world, integrated with it (depth-tested), or in front of it. All three
   // are drawn into the same HDR image, so the finish (bloom, halation, aberration) applies to them like the world.
