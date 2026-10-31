@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+- **More agents (observe-only hooks).** Gemini CLI, Qwen Code, GitHub Copilot (CLI and VS Code's Copilot harness),
+  Factory Droid, Grok Build and goose now have adapters (`scripts/hooks/<tool>.js`, one shared runtime) and installers:
+  `npm run hooks:gemini|qwen|copilot|droid|grok|goose -- <project>`, or Connections › *More agents*. Each adapter was
+  written from its tool's hook documentation (cited in its header, checked 2026-10-30) and tested against those
+  documented payloads only; **no real session of these tools was run**. The rules are the same as for Claude Code,
+  Cursor and Codex: paths that pass the extension's filters, tool names, command categories, prompt and reply lengths
+  and fingerprints; never prompt text, replies, command lines, tool arguments, edit strings or file contents; nothing on
+  stdout, always exit 0, the token only to a receiver that proves it holds it. No installer registers an event that
+  can deny, block or rewrite (`BeforeTool`, `PreToolUse`, `PermissionRequest`, `preToolUse`, …). None of these payloads
+  documents a shell exit code, so their commands show a category and, at most, *failed*. Copilot and Grok Build name no
+  files, and Droid only for `Create`. The research matrix (which tools document what, and why Kimi, Cline, Windsurf,
+  Kiro, Augment, Junie, OpenCode, Amp, Continue, Roo Code, Aider and Zed have no adapter yet) is in
+  [docs/AGENTS.md](docs/AGENTS.md).
+- **CAST catalog.** New providers: `gemini` Gemini (seat 5), `copilot` Copilot (6), `droid` Droid (7), `goose` Goose (3).
+  These names are for `scripts/event.js --provider`: `opencode` OpenCode (4), `cline` Cline (6), `windsurf` Windsurf (3),
+  `amp` Amp (7), `kiro` Kiro (5), `augment` Augment (4), `junie` Junie (6), `aider` Aider (7). The worlds and the score
+  have eight seats (colour, signal shape, voice), so these providers share a seat with Claude, Cursor, Codex, Grok, Qwen
+  or Kimi. Those six keep their seats, names and colours. A chip names its provider, and sessions are numbered per chip.
+  Uncatalogued ids still read *Agent* and hash into seats 6–7. The Stage, hover cards, Home's *Last night*, the
+  Control Center and `npm run doctor`, which now lists the agents it observed, all show the new names.
+- **Interpretation impact (the version is not bumped here).** The reducer reads `presence()` for an agent's seat and
+  counts collisions only between catalogued providers. A journal whose events name one of the twelve new ids is
+  interpreted differently once its projection is rebuilt. Its agent's voice is the catalogued seat, where it used to
+  be a hash into 6 or 7, so its colour, shape and pan can change. Its edits can now form an `agent.collision` with
+  another catalogued provider. Its chips read the product name instead of *Agent*. Projections built before this change
+  keep their old reading until the interpretation version changes, which the language-adapter work does with version 10.
+- **Receiver.** `/api/integrations/<tool>/plan|apply` for each new tool, behind the control capability, with the same
+  review-then-write flow. Every folder on a nested hook path (`.github/copilot`, `.grok/hooks`,
+  `.agents/plugins/…/hooks`) is refused if it is a link, not only the last folder. `GET /api/integrations` lists the
+  tools with their observed projects (and the adapter path only with a capability). Providers with an adapter are
+  *first-party*.
+- **Connections.** A *More agents* section with one tab per tool. Each tab shows its observed activity per project
+  (marked when the events did not come through its hook), what the hooks send and never send, the file and the events
+  installed, the trust rule and a link to the tool's documentation. The same plan, review, write and remove flow is
+  there too. The overview strip has a seventh channel. *Other agents* no longer lists providers that have their own
+  section. The page is checked at 1920×1080 and 1280×720.
+- **Known limit.** Copilot (and Grok Build, Devin) also read the repository's Claude Code hook files. With Claude Code's
+  hooks installed, a Copilot session in that project can also appear as Claude.
+
 ## 0.7.2 — 2026-10-29
 
 Product 0.7.2, for use on your own machine; not stable. Interpretation **9** (8 in 0.7.1): on its first start the

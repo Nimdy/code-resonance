@@ -73,26 +73,39 @@ Optional: let agents join as a CAST (name, seat, voice) in the project's world. 
 npm run hooks:claude -- /path/to/project
 npm run hooks:cursor -- /path/to/project
 npm run hooks:codex -- /path/to/project
+npm run hooks:gemini -- /path/to/project    # Gemini CLI: .gemini/settings.json
+npm run hooks:qwen -- /path/to/project      # Qwen Code: .qwen/settings.json
+npm run hooks:copilot -- /path/to/project   # Copilot CLI and VS Code's Copilot harness: .github/copilot/settings.local.json
+npm run hooks:droid -- /path/to/project     # Factory Droid: .factory/hooks.json
+npm run hooks:grok -- /path/to/project      # Grok Build: .grok/hooks/code-resonance.json
+npm run hooks:goose -- /path/to/project     # goose: .agents/plugins/code-resonance/hooks/hooks.json
 ```
 
 Then start a new agent session in that project: a session that was already running does not pick up new hooks. Codex
-also asks you to review and trust new hooks (`/hooks`) before they run. While an agent is only thinking, nothing new
-arrives: Code Resonance sees its sessions, tools and files, never its reasoning.
+also asks you to review and trust new hooks (`/hooks`) before they run; Gemini CLI asks once before it runs a new
+project hook; Grok Build runs project hooks only after `/hooks-trust` (or `--trust`). While an agent is only thinking,
+nothing new arrives: Code Resonance sees its sessions, tools and files, never its reasoning. What each tool's adapter
+reads (Copilot and Grok name no files; none of the six newer tools reports exit codes) and why other tools have no
+adapter yet: [AGENTS.md](AGENTS.md). The six newer adapters were built from their tools' documentation and tested
+against its payloads; no real session of those tools was run to qualify them.
 
 **Several agents on one project.** The hooks belong to the project, not to one session: once a tool's hooks are in,
 every session of that tool in the project joins, at the same time if you like. A typical day (Claude Code in two
 terminals on different parts of the code, a Cursor agent chat on a third, Codex on tests) shows four presences, each
 going to the files it works on, each edit attributed to the session whose tool touched the file. Sessions of the same
 tool running together are numbered in labels and the hover card (*Claude*, *Claude 2*; a lone session is just
-*Claude*; a closed session's number is free again), and share the tool's colour and voice. Subagents show as their
+*Claude*; a closed session's number is free again), and share the tool's colour and voice. There are eight seats, so
+some tools share a colour and voice (Gemini with Kimi, Goose with Grok, …): their chips tell them apart, and each
+tool's sessions are numbered on their own. Subagents show as their
 tool's *subagent*. Two different tools on the same file (or the same subsystem) within a minute are a *meeting* of
 agents; two sessions of the same tool are not. An agent with no hooks here (for example one built into an editor
 without an adapter) is not a presence: its edits still arrive, unattributed, like your own.
 
 Connections shows what the receiver has actually observed (VS Code capture, the settings the extension reported, Claude
-Code, Cursor and Codex activity) and can add or remove each adapter after showing the exact change. Cursor is
-observe-only after-hooks (never `subagentStart`). Codex is observe-only (never `PreToolUse` / `PermissionRequest`;
-paths only from patch headers). Stage chips show catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi), not vendor
+Code, Cursor and Codex activity, and under *More agents* one tab per newer tool) and can add or remove each adapter
+after showing the exact change. Cursor is observe-only after-hooks (never `subagentStart`). Codex is observe-only
+(never `PreToolUse` / `PermissionRequest`; paths only from patch headers). No adapter installs an event that can deny.
+Stage chips show catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi, Gemini, Copilot, Droid, Goose, …), not vendor
 art. Overnight CAST and a public OBS night: [campaign-0.7.md](campaign-0.7.md). The README hero is a 70-second CAST
 session of Pulse.
 
@@ -257,6 +270,8 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | No project appears | capture not started, or the extension cannot reach the receiver | CR status-bar item → Start; `npm run doctor` shows the port the receiver uses; the extension's port setting is `resonance.receiverPort` |
 | The project shows as *Project 1a2b3c4d*, says *No VS Code capture* and has no structure | only an agent's hooks have reported so far; VS Code capture is not running in that folder | in that project's VS Code window: **CR stopped** → **Start Code Performance**; the name and files follow within seconds |
 | An agent never appears after `npm run hooks:…` | the agent session started before the hooks were added; Codex has not trusted the new hooks yet; or the workspace is not trusted | start a new agent session in that project; in Codex, review the hooks with `/hooks`; nothing arrives while an agent is only thinking |
+| Gemini CLI, Qwen Code, Copilot, Droid, Grok or goose never appears | the folder is not trusted (Gemini CLI, Qwen Code, Copilot CLI, Grok `/hooks-trust`), Gemini CLI is waiting for you to accept the new hook, or the session started before the hooks were added | trust the folder in that tool, accept the hook, start a new session; Connections › More agents shows whether its events arrive |
+| A Copilot session also shows up as *Claude* | Copilot reads the repository's `.claude/settings*.json` hooks too, so with Claude Code's hooks installed it also runs the Claude Code adapter | remove one of the two from that project (Connections), or accept the double presence; see [AGENTS.md](AGENTS.md) |
 | The world looks grainy or soft | **Auto** quality lowered the resolution because frames were slow on this GPU; the Cinematic finish adds a fine film grain | Visual Studio (or Settings) → rendering quality on this device → **High**; Visual Studio → Finish → **Clean** for less grain; on Windows, let the browser use the high-performance GPU (Settings → System → Display → Graphics); **Open Stage** shows the full resolution |
 | Events arrive late | by design: interpretation runs ~10 s behind the work | wait; the replay has everything |
 | No sound | the browser needs a click; or the tab is muted | **Enable sound**; check the tab's audio |
