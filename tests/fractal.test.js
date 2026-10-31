@@ -230,6 +230,33 @@ test('The earned bloom is rare: the director\'s token and a four-minute gap; oth
   assert.equal(milestone(T0+10000+500000,3),'bloom','four minutes after it, with the token: blooms again');
   w.dispose();
 });
+test('The finish: each region its own hue on the harmony (never olive), a gentler swell once unfolded, the key\'s shadow traced at the top qualities',async()=>{
+  const {THREE}=await load('core');const {createFamily}=await load('fractal');const {createAgents}=await load('agents');const {MIN_IT}=await load('fractal-forms');
+  const director={lasting:()=>[],attentionAt:()=>null,activityAt:()=>0,unlockedAt:()=>[]};
+  const frame=(model,t,quality=0)=>({t,tsec:(t-model.epoch)/1000,tview:(t-model.epoch)/1000,dt:1/30,beat:0,barPhase:0,mood:{tempo:96},energy:0,activity:0,unlocks:[],agents:[],overrides:{},quality,music:null});
+  // the region colour (sRGB HSL) in the table at a region's own direction, as the shader's octahedral lookup reads it
+  const oct=u=>{const s=Math.abs(u[0])+Math.abs(u[1])+Math.abs(u[2]);let x=u[0]/s,z=u[2]/s;if(u[1]<0){const px=x;x=(1-Math.abs(z))*(px>=0?1:-1);z=(1-Math.abs(px))*(z>=0?1:-1);}return [x*.5+.5,z*.5+.5];};
+  const colours=w=>{let R=null;w.compose.scene.traverse(o=>{if(o.userData?.fractal)R=o.userData.fractal;});const img=R.uSw.value.image,half=THREE.DataUtils.fromHalfFloat;
+    return {R,regions:['A','B','C'].map(id=>{const p=w.inspect(`r:${id}`,null).position,l=p.length(),[u,v]=oct([p.x/l,p.y/l,p.z/l]),o=(Math.min(img.height-1,Math.floor(v*img.height))*img.width+Math.min(img.width-1,Math.floor(u*img.width)))*4;
+      const hsl={};new THREE.Color(half(img.data[o]),half(img.data[o+1]),half(img.data[o+2])).getHSL(hsl,THREE.SRGBColorSpace);return {h:hsl.h*360,s:hsl.s,l:hsl.l,a:half(img.data[o+3])};})};};
+  const make=async(name,quality=0)=>{const r=recipe.generate(project(name),{family:ID,now:0}),model=await network();
+    const w=createFamily({scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(34,16/9,.1,4000),model,recipe:r,speed:()=>1,name:id=>id,director,agents:createAgents(),pipeline:{size:[640,360]}});
+    w.update(frame(model,T0+4000,quality));return {w,r};};
+  const dh=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
+  for(const name of ['world','finish-1','finish-2','finish-3']){
+    const {w,r}=await make(name),{R,regions}=colours(w),swell=r.genome.geometry.swell;
+    for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)assert(dh(regions[i].h,regions[j].h)>=8,`${name} (${r.genome.palette.scheme}): regions ${i} and ${j} have their own hues (${regions.map(x=>x.h.toFixed(0))})`);
+    for(const x of regions)assert(!(x.h>48&&x.h<100),`${name}: no region is olive (${x.h.toFixed(0)})`);
+    // the swell: up to the identity's, gentler once the recursion has unfolded past MIN_IT + 1 (the table's alpha holds it)
+    assert(R.uSwN.value<=swell+1e-9&&R.uSwN.value>=swell*.5-1e-9);if(w.stats().iterations>MIN_IT+1.5)assert(R.uSwN.value<swell);
+    for(const x of regions)assert(x.a>=1&&x.a<=1+R.uSwN.value+1e-3);
+    // the same identity draws the same colours
+    const again=await make(name);assert.deepEqual(colours(again.w).regions,regions);again.w.dispose();
+    assert.equal(R.uShN.value,6,'quality 0 traces the key light\'s shadow');w.dispose();
+  }
+  const low=await make('world',3);let R3=null;low.w.compose.scene.traverse(o=>{if(o.userData?.fractal)R3=o.userData.fractal;});
+  assert.equal(R3.uShN.value,0,'quality 3: two taps toward the light instead');low.w.dispose();
+});
 test('The player and the receiver know the preview: the host loads it, /api/catalog lists it apart from the three',async t=>{
   assert.match(fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8'),/'fractal-continuum':'\.\/fractal\.js'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-fractal-'),quiet:true});

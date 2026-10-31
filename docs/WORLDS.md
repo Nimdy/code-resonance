@@ -193,7 +193,8 @@ life yet; adding it changed no existing identity. Design brief, stills and what 
 An evolving 3D fractal universe: one raymarched, distance-estimated fractal whose formula and parameters (a Mandelbulb,
 a Julia bulb, a Mandelbox or a kaleidoscopic crystal, its branching, twist and shape) come from the code's character and
 the identity's own stream, so projects become different universes, not only different colours. Development unfolds its
-recursion; subsystems are regions of its surface (swelling with their files), files are sites of light on it,
+recursion; subsystems are regions of its surface, each in its own hue on the identity's harmony (swelling with
+their files), lit hard from the side like a cut stone, files are sites of light on it,
 dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
 shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
 decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
