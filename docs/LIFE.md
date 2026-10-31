@@ -1,7 +1,7 @@
 # Digital life
 
-The three flagship worlds can be inhabited: autonomous populations that sense, move, gather, leave traces and react
-to the world and to each other. This document is the contract: what the system is, what is deterministic and how
+The three flagship worlds, and Fractal Continuum among the previews, can be inhabited: autonomous populations that
+sense, move, gather, leave traces and react to the world and to each other. This document is the contract: what the system is, what is deterministic and how
 exactly, what changes for existing identities, and what it costs.
 
 ## The loop
@@ -48,13 +48,14 @@ live a seeded lifetime, fade out, and their slot is reused by a new generation a
 with time: no per-event spawning, fixed arrays, fixed trail length, a bounded number of sites (64) whose conditions are
 forgotten when the site disappears.
 
-## The three ecologies
+## The ecologies
 
 | World | Inhabitants | What they do | What the world shows of them |
 |---|---|---|---|
 | Fractal Biosphere (`life/biosphere.js`) | pollinators, spores, plankton colonies, drifters (about 1000) | Pollinators choose an organism's crown heads by appeal (visitors, trail, the organism's prominence, lasting milestones; winner-take-more), crowd above a threshold that scales with the crown, drain its nectar and leave in small streams for the next crown. Plankton colonies gather and move on between crowns; spores ride the gyre and settle in calm water; drifters wake where the water is disturbed. A failure opens a void around the strained organism and scatters life; a recovery lets it return. | Visited crowns and buds light up locally (the organisms' own photophores); explorers are dim and tail-less, gatherings are the brightest. |
 | Stellar Forge (`life/stellar.js`) | dust, accretion fragments, charged motes, stellar wind (about 1100) | Matter moves with the galaxy's differential rotation, density waves and eddies; systems capture fragments on eccentric bands; a failure's onset blows a system's halo out and its wind thickens, a recovery draws the matter back; a new system pulls harder for a while; verified milestones are lasting attractors. | Soft tapered ribbons and uneven beaded clumps; the gas map brightens along the streams matter keeps using (a matter map rebuilt from the state each tick). The galaxy stays the protagonist. |
 | Machine Cathedral (`life/cathedral.js`) | couriers, wardens, sparks | Routed on the city's own network (kerbs, docks, shafts on each tower's stone, galleries, spokes, channels, canal corridors, cables), never through stone. Traffic on a route deters the next traveller (congestion) or draws it (trail); shaft gates release climbers in convoys, kerb junctions admit platoons on the precinct's beat. A failure withdraws the wardens from the struck precinct; after a recovery they gather at the hub's foot and climb together. | Lanterns with their own halo shader; copings, channels and cables lit by recent traffic. |
+| Fractal Continuum, preview (`life/fractal.js`) | motes, skimmers, embers (680) | Live on a closed surface: the ecosystem's plane is an azimuthal equidistant map of the sphere of directions around the form's pole, its height the altitude above the surface; the life is held within 135° of the pole, so the map's one seam (the south pole) is never reached. Motes choose active sites (winner-take-more), circle them and leave carrying their light, following the one who left before them (threads of light between sites); skimmers flock along the threads; embers rest where the current is calm. A failing run opens a void over its site; after the recovery the repaired site draws the motes back. | Drawn on the surface as it is drawn at that moment (the vertex shader traces each point above the fractal's relief, pits bridged) and hidden behind the relief; the life's light pools in the relief around its gatherings and along its threads. [worlds/fractal-continuum.md](worlds/fractal-continuum.md#digital-life) |
 
 ## Ecology v2
 
@@ -322,6 +323,9 @@ a new coding agent, a courier is never a tool call.
   *Digital life* group turns it on (a tuning of `life.enabled`: preview, cancel, apply; reset removes it again).
 - `life.enabled: false` (or absent) renders the world exactly as before: no ecosystem, no draw call, no uniform
   changed. Checked byte-identical against the PR #9 renderer.
+- Fractal Continuum (a preview) offers the same `life.*` values; the generator draws none for it, so an identity has
+  digital life once a tuning turns it on. Life off renders it exactly as before (compared in Node with the world
+  before digital life).
 - Approved films keep their recipes (`<film>.recipe.json`): those have no `life`, so they render as they did.
 
 ### Controls (`engine/catalog.js`, `life.*`)
