@@ -72,14 +72,14 @@ test('Generator 5 pinned: the graduated genomes, digital life for their new iden
   }
   // Each world's life is its own draw (the stream is keyed by the family), not one shared set of values.
   const lives=recipe.GRADUATED.map(f=>JSON.stringify(recipe.generate(EMPTY,{family:f,now:0}).genome.life));assert.equal(new Set(lives).size,3);
-  // A pack's world or look never gets it: a look over a graduated family is its author's (tests/packs.test.js covers the
-  // registry); the finish and the composed score are the v4 defaults, as for the flagships.
+  // A look over a graduated family never gets it (the last test below); the finish and the composed score are the v4
+  // defaults, as for the flagships.
   const ss=recipe.generate(EMPTY,{family:'synaptic-storm',now:0});assert.equal(ss.genome.technique.finish,'cinematic');assert.equal(ss.genome.music.score,3);
   assert.equal(ss.familyName,'Synaptic Storm');assert.equal(ss.familyKind,'builtin');assert.equal(ss.recipeVersion,5);
 });
 test('The graduated families are chosen by their own signals: the three datasets, and each signal on its own',()=>{
   const at=(name,version=5)=>{const d=DATASETS[name];const traits=version>=5?d.traits:withoutGrown(d.traits);return recipe.generate({projectId:name},{seed:d.seed,traits,now:0,version});};
-  // Generator 4 chose, and stored identities of these datasets keep: Machine Cathedral, Stellar Forge, Machine Cathedral.
+  // Generator 4 chose Machine Cathedral, Stellar Forge, Machine Cathedral (and the identities stored for them stay).
   assert.deepEqual(['excalidraw','lumen','self'].map(n=>at(n,4).family),['machine-cathedral','stellar-forge','machine-cathedral']);
   // Generator 5: Excalidraw's dense, coupled 450 files are a network; Lumen and Code Resonance were recorded from their
   // first file, so their whole history is there to lay down as land.
