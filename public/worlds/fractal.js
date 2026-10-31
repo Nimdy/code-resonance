@@ -595,7 +595,12 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     threads.sort((x,y)=>x.born-y.born||x.seed-y.seed);threads=threads.slice(0,MAX_THREADS);
     thr.ensure(threads.length*TSEG);site.ensure(lay.sites.length);
   }
-  function rebuild(){layKey='';swSig='';}
+  // The camera is the host's: its rig eases it toward cameraGoal and snaps it to the next goal after a rebuild (a seek, a
+  // new performance, a world switch). Until the rig has placed it for this state nothing here reads where it was: the
+  // level of detail is taken at the framing distance and a close-up's dolly at the direction the goal turns to, so the
+  // frame at a moment never depends on the path playback took to it (tests/fractal-seek.test.js).
+  let camPlaced=false;
+  function rebuild(){layKey='';swSig='';camPlaced=false;}
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0,overrides:{},agents:[]},itNow=MIN_IT,itDraw=MIN_IT,gsNow=1,massNow=0,swNow=SWELL;
   const sitePos=[],siteSurf=[],siteBase=[];   // world positions of the sprites; fractal-space surface points (events), before the swell
@@ -776,7 +781,9 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     const [w,h]=ctx.pipeline.size;U.uPx.value=Math.max(.4,h/1080);U.uRes.value.set(w,h);U.uV.value=i.tview;
     structure(i.t);
     massNow=massAt(model,i.t,sp);itNow=unfoldAt(fc,massNow);
-    const [,hpx]=ctx.pipeline.size,camD=Math.max(1e-3,camera.position.length()/(gsNow*WS)-R0*.9),foot=camD*2*Math.tan(camera.fov*Math.PI/360)/Math.max(1,hpx*q.scale);
+    // (before the camera is placed for this state: the framing distance, in fractal units, at the identity's own lens)
+    const fovNow=camPlaced?camera.fov:clamp(num(cam.fov,32),20,55),dist=camPlaced?camera.position.length()/(gsNow*WS):R0*(1+SWELL*.7)/Math.sin(fovNow*Math.PI/360)*1.2*clamp(num(cam.distance,1),.6,1.6);
+    const [,hpx]=ctx.pipeline.size,camD=Math.max(1e-3,dist-R0*.9),foot=camD*2*Math.tan(fovNow*Math.PI/360)/Math.max(1,hpx*q.scale);
     itDraw=Math.min(itNow,q.cap,detailCap(fc,foot));
     // the swell: a region grows with its files, the more gently the further the form has unfolded, so its fine detail
     // is magnified and sheared less (a smooth seed may bulge; an intricate form keeps its structure)
@@ -811,7 +818,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     bgU.uHazeK.value=clamp(num(atm.haze,.7),0,1.6)*atmo;bgU.uV.value=i.tview;bgU.uQ.value=i.quality||0;bgU.uRw.value=R0*(1+SWELL*.6)*gsNow*WS;
   }
   const fwd=new THREE.Vector3(),rightV=new THREE.Vector3(),upV=new THREE.Vector3(),vp=new THREE.Matrix4();
-  function afterCamera(i){camera.updateMatrixWorld();
+  function afterCamera(i){camPlaced=true;camera.updateMatrixWorld();
     vp.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);R.uVP.value.copy(vp);R.uInvVP.value.copy(vp).invert();
     const s=gsNow*WS;R.uCamF.value.copy(camera.position).divideScalar(s);
     // the key light: above and to the side of the camera, circling slowly (ambient)
@@ -851,15 +858,17 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     // what changed is seen up close (the surface's fine structure fills the frame); an agent's work in a medium view
     const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;let k=0;
     if(att&&since<13&&!bloomNow){const p=attentionPoint(att);if(p){const s=sphOf(p.dir);k=smooth(since/1.4)*(1-smooth((since-8.5)/4.5))*clamp(i.overrides.intensity??1,.4,1)*.85;
-      const kd=k*smooth((since-.9)/2)*facing(p.dir);target.lerp(p.pos,k*.75);az=lerpAngle(az,s.az,k);el=lerp(el,clamp(s.el,-.3,1.25),k);distance=lerp(distance,Math.min(distance,Rw*.45/Math.tan(half)),kd);}}
+      const kd=k*smooth((since-.9)/2)*facing(p.dir,lerpAngle(az,s.az,k),lerp(el,clamp(s.el,-.3,1.25),k));target.lerp(p.pos,k*.75);az=lerpAngle(az,s.az,k);el=lerp(el,clamp(s.el,-.3,1.25),k);distance=lerp(distance,Math.min(distance,Rw*.45/Math.tan(half)),kd);}}
     if(k<.01){const busy=(touches[0]&&touches[0].k>.15&&touches[0].kind==='edit'?touches[0].fileId:null)||i.agents.map(a=>workOf(a,i.t)).find(Boolean);
       if(busy){const kk=siteIdx.get(busy),qq=siteSurf[kk];if(qq){const r=Math.hypot(...qq),d=qq.map(x=>x/r),s=sphOf(d);target.lerp(tmp.set(...qq).multiplyScalar(gsNow*WS),.4);az=lerpAngle(az,s.az,.55);el=lerp(el,clamp(s.el,-.3,1.2),.5);
-        distance=lerp(distance,Math.min(distance,Rw*.8/Math.tan(half)),.6*facing(d));}}}
+        distance=lerp(distance,Math.min(distance,Rw*.8/Math.tan(half)),.6*facing(d,az,el));}}}
     return {target,distance,azimuth:az,elevation:el,fov,omega:k>.01?1.1:.5};
   }
   const lerpAngle=(a,b,k)=>{let d=b-a;while(d>Math.PI)d-=TAU;while(d<-Math.PI)d+=TAU;return a+d*k;};
   // How directly the camera already faces a direction: a close-up waits until it does (it never cuts through the form).
-  function facing(d){const p=camera.position,l=p.length()||1;return smooth((p.x*d[0]+p.y*d[1]+p.z*d[2])/l*1.6-.3);}
+  // (before the camera is placed for this state: as faced from the goal's own azimuth and elevation, where the snap puts it)
+  function facing(d,az,el){if(!camPlaced){const ce=Math.cos(el);return smooth((Math.cos(az)*ce*d[0]+Math.sin(el)*d[1]+Math.sin(az)*ce*d[2])*1.6-.3);}
+    const p=camera.position,l=p.length()||1;return smooth((p.x*d[0]+p.y*d[1]+p.z*d[2])/l*1.6-.3);}
   function regionPoint(r){const n0=Math.floor(itDraw),rr=radiusAt(`r:${r.id}`,r.dir,n0)*swellAt(r.dir,lay.regions,weights,swNow)*gsNow*WS;return new THREE.Vector3(...r.dir).multiplyScalar(rr);}
   function attentionPoint(c){const s=c.subject||{};
     const fid=s.fileId&&siteIdx.has(s.fileId)?s.fileId:null;
