@@ -258,6 +258,12 @@
 /* ---- Laptop and narrow windows ------------------------------------------------------------------------------------ */
 @media (max-width:1280px){.ws-music .ms-preview{top:-24px}
   .ws-music .ms-monitor{padding:14px 16px}.ws-music .ms-readout{padding:8px 10px}.ws-music .ms-readout b{font-size:15px}.ws-music .ms-readout:nth-child(n) b{font-size:15px}}
+/* Below 1280 px the desk beside the monitor is narrower than the title and the scope box side by side (about 700 px):
+   the scope goes under the title instead of widening the whole page under the monitor. With the 300 px monitor column
+   (1080 px and below), its read-outs go two by two and the sound notice's button under its words, as in one column. */
+@media (max-width:1279px){.ws-music .ms-head{flex-wrap:wrap}.ws-music .ms-scope{flex:1 1 100%}}
+@media (max-width:1080px){.ws-music .ms-live-grid{grid-template-columns:repeat(2,1fr)}.ws-music .ms-readout:nth-child(3){border-left:0}.ws-music .ms-readout:nth-child(n+3){border-top:1px solid var(--line)}
+  .ws-music .ms-sound-off{flex-wrap:wrap}.ws-music .ms-sound-off .grow{flex-basis:100%}.ws-music .ms-tempi{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
   /* One scroll for the whole studio. The monitor (stage and read-outs) comes first, so a change is seen reacting while
      the controls are in view; the read-only identity goes last. The inspector's box dissolves so its parts can be placed. */
