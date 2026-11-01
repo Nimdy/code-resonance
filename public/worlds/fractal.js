@@ -29,7 +29,8 @@
 //                            and only with the director's milestone token; otherwise a local unfolding. It leaves an inner
 //                            light in the subject's region (lasting)
 // Ambient life (never progress): the form breathes on the bars, the key light circles slowly, glints catch on the beat,
-// sites pulse spontaneously on the beat grid (raised by recent work), dust drifts in the void.
+// sites pulse spontaneously on the beat grid (raised by recent work) and, with the musical clock, on the eighths where
+// the arrangement plays rhythm (a section's onset: a soft volley and a shimmer of glints), dust drifts in the void.
 // Every image is a function of the model, the recipe, the director's fold and the performance clock; the level of detail
 // drawn (how many recursions the pixels can hold) also follows the camera's distance, as the camera rig follows the frames.
 import {THREE,clamp,lerp,smooth,hash,rand} from './core.js';
@@ -144,7 +145,7 @@ export function createFamily(ctx){
     uRimDir:{value:new THREE.Vector3(0,0,-1)},uShN:{value:6},uShK:{value:9},uHueD:{value:HUE_D},uHueR:{value:HUE_R},uIri:{value:IRI},uSwN:{value:SWELL},
     uHi:{value:V3(pal.highlight)},uAcc:{value:V3(pal.accent,1.3)},uWarn:{value:V3(pal.warning,1.2)},uValid:{value:V3(pal.valid,1.2)},
     uOcc:{value:clamp(num(mtl.occlusion,1),.4,1.8)},uTrapK:{value:clamp(num(mtl.trap,.5),0,1)},uSheen:{value:clamp(num(mtl.sheen,.4),0,1)},uRim:{value:clamp(num(mtl.rim,.7),0,1.6)},
-    uGlow:{value:GLOW},uInner:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.6)},uBeat:{value:0},uTime:{value:0},uBreath:{value:0},uQ:{value:0},
+    uGlow:{value:GLOW},uInner:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.6)},uBeat:{value:0},uSect:{value:0},uTime:{value:0},uBreath:{value:0},uQ:{value:0},
     uTch:{value:L4(4)},uTchC:{value:L4(4)},uWav:{value:L4(6)},uWavC:{value:L4(6)},uWavK:{value:L4(6)},uLast:{value:L4(4)},uStress:{value:0},uHaloK:{value:clamp(num(atm.halo,.7),0,1.6)},uHaloC:{value:V3(pal.highlight.clone().lerp(pal.primary,.5),.5)}};
   // Life on: the light the life pools in the relief (an octahedral map of directions like the swell table's, rebuilt
   // from the ecosystem at each tick; r: where motes gather and embers rest, g: the threads they keep using).
@@ -171,7 +172,7 @@ float mapA(vec3 p,float s){return mapK(p,max(${MIN_IT.toFixed(1)},uIt-1.),s);}
 vec3 rayDir(vec2 uv){vec4 a=uInvVP*vec4(uv*2.-1.,-1.,1.),b=uInvVP*vec4(uv*2.-1.,1.,1.);return normalize(b.xyz/b.w-a.xyz/a.w);}`;
   const FS=`precision highp float;varying vec2 vUv;
 uniform mat4 uVP;uniform vec3 uKey,uKeyC,uFillC,uRimC,uRimDir,uHi,uAcc,uWarn,uValid,uHaloC;
-uniform float uEpsK,uOcc,uTrapK,uSheen,uRim,uGlow,uInner,uShim,uBeat,uTime,uBreath,uQ,uStress,uHaloK,uShK,uHueD,uHueR,uIri,uSwN;uniform int uAOn,uShN;
+uniform float uEpsK,uOcc,uTrapK,uSheen,uRim,uGlow,uInner,uShim,uBeat,uSect,uTime,uBreath,uQ,uStress,uHaloK,uShK,uHueD,uHueR,uIri,uSwN;uniform int uAOn,uShN;
 uniform vec4 uTch[4],uTchC[4],uWav[6],uWavC[6],uWavK[6],uLast[4];${LIFE?'\nuniform sampler2D uLifeL;uniform vec4 uLifeK;uniform vec3 uLifeC;':''}
 ${MAP}
 float h31(vec3 p){p=fract(p*vec3(.1031,.1030,.0973));p+=dot(p,p.yxz+33.33);return fract((p.x+p.y)*p.z);}
@@ -217,9 +218,10 @@ vec3 shade(vec3 p,vec3 rd,float t,out float aoOut){
   float rim=pow(fr,3.)*clamp(dot(n,uRimDir)*.8+.2,0.,1.)*ao;
   vec3 c=alb*lin+sc*(uKeyC*spe+envK)+uRimC*(rim*uRim*(.5+.7*gl)+env*.6);
   // ambient glints on the beat: rare points of light where a glassy ridge catches the key, in the region's colour, more
-  // of them where a region holds more files (its swell), a few pixels wide at any distance
+  // of them where a region holds more files (its swell), a few pixels wide at any distance; a section's onset (uSect)
+  // is a brief shimmer of many more, over every lit facet
   if(uShim>0.&&uQ<2.5){float lv=floor(log2(e*3.)),cs=exp2(lv);vec3 g=floor(p/cs);float hs=h31(g+lv*17.),rw=clamp((s-1.)/max(uSwN,1e-3),0.,1.);
-    if(hs>.9994-.0024*rw){float tw=.5+.5*sin(uTime*(1.7+hs*3.)+hs*90.);c+=mix(normalize(bright+1e-4)*2.2,uHi,.3)*pow(tw,6.)*(.3+.7*uBeat)*uShim*ao*3.*smoothstep(.55,.95,nh)*sh*(.4+gl);}}
+    if(hs>.9994-.0024*rw-.0036*uSect){float tw=.5+.5*sin(uTime*(1.7+hs*3.)+hs*90.);c+=mix(normalize(bright+1e-4)*2.2,uHi,.3)*pow(tw,6.)*(.3+.7*max(uBeat,uSect))*uShim*ao*3.*smoothstep(.55-.4*uSect,.95,nh)*sh*(.4+gl);}}
   // events on the surface
   float cre=1.-ao;cre*=cre;vec3 em=vec3(0.);
   ${unroll(4,k=>`vec4 C=uTchC[${k}];if(C.w>0.){vec4 T=uTch[${k}];float d=length(p-T.xyz),a=T.w;
@@ -653,7 +655,17 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
   const tempoOf=i=>Math.max(40,i.mood?.tempo||92);
   const near=(list,i,ms)=>list.filter(x=>x.at<=i.t&&i.t-x.at<ms*ctx.speed());
   const seatOf=a=>presence(a.provider).seat%8;
-  let stressNow=0,bloomNow=0,lastStats={};
+  let stressNow=0,bloomNow=0,sectNow=0,lastStats={};
+  // The music per bar (ctx.musicAt: the host's musical clock, a pure function of the performance's frames): how much
+  // rhythm the arrangement plays there (the gate of the eighth notes), and which section it belongs to. Cached per bar.
+  const barMusic=new Map();
+  function musicOfBar(k,bar){const key=`${k}|${bar}`;let v=barMusic.get(key);
+    if(!v){const ex=ctx.musicAt(k*bar+bar*.5);v={rhythm:ex?Math.pow(clamp(+ex.rhythm||0),1.5):0,section:ex?ex.section:null};barMusic.set(key,v);if(barMusic.size>512)barMusic.delete(barMusic.keys().next().value);}
+    return v;}
+  const rhythmAt=(k,bar)=>musicOfBar(k,bar).rhythm;
+  // The start of the section in force at t (the first bar of the run of bars with its section), within 64 bars.
+  function sectionStart(t,bar){const b=Math.floor(t/bar),s0=musicOfBar(b,bar).section;if(s0===null||s0===undefined)return null;
+    for(let k=b-1;k>=b-64;k--)if(musicOfBar(k,bar).section!==s0)return (k+1)*bar;return null;}
   // A site's surface point (fractal space) at the current frame: its radius at the drawn recursion, the region's swell.
   // (siteBase: the same point before the region's swell, where the decoherence field lives)
   function surfacePoint(s,out,base){const n0=Math.floor(itDraw),f=itDraw-n0,r0=radiusAt(s.id,s.dir,n0),r1=radiusAt(s.id,s.dir,Math.min(MAX_IT,n0+1)),r=lerp(r0,r1,f);
@@ -709,6 +721,17 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
       const [k1,k2]=spontaneous(h,b,kk=>pn*(1+1.4*act(kk)),48),jit=kk=>(1-SYNC)*rand((h^Math.imul(kk|0,0x85ebca6b))>>>0)*beatMs*.5;
       for(const kk of [k1,k2])if(kk!==null)offer(x,kk*beatMs-jit(kk),spontS,C_SPONT,t);
       if(stressS[k]>.05){const hm=hash(`mis/${s.id}`),step=beatMs*.37,kq=Math.floor(t/step);for(let j=0;j<5;j++){const kk=kq-j;if(rand((hm^Math.imul(kk|0,0x27d4eb2d))>>>0)<.45*stressS[k])offer(x,kk*step+rand(hm+kk)*step*.8,-.7*stressS[k],C_WARN,t);}}}
+    // Music (only where the host gives the musical clock, ctx.musicAt): sites also fire on the eighth notes between the
+    // beats, gated by the rhythm the arrangement plays in the candidate's own bar (read there, so a pulse in flight never
+    // changes and the state at a moment never depends on the music after it); their threads carry the pulse. A section's
+    // onset is a soft volley of every site within a third of a beat, and a shimmer of glints over the surface.
+    sectNow=0;
+    if(ctx.musicAt&&mu){const eMs=beatMs/2,e0=Math.floor(t/eMs),bar=beatMs*4,b0=Math.floor((e0-31)*eMs/bar),rh=[];for(let j=0;j<6;j++)rh.push(rhythmAt(b0+j,bar));
+      const gate=e=>rh[Math.floor(e*eMs/bar)-b0]??0;
+      for(let k=0;k<N;k++){const s=lay.sites[k];if(!model.modules.get(s.id))continue;const pn=RES*clamp(.9/Math.sqrt(N+4),.015,.12)*(.6+.8*rand(hash(s.id)+5))*.8;
+        const [e1,e2]=spontaneous(s.h8??=hash(`${s.id}/eighth`),e0,e=>e&1?pn*gate(e):0,32);for(const e of [e1,e2])if(e!==null)offer(fires[k],e*eMs,spontS*.75,C_SPONT,t);}
+      const ts=sectionStart(t,bar);if(ts!==null&&t-ts<6000*sp){for(let k=0;k<N;k++)offer(fires[k],ts+rand(hash(`${lay.sites[k].id}/${ts}`))*beatMs*.3,.6,C_SPONT,t);
+        const a=(t-ts)/1000/sp;sectNow=smooth(a/.25)*Math.exp(-a*1.4);}}
     for(const w of near(waves,i,9000)){for(const id of w.files){const k=siteIdx.get(id);if(k===undefined)continue;const p=siteSurf[k],d=Math.hypot(p[0]-w.o[0],p[1]-w.o[1],p[2]-w.o[2]);offer(fires[k],w.at+d/w.speed*1000*sp,.9,C_VALID,t);}}
     for(const r of near(recoheres,i,8000)){const k0=Math.floor(r.at/beatMs);for(const id of r.files){const k=siteIdx.get(id);if(k===undefined)continue;for(let j=1;j<=3;j++)offer(fires[k],(k0+j)*beatMs,1.05,C_VALID,t);}}
     for(const g of near(glows,i,8000))for(const id of g.files){const k=siteIdx.get(id);if(k!==undefined)offer(fires[k],g.at+250*sp,.8,C_GROW,t);}
@@ -924,7 +947,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     if(fc.form==='kifs'){R.KR1.value.set(...rotation(.06+fc.twist*.32+twist*.45,.04+fc.twist*.22+twist*.3));R.KR2.value.set(...rotation(-.03-fc.twist*.14-twist*.2,.08+fc.twist*.26+twist*.4));}
     R.TWON.value=formula.twist.tw||formula.twist.sp||twist?1:0;R.TWC.value.set(Math.cos(formula.twist.tw+twist),Math.sin(formula.twist.tw+twist));R.SPC.value.set(Math.cos(formula.twist.sp+twist*.5),Math.sin(formula.twist.sp+twist*.5));
     fracScale=q.scale;R.uIt.value=itDraw;R.FIT.value=Math.floor(itDraw)+2;R.uSteps.value=q.steps;R.uEpsK.value=q.eps;R.uAOn.value=q.ao;R.uShN.value=q.sh;R.uQ.value=i.quality||0;R.uTime.value=i.tview;
-    R.uBeat.value=i.beat*num(MU.beatPulse,.4)*reactive;R.uBreath.value=breath;R.uInner.value=i.unlocks[1]?.level||0;R.uStress.value=stressNow;
+    R.uBeat.value=i.beat*num(MU.beatPulse,.4)*reactive;R.uSect.value=sectNow*reactive;R.uBreath.value=breath;R.uInner.value=i.unlocks[1]?.level||0;R.uStress.value=stressNow;
     eventUniforms(i);
     // the burst
     // the burst's points are traced on the first frame (already a long one), not on the milestone's: shown at the first bloom
@@ -1042,7 +1065,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();}
   // After a seek: no transient survives (the lasting inner light comes back from the director's record).
-  function onPrime(){for(const l of [waves,decoheres,recoheres,glows,blooms,deepens,meetings])l.length=0;agentState.clear();lastSig='';}
+  function onPrime(){for(const l of [waves,decoheres,recoheres,glows,blooms,deepens,meetings])l.length=0;agentState.clear();lastSig='';barMusic.clear();}
   // Composition anchors (layers.js): the form, its regions, the sites, its rim. Read-only.
   const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
   function composeAnchors(i){const Rw=R0*(1+SWELL*.5)*gsNow*WS;composeA.center.set(0,0,0);composeA.extent=Rw;composeA.boundary.radius=Rw*1.1;composeA.boundary.y=0;
