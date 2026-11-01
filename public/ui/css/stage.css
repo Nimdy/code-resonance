@@ -77,7 +77,10 @@ body.stage-idle,body.stage-idle *{cursor:none!important}
 .stage-sound[aria-pressed="true"]{background:var(--accent-soft)!important;border-color:var(--accent-line)!important;color:var(--accent)!important}
 .stage-hints{display:flex;gap:18px;font-size:13px;color:rgba(222,230,242,.66);white-space:nowrap}
 .stage-hints span{display:inline-flex;align-items:center;gap:6px}
-@media (max-width:1180px){.stage-hints{display:none}}
+/* When the bar has to wrap (a narrow window, a long title), the window buttons keep the right edge of their own row
+   instead of dropping under the way back with a stray divider left at the end of the first row. */
+.stage-top>.stage-group:last-child{margin-left:auto}
+@media (max-width:1180px){.stage-hints{display:none}.stage-sep{display:none}}
 @media (max-width:900px){.stage-top{padding:10px 10px 28px}.stage-top .stage-present{order:5;width:100%;flex-wrap:wrap}.stage-sep{display:none}.stage-title strong{max-width:60vw}.transport-row{flex-wrap:wrap}.scrub{order:4;flex-basis:100%}.stage-info{display:none}.stage-back-keys{display:none}}
 /* Messages on the Stage sit above the transport, never over its controls. */
 body.immersive .toasts{bottom:136px}
