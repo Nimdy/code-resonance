@@ -8,23 +8,22 @@ One window records at a time.
 
 **Where it is written** (Record & Broadcast, a choice of this browser, kept in its storage):
 
-- *Keep in memory, download when stopped* (the default, as before): the browser holds the whole file in memory until
-  you stop, then downloads it. A crash or a closed tab loses it. For up to about half an hour (see *Limits*).
-- *Record to a file on disk* (recommended for long sessions): you choose the file in the browser's Save dialog when you
+- *Download at the end* (the default, as before): the browser holds the whole file in memory until you stop, then
+  downloads it. A crash or a closed tab loses it. For up to about half an hour (see *Limits*).
+- *File on disk* (recommended for long sessions): you choose the file in the browser's Save dialog when you
   press Record, and the recording is written to disk as it is recorded. Memory stays flat, the length is bounded by the
   disk, a crash or a closed tab keeps what was written, and the saved file is seekable with its duration. See
   [Recording to a file on disk](#recording-to-a-file-on-disk).
 
-**Recording profile** (Record & Broadcast; the global default in Settings): *720p* (1280×720, the default), *1080p*
-(1920×1080), *Vertical* (1080×1920, 9:16: see [Vertical clips](#vertical-clips-916)) or *Stage size*. At 720p
-or 1080p the world renders at exactly that size with a 16:9 camera (the living worlds, visual packs and the
-Construct), and the stage shows the same picture letterboxed while you record: what you see is what is recorded,
-nothing is stretched, cut or bordered in the file. Monolith, the 2D world, keeps the stage's shape and is fitted into
-the frame with black bars (at Vertical it is drawn upright at 1080×1920 too). Labels scale with the output, so 720p and
-1080p have the same composition.
-*Stage size* records the stage as it is on screen (any aspect ratio). Video bitrate: 5 Mbit/s at 720p, 8 Mbit/s at
-1080p, in proportion for the stage size. Adaptive quality may lower the world's internal resolution while frames are
-slow; the file keeps the chosen dimensions.
+**Recording profile** (Record & Broadcast, beside where it is written under the monitor; the global default in
+Settings): *720p* (1280×720, the default), *1080p* (1920×1080), *Vertical* (1080×1920, 9:16: see [Vertical
+clips](#vertical-clips-916)) or *Stage size*. At 720p or 1080p the world renders at exactly that size with a 16:9 camera
+(the living worlds, visual packs and the Construct), and the stage shows the same picture letterboxed while you record:
+what you see is what is recorded, nothing is stretched, cut or bordered in the file. Monolith, the 2D world, keeps the
+stage's shape and is fitted into the frame with black bars (at Vertical it is drawn upright at 1080×1920 too). Labels
+scale with the output, so 720p and 1080p have the same composition. *Stage size* records the stage as it is on screen
+(any aspect ratio). Video bitrate: 5 Mbit/s at 720p, 8 Mbit/s at 1080p, in proportion for the stage size. Adaptive
+quality may lower the world's internal resolution while frames are slow; the file keeps the chosen dimensions.
 
 720p is the default because it holds 30 frames per second on modest GPUs: on the AMD integrated GPU used for testing
 (measured with the worlds of PR #6, before the flagship worlds), every world recorded at 30 fps at 720p, while at
@@ -39,7 +38,7 @@ the whole file, so the player finishes and saves the recording at that moment an
 
 ## Recording to a file on disk
 
-**Using it.** Choose *Record to a file on disk* under *Where it is written*. Record then opens the browser's Save dialog
+**Using it.** Choose *File on disk* under *Where it is written*. Record then opens the browser's Save dialog
 (the name is `code-resonance-<project>-<time>.webm`; the browser remembers the folder) and starts once you have chosen
 the file; cancelling records nothing. While it records, the *Data* readout is *On disk*: the bytes written so far, as the
 writer confirms them, beside the elapsed time; the *File* line names your file. When you stop, the line under Record says
@@ -219,8 +218,8 @@ The first marker method (white flash, 2 kHz click found by band energy) could pa
 
 ## Limits
 
-- *Keep in memory* (the default) holds the recording in memory until it stops. Measured: the file grows about 17 MB a
-  minute at a 746×512 stage, 35-37 MB at 720p and 50-61 MB at 1080p, and the browser holds 1.5-1.7 times that while
+- *Download at the end* (the default) holds the recording in memory until it stops. Measured: the file grows about 17 MB
+  a minute at a 746×512 stage, 35-37 MB at 720p and 50-61 MB at 1080p, and the browser holds 1.5-1.7 times that while
   recording (3 minutes at 720p: a 110 MB file, +185 MB; at 1080p: 182 MB, +268 MB), so about 60 MB a minute at 720p and
   90 MB at 1080p, against about 70 MB for the earlier default (the stage at 6.2 Mbit/s: a 132 MB file, +208 MB in three
   minutes). For long sessions record to a file on disk (above), whose length is bounded by disk, or use OBS.

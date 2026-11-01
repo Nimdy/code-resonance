@@ -12,25 +12,28 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 
 | Workspace | Route | What it is for |
 |---|---|---|
-| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; first-run guide; **Last night** (a sped-up highlight replay, 4× default, 16× if long); the way into the studios (Create a composition, Continue the last one) |
+| Home | `#/home` | Is everything running, which project is active, is capture really active, what needs attention; a first run (no project of your own yet; the demo does not count) shows the stage first, idle or playing the demo with its *Demonstration (fictional)* label, and a compact setup checklist beside it (one line per step with its true status, the next step open); **Last night** (a sped-up highlight replay, 4× default, 16× if long); the way into the studios (Create a composition, Continue the last one) |
 | Projects | `#/projects`, `#/projects/<id>` | The projects the receiver knows, their identity, statistics, timeline, agents, exports |
-| Visual Studio | `#/visual` | Worlds, the Visual Recipe (World DNA), metadata-driven parameters, previews, visual presets, public title, **Propose public names** (writes only on Accept) |
+| Visual Studio | `#/visual` | **Worlds** (every world, grouped Built in, Previews and From packs, in view at 1920 × 1080; never a sideways strip), **Looks** (the curated looks and your visual presets), classic stages, the Visual Recipe (World DNA), metadata-driven parameters, previews, public title, **Propose public names** (writes only on Accept) |
 | Artist Studio | `#/artist`, `#/artist/new/<starter>`, `#/artist/from/<family>`, `#/artist/edit/<id>`, `#/artist/project` | Compositions of procedural layers over a built-in world or the artist canvas, what they react to, previewed on the stage, saved with versions, applied to a project, exported as a pack ([ARTIST-STUDIO.md](ARTIST-STUDIO.md)) |
 | Music Studio | `#/music` | The score a project plays (classic, or composed with a one-click upgrade), style, the composed score's character (mood, evolution, melody, rhythm, atmosphere, harmony, dynamics, space) and balance (a level and mute per voice the style can sound), tempo, texture, volume, the project's musical identity, music presets and four curated starting points; every change is previewed from the next bar, then applied to the project or the global defaults |
 | Visual Packs | `#/packs` | My creations; installed packs grouped as imported creations and looks, shader packs and full coded worlds; install (zip or folder), review, approve, revoke, remove, inspect; creator documentation |
 | Connections | `#/connections` | The receiver, VS Code capture evidence and reported settings, Claude Code / Cursor / Codex hooks, More agents (one tab each for Gemini CLI, Qwen Code, GitHub Copilot, Factory Droid, Grok Build and goose: observed activity, what the hooks send, add or remove after review), CAST catalog, other agents |
-| Record & Broadcast | `#/output` | Recording profiles (720p, 1080p, **Vertical** 1080 × 1920, stage size), where a recording is written (**a file on disk** or memory) and state, interrupted recordings to save or discard, the OBS browser source, exports, the `npm run film` command and the **vertical clip** command next to it (not a live record) |
+| Record & Broadcast | `#/output` | Under the monitor, Record with the recording profile (720p, 1080p, **Vertical** 1080 × 1920, stage size) and where a recording is written (**File on disk** or **Download at the end**) side by side; state, interrupted recordings to save or discard, the OBS browser source, exports, the `npm run film` command and the **vertical clip** command next to it (not a live record) |
 | Settings | `#/settings` | Global preferences, this device, storage and privacy, diagnostics, documentation (including the 0.7.0 campaign runbook) |
 | Performance Stage | `#/stage` | The immersive stage: live/replay, labels, world, sound, record, full screen |
 
-**Record & Broadcast** in detail: the monitor shows the stage exactly as it is recorded, with the recorder under it.
-The recording profile is saved for every window; **Vertical** records the stage upright at 1080 × 1920 for Reels
-and Shorts (every world frames portraits, its words inside the platforms' safe area; the slot shows it with
-bars at the sides; the browser saves WebM). **Where it is written** is this browser's choice: *Record to a file on
-disk* (recommended for long sessions: Record opens the browser's Save dialog, the recording is written to disk as it
-is recorded and copied into your file, seekable, when you stop; the recorder shows the bytes on disk and the file) or
-*Keep in memory, download when stopped* (the default). A browser without the File System Access API, or a page on a
-network address, shows why the first is unavailable. A recording to disk that a crash or a closed tab interrupted is
+**Record & Broadcast** in detail: the monitor shows the stage exactly as it is recorded, and under it one control
+area: Record, then two switches side by side, the **recording profile** and **where it is written** (at 1366 × 768 all
+three are in the first view). The recording profile is saved for every window; each option shows its size, and
+*About profiles* says what each is for. **Vertical** records the stage upright at 1080 × 1920 for Reels and Shorts
+(every world frames portraits, its words inside the platforms' safe area; the slot shows it with bars at the sides; the
+browser saves WebM). **Where it is written** is this browser's choice: *File on disk* (recommended for long sessions:
+Record opens the browser's Save dialog, the recording is written to disk as it is recorded and copied into your file,
+seekable, when you stop; the recorder shows the bytes on disk and the file) or *Download at the end* (the default: the
+browser keeps the file in memory and downloads it when you stop). A browser without the File System Access API, or a
+page on a network address, shows the first disabled with the reason. The right column holds the last recording, the
+way to the OBS presentation and the exports. A recording to disk that a crash or a closed tab interrupted is
 offered under the recorder (**Save to a file…** or **Discard**) in any window opened afterwards. See
 [RECORDING.md](RECORDING.md#recording-to-a-file-on-disk). Under **Export and replay**, the **Deterministic film** card gives two
 commands once the project has a public title: `npm run film -- --project <id>` (the whole highlight, 16:9 WebM) and

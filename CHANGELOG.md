@@ -20,6 +20,21 @@
     reading packs when none are installed; a pack's numeric values keep their decimal point (1.25, not "1 25"); a
     project's page names its export and its studios as the rest of the interface does, and the Visual Studio's
     information-mode note no longer runs two sentences together.
+- **First impressions** (the owner's three approved proposals from the UX pass):
+  - *Visual Studio:* the world browser is no longer a strip that scrolls sideways. Its tabs read *Worlds · N*, *Looks*
+    and *Classic stages*. Every world sits in a group (Built in, Previews, From packs), each with a one-line header. At
+    1920 × 1080 every world is in view; on a laptop the first row holds the first card of every group (Aurora and the
+    pack worlds without hunting), and the browser scrolls vertically, fades at its edge and says how many are below.
+    Cards carry only true chips: *Saved*, *Life on* (where the identity's life is on), *Needs approval*. *Looks* holds
+    the curated looks and your presets. The arrow keys move between cards.
+  - *Home, first run:* while no project of your own exists (the demo does not count), the stage comes first, playing the
+    demo with its *Demonstration (fictional)* label or idle with `npm run demo` to copy. Beside it the setup guide is a
+    compact checklist, one line per step with its true status; only the next step is open, the others open on demand. At
+    1366 × 768 the stage and the next step are both in the first view.
+  - *Record & Broadcast:* Record, the recording profile (sizes under the names) and where it is written (*File on disk*,
+    *Download at the end*) form one control area under the monitor, in the first view at 1366 × 768. *About profiles*
+    holds the explanations, beside *Performance and limits*. The last recording, the way to OBS and the exports fill the
+    right column.
 - The vertical format names Reels and Shorts only.
 
 ## 0.9.1 — 2026-11-01

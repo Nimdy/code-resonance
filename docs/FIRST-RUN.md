@@ -174,15 +174,17 @@ Capture resumes when VS Code restarts until you stop it from the same menu.
 
 ## Choose how it looks and sounds
 
-**Visual Studio** shows the project's identity (its Visual Recipe) and the worlds it can take: choose a world, see it
-on the stage as a preview (*Preview · not saved*), customise its parameters (spectacle, motion, information on the
-stage, the public title, subsystem names, and every genome parameter of the family or pack), then **Apply** — or
-**Cancel**, and nothing changed. **Propose public names** fills subsystem aliases from each role plus a generated name
-(`Craft - Vauos`; a hyphen, because aliases reject a middle-dot) and writes nothing until **Accept**. Customising locks
-the identity; *Reset customisations* returns to the generated values. Visual presets save a look you want to reuse on other projects. The same page chooses the **finish** (Clean,
-Cinematic, Dreamlike; Classic is the look from before finishes) and, under *Digital life*, the inhabitants and how much
-the music moves them (**Music influence** 0, 1 or 2). A project made before these existed says *Made before Phase 11*
-and keeps its look until you choose *Use the Phase 11 finish* (and ecology, where it has digital life).
+**Visual Studio** shows the project's identity (its Visual Recipe) and the worlds it can take (under **Worlds**, every
+world in view, grouped Built in, Previews and From packs; under **Looks**, the curated looks and your presets): choose a
+world, see it on the stage as a preview (*Preview · not saved*), customise its parameters (spectacle, motion,
+information on the stage, the public title, subsystem names, and every genome parameter of the family or pack), then
+**Apply** — or **Cancel**, and nothing changed. **Propose public names** fills subsystem aliases from each role plus a
+generated name (`Craft - Vauos`; a hyphen, because aliases reject a middle-dot) and writes nothing until **Accept**.
+Customising locks the identity; *Reset customisations* returns to the generated values. Visual presets save a look you
+want to reuse on other projects. The same page chooses the **finish** (Clean, Cinematic, Dreamlike; Classic is the look
+from before finishes) and, under *Digital life*, the inhabitants and how much the music moves them (**Music influence**
+0, 1 or 2). A project made before these existed says *Made before Phase 11* and keeps its look until you choose *Use the
+Phase 11 finish* (and ecology, where it has digital life).
 
 **Music Studio** sets the style (Ambient, Pulse, Cinematic, Chip), tempo (the project's own or manual), texture and
 volume, for this project or as the global default; changes are heard on the next bar and saved only when you apply.
@@ -226,14 +228,17 @@ a second monitor. The Stage shows the project's public title only, never its fol
 ## Record
 
 **Record** (top bar, Stage, or **Record & Broadcast**) records what the stage shows (the world and its labels, for every
-world and every kind of pack) together with the music, to a WebM file, until you stop it. Profiles: **720p** (the
-default), **1080p** (sharper; the built-in worlds may not hold 30 fps on an integrated GPU) or the stage's size. Only
-one window records at a time. The file downloads when you stop, or when a pack is stopped while recording.
-Chromium-based browsers (Chrome, Edge) and OBS support it; elsewhere the application says recording is unavailable. The
-browser keeps the recording in memory until you stop (about 60 MB a minute at 720p and 90 MB at 1080p); for sessions
-longer than about half an hour, record with OBS. While a Visual Studio or Artist Studio preview is shown, Record asks
-you to apply or cancel it first: a recording shows what is saved. If the sound stops reaching the recording (an audio device disconnected or stalled), the
-recording is finished and saved at that moment, with the reason. Code Resonance keeps no copy or library of recordings.
+world and every kind of pack) together with the music, to a WebM file, until you stop it. Under the monitor of Record &
+Broadcast, beside Record: the profile, **720p** (the default), **1080p** (sharper; the built-in worlds may not hold 30
+fps on an integrated GPU), **Vertical** or the stage's size, and where it is written, **File on disk** (for long
+sessions) or **Download at the end**. Only one window records at a time. The file is saved when you stop, or when a
+pack is stopped while recording. Chromium-based browsers (Chrome, Edge) and OBS support it; elsewhere the application
+says recording is unavailable. With Download at the end the browser keeps the recording in memory until you stop (about
+60 MB a minute at 720p and 90 MB at 1080p); for sessions longer than about half an hour, record to a file on disk or
+with OBS. While a Visual Studio or Artist
+Studio preview is shown, Record asks you to apply or cancel it first: a recording shows what is saved. If the sound
+stops reaching the recording (an audio device disconnected or stalled), the recording is finished and saved at that
+moment, with the reason. Code Resonance keeps no copy or library of recordings.
 
 The recording contains the stage only: no source, file names, paths, prompts, command text or the receiver's token.
 
