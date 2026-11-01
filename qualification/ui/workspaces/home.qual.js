@@ -1,10 +1,11 @@
 'use strict';
-// Real-browser qualification of Home: the first-run guide (derived from real state, resumable, hidden for good once
-// dismissed), the active project's capture status built from evidence, the attention list, recent projects and the
-// way to the Stage. Every check reads the receiver's API or the engine, never the page's own claims alone.
+// Real-browser qualification of Home: the first run (the stage first, idle or playing the fictional demo, with a compact
+// setup checklist derived from real state, resumable, hidden for good once dismissed), the active project's capture
+// status built from evidence, the attention list, recent projects and the way to the Stage. Every check reads the receiver's API or the engine, never the page's own claims alone.
 // Usage: node qualification/ui/workspaces/home.qual.js   (Chromium from Playwright's cache; isolated temp data dirs)
 const path=require('node:path');
 const fsp=require('node:fs/promises');
+const cp=require('node:child_process');
 const REPO=path.resolve(__dirname,'../../..');
 const {chromium}=require(path.join(REPO,'qualification/node_modules/playwright-core'));
 const {createEnvironment}=require('../environment.js');
@@ -44,15 +45,31 @@ const firstId=sha('code-resonance-home-qual/first-project');
       const guide=await page.textContent('#setupGuide');
       check('the receiver step names the real version and port',guide.includes(`Version ${status.version} on port ${status.port}`),`${status.version}:${status.port}`);
       check('the VS Code step gives the exact commands for this version',guide.includes('npm run package:vsix')&&guide.includes(`code --install-extension code-resonance-${status.version}.vsix`)&&guide.includes('CODE RESONANCE: Start Code Performance'));
-      check('the demo is offered as optional and clearly fictional',guide.includes('npm run demo')&&guide.includes('Demonstration (fictional)')&&guide.includes('Optional'));
-      check('nothing claims the page can start the receiver',!/click to start|start the receiver now/i.test(guide));
-      check('first run: no stage slot is shown',await page.$eval('.home-hero',e=>e.hidden));
+      // The stage comes first, idle (nothing claims to be live, no demo label), with the one command that makes the demo under it.
+      const firstDemo=await page.textContent('.home-first-demo');
+      check('the demo is offered under the stage as optional and clearly fictional',firstDemo.includes('npm run demo')&&firstDemo.includes('Demonstration (fictional)')&&firstDemo.includes('Optional')&&await page.isVisible('.home-first-demo .copy'));
+      check('nothing claims the page can start the receiver',!/click to start|start the receiver now/i.test(guide+firstDemo));
+      const stage=await page.evaluate(()=>{const s=document.querySelector('[data-stage-slot]').getBoundingClientRect(),h=document.getElementById('stageHost').getBoundingClientRect();
+        return {hero:!document.querySelector('.home-hero').hidden,placed:Math.abs(s.left-h.left)<2&&Math.abs(s.width-h.width)<2&&!document.getElementById('stageHost').classList.contains('parked'),live:!document.querySelector('.home-chrome .pill.live')?.hidden,demo:!document.getElementById('homeDemoBadge').hidden,idle:!!document.querySelector('#stageEmpty:not(.hidden)')};});
+      check('first run: the stage comes first, idle (no Live or demo label without a project)',stage.hero&&stage.placed&&!stage.live&&!stage.demo,JSON.stringify(stage));
+      // One line per step with its true status; only the next step is open, the others open on demand.
+      const rows=await page.$$eval('.home-step',els=>els.map(e=>({id:e.dataset.step,status:e.querySelector('.home-step-status')?.textContent,open:e.querySelector('details')?e.querySelector('details').open:null})));
+      check('first run: the checklist gives each step its status (Done, Next, Listening, To do), only the next step open',
+        rows.map(r=>`${r.id}:${r.status}:${r.open}`).join()==='receiver:Done:null,vscode:Next:true,project:Listening:false,sound:To do:false,stage:To do:false',JSON.stringify(rows));
+      check('the checklist is beside the stage, the stage and the next step both in the first view at 1440 × 900',await page.evaluate(()=>{const g=document.getElementById('setupGuide'),s=document.querySelector('.home-slot').getBoundingClientRect(),n=document.querySelector('.home-step.current').getBoundingClientRect();
+        return !!g.closest('.home-side')&&s.bottom<=innerHeight&&n.top>=0&&n.bottom<=innerHeight;}));
       check('first run: "waiting for the first project" is listening on the change feed',(await page.textContent('.home-step[data-step="project"]')).includes('Listening'));
       await shot(page,'first-run-1440x900');
+      await page.setViewportSize({width:1366,height:768});await page.waitForTimeout(400);await shot(page,'first-run-1366x768');
+      const fold=await page.evaluate(()=>{const s=document.querySelector('.home-slot').getBoundingClientRect(),n=document.querySelector('.home-step.current').getBoundingClientRect(),p=document.querySelector('.ws-home');
+        return {stage:s.top>=0&&s.bottom<=innerHeight,next:n.top>=0&&n.bottom<=innerHeight,overflow:p.scrollWidth-p.clientWidth};});
+      check('first run at 1366 × 768: the stage and the next step are both above the fold, nothing overflows',fold.stage&&fold.next&&fold.overflow<=1,JSON.stringify(fold));
       await page.setViewportSize({width:1280,height:720});await shot(page,'first-run-1280x720');
       await page.setViewportSize({width:900,height:800});await shot(page,'first-run-900x800');
       await page.setViewportSize({width:1440,height:900});
-      // Sound: a real click starts the engine's music; the step follows the engine's state.
+      // Sound: the step opens on demand, and a real click starts the engine's music; the step follows the engine's state.
+      await page.click('.home-step[data-step="sound"] summary');
+      check('a step that is not next opens on demand',await page.$eval('.home-step[data-step="sound"] details',d=>d.open)&&await page.isVisible('#guideSound'));
       await page.click('#guideSound');
       await page.waitForFunction(()=>window.ResonancePlayer.state.sound.enabled,null,{timeout:10000});
       await page.waitForFunction(()=>document.querySelector('.home-step[data-step="sound"]')?.dataset.done==='true',null,{timeout:5000});
@@ -81,6 +98,25 @@ const firstId=sha('code-resonance-home-qual/first-project');
         .then(()=>check('the new project becomes the active project on Home',true),async()=>check('the new project becomes the active project on Home',false,await page.textContent('#homeProjectName').catch(()=>'(none)')));
       await shot(page,'first-project-arrived-1440x900');
       allErrors.push(...a.errors,...b.errors);await a.context.close();await b.context.close();
+    }finally{await env.stop();}
+    // ---- A demo-only installation: still a first run (the fictional demo is not a project of your own) -------------
+    env=await createEnvironment({empty:true});
+    try{
+      await new Promise((resolve,reject)=>{const c=cp.spawn(process.execPath,[path.join(REPO,'scripts/demo.js'),'--fast'],{env:{...process.env,RESONANCE_DATA:env.dir,RESONANCE_PORT:String(env.svc.port)},stdio:'ignore'});
+        c.on('exit',code=>code===0?resolve():reject(new Error(`demo exited ${code}`)));c.on('error',reject);});
+      await fetch(env.url+'/v1/flush',{method:'POST',headers:{Authorization:`Bearer ${env.svc.token}`}});
+      const demoId=sha('CODE RESONANCE — FICTIONAL DEMO');
+      const d=await open(browser,env.url+'/#/home',{width:1366,height:768});const {page}=d;
+      await page.waitForSelector('#setupGuide',{timeout:15000});
+      await page.waitForFunction(id=>window.ResonancePlayer.state.project===id&&!document.getElementById('homeDemoBadge').hidden,demoId,{timeout:20000}).catch(()=>{});
+      const ds=await page.evaluate(()=>({project:window.ResonancePlayer.state.project,badge:!document.getElementById('homeDemoBadge').hidden,firstRun:document.querySelector('.home-grid').classList.contains('first-run'),
+        guideSide:!!document.getElementById('setupGuide').closest('.home-side'),projectPanel:!document.querySelector('.home-project').hidden,recent:!document.querySelector('.home-recent-sec').hidden,panel:document.querySelector('.home-first-demo').textContent}));
+      check('a demo-only install is still a first run: the stage plays the demo with its Demonstration (fictional) label, the checklist beside it',ds.project===demoId&&ds.badge&&ds.firstRun&&ds.guideSide&&!ds.projectPanel&&!ds.recent,JSON.stringify({...ds,panel:undefined}));
+      check('under the stage the demo says it is fictional and offers the Stage',/Demonstration \(fictional\)/.test(ds.panel)&&/nothing in it comes from real work/.test(ds.panel)&&await page.isVisible('#homeFirstStage'),ds.panel.slice(0,120));
+      const df=await page.evaluate(()=>{const v=s=>{const b=document.querySelector(s).getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight;};const p=document.querySelector('.ws-home');return {stage:v('.home-slot'),demo:v('.home-first-demo'),next:v('.home-step.current'),overflow:p.scrollWidth-p.clientWidth};});
+      check('demo-only at 1366 × 768: the stage, its demo panel and the next step are all above the fold',df.stage&&df.demo&&df.next&&df.overflow<=1,JSON.stringify(df));
+      await shot(page,'first-run-demo-1366x768');
+      allErrors.push(...d.errors);await d.context.close();
     }finally{await env.stop();}
     // ---- A populated installation: lumen (real, stopped long ago), sample (0.5 extension + Claude Code), demo -----
     env=await createEnvironment();

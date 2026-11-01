@@ -19,16 +19,17 @@
 /* The wide column grows only as far as the stage can (its height limit); on short, wide windows (an ultrawide at 1080
    px) the width beyond it goes to the side column instead of an empty band beside the stage. Where the stage is limited
    by width (1920x1080, 2560x1440, 1440x900, 1280x720) this resolves exactly as minmax(0,1fr) var(--home-side). */
-.ws-home .home-grid:not(.first-run){grid-template-columns:minmax(0,var(--hero-max)) minmax(var(--home-side),1fr)}
+.ws-home .home-grid{grid-template-columns:minmax(0,var(--hero-max)) minmax(var(--home-side),1fr)}
 .ws-home .home-main,.ws-home .home-side{display:grid;gap:var(--home-gap);align-content:start;min-width:0}
 /* The side column ends level with the wide one: attention takes the height left under the active project, so no dead
    band opens under it where the stage and recent projects are the taller column (1920x1080). Where the side is the
    taller column (1440x900, 1280x720) this changes nothing. */
-.ws-home .home-grid:not(.first-run):not(.guide-top)>.home-side{align-self:stretch;grid-template-rows:auto 1fr}
-/* A first run with nothing needing attention: no side column (it would hold one lone card), so the guide or the empty
-   state has the full width. With an attention item (receiver offline, no WebGL) the side column stays. */
-.ws-home .home-grid.first-run.att-calm{grid-template-columns:minmax(0,1fr)}
-.ws-home .home-grid.first-run.att-calm>.home-side,.ws-home .home-grid.first-run.att-calm .home-att{display:none}
+.ws-home .home-grid:not(.first-run)>.home-side{align-self:stretch;grid-template-rows:auto 1fr}
+/* A first run (no project of your own yet): the stage first in the wide column, the setup checklist beside it, and
+   attention under the checklist only when something needs it. The stage leaves room under it for the demo's panel, so
+   the stage and the checklist's next step are both in the first view at 1366 x 768. */
+.ws-home:has(.home-grid.first-run){--hero-budget:300px}
+.ws-home .home-grid.first-run.att-calm .home-att{display:none}
 .ws-home .nowrap{white-space:nowrap}
 /* Regions that only sometimes hold something (guide, first-run empty state) must not cost a grid gap when empty. */
 .ws-home .page-inner>div:empty,.ws-home .home-main>div:empty,.ws-home .home-grid>div:empty{display:none}
@@ -37,6 +38,13 @@
 /* ---- The live world: 16:9, as wide as the column, never taller than the window leaves room for ---- */
 .ws-home .home-hero{width:min(100%,var(--hero-max));min-width:min(100%,520px);display:grid;gap:12px}
 .ws-home .home-slot{width:100%;aspect-ratio:16/9;border-radius:var(--r-4);box-shadow:0 0 0 1px var(--line-2) inset,0 18px 48px rgba(0,0,0,.45)}
+/* Under the stage on a first run: the demo playing on it (and what it is), or the one command that makes it. */
+.ws-home .home-first-demo{display:flex;flex-direction:row;align-items:center;gap:12px 18px;flex-wrap:wrap;padding:14px 18px}
+.ws-home .home-first-demo[hidden]{display:none}
+.ws-home .home-first-demo-text{display:grid;gap:3px;flex:1 1 300px;min-width:0}
+.ws-home .home-first-demo-text strong{font-size:15px}
+.ws-home .home-first-demo-text p{max-width:var(--measure)}
+.ws-home .home-first-demo-cmd{flex:1 1 240px;min-width:0;max-width:340px}
 .ws-home .home-night{padding:14px 18px 16px;display:grid;gap:10px}
 .ws-home .home-night[hidden]{display:none}
 .ws-home .home-night-head{display:flex;align-items:flex-start;gap:10px}
@@ -142,23 +150,38 @@
   .ws-home .rr-meta{flex:1 1 0}
   .ws-home .rr-meta:not(:empty)::before{content:'·';margin-right:6px;color:var(--text-4)}
 }
-/* ---- First-run guide: numbered steps on a thin rail; done steps fold to one line ---- */
+/* ---- Setup guide: one line per step with its true status; the next step open, the others on demand ---- */
 .ws-home .home-guide{overflow:hidden}
 .ws-home .home-guide-head{display:flex;align-items:flex-start;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--line)}
 .ws-home .home-guide-head .grow{flex:1;display:grid;gap:3px}
 .ws-home .home-guide-body{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,22vw,380px)}
-.ws-home .home-steps{list-style:none;margin:0;padding:22px 24px 8px;display:grid}
-.ws-home .home-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
-.ws-home .home-step:not(:last-child)::before{content:'';position:absolute;left:13.5px;top:32px;bottom:4px;width:1px;background:var(--line-2)}
+.ws-home .home-guide.compact .home-guide-body{grid-template-columns:minmax(0,1fr)}
+.ws-home .home-guide.compact .home-guide-head{padding:16px 18px 12px}
+.ws-home .home-steps{list-style:none;margin:0;padding:10px 12px 12px;display:grid;gap:2px}
+.ws-home .home-step{position:relative;min-width:0}
+.ws-home .home-step-d>summary{list-style:none;cursor:pointer}
+.ws-home .home-step-d>summary::-webkit-details-marker{display:none}
+.ws-home .home-step-sum{display:grid;grid-template-columns:28px minmax(0,1fr) 12px;gap:12px;align-items:center;padding:8px 10px;border-radius:var(--r-2)}
+.ws-home .home-step.done .home-step-sum{grid-template-columns:28px minmax(0,1fr)}
+.ws-home .home-step-d>summary:hover{background:var(--bg-3)}
+.ws-home .home-step-d>summary:focus-visible{outline-offset:-2px}
+/* The disclosure's chevron: right when closed, down when open. */
+.ws-home .home-step-d>summary::after{content:'';width:7px;height:7px;border-right:1.5px solid var(--text-3);border-bottom:1.5px solid var(--text-3);transform:rotate(-45deg);transition:transform var(--t-2) var(--ease);justify-self:center}
+.ws-home .home-step-d[open]>summary::after{transform:rotate(45deg)}
 .ws-home .home-step-mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-3);background:var(--bg-1);color:var(--text-3);font:600 13px var(--mono)}
 .ws-home .home-step-mark svg{width:14px;height:14px}
 .ws-home .home-step.done .home-step-mark{background:var(--ok-soft);border-color:rgba(138,248,201,.35);color:var(--ok)}
 .ws-home .home-step.current .home-step-mark{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-.ws-home .home-step-text{display:grid;gap:3px;padding-top:4px;min-width:0}
-.ws-home .home-step-text strong{font-size:15px;font-weight:600}
-.ws-home .home-step.done .home-step-text strong{color:var(--text-2);font-weight:550}
-.ws-home .home-step:not(.done):not(.current) .home-step-text strong{color:var(--text-2)}
-.ws-home .home-step-body{display:grid;gap:9px;margin-top:4px;justify-items:start;font-size:14px;color:var(--text-2);max-width:var(--measure)}
+.ws-home .home-step-text{display:grid;gap:2px;min-width:0}
+.ws-home .home-step-line{display:flex;align-items:baseline;gap:6px 10px;flex-wrap:wrap;min-width:0}
+.ws-home .home-step-line strong{font-size:14.5px;font-weight:600}
+.ws-home .home-step.done .home-step-line strong{color:var(--text-2);font-weight:550}
+.ws-home .home-step:not(.done):not(.current) .home-step-line strong{color:var(--text-2)}
+.ws-home .home-step-status{font:600 11.5px/1.5 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.ws-home .home-step-status.done{color:var(--ok)}.ws-home .home-step-status.current{color:var(--accent)}
+.ws-home .home-step-summary{min-width:0;overflow-wrap:anywhere}
+.ws-home .home-step-d>.home-step-body{padding:2px 10px 12px 50px}
+.ws-home .home-step-body{display:grid;gap:9px;justify-items:start;font-size:14px;color:var(--text-2);max-width:var(--measure)}
 .ws-home .home-step-body .copy{width:100%;max-width:620px}
 .ws-home .home-cmds{margin:0;padding-left:18px;display:grid;gap:10px;width:100%}
 .ws-home .home-cmds li{display:grid;gap:6px}
@@ -173,7 +196,7 @@ html[data-motion="reduce"] .ws-home .home-listen .dot.ok,html[data-motion="reduc
 .ws-home .home-demo .copy{width:100%}
 .ws-home .home-demo .btn{justify-self:start}
 /* The guide with the full width (a calm first run, or below both columns): the demo column widens with it. */
-@media (min-width:1181px){.ws-home :is(.home-grid.first-run.att-calm,.home-guide-bottom) .home-guide-body{grid-template-columns:minmax(0,1fr) clamp(320px,30%,480px)}}
+@media (min-width:1181px){.ws-home .home-guide-bottom .home-guide-body{grid-template-columns:minmax(0,1fr) clamp(320px,30%,480px)}}
 /* ---- Large, tall screens (2560x1440 and up) ----
    The stage is then much taller than the active project and attention, which would leave an empty block beside it. The
    two columns are flattened into one grid: the stage spans the side's rows, the recent projects move into the side
@@ -187,7 +210,7 @@ html[data-motion="reduce"] .ws-home .home-listen .dot.ok,html[data-motion="reduc
   .ws-home .home-grid:not(.first-run) .home-project{grid-column:2;grid-row:1}
   .ws-home .home-grid:not(.first-run) .home-att{grid-column:2;grid-row:2}
   .ws-home .home-grid:not(.first-run) .home-recent-sec{grid-column:2;grid-row:3}
-  .ws-home .home-grid:not(.first-run) :is(.home-first,.home-guide-top,.home-guide-bottom){grid-column:1 / -1}
+  .ws-home .home-grid:not(.first-run) :is(.home-first,.home-guide-bottom){grid-column:1 / -1}
   .ws-home .home-grid:not(.first-run) .home-recent-row:nth-child(n+5){display:none}
 }
 /* ---- Narrower windows ---- */
@@ -196,7 +219,7 @@ html[data-motion="reduce"] .ws-home .home-listen .dot.ok,html[data-motion="reduc
 @media (max-width:1000px){
   .ws-home .home-grid{display:flex;flex-direction:column;align-items:stretch;gap:var(--home-gap)}
   .ws-home .home-main,.ws-home .home-side{display:contents}
-  .ws-home .home-hero{order:1;width:100%;min-width:0}.ws-home .home-first,.ws-home .home-guide-top{order:2}.ws-home .home-project{order:3}.ws-home .home-att{order:4}
+  .ws-home .home-hero{order:1;width:100%;min-width:0}.ws-home .home-first,.ws-home .home-guide-side{order:2}.ws-home .home-project{order:3}.ws-home .home-att{order:4}
   .ws-home .home-recent-sec{order:5}.ws-home .home-guide-bottom{order:6}
   .ws-home .home-name{font-size:22px}
 }
