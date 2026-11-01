@@ -108,3 +108,17 @@ test('Events act only through conditions: the same identities either way, influe
   const s2=e.snapshot();e.influence({kind:'disturb',site:e.sites.ids[0],amount:1});run(e,200);e.influence({kind:'recover',site:e.sites.ids[0],amount:1});run(e,40);const w2=e.digest();
   e.restore(s2);e.influence({kind:'disturb',site:e.sites.ids[0],amount:1});run(e,200);e.influence({kind:'recover',site:e.sites.ids[0],amount:1});run(e,40);assert.equal(e.digest(),w2);
 });
+test('An Aurora identity: new ones live (generator 5, its own stream), a stored one keeps what it had, a tuning turns life on and off',async()=>{
+  const recipe=require('../engine/recipe'),catalog=require('../engine/catalog'),{project}=require('./life-aurora-fixture');
+  const p=project('stored'),r=recipe.generate(p,{family:'aurora',now:0});
+  assert.equal(r.genome.life.enabled,true);assert.equal(r.genome.life.ecology,2);for(const [k,v] of Object.entries(r.genome.life))assert(catalog.accepts(catalog.LIFE[`life.${k}`],v),`life.${k}`);
+  assert.equal(recipe.generate(p,{family:'aurora',now:0,version:4}).genome.life,undefined,'only generator 5 draws it');
+  // without life, every other value is the 0.9.0 draw (life comes from its own random stream, appended)
+  const {life:_,...rest}=r.genome;assert.deepEqual(Object.keys(r.genome).at(-1)==='life'||Object.keys(r.genome).indexOf('life')>Object.keys(r.genome).indexOf('palette'),true);
+  const stored={...r,genome:rest};assert.equal(recipe.resolve(stored,p,5).recipe,stored,'a stored Aurora without life is served as stored');
+  const same=recipe.update(stored,{type:'pack',pack:null},p,0);assert.equal(same.genome.life,undefined,'redrawn without a look: still none');assert.deepEqual(same.genome,stored.genome);
+  const on=recipe.update(stored,{type:'tune',values:{'life.enabled':true}},p,0);assert.deepEqual(on.genome.life,{enabled:true});
+  assert.deepEqual(recipe.update(on,{type:'pack',pack:null},p,0).genome,on.genome,'a tuned life is kept exactly');
+  assert.equal(recipe.update(on,{type:'tune-reset'},p,0).genome.life,undefined,'reset removes it again');
+  assert.equal(identity().genome.life,undefined,'(the fixture\'s identity without life is the stored kind)');
+});

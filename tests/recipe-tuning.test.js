@@ -155,10 +155,10 @@ test('applyActions applies a batch in order; the same actions on the same recipe
   assert.throws(()=>recipe.applyActions(r,Array.from({length:17},()=>({type:'lock'})),P,0,reg),/Invalid actions/);
 });
 test('The Visual Studio\'s curated presets and Essentials name real parameters of their families, within range',()=>{
-  const {FAMILIES:F,COMMON}=require('../engine/catalog');
+  const {FAMILIES:F,PREVIEWS:PV,COMMON}=require('../engine/catalog');
   const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/ui/workspaces/visual.js'),'utf8');
   const constant=name=>Function(`return ${src.match(new RegExp(`const ${name}=([\\s\\S]*?);\\n`))[1]}`)();
-  const params=f=>({...COMMON,...F[f].parameters});
+  const params=f=>({...COMMON,...(F[f]||PV[f]).parameters});
   const curated=constant('CURATED');
   assert.ok(curated.length>=6);
   for(const p of curated){
