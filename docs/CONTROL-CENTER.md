@@ -126,8 +126,11 @@ page cannot send without a CORS preflight the receiver never answers. The pairin
 VS Code's *Open Code Stage*) and keeps it, so other programs and accounts on the computer cannot change anything by
 forging an Origin header. The link carries a single-use code (15 minutes) that the receiver exchanges for the key, so the
 key never appears in a link or a command line. An unpaired browser can watch, play and record, and offers *Pair this
-browser*. A program listening on the receiver's port while it is stopped could read a browser's stored key (see
-[SECURITY.md](../SECURITY.md)). Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS
+browser* (in the top bar). Opening a view never asks: what a view reads in the background (the Visual Studio's
+thumbnails, the data folder in Settings, the receiver's details in Connections) is refused quietly, and the first change
+the receiver refuses opens the pairing dialog (on the Stage, a message with a Pair action instead). A program listening
+on the receiver's port while it is stopped could read a browser's stored key (see [SECURITY.md](../SECURITY.md)).
+Capabilities live in the receiver's memory only (12 h, renewed on use). The OBS
 view never requests one. The ingestion token (`/v1/*`) is never returned to a page. Pack imports are extracted into a
 quarantine directory with the SDK's limits (file types, sizes, count, total, paths, links) and validated by the same
 code as the command line; code packs are installed unapproved; approval stays bound to the exact files (digest).

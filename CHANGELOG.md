@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- **Control Center UX pass** (every workspace screenshotted at 1920 × 1080, 1366 × 768, 1280 × 800 and 1024 × 700, on a
+  fresh install, with projects, unpaired, with the receiver stopped and while loading; contrast, focus and accessible
+  names measured in the browser). Fixes only, no new layout or navigation:
+  - *Laptop and narrow windows:* the Artist Studio no longer cuts off Apply to project at 1366 and 1280 px, and keeps
+    its stage at 1024 × 700 (it was a few pixels tall); the Music Studio, the Visual Packs library, the Visual Studio's
+    tabs and finishes, Home's links and Last night command, and the Stage's top bar no longer overflow, clip or wrap
+    out of place below 1280 px. A pack's tables no longer scroll inside the scrolling inspector; a message with an
+    action keeps its width for its words.
+  - *Accessibility:* secondary text meets WCAG AA (4.5:1) on every surface (it fell to 4.1:1 on selected cards and
+    under 4:1 on the lightest panel), and no text uses the divider grey any more; keyboard focus is clearly visible on
+    fields and sliders, and a control reached with Tab is never left with its ring cut at a scroller's edge.
+  - *States and copy:* a stopped receiver is said in words everywhere ("The receiver is not answering (start it again
+    with npm start)", not "Failed to fetch"); a slow first load says it is loading, not that the settings or the
+    receiver failed; an unpaired browser is asked to pair when it tries a change, not as soon as it opens the Visual
+    Studio; the Visual Studio no longer offers Apply with nothing to apply, and Visual Packs no longer says it is reading
+    packs when none are installed; a pack's numeric values keep their decimal point (1.25, not "1 25"); a project's
+    page names its export and its studios as the rest of the interface does.
+
 ## 0.9.1 — 2026-11-01
 
 Product 0.9.1, for use on your own machine; not stable. This tag is `v0.9.1`. **Aurora is inhabited**: arctic foxes,
