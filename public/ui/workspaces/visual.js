@@ -229,7 +229,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       if(best>=0)j=best;}
     if(j!==i){e.preventDefault();all[j].focus();all[j].scrollIntoView({block:'nearest'});}
   });
-  const browser=h('section',{class:'vs-browser','aria-label':'World browser'},h('div',{class:'vs-browser-head'},tabs,browserNote,browserActions),cards,moreBtn);
+  // "N more below" sits in the head row, beside the actions: it never covers a card.
+  const browser=h('section',{class:'vs-browser','aria-label':'World browser'},h('div',{class:'vs-browser-head'},tabs,browserNote,moreBtn,browserActions),cards);
   const main=h('div',{class:'main vs-main'},head,stageBox,browser);
   // Inspector
   const statePill=h('span',{class:'pill plain'});
@@ -980,10 +981,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const presetCard=(into,p,curated)=>{
       const x=p.payload||{},n=Object.keys(x.tuning||{}).length,err=presetErrors.get(p.id),prev=presetPreview===p.id;
       const summary=[x.family?familyName(x.family):'Automatic family',x.look?(packOf(x.look)?.name||x.look):null,n?count(n,'parameter'):null,x.overrides?.intensity!==undefined&&x.overrides.intensity!==1?`Spectacle ${pct(x.overrides.intensity)}`:null].filter(Boolean).join(' · ');
+      // Compact: the name and what the look is, then its world and parameters beside the actions.
       into.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
-        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name,title:p.name}),h('span',{class:'vs-card-line',text:summary,title:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line,title:p.line}):null)),
+        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name,title:p.name}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line,title:p.line}):null)),
         err?h('div',{class:'vs-error small',text:err}):null,
-        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):null,h('span',{class:'grow'}),
+        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):h('span',{class:'vs-card-line',text:x.family?familyName(x.family):'Automatic family',title:summary}),h('span',{class:'grow'}),
           button({label:'Preview',size:'sm',kind:'outline',icon:'eye',attrs:{'aria-label':`Preview the preset ${p.name}`},onClick:()=>previewPreset(p)}),
           curated?null:button({icon:'doc',size:'sm',kind:'ghost',title:'Rename',attrs:{'aria-label':`Rename the preset ${p.name}`},onClick:()=>renamePreset(p)}),
           curated?null:button({icon:'trash',size:'sm',kind:'ghost',title:'Delete',attrs:{'aria-label':`Delete the preset ${p.name}`},onClick:()=>deletePreset(p)}))));

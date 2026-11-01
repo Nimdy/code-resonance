@@ -33,7 +33,7 @@
 @container vs-main (max-width:860px){.ws-visual .vs-note-long{display:none}.ws-visual .vs-note-short{display:inline}}
 .ws-visual .vs-browser-actions{display:flex;gap:6px;flex:none}
 .ws-visual .vs-cards{flex:1 1 0;min-height:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:14px 20px;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;padding:1px 2px 9px}
-.ws-visual .vs-cards.fade-b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 44px),transparent)}
+.ws-visual .vs-cards.fade-b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 24px),transparent)}
 .ws-visual .vs-cards-empty{align-self:center;padding:24px 4px}
 .ws-visual .vs-shelf{display:grid;gap:8px;align-content:start;min-width:0}
 .ws-visual .vs-shelf.full{flex:1 1 100%}
@@ -43,9 +43,9 @@
 .ws-visual .vs-shelf-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
 .ws-visual .vs-shelf:not(.full) .vs-shelf-cards{display:grid;grid-template-columns:repeat(var(--cols,1),var(--card-w,200px));grid-auto-rows:var(--card-h,120px);gap:10px}
 .ws-visual .vs-shelf.full .vs-shelf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
-/* "N more below": over the faded edge, at the right; scrolls the browser to its end. */
-.ws-visual .vs-more{position:absolute;right:10px;bottom:8px;z-index:4;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 9px;border-radius:14px;
-  border:1px solid var(--line-3);background:var(--bg-3);color:var(--text-1);font-size:12.5px;font-weight:600;box-shadow:var(--shadow-1)}
+/* "N more below": in the head row, beside the actions; scrolls the browser to its end. */
+.ws-visual .vs-more{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 8px;border-radius:14px;
+  border:1px solid var(--line-3);background:var(--bg-3);color:var(--text-1);font-size:12.5px;font-weight:600;white-space:nowrap}
 .ws-visual .vs-more:hover{background:var(--bg-4);border-color:var(--accent-line)}
 .ws-visual .vs-more svg{width:14px;height:14px;color:var(--accent)}
 .ws-visual .vs-more[hidden]{display:none}
@@ -87,17 +87,17 @@
 .ws-visual .vs-card-text strong{font-size:13px;line-height:1.3;font-weight:620;letter-spacing:-.005em;color:#f2f6fc;text-shadow:0 1px 8px rgba(0,0,0,.8);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 .ws-visual .vs-card-line{font-size:12px;line-height:1.35;color:rgba(214,222,236,.9);text-shadow:0 1px 6px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Looks: no picture, a compact text card with its actions */
-.ws-visual .vs-card.preset{padding:11px 12px 0;min-height:118px;background:linear-gradient(160deg,var(--bg-3),var(--bg-2) 70%)}
+.ws-visual .vs-card.preset{padding:10px 12px 0;background:linear-gradient(160deg,var(--bg-3),var(--bg-2) 70%)}
 .ws-visual .vs-card.preset .vs-card-text{position:static;padding:0;gap:2px;pointer-events:auto}
 .ws-visual .vs-card.preset .vs-card-text strong{font-size:14.5px;line-height:1.3;color:var(--text-1);text-shadow:none}
-.ws-visual .vs-card.preset .vs-card-line{color:var(--text-3);text-shadow:none}
+.ws-visual .vs-card.preset .vs-card-line{color:var(--text-3);text-shadow:none;min-width:0;font-size:12px}
 .ws-visual .vs-card.preset .vs-card-why{color:var(--text-2);font-size:12.5px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-card.preset .vs-error{margin-top:4px}
 .ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft);color:var(--accent)}
 .ws-visual .vs-preset-body{display:flex;gap:10px;align-items:flex-start;min-width:0;min-height:0;overflow:hidden}
 .ws-visual .vs-preset-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn);flex:none}
 .ws-visual .vs-preset-icon svg{width:15px;height:15px}
-.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;padding:8px 0 10px;margin-top:auto;min-height:30px;flex:none}
+.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;padding:6px 0 8px;margin-top:auto;min-height:30px;flex:none;min-width:0}
 .ws-visual .vs-card-foot .pill{height:20px;font-size:12px;padding:0 8px}
 .ws-visual .vs-card-foot .grow{flex:1}
 /* ---- Inspector ---- */
