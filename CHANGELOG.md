@@ -6,7 +6,8 @@
   a two-core runner, most of it a few long digital-life simulations. It now runs as three parallel shards per platform
   (`node --test --test-shard=i/3`, every third test file: 199, 237 and 230 tests, 118–127 s each at two workers
   locally), with the syntax check, the package and the smoke test once, in shard 1. Every test still runs on every
-  pull request; the slowest job is now the Ember Observatory pack's compatibility test (about 6 minutes).
+  pull request. Measured on its own pull request: the validation jobs took 4.1 minutes (about 10 before) and the
+  whole check 6.9 minutes (10–13 before), now set by the Ember Observatory pack's compatibility test.
 - **Timing:** the two failures 0.9.0's pull request met (the audio export's first bar a hair below zero, and a test
   that expected the life driver's background stage in one frame) were fixed there. A search for more found none: the
   suite passed 666/666 in eight stressed runs (three suites at once on 24 cores, twice, and confined to two cores each
