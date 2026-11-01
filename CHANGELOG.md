@@ -33,7 +33,8 @@
   or later* instead of refusing an unknown family or trait. One that declares less still installs, with a warning that
   says what to declare (`node scripts/pack.js validate`, the Visual Packs import). The Artist Studio's *Export* writes
   `^1.3` over the three and `^1.2` otherwise, so a creation over a flagship still installs on 0.8.0. Every pack written
-  for `^1.0` to `^1.2` runs unchanged; `sdk.version` is `'1.3.0'` ([docs/packs/migration.md](docs/packs/migration.md)).
+  for `^1.0` to `^1.2` runs unchanged; `sdk.version` is `'1.3.0'`, and a world pack's agent presences carry a subagent's
+  `parent` ([docs/packs/migration.md](docs/packs/migration.md)).
 
 ## 0.8.1 — 2026-10-31
 

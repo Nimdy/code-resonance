@@ -57,7 +57,9 @@ placed by the host inside the platforms' safe area ([RECORDING.md](../RECORDING.
 - `beat` (1 on the beat, decaying), `barPhase` (0–1 through the bar), `mood` `{section, energy, tempo}`, `energy`.
 - `activity` 0–1, `phase` `'idle' | 'active' | 'milestone'`.
 - `unlocks`: `[{name, level}]`, your ambient layers in manifest order, fading in after each verified milestone.
-- `agents`: presences `{id, number, voice, state, display, label, activity, fileId, home, since, arrived, alpha, busy}`.
+- `agents`: presences `{id, number, voice, state, display, label, activity, fileId, home, since, arrived, alpha, busy}`,
+  with `subagent` (true for a subagent) and, since SDK 1.3, `parent`: a subagent's parent presence `id` when the
+  receiver observed the parent's session (interpretation 11), otherwise `null`.
 - `overrides`: the viewer's settings `{intensity, motion, atmosphere}` (and `labels` only when the project chose its own information mode; the mode on screen is applied by the host, a pack does not need it); `quality`: adaptive level 0–3 (at 2
   and above, halve your particle counts).
 
