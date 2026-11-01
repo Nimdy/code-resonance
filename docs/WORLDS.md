@@ -7,8 +7,9 @@ development actually does. Every structure is real project data; the worlds neve
 **Status:** the three flagship worlds (rebuilt in PR #8) have been reviewed by the owner, and their approved films are
 the baseline later changes are checked against. Synaptic Storm, Fractal Continuum and Temporal Terrain, previews until
 then, graduated with generator 5: they are families like the three (scored for the automatic choice, a base for packs,
-curated looks), but none of them has been reviewed artistically yet. Technical qualification (determinism, idle life,
-resources, privacy, performance) is separate from that artistic judgement, and no one else has reviewed them yet.
+curated looks); the owner watched each on a film of a whole session, inhabited, and accepted them (2026-10-31), while
+their six curated looks have not been reviewed. Technical qualification (determinism, idle life, resources, privacy,
+performance) is separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
 
@@ -227,7 +228,7 @@ axons between neurons, and two on one file meet as two signals. Its digital life
 for new identities): astrocytes settled beside the synapses, vesicles on a slow neuromodulator tide that gather at
 active synapses, and microglia at an inhibited neuron's edge; life withdraws from a failing run's neurons and returns
 after the recovery. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
-two curated looks; adding it changed no existing identity, and it has not been reviewed artistically. Design brief,
+two curated looks; adding it changed no existing identity, and the owner accepted it on a film. Design brief,
 stills and what remains: [worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`,
 `synaptic-layout.js`, `life/synaptic.js`).
 
@@ -244,8 +245,8 @@ decohere in the warning colour, recovery restores coherence, a commit glows, and
 fractal bloom. Its digital life, behind the recipe's `life` values (on for new identities), is motes of light living
 on the surface: they gather at the sites being worked on, leave threads of light between them and withdraw from a
 decohering region. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
-two curated looks; adding it changed no existing identity, and it has not been reviewed artistically since the owner
-found it "gum"-like. Design brief, stills, measured GPU time and what remains:
+two curated looks; adding it changed no existing identity, and the owner, who once found it "gum"-like, accepted its
+new finish on a film. Design brief, stills, measured GPU time and what remains:
 [worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`, `fractal-forms.js`,
 `life/fractal.js`).
 
@@ -262,8 +263,7 @@ A replay's land is its whole recorded history, also after a seek (the host hands
 recorded windows). Its digital life, behind the recipe's `life` values (on for new identities): grazers that graze
 the pastures of the present against the flow of time and shelter from a fault, swifts over the present and gleaners on
 the receding paths. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
-two curated looks; adding it changed no existing identity, and it has not been reviewed artistically or watched in
-motion by a person. Design brief, stills, measured GPU time and what remains:
+two curated looks; adding it changed no existing identity, and the owner accepted it on a film. Design brief, stills, measured GPU time and what remains:
 [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`, `terrain-layout.js`,
 `terrain-glsl.js`, `life/terrain.js`).
 

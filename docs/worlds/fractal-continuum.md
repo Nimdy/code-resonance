@@ -13,9 +13,10 @@ with two curated looks and the Artist Studio composes over it. Graduating it cha
 The owner watched it live and found it read as "gum" (one soft purple, even soft light, shapes rounded by the swell, a
 white sugar of sparkle); the finish described here (0.8.0) answers that: each region its own hue on the
 identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
-swell, rare coloured glints. It has not been reviewed artistically since. Everything below marked *prototype* is
-implemented; *planned* is not. It can be inhabited: [digital life](#digital-life) (motes of light living on the
-surface) behind the recipe's `life` values, off until they turn it on.
+swell, rare coloured glints. The owner watched it again, inhabited, on a film of the whole Lumen Recipes session (life
+on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); its curated looks have not been reviewed. Everything
+below marked *prototype* is implemented; *planned* is not. It can be inhabited: [digital life](#digital-life) (motes
+of light living on the surface) behind the recipe's `life` values, on for new identities (generator 5).
 
 ![One project, four universes](fractal-continuum-universes.jpg)
 
@@ -388,7 +389,7 @@ The finish keeps this: region hues come from the region's id and creation order,
 at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
 and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
 
-**The camera after a seek** (fixed after 0.8.0). The world read the camera the host's rig left behind in two places: the
+**The camera after a seek** (fixed in 0.8.1). The world read the camera the host's rig left behind in two places: the
 level of detail (from the camera's distance, with the form's scale of the previous frame) and a close-up's dolly
 (`facing()`: the camera comes in once it already faces the event's site). After a rebuild (a seek, a new performance,
 a world switch) the rig snaps to the next goal, but both were read before that snap, from the camera of the moment
@@ -510,7 +511,7 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 4. **Agents**: travel along the threads between sites, `agent.collision` as two signals meeting.
 5. **Music**: rhythm-gated subdivisions and section onsets.
 6. **Digital life** ([Digital life](#digital-life)): a grammar for the surface behind the recipe's `life` values, on for
-   new identities (generator 5), tested in Node. Remains: an artistic review on films, the browser's qualification
+   new identities (generator 5), tested in Node; the owner accepted it on a film (2026-10-31). Remains: the browser's qualification
    (`life.qual.js` covers the three flagships) and live playback at Auto.
 7. **Generator inclusion**: done in generator 5 (above).
 8. **Graduation**: done with generator 5: in `FAMILIES`, its parameters frozen in the catalogue (a base for packs),
