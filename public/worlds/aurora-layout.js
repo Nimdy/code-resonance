@@ -98,11 +98,12 @@ export function curtainPoint(p,s,h,tv,A,rip,out=[0,0,0],kf=1){
   const d=foldAt(s,s/Math.max(p.len,1),h,p.seed,tv,A,rip,kf),x=p.x+p.dx*s+p.dz*d,z=p.z+p.dz*s-p.dx*d;
   out[0]=x+MAG[0]*h;out[1]=p.alt+MAG[1]*h;out[2]=z+MAG[2]*h;return out;
 }
-// ---- Field lines: a dependency between two curtains is an arc of faint light from the importing ray up along the field,
-// over and down into the imported ray (a cubic Bezier from a point a third of the way up each ray).
+// ---- Field lines: a dependency between two curtains is a long, gentle arc from the importing ray, lifted a little along
+// the field, into the imported ray (a cubic Bezier from a point a third of the way up each ray). Its rise is a sixth of
+// its span (never a loop: seen from the shore a tall arc between two far curtains reads as a circle in the sky).
 export function fieldLine(a,b,ha,hb,n=24,out=[]){
   const P0=[a[0]+MAG[0]*ha,a[1]+MAG[1]*ha,a[2]+MAG[2]*ha],P3=[b[0]+MAG[0]*hb,b[1]+MAG[1]*hb,b[2]+MAG[2]*hb];
-  const k=.5*Math.hypot(P3[0]-P0[0],P3[1]-P0[1],P3[2]-P0[2])+140,P1=P0.map((v,i)=>v+MAG[i]*k),P2=P3.map((v,i)=>v+MAG[i]*k);
+  const k=.16*Math.hypot(P3[0]-P0[0],P3[1]-P0[1],P3[2]-P0[2])+30,P1=P0.map((v,i)=>v+MAG[i]*k),P2=P3.map((v,i)=>v+MAG[i]*k);
   out.length=0;for(let j=0;j<=n;j++){const u=j/n,v=1-u;out.push([0,1,2].map(i=>v*v*v*P0[i]+3*v*v*u*P1[i]+3*v*u*u*P2[i]+u*u*u*P3[i]));}
   return out;
 }

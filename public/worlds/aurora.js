@@ -400,23 +400,38 @@ export function createFamily(ctx){
   const sameSpot=(A,B)=>!!A&&!!B&&A.curtain===B.curtain&&A.id===B.id;
   function restOf(P,from,s){let x=from;for(let j=0;j<P.length;j++){const d=dist3(x,P[j]);if(s<d)return P.slice(j);s-=d;x=P[j];}return [];}
   function alongFrom(P,from,s,to){const pts=[from,...P,to];return pathAt({pts},s);}
+  // A move along field lines leaves a wake: the stretch of line it flew lights behind it and fades (WAKE); the wakes of
+  // the moves before it (cut short where the next move began) fade on (from the same look-back, so equally pure).
+  const WAKE=3200;
   function agentAt(id,t,tv,depth=0){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
     const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
-    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const q=goalOf(prev,(tc-1-model.epoch)/1000/sp,tc-1),w=depth<MOVES_BACK?agentBefore(id,tc-1,depth+1):null,was=w?.p||q;
+    let wakes=null;
+    if(t-tc<(TRAVEL_MAX+WAKE)*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const q=goalOf(prev,(tc-1-model.epoch)/1000/sp,tc-1),w=depth<MOVES_BACK?agentBefore(id,tc-1,depth+1):null,was=w?.p||q;
+      if(w?.wakes)for(const k of w.wakes)if(t<Math.min(k.until,k.tc+k.T)+WAKE*sp)(wakes||=[]).push(k.until<=tc?k:{...k,until:tc});
       const A=spotOf(prev,tc-1),B=spotOf(a,t);let pts=null,min=TRAVEL;
       if(dist3(was,q)<ARRIVED){const path=journey(A,B,q,g);if(path)pts=path.pts.slice(1,-1);}
       else if(w?.rest&&sameSpot(A,B)){pts=w.rest;min=TRAVEL/2;}
       if(pts&&pts.length){const total=dist3(was,pts[0])+pathLen(pts)+dist3(pts[pts.length-1],g),T=clamp(total/FLY_V*1000,min,TRAVEL_MAX)*sp;
-        if(t-tc<T){const at=smooth((t-tc)/T)*total;return {a,p:alongFrom(pts,was,at,g),travel:true,line:true,rest:restOf(pts,was,at)};}}
+        if(t<tc+T+WAKE*sp)(wakes||=[]).push({pts:[was,...pts,g],total,tc,T,until:Infinity});
+        if(t-tc<T){const at=smooth((t-tc)/T)*total;return {a,p:alongFrom(pts,was,at,g),travel:true,line:true,rest:restOf(pts,was,at),wakes};}}
       else{const D=dist3(was,g),T=clamp(D/FLY_V*1000,TRAVEL,TRAVEL_MAX)*sp;if(t-tc<T){const k=smooth((t-tc)/T),lift=Math.sin(k*Math.PI)*Math.min(260,D*.22);
-        return {a,p:[lerp(was[0],g[0],k),lerp(was[1],g[1],k)+lift,lerp(was[2],g[2],k)],travel:true};}}}}
-    return {a,p:g};}
+        return {a,p:[lerp(was[0],g[0],k),lerp(was[1],g[1],k)+lift,lerp(was[2],g[2],k)],travel:true,wakes};}}}}
+    return {a,p:g,wakes};}
+  // the moment a wake's wisp passed a point a share u of the way along it (the inverse of the move's smoothstep)
+  const passedAt=(k,u)=>k.tc+k.T*(.5-Math.sin(Math.asin(clamp(1-2*u,-1,1))/3));
+  function drawWake(k,t,c,alpha){const sp=ctx.speed(),P=k.pts,end=Math.min(t,k.until);let s=0;
+    for(let j=1;j<P.length;j++){const d=dist3(P[j-1],P[j]);s+=d;const at=passedAt(k,s/k.total);if(at>end)break;
+      const age=(t-at)/sp,f=Math.exp(-age/1100)*(1-smooth(age/WAKE))*smooth(j/3)*smooth((P.length-1-j)/2+.5);if(f<.01)continue;
+      ribbon(P[j-1],P[j],6,6,c,alpha*.16*f,1,1,.12);}}
   const pathLen=P=>{let l=0;for(let j=1;j<P.length;j++)l+=dist3(P[j-1],P[j]);return l;};
   function updateAgents(i){
     const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Map();travelNow=0;lineNow=0;
+    let wakes=0;
     for(const a of i.agents.slice(0,12)){const h=agentAt(a.id,i.t,i.tview);if(!h)continue;seen.set(a.id,a);if(h.travel)travelNow++;if(h.line)lineNow++;
       let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...h.p);
       const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.7)*prom,sub=a.subagent||a.parent?.6:1,tk=touches.find(x=>x.agentId===a.id)?.k||0;
+      // the field lines it flew along, lit behind it and fading
+      if(h.wakes)for(const k of h.wakes){drawWake(k,i.t,c,a.alpha*prom);wakes++;}
       // its trail: where it was (sampled from its pure path)
       // (along a field line, a denser, brighter comet)
       const TR=h.line?36:18,dt=h.line?45:80;
@@ -431,7 +446,7 @@ export function createFamily(ctx){
       const lift=Math.min(60,L*.18),N=24,ph=i.tview/5,bead=(ph-Math.floor(ph))*1.2-.1;let prev=null;
       for(let k=0;k<=N;k++){const u=k/N,q=[lerp(A.x,B.x,u),lerp(A.y,B.y,u)+Math.sin(u*Math.PI)*lift,lerp(A.z,B.z,u)];if(prev){const b=Math.exp(-(((u-bead)/.05)**2));ribbon(prev,q,.35+.6*b,.35+.6*b,c,al*(.22+.7*b)*smooth(u/.08)*smooth((1-u)/.08),1,1);}prev=q;}
       tethers++;}
-    lastStats.tethers=tethers;
+    lastStats.tethers=tethers;lastStats.wakes=wakes;
     // agent.collision (two agents on one file): each wisp runs in toward that ray's foot from its own side over 1.2 s; where
     // they meet a ring in both colours spreads and fades. A pure function of the time since the event.
     for(const mt of near(meetings,i,4200)){const f=files.get(mt.fileId);if(!f)continue;const a0=(i.t-mt.at)/1000/sp,ph=rand(hash(`${mt.at}/${mt.fileId}`)),P=mt.providers.length?mt.providers:['a','b'];
@@ -447,12 +462,17 @@ export function createFamily(ctx){
   function writeScene(i){
     const t=i.t,sp=ctx.speed(),tv=i.tview,inten=clamp(i.overrides.intensity??1,.4,1.3),src=M();let validated=0,stressed=0;
     for(const f of files.values()){const m=src.modules.get(f.id);if(!m)continue;const st=src.stateAt(m,t);if(st==='validated')validated++;if(st==='stressed')stressed++;}
-    // field lines: faint arcs between curtains; a pulse runs along each from the importer when its file fires
+    // field lines: at rest barely there (a trace of light between curtains); a new one draws itself in and settles over
+    // a few seconds; a pulse runs along each from the importer when its file fires, the line lit for a moment behind it.
+    // Where a wisp flies along them they light behind it (its wake, updateAgents)
     arcsAt(i);const ak=clamp(Math.sqrt(4/Math.max(1,arcs.length)),.2,1)*inten;
     for(const r of arcs){const P=arcLine(r,arcPts),n=P.length-1,m=Math.max(1,Math.round(n*r.drawn)),c=V3(new THREE.Color().fromArray(curtainColor(r.a.curtain.id,r.a.curtain.rank)).lerp(pal.highlight,.35),1);
-      for(let k=0;k<m;k++){const u=(k+.5)/n,e=smooth(u/.15)*smooth((1-u)/.15);ribbon(P[k],P[k+1],10,10,c,.03*ak*r.alpha*e,1,1,.12);}
+      const fresh=Number.isFinite(r.born)?1-smooth((t-r.born-2400*sp)/(4000*sp)):0,rest=(.005+.035*fresh)*ak*r.alpha;
       const mm=src.modules.get(r.a.id),fired=mm?Math.max(mm.lastAgent,mm.lastHuman):-Infinity,pa=Number.isFinite(fired)?(t-fired)/1000/sp:Infinity;
-      if(r.drawn>=1&&pa>=0&&pa<2.4){const s0=smooth(pa/2)*n;for(let k=0;k<4;k++){const s1=s0-k*.5;if(s1<0)break;const j=Math.min(n-1,Math.floor(s1)),f=s1-j,p=[lerp(P[j][0],P[j+1][0],f),lerp(P[j][1],P[j+1][1],f),lerp(P[j][2],P[j+1][2],f)];
+      const pulse=r.drawn>=1&&pa>=0&&pa<3.4,s0=pulse?smooth(pa/2)*n:-1,pf=pulse?1-smooth((pa-2)/1.4):0;
+      for(let k=0;k<m;k++){const u=(k+.5)/n,e=smooth(u/.15)*smooth((1-u)/.15),behind=pulse&&k+.5<=s0?Math.exp(-(s0-k-.5)/3)*pf:0;
+        const al=(rest+.05*ak*r.alpha*behind)*e;ribbon(P[k],P[k+1],8,8,c,al,1,1,.12);}
+      if(pulse&&pa<2.4){for(let k=0;k<4;k++){const s1=s0-k*.5;if(s1<0)break;const j=Math.min(n-1,Math.floor(s1)),f=s1-j,p=[lerp(P[j][0],P[j+1][0],f),lerp(P[j][1],P[j+1][1],f),lerp(P[j][2],P[j+1][2],f)];
         point(p,c,(k?.5*(1-k/4):1.3)*inten*r.alpha*(1-smooth((pa-2)/.4)),k?6:13,8);}}}
     // lanterns: a warm flame and its halo on the shore for each verified milestone (a small candle for a refactor)
     const ls=lanternsOf(i);let ng=0;
@@ -642,7 +662,7 @@ export function createFamily(ctx){
     return {position:new THREE.Vector3(...footOf(f,f.h*.4)),text:`A ray of ${ctx.name(f.curtain.id)} · ${M().stateAt(m,(i||info).t)}`,sub:`${plural(Math.round(f.n),'symbol')} · ${plural(n,'field line')}`};}
   function stats(){return {curtains:curtains.length,rays:files.size,history:!!hist,arcs:lastStats.arcs||0,lanterns:lastStats.lanterns||0,breakups:breakups.filter(s=>s.full).length,
     lastBreakup:breakups.length?(breakups.at(-1).full?'breakup':'local'):null,corona:+coronaNow.toFixed(2),breakup:+breakNow.toFixed(2),storm:+stormNow.toFixed(2),travel:travelNow,fieldTravel:lineNow,touches:touches.length,
-    tethers:lastStats.tethers||0,meteors:lastStats.meteors||0,fx:nFx,ribbons:nRib,vertices:curtainMesh?curtainMesh.geometry.attributes.aC.count:0};}
+    tethers:lastStats.tethers||0,wakes:lastStats.wakes||0,meteors:lastStats.meteors||0,fx:nFx,ribbons:nRib,vertices:curtainMesh?curtainMesh.geometry.attributes.aC.count:0};}
   function rebuild(){hist=null;prep=null;prepKey='';lnSig='';jMid.clear();jT=null;}
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);}mirrorScene.clear();curtainMesh?.geometry.dispose();for(const x of disposables)x.dispose?.();}
   // After a seek: no transient survives (lanterns come back from the director's record).
