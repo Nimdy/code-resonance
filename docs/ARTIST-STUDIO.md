@@ -80,7 +80,8 @@ New layers start with one tasteful mapping, and an empty list offers one-click s
 
 ## Share: export and import
 
-**Export** turns a saved composition into a data-only visual pack (`kind: "declarative"`, `sdk: "^1.2"`, an id
+**Export** turns a saved composition into a data-only visual pack (`kind: "declarative"`, `sdk: "^1.2"`, or `"^1.3"`
+over Synaptic Storm, Fractal Continuum or Temporal Terrain, an id
 `creator.<name>-<6 hex>`, the author name and license the artist chooses): `pack.json` with the composition and a
 README that describes every layer and mapping in words. *Inspect contents* shows both files exactly; *Download .zip*
 writes them with a small stored-entry ZIP writer (`public/ui/zip.js`). The receiver checks the manifest as an import

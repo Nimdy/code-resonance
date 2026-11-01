@@ -1,0 +1,988 @@
+{
+ "checks": [
+  {
+   "name": "synaptic-storm: life is on for a recipe with life enabled",
+   "pass": true,
+   "detail": "synaptic-storm tick 2882, 813 alive"
+  },
+  {
+   "name": "synaptic-storm: after playing near the end and seeking back, the ecosystem and the image are the same",
+   "pass": true,
+   "detail": "2d003439/2d003439 image 80dfe8f7b1a694ee/80dfe8f7b1a694ee"
+  },
+  {
+   "name": "synaptic-storm: continuous play from the start reaches the same ecosystem",
+   "pass": true,
+   "detail": "2d003439 (144 s of performance at 6 fps, 240 s)"
+  },
+  {
+   "name": "synaptic-storm: a fresh session renders the same ecosystem and image",
+   "pass": true,
+   "detail": "2d003439 80dfe8f7b1a694ee"
+  },
+  {
+   "name": "synaptic-storm: after a browser restart, the same ecosystem and image",
+   "pass": true,
+   "detail": "2d003439 80dfe8f7b1a694ee"
+  },
+  {
+   "name": "synaptic-storm: 15, 30, 60 and 120 fps reach the same ecosystem",
+   "pass": true,
+   "detail": "2d003439 2d003439 2d003439 2d003439"
+  },
+  {
+   "name": "synaptic-storm: changing the quality while it lives never changes the ecosystem",
+   "pass": true,
+   "detail": "2d003439/2d003439; presented per level: [0,898,450,444,0,894]"
+  },
+  {
+   "name": "synaptic-storm: idle ten minutes, the population lives and moves",
+   "pass": true,
+   "detail": "30s 813 alive v 0.388, 120s 813 alive v 0.437, 240s 813 alive v 0.444, 360s 813 alive v 0.403, 480s 813 alive v 0.516, 600s 813 alive v 0.414"
+  },
+  {
+   "name": "synaptic-storm: idle, the image keeps changing",
+   "pass": true,
+   "detail": "mean |Δluma| 7.6, 10.74, 10.44, 9.75, 5.79"
+  },
+  {
+   "name": "synaptic-storm: idle, no intent is created and the director, once idle, stays idle",
+   "pass": true,
+   "detail": "30s 205/active, 120s 205/idle, 240s 205/idle, 360s 205/idle, 480s 205/idle, 600s 205/idle"
+  },
+  {
+   "name": "synaptic-storm: idle, GPU resources are constant and memory bounded",
+   "pass": true,
+   "detail": "geometries/textures 15/15; heap MB 45 45 45 45 45 45; checkpoints {\"recent\":6,\"sparse\":24}"
+  },
+  {
+   "name": "synaptic-storm: life off runs no ecosystem",
+   "pass": true,
+   "detail": "null"
+  },
+  {
+   "name": "synaptic-storm: the labels are the same with life on and off (inhabitants are never labelled)",
+   "pass": true,
+   "detail": "1/1"
+  },
+  {
+   "name": "synaptic-storm: no page errors",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "fractal-continuum: life is on for a recipe with life enabled",
+   "pass": true,
+   "detail": "fractal-continuum tick 2882, 602 alive"
+  },
+  {
+   "name": "fractal-continuum: after playing near the end and seeking back, the ecosystem and the image are the same",
+   "pass": true,
+   "detail": "5a1a09f4/5a1a09f4 image 9918f2771f871f70/9918f2771f871f70"
+  },
+  {
+   "name": "fractal-continuum: continuous play from the start reaches the same ecosystem",
+   "pass": true,
+   "detail": "5a1a09f4 (144 s of performance at 6 fps, 227 s)"
+  },
+  {
+   "name": "fractal-continuum: a fresh session renders the same ecosystem and image",
+   "pass": true,
+   "detail": "5a1a09f4 9918f2771f871f70"
+  },
+  {
+   "name": "fractal-continuum: after a browser restart, the same ecosystem and image",
+   "pass": true,
+   "detail": "5a1a09f4 9918f2771f871f70"
+  },
+  {
+   "name": "fractal-continuum: 15, 30, 60 and 120 fps reach the same ecosystem",
+   "pass": true,
+   "detail": "5a1a09f4 5a1a09f4 5a1a09f4 5a1a09f4"
+  },
+  {
+   "name": "fractal-continuum: changing the quality while it lives never changes the ecosystem",
+   "pass": true,
+   "detail": "5a1a09f4/5a1a09f4; presented per level: [0,984,361,492,0,986]"
+  },
+  {
+   "name": "fractal-continuum: idle ten minutes, the population lives and moves",
+   "pass": true,
+   "detail": "30s 602 alive v 0.394, 120s 602 alive v 0.393, 240s 602 alive v 0.417, 360s 602 alive v 0.336, 480s 602 alive v 0.559, 600s 602 alive v 0.354"
+  },
+  {
+   "name": "fractal-continuum: idle, the image keeps changing",
+   "pass": true,
+   "detail": "mean |Δluma| 7.26, 18.32, 17.93, 9.37, 17.3"
+  },
+  {
+   "name": "fractal-continuum: idle, no intent is created and the director, once idle, stays idle",
+   "pass": true,
+   "detail": "30s 205/active, 120s 205/idle, 240s 205/idle, 360s 205/idle, 480s 205/idle, 600s 205/idle"
+  },
+  {
+   "name": "fractal-continuum: idle, GPU resources are constant and memory bounded",
+   "pass": true,
+   "detail": "geometries/textures 14/18; heap MB 26 26 26 26 26 26; checkpoints {\"recent\":6,\"sparse\":24}"
+  },
+  {
+   "name": "fractal-continuum: life off runs no ecosystem",
+   "pass": true,
+   "detail": "null"
+  },
+  {
+   "name": "fractal-continuum: the labels are the same with life on and off (inhabitants are never labelled)",
+   "pass": true,
+   "detail": "1/1"
+  },
+  {
+   "name": "fractal-continuum: no page errors",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "temporal-terrain: life is on for a recipe with life enabled",
+   "pass": true,
+   "detail": "temporal-terrain tick 2882, 702 alive"
+  },
+  {
+   "name": "temporal-terrain: after playing near the end and seeking back, the ecosystem and the image are the same",
+   "pass": true,
+   "detail": "ae2770ad/ae2770ad image 10999dae223d60f2/10999dae223d60f2"
+  },
+  {
+   "name": "temporal-terrain: continuous play from the start reaches the same ecosystem",
+   "pass": true,
+   "detail": "ae2770ad (144 s of performance at 6 fps, 236 s)"
+  },
+  {
+   "name": "temporal-terrain: a fresh session renders the same ecosystem and image",
+   "pass": true,
+   "detail": "ae2770ad 10999dae223d60f2"
+  },
+  {
+   "name": "temporal-terrain: after a browser restart, the same ecosystem and image",
+   "pass": true,
+   "detail": "ae2770ad 10999dae223d60f2"
+  },
+  {
+   "name": "temporal-terrain: 15, 30, 60 and 120 fps reach the same ecosystem",
+   "pass": true,
+   "detail": "ae2770ad ae2770ad ae2770ad ae2770ad"
+  },
+  {
+   "name": "temporal-terrain: changing the quality while it lives never changes the ecosystem",
+   "pass": true,
+   "detail": "ae2770ad/ae2770ad; presented per level: [0,1144,573,760,0,1152]"
+  },
+  {
+   "name": "temporal-terrain: idle ten minutes, the population lives and moves",
+   "pass": true,
+   "detail": "30s 704 alive v 1.026, 120s 703 alive v 1.064, 240s 702 alive v 1.046, 360s 700 alive v 1.102, 480s 705 alive v 1.258, 600s 701 alive v 0.973"
+  },
+  {
+   "name": "temporal-terrain: idle, the image keeps changing",
+   "pass": true,
+   "detail": "mean |Δluma| 7.02, 8.28, 11.76, 12.1, 6.1"
+  },
+  {
+   "name": "temporal-terrain: idle, no intent is created and the director, once idle, stays idle",
+   "pass": true,
+   "detail": "30s 205/active, 120s 205/idle, 240s 205/idle, 360s 205/idle, 480s 205/idle, 600s 205/idle"
+  },
+  {
+   "name": "temporal-terrain: idle, GPU resources are constant and memory bounded",
+   "pass": true,
+   "detail": "geometries/textures 14/17; heap MB 37 37 37 37 37 37; checkpoints {\"recent\":6,\"sparse\":24}"
+  },
+  {
+   "name": "temporal-terrain: life off runs no ecosystem",
+   "pass": true,
+   "detail": "null"
+  },
+  {
+   "name": "temporal-terrain: the labels are the same with life on and off (inhabitants are never labelled)",
+   "pass": true,
+   "detail": "1/1"
+  },
+  {
+   "name": "temporal-terrain: no page errors",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "switching: the running ecosystem is always the shown world's",
+   "pass": true,
+   "detail": "stellar-forge:stellar-forge, machine-cathedral:machine-cathedral, fractal-biosphere:fractal-biosphere, stellar-forge:stellar-forge, machine-cathedral:machine-cathedral, fractal-biosphere:fractal-biosphere"
+  },
+  {
+   "name": "switching: geometries and textures return to their level",
+   "pass": true,
+   "detail": "31/15 -> 31/15"
+  },
+  {
+   "name": "replay -> live: the live ecosystem starts at the switch (no restoring, a new origin, not the replay's inputs)",
+   "pass": true,
+   "detail": "{\"wallMs\":3127,\"tick\":61,\"restoring\":false,\"inputs\":0,\"replayInputs\":75138,\"resets\":6}"
+  },
+  {
+   "name": "far seek: restoring is reported, then the ecosystem is current again (within 180 s a seek)",
+   "pass": true,
+   "detail": "[{\"fraction\":0.85,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":25270,\"wallMs\":25270,\"lastRestoreMs\":25179,\"ticks\":7750,\"generation\":1626,\"historyMs\":35.9,\"fromCheckpoint\":0},{\"fraction\":0.15,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":5189,\"wallMs\":5189,\"lastRestoreMs\":5079,\"ticks\":1650,\"generation\":287,\"historyMs\":4.3,\"fromCheckpoint\":0},{\"fraction\":0.6,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":9369,\"wallMs\":9369,\"lastRestoreMs\":9295,\"ticks\":3000,\"generation\":1148,\"historyMs\":14.1,\"fromCheckpoint\":0}]"
+  },
+  {
+   "name": "far seek: no page errors",
+   "pass": true,
+   "detail": ""
+  }
+ ],
+ "measurements": {
+  "families": {
+   "synaptic-storm": {
+    "digest": "2d003439",
+    "image": "80dfe8f7b1a694ee",
+    "tick": 2882,
+    "framerates": [
+     "2d003439",
+     "2d003439",
+     "2d003439",
+     "2d003439"
+    ],
+    "qualityPresented": [
+     {
+      "drawn": 583,
+      "followers": 0,
+      "tails": 0,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     },
+     {
+      "drawn": 583,
+      "followers": 898,
+      "tails": 588,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     },
+     {
+      "drawn": 584,
+      "followers": 450,
+      "tails": 316,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     },
+     {
+      "drawn": 578,
+      "followers": 444,
+      "tails": 456,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     },
+     {
+      "drawn": 581,
+      "followers": 0,
+      "tails": 0,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     },
+     {
+      "drawn": 581,
+      "followers": 894,
+      "tails": 574,
+      "drawCalls": 2,
+      "cells": 134,
+      "sites": 7,
+      "scale": 1
+     }
+    ],
+    "idle": [
+     {
+      "at": 30,
+      "alive": 813,
+      "speed": 0.388,
+      "modes": {
+       "explore": 183,
+       "seek": 175,
+       "orbit": 193,
+       "disperse": 6,
+       "rest": 256,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "active",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 13
+      },
+      "tickMs": 1.336
+     },
+     {
+      "at": 120,
+      "alive": 813,
+      "speed": 0.437,
+      "modes": {
+       "explore": 140,
+       "seek": 240,
+       "orbit": 169,
+       "disperse": 1,
+       "rest": 263,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 18
+      },
+      "tickMs": 1.372
+     },
+     {
+      "at": 240,
+      "alive": 813,
+      "speed": 0.444,
+      "modes": {
+       "explore": 153,
+       "seek": 232,
+       "orbit": 177,
+       "disperse": 0,
+       "rest": 251,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.394
+     },
+     {
+      "at": 360,
+      "alive": 813,
+      "speed": 0.403,
+      "modes": {
+       "explore": 201,
+       "seek": 168,
+       "orbit": 172,
+       "disperse": 10,
+       "rest": 262,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.652
+     },
+     {
+      "at": 480,
+      "alive": 813,
+      "speed": 0.516,
+      "modes": {
+       "explore": 104,
+       "seek": 324,
+       "orbit": 128,
+       "disperse": 0,
+       "rest": 257,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.542
+     },
+     {
+      "at": 600,
+      "alive": 813,
+      "speed": 0.414,
+      "modes": {
+       "explore": 158,
+       "seek": 221,
+       "orbit": 172,
+       "disperse": 0,
+       "rest": 262,
+       "settle": 0,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 15,
+      "textures": 15,
+      "heap": 44700000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.557
+     }
+    ],
+    "idleMotion": [
+     7.6,
+     10.74,
+     10.44,
+     9.75,
+     5.79
+    ],
+    "off": {
+     "drawCallsOff": 7,
+     "drawCallsOn": 9,
+     "gpuOff": null,
+     "gpuOn": null
+    }
+   },
+   "fractal-continuum": {
+    "digest": "5a1a09f4",
+    "image": "9918f2771f871f70",
+    "tick": 2882,
+    "framerates": [
+     "5a1a09f4",
+     "5a1a09f4",
+     "5a1a09f4",
+     "5a1a09f4"
+    ],
+    "qualityPresented": [
+     {
+      "drawn": 602,
+      "followers": 0,
+      "trailSegments": 300,
+      "points": 602,
+      "drawCalls": 2,
+      "sites": 22
+     },
+     {
+      "drawn": 601,
+      "followers": 984,
+      "trailSegments": 752,
+      "points": 1585,
+      "drawCalls": 2,
+      "sites": 22
+     },
+     {
+      "drawn": 602,
+      "followers": 361,
+      "trailSegments": 442,
+      "points": 963,
+      "drawCalls": 2,
+      "sites": 22
+     },
+     {
+      "drawn": 601,
+      "followers": 492,
+      "trailSegments": 552,
+      "points": 1093,
+      "drawCalls": 2,
+      "sites": 22
+     },
+     {
+      "drawn": 602,
+      "followers": 0,
+      "trailSegments": 350,
+      "points": 602,
+      "drawCalls": 2,
+      "sites": 22
+     },
+     {
+      "drawn": 602,
+      "followers": 986,
+      "trailSegments": 904,
+      "points": 1588,
+      "drawCalls": 2,
+      "sites": 22
+     }
+    ],
+    "idle": [
+     {
+      "at": 30,
+      "alive": 602,
+      "speed": 0.394,
+      "modes": {
+       "explore": 248,
+       "seek": 107,
+       "orbit": 66,
+       "disperse": 78,
+       "rest": 42,
+       "settle": 61,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "active",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 13
+      },
+      "tickMs": 0.994
+     },
+     {
+      "at": 120,
+      "alive": 602,
+      "speed": 0.393,
+      "modes": {
+       "explore": 218,
+       "seek": 122,
+       "orbit": 112,
+       "disperse": 70,
+       "rest": 31,
+       "settle": 49,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 18
+      },
+      "tickMs": 1.016
+     },
+     {
+      "at": 240,
+      "alive": 602,
+      "speed": 0.417,
+      "modes": {
+       "explore": 250,
+       "seek": 121,
+       "orbit": 140,
+       "disperse": 27,
+       "rest": 27,
+       "settle": 37,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.036
+     },
+     {
+      "at": 360,
+      "alive": 602,
+      "speed": 0.336,
+      "modes": {
+       "explore": 240,
+       "seek": 96,
+       "orbit": 92,
+       "disperse": 50,
+       "rest": 46,
+       "settle": 78,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.085
+     },
+     {
+      "at": 480,
+      "alive": 602,
+      "speed": 0.559,
+      "modes": {
+       "explore": 215,
+       "seek": 201,
+       "orbit": 60,
+       "disperse": 82,
+       "rest": 10,
+       "settle": 34,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.143
+     },
+     {
+      "at": 600,
+      "alive": 602,
+      "speed": 0.354,
+      "modes": {
+       "explore": 248,
+       "seek": 98,
+       "orbit": 174,
+       "disperse": 44,
+       "rest": 6,
+       "settle": 32,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 18,
+      "heap": 26000000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.105
+     }
+    ],
+    "idleMotion": [
+     7.26,
+     18.32,
+     17.93,
+     9.37,
+     17.3
+    ],
+    "off": {
+     "drawCallsOff": 9,
+     "drawCallsOn": 11,
+     "gpuOff": null,
+     "gpuOn": null
+    }
+   },
+   "temporal-terrain": {
+    "digest": "ae2770ad",
+    "image": "10999dae223d60f2",
+    "tick": 2882,
+    "framerates": [
+     "ae2770ad",
+     "ae2770ad",
+     "ae2770ad",
+     "ae2770ad"
+    ],
+    "qualityPresented": [
+     {
+      "drawn": 696,
+      "followers": 0,
+      "trailSegments": 183,
+      "drawCalls": 2,
+      "awake": 390,
+      "asleep": 0,
+      "grazing": 42,
+      "kx": 0.763
+     },
+     {
+      "drawn": 697,
+      "followers": 1144,
+      "trailSegments": 546,
+      "drawCalls": 2,
+      "awake": 390,
+      "asleep": 0,
+      "grazing": 44,
+      "kx": 0.763
+     },
+     {
+      "drawn": 697,
+      "followers": 573,
+      "trailSegments": 364,
+      "drawCalls": 2,
+      "awake": 391,
+      "asleep": 0,
+      "grazing": 44,
+      "kx": 0.763
+     },
+     {
+      "drawn": 701,
+      "followers": 760,
+      "trailSegments": 549,
+      "drawCalls": 2,
+      "awake": 394,
+      "asleep": 0,
+      "grazing": 37,
+      "kx": 0.763
+     },
+     {
+      "drawn": 701,
+      "followers": 0,
+      "trailSegments": 183,
+      "drawCalls": 2,
+      "awake": 393,
+      "asleep": 0,
+      "grazing": 39,
+      "kx": 0.763
+     },
+     {
+      "drawn": 703,
+      "followers": 1152,
+      "trailSegments": 549,
+      "drawCalls": 2,
+      "awake": 393,
+      "asleep": 0,
+      "grazing": 38,
+      "kx": 0.763
+     }
+    ],
+    "idle": [
+     {
+      "at": 30,
+      "alive": 704,
+      "speed": 1.026,
+      "modes": {
+       "explore": 185,
+       "seek": 258,
+       "orbit": 93,
+       "disperse": 3,
+       "rest": 121,
+       "settle": 44,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "active",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 13
+      },
+      "tickMs": 0.502
+     },
+     {
+      "at": 120,
+      "alive": 703,
+      "speed": 1.064,
+      "modes": {
+       "explore": 147,
+       "seek": 243,
+       "orbit": 118,
+       "disperse": 8,
+       "rest": 136,
+       "settle": 51,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 18
+      },
+      "tickMs": 0.693
+     },
+     {
+      "at": 240,
+      "alive": 702,
+      "speed": 1.046,
+      "modes": {
+       "explore": 145,
+       "seek": 274,
+       "orbit": 129,
+       "disperse": 0,
+       "rest": 107,
+       "settle": 47,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 0.526
+     },
+     {
+      "at": 360,
+      "alive": 700,
+      "speed": 1.102,
+      "modes": {
+       "explore": 200,
+       "seek": 187,
+       "orbit": 100,
+       "disperse": 4,
+       "rest": 152,
+       "settle": 57,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 0.688
+     },
+     {
+      "at": 480,
+      "alive": 705,
+      "speed": 1.258,
+      "modes": {
+       "explore": 139,
+       "seek": 313,
+       "orbit": 80,
+       "disperse": 13,
+       "rest": 114,
+       "settle": 46,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 0.66
+     },
+     {
+      "at": 600,
+      "alive": 701,
+      "speed": 0.973,
+      "modes": {
+       "explore": 136,
+       "seek": 251,
+       "orbit": 155,
+       "disperse": 0,
+       "rest": 117,
+       "settle": 42,
+       "route": 0
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 14,
+      "textures": 17,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 0.681
+     }
+    ],
+    "idleMotion": [
+     7.02,
+     8.28,
+     11.76,
+     12.1,
+     6.1
+    ],
+    "off": {
+     "drawCallsOff": 3,
+     "drawCallsOn": 5,
+     "gpuOff": null,
+     "gpuOn": null
+    }
+   }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "switching": {
+   "seen": [
+    "stellar-forge:stellar-forge",
+    "machine-cathedral:machine-cathedral",
+    "fractal-biosphere:fractal-biosphere",
+    "stellar-forge:stellar-forge",
+    "machine-cathedral:machine-cathedral",
+    "fractal-biosphere:fractal-biosphere"
+   ],
+   "base": {
+    "geometries": 31,
+    "textures": 15,
+    "heap": 20500000
+   },
+   "after": {
+    "geometries": 31,
+    "textures": 15,
+    "heap": 20500000
+   }
+  },
+  "replayToLive": {
+   "wallMs": 3127,
+   "tick": 61,
+   "restoring": false,
+   "inputs": 0,
+   "replayInputs": 75138,
+   "resets": 6
+  },
+  "farSeek": [
+   {
+    "fraction": 0.85,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 25270,
+    "wallMs": 25270,
+    "lastRestoreMs": 25179,
+    "ticks": 7750,
+    "generation": 1626,
+    "historyMs": 35.9,
+    "fromCheckpoint": 0
+   },
+   {
+    "fraction": 0.15,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 5189,
+    "wallMs": 5189,
+    "lastRestoreMs": 5079,
+    "ticks": 1650,
+    "generation": 287,
+    "historyMs": 4.3,
+    "fromCheckpoint": 0
+   },
+   {
+    "fraction": 0.6,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 9369,
+    "wallMs": 9369,
+    "lastRestoreMs": 9295,
+    "ticks": 3000,
+    "generation": 1148,
+    "historyMs": 14.1,
+    "fromCheckpoint": 0
+   }
+  ]
+ }
+}

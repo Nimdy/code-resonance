@@ -1,0 +1,407 @@
+{
+  "at": "2026-11-01T03:18:52.927Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "determinism: excalidraw (synaptic-storm) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "69097a39bbc73c60 / 69097a39bbc73c60"
+    },
+    {
+      "name": "no page errors: excalidraw (synaptic-storm)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: lumen (fractal-continuum) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "f93fdd90729ae59a / f93fdd90729ae59a"
+    },
+    {
+      "name": "no page errors: lumen (fractal-continuum)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "determinism: self (temporal-terrain) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "cd5d9e9bc6832381 / cd5d9e9bc6832381"
+    },
+    {
+      "name": "no page errors: self (temporal-terrain)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "idle life: synaptic-storm keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 4.17, 5.13, 4.89 (0-255)"
+    },
+    {
+      "name": "idle life: synaptic-storm shows no new structure or event while idle",
+      "pass": true,
+      "detail": "{\"clusters\":6,\"neurons\":7,\"files\":17,\"segments\":1862,\"boutons\":1187,\"axons\":6,\"storms\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}"
+    },
+    {
+      "name": "idle life: the director reports idle (synaptic-storm)",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "no page errors while idle: synaptic-storm",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "privacy: no label of synaptic-storm contains a path, file name, source identifier or the project folder name",
+      "pass": true,
+      "detail": "46 distinct label strings checked"
+    },
+    {
+      "name": "idle life: fractal-continuum keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 10.85, 10.92, 11.19 (0-255)"
+    },
+    {
+      "name": "idle life: fractal-continuum shows no new structure or event while idle",
+      "pass": true,
+      "detail": "{\"form\":\"kifs\",\"power\":null,\"regions\":6,\"blooms\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}"
+    },
+    {
+      "name": "idle life: the director reports idle (fractal-continuum)",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "no page errors while idle: fractal-continuum",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "privacy: no label of fractal-continuum contains a path, file name, source identifier or the project folder name",
+      "pass": true,
+      "detail": "49 distinct label strings checked"
+    },
+    {
+      "name": "idle life: temporal-terrain keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 8.92, 5.44, 8.14 (0-255)"
+    },
+    {
+      "name": "idle life: temporal-terrain shows no new structure or event while idle",
+      "pass": true,
+      "detail": "{\"ranges\":6,\"files\":17,\"roads\":3,\"commits\":2,\"monuments\":2,\"sunrises\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}"
+    },
+    {
+      "name": "idle life: the director reports idle (temporal-terrain)",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "no page errors while idle: temporal-terrain",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "privacy: no label of temporal-terrain contains a path, file name, source identifier or the project folder name",
+      "pass": true,
+      "detail": "45 distinct label strings checked"
+    },
+    {
+      "name": "resources: switching between the 6 worlds 12 times leaves GPU geometries and textures at their level",
+      "pass": true,
+      "detail": "geometries 29->29, textures 19->19"
+    }
+  ],
+  "measurements": {
+    "options": {
+      "families": [
+        "synaptic-storm",
+        "fractal-continuum",
+        "temporal-terrain"
+      ],
+      "size": "960x540",
+      "idleFps": 15
+    },
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "idleByFamily": {
+      "synaptic-storm": {
+        "seconds": "10-100 after the last event",
+        "fps": 15,
+        "meanAbsLumaDiff": [
+          4.17,
+          5.13,
+          4.89
+        ],
+        "structure": "{\"clusters\":6,\"neurons\":7,\"files\":17,\"segments\":1862,\"boutons\":1187,\"axons\":6,\"storms\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
+        "phases": [
+          "active",
+          "idle",
+          "idle",
+          "idle"
+        ]
+      },
+      "fractal-continuum": {
+        "seconds": "10-100 after the last event",
+        "fps": 15,
+        "meanAbsLumaDiff": [
+          10.85,
+          10.92,
+          11.19
+        ],
+        "structure": "{\"form\":\"kifs\",\"power\":null,\"regions\":6,\"blooms\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
+        "phases": [
+          "active",
+          "idle",
+          "idle",
+          "idle"
+        ]
+      },
+      "temporal-terrain": {
+        "seconds": "10-100 after the last event",
+        "fps": 15,
+        "meanAbsLumaDiff": [
+          8.92,
+          5.44,
+          8.14
+        ],
+        "structure": "{\"ranges\":6,\"files\":17,\"roads\":3,\"commits\":2,\"monuments\":2,\"sunrises\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
+        "phases": [
+          "active",
+          "idle",
+          "idle",
+          "idle"
+        ]
+      }
+    },
+    "privacyFolderName": true,
+    "labelsByFamily": {
+      "synaptic-storm": [
+        "1 agent present",
+        "1 branch misfiring",
+        "1 component",
+        "10 validated",
+        "3 branches misfiring",
+        "5 branches misfiring",
+        "8 branches misfiring",
+        "A cascade · Integration validated",
+        "A generative world from this project's code",
+        "A new cluster of neurons forms",
+        "Alyror → Vauos",
+        "Building",
+        "Claude 2 · working on a request",
+        "Claude · connected",
+        "Claude · disconnected",
+        "Claude · editing",
+        "Claude · reading",
+        "Claude · running",
+        "Claude · searching",
+        "Claude · testing",
+        "Claude · waiting for the next prompt",
+        "Claude · working on a request",
+        "Claude: testing",
+        "Claude: working on a request",
+        "Code Resonance · Synaptic Storm",
+        "Committed · 1 branch potentiated",
+        "Committed · the work is potentiated",
+        "Integration validated",
+        "Integration · a new axon pathway links two clusters",
+        "Ioeoel · logic",
+        "New branches arborise",
+        "Recovered · the network fires in step again",
+        "Recovery",
+        "Synaptic Storm",
+        "Tests fail · 8 branches misfire",
+        "Tests pass · an activation wave crosses 2 branches",
+        "The network grows · chapter 2",
+        "The network grows · chapter 3",
+        "Zaulel · interface",
+        "accumulated structure",
+        "commit observed",
+        "milestone · verified by a passing test run",
+        "observed failing run",
+        "observed passing run",
+        "the tests pass again",
+        "verified by a passing test run · myelin remains"
+      ],
+      "fractal-continuum": [
+        "1 agent present",
+        "1 component",
+        "1 site decohering",
+        "10 validated",
+        "3 sites decohering",
+        "5 sites decohering",
+        "8 sites decohering",
+        "A generative world from this project's code",
+        "A local unfolding · Integration validated",
+        "A new region unfolds",
+        "Alyror · logic",
+        "Alyror → Vauos",
+        "Building",
+        "Claude 2 · disconnected",
+        "Claude 2 · working on a request",
+        "Claude · connected",
+        "Claude · disconnected",
+        "Claude · editing",
+        "Claude · running",
+        "Claude · searching",
+        "Claude · testing",
+        "Claude · waiting for the next prompt",
+        "Claude · working on a request",
+        "Claude: testing",
+        "Claude: working on a request",
+        "Code Resonance · Fractal Continuum",
+        "Committed · 1 site glow",
+        "Committed · the work glows",
+        "Deen · tests",
+        "Fractal Continuum",
+        "Integration validated",
+        "Integration · a thread of light links two regions",
+        "Ioeoel · logic",
+        "Recovered · coherence restored",
+        "Recovery",
+        "Tests fail · 8 sites decohere",
+        "Tests pass · a coherent wave crosses 2 sites",
+        "The continuum deepens · chapter 2",
+        "The continuum deepens · chapter 3",
+        "The surface unfolds finer detail",
+        "Vauos · logic",
+        "Zaulel · interface",
+        "accumulated structure",
+        "commit observed",
+        "milestone · verified by a passing test run",
+        "observed failing run",
+        "observed passing run",
+        "the tests pass again",
+        "verified by a passing test run · an inner light remains"
+      ],
+      "temporal-terrain": [
+        "1 agent present",
+        "1 component",
+        "1 peak on a fault",
+        "10 validated",
+        "3 peaks on a fault",
+        "5 peaks on a fault",
+        "7 peaks on a fault",
+        "8 peaks on a fault",
+        "A generative world from this project's code",
+        "A glow over the range · Integration validated",
+        "A new range rises",
+        "Building",
+        "Claude 2 · disconnected",
+        "Claude 2 · working on a request",
+        "Claude · connected",
+        "Claude · disconnected",
+        "Claude · editing",
+        "Claude · reading",
+        "Claude · running",
+        "Claude · searching",
+        "Claude · testing",
+        "Claude · waiting for the next prompt",
+        "Claude · working on a request",
+        "Claude: testing",
+        "Claude: working on a request",
+        "Code Resonance · Temporal Terrain",
+        "Committed · 1 stake on the survey line",
+        "Committed · a survey line is drawn",
+        "Integration validated",
+        "Integration · a road of light links two ranges",
+        "Recovered · the fault heals",
+        "Recovery",
+        "Temporal Terrain",
+        "Tests fail · a fault opens under 8 peaks",
+        "Tests pass · a scan crosses 2 peaks",
+        "The land reaches further · chapter 2",
+        "The land reaches further · chapter 3",
+        "The ridge grows",
+        "Vauos · logic",
+        "accumulated structure",
+        "commit observed",
+        "milestone · verified by a passing test run",
+        "observed failing run",
+        "observed passing run",
+        "the tests pass again"
+      ]
+    },
+    "privacyPatterns": 44,
+    "worldSwitching": [
+      {
+        "geometries": 11,
+        "textures": 17,
+        "heap": 42100000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 42100000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 42100000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 42100000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 42100000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 42100000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 42100000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 42100000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 42100000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 42100000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 42100000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 42100000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 42100000
+      }
+    ]
+  }
+}

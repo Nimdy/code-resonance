@@ -1,5 +1,59 @@
 # Changelog
 
+## Unreleased
+
+- **Temporal Terrain flies over its history when the performance is idle:** once nothing has happened for 24 s and the
+  director's activity is idle, the camera travels back along the time axis over the older land that the logarithmic
+  depth compresses into the haze, to where the land's recorded history began, lingers there and returns (72 s in all;
+  later flights every 120 s while the quiet lasts). Any happening ends it at once, an agent at work holds it, and it
+  flies only where the history reaches well beyond the camera's own view (Self 60 s after its last event, Lumen
+  Recipes after six minutes, never a project indexed whole by its first scan). Portrait keeps its steep view; the
+  haze counts from where the camera is, so the old land is clear around it. A pure function of the performance and
+  the moment, like the rest of the world.
+- **Roads in the land:** Temporal Terrain's dependencies between subsystems are paths of light in the land near the
+  front edge instead of arcs over it: from the importing peak down into the valley beside its range, across at a depth
+  of its own (a longer road behind the shorter ones it spans) and up to the imported peak, drawn by the land's own
+  shader. An agent moving between ranges the roads join travels along them; two agents on one file are two signals in
+  their colours meeting at its peak. The recorded datasets never move an agent along a road, so this was seen only in
+  tests and a constructed scene.
+- **Temporal Terrain hears the music:** with the host's musical clock, the present's contour lines shimmer on the
+  off-beat eighths the arrangement plays, and a new section sends a soft wave of light back over the land. Tests:
+  `tests/terrain-flight.test.js`, `tests/terrain-roads.test.js`, `tests/terrain-music.test.js`; design and what is not
+  done in [docs/worlds/temporal-terrain.md](docs/worlds/temporal-terrain.md).
+- **Fractal Continuum's agents travel the threads:** a dependency thread is now a vein of light along the surface
+  (traced at a coarse recursion and draped over the relief, its ends on the sites; within a region it hugs the form,
+  between regions it arcs gently over it) instead of an arc that could run through the form. Between two sites the
+  threads join (at most four), an agent's signal runs down to the first site and along those veins at conduction
+  speed (1.8 to 3.2 s, a comet of its colour behind it); elsewhere it keeps its ride. A move now begins where the
+  signal is, so a change that interrupts one (a tool reported for 40 ms, the edit's cue a moment later) no longer
+  makes it jump: on Lumen Recipes, steps of more than 5 world units in one frame went from 24 to 2. Two agents on one
+  file (`agent.collision`) are two signals in their colours swooping down to its site, with rings of both colours
+  rippling across the surface. With the host's musical clock, sites also pulse on the eighth notes between the beats
+  where the arrangement plays rhythm (read at their own bar: a pulse in flight never changes), and a section's onset
+  is a soft volley of every site and a brief shimmer of glints over the surface. Tested in Node
+  (`tests/fractal-agents.test.js`, `tests/fractal-music.test.js`; `docs/worlds/fractal-continuum.md`); not yet seen
+  by the owner.
+- **Synaptic Storm: subagents tethered to their parent.** A subagent is a smaller signal (0.6 of a session's), and a
+  faint filament in its colour ties it to its parent's signal: along the axon pathway between their neurons when the
+  graph joins them, otherwise a shallow arc, easing between the two while either travels, with a bead of light running
+  down it from the parent every five seconds. No tether when the parent is unknown or has ended; no words, so labels,
+  the OBS view and recordings show nothing new. The parent comes from **interpretation 11**: every adapter that observes
+  subagents (Claude Code, Codex, Qwen, Copilot, Cursor, Droid) keys one as its session's key plus its own, in the
+  parent's session, so once the receiver has observed that session a subagent's `agent.state` intents carry
+  `subject.parentAgentId` (the parent's public id, never a name or path; packs receive it as an opaque token). On its
+  first start the receiver rebuilds each project's derived files once from its journal; nothing else changes. Seen only
+  on a synthetic fixture (no recording has subagents), not reviewed. Tests: `tests/agent-parents.test.js`,
+  `tests/synaptic-subagents.test.js` ([docs/worlds/synaptic-storm.md](docs/worlds/synaptic-storm.md#agents),
+  [docs/AGENTS.md](docs/AGENTS.md#known-limits)).
+- **Visual Pack SDK 1.3:** Synaptic Storm, Fractal Continuum and Temporal Terrain as the base of a declarative or shader
+  pack and the project trait `grown` (in the pack schema's traits now) for a world pack's parameters, both available
+  since 0.8.1, are SDK 1.3: a pack that uses them declares `"sdk": "^1.3"`, so that an older receiver says *needs SDK 1.3
+  or later* instead of refusing an unknown family or trait. One that declares less still installs, with a warning that
+  says what to declare (`node scripts/pack.js validate`, the Visual Packs import). The Artist Studio's *Export* writes
+  `^1.3` over the three and `^1.2` otherwise, so a creation over a flagship still installs on 0.8.0. Every pack written
+  for `^1.0` to `^1.2` runs unchanged; `sdk.version` is `'1.3.0'`, and a world pack's agent presences carry a subagent's
+  `parent` ([docs/packs/migration.md](docs/packs/migration.md)).
+
 ## 0.8.1 — 2026-10-31
 
 Product 0.8.1, for use on your own machine; not stable. This tag is `v0.8.1`. Visual Recipe generator **5**: Synaptic

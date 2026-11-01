@@ -50,9 +50,9 @@ vec4 relief(float x,float z,float rug,float fine){
 // agents' touches lifting the ground, a fault's tremor), its normal, the smooth effects' light, mist and fog.
 // position: (u in [-1, 1], depth, -1 surface / 0 cut top / 1 cut bottom).
 export const LAND_VS=`
-uniform highp sampler2D uLand;uniform float uXc,uXh,uL,uTau,uBase,uV,uQ,uOct,uZmax,uHazeK,uMist,uNFx,uNMn,uNTch;
+uniform highp sampler2D uLand;uniform float uXc,uXh,uL,uTau,uBase,uV,uQ,uOct,uZmax,uHazeK,uMist,uNFx,uNMn,uNTch,uFlyZ;
 uniform vec4 uTch[4],uFx[8],uFxB[8],uFxC[8],uMn[8];
-varying vec3 vW,vN,vCol,vFx,vFogC;varying vec4 vA;varying float vCrest,vAge,vTp,vSk,vTop,vDepth,vMist,vFog;
+varying vec3 vW,vN,vCol,vFx,vFogC;varying vec4 vA;varying float vCrest,vAge,vTp,vSk,vTop,vDepth,vMist,vFog,vXs;
 ${ROWS_GLSL}
 ${NOISE2}
 ${RELIEF}
@@ -91,21 +91,23 @@ void main(){
   vec3 p=vec3(x,H,-depth);vTop=H;vSk=sk;
   if(sk>.5){p.y=-uBase;}
   if(sk>-.5)vN=vec3(0.,0.,1.);
-  vA=vec4(clamp(A.y,0.,2.),clamp(A.z,0.,1.),clamp(A.w,0.,1.),H);vCol=max(B.rgb,vec3(0.));vCrest=clamp(B.w,0.,1.);vAge=age;vTp=tp;vDepth=depth;
+  vA=vec4(clamp(A.y,0.,2.),clamp(A.z,0.,1.),clamp(A.w,0.,1.),H);vCol=max(B.rgb,vec3(0.));vCrest=clamp(B.w,0.,1.);vAge=age;vTp=tp;vDepth=depth;vXs=xs;
   vec4 wp=modelMatrix*vec4(p,1.);vW=wp.xyz;
-  // mist in the valleys (ambient, drifting), thickening with distance; fog toward the horizon's own colour
-  float mn=uQ<2.5?vnd(vec2(x/34.+uV*.012,depth/30.)).x:0.;
-  vMist=clamp(uMist*exp(-max(H,0.)/1.8)*(.35+.65*smoothstep(-.5,.6,mn))*(.15+.6*smoothstep(10.,140.,depth)),0.,.7);
-  vFog=clamp(1.-exp(-pow(depth/(uZmax*.6/max(uHazeK,.2)),1.8)),0.,1.);vFogC=skyCol(normalize(vW-cameraPosition));
+  // mist in the valleys (ambient, drifting), thickening with distance; fog toward the horizon's own colour. Both count
+  // from uFlyZ: the depth the camera has flown back to over the history (0 at the present: the land as always)
+  float mn=uQ<2.5?vnd(vec2(x/34.+uV*.012,depth/30.)).x:0.,dz=max(depth-uFlyZ,0.);
+  vMist=clamp(uMist*exp(-max(H,0.)/1.8)*(.35+.65*smoothstep(-.5,.6,mn))*(.15+.6*smoothstep(10.,140.,dz)),0.,.7);
+  vFog=clamp(1.-exp(-pow(dz/(uZmax*.6/max(uHazeK,.2)),1.8)),0.,1.);vFogC=skyCol(normalize(vW-cameraPosition));
   gl_Position=projectionMatrix*viewMatrix*wp;}`;
 // The land's fragments: the rock under a low key light and the sky, the contour lines (anti-aliased by their screen
 // width, index lines brighter, each kind fading where its lines would crowd), the present's heat, faults, the
 // validated sheen, what is thin (survey lines, the touches' rings) and the agents' light, mist and fog.
 export const LAND_FS=`
-uniform float uInt,uIdx,uLW,uGlow,uSheen,uCut,uPx,uQ,uV,uBeat,uBeatL,uShim,uLant,uBase,uL,uTau,uNow,uFresh,uNCm,uNSv,uNTch,uNAg;
+uniform float uInt,uIdx,uLW,uGlow,uSheen,uCut,uPx,uQ,uV,uBeat,uBeatL,uShim,uLant,uBase,uL,uTau,uNow,uFresh,uNCm,uNSv,uNTch,uNAg,uEighth;
+uniform sampler2D uRoad;uniform vec4 uRoadX;uniform vec3 uRoadC;uniform vec2 uSweep;
 uniform vec3 uRock,uWarn,uValid,uHi,uSkyC;
 uniform vec4 uSv[4],uTch[4],uTchC[4],uAg[6],uAgC[6],uCm[16];
-varying vec3 vW,vN,vCol,vFx,vFogC;varying vec4 vA;varying float vCrest,vAge,vTp,vSk,vTop,vDepth,vMist,vFog;
+varying vec3 vW,vN,vCol,vFx,vFogC;varying vec4 vA;varying float vCrest,vAge,vTp,vSk,vTop,vDepth,vMist,vFog,vXs;
 ${SKY}
 ${NOISE2}
 // A contour line's coverage: the distance to the nearest isoline in pixels (fw: the level's change per pixel, taken in
@@ -145,6 +147,9 @@ void main(){
     col+=uWarn*crack*(2.4*exp(-age/40.)+.35)+uWarn*st*.05;}
   // the score's beat: one contour level in four brightens, climbing the land beat by beat
   float bk=mod(lvl+uBeatL+256.,4.);lc*=1.+uShim*uBeat*.9*step(bk,.5);
+  // the music, where the host gives its clock: the present's lines shimmer on the eighths the arrangement plays, and a
+  // section's onset sends a soft wave of light back over the land (both 0 otherwise)
+  lc*=1.+uEighth*hot*1.1+uSweep.y*exp(-pow((depth-uSweep.x)/(2.5+.06*uSweep.x),2.));
   // the smooth effects (from the vertices) light the lines most
   lc+=vFx*1.4;col+=vFx*.12;
   // survey flashes: a commit's line across the land at its moment
@@ -156,6 +161,10 @@ void main(){
   if(uLant>0.){vec2 c=vec2(vW.x/3.,tp/12.),ce=floor(c),f=fract(c)-.5;float h=vh(ce+17.)*.5+.5;
     if(h>.9)col+=uAcc*exp(-dot(f,f)*90.)*smoothstep(.88,.99,vCrest)*uLant*.8*smoothstep(8.,30.,depth);}
   col+=lc*on;
+  // roads: the present's dependencies between ranges as paths in the land (a light map in the layout's frame, near the
+  // front edge): a fine bright core with a faint halo on the ground, the contour lines it crosses a little brighter
+  if(depth<uRoadX.z){float rd=textureLod(uRoad,vec2((vXs-uRoadX.x)*uRoadX.y,depth/uRoadX.z),0.).r,core=smoothstep(.38,.62,rd);
+    col+=uRoadC*(core*.55+rd*(.07+on*.3))*uRoadX.w*smoothstep(uRoadX.z,uRoadX.z*.8,depth);}
   // the agents' touches: two rings of light in their colour opening around the touch, brightest on the contour lines
   // they cross (the dome opens the lines into rings), fading over about two seconds
   for(int k=0;k<4;k++){if(float(k)>=uNTch)break;vec4 T=uTch[k],C=uTchC[k];float dk=uL*log(1.+max(uNow-T.y,0.)/uTau),r=length(vec2(vW.x-T.x,depth-dk));

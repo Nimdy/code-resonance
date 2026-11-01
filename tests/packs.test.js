@@ -35,10 +35,24 @@ test('Compatibility: a pack runs on the SDK major it names, at or above the mino
   assert.equal(packs.compatible({sdk:'^1.2'},'1.0.0').ok,false);
   assert.equal(packs.compatible({sdk:'^2.0'},'1.9.0').ok,false);
   assert.equal(packs.compatible({},'1.0.0').ok,false);
-  // SDK 1.1 (pack code in a worker, sdk.util.canvas), 1.2 (declarative compositions, technique.finish): packs written
-  // for 1.0 keep running; the examples declare ^1.0.
-  assert.equal(packs.SDK_VERSION,'1.2.0');assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);assert.equal(packs.compatible({sdk:'^1.2'},packs.SDK_VERSION).ok,true);
+  // SDK 1.1 (pack code in a worker, sdk.util.canvas), 1.2 (declarative compositions, technique.finish), 1.3 (the
+  // families graduated in 0.8.1 as bases, the trait `grown`): packs written for 1.0 keep running; the examples declare ^1.0.
+  assert.equal(packs.SDK_VERSION,'1.3.0');assert.match(packs.compatible({sdk:'^1.3'},'1.2.0').reason,/needs SDK 1\.3 or later, this is 1\.2\.0/);assert.equal(packs.compatible({sdk:'^1.1'},'1.0.0').ok,false);assert.equal(packs.compatible({sdk:'^1.2'},packs.SDK_VERSION).ok,true);
   for(const d of fs.readdirSync(EXAMPLES))assert.equal(packs.compatible(JSON.parse(fs.readFileSync(path.join(EXAMPLES,d,'pack.json'),'utf8'))).ok,true,d);
+});
+test('SDK 1.3: a pack over a family graduated in 0.8.1, or deriving from "grown", still installs and is told to declare ^1.3',t=>{
+  const report=(m,files)=>{const r=packs.inspect(pack(t,m,files));return {errors:r.errors,sdk:r.warnings.filter(w=>w.startsWith('pack.json/sdk'))};};
+  for(const b of ['synaptic-storm','fractal-continuum','temporal-terrain']){
+    const r=report(declarative({base:b}));assert.deepEqual(r.errors,[],b);
+    assert.equal(r.sdk.length,1,b);assert.match(r.sdk[0],new RegExp(`the base "${b}", new in SDK 1\\.3: declare "sdk": "\\^1\\.3"`));
+    assert.deepEqual(report({...declarative({base:b}),sdk:'^1.3'}).sdk,[],`${b} with ^1.3`);
+    assert.deepEqual(packs.needs({shader:{base:b}}).map(([n])=>n),[3],`a shader pack over ${b}`);
+  }
+  for(const b of ['stellar-forge','fractal-biosphere','machine-cathedral'])assert.deepEqual(report(declarative({base:b})).sdk,[],`${b} needs nothing new`);
+  const grown=world({parameters:{spread:{type:'number',min:0,max:1,from:{trait:'grown'}}}});
+  let r=report(grown,{'world.js':WORLD_JS});assert.deepEqual(r.errors,[]);assert.equal(r.sdk.length,1);assert.match(r.sdk[0],/the trait "grown" \(\/world\/parameters\/spread\)/);
+  assert.deepEqual(report({...grown,sdk:'^1.3'},{'world.js':WORLD_JS}).sdk,[]);
+  r=report(world({parameters:{spread:{type:'number',min:0,max:1,from:{trait:'agentShare'}}}}),{'world.js':WORLD_JS});assert.deepEqual(r.errors,[]);assert.deepEqual(r.sdk,[]);
 });
 test('Pack code is told the SDK version its compatibility was checked against',async()=>{
   // Two copies by necessity: the pack frame's CSP serves only /worlds/ and /vendor/, and the engine cannot require ESM.

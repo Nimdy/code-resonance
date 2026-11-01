@@ -30,7 +30,8 @@ the base family's [catalogue](catalogue.md), effect polarity, referenced files, 
 ```
 
 `base` is a built-in family or an installed world pack (then `overrides` use `params.<name>` plus the shared palette,
-light and technique entries). A number may be a `[min, max]` range: each project gets its own seeded value. `effects`
+light and technique entries). Synaptic Storm, Fractal Continuum and Temporal Terrain are bases since SDK 1.3: a pack
+over one of them declares `"sdk": "^1.3"`. A number may be a `[min, max]` range: each project gets its own seeded value. `effects`
 re-maps intents to other effect presets of the same polarity; `unlocks` orders the family's ambient layers.
 `technique.finish` (SDK 1.2) chooses the cinematic finish: `classic` (the world's own grade), `clean`, `cinematic` or
 `dreamlike`.
@@ -100,7 +101,8 @@ events and digital life), **Open in Artist Studio** makes an editable copy. It i
 `weights`), `boolean` (probability `p`). With `from`, a number follows a project trait: `min + (max - min) ×
 clamp(trait × scale + offset)` plus seeded `jitter`. Traits: `modules`, `districts`, `symbols`, `ui`, `uiModules`,
 `routes`, `model`, `functions`, `dependencyDensity`, `crossDensity`, `hubness`, `branching`, `depth` (symbols per
-module), `tests`, `agents`, `agentShare`.
+module), `tests`, `agents`, `agentShare`, and since SDK 1.3 `grown` (the share of the project's symbols created while it
+was observed; declare `"sdk": "^1.3"`).
 
 **Effects** name how each of the twelve effect intents looks; `validation.failed` and `milestone.achieved` are
 required. **Ambient** `unlocks` (up to eight) are the layers verified milestones enable, in order (`frame.unlocks`).

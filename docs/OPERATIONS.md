@@ -9,7 +9,7 @@ Product version **0.8.1**. The last published GitHub Release before the 0.7 seri
 is not stable. It runs from this repository, or from the VS Code extension alone: the VSIX carries the receiver and the
 extension starts it when none is running ([Getting started](FIRST-RUN.md#with-the-extension-alone)). Publishing to the
 Visual Studio Marketplace and Open VSX is prepared, not done ([PUBLISHING.md](PUBLISHING.md)). The product version is separate from the versions of
-the data formats, the score, the Visual Recipe generator, the interpretation (10) and the Visual Pack SDK
+the data formats, the score, the Visual Recipe generator, the interpretation (11) and the Visual Pack SDK
 ([ARCHITECTURE.md](../ARCHITECTURE.md#versions-and-compatibility)). Overnight CAST and a public OBS night:
 [campaign-0.7.md](campaign-0.7.md). The README hero is a 70-second CAST session of Pulse.
 
@@ -53,8 +53,8 @@ has not been run on Windows, on macOS or from a Remote-WSL, SSH or container win
   candidate folders; each adapter's header in `engine/languages/` lists what it does not recognise. Other languages
   count at file level. The scanners ran without errors over the Python 3.12 standard library, part of the JDK 21
   sources and the system's C and C++ headers, and over a handful of real Go, C#, PHP and Ruby files; Rust, Kotlin and
-  Swift are verified on fixtures only. Interpretation **10** (language adapters,
-  the larger agent catalog) is independent of the product version. AI agents with an observe-only adapter: Claude
+  Swift are verified on fixtures only. Interpretation **11** (10: language adapters,
+  the larger agent catalog; 11: a subagent names its parent) is independent of the product version. AI agents with an observe-only adapter: Claude
   Code, Cursor, Codex, Gemini CLI, Qwen Code, GitHub Copilot (CLI and VS Code's Copilot harness), Factory Droid, Grok
   Build and goose. Any other agent can report only through `scripts/event.js` (why each has no adapter:
   [AGENTS.md](AGENTS.md)). Stage chips show CAST catalog names (Claude, Cursor, Codex, Grok, Qwen, Kimi, Gemini,

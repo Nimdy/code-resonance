@@ -71,7 +71,7 @@ export function intent(i){
   const s=i.subject||{},d=i.detail||{};
   return compact({v:1,id:opaque(i.id),type:i.type,ts:num(i.ts,0),ord:num(i.ord,0),tier:int(i.tier,0,4)??0,magnitude:num(i.magnitude,0,1)??0,evidence:oneOf(EVIDENCE,i.evidence)||'observed',
     subject:compact({fileId:token(s.fileId),groupId:token(s.groupId),targetId:token(s.targetId),targetGroupId:token(s.targetGroupId),agentId:token(s.agentId),
-      voice:int(s.voice,0,64),fileIds:tokens(s.fileIds),provenance:oneOf(ATTRIBUTION,s.provenance)}),
+      parentAgentId:token(s.parentAgentId),voice:int(s.voice,0,64),fileIds:tokens(s.fileIds),provenance:oneOf(ATTRIBUTION,s.provenance)}),
     detail:compact({state:oneOf(AGENT_STATES,d.state),activity:oneOf(ACTIVITIES,d.activity),subagent:bool(d.subagent),count:int(d.count,0,1e6),kinds:kinds(d.kinds),
       chapter:int(d.chapter,0,1e4),category:typeof d.category==='string'&&/^[a-z]{1,16}$/.test(d.category)?d.category:undefined,repaired:int(d.repaired,0,1e6),
       first:bool(d.first),removedSymbols:int(d.removedSymbols,0,1e6),providers:catalogIds(d.providers),provider:catalogId(d.provider),scope:oneOf(SCOPE,d.scope)})});

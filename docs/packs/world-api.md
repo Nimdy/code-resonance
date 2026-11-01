@@ -1,4 +1,4 @@
-# World API (SDK 1; current 1.2)
+# World API (SDK 1; current 1.3)
 
 A world pack's entry module (`world.entry` in the manifest) is one self-contained ES module. It must not import
 anything (the frame refuses it, and validation rejects it): everything comes through `sdk`.
@@ -57,7 +57,9 @@ placed by the host inside the platforms' safe area ([RECORDING.md](../RECORDING.
 - `beat` (1 on the beat, decaying), `barPhase` (0–1 through the bar), `mood` `{section, energy, tempo}`, `energy`.
 - `activity` 0–1, `phase` `'idle' | 'active' | 'milestone'`.
 - `unlocks`: `[{name, level}]`, your ambient layers in manifest order, fading in after each verified milestone.
-- `agents`: presences `{id, number, voice, state, display, label, activity, fileId, home, since, arrived, alpha, busy}`.
+- `agents`: presences `{id, number, voice, state, display, label, activity, fileId, home, since, arrived, alpha, busy}`,
+  with `subagent` (true for a subagent) and, since SDK 1.3, `parent`: a subagent's parent presence `id` when the
+  receiver observed the parent's session (interpretation 11), otherwise `null`.
 - `overrides`: the viewer's settings `{intensity, motion, atmosphere}` (and `labels` only when the project chose its own information mode; the mode on screen is applied by the host, a pack does not need it); `quality`: adaptive level 0–3 (at 2
   and above, halve your particle counts).
 
@@ -65,7 +67,7 @@ placed by the host inside the platforms' safe area ([RECORDING.md](../RECORDING.
 
 | Member | What it is |
 |---|---|
-| `version`, `api` | `'1.2.0'` (`'1.0.0'` or `'1.1.0'` on older runtimes), `1` (unchanged since 1.0) |
+| `version`, `api` | `'1.3.0'` (`'1.0.0'`, `'1.1.0'` or `'1.2.0'` on older runtimes), `1` (unchanged since 1.0) |
 | `THREE` | three.js r170 |
 | `scene`, `camera`, `renderer`, `film` | your scene, the camera the rig drives, the renderer (in the pack worker, on an `OffscreenCanvas`), whether a film is rendering |
 | `recipe`, `params`, `palette` | the recipe; your declared parameters drawn for this project; palette colours as `THREE.Color` (`primary`, `secondary`, `accent`, `highlight`, `deep`, `haze`, `warning`, `valid`) |

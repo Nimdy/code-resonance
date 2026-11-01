@@ -14,7 +14,9 @@ const {compile}=require('./schema');
 const catalog=require('./catalog');
 const Composition=require('../public/composition.js');
 // 1.2: declarative.composition (Artist Studio creations exported as data-only packs) and technique.finish.
-const SDK_VERSION='1.2.0';
+// 1.3: the families that graduated in 0.8.1 as bases (SINCE_1_3) and the project trait `grown` (generator 5).
+const SDK_VERSION='1.3.0';
+const SINCE_1_3=new Set(['synaptic-storm','fractal-continuum','temporal-terrain']);
 const SCHEMA=JSON.parse(fs.readFileSync(path.join(__dirname,'../packs/schema/pack.schema.json'),'utf8'));
 const validateSchema=compile(SCHEMA);
 const FILE=new RegExp(SCHEMA.$defs.file.pattern,'u');
@@ -30,6 +32,15 @@ function compatible(manifest,sdk=SDK_VERSION){
   return {ok:true};
 }
 const executable=kind=>kind==='shader'||kind==='world';
+// What a manifest uses that an older SDK does not know, with the minor that brought it ([minor, what]). A pack that
+// declares less still installs here; an older receiver would refuse it for an unknown base or trait instead of saying
+// which SDK it needs, so inspect() warns.
+function needs(m){
+  const out=[],base=m.declarative?.base??m.shader?.base;
+  if(SINCE_1_3.has(base))out.push([3,`the base "${base}"`]);
+  for(const [k,p] of Object.entries(m.world?.parameters||{}))if(p?.from?.trait==='grown')out.push([3,`the trait "grown" (/world/parameters/${k})`]);
+  return out;
+}
 // Files a manifest refers to.
 function referenced(m){
   const w=m.world||{},s=m.shader||{};
@@ -105,6 +116,8 @@ function inspect(dir,registry=null){
   if(!errors.length){
     const c=compatible(manifest);if(!c.ok)errors.push({at:'pack.json/sdk',message:c.reason});
     for(const e of semantic(manifest,registry))errors.push({at:`pack.json${e.at}`,message:e.message});
+    const declared=Number(/^\^1\.(\d+)$/.exec(manifest.sdk||'')?.[1]);
+    for(const [n,what] of needs(manifest))if(declared<n)warnings.push(`pack.json/sdk: uses ${what}, new in SDK 1.${n}: declare "sdk": "^1.${n}" so that older receivers say which SDK it needs`);
   }
   // Files: every file must have an allowed name; limits on count and size; no links.
   const walk=(d,rel='')=>{for(const ent of fs.readdirSync(d,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){
@@ -220,4 +233,4 @@ function checkManifest(m,registry=null){
   for(const e of semantic(m,registry))errors.push({at:`pack.json${e.at}`,message:e.message});
   return errors;
 }
-module.exports={SDK_VERSION,SCHEMA,LIMITS,compatible,inspect,install,remove,setTrust,createRegistry,catalogueOf,executable,packsDir,checkManifest};
+module.exports={SDK_VERSION,SCHEMA,LIMITS,compatible,needs,inspect,install,remove,setTrust,createRegistry,catalogueOf,executable,packsDir,checkManifest};
