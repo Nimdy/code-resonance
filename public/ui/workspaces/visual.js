@@ -201,6 +201,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const footStatus=h('div',{class:'vs-foot-status small',role:'status','aria-live':'polite'});
   const cancelBtn=button({label:'Cancel',kind:'ghost',id:'vsCancel',onClick:()=>discard()});
   const applyBtn=button({label:'Apply',kind:'primary',icon:'check',id:'vsApply',onClick:()=>apply()});
+  // Shown only while a preview is pending (renderFoot); with no project, or before its identity loads, there is nothing to apply.
+  cancelBtn.hidden=true;applyBtn.hidden=true;
   const foot=h('div',{class:'inspector-foot vs-foot'},footStatus,cancelBtn,applyBtn);
   const inspector=h('aside',{class:'inspector vs-inspector','aria-label':'World DNA'},inspHead,body,foot);
   view.append(h('div',{class:'split ws-visual'},main,inspector));
