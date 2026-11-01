@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **CI in about half the time:** the unit and integration suite ran as one job per platform and took 9–10 minutes on
+  a two-core runner, most of it a few long digital-life simulations. It now runs as three parallel shards per platform
+  (`node --test --test-shard=i/3`, every third test file: 199, 237 and 230 tests, 118–127 s each at two workers
+  locally), with the syntax check, the package and the smoke test once, in shard 1. Every test still runs on every
+  pull request. Measured on its own pull request: the validation jobs took 4.1 minutes (about 10 before) and the
+  whole check 6.9 minutes (10–13 before), now set by the Ember Observatory pack's compatibility test.
+- **Timing:** the two failures 0.9.0's pull request met (the audio export's first bar a hair below zero, and a test
+  that expected the life driver's background stage in one frame) were fixed there. The suite then passed 666/666 in
+  eight stressed runs (three suites at once on 24 cores, twice, and confined to two cores each with a busy loop
+  competing, twice), but a later run met one more: the tests that start a receiver on a port of their own took it from
+  `listen(0)`, the system's ephemeral range, which the connections of the other test files draw from at the same
+  moment, so the port could be taken before the receiver bound it (a test's two receivers both found it occupied).
+  They now share one helper (`tests/helpers.js` `freePort`) that picks a port below every platform's ephemeral range,
+  at random, checked free and never twice in a file.
 - **Curated looks of the graduated worlds reworked** to do what their one-line descriptions say, each holding on
   Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU; the owner has not reviewed them yet).
   *Kaleidoscope crystal* (Fractal Continuum) read as a soft pink-violet lump, close to the "gum" look: it is now a
