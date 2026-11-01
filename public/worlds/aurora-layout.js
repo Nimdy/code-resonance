@@ -51,11 +51,12 @@ const AZ=[0,15,-17,29,-31,6,-7,39,-40,22],DEPTH=[0,-.6,.5,.35,-.35,.85,.75,-.85,
 export function placeOf(rank,id,cfg){
   const h=hash(`curtain/${id}`),side=rank%2?1:-1;
   const g=rank<DEPTH.length?DEPTH[rank]:frac(rank*.6180339887+.5)*2-1;
-  const az=(rank<AZ.length?AZ[rank]*Math.PI/180:side*(.1+.62*frac(rank*.7548776662+.29)))*cfg.spread,R=MID*Math.exp(.45*g)*Math.sqrt(cfg.spread);
+  const az=(rank<AZ.length?AZ[rank]*Math.PI/180:side*(.1+.62*frac(rank*.7548776662+.29)))*cfg.spread,R=MID*Math.exp(.62*g)*Math.sqrt(cfg.spread);
   // the trace leans off east-west, so a curtain sweeps from low on the horizon (its far end) up into the sky (its near
   // end); one to a side turns a little toward facing the shore
   const tilt=(rand(h)<.5?-1:1)*(rank===0?.88+.25*rand(h+4):.15+.38*rand(h+4))+az*.3;
-  return {R,az,tilt,x:R*Math.sin(az),z:-R*Math.cos(az),dx:Math.cos(tilt),dz:Math.sin(tilt),alt:ALT*(.92+.16*rand(h+1)),H:HEIGHT*cfg.height*(.86+.28*rand(h+2)),seed:rand(h+3)};
+  // (a far curtain's foot stands a little lower, so it rises from behind the far shore's mountains)
+  return {R,az,tilt,x:R*Math.sin(az),z:-R*Math.cos(az),dx:Math.cos(tilt),dz:Math.sin(tilt),alt:ALT*(.92+.16*rand(h+1))*(1-.24*Math.max(0,g)),H:HEIGHT*cfg.height*(.86+.28*rand(h+2)),seed:rand(h+3)};
 }
 // The curtains at moment g: each subsystem with a live file, in order of birth, with its place, its half-length (the
 // minimum and its files at the spacing, eased in as they arrive) and its rays: each file's signed place along the trace
@@ -97,11 +98,12 @@ export function curtainPoint(p,s,h,tv,A,rip,out=[0,0,0],kf=1){
   const d=foldAt(s,s/Math.max(p.len,1),h,p.seed,tv,A,rip,kf),x=p.x+p.dx*s+p.dz*d,z=p.z+p.dz*s-p.dx*d;
   out[0]=x+MAG[0]*h;out[1]=p.alt+MAG[1]*h;out[2]=z+MAG[2]*h;return out;
 }
-// ---- Field lines: a dependency between two curtains is an arc of faint light from the importing ray up along the field,
-// over and down into the imported ray (a cubic Bezier from a point a third of the way up each ray).
+// ---- Field lines: a dependency between two curtains is a long, gentle arc from the importing ray, lifted a little along
+// the field, into the imported ray (a cubic Bezier from a point a third of the way up each ray). Its rise is a sixth of
+// its span (never a loop: seen from the shore a tall arc between two far curtains reads as a circle in the sky).
 export function fieldLine(a,b,ha,hb,n=24,out=[]){
   const P0=[a[0]+MAG[0]*ha,a[1]+MAG[1]*ha,a[2]+MAG[2]*ha],P3=[b[0]+MAG[0]*hb,b[1]+MAG[1]*hb,b[2]+MAG[2]*hb];
-  const k=.5*Math.hypot(P3[0]-P0[0],P3[1]-P0[1],P3[2]-P0[2])+140,P1=P0.map((v,i)=>v+MAG[i]*k),P2=P3.map((v,i)=>v+MAG[i]*k);
+  const k=.16*Math.hypot(P3[0]-P0[0],P3[1]-P0[1],P3[2]-P0[2])+30,P1=P0.map((v,i)=>v+MAG[i]*k),P2=P3.map((v,i)=>v+MAG[i]*k);
   out.length=0;for(let j=0;j<=n;j++){const u=j/n,v=1-u;out.push([0,1,2].map(i=>v*v*v*P0[i]+3*v*v*u*P1[i]+3*v*u*u*P2[i]+u*u*u*P3[i]));}
   return out;
 }
@@ -125,10 +127,12 @@ export function mountainLayers(seed,{layers=4,height=1}={}){
   for(let l=1;l<=n;l++){const R=MTN_R[l-1],K=1200,X=MTN_A,ys=new Float32Array(K),s=`${seed}/mtn/${l}`,off=rand(hash(s+'o'))*500;
     const H=height*R*(.058+.022*rand(hash(s)))*(l===1?.85:1),scale=R/(260+70*l);
     for(let i=0;i<K;i++){const a=-X+2*X*i/(K-1);
-      // ridges with peaks, a broad swell, and the valley of the lake's outlet kept low in the middle of the nearest layer
+      // ridges with peaks, a broad swell, now and then a massif standing above its range, and the valley of the lake's
+      // outlet kept low in the middle of the nearest layer
       const r=ridged(a*scale+off,s,5),sw=.5+.5*vn1(a*R/(950+320*l)+off,s+'s'),mid=l===1?1-.5*Math.exp(-((a/.42)**2)):1;
-      ys[i]=H*Math.pow(r,1.4)*sw*mid*1.35;}
-    out.push({l,tree:false,R,X,K,ys,haze:clamp(.16+.24*(l-1)/Math.max(1,n-1)*1.8,0,.85)});}
+      const ms=Math.pow(vn1(a*R/(2300+400*l)+off*1.7,s+'m'),3);
+      ys[i]=H*Math.pow(r,1.4)*sw*mid*1.35*(1+.6*ms);}
+    out.push({l,tree:false,R,X,K,ys,haze:clamp(.14+.2*(l-1)/Math.max(1,n-1)*1.8,0,.85)});}
   return out;
 }
 export function profileAt(L,x){const u=(x+L.X)/(2*L.X)*(L.K-1),i=Math.max(0,Math.min(L.K-2,Math.floor(u))),f=clamp(u-i);return L.ys[i]+(L.ys[i+1]-L.ys[i])*f;}

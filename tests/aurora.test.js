@@ -247,6 +247,25 @@ test('A wisp\'s move begins where it is: a change that interrupts it (a 40 ms to
   for(let t=T0+2600;t<=T0+9000;t+=50){W.at(t);const p=W.w.agentPosition('w');assert(p,`a position at ${t-T0}`);if(prev)worst=Math.max(worst,p.distanceTo(prev));prev=p.clone();}
   assert(worst<120,`the largest step in 50 ms is ${worst.toFixed(1)} units (a jump would cross the sky)`);W.w.dispose();
 });
+test('Field lines are long, gentle arcs, barely there at rest; they light behind a wisp that flies along them, then fade',async()=>{
+  const {fieldLine}=await load('aurora-layout');
+  for(const [a,b,ha,hb] of [[[0,235,-1300],[400,235,-1500],60,60],[[-900,220,-1100],[1200,250,-2800],40,120],[[0,240,-1000],[0,240,-1300],80,20]]){
+    const P=fieldLine(a,b,ha,hb,24,[]),A=P[0],B=P.at(-1),L=Math.hypot(B[0]-A[0],B[1]-A[1],B[2]-A[2]);let rise=0;
+    for(const p of P){const u=((p[0]-A[0])*(B[0]-A[0])+(p[1]-A[1])*(B[1]-A[1])+(p[2]-A[2])*(B[2]-A[2]))/(L*L),q=[0,1,2].map(i=>A[i]+(B[i]-A[i])*u);rise=Math.max(rise,Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]));}
+    assert(rise<=.2*L+25,`an arc rises ${rise.toFixed(0)} over a span of ${L.toFixed(0)} (a loop would read as a circle)`);}
+  // at rest (old links, no file firing): every field-line segment is a trace
+  const alphas=(scene,width)=>{let rib=null;scene.traverse(o=>{if(o.geometry?.attributes?.rA)rib=o;});const n=rib.geometry.instanceCount,A=rib.geometry.attributes.rA.array,C=rib.geometry.attributes.rC.array,out=[];
+    for(let k=0;k<n;k++)if(Math.abs(A[k*4+3]-width)<1e-6)out.push(C[k*4+3]);return out;};
+  const R=await headless(await network(),{name:'lines'});R.at(T0+30000);
+  assert(alphas(R.scene,8).every(a=>a<=.006),'field lines at rest are barely there');assert.equal(R.w.stats().wakes,0);R.w.dispose();
+  // a wisp's move between two curtains a field line joins lights the line behind it, and the light fades
+  const {createAgents}=await load('agents');const ag=createAgents(),rec=(ts,state,fileId,activity)=>ag.record({type:'agent.state',ts,tier:0,magnitude:.1,evidence:'observed',subject:{agentId:'w',voice:2,fileId},detail:{state,activity,provider:'codex'}});
+  rec(T0+500,'tool','a2','editing');rec(T0+540,'processing',null);rec(T0+6000,'tool','b0','editing');rec(T0+6040,'processing',null);
+  const W=await headless(await network(),{name:'lines',agents:ag});let lit=0,line=0;
+  for(let t=T0+5000;t<=T0+16000;t+=250){W.at(t);const s=W.w.stats();if(s.fieldTravel)line++;if(s.wakes&&alphas(W.scene,6).some(a=>a>.01))lit++;}
+  assert(line>0&&lit>line,`the wisp flew along the line (${line} samples) and its wake outlasted the flight (${lit})`);
+  W.at(T0+30000);assert.equal(W.w.stats().wakes,0,'and faded');assert(alphas(W.scene,6).length===0);W.w.dispose();
+});
 test('The music, read per bar: the rays shimmer on the eighths the arrangement plays, a section\'s onset surges along the curtains',async()=>{
   // a stub clock: rhythm in odd bars, a new section from bar 20
   const bar=4*60000/96,calls=[];const musicAt=T=>{const b=Math.floor(T/bar);calls.push(b);return {rhythm:b%2?1:0,energy:.6,dynamics:.7,section:b>=20?'lift':'home'};};
