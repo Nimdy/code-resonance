@@ -224,8 +224,8 @@ export default {mount(view,ctx){
       actions.replaceChildren(...[
         active()?null:button({label:'Make active',icon:'check',kind:'primary',id:'makeActive',title:'Show this project on the Stage and in the studios',onClick:()=>{S.select(id);toast('This project is now the active project.','ok');}}),
         button({label:'Open Stage',icon:'stage',kind:active()?'primary':'outline',onClick:()=>choose('stage')}),
-        button({label:'Visual identity',icon:'visual',kind:'ghost',onClick:()=>choose('visual')}),
-        button({label:'Music',icon:'music',kind:'ghost',onClick:()=>choose('music')})].filter(Boolean));
+        button({label:'Visual Studio',icon:'visual',kind:'ghost',title:'This project’s visual identity',onClick:()=>choose('visual')}),
+        button({label:'Music Studio',icon:'music',kind:'ghost',title:'This project’s music',onClick:()=>choose('music')})].filter(Boolean));
     }
     // ---- Overview: only the statistics the receiver returned -------------------------------------------------
     function renderOverview(){
@@ -318,15 +318,15 @@ export default {mount(view,ctx){
     let exportBtn=null;
     function renderExports(){
       const s=P.state,last=s.recording.last,isActive=active();
-      exportBtn=button({label:s.exporting?'Rendering…':'Render music (WAV)',icon:'wave',size:'sm',id:'exportAudio',disabled:!isActive||s.exporting,onClick:async()=>{
+      exportBtn=button({label:s.exporting?'Rendering…':'Export audio (WAV)',icon:'wave',size:'sm',id:'exportAudio',disabled:!isActive||s.exporting,onClick:async()=>{
         try{const r=await P.exportAudio();if(r)toast(`Saved ${r.file} (${duration(r.seconds*1000)}) to your downloads.`,'ok');else toast('Nothing recorded to render yet.','warning');}
         catch(e){toast(`The music could not be rendered: ${e.message}`,'error');}}});
       exportsEl.replaceChildren(h('div',{class:'list proj-exports'},
         h('div',{class:'list-row'},h('div',{class:'grow'},h('strong',{text:'Performance data'}),h('div',{class:'faint tiny',text:'JSON: statistics, sessions and the interpreted timeline (no source code).'})),
           h('a',{class:'btn sm',href:`/api/export?id=${encodeURIComponent(id)}`,download:'',id:'exportJson'},icon('download'),h('span',{text:'Download'}))),
-        h('div',{class:'list-row'},h('div',{class:'grow'},h('strong',{text:'Music'}),h('div',{class:'faint tiny',text:isActive?(s.exporting?'Rendering offline; the download starts when it is done.':'Up to 10 minutes: from the playhead in replay, else the last 10 minutes.'):'Available for the active project.'})),
+        h('div',{class:'list-row'},h('div',{class:'grow'},h('strong',{text:'Audio'}),h('div',{class:'faint tiny',text:isActive?(s.exporting?'Rendering offline; the download starts when it is done.':'Up to 10 minutes: from the playhead in replay, else the last 10 minutes.'):'Available for the active project.'})),
           isActive?exportBtn:button({label:'Make active',size:'sm',onClick:()=>S.select(id)})),
-        h('div',{class:'list-row'},h('div',{class:'grow'},h('strong',{text:'Video'}),h('div',{class:'faint tiny',text:'Recordings are saved by the browser to its downloads folder. Code Resonance keeps no video library.'}),
+        h('div',{class:'list-row'},h('div',{class:'grow'},h('strong',{text:'Video'}),h('div',{class:'faint tiny',text:'A recording goes to your downloads folder, or to the file you chose when recording to disk. Code Resonance keeps no video library.'}),
           ...[last?h('div',{class:'small muted proj-last-rec',text:`Last recording in this window: ${last.file||'WebM'} · ${duration(last.durationMs)}${last.at?` · ${when(last.at)}`:''}${last.audio&&!last.audioLost?'':' · no sound'}`}):null].filter(Boolean)),
           button({label:'Record & Broadcast',icon:'broadcast',size:'sm',kind:'ghost',title:'Recording and the OBS view',onClick:()=>navigate('output')}))));
     }

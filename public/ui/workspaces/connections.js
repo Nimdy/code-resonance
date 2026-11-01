@@ -374,7 +374,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const renderClaude=()=>renderHook('claude',{observed:claudeObserved,info:claudeInfo,setup:claudeSetup,empty:'No Claude Code events observed.',
     footnote:'Hooks only receive the lifecycle events Claude Code documents; nothing here sees the model’s reasoning. The adapter never writes to Claude Code’s output and always exits successfully, so it cannot change what Claude does.'});
   const renderCursor=()=>renderHook('cursor',{observed:cursorObserved,info:cursorInfo,setup:cursorSetup,empty:'No Cursor events observed.',
-    footnote:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Prove these hooks only in a trusted workspace.'});
+    footnote:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Cursor runs them only in a trusted workspace.'});
   // The other tools: a tab per tool (its dot is live while its events arrive), the chosen one's activity, facts and flow.
   function renderMore(){
     const list=integ?.agents||[],now=Date.now();
@@ -400,7 +400,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     if(j<0)return;e.preventDefault();chooseTool(list[j].slug);document.getElementById(`connTool-${list[j].slug}`)?.focus();
   }
   const renderCodex=()=>renderHook('codex',{observed:codexObserved,info:codexInfo,setup:codexSetup,empty:'No Codex events observed.',
-    footnote:'Hooks only receive the lifecycle events Codex documents; nothing here sees the model’s reasoning. Paths come from patch headers only, never hunk text. The adapter never writes to Codex’s output and always exits successfully, so it cannot deny, block or change what Codex does. PreToolUse is not installed. Prove these hooks only in a trusted workspace.'});
+    footnote:'Hooks only receive the lifecycle events Codex documents; nothing here sees the model’s reasoning. Paths come from patch headers only, never hunk text. The adapter never writes to Codex’s output and always exits successfully, so it cannot deny, block or change what Codex does. PreToolUse is not installed. Codex runs them only when the project’s .codex/ layer is trusted.'});
   // `api` names the route's tool (the More agents flow changes it with its tab; `retarget` starts over), `entry` its
   // integrations entry; texts may be functions of the current tool.
   function hookFlow({slug,commandFallback,help,emptyPath,installNext,removeNext,api=()=>slug,entry=()=>integ?.[slug]}){

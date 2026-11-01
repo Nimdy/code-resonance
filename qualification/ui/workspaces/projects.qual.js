@@ -113,7 +113,7 @@ const pass=(name,p,detail)=>p.then(()=>check(name,true,detail),e=>check(name,fal
     await page.waitForSelector('#exportAudio:not([disabled])',{timeout:10000});
     const [wav]=await Promise.all([page.waitForEvent('download',{timeout:180000}),page.click('#exportAudio')]);
     const wavPath=await wav.path(),head=fs.readFileSync(wavPath).subarray(0,12).toString('latin1');
-    check('export: "Render music (WAV)" downloads a WAV of the active project',wav.suggestedFilename().endsWith('.wav')&&head.startsWith('RIFF')&&head.endsWith('WAVE')&&!wav.suggestedFilename().includes('lumen'),`${wav.suggestedFilename()} (${fs.statSync(wavPath).size} bytes)`);
+    check('export: "Export audio (WAV)" downloads a WAV of the active project',wav.suggestedFilename().endsWith('.wav')&&head.startsWith('RIFF')&&head.endsWith('WAVE')&&!wav.suggestedFilename().includes('lumen'),`${wav.suggestedFilename()} (${fs.statSync(wavPath).size} bytes)`);
     // ---- Independence of projects, and a second window converging ----------------------------------------------
     // lumen's world and information mode are changed on the Stage (as a person would), then compared with sample's.
     await page.goto(env.url+'/#/stage');await page.waitForSelector('[data-world="construct"]',{timeout:15000});
