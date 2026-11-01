@@ -177,7 +177,9 @@ details.disclosure>.disclosure-body{display:grid;gap:14px;padding:10px 0 4px}
 .callout .callout-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
 /* Code / command block with copy */
 .copy{display:flex;align-items:stretch;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--bg-0);overflow:hidden;min-width:0}
-.copy code{flex:1;background:none;border:0;padding:8px 10px;white-space:pre-wrap;overflow-wrap:break-word;font-size:13px;color:#d6eef5;min-width:0}
+/* anywhere, not break-word: a long token (a project id) may then break for layout too, so it never widens the box past
+   its column and pushes the Copy button out of view. */
+.copy code{flex:1;background:none;border:0;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#d6eef5;min-width:0}
 .copy .btn{border-radius:0;border:0;border-left:1px solid var(--line-2);height:auto;background:var(--bg-2)}
 /* Empty states */
 .empty{display:grid;justify-items:center;text-align:center;gap:10px;padding:44px 24px;color:var(--text-2)}
