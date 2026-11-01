@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **CI in about half the time:** the unit and integration suite ran as one job per platform and took 9–10 minutes on
+  a two-core runner, most of it a few long digital-life simulations. It now runs as three parallel shards per platform
+  (`node --test --test-shard=i/3`, every third test file: 199, 237 and 230 tests, 118–127 s each at two workers
+  locally), with the syntax check, the package and the smoke test once, in shard 1. Every test still runs on every
+  pull request; the slowest job is now the Ember Observatory pack's compatibility test (about 6 minutes).
+- **Timing:** the two failures 0.9.0's pull request met (the audio export's first bar a hair below zero, and a test
+  that expected the life driver's background stage in one frame) were fixed there. A search for more found none: the
+  suite passed 666/666 in eight stressed runs (three suites at once on 24 cores, twice, and confined to two cores each
+  with a busy loop competing, twice).
+
 ## 0.9.0 — 2026-11-01
 
 Product 0.9.0, for use on your own machine; not stable. This tag is `v0.9.0`. **Aurora**, a new world, as a preview
