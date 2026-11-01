@@ -10,10 +10,13 @@
 //                            intricate, so the swell never smears its fine structure)
 //  - file (module)        -> a site of light on its region's surface (traced to the surface with the JS twin of the
 //                            estimator): its size from its symbols, its light from its state
-//  - dependency           -> a faint thread of light arcing from the importing file's site to the imported one's
-//  - agent                -> a signal in its provider's colour and shape (CAST seat) that rides to the site it works on;
-//                            its edit touches the surface there: rings of its colour ripple across the fractal, the
-//                            crevices around the site light up, the site flares and its threads carry the pulse
+//  - dependency           -> a faint thread of light: a vein along the surface from the importing file's site to the
+//                            imported one's (draped over the relief, never through the form)
+//  - agent                -> a signal in its provider's colour and shape (CAST seat) that travels the veins to the site
+//                            it works on where the threads join them (otherwise it rides over the form); its edit
+//                            touches the surface there: rings of its colour ripple across the fractal, the crevices
+//                            around the site light up, the site flares and its threads carry the pulse; two agents on
+//                            one file meet there (agent.collision) in rings of both colours
 //  - human edit, new file, new symbols -> a pulse of the site (warm white, the light's colour)
 //  - tests passing        -> a coherent wave of light sweeping the whole form from the covered sites
 //  - failure              -> decoherence: the covered region distorts and stutters, static crackles in the warning
@@ -36,7 +39,7 @@ import {presence} from '../providers.js';
 import {createFractalGrammar,toDir as lifeDir,toMap as lifeMap,ALT0 as LIFE_ALT0,ALT as LIFE_ALT,FIELD as LIFE_FIELD,MOTE,SKIMMER,EMBER} from './life/fractal.js';
 import {position as lifePosition,follower as lifeFollower,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {u01,MODE as LIFE_MODE} from './life/sim.js';
-const TAU=Math.PI*2,WS=10,BLOOM_GAP=240000,DWELL=4500,MOTES=360,BURST=3200,MAX_THREADS=480,TSEG=10,MAX_FX=4000;
+const TAU=Math.PI*2,WS=10,BLOOM_GAP=240000,DWELL=4500,MOTES=360,BURST=3200,MAX_THREADS=480,MAX_FX=4000;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers).
 const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
 const C_HUMAN=8,C_GROW=9,C_VALID=10,C_BLOOM=11,C_WARN=12,C_SPONT=13;
@@ -348,25 +351,26 @@ void main(){vec2 sp=vUv*uFracSize-.5;ivec2 i0=ivec2(floor(sp)),mx=ivec2(uFracSiz
       if(vS.y>0.){float rr=vS.y;g+=exp(-pow((r-rr)*14.,2.))*(1.-rr)*1.2;}
       gl_FragColor=vec4(vC.rgb*g*vC.a,1.);}`,{uFrac:CU.uFrac,uFracSize:CU.uFracSize});
   siteMat.depthTest=false;add(new THREE.Points(site.geometry,siteMat),2);
-  // ---- Threads: dependencies as faint arcs of light between sites (instanced ribbons, curve on the GPU) --------------
+  // ---- Threads: dependencies as faint veins of light along the surface between sites (instanced ribbons, one per
+  // segment; the CPU places the vein on the form, see veinOf) ----------------------------------------------------------
   const ribbon=keep(new THREE.BufferGeometry());ribbon.setAttribute('position',new THREE.Float32BufferAttribute([0,-1,0,1,-1,0,0,1,0,1,1,0],3));ribbon.setIndex([0,1,2,2,1,3]);
   const thr=(()=>{const g=new THREE.InstancedBufferGeometry();g.index=ribbon.index;g.setAttribute('position',ribbon.attributes.position);const self={geometry:g,capacity:0,arrays:{},layout:{hA:4,hB:4,hP:4,hQ:4}};
     self.ensure=n=>{if(n<=self.capacity)return;let c=Math.max(256,self.capacity);while(c<n)c*=2;for(const [k,s] of Object.entries(self.layout)){const a=new Float32Array(c*s),o=self.arrays[k];if(o)a.set(o);self.arrays[k]=a;g.deleteAttribute(k);
       const at=new THREE.InstancedBufferAttribute(a,s);at.setUsage(THREE.DynamicDrawUsage);g.setAttribute(k,at);}self.capacity=c;};
     self.write=(k,i,a,b,c,d)=>{const s=self.layout[k],x=self.arrays[k],o=i*s;x[o]=a;x[o+1]=b;x[o+2]=c;x[o+3]=d;};
     self.commit=n=>{g.instanceCount=n;for(const k of Object.keys(self.layout))g.attributes[k].needsUpdate=true;};self.ensure(256);g.instanceCount=0;self.dispose=()=>g.dispose();keep(self);return self;})();
-  const thrMat=glow(`attribute vec4 hA,hB,hP,hQ;uniform float uPx,uV,uThrK;uniform vec2 uRes;uniform vec3 uThrC,uSpark;uniform vec3 uCol[14];varying vec3 vC;varying float vV;
-    vec3 bez(vec3 a,vec3 c,vec3 b,float u){float v=1.-u;return v*v*a+2.*v*u*c+u*u*b;}
+  // (hA, hB: the segment's ends in world space and where they lie along the vein (0..1); hP: the vein's length, its
+  // light, the importing site's two latest firings; hQ: their strengths and colours)
+  const thrMat=glow(`attribute vec4 hA,hB,hP,hQ;uniform float uPx,uV,uThrK;uniform vec2 uRes;uniform vec3 uThrC;uniform vec3 uCol[14];varying vec3 vC;varying float vV;
     vec2 scr(vec4 c){return c.xy/max(c.w,1e-3)*uRes*.5;}
     float pulse(float a,float s,float u,float L){if(a<0.||s<=0.)return 0.;float f=a*2.2/max(L,.3);if(f>1.1)return 0.;return s*(exp(-pow((u-f)*L*2.2,2.))*1.8+step(u,f)*exp(-(f-u)*L*1.5)*.25);}
-    void main(){vec3 a=hA.xyz,b=hB.xyz;float L=length(b-a);vec3 m=normalize(a+b+1e-4)*(max(length(a),length(b))+hP.x*L);
-      float u0=hA.w,u1=hB.w,u=mix(u0,u1,position.x);vec4 ca=projectionMatrix*viewMatrix*vec4(bez(a,m,b,u0),1.),cb=projectionMatrix*viewMatrix*vec4(bez(a,m,b,u1),1.);
+    void main(){float L=hP.x,u=mix(hA.w,hB.w,position.x);vec4 ca=projectionMatrix*viewMatrix*vec4(hA.xyz,1.),cb=projectionMatrix*viewMatrix*vec4(hB.xyz,1.);
       vec2 d=scr(cb)-scr(ca);vec2 nn=length(d)>1e-4?normalize(vec2(-d.y,d.x)):vec2(0.,1.);float w=1.1*uPx;
       vec4 c=mix(ca,cb,position.x);c.xy+=nn*position.y*w/uRes*2.*c.w;gl_Position=c;vV=position.y;
       vec3 p=uCol[int(hQ.z+.5)]*pulse(uV-hP.z,hQ.x,u,L)+uCol[int(hQ.w+.5)]*pulse(uV-hP.w,hQ.y,u,L);
       vC=uThrC*uThrK*hP.y*(.6+.4*sin(u*3.1416))+p*.9;}`,
     `varying vec3 vC;varying float vV;void main(){float k=exp(-vV*vV*2.5);gl_FragColor=vec4(vC*k,1.);}`,
-    {uThrK:{value:clamp(num(geo.threads,.8),0,1.6)},uThrC:{value:V3(pal.highlight.clone().lerp(pal.accent,.35),.12)},uSpark:{value:V3(pal.accent,1.5)},uCol:{value:COLS}});
+    {uThrK:{value:clamp(num(geo.threads,.8),0,1.6)},uThrC:{value:V3(pal.highlight.clone().lerp(pal.accent,.35),.12)},uCol:{value:COLS}});
   add(new THREE.Mesh(thr.geometry,thrMat),1);
   // ---- Signals: agents, their trails and injections, the bloom's burst (CPU points) ----------------------------------
   const fx=pointsOf({fC:4,fS:2},512);
@@ -573,7 +577,8 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     };
   }
   // ---- Structure -----------------------------------------------------------------------------------------------------
-  let lay={regions:[],sites:[]},layKey='',layFrom=-Infinity,layUntil=Infinity,siteIdx=new Map(),regionIdx=new Map(),threads=[],weights=[];
+  let lay={regions:[],sites:[]},layKey='',layFrom=-Infinity,layUntil=Infinity,siteIdx=new Map(),regionIdx=new Map(),threads=[],weights=[],adj=[];
+  const routes=new Map(),veinPts=[];
   const radCache=new Map();
   // The surface radius along a site's direction at integer recursion n (cached: the shape at n never changes).
   function radiusAt(key,dir,n){const k=`${key}|${n}`;let r=radCache.get(k);if(r===undefined){r=formula.radial(dir,n);if(r===null){
@@ -591,10 +596,49 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     for(const x of [...model.modules.values(),...model.links.values()]){edge(model.bornAt(x));if(x.removed!==null)edge(x.removed+1600);}
     threads=[];const seen=new Set();
     for(const l of model.links.values()){if(!model.alive(l,t))continue;const a=siteIdx.get(l.a),b=siteIdx.get(l.b);if(a===undefined||b===undefined||a===b)continue;const k=`${a}>${b}`;if(seen.has(k))continue;seen.add(k);
-      threads.push({a,b,born:model.bornAt(l),removed:l.removed,cross:lay.sites[a].region!==lay.sites[b].region,seed:rand(hash(l.key))});}
+      threads.push({a,b,key:`${l.a}>${l.b}`,born:model.bornAt(l),removed:l.removed,cross:lay.sites[a].region!==lay.sites[b].region,seed:rand(hash(l.key))});}
     threads.sort((x,y)=>x.born-y.born||x.seed-y.seed);threads=threads.slice(0,MAX_THREADS);
-    thr.ensure(threads.length*TSEG);site.ensure(lay.sites.length);
+    // the thread graph agents travel: per site, its neighbours and the thread to each, in the threads' own order
+    adj=lay.sites.map(()=>[]);threads.forEach((th,j)=>{adj[th.a].push([th.b,j]);adj[th.b].push([th.a,j]);});routes.clear();
+    thr.ensure(threads.length*12);site.ensure(lay.sites.length);
   }
+  // ---- Veins: a thread's way along the surface ------------------------------------------------------------------------
+  // A thread runs on the great circle between its sites' directions, in segments of about VEIN_STEP, at the form's radius
+  // along it: traced at a coarse recursion (at most VEIN_IT, the outer envelope of the finer relief for the bulbs and the
+  // crystal, so the vein bridges its pits instead of diving into every crevice; a Mandelbox grows outward as it unfolds,
+  // so it is traced at the drawn recursion), swollen with the regions, scaled so that its ends meet the sites exactly,
+  // and lifted a little toward its middle: within a region it hugs the form, between regions it arcs gently over it. A
+  // lobe that rises between two of its points still hides it for a moment; a long thread no longer runs through the
+  // form. Per thread (by its files): its directions, its radii per integer recursion and its swell, cached as pure
+  // functions of their keys.
+  const VEIN_IT=5,VEIN_ALT=[.012,.035],VEIN_STEP=4.5*Math.PI/180,veins=new Map();let veinSig='',veinSigId=0,veinQW=[],veinQA=0;
+  const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+  // the swell along a vein from the quantized weights the swell table is written for (a pure function of veinSigId's content)
+  function veinSwell(){const qa=Math.round(swNow*512)/512,qw=weights.map(w=>Math.round(w*128)/128);
+    const sig=`${qa}|`+lay.regions.map((r,k)=>`${r.id},${qw[k]},${kappaOf(r)},${r.dir}`).join(';');
+    if(sig!==veinSig){veinSig=sig;veinSigId++;veinQW=qw;veinQA=qa;}}
+  function coarseRadius(d,n){let r=formula.radial(d,n);if(r!==null)return r;
+    for(let j=0;j<6&&r===null;j++){const a=j*1.047,d2=norm3([d[0]+.08*Math.cos(a),d[1]+.08*Math.sin(a),d[2]]);r=formula.radial(d2,n);}return r??R0*.9;}
+  function veinOf(th,A,B,n0,fr,gs){
+    const da=lay.sites[th.a].dir,db=lay.sites[th.b].dir;let v=veins.get(th.key);
+    // (a new layout has new arrays for the same directions: compared once by value, then by identity)
+    if(v&&(v.da!==da||v.db!==db)&&String(v.da)===String(da)&&String(v.db)===String(db)){v.da=da;v.db=db;}
+    if(!v||v.da!==da||v.db!==db){
+      // (sites nearly opposite: the great circle through a fixed perpendicular)
+      const c=clamp(da[0]*db[0]+da[1]*db[1]+da[2]*db[2],-1,1),om=Math.acos(c),pp=om>Math.PI-1e-3?perp(da)[0]:null,dirs=[],ns=clamp(Math.round(om/VEIN_STEP),4,40);
+      for(let s=0;s<=ns;s++){const u=s/ns;if(om<1e-4)dirs.push(da.slice());else if(pp)dirs.push(norm3([0,1,2].map(k=>da[k]*Math.cos(Math.PI*u)+pp[k]*Math.sin(Math.PI*u))));
+        else{const sn=Math.sin(om),wa=Math.sin((1-u)*om)/sn,wb=Math.sin(u*om)/sn;dirs.push(norm3([0,1,2].map(k=>da[k]*wa+db[k]*wb)));}}
+      v={da,db,dirs,ns,lv:new Map(),swId:-1,sw:new Float64Array(ns+1),P:Array.from({length:ns+1},()=>[0,0,0])};veins.set(th.key,v);if(veins.size>4096)veins.delete(veins.keys().next().value);}
+    // (draped over the relief: each point at least as high as its neighbours, then eased, so the vein rides over the lobes
+    // instead of zigzagging into the gaps between them)
+    const ns=v.ns,level=n=>{let r=v.lv.get(n);if(!r){const x=new Float64Array(ns+1),y=new Float64Array(ns+1);r=new Float64Array(ns+1);for(let s=0;s<=ns;s++)x[s]=coarseRadius(v.dirs[s],n);
+      for(let s=0;s<=ns;s++)y[s]=Math.max(x[Math.max(0,s-1)],x[s],x[Math.min(ns,s+1)]);for(let s=0;s<=ns;s++)r[s]=s===0||s===ns?x[s]:(y[s-1]+2*y[s]+y[s+1])/4;v.lv.set(n,r);}return r;};
+    const r0=level(n0),r1=fr>0?level(Math.min(MAX_IT,n0+1)):r0;
+    if(v.swId!==veinSigId){v.swId=veinSigId;for(let s=0;s<=ns;s++)v.sw[s]=swellAt(v.dirs[s],lay.regions,veinQW,veinQA);}
+    const c=s=>lerp(r0[s],r1[s],fr)*v.sw[s],ka=Math.hypot(A[0],A[1],A[2])/(gs*c(0)),kb=Math.hypot(B[0],B[1],B[2])/(gs*c(ns)),alt=VEIN_ALT[th.cross?1:0],P=v.P;
+    for(let k=0;k<3;k++){P[0][k]=A[k];P[ns][k]=B[k];}
+    for(let s=1;s<ns;s++){const u=s/ns,r=gs*(c(s)*lerp(ka,kb,u)+alt*Math.sin(Math.PI*u)),d=v.dirs[s];P[s][0]=d[0]*r;P[s][1]=d[1]*r;P[s][2]=d[2]*r;}
+    return P;}
   // The camera is the host's: its rig eases it toward cameraGoal and snaps it to the next goal after a rebuild (a seek, a
   // new performance, a world switch). Until the rig has placed it for this state nothing here reads where it was: the
   // level of detail is taken at the framing distance and a close-up's dolly at the direction the goal turns to, so the
@@ -604,7 +648,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0,overrides:{},agents:[]},itNow=MIN_IT,itDraw=MIN_IT,gsNow=1,massNow=0,swNow=SWELL;
   const sitePos=[],siteSurf=[],siteBase=[];   // world positions of the sprites; fractal-space surface points (events), before the swell
-  const waves=[],decoheres=[],recoheres=[],glows=[],blooms=[],deepens=[];
+  const waves=[],decoheres=[],recoheres=[],glows=[],blooms=[],deepens=[],meetings=[];
   const push=(list,x,max=6)=>{list.push(x);if(list.length>max)list.shift();};
   const tempoOf=i=>Math.max(40,i.mood?.tempo||92);
   const near=(list,i,ms)=>list.filter(x=>x.at<=i.t&&i.t-x.at<ms*ctx.speed());
@@ -692,16 +736,19 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
       site.write('position',n,...p);site.write('sC',n,c.x,c.y,c.z,life*flick*alpha*GLOW);
       site.write('sS',n,(16+7*Math.log2(1+nsym))*size*(1+.6*Math.max(f1,tk)),.018*size*WS*(1+Math.log2(1+nsym)*.35),.5+.5*Math.max(f1,tk),ring);n++;}
     site.commit(n);
-    // threads: their ends follow the sites; pulses from the importing file's firings
+    // threads: veins along the surface (veinOf), their ends on the sites; pulses from the importing file's firings. The
+    // points drawn are kept for the agents that travel them (veinPts, by thread)
     let m2=0;const thK=clamp(Math.sqrt(120/Math.max(1,threads.length)),.35,1);thrMat.uniforms.uThrK.value=clamp(num(geo.threads,.8),0,1.6)*thK;
-    for(const th of threads){const a=sitePos[th.a],bb=sitePos[th.b];if(!a||!bb)continue;const life=smooth((t-th.born)/(2400*sp))*(th.removed===null?1:1-smooth((t-th.removed)/(1600*sp)));if(life<=.002)continue;
+    const lt=fc.form==='box'?itDraw:Math.min(itDraw,VEIN_IT),vn=Math.floor(lt),vf=lt-vn;veinSwell();veinPts.length=threads.length;
+    threads.forEach((th,j)=>{veinPts[j]=null;const a=sitePos[th.a],bb=sitePos[th.b];if(!a||!bb)return;const life=smooth((t-th.born)/(2400*sp))*(th.removed===null?1:1-smooth((t-th.removed)/(1600*sp)));if(life<=.002)return;
+      const P=veinOf(th,a,bb,vn,vf,gs),ns=P.length-1;let L=0;for(let s=0;s<ns;s++)L+=dist3(P[s],P[s+1]);veinPts[j]=P;thr.ensure(m2+ns);
       const x=fires[th.a],S=x0=>Number.isFinite(x0)?(x0-model.epoch)/1000/sp:-1e5;
-      for(let s=0;s<TSEG;s++){thr.write('hA',m2,...a,s/TSEG);thr.write('hB',m2,...bb,(s+1)/TSEG);thr.write('hP',m2,th.cross?.22:.1,life*(th.cross?1:.7),S(x.t1),S(x.t2));
-        thr.write('hQ',m2,x.s1>0?Math.min(1.2,x.s1):0,x.s2>0?Math.min(1.2,x.s2):0,x.c1,x.c2);m2++;}}
+      for(let s=0;s<ns;s++){thr.write('hA',m2,...P[s],s/ns);thr.write('hB',m2,...P[s+1],(s+1)/ns);thr.write('hP',m2,L,life*(th.cross?1:.7),S(x.t1),S(x.t2));
+        thr.write('hQ',m2,x.s1>0?Math.min(1.2,x.s1):0,x.s2>0?Math.min(1.2,x.s2):0,x.c1,x.c2);m2++;}});
     thr.commit(m2);
-    lastStats={fires:fires.filter(x=>x.t1>-Infinity).length,threads:m2/TSEG,sites:n};
+    lastStats={fires:fires.filter(x=>x.t1>-Infinity).length,threads:veinPts.filter(Boolean).length,sites:n};
   }
-  // ---- Agents: signals riding to the site they work on (pure functions of the observed lifecycle and time) ----------
+  // ---- Agents: signals travelling to the site they work on (pure functions of the observed lifecycle and time) ------
   const agentState=new Map();
   let editsT=null;const edits=new Map();
   function editsOf(voice){if(editsT!==info.t){edits.clear();editsT=info.t;}let l=edits.get(voice);
@@ -721,24 +768,95 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
   function slerpGoal(a,b,k){const c=clamp(a[0][0]*b[0][0]+a[0][1]*b[0][1]+a[0][2]*b[0][2],-1,1),om=Math.acos(c);let d;
     if(om<1e-4)d=b[0];else{const s=Math.sin(om),wa=Math.sin((1-k)*om)/s,wb=Math.sin(k*om)/s;d=[0,1,2].map(j=>a[0][j]*wa+b[0][j]*wb);}
     return [norm3(d),lerp(a[1],b[1],k)+Math.sin(k*Math.PI)*Math.min(.45,om*.35)];}
-  function agentAt(id,t,tv){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
-    const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
-    if(t-tc<1800*sp){const prev=ctx.agents.presence(id,tc-1);if(prev)g=slerpGoal(goalOf(prev,tv,tc-1),g,smooth((t-tc)/(1800*sp)));}
-    const s=gsNow*WS;return {a,p:[g[0][0]*g[1]*s,g[0][1]*g[1]*s,g[0][2]*g[1]*s]};}
+  // The site an agent's goal is at (as goalOf places it): the one it works on, else its home's; -1 when it circles the form.
+  function goalSite(p,t){const w=workOf(p,t);if(w)return siteIdx.get(w)??-1;const h=p.home?siteIdx.get(p.home):undefined;return h??-1;}
+  // The shortest path through the thread graph between two sites (at most ROUTE_HOPS threads, either way along them),
+  // over the threads already drawn in full when the move begins (tc): breadth first in the threads' own (structural)
+  // order, so a pure function of the structure and tc. Cached per structure. Null when the threads do not join them.
+  const ROUTE_HOPS=4;
+  function routeOf(sa,sb,tc){if(sa<0||sb<0||sa===sb)return null;const key=`${sa}>${sb}@${tc}`;if(routes.has(key))return routes.get(key);
+    const sp=ctx.speed(),ok=th=>th.born+2400*sp<=tc&&(th.removed===null||th.removed>tc);
+    const prev=new Map([[sa,null]]),depth=new Map([[sa,0]]),q=[sa];
+    for(let h=0;h<q.length&&!prev.has(sb);h++){const n=q[h];if(depth.get(n)>=ROUTE_HOPS)continue;for(const [m,j] of adj[n]||[])if(!prev.has(m)&&ok(threads[j])){prev.set(m,[n,j]);depth.set(m,depth.get(n)+1);q.push(m);}}
+    let out=null;if(prev.has(sb)){out=[];for(let n=sb;n!==sa;){const [p,j]=prev.get(n);out.unshift([p,j]);n=p;}}
+    if(routes.size>1024)routes.clear();routes.set(key,out);return out;}
+  // A route's veins as one polyline (each vein's drawn points, with or against its direction), once per frame; null when
+  // one of them is not drawn at this frame.
+  let legsT=null;const legs=new Map();
+  function legsOf(route){if(legsT!==info.t){legs.clear();legsT=info.t;}const key=route.map(([p,j])=>`${p}:${j}`).join(',');if(legs.has(key))return legs.get(key);
+    const pts=[];let L=null;
+    for(const [p,j] of route){const P=veinPts[j];if(!P){pts.length=0;break;}const fwd=threads[j].a===p,ns=P.length-1;for(let s=pts.length?1:0;s<=ns;s++)pts.push(P[fwd?s:ns-s]);}
+    if(pts.length){let len=0;for(let j=1;j<pts.length;j++)len+=dist3(pts[j-1],pts[j]);L={pts,len};}
+    legs.set(key,L);return L;}
+  // The point at arclength s along from -> the veins -> out (written into out).
+  function along(L,from,s,out){const P=L.pts;let x=from;for(let j=0;j<=P.length;j++){const y=j<P.length?P[j]:out.slice(),d=dist3(x,y);
+      if(s<=d||j===P.length){const u=d>1e-6?Math.min(1,s/d):1;for(let c=0;c<3;c++)out[c]=x[c]+(y[c]-x[c])*u;return out;}s-=d;x=y;}return out;}
+  // The vertices of the path from -> P after arclength s (from the next one on): where a move along the veins still goes.
+  function restOf(P,from,s){let x=from;for(let j=0;j<P.length;j++){const d=dist3(x,P[j]);if(s<d)return P.slice(j);s-=d;x=P[j];}return [];}
+  // From where the signal was when its goal last changed (a state, an edit landing, its dwell ending) to the new goal:
+  // between two sites the threads join, once it has reached the goal before, the signal runs down to the first site and
+  // along the veins to the last, at conduction speed (CONDUCT world units a second: 1.8 to 3.2 s, so it still rests at
+  // an edit's site before its dwell ends); a change that only moves its goal at the same site (an edit landing there
+  // while it travels to it) lets it run on along the veins it is on; otherwise it goes over 1.8 s in spherical
+  // coordinates (it never cuts through the form). Where it was is the same function at the moment before the change (its
+  // view time from that moment; each moment computed once a frame; at most MOVES_BACK changes back, beyond them the goal
+  // before), so a change that interrupts a move (a tool reported for 40 ms) never makes it jump. `travel`: where it is
+  // along the veins and the vertices still ahead.
+  const TRAVEL=1800,TRAVEL_MAX=3200,CONDUCT=6,MOVES_BACK=48,ARRIVED=1;
+  let wasT=null;const wasAt=new Map();
+  function agentBefore(id,t,depth){if(wasT!==info.t){wasAt.clear();wasT=info.t;}const key=`${id}|${t}`;if(wasAt.has(key))return wasAt.get(key);
+    const x=agentAt(id,t,(t-model.epoch)/1000/ctx.speed(),depth);wasAt.set(key,x);return x;}
+  function agentAt(id,t,tv,depth=0){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
+    const sp=ctx.speed(),m=lastEdit(a,t),s=gsNow*WS;let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
+    const W=x=>[x[0][0]*x[1]*s,x[0][1]*x[1]*s,x[0][2]*x[1]*s];
+    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const at0=W(goalOf(prev,(tc-1-model.epoch)/1000/sp,tc-1));
+      const w=depth<MOVES_BACK?agentBefore(id,tc-1,depth+1):null,was=w?.p||at0,there=dist3(was,at0)<ARRIVED,sa=goalSite(prev,tc-1),sb=goalSite(a,t);
+      let pts=null,hops=0,min=TRAVEL;
+      if(there){const route=routeOf(sa,sb,tc),L=route&&legsOf(route);if(L){pts=L.pts;hops=route.length;}}
+      else if(w?.travel&&sb>=0&&sb===sa){pts=w.travel.rest;hops=w.travel.hops;min=TRAVEL/2;}
+      if(pts){const out=W(g),total=pts.length?dist3(was,pts[0])+pathLen(pts)+dist3(pts[pts.length-1],out):dist3(was,out),T=clamp(total/CONDUCT*1000,min,TRAVEL_MAX)*sp;
+        if(t-tc<T){const at=smooth((t-tc)/T)*total;return {a,p:along({pts},was,at,out),travel:{from:tc,k:(t-tc)/T,hops,rest:restOf(pts,was,at)}};}}
+      else if(t-tc<TRAVEL*sp){const r=Math.hypot(was[0],was[1],was[2])||1;g=slerpGoal([was.map(x=>x/r),r/s],g,smooth((t-tc)/(TRAVEL*sp)));}}}
+    return {a,p:W(g),travel:null};}
+  const pathLen=P=>{let l=0;for(let j=1;j<P.length;j++)l+=dist3(P[j-1],P[j]);return l;};
   function fxPoint(n,p,c,k,size,shape){if(n>=MAX_FX||k<=.003)return n;fx.write('position',n,p[0],p[1],p[2]);fx.write('fC',n,(c.x??c.r)*k,(c.y??c.g)*k,(c.z??c.b)*k,1);fx.write('fS',n,size,shape);return n+1;}
+  let travelling=0;
   function updateAgents(i){
-    const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Set();let n=0;
+    const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Set();let n=0;travelling=0;
     for(const a of i.agents.slice(0,12)){const h=agentAt(a.id,i.t,i.tview);if(!h)continue;seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...h.p);
-      const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent?.75:1;
-      for(let k=20;k>=1;k--){const q=agentAt(a.id,i.t-k*60*sp*trailK,i.tview-k*.06*trailK);if(!q)continue;const f=1-k/21;n=fxPoint(n,q.p,c,alpha*f*f,(2.5+7*f)*sub,8);}
+      const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent?.75:1;if(h.travel)travelling++;
+      // the trail: where the signal was (sampled from its pure path). Along the veins, a denser, brighter comet: the
+      // thread it runs lights up in its colour behind it
+      const TR=h.travel?32:20,dt=h.travel?40:60;
+      for(let k=TR;k>=1;k--){const q=agentAt(a.id,i.t-k*dt*sp*trailK,i.tview-k*dt/1000*trailK);if(!q)continue;const f=1-k/(TR+1);
+        n=q.travel?fxPoint(n,q.p,c,alpha*Math.pow(f,1.4)*1.5,(3.5+8*f)*sub,8):fxPoint(n,q.p,c,alpha*f*f,(2.5+7*f)*sub,8);}
       n=fxPoint(n,h.p,c,alpha*.45,80*sub,8);n=fxPoint(n,h.p,c,alpha*1.6,42*sub,seat<6?seat:6);n=fxPoint(n,h.p,{r:1,g:1,b:1},alpha,7*sub,8);
-      // injection: light from the signal into the site it edits (out of it while it reads)
-      const work=workOf(a,i.t),k0=work?siteIdx.get(work):undefined,sp2=k0!==undefined?sitePos[k0]:null;
-      if(sp2){const inward=!(a.display==='tool'&&LIGHT.has(a.activity));for(let k=0;k<10;k++){let f=(i.tview*1.1+k/10)%1;if(!inward)f=1-f;
-        n=fxPoint(n,[lerp(h.p[0],sp2[0],f),lerp(h.p[1],sp2[1],f),lerp(h.p[2],sp2[2],f)],c,alpha*Math.sin(f*Math.PI),4,8);}}}
+      // injection: light from the signal into the site it edits (out of it while it reads); on the veins, once it arrives
+      const work=workOf(a,i.t),k0=work?siteIdx.get(work):undefined,sp2=k0!==undefined?sitePos[k0]:null,inj=h.travel?smooth((h.travel.k-.85)/.15):1;
+      if(sp2&&inj>0){const inward=!(a.display==='tool'&&LIGHT.has(a.activity));for(let k=0;k<10;k++){let f=(i.tview*1.1+k/10)%1;if(!inward)f=1-f;
+        n=fxPoint(n,[lerp(h.p[0],sp2[0],f),lerp(h.p[1],sp2[1],f),lerp(h.p[2],sp2[2],f)],c,alpha*inj*Math.sin(f*Math.PI),4,8);}}}
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
+    // agent.collision: each agent's signal, in its colour and shape, swoops down to the shared file's site from its own
+    // side (along one line over the surface, seeded by the event) over 1.2 s, trailing; where they meet a flash marks the
+    // site and rings in both colours ripple across the surface from it (meetingRings, in the touch slots)
+    for(const mt of near(meetings,i,4200)){const k0=siteIdx.get(mt.fileId),q=k0!==undefined?siteSurf[k0]:null,sp3=k0!==undefined?sitePos[k0]:null;if(!q||!sp3)continue;
+      const a0=(i.t-mt.at)/1000/sp,h=rand(hash(`${mt.at}/${mt.fileId}`))*TAU,P=mt.providers.length?mt.providers:['a','b'],r=Math.hypot(...q),d=q.map(x=>x/r),[u,v]=perp(d),s=gsNow*WS;
+      const k=smooth(a0/1.2),fade=1-smooth((a0-2.6)/1.6),cols=P.map(pv=>agentCol[presence(pv).seat%8]);
+      P.forEach((pv,j)=>{const ang=h+j*TAU/P.length,ca=Math.cos(ang),sa=Math.sin(ang),c=cols[j],seat=presence(pv).seat%8;
+        for(let tr=5;tr>=0;tr--){const th=Math.min(MEET_ARC,MEET_ARC*(1-k)+tr*.03*(1-k*.6)),ct=Math.cos(th),st=Math.sin(th),rr=r*(1.045+.5*th)*s;
+          const dd=norm3([d[0]*ct+(u[0]*ca+v[0]*sa)*st,d[1]*ct+(u[1]*ca+v[1]*sa)*st,d[2]*ct+(u[2]*ca+v[2]*sa)*st]);
+          n=fxPoint(n,[dd[0]*rr,dd[1]*rr,dd[2]*rr],c,(tr?.5*(1-tr/6):1.4)*fade*mt.s*(a0<1.25?1:.35),tr?4+2*(6-tr)/6:30,tr?8:seat<6?seat:6);}});
+      if(a0>=1.1){const b=a0-1.1,c0=cols[0],c1=cols[1%cols.length],mix={r:(c0.r+c1.r)/2,g:(c0.g+c1.g)/2,b:(c0.b+c1.b)/2};
+        n=fxPoint(n,sp3,mix,1.6*Math.exp(-b*2.2)*mt.s,26+40*smooth(b/1.4),8);n=fxPoint(n,sp3,{r:1,g:1,b:1},1.3*Math.exp(-b*4)*mt.s,12,8);}}
     return n;
   }
+  // The meetings' rings on the surface this frame (pure: the meetings and the time): two per meeting, one in each agent's
+  // colour (the second a fifth of a second behind), for three seconds after the signals meet.
+  const MEET_ARC=.32;
+  function meetingRings(i){const sp=ctx.speed(),out=[];
+    for(const mt of near(meetings,i,4200).reverse()){const k0=siteIdx.get(mt.fileId),q=k0!==undefined?siteSurf[k0]:null;if(!q||!sitePos[k0])continue;const a0=(i.t-mt.at)/1000/sp-1.1;
+      const P=mt.providers.length?mt.providers:['a','b'];for(let j=0;j<2;j++){const a=a0-.2*j;if(a<0||a>=3)continue;const c=agentCol[presence(P[j%P.length]).seat%8];out.push({o:q,a,c,k:clamp(mt.s,0,1.4)*(1-smooth((a-2)/1))});}}
+    return out;}
   // ---- Effects: recorded intents only ---------------------------------------------------------------------------------
   function effect(cmd,i){
     if(i)info=i;const s=clamp(cmd.scale,0,1.6),subj=cmd.subject||{},at=Number.isFinite(cmd.at)?cmd.at:info.t;if(s<=0)return;
@@ -750,7 +868,10 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
       case 'bloom':case 'refine':{const full=cmd.tier>=3&&bloomAllowed(cmd.at);push(blooms,{at,files,s,o:c?.p||null,site:c?.id,full,grand:full&&cmd.tier>=4,refactor:cmd.effect==='refine'},4);break;}
       case 'glow':push(glows,{at,files,s,o:c?.p||null,site:c?.id,r:Math.max(.12,(c?.spread||0)+.1)});break;
       case 'deepen':push(deepens,{at,s});break;
-      default:break;// growth (emerge, seed, unfold, erode, thread) is drawn from the model's own times
+      // two agents on one file (agent.collision; the director gives it the family's integration look): two signals
+      // meeting at that site. Growth (a thread for a real connection) is drawn from the model's own times.
+      case 'thread':if(cmd.intent==='agent.collision'&&subj.fileId)push(meetings,{at,fileId:subj.fileId,providers:(cmd.detail?.providers||[]).slice(0,4),s},4);break;
+      default:break;// growth (emerge, seed, unfold, erode) is drawn from the model's own times
     }
   }
   // The surface events of this frame into the shader's slots (most recent first).
@@ -765,8 +886,10 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     slots.sort((a,b)=>a.a-b.a);
     // (an empty slot is all zeros: nothing from an earlier frame stays in the state)
     for(let k=0;k<6;k++){const x=slots[k];if(!x){R.uWav.value[k].set(0,0,0,0);R.uWavC.value[k].set(0,0,0,0);R.uWavK.value[k].set(0,0,0,0);continue;}R.uWav.value[k].set(...x.o,x.a);R.uWavC.value[k].set(x.c.x,x.c.y,x.c.z,0);R.uWavK.value[k].set(x.kind,x.s*clamp(i.overrides.intensity??1,.3,1.4),x.speed||0,x.w||0);}
-    for(let k=0;k<4;k++){const x=touches[k],s=x?siteSurf[siteIdx.get(x.fileId)]:null;if(!x||!s){R.uTch.value[k].set(0,0,0,0);R.uTchC.value[k].set(0,0,0,0);continue;}
-      const c=agentCol[x.seat%8];R.uTch.value[k].set(...s,x.age);R.uTchC.value[k].set(c.r*1.6,c.g*1.6,c.b*1.6,clamp(x.k,0,1.4)*(x.kind==='edit'?1:.45));}
+    // the touches' rings, after two agents' meeting rings (the most recent meeting first)
+    const rings=meetingRings(i);for(const x of touches){const s=siteSurf[siteIdx.get(x.fileId)];if(s){const c=agentCol[x.seat%8];rings.push({o:s,a:x.age,c,k:clamp(x.k,0,1.4)*(x.kind==='edit'?1:.45)});}}
+    for(let k=0;k<4;k++){const x=rings[k];if(!x){R.uTch.value[k].set(0,0,0,0);R.uTchC.value[k].set(0,0,0,0);continue;}
+      R.uTch.value[k].set(...x.o,x.a);R.uTchC.value[k].set(x.c.r*1.6,x.c.g*1.6,x.c.b*1.6,x.k);}
     // lasting: the regions of verified milestones keep an inner light
     const L=lastingRegions(i);for(let k=0;k<4;k++){const x=L[k];if(!x){R.uLast.value[k].set(0,0,0,0);continue;}R.uLast.value[k].set(...x.dir,x.level);}
   }
@@ -896,7 +1019,7 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
       case 'milestone.achieved':{const k=milestoneWords(c),st=bloomOf(c);return {text:`${st?.full?'Fractal bloom':'A local unfolding'} · ${k}`,sub:'verified by a passing test run · an inner light remains',position:pos,banner:k,bannerSub:'milestone · verified by a passing test run'};}
       case 'repository.checkpoint':return {text:n?`Committed · ${plural(n,'site')} glow`:'Committed · the work glows',sub:'commit observed',position:pos};
       case 'world.expanded':return {text:`The continuum deepens · chapter ${d.chapter}`,sub:'accumulated structure',position:pos};
-      case 'agent.collision':return {text:'Two agents meet in one region',sub:(d.providers||[]).map(id=>presence(id).display).join(' · '),position:pos};
+      case 'agent.collision':return {text:d.scope==='file'?'Two agents meet at one site':'Two agents meet in one region',sub:(d.providers||[]).map(id=>presence(id).display).join(' · '),position:pos};
       default:return null;}}
   function agentPosition(id){return agentState.get(id)?.pos||null;}
   function agentColor(a){return '#'+agentCol[seatOf(a)].getHexString();}
@@ -915,11 +1038,11 @@ float lifePx(float size,float w){return size*uWSg*projectionMatrix[1][1]*uRes.y*
     return {position:new THREE.Vector3(...sitePos[k]),text:`A site of ${ctx.name(lay.sites[k].region)} · ${model.stateAt(m,i.t)}`,sub:`${plural(model.symbolsAt(m,i.t),'symbol')} · ${plural(deps,'thread')}`};}
   function stats(){return {form:fc.form,power:fc.form==='bulb'||fc.form==='julia'?fc.power:null,iterations:+itNow.toFixed(2),drawnIterations:+itDraw.toFixed(2),mass:+massNow.toFixed(1),
     regions:lay.regions.length,sites:lastStats.sites||0,threads:lastStats.threads||0,touches:touches.length,blooms:blooms.filter(s=>s.full).length,lastBloom:blooms.length?(blooms.at(-1).full?'bloom':'local'):null,firing:lastStats.fires||0,
-    decoherence:+stressNow.toFixed(2),fx:fx.n};}
+    decoherence:+stressNow.toFixed(2),fx:fx.n,travelling,meetings:near(meetings,info,4200).length};}
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();}
   // After a seek: no transient survives (the lasting inner light comes back from the director's record).
-  function onPrime(){for(const l of [waves,decoheres,recoheres,glows,blooms,deepens])l.length=0;agentState.clear();lastSig='';}
+  function onPrime(){for(const l of [waves,decoheres,recoheres,glows,blooms,deepens,meetings])l.length=0;agentState.clear();lastSig='';}
   // Composition anchors (layers.js): the form, its regions, the sites, its rim. Read-only.
   const composeA={center:new THREE.Vector3(),extent:14,subsystems:[],active:{pos:new THREE.Vector3()},nodes:[],boundary:{radius:16,y:0}};
   function composeAnchors(i){const Rw=R0*(1+SWELL*.5)*gsNow*WS;composeA.center.set(0,0,0);composeA.extent=Rw;composeA.boundary.radius=Rw*1.1;composeA.boundary.y=0;
