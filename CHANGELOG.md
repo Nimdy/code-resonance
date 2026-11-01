@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.8.1 — 2026-10-31
+
+Product 0.8.1, for use on your own machine; not stable. This tag is `v0.8.1`. Visual Recipe generator **5**: Synaptic
+Storm, Fractal Continuum and Temporal Terrain graduate from preview, the automatic choice can pick them for a new
+identity, and each is inhabited by digital life of its own. No existing identity changes. The owner watched each on a
+film of the whole Lumen Recipes session (2×, life on, 1920×1080 on the AMD iGPU) and accepted them; their six curated
+looks have not been reviewed. Interpretation is still 10. The VS Code extension is 0.8.1
+(`code-resonance-0.8.1.vsix`); it is not published to the Marketplace or Open VSX yet
+([docs/PUBLISHING.md](docs/PUBLISHING.md)).
 
 - **Six worlds to choose from: generator 5.** Synaptic Storm, Fractal Continuum and Temporal Terrain graduate: the
   family scores can choose them for a new identity, each scored from its own random stream after the flagships'
@@ -31,7 +39,7 @@
   never an agent's colour), and a neuron's membrane and synaptic clefts brighten with the life gathered there. Only as
   many inhabitants are awake as the neurons can host. On for new identities (generator 5); the catalogue's entry
   offers the standard `life.*` group and its Essentials the switch. A recipe without life renders exactly as before
-  (pinned against 1226b8a). Tests: `tests/life-synaptic*.test.js`. Not yet watched in motion by a person.
+  (pinned against 1226b8a). Tests: `tests/life-synaptic*.test.js`.
 - **Fractal Continuum can be inhabited:** motes of light living on the fractal's surface drift with its current,
   gather at the sites being worked on and leave threads of light between them; small flocks skim the relief and embers
   rest in its hollows. A failing run opens a void over its region and the motes wait at its edge; after the recovery
@@ -51,8 +59,8 @@
   heals. Swifts flock over the present; gleaners follow the herds' paths as they recede through the older land. The
   land's rate is the macro current, and the trail, energy and disturbance fields ride the land back. The world draws
   them on the drawn ground, with their light on the contour lines around them and their paths through the lines.
-  Determinism, behaviour and the world's life-off guarantee are tested (`tests/life-terrain*.test.js`); not yet
-  watched in motion by a person (`docs/worlds/temporal-terrain.md`).
+  Determinism, behaviour and the world's life-off guarantee are tested (`tests/life-terrain*.test.js`;
+  `docs/worlds/temporal-terrain.md`).
 - **Synaptic Storm's agents travel the network:** between two neurons the axon graph joins, an agent's signal runs in
   from its branch to the soma and along those axons' own curves at conduction speed (1.8 to 4.5 s) instead of a lifted
   arc; two agents on one file (`agent.collision`) are two signals in their colours meeting at its branch in a ring.
@@ -71,8 +79,8 @@
 - **Qualification parity:** `catalogue.qual.js` renders all six families with every parameter at both ends (12/12,
   SwiftShader); `worlds.qual.js` qualifies determinism across seeks, idle life, label privacy and resource release for
   every family (`--families`, `--size`, `--fps`, `--tag`). Run for the three graduated worlds: 21/22. The one failure,
-  Fractal Continuum's determinism across seeks (older than generator 5), is fixed below and the check passes on
-  SwiftShader with digital life off and on
+  Fractal Continuum's determinism across seeks (older than generator 5), is fixed above; on the integrated branch the
+  three, with digital life on, pass 22/22 (SwiftShader)
   ([QUALIFICATION.md](docs/QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Long frames at 1920×1080 diagnosed** (`qualification/visual/stalls.js`, new: per-frame callback, WebGL and GPU
   timer records plus a Chrome trace of every process): on the WSL2 AMD path (ANGLE's GL backend over Mesa d3d12) the

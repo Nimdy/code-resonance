@@ -13,8 +13,9 @@ preview until generator 5 graduated it: the family scores can choose it, it is a
 the Visual Studio offers it with two curated looks and the Artist Studio composes over it. Graduating it changed no
 existing identity (see [Selection and compatibility](#selection-and-compatibility)). It can be inhabited: its
 [digital life](#digital-life) (herds of light on the land of time) is on when the recipe's life values say so (new
-identities from generator 5 have it on), and off the world is exactly as it was. It has **not been reviewed
-artistically** and has not been watched in motion by a person (stills only, see [What is not done](#what-is-not-done)).
+identities from generator 5 have it on), and off the world is exactly as it was. The owner watched it, inhabited, on a
+film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); before
+that it was judged from stills only, and its curated looks have not been reviewed (see [What is not done](#what-is-not-done)).
 Everything described here is implemented unless marked *planned*.
 
 ![Self, halfway through its session](temporal-terrain-hero.jpg)
@@ -356,9 +357,8 @@ about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this n
 
 ## What is not done
 
-- **Not watched in motion** by a person and no film rendered: every judgement above is from stills. The flow of the land,
-  the touch's dome and rings, the scan and the sunrise were only seen as single frames.
-- **No artistic review** with the owner; the owner's reference images were not available.
+- **Watched in motion once:** the owner accepted a film of the whole Lumen Recipes session with life on (2026-10-31);
+  the judgements in this document were made from stills before it. The owner's reference images were not available.
 - **The far history of a long session** is compressed by the logarithmic depth: Self's first fifteen minutes lie past
   depth 150, in the haze; the camera never travels back along the time axis (*planned*: an idle flight over history).
 - **The commit's survey line** lies right behind the front edge while it flashes: it reads across the ranges there, but
@@ -384,8 +384,6 @@ about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this n
   valleys); the paths show only through the contour lines (the fields are 2 units a cell). In replays faster than 1.5×
   the life lags the land (its paths fade). Not run: the qualification's browser suites for life
   (`qualification/visual/life.qual.js`), a live session, the soak.
-- **Generator inclusion and graduation**: as for the other previews, a new generator version would be needed to let the
-  family scores choose it, and its parameters would freeze into the catalogue with curated looks and the Artist Studio.
 - **Generator inclusion and graduation** are done (generator 5, above); its curated looks have not been reviewed
   artistically.
 </content>

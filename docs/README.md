@@ -53,7 +53,7 @@ SDK pages. It shows them as text without images, and a link to a document it doe
 
 ## Versions
 
-The product version (0.8.0) is not the version of the interpretation (10), the score, the Visual Recipe
+The product version (0.8.1) is not the version of the interpretation (10), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
 The last published GitHub Release before the 0.7 series is 0.6.0 (`v0.6.0`).
@@ -65,9 +65,10 @@ The milestones were developed as a stack of eleven pull requests, integrated int
 consistent, so the pull request is the key here. 0.7.0 and 0.7.1 are the CAST campaign after that stack, plus pairing
 proof, ecology CI, and highlight/label hardening: [campaign-0.7.md](campaign-0.7.md). 0.7.2 adds the token proof
 for every client, interpretation 9, hover details and the agent touch, the redrawn Monolith, the MIT License and two
-preview worlds, Synaptic Storm and Fractal Continuum. 0.8.0 (this tree) adds the web demo, an extension that is enough
-on its own, six more agents, nine more languages and deeper Python (interpretation 10), vertical clips, recording to a
-file on disk and a third preview world, Temporal Terrain ([CHANGELOG](../CHANGELOG.md)). The interpretation is
+preview worlds, Synaptic Storm and Fractal Continuum. 0.8.0 adds the web demo, an extension that is enough on its
+own, six more agents, nine more languages and deeper Python (interpretation 10), vertical clips, recording to a file on
+disk and a third preview world, Temporal Terrain. 0.8.1 (this tree) graduates the three previews: generator 5 can
+choose them, and each is inhabited by digital life of its own ([CHANGELOG](../CHANGELOG.md)). The interpretation is
 independent of the product version.
 
 | PR | Milestone | Qualification | Changelog | Evidence in the repository |

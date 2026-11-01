@@ -10,8 +10,10 @@ the network, and the neuron whose file it edits fires.
 it with two curated looks and the Artist Studio composes over it. Graduating it changed no existing identity (see
 [Selection and compatibility](#selection-and-compatibility)). Since the first prototype: its
 [digital life](#digital-life) (behind the recipe's `life` values, on for new identities) and agents that travel the
-network's own axon pathways, with `agent.collision` drawn as two signals meeting (2026-10-31). Nobody has reviewed it
-artistically yet. Everything below marked *prototype* is implemented; *planned* is not.
+network's own axon pathways, with `agent.collision` drawn as two signals meeting (2026-10-31). The owner watched it,
+inhabited, on a film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it
+(2026-10-31); its curated looks have not been reviewed. Everything below marked *prototype* is implemented; *planned*
+is not.
 
 ![A large project as a network](synaptic-storm-network.jpg)
 
@@ -403,8 +405,8 @@ without: on this path every millisecond counts.
 
 What remains after this prototype:
 
-1. **Artistic review** with the owner against the reference; films of whole sessions (`qualification/visual/film.js`)
-   rather than stills; a hardware-GPU pass (the stills here are software rendered).
+1. **Artistic review**: done (2026-10-31): the owner accepted a film of the whole Lumen Recipes session with life on
+   (`qualification/visual/film.js`, 1920×1080 on the AMD iGPU). Its curated looks have not been reviewed.
 2. **Performance on the target machines**: GPU time at Auto on an integrated GPU and in OBS (`worlds.qual.js`,
    `recording.qual.js`), long soak; then the CPU cost on large projects (incremental signatures, spike heads on the GPU).
 3. **Qualification parity** with the three families: `catalogue.qual.js` and `worlds.qual.js` (determinism across seeks,
@@ -416,8 +418,7 @@ What remains after this prototype:
 5. **Music**: done (2026-10-31): rhythm-gated subdivisions and section onsets (see [Music](#music)). Remaining: a check
    with `life-music.js`-style measurements on films, and listening to whether the eighths read as rhythm and not noise.
 6. **Digital life**: done (2026-10-31; see [Digital life](#digital-life)), behind the recipe's `life` values with the
-   standard catalogue group. Remaining: films of whole sessions with life on and the owner's artistic review; a
-   qualification run of
+   standard catalogue group, and accepted on a film (item 1). Remaining: a qualification run of
    `visual/life.qual.js` in a browser (determinism across seeks and generations is tested in Node only).
 7. **Generator inclusion**: done in generator 5 (above).
 8. **Graduation**: done with generator 5: in `FAMILIES`, its parameters frozen in the catalogue (a base for packs),
