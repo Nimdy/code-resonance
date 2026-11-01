@@ -78,14 +78,16 @@ export function createFamily(ctx){
   // The rays' striation: discrete rays of varied width and strength across 2048 texels (four sets: fine, finer and
   // faster, broad bands, and a smooth one for the ragged lower edge), wrapping.
   const striTex=keep((()=>{const N=2048,d=new Uint8Array(N*4),r=rngOf(hash(`stri/${seed}`));
-    // r: fine rays; g: finer, sampled at its own scale (it drifts the other way); b: broad bands; a: the edge's raggedness
-    const sets=[[44,6,20],[34,4,12],[11,48,150],[0,0,0]];
+    // r: discrete rays, about 11 world units apart; g: finer ones, sampled at their own scale (they drift the other way);
+    // b: broad bands (their strength along the curtain); a: the edge's raggedness
+    const sets=[[32,10,24],[26,10,24],[11,48,150],[0,0,0]];
     for(let c=0;c<4;c++){const a=new Float32Array(N);
       if(c===3){const p1=r()*TAU,p2=r()*TAU;for(let i=0;i<N;i++)a[i]=.5+.3*Math.sin(i/N*TAU*4+p1)+.2*Math.sin(i/N*TAU*14+p2);}
       else{const [n,w0,w1]=sets[c];for(let k=0;k<n*2;k++){const p=r()*N,w=w0+(w1-w0)*r()**1.5,h=.35+.65*r()**.7;for(let i=-Math.ceil(w*3);i<=Math.ceil(w*3);i++){const j=((Math.floor(p)+i)%N+N)%N;a[j]+=h*Math.exp(-((i/w)**2));}}
-        for(let i=0;i<N;i++)a[i]+=.08;}
+        if(c===2)for(let i=0;i<N;i++)a[i]+=.08;}
       let mx=0;for(const v of a)mx=Math.max(mx,v);for(let i=0;i<N;i++)d[i*4+c]=Math.round(clamp(a[i]/(mx*(c===3?1:.8)))*255);}
-    const t=new THREE.DataTexture(d,N,1,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=t.minFilter=THREE.LinearFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;})());
+    // (mipmapped: on a far curtain the rays average out instead of shimmering)
+    const t=new THREE.DataTexture(d,N,1,THREE.RGBAFormat);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;})());
   const cpData=new Float32Array(8*(MAXC+1)*4),cpTex=keep(new THREE.DataTexture(cpData,8,MAXC+1,THREE.RGBAFormat,THREE.FloatType));cpTex.magFilter=cpTex.minFilter=THREE.NearestFilter;cpTex.needsUpdate=true;
   const rayA=new Uint8Array(RAYW*(MAXC+1)*4),rayB=new Uint8Array(RAYW*(MAXC+1)*4);
   const rayTexA=keep(new THREE.DataTexture(rayA,RAYW,MAXC+1,THREE.RGBAFormat)),rayTexB=keep(new THREE.DataTexture(rayB,RAYW,MAXC+1,THREE.RGBAFormat));
@@ -245,7 +247,10 @@ export function createFamily(ctx){
   const at3=(c,s,h,out=[0,0,0])=>curtainPoint(c,s,h,info.tview,foldA,rip,out,c.kf);
   function placeCurtains(i){
     const P=prepared();curtains=curtainsAt(P,i.t,cfg).slice(0,MAXC).map((c,k)=>({...drifted(c,i.tview),k}));files=new Map();
-    for(const c of curtains){const st=c.files.reduce((m,f)=>Math.max(m,f.storm),0);c.storm=st;c.kf=(1+.7*st)*clamp(c.R/1350,.6,1.6);
+    // a far, low curtain's foot is soft (seen through more air: crisp from about 11.5 degrees up, soft below about 6.3)
+    // and its folds are shallow: near the horizon it reads as a smooth band, never a jagged ridge
+    for(const c of curtains){const st=c.files.reduce((m,f)=>Math.max(m,f.storm),0);c.storm=st;c.soft=1-smooth((Math.atan2(c.alt,c.R)-.11)/(.2-.11));
+      c.kf=(1+.7*st)*clamp(c.R/1350,.6,1.6)*(1-.7*c.soft);
       for(const f of c.files)files.set(f.id,{...f,curtain:c});}}
   // The touches: the agent's own tool event on a file (touch.js), and an attributed edit landing (the model's correlated cue).
   function touchList(i){
@@ -268,7 +273,7 @@ export function createFamily(ctx){
       const elev=Math.atan2(c.alt,c.R),ext=.45+.55*smooth((elev-.07)/.2),size=.62+.5*clamp(Math.log2(1+c.files.length)/5);
       const b=(.5+.36*act+.16*energy+.28*lit)*glowK*ext*size*(.25+.75*c.kindle)*(1+1.6*breakNow)*(1-.25*coronaNow*(1-breakNow));c.bright=b;
       put(k,0,c.x,c.z,c.dx,c.dz);put(k,1,c.len,c.alt,c.H,c.seed);put(k,2,b,c.kindle,0,c.kf);put(k,3,lo[0],lo[1],lo[2],0);
-      put(k,4,hi[0],hi[1],hi[2],(.8+.5*act+1.1*breakNow)*(1-.5*c.storm));put(k,5,0,0,0,0);
+      put(k,4,hi[0],hi[1],hi[2],(.8+.5*act+1.1*breakNow)*(1-.5*c.storm));put(k,5,0,0,0,c.soft);
       // the rays: the top of the curtain follows its files' heights; each file's own ray; storm and validated shares; ignition
       rayF.fill(0);flashV.fill(0);flashH.fill(0);const L=c.len,tx=s=>(s/L*.5+.5)*(RAYW-1),sT=Math.max(cfg.sp*1.25,34),sR=clamp(cfg.sp*.07,2.4,7),sS=cfg.sp*1.6+70,sV=cfg.sp*.9+24;
       const w0=.22;for(let j=0;j<RAYW;j++){rayF[j*8]=.36*w0;rayF[j*8+4]=w0;}
@@ -484,7 +489,9 @@ export function createFamily(ctx){
     placeCurtains(i);touches=touchList(i);
     // folds: slow and middle folds always, the fast one deepening with the work (a quiet arc versus a substorm)
     const act=clamp(i.activity||0),fK=clamp(num(au.folds,.9),0,1.8),energy=clamp(i.music?i.music.energy:i.energy||0);
-    foldA=[48*fK,30*fK*(1+.4*act),(6+22*act+8*energy+30*breakNow)*fK];U.uA.value.set(...foldA);
+    // (the slow fold makes the long S-curves and the edge-on pleats; the middle and fast folds stay shallow at rest, so a
+    // hem is a smooth line and never a jagged ridge, and deepen with the work)
+    foldA=[50*fK,12*fK*(1+1.2*act),(2.5+16*act+6*energy+30*breakNow)*fK];U.uA.value.set(...foldA);
     U.uFast.value=clamp(act*1.3+breakNow);
     // the music, only where the host gives its clock: ripples on the bars (each bar's depth read at that bar, so a ripple
     // under way never changes), the rays' shimmer on the eighths the arrangement plays, a surge at a section's onset

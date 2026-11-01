@@ -51,11 +51,12 @@ const AZ=[0,15,-17,29,-31,6,-7,39,-40,22],DEPTH=[0,-.6,.5,.35,-.35,.85,.75,-.85,
 export function placeOf(rank,id,cfg){
   const h=hash(`curtain/${id}`),side=rank%2?1:-1;
   const g=rank<DEPTH.length?DEPTH[rank]:frac(rank*.6180339887+.5)*2-1;
-  const az=(rank<AZ.length?AZ[rank]*Math.PI/180:side*(.1+.62*frac(rank*.7548776662+.29)))*cfg.spread,R=MID*Math.exp(.45*g)*Math.sqrt(cfg.spread);
+  const az=(rank<AZ.length?AZ[rank]*Math.PI/180:side*(.1+.62*frac(rank*.7548776662+.29)))*cfg.spread,R=MID*Math.exp(.62*g)*Math.sqrt(cfg.spread);
   // the trace leans off east-west, so a curtain sweeps from low on the horizon (its far end) up into the sky (its near
   // end); one to a side turns a little toward facing the shore
   const tilt=(rand(h)<.5?-1:1)*(rank===0?.88+.25*rand(h+4):.15+.38*rand(h+4))+az*.3;
-  return {R,az,tilt,x:R*Math.sin(az),z:-R*Math.cos(az),dx:Math.cos(tilt),dz:Math.sin(tilt),alt:ALT*(.92+.16*rand(h+1)),H:HEIGHT*cfg.height*(.86+.28*rand(h+2)),seed:rand(h+3)};
+  // (a far curtain's foot stands a little lower, so it rises from behind the far shore's mountains)
+  return {R,az,tilt,x:R*Math.sin(az),z:-R*Math.cos(az),dx:Math.cos(tilt),dz:Math.sin(tilt),alt:ALT*(.92+.16*rand(h+1))*(1-.24*Math.max(0,g)),H:HEIGHT*cfg.height*(.86+.28*rand(h+2)),seed:rand(h+3)};
 }
 // The curtains at moment g: each subsystem with a live file, in order of birth, with its place, its half-length (the
 // minimum and its files at the spacing, eased in as they arrive) and its rays: each file's signed place along the trace

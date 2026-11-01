@@ -23,8 +23,8 @@ vec4 cp(int k,int j){return texelFetch(uCP,ivec2(j,k),0);}
 vec3 trace(vec4 T0,vec4 T1,vec4 T2,vec4 T5,float s,float u,float h){
   if(T2.z<.5){float d=fold(s,u,h,T1.w,T2.w);return vec3(T0.x+T0.z*s+T0.w*d,T1.y,T0.y+T0.w*s-T0.z*d);}
   // the corona's ring: folds run around it, radially
-  // (finer and shallower than a line's: from below, deep radial folds would read as teeth)
-  float a=u*3.14159265,d=fold(s*2.3,u,h,T1.w,T2.w)-s*s*5.29*${BOW.toExponential(6)};float r=T5.x+d*.14;return vec3(T5.y+cos(a)*r,T1.y,T5.z+sin(a)*r);}
+  // (barely folded: from below, radial folds read as a crown of teeth; its edge comes from its rays instead)
+  float a=u*3.14159265,d=fold(s*2.3,u,h,T1.w,T2.w)-s*s*5.29*${BOW.toExponential(6)};float r=T5.x+d*.04;return vec3(T5.y+cos(a)*r,T1.y,T5.z+sin(a)*r);}
 void main(){
   int k=int(aC.x+.5);vec4 T0=cp(k,0),T1=cp(k,1),T2=cp(k,2),T3=cp(k,3),T4=cp(k,4),T5=cp(k,5);
   vK=aC.x;vSd=T1.w;vP=vec4(T2.x,T2.y,T1.x,T1.z);vQ=vec4(T3.w,T4.w,T2.z,T5.w);vLo=T3.rgb;vHi=T4.rgb;
@@ -54,39 +54,49 @@ varying vec3 vW;varying vec2 vS;varying float vK,vEdge,vH,vSd;varying vec3 vLo,v
 void main(){
   float row=(vK+.5)/uNK,su=vS.x*.5+.5;vec4 A=texture(uRay,vec2(su,row));A.x*=1.5;A.y*=2.;
   float s=vS.x*vP.z,x0=vS.y,storm=A.z*uStormK;
-  // rays: fine striation along the trace (world units) with broad bands and the edge's raggedness in the same texels,
-  // drifting slowly; a finer, faster set (the other way) takes a larger share as the work quickens
-  vec4 S1=texture(uStri,vec2(s*.0021+uV*.0012+vSd*7.,.5));float r2=texture(uStri,vec2(s*.0047-uV*.0031+vSd*3.,.5)).g;
-  float rays=mix(S1.r*.6+S1.b*.4,r2,.3+.4*uFast);
+  // rays: discrete rays along the trace (world units) drifting slowly, and a finer, faster set (the other way) that takes
+  // a larger share as the work quickens; broad bands vary their strength along the curtain but never fill the gaps
+  // between them: between two rays the sky shows through
+  // (the corona's ring, overhead and near, has its rays twice as dense)
+  float ring=step(.5,vQ.z),sr=s*(1.+ring);
+  vec4 S1=texture(uStri,vec2(sr*.0021+uV*.0012+vSd*7.,.5));float r2=texture(uStri,vec2(sr*.0047-uV*.0031+vSd*3.,.5)).g;
+  float rays=mix(S1.r,r2,.3+.4*uFast)*(.5+.6*S1.b),R=smoothstep(.07,.66,rays);
 #ifdef MIRROR
   float fl=.5;
 #else
   // the rays flicker along their length: brighter knots rising and falling along the field
   float fl=texture(uNoise,vec2(s*.0031+vSd*5.,x0*.9-uV*(.05+.09*uFast+.25*storm))).x;
 #endif
+  // the corona's ring has no sheet at its foot: its rays start at irregular heights and dissolve downward
+  float n2=.5;
+  if(ring>0.){float n1=texture(uNoise,vec2(s*.0013+vSd*2.,.61)).y;n2=texture(uNoise,vec2(s*.0061+vSd,.23)).w;x0+=(n1-.5)*.34+(n2-.5)*.16;}
   // the lower edge is sharp but ragged (deeper under a storm), each ray dipping a little below it
-  float x=x0-(S1.a-.5)*(.008+.1*storm)+(rays-.5)*.012,xp=max(x,0.);
-  float lo=smoothstep(-.006,.008+.014/uEdgeK,x);
-  float top=max(A.x*vP.y,.05)*(1.+.22*(rays-.45))+.05*(fl-.5);
+  float x=x0-(S1.a-.5)*(.008+.1*storm)+(R-.4)*.014,xp=max(x,0.);
+  // a far, low curtain (vQ.w: its softness) is seen through more air: its foot is soft and broken by its rays, with no
+  // hem line (stacked sharp hems near the horizon would read as mountain ridges in the sky)
+  float soft=vQ.w*(1.-ring);
+  float lo=ring>0.?smoothstep(-.02,.16,x)*(.15+.85*R):smoothstep(-.006-.06*soft,.008+.014/uEdgeK+.34*soft,x)*mix(1.,.15+.85*R,soft);
+  float top=max(A.x*vP.y,.05)*(1.+.22*(rays-.45))*(ring>0.?.65+.7*n2:1.)+.05*(fl-.5);
   // a soft top: the rays thin out toward their heights; the curtain's ends fade
   // (the fades are long: under the tone curve a tenth of a bright curtain still shows)
   float end=pow(smoothstep(1.,.3,abs(vS.x)),2.2),cut=pow(smoothstep(top+.03,top*.45,x),1.6)*end;
   if(cut*lo<=.001)discard;
-  // the light: a thin bright hem at the lower edge, a bright band over it, a dim body above that the rays carry upward,
-  // and toward the top the fringe colour
-  // the lower edge is not even: bright knots and dimmer stretches drifting along it
+  // the light: a thin bright hem at the lower edge and a short fringe of diffuse light over it (a bright fringe, never the
+  // top of a lit slab), then the rays, which carry the light upward with dark sky between them; toward the top the
+  // fringe colour, in the rays. The lower edge is not even: bright knots and dimmer stretches drifting along it
   float knot=.5+.9*smoothstep(.3,.75,texture(uNoise,vec2(s*.0011+vSd*3.,uV*.011+vSd)).z);
-  float rr=pow(rays,1.6),hem=exp(-pow(xp/.016,2.))*knot,band=exp(-xp*11.)*knot,body=exp(-xp*2.3)*(.7+.3*knot);
-  float rm=1.+uEighth*(rays*2.-.8);
+  float hem=exp(-pow(xp/.011,2.))*knot*(1.-.85*ring)*(1.-soft),glow=exp(-xp*mix(30.,16.,soft))*knot*(1.-.8*ring)*(1.-.8*soft);
+  float rl=(R*R*.9+.12*rays)*(exp(-xp*5.)*1.05+exp(-xp*1.5)*.45)+ring*.16*rays*exp(-xp*1.6);
+  float rm=1.+uEighth*(R*2.-.6);
   float fr=smoothstep(.16,.48,x)*exp(-pow((x-top*.72)/(.22+.2*top),2.));
-  vec3 c=vLo*((hem*.55+band*(.62+.5*rays)*mix(1.,.55+.9*rays,uRayK*.6))*(.8+.35*fl)+body*(.045+.44*rr*uRayK)*(.5+.75*fl))*rm*lo*cut
-    +vHi*fr*(.18+.85*rr)*(.5+.6*fl)*vQ.y*uFringeK*cut*.4;
+  vec3 c=vLo*((hem*1.3+glow*(.55+.8*R))*(.8+.35*fl)+rl*uRayK*2.6*(.55+.7*fl))*rm*lo*cut
+    +vHi*fr*R*(.45+.85*R)*(.5+.6*fl)*vQ.y*uFringeK*cut*.6;
   // the files' rays: brighter streaks along the field up to their own heights
-  float fray=A.y*lo*smoothstep(top+.02,top*.5,x)*end;c+=mix(vLo,uWhite,.08)*fray*(.28*exp(-xp*3.)+.1*rr+.035)*(.7+.6*fl);
+  float fray=A.y*lo*smoothstep(top+.02,top*.5,x)*end;c+=mix(vLo,uWhite,.08)*fray*(R*(.6*exp(-xp*2.5)+.2*R)+.012)*(.7+.6*fl);
 #ifndef MIRROR
   // ignition: a pulse running up the ray in its colour, and the ray lit behind it
   if(uFlash>0.){vec4 B=texture(uRayB,vec2(su,row));B.rgb*=4.;B.a*=1.25;
-    if(B.a>0.){float fp=exp(-pow((x-B.a)/.07,2.))*step(-.05,x),lit=smoothstep(B.a+.05,B.a-.1,x)*exp(-x*1.4);c+=B.rgb*(fp*1.5+lit*.4)*lo;}}
+    if(B.a>0.){float fp=exp(-pow((x-B.a)/.07,2.))*step(-.05,x),lit=smoothstep(B.a+.05,B.a-.1,x)*exp(-x*1.4);c+=B.rgb*(fp*3.6+lit*1.3)*lo;}}
 #endif
   // validated rays settle: a little paler at the hem
   c+=uValid*A.w*hem*.3*cut;
