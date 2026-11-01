@@ -284,7 +284,7 @@ export function createFamily(ctx){
         const tc=touches.find(x=>x.fileId===f.id);if(tc&&(!fl||tc.k>fl.k)){const ac=agentCol[tc.seat%8];fl={k:tc.k*(tc.kind==='edit'?.7:.32),h:smooth(tc.age/.9)*f.h*1.05,c:[ac.r*.85+lo[0]*.15,ac.g*.85+lo[1]*.15,ac.b*.85+lo[2]*.15]};}
         const hu=m&&Number.isFinite(m.lastHuman)&&m.lastHuman>=m.lastAgent?(t-m.lastHuman)/sp/1000:Infinity;
         if(hu>=0&&hu<2.6&&(!fl||fl.k<.5)){fl={k:smooth(hu/.12)*Math.pow(1-hu/2.6,1.5)*.7,h:smooth(hu/.9)*f.h,c:[1,.86,.7]};}
-        if(fl&&fl.k>.005)put2(sR*1.8,(o,w)=>{const v=fl.k*w,j=o>>3;if(v>flashV[j]){flashV[j]=v;rayF[o+5]=fl.c[0]*v;rayF[o+6]=fl.c[1]*v;rayF[o+7]=fl.c[2]*v;flashH[j]=fl.h;}});}
+        if(fl&&fl.k>.005)put2(sR*1.05,(o,w)=>{const v=fl.k*w,j=o>>3;if(v>flashV[j]){flashV[j]=v;rayF[o+5]=fl.c[0]*v;rayF[o+6]=fl.c[1]*v;rayF[o+7]=fl.c[2]*v;flashH[j]=fl.h;}});}
       for(let j=0;j<RAYW;j++){const o=j*8,q=(k*RAYW+j)*4;rayA[q]=Math.round(clamp(rayF[o]/Math.max(rayF[o+4],1e-6)/1.5)*255);rayA[q+1]=Math.round(clamp(rayF[o+1]/2)*255);
         rayA[q+2]=Math.round(clamp(rayF[o+2])*255);rayA[q+3]=Math.round(clamp(rayF[o+3])*255);
         rayB[q]=Math.round(clamp(rayF[o+5]/4)*255);rayB[q+1]=Math.round(clamp(rayF[o+6]/4)*255);rayB[q+2]=Math.round(clamp(rayF[o+7]/4)*255);rayB[q+3]=flashV[j]>.004?Math.max(1,Math.round(clamp(flashH[j]/1.25)*255)):0;}}
@@ -383,22 +383,39 @@ export function createFamily(ctx){
   const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
   function pathAt(path,s){const P=path.pts;for(let k=1;k<P.length;k++){const d=dist3(P[k-1],P[k]);if(s<=d||k===P.length-1){const u=d>1e-9?clamp(s/d):1;
     return [lerp(P[k-1][0],P[k][0],u),lerp(P[k-1][1],P[k][1],u),lerp(P[k-1][2],P[k][2],u)];}s-=d;}return P[P.length-1].slice();}
-  // From the goal before the latest change to this one: along the field lines between curtains they join, otherwise a
-  // lifted arc (up through the night, over 1.8 to 4.5 s).
-  function agentAt(id,t,tv){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
+  // From where the wisp was when its goal last changed (a state, an edit landing, its dwell ending) to the new goal:
+  // between curtains the field lines join, once it had reached the goal before, along those lines (1.8 to 4.5 s); a
+  // change that keeps its goal at the same ray (a tool's 40 ms ending while it travels there) lets it fly on along the
+  // lines it is on; otherwise a lifted arc up through the night. Where it was is this same function at the moment before
+  // the change (each moment computed once a frame, at most MOVES_BACK changes back; beyond them the goal before), so a
+  // change that interrupts a move never makes it jump.
+  const MOVES_BACK=32,ARRIVED=6;let wasT=null;const wasAt=new Map();
+  function agentBefore(id,t,depth){if(wasT!==info.t){wasAt.clear();wasT=info.t;}const key=`${id}|${t}`;if(wasAt.has(key))return wasAt.get(key);
+    const x=agentAt(id,t,(t-model.epoch)/1000/ctx.speed(),depth);wasAt.set(key,x);return x;}
+  const sameSpot=(A,B)=>!!A&&!!B&&A.curtain===B.curtain&&A.id===B.id;
+  function restOf(P,from,s){let x=from;for(let j=0;j<P.length;j++){const d=dist3(x,P[j]);if(s<d)return P.slice(j);s-=d;x=P[j];}return [];}
+  function alongFrom(P,from,s,to){const pts=[from,...P,to];return pathAt({pts},s);}
+  function agentAt(id,t,tv,depth=0){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
     const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
-    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const q=goalOf(prev,tv,tc-1),path=journey(spotOf(prev,tc-1),spotOf(a,t),q,g);
-      if(path){const T=clamp(path.len/FLY_V*1000,TRAVEL,TRAVEL_MAX)*sp;if(t-tc<T)return {a,p:pathAt(path,smooth((t-tc)/T)*path.len),travel:true,line:true};}
-      else{const D=dist3(q,g),T=clamp(D/FLY_V*1000,TRAVEL,TRAVEL_MAX)*sp;if(t-tc<T){const k=smooth((t-tc)/T),lift=Math.sin(k*Math.PI)*Math.min(260,D*.22);
-        g=[lerp(q[0],g[0],k),lerp(q[1],g[1],k)+lift,lerp(q[2],g[2],k)];return {a,p:g,travel:true};}}}}
+    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const q=goalOf(prev,(tc-1-model.epoch)/1000/sp,tc-1),w=depth<MOVES_BACK?agentBefore(id,tc-1,depth+1):null,was=w?.p||q;
+      const A=spotOf(prev,tc-1),B=spotOf(a,t);let pts=null,min=TRAVEL;
+      if(dist3(was,q)<ARRIVED){const path=journey(A,B,q,g);if(path)pts=path.pts.slice(1,-1);}
+      else if(w?.rest&&sameSpot(A,B)){pts=w.rest;min=TRAVEL/2;}
+      if(pts&&pts.length){const total=dist3(was,pts[0])+pathLen(pts)+dist3(pts[pts.length-1],g),T=clamp(total/FLY_V*1000,min,TRAVEL_MAX)*sp;
+        if(t-tc<T){const at=smooth((t-tc)/T)*total;return {a,p:alongFrom(pts,was,at,g),travel:true,line:true,rest:restOf(pts,was,at)};}}
+      else{const D=dist3(was,g),T=clamp(D/FLY_V*1000,TRAVEL,TRAVEL_MAX)*sp;if(t-tc<T){const k=smooth((t-tc)/T),lift=Math.sin(k*Math.PI)*Math.min(260,D*.22);
+        return {a,p:[lerp(was[0],g[0],k),lerp(was[1],g[1],k)+lift,lerp(was[2],g[2],k)],travel:true};}}}}
     return {a,p:g};}
+  const pathLen=P=>{let l=0;for(let j=1;j<P.length;j++)l+=dist3(P[j-1],P[j]);return l;};
   function updateAgents(i){
     const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Map();travelNow=0;lineNow=0;
     for(const a of i.agents.slice(0,12)){const h=agentAt(a.id,i.t,i.tview);if(!h)continue;seen.set(a.id,a);if(h.travel)travelNow++;if(h.line)lineNow++;
       let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...h.p);
       const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.7)*prom,sub=a.subagent||a.parent?.6:1,tk=touches.find(x=>x.agentId===a.id)?.k||0;
       // its trail: where it was (sampled from its pure path)
-      for(let s=18;s>=1;s--){const q=agentAt(a.id,i.t-s*80*sp*trailK,i.tview-s*.08*trailK);if(!q)continue;const f=1-s/19;point(q.p,c,alpha*f*f*.9,(2.5+7*f)*sub,8);}
+      // (along a field line, a denser, brighter comet)
+      const TR=h.line?36:18,dt=h.line?45:80;
+      for(let s=TR;s>=1;s--){const q=agentAt(a.id,i.t-s*dt*sp*trailK,i.tview-s*dt/1000*trailK);if(!q)continue;const f=1-s/(TR+1);point(q.p,c,alpha*f*f*(h.line?1.2:.9),(2.5+7*f)*sub,8);}
       point(h.p,c,alpha*.4,70*sub,11);point(h.p,c,alpha*(1.5+tk),34*sub,seat<6?seat:6);point(h.p,{r:1,g:1,b:1},alpha,6*sub,8);
       // at its ray: a thread of its colour up the ray it touches
       const w=h.travel?null:workOf(a,i.t);if(w){const f=files.get(w),top=footOf(f,f.h*.85),foot=footOf(f,.06);ribbon(h.p,foot,.8,1.4,c,alpha*(.3+.6*tk),1,.4);ribbon(foot,top,1.4,.6,c,alpha*.22*(.4+tk),.6,0);}}
@@ -521,9 +538,9 @@ export function createFamily(ctx){
     // the view: toward the curtains' brightness-weighted middle, the horizon low in the frame (a tall sky over its
     // reflection); breathing slowly while nothing happens
     let wx=0,ws=0;for(const c of curtains){const k=c.bright*c.len;wx+=c.az*k;ws+=k;}
-    let yaw=clamp(ws?wx/ws:0,-.35,.35)*.6+.045*Math.sin(tv/97)*drift,fovL=clamp(num(cam.fov,56),40,72)*own.fov;
-    const vf=portrait?2*Math.atan(Math.tan(Math.atan(Math.tan(fovL*Math.PI/360)*(16/9))*.64)/aspect)*180/Math.PI:fovL;
-    const half=vf*Math.PI/360;let pitch=Math.atan(Math.tan(half)*(portrait?.16:.18))+clamp(num(cam.elevation,.45),0,1.2)*.05+.012*Math.sin(tv/71)*drift,fov=vf;
+    let yaw=clamp(ws?wx/ws:0,-.35,.35)*(portrait?.25:.6)+.045*Math.sin(tv/97)*drift,fovL=clamp(num(cam.fov,56),40,72)*own.fov;
+    const vf=portrait?2*Math.atan(Math.tan(Math.atan(Math.tan(fovL*Math.PI/360)*(16/9))*.5)/aspect)*180/Math.PI:fovL;
+    const half=vf*Math.PI/360;let pitch=Math.atan(Math.tan(half)*(portrait?.1:.18))+clamp(num(cam.elevation,.45),0,1.2)*.05+.012*Math.sin(tv/71)*drift,fov=vf;
     // what changed is seen up close: its curtain, the camera leaning toward it and closing in a little
     const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;let k=0;
     const tch=touches.find(x=>x.kind==='edit'&&x.k>.2&&files.has(x.fileId));

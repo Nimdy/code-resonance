@@ -240,6 +240,13 @@ test('Agents: a subagent is tethered to its parent; two agents on one file are t
   W.w.effect({effect:'field-line',intent:'agent.collision',tier:1,scale:1,at:T0+1600,subject:{fileId:'a1'},detail:{providers:['claude-code','cursor']}},W.frame(T0+1600));
   W.at(T0+2400);assert(snapshot(W.scene).fx.length>before,'the meeting draws its wisps');W.w.dispose();
 });
+test('A wisp\'s move begins where it is: a change that interrupts it (a 40 ms tool, then work) never makes it jump',async()=>{
+  const {createAgents}=await load('agents');const ag=createAgents(),rec=(ts,state,fileId,activity)=>ag.record({type:'agent.state',ts,tier:0,magnitude:.1,evidence:'observed',subject:{agentId:'w',voice:2,fileId},detail:{state,activity,provider:'codex'}});
+  rec(T0+500,'tool','a1','editing');rec(T0+540,'processing',null);rec(T0+3000,'tool','b1','editing');rec(T0+3040,'processing',null);rec(T0+4200,'tool','c1','editing');rec(T0+4240,'processing',null);
+  const W=await headless(await network(),{name:'moves',agents:ag});let prev=null,worst=0;
+  for(let t=T0+2600;t<=T0+9000;t+=50){W.at(t);const p=W.w.agentPosition('w');assert(p,`a position at ${t-T0}`);if(prev)worst=Math.max(worst,p.distanceTo(prev));prev=p.clone();}
+  assert(worst<120,`the largest step in 50 ms is ${worst.toFixed(1)} units (a jump would cross the sky)`);W.w.dispose();
+});
 test('The music, read per bar: the rays shimmer on the eighths the arrangement plays, a section\'s onset surges along the curtains',async()=>{
   // a stub clock: rhythm in odd bars, a new section from bar 20
   const bar=4*60000/96,calls=[];const musicAt=T=>{const b=Math.floor(T/bar);calls.push(b);return {rhythm:b%2?1:0,energy:.6,dynamics:.7,section:b>=20?'lift':'home'};};
