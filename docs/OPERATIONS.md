@@ -5,7 +5,7 @@ receiver prints, and what has and has not been verified. Setting it up for the f
 
 ## Status
 
-Product version **0.8.1**. The last published GitHub Release before the 0.7 series is **0.6.0** (`v0.6.0`). For private use on your own machine; it
+Product version **0.9.0**. The last published GitHub Release before the 0.7 series is **0.6.0** (`v0.6.0`). For private use on your own machine; it
 is not stable. It runs from this repository, or from the VS Code extension alone: the VSIX carries the receiver and the
 extension starts it when none is running ([Getting started](FIRST-RUN.md#with-the-extension-alone)). Publishing to the
 Visual Studio Marketplace and Open VSX is prepared, not done ([PUBLISHING.md](PUBLISHING.md)). The product version is separate from the versions of

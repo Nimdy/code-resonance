@@ -12,7 +12,7 @@ it with two curated looks and the Artist Studio composes over it. Graduating it 
 [digital life](#digital-life) (behind the recipe's `life` values, on for new identities) and agents that travel the
 network's own axon pathways, with `agent.collision` drawn as two signals meeting (2026-10-31). The owner watched it,
 inhabited, on a film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it
-(2026-10-31); its curated looks have not been reviewed. After 0.8.1: [subagents](#agents) are smaller signals tethered
+(2026-10-31); its curated looks have not been reviewed. In 0.9.0: [subagents](#agents) are smaller signals tethered
 to their parent's (interpretation 11 names the parent), not yet reviewed. Everything described below is implemented;
 what remains is in [Path to shipping](#path-to-shipping).
 
@@ -445,7 +445,7 @@ What remains:
    idle, privacy of every label, resources) now cover all six families; see
    [QUALIFICATION.md](../QUALIFICATION.md) for what was run.
 4. **Agents**: done (2026-10-31): they travel the actual axon pathways between neurons and `agent.collision` is two
-   signals meeting (see [Agents](#agents)). Subagents are smaller signals tethered to their parent (after 0.8.1,
+   signals meeting (see [Agents](#agents)). Subagents are smaller signals tethered to their parent (0.9.0,
    interpretation 11; `tests/agent-parents.test.js`, `tests/synaptic-subagents.test.js`), seen only on a synthetic
    fixture, not reviewed. A look at the one recording (Lumen Recipes): most of its agents' moves between files are
    between files the dependency graph joins (see [Agents](#agents)). Remaining: a recorded session with reads that name

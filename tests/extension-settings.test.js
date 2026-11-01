@@ -67,7 +67,7 @@ test('workspace.started reports the extension version, remote and every capture 
   const started=x.sent.find(e=>e.kind==='workspace.started');assert(started,x.kinds().join(','));
   assert.deepEqual(started.meta,{extensionVersion:VERSION,remote:'wsl',includeHidden:true,captureDocumentContents:true,captureTerminalCommands:true,
     capturePromptText:false,shareProjectName:true,baselineFileLimit:120,receiverPort:4199});
-  assert.equal(VERSION,'0.8.1');assert.equal(started.name,'my-secret-folder');
+  assert.equal(VERSION,'0.9.0');assert.equal(started.name,'my-secret-folder');
   assert.equal(x.outboxes[0].port,4199,'the reported port is the one the capture delivers to');
   assert.deepEqual(x.ensured,[{port:4199,dir:path.join(dir,'data'),start:true}],'starting capture looks for (or starts) a receiver on that port, in the data directory');
   assert.equal(x.outboxes[0].authFile,path.join(dir,'data','receiver-auth.json'),'the outbox reads the token of that data directory');

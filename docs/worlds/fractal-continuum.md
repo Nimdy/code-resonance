@@ -16,7 +16,7 @@ white sugar of sparkle); the finish described here (0.8.0) answers that: each re
 identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
 swell, rare coloured glints. The owner watched it again, inhabited, on a film of the whole Lumen Recipes session (life
 on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); its curated looks have not been reviewed. Since then
-(after 0.8.1, not yet reviewed by the owner): the threads are veins along the surface, agents travel them (with
+(0.9.0, not yet reviewed by the owner): the threads are veins along the surface, agents travel them (with
 `agent.collision` drawn as two signals meeting) and sites fire on the eighth notes where the music plays rhythm (see
 [Agents](#agents) and [Music](#music)). Everything below marked *prototype* is implemented; *planned* is not. It can be
 inhabited: [digital life](#digital-life) (motes of light living on the surface) behind the recipe's `life` values, on
@@ -444,7 +444,7 @@ The finish keeps this: region hues come from the region's id and creation order,
 at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
 and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
 
-**Agents, veins and the music** (after 0.8.1). The veins' caches (directions, radii per integer recursion, the swell
+**Agents, veins and the music** (0.9.0). The veins' caches (directions, radii per integer recursion, the swell
 at the swell table's quantized weights) hold pure functions of their keys; a route is a breadth-first search over the
 threads in their structural order, filtered by the moment its move began; where a signal was before a change is the
 same function at that moment (memoized within a frame only); the rhythm and section of a bar come from the musical
@@ -498,7 +498,7 @@ one reading): 17.8 → 18.1 ms at 0, 13.9 → 13.3 at 1, 7.3 → 6.7 at 2, 3.8 �
 SwiftShader (no `--gpu`, 960×540): the world compiles and draws (lab still, no GPU timer there). CPU: lab `updateMs`
 0.2–1.1 ms on Lumen, 1.4–2.2 ms on Excalidraw. Draw calls in the lab: 8–9.
 
-**Veins, agents on them and the music** (after 0.8.1), measured against the code at 0.8.1 alternated in fresh pages,
+**Veins, agents on them and the music** (0.9.0), measured against the code at 0.8.1 alternated in fresh pages,
 three rounds each (lab `gpuMs`, AMD iGPU through WSL2 D3D12, 1920×1080, quality 0, generated identities with life on,
 load average 9–11 from other work on the machine):
 
@@ -592,7 +592,7 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 
 1. **Artistic review**: done for the world as of 0.8.1: the owner watched a film of the whole Lumen Recipes session
    (life on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31). Remains: the curated looks, a pole still at rest,
-   and the agents' travel, the veins and the music below (after 0.8.1), on a film.
+   and the agents' travel, the veins and the music below (0.9.0), on a film.
 2. **Sharpness and cost**: a temporal-free way to recover detail (an adaptive share by the form's coverage is in place;
    a cheaper estimator or a precomputed distance field for the approach could buy a larger share), measured on the
    target machines at Auto, in OBS and over a long soak.
