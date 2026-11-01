@@ -1318,6 +1318,32 @@ Temporal Terrain flies over its history when idle, and Synaptic Storm's subagent
   - a Temporal Terrain flight interrupted by a real event in the browser (Node only);
   - live playback at Auto on a slower machine, OBS, a soak.
 
+## Curated looks of the graduated worlds
+
+The six curated looks of Synaptic Storm, Fractal Continuum and Temporal Terrain checked against their own one-line
+descriptions, and four of them retuned, plus Teal Mandelbulb's light pinned. Tuning only. Branch `feat/looks-polish`,
+2026-11-01.
+
+- **Stills** (`visual/lab.js`, AMD iGPU, 1920×1080, labels as in a film, digital life on): each look before and after on
+  Lumen (at 0.5, at 1, 30 s idle), Self and Excalidraw (at 1, 30 s idle) and one 1080×1920 portrait (Lumen at 1), and
+  two alternatives per reworked look (Lumen at 1 and 30 s idle, Self 30 s idle). The "after" stills, rendered from the
+  payloads read from the committed `visual.js`, are byte-identical to the renders made while tuning. They are on a local
+  review page (`results/films/looks/index.html`, not tracked), for the owner's review; the judgements in the world docs
+  are an agent's, from stills.
+- **Node** (`npm test`): **666/666**, including the tests that check every curated path is a parameter of its family
+  within range and that each graduated look applies through the recipe with its values intact. `npm run check`: no
+  syntax errors.
+- **Visual Studio** (`ui/workspaces/visual.qual.js`, SwiftShader): **80/80** on the final commit (and on the first),
+  twelve read-only curated looks offered. The suite previews only *Bioluminescent abyss*; the retuned looks were not
+  previewed in the interface.
+- **GPU time per frame** (the lab's single-frame readings on Lumen at 1 and 30 s idle, AMD iGPU, a shared GPU, so the
+  noise is about ±0.5 ms or more): *Storm front* 20.5–20.9 and 16.6 ms before, 22.4–24.1 and 18.0–18.2 ms after (about
+  1.5–3 ms more; which of its values costs it was not measured); *Glass cortex* 19.0 and 15.2 ms before, 17.5 and 13.3
+  ms after; *Kaleidoscope crystal* 20.3 and 16.5 ms before, 20.9 and 17.0 ms after; *Misty valley* 14.5 and 14.1 ms
+  before, 14.6 and 14.2 ms after.
+- **Not run:** `visual/catalogue.qual.js` (no parameter or range changed); films or live playback of the retuned looks;
+  the looks with events other than those in the three recordings.
+
 ## Not verified
 
 > Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI
