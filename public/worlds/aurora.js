@@ -515,7 +515,7 @@ export function createFamily(ctx){
     for(const c of curtains){const lo=curtainColor(c.id,c.rank),sz=c.len*c.H/(c.R*c.R),k=c.bright*sz;aurL.x+=lo[0]*k;aurL.y+=lo[1]*k;aurL.z+=lo[2]*k;wx+=Math.sin(c.az)*k;wsum+=k;lobeOrder.push([k,c]);}
     if(coronaNow+breakNow>0){const C0=coronaColors()[0],k=(coronaNow+breakNow*1.5)*.45;aurL.x+=C0[0]*k;aurL.y+=C0[1]*k;aurL.z+=C0[2]*k;}
     aurL.multiplyScalar(.2);U.uAurL.value.copy(aurL);U.uAurD.value.set(wsum?wx/wsum:0,.45,-1).normalize();
-    U.uSkyAmb.value.copy(V3(pal.haze,.7)).add(new THREE.Vector3(.005,.007,.014));
+    U.uSkyAmb.value.copy(V3(pal.haze,.7)).add(new THREE.Vector3(.011,.015,.03));
     lobeOrder.sort((a,b)=>b[0]-a[0]);let n=0;
     for(const [k,c] of lobeOrder.slice(0,8)){const p=at3(c,0,c.H*.04),d=tmpV.set(p[0]-camPos.x,p[1]-camPos.y,p[2]-camPos.z).normalize(),lo=curtainColor(c.id,c.rank);
       const size=clamp(Math.atan2(c.len,c.R)*.55,.05,.6);skyU.uLobe.value[n].set(d.x,d.y,d.z,size*size*1.4);skyU.uLobeC.value[n].set(lo[0],lo[1],lo[2],.022*c.bright*Math.min(1.5,k*40+.3));n++;}

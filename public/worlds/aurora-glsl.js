@@ -24,7 +24,7 @@ vec3 trace(vec4 T0,vec4 T1,vec4 T2,vec4 T5,float s,float u,float h){
   if(T2.z<.5){float d=fold(s,u,h,T1.w,T2.w);return vec3(T0.x+T0.z*s+T0.w*d,T1.y,T0.y+T0.w*s-T0.z*d);}
   // the corona's ring: folds run around it, radially
   // (finer and shallower than a line's: from below, deep radial folds would read as teeth)
-  float a=u*3.14159265,d=fold(s*2.3,u,h,T1.w,T2.w)-s*s*5.29*${BOW.toExponential(6)};float r=T5.x+d*.22;return vec3(T5.y+cos(a)*r,T1.y,T5.z+sin(a)*r);}
+  float a=u*3.14159265,d=fold(s*2.3,u,h,T1.w,T2.w)-s*s*5.29*${BOW.toExponential(6)};float r=T5.x+d*.14;return vec3(T5.y+cos(a)*r,T1.y,T5.z+sin(a)*r);}
 void main(){
   int k=int(aC.x+.5);vec4 T0=cp(k,0),T1=cp(k,1),T2=cp(k,2),T3=cp(k,3),T4=cp(k,4),T5=cp(k,5);
   vK=aC.x;vSd=T1.w;vP=vec4(T2.x,T2.y,T1.x,T1.z);vQ=vec4(T3.w,T4.w,T2.z,T5.w);vLo=T3.rgb;vHi=T4.rgb;
@@ -168,7 +168,8 @@ void main(){vec2 p=vW.xz;vec3 toC=cameraPosition-vW;float dist=length(toC);vec3 
   else r/=.36;
   float F=.025+.975*pow(graze,5.);F=mix(F,F*.5+.5*pow(graze,2.2),.35*uGloss);
   vec3 ice=uIce*(.55+.45*n0.x)*(.7+.3*n2.x);
-  vec3 col=ice*(1.-F)+r*F*mix(.7,.97,uGloss)*(1.-thin*.5);
+  // (the ice's own surface catches a little of the aurora's light: near the shore, where it reflects least, it still reads)
+  vec3 col=ice*(1.-F)+r*F*mix(.7,.97,uGloss)*(1.-thin*.5)+uAurL*(1.-F)*(.05+.06*n2.x);
   vec3 snow=uSnowC*(uSkyAmb*(.75+.3*st)+uAurL*(.3+.45*st))*(.82+.18*n1.z);
   col=mix(col,snow*.7+col*.35,thin*.5);col=mix(col,snow,drift);
   col+=uSnowC*crack*(uSkyAmb*.7+uAurL*.45)*.8;
