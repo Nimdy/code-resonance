@@ -11,6 +11,10 @@ project's derived files once from its journal. No existing identity changes; gen
 chooses Aurora. Visual Pack SDK **1.3**. The VS Code extension is 0.9.0 (`code-resonance-0.9.0.vsix`); it is not
 published to the Marketplace or Open VSX yet ([docs/PUBLISHING.md](docs/PUBLISHING.md)).
 
+- **Fixed: exporting a recording's audio could fail** with *Failed to execute 'setValueAtTime'*: the offline render
+  computed the first bar's offset from epoch timestamps (about 1.8e12 ms, where a double resolves 2^-12 ms), so for
+  some start times it rounded to a hair below zero (-2.4e-7 s), which the browser refuses. It now never starts before
+  zero. Seen once in CI (`browser/stage.qual.js`, the WAV export), not reproduced on demand.
 - **Aurora, a new world (preview):** a polar night over a frozen lake, and the software is the aurora. Subsystems are
   curtains of light across the sky (folded sheets hanging along the magnetic field, a sharp bright lower edge, rays with dark
   sky between them, green to teal at their foot and violet to magenta toward their tops, seen through a lens whose
