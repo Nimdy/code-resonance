@@ -154,6 +154,17 @@ export function landHeight(S,x,z){
   const w=30-14*tk+5*vn1(tk*9+3,s+'w'),pt=clamp(1-best/w)**.8*(2.4+1.4*vn1(tk*6,s+'h'))+1.6*Math.exp(-(((x-S.cabin[0])**2)+((z-S.cabin[1])**2))/220);
   return Math.max(bank,pt)-.35;
 }
+// The spruces [x, y, z, height, seed]: on the point around the cabin and along the bank toward it (k: the recipe's
+// land.trees), and a few far along the near bank. aurora.js draws them; the digital life's hares keep near them and the
+// owl perches on their tops.
+export function sprucesOf(S,seed,k=1){const out=[],r=xorshift(hash(`trees/${seed}`)),n=Math.round(14*clamp(k,0,1.6));
+  for(let j=0;j<n;j++){const t=.45+.55*r(),p=S.spine(t),w=(30-14*t)*.7,x=p[0]+(r()-.5)*w,z=p[1]+(r()-.5)*w*.8;
+    if(Math.hypot(x-S.cabin[0],z-S.cabin[1])<9)continue;const y=landHeight(S,x,z);if(y<.4)continue;out.push([x,y-.2,z,7+8*r(),r()]);}
+  for(let j=0;j<3;j++){const x=S.side*(150+40*r()),z=-8-30*r();out.push([x,landHeight(S,x,z)-.2,z,10+8*r(),r()]);}
+  return out;}
+// The cabin, its front to the shore: the height of its floor and its yaw (aurora.js builds it from them).
+export function cabinOf(S){return {y:landHeight(S,...S.cabin)-.15,yaw:Math.atan2(0-S.cabin[0],6-S.cabin[1])};}
+function xorshift(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
 // Lanterns: the k-th verified milestone's lantern stands at the lake's edge of the point, from near the cabin back toward
 // the bank (each later one nearer the shore the camera stands on), a little above the snow.
 export function lanternAt(S,k){const t=clamp(.9-.1*k-.02*(k>5?k-5:0),.08,.9),p=S.spine(t),q=S.spine(Math.min(1,t+.02)),tx=q[0]-p[0],tz=q[1]-p[1],L=Math.hypot(tx,tz)||1;
