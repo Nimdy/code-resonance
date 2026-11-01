@@ -473,6 +473,12 @@ about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this n
   hands them to a built-in world that implements `onHistory` (packs never get them). The Visual Studio lists it with the
   flagships (thumbnail, the code's-match star, two curated looks: *Survey map* and *Misty valley*, and an Essentials
   group), the Artist Studio offers it as a base, and the web demo offers it with the other worlds (eight in all).
+  *Misty valley* was reworked on 2026-11-01: its mist barely showed, because the mist takes the sky's colour (a dark
+  navy on most projects) and is thin near the present. It now sets a dusky rose haze (the colour of both the mist and
+  the horizon), the most mist, a little less distance fog, higher ridges, slightly dimmer contour lines and a valley
+  view a little higher with a narrower lens: the mist reads as pale banks over the low ground around the ranges, under
+  a warm dusk horizon on every project. It does not fill the narrow valleys between the ridges near the present: the
+  world thins the mist there whatever the tuning.
 
 ## What is not done
 
