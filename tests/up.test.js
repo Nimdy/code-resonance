@@ -1,20 +1,13 @@
 'use strict';
 // scripts/up.js: first-run starts or reuses a CR receiver, refuses a foreign occupant, never prints the token.
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),net=require('node:net'),cp=require('node:child_process');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),cp=require('node:child_process');
 const {sha}=require('../receiver/protocol');
-const {tempDir,startService}=require('./helpers');
+const {tempDir,startService,freePort}=require('./helpers');
 const {isCrHealth,probe}=require('../scripts/up');
 const UP=path.join(__dirname,'../scripts/up.js');
 const PAIR=/http:\/\/127\.0\.0\.1:\d+\/#pair=[0-9a-f]{32}/;
 const FLAGS=['--no-open','--no-install','--no-demo'];
-function freePort(){
-  return new Promise((resolve,reject)=>{
-    const s=net.createServer();
-    s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(err=>err?reject(err):resolve(p));});
-    s.on('error',reject);
-  });
-}
 function occupyHttp(t, handler){
   const server=http.createServer(handler);
   t.after(()=>new Promise(r=>server.close(()=>r())));

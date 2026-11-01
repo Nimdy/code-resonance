@@ -4,13 +4,12 @@
 // free loopback ports with temporary data directories (never 4174, never ~/.code-resonance); every receiver a test
 // starts is stopped when it ends.
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net'),http=require('node:http'),cp=require('node:child_process');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),http=require('node:http'),cp=require('node:child_process');
 const host=require('../extension/receiver-host');
-const {startService,tempDir}=require('./helpers');
+const {startService,tempDir,freePort}=require('./helpers');
 const REPO=path.join(__dirname,'..');
 const RUNTIME={root:REPO,kind:'checkout'},LAUNCHER=path.join(REPO,'extension','launcher.js');
 const VERSION=require('../extension/package.json').version;
-const freePort=()=>new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const {port}=s.address();s.close(()=>resolve(port));});s.on('error',reject);});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // A data directory whose bundled receiver (if any) is stopped, then removed, when the test ends. On Windows a process's
 // open files (its log in the data directory) keep the directory busy until the process has exited, so the removal waits
