@@ -81,6 +81,9 @@
 .ws-home .home-links .btn:hover{color:var(--text-1)}
 /* The creation links: a composition's name may be long; it is cut, whole in the tooltip. */
 .ws-home .home-links .btn span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* A link alone on its row (Create a composition, while nothing is there to continue) takes the whole row: in half of a
+   narrow column its label was cut ("Create a compos…" at 1280 px). */
+.ws-home .home-links .btn:last-child:nth-child(odd){grid-column:1/-1}
 .ws-home .home-links #homeCreate,.ws-home .home-links #homeContinue{color:var(--text-1)}
 .ws-home .home-links #homeCreate svg{color:var(--accent)}
 .ws-home .home-cap{display:grid;gap:12px;padding:16px 20px 18px;border-top:1px solid var(--line);background:var(--bg-1)}
