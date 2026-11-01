@@ -29,8 +29,11 @@ export const state={
 export function on(f){listeners.add(f);return ()=>listeners.delete(f);}
 export const player=P;
 // ---- Receiver access ---------------------------------------------------------------------------------------------
-export async function get(url){const r=await fetch(url,{cache:'no-store'});const data=await r.json().catch(()=>null);if(!r.ok){const e=new Error(data?.error||`HTTP ${r.status}`);e.status=r.status;e.code=data?.code;throw e;}return data;}
-export async function getText(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.text();}
+// A request the receiver never answered is said in words (still a TypeError, as the engine's requests are).
+// (The web demo's own files failing keep the demo's message: there is no receiver to start there.)
+const offline=e=>{if(!(e instanceof TypeError)||/web demo/.test(e.message))throw e;const t=new TypeError('The receiver is not answering (start it again with npm start)');t.offline=true;throw t;};
+export async function get(url){const r=await fetch(url,{cache:'no-store'}).catch(offline);const data=await r.json().catch(()=>null);if(!r.ok){const e=new Error(data?.error||`HTTP ${r.status}`);e.status=r.status;e.code=data?.code;throw e;}return data;}
+export async function getText(url){const r=await fetch(url,{cache:'no-store'}).catch(offline);if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.text();}
 export const post=(url,body,o)=>P.api.post(url,body,o);
 export async function loadProjects(){
   try{const list=(await get('/api/projects')).projects||[];state.projects=list;state.projectsLoaded=true;delete state.errors.projects;

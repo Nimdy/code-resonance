@@ -202,17 +202,19 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // ---- Receiver ---------------------------------------------------------------------------------------------------
   async function loadStatus(){
     // With the control capability the receiver also says where its data lives; a window without one still gets the rest.
-    try{status=await P.api.request('GET','/api/status');}
+    try{status=await P.api.request('GET','/api/status',undefined,{quiet:true});}
     catch(e){try{status=await S.get('/api/status');}catch(e2){statusError=e2.message;renderReceiver();renderStrip();return;}}
     statusAt=Date.now();statusError=null;renderReceiver();renderStrip();
   }
   const receiverUp=()=>!!status&&!statusError&&P.state.receiver!==false;
+  // No answer yet and nothing failed: still asking (the engine may already have heard from the receiver meanwhile).
+  const asking=()=>!status&&!statusError&&P.state.receiver!==false;
   function renderReceiver(){
     const s=status,up=receiverUp(),now=Date.now(),v=(k,value,cls='')=>h('span',{class:cls,dataset:{k},text:value});
     if(!up){
       rebuild(receiverBody,h('div',{class:'conn-panel'},
-        callout({kind:P.state.receiver===null&&!statusError?'':'danger',icon:'warn',title:P.state.receiver===null&&!statusError?'Asking the receiver…':'The receiver is not answering',
-          body:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back. See “Start and check the receiver”.`:'This page reconnects by itself when it starts. See “Start and check the receiver”.'})));
+        callout({kind:asking()?'':'danger',icon:asking()?'info':'warn',title:asking()?'Asking the receiver…':'The receiver is not answering',
+          body:asking()?null:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back. See “Start and check the receiver”.`:'This page reconnects by itself when it starts. See “Start and check the receiver”.'})));
       return;
     }
     const w=s.worker||{},pk=s.packs||{},feed=S.state.changes;
@@ -374,7 +376,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   const renderClaude=()=>renderHook('claude',{observed:claudeObserved,info:claudeInfo,setup:claudeSetup,empty:'No Claude Code events observed.',
     footnote:'Hooks only receive the lifecycle events Claude Code documents; nothing here sees the model’s reasoning. The adapter never writes to Claude Code’s output and always exits successfully, so it cannot change what Claude does.'});
   const renderCursor=()=>renderHook('cursor',{observed:cursorObserved,info:cursorInfo,setup:cursorSetup,empty:'No Cursor events observed.',
-    footnote:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Prove these hooks only in a trusted workspace.'});
+    footnote:'Hooks only receive the after-events Cursor documents; nothing here sees the model’s reasoning. The adapter never writes to Cursor’s output and always exits successfully, so it cannot change what Cursor does. Cursor runs them only in a trusted workspace.'});
   // The other tools: a tab per tool (its dot is live while its events arrive), the chosen one's activity, facts and flow.
   function renderMore(){
     const list=integ?.agents||[],now=Date.now();
@@ -400,7 +402,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     if(j<0)return;e.preventDefault();chooseTool(list[j].slug);document.getElementById(`connTool-${list[j].slug}`)?.focus();
   }
   const renderCodex=()=>renderHook('codex',{observed:codexObserved,info:codexInfo,setup:codexSetup,empty:'No Codex events observed.',
-    footnote:'Hooks only receive the lifecycle events Codex documents; nothing here sees the model’s reasoning. Paths come from patch headers only, never hunk text. The adapter never writes to Codex’s output and always exits successfully, so it cannot deny, block or change what Codex does. PreToolUse is not installed. Prove these hooks only in a trusted workspace.'});
+    footnote:'Hooks only receive the lifecycle events Codex documents; nothing here sees the model’s reasoning. Paths come from patch headers only, never hunk text. The adapter never writes to Codex’s output and always exits successfully, so it cannot deny, block or change what Codex does. PreToolUse is not installed. Codex runs them only when the project’s .codex/ layer is trusted.'});
   // `api` names the route's tool (the More agents flow changes it with its tab; `retarget` starts over), `entry` its
   // integrations entry; texts may be functions of the current tool.
   function hookFlow({slug,commandFallback,help,emptyPath,installNext,removeNext,api=()=>slug,entry=()=>integ?.[slug]}){
@@ -526,7 +528,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       h('span',{class:'conn-seg-label'},icon(ic),h('span',{class:'eyebrow',text:label})),h('span',{class:'conn-seg-line'},h('span',{class:['dot',state==='on'?'ok':state==='warn'?'warn':state==='off-danger'?'danger':'']}),h('strong',{text:line})),
       h('span',{class:'faint tiny ellipsis',text:sub}));
     rebuild(strip,
-      seg('receiver','Receiver','cpu',up?'on':P.state.receiver===null&&!statusError?'idle':'off-danger',up?'Running':P.state.receiver===null&&!statusError?'Asking…':'Not answering',up?`${status.version} · ${location.host}`:'npm start'),
+      seg('receiver','Receiver','cpu',up?'on':asking()?'idle':'off-danger',up?'Running':asking()?'Asking…':'Not answering',up?`${status.version} · ${location.host}`:asking()?location.host:'npm start'),
       seg('vscode','VS Code','code',running?'on':quiet?'warn':'idle',running?`${count(running,'capture')} running`:quiet?'Started, but quiet':seen?'No capture running':'No capture observed',
         `${count(real.length,'project')}${quiet&&running?` · ${quiet} quiet`:''}`),
       seg('claude','Claude Code','terminal',clLast&&now-clLast<RUNNING_MS?'on':'idle',cl.length?`Events ${ago(clLast,now)}`:'No events observed',cl.length?`in ${count(cl.length,'project')}`:'hooks not seen yet'),
@@ -540,7 +542,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // ---- Loading and staying current ----------------------------------------------------------------------------------
   async function loadIntegrations(){
     // With the capability the response also names the adapter's path (shown as the hook command).
-    try{integ=await P.api.request('GET','/api/integrations');integError=null;}
+    try{integ=await P.api.request('GET','/api/integrations',undefined,{quiet:true});integError=null;}
     catch{try{integ=await S.get('/api/integrations');integError=null;}catch(e){integError=e.message;}}
     claude.updateCli();cursor.updateCli();codex.updateCli();renderVsGuide();renderClaude();renderCursor();renderCodex();renderMore();more.refresh();renderAgents();renderEditors();renderStrip();
   }

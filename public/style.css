@@ -6,7 +6,7 @@
   color-scheme:dark;
   --bg-0:#05070b;--bg-1:#0a0d13;--bg-2:#0e1219;--bg-3:#141923;--bg-4:#1a2030;--bg-5:#222a3b;
   --line:rgba(170,190,230,.075);--line-2:rgba(170,190,230,.13);--line-3:rgba(170,190,230,.22);
-  --text-1:#e9edf5;--text-2:#aab3c5;--text-3:#7d879c;--text-4:#4e576a;
+  --text-1:#e9edf5;--text-2:#aab3c5;--text-3:#8892a9;--text-4:#4e576a;
   --accent:#75edff;--accent-2:#4fd6ea;--accent-soft:rgba(117,237,255,.11);--accent-line:rgba(117,237,255,.34);--accent-ink:#031216;
   --ok:#8af8c9;--ok-soft:rgba(138,248,201,.1);--warn:#ffc27d;--warn-soft:rgba(255,194,125,.1);--danger:#ff7484;--danger-soft:rgba(255,116,132,.1);
   --agent:#ed94ff;--record:#ff4d61;--record-soft:rgba(255,77,97,.14);
@@ -79,6 +79,8 @@ p{margin:0}
 .textarea{height:auto;padding:8px 10px;resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.5}
 .input:hover,.select:hover{border-color:var(--line-3)}
 .input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--accent-line);background:var(--bg-2)}
+/* Keyboard focus (and typing) is unmistakable: the faint focused border alone was hard to find on a dark field. */
+.input:focus-visible,.select:focus-visible,.textarea:focus-visible{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .input[aria-invalid="true"]{border-color:rgba(255,116,132,.6)}
 .select{appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);
   background-position:calc(100% - 15px) 14px,calc(100% - 10px) 14px;background-size:5px 5px;background-repeat:no-repeat}
@@ -102,6 +104,8 @@ p{margin:0}
 .range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text-1);border:0}
 .range:hover::-webkit-slider-thumb,.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px rgba(117,237,255,.18)}
 .range:focus-visible{outline:none}.range:focus-visible::-webkit-slider-runnable-track{outline:1px solid var(--accent-line);outline-offset:3px}
+/* The focused slider's thumb carries a clear ring (the track's outline and the hover glow alone were faint). */
+.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--bg-0),0 0 0 4px var(--accent)}.range:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--bg-0),0 0 0 4px var(--accent)}
 .range:disabled{opacity:.4;cursor:not-allowed}
 /* Switch */
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
@@ -173,7 +177,9 @@ details.disclosure>.disclosure-body{display:grid;gap:14px;padding:10px 0 4px}
 .callout .callout-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
 /* Code / command block with copy */
 .copy{display:flex;align-items:stretch;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--bg-0);overflow:hidden;min-width:0}
-.copy code{flex:1;background:none;border:0;padding:8px 10px;white-space:pre-wrap;overflow-wrap:break-word;font-size:13px;color:#d6eef5;min-width:0}
+/* anywhere, not break-word: a long token (a project id) may then break for layout too, so it never widens the box past
+   its column and pushes the Copy button out of view. */
+.copy code{flex:1;background:none;border:0;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#d6eef5;min-width:0}
 .copy .btn{border-radius:0;border:0;border-left:1px solid var(--line-2);height:auto;background:var(--bg-2)}
 /* Empty states */
 .empty{display:grid;justify-items:center;text-align:center;gap:10px;padding:44px 24px;color:var(--text-2)}
@@ -205,6 +211,12 @@ details.disclosure>.disclosure-body{display:grid;gap:14px;padding:10px 0 4px}
 body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:var(--r-2);background:var(--bg-3);border:1px solid var(--line-2);box-shadow:var(--shadow-1);font-size:13.5px;color:var(--text-1);animation:rise-in var(--t-3) var(--ease)}
 .toast .grow{flex:1;min-width:0;line-height:1.45}
+/* A message with an action keeps the toast's width for its words: the action goes under them, the dismiss button
+   stays at the top right (an action beside the words squeezed them into a column of one or two words a line). */
+.toast:has(>.btn:not(:last-child)){flex-wrap:wrap;row-gap:8px}
+.toast:has(>.btn:not(:last-child)) .grow{flex-basis:calc(100% - 60px)}
+.toast>.btn:last-child{order:1}
+.toast>.btn:not(:last-child){order:2;margin-left:18px}
 .toast.warning{border-color:rgba(255,194,125,.3)}.toast.warning .dot{background:var(--warn)}
 .toast.error{border-color:rgba(255,116,132,.35)}.toast.error .dot{background:var(--danger)}
 .toast.ok .dot{background:var(--ok)}.toast .dot{margin-top:5px;background:var(--accent)}
@@ -251,6 +263,8 @@ body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .workspace-view{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0;min-height:0;animation:view-in var(--t-3) var(--ease)}
 @keyframes view-in{from{opacity:0;transform:translateY(6px)}}
 .page{flex:1;overflow:auto;padding:28px var(--gutter) 48px;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
+/* A control reached with Tab is scrolled fully into view, its focus ring included (not cut at the scroller's edge). */
+.page,.inspector-body{scroll-padding-block:24px}
 .page-inner{max-width:var(--page-max);margin:0 auto;display:grid;gap:24px;align-content:start}
 .page-head{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .page-head .grow{flex:1;min-width:240px;display:grid;gap:6px}

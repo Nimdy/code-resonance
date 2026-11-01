@@ -38,21 +38,30 @@
   }
   takePairFragment();
   let pairing=readPairing()||pendingCode?'unknown':'unpaired';
-  const api=(()=>{let capability=null,pending=null;
+  const OFFLINE_TEXT='The receiver is not answering (start it again with npm start)';
+  const api=(()=>{let capability=null,pending=null,pendingQuiet=false;
+    // A request the receiver never answered (stopped, restarting) is said in words; it stays a TypeError, which callers
+    // tell apart from a refusal (offline marks it for unreachable() below).
+    // (The web demo's own files failing keep the demo's message: there is no receiver to start there.)
+    const offline=e=>{if(!(e instanceof TypeError)||/web demo/.test(e.message))throw e;const t=new TypeError(OFFLINE_TEXT);t.offline=true;throw t;};
     function failure(status,data){const e=new Error(data?.error||`HTTP ${status}`);e.status=status;e.code=data?.code||null;e.data=data||null;return e;}
-    function session({quiet=false}={}){if(!pending){const code=pendingCode;pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(code?{code}:{pairing:readPairing()||undefined})})
-      .then(async r=>{const data=await r.json().catch(()=>null);if(code)pendingCode=null;
+    // quiet: a check made in the background (a remembered key, a view reading what it may show) is refused without
+    // announcing it; a change the person asked for announces its refusal (the interface then offers to pair).
+    function session({quiet=false}={}){if(!pending){pendingQuiet=quiet;const code=pendingCode;pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(code?{code}:{pairing:readPairing()||undefined})})
+      .catch(offline).then(async r=>{const data=await r.json().catch(()=>null);if(code)pendingCode=null;
         // A refusal announces itself (the interface offers to pair), except the silent check of a remembered key.
         if(!r.ok){if(data?.code==='pairing-required'){pairing='unpaired';changed(quiet&&!code?'pairing-checked':'pairing');}throw failure(r.status,data);}
         if(data.pairing){try{localStorage.setItem(PAIR_KEY,data.pairing);}catch{}}
         capability=data.capability;if(pairing!=='paired'){pairing='paired';changed('pairing');}return capability;}).finally(()=>{pending=null;});}
+      // A change asked for while a background check is on its way: the refusal is announced as the change's own.
+      else if(!quiet&&pendingQuiet){pendingQuiet=false;return pending.catch(e=>{if(e?.code==='pairing-required')changed('pairing');throw e;});}
       return pending;}
-    async function request(method,url,body,{retry=true,type=null}={}){
-      if(!capability)await session();
+    async function request(method,url,body,{retry=true,type=null,quiet=false}={}){
+      if(!capability)await session({quiet});
       const init={method,headers:{'X-Resonance-Capability':capability},cache:'no-store'};
       if(body!==undefined){if(type){init.headers['Content-Type']=type;init.body=body;}else{init.headers['Content-Type']='application/json';init.body=JSON.stringify(body);}}
-      const r=await fetch(url,init);
-      if(r.status===401&&retry){capability=null;return request(method,url,body,{retry:false,type});}
+      const r=await fetch(url,init).catch(offline);
+      if(r.status===401&&retry){capability=null;return request(method,url,body,{retry:false,type,quiet});}
       const data=await r.json().catch(()=>null);
       if(!r.ok)throw failure(r.status,data);
       return data;}
@@ -76,7 +85,7 @@
   const recording=window.ResonanceRecording.create();let packFrame=null,lastRecording=null;const flashes=[];
   let living=null,livingLoading=null,livingFailed=false,livingRetryAt=0,livingFor='',recipe=null,previewRecipe=null,previewNotice='';
   // A failed request or module download means the receiver is unreachable (restarting, stopped): retry, never give up a world for it.
-  const unreachable=e=>e instanceof TypeError&&/fetch/i.test(e.message);
+  const unreachable=e=>e instanceof TypeError&&(e.offline||/fetch/i.test(e.message));
   // Visual packs (GET /api/packs); code packs run only in the isolated pack frame.
   let packs=[],packNotice='',stoppedPack=null,lastStop=null,overBudget={since:0,warned:false};const stoppedPacks=new Map();
   // Visual quality: AUTO adapts when frames are slow; a fixed level stays put (URL ?quality= / ?adapt=0 override).

@@ -116,7 +116,8 @@ export function parameterControl(spec,value,{onInput=null,onChange,label}){
     default:return h('span',{class:'faint small',text:'Not editable here'});
   }
 }
-export function humanize(v){const s=String(v).replace(/[-_.]+/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2');return s.charAt(0).toUpperCase()+s.slice(1);}
+// A number is shown as it is (1.25 stays 1.25: only words lose their separators).
+export function humanize(v){if(typeof v==='number')return String(v);const s=String(v).replace(/[-_.]+/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2');return s.charAt(0).toUpperCase()+s.slice(1);}
 export function formatParam(spec,v){if(v===undefined||v===null)return '—';if(spec.type==='number')return Number(v).toFixed(spec.max-spec.min>=20?1:2);if(spec.type==='vec3')return v.map(x=>Number(x).toFixed(2)).join(' ');if(spec.type==='boolean')return v?'On':'Off';return humanize(v);}
 // ---- Surfaces -------------------------------------------------------------------------------------------------
 export function section({title,subtitle=null,actions=[],id:elId=null},...children){

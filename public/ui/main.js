@@ -102,19 +102,21 @@ function projectLine(p){
   bits.push(e?.lastReceivedAt?`Activity ${ago(e.lastReceivedAt)}`:p.updatedAt?`Updated ${ago(p.updatedAt)}`:'No activity received');
   return bits.join(' · ');
 }
+let feedOpened=false;
 function updateShell(topics){
   const s=P.state,p=store.project();
   if(!topics||topics.has('projects')||topics.has('selection')){
     text(document.getElementById('projectTitle'),p?projectName(p):store.state.projectsLoaded?'No project yet':'Loading…');
-    text(document.getElementById('projectSub'),p?projectLine(p):'Open a project in VS Code to begin');
+    text(document.getElementById('projectSub'),p?projectLine(p):store.state.projectsLoaded?'Open a project in VS Code to begin':'Waiting for the receiver');
     const live=p?.evidence?.lastReceivedAt&&Date.now()-p.evidence.lastReceivedAt<120000;
     document.getElementById('projectDot').className=`dot ${live?'ok':p?'':'warn'}`;
   }
   if(!topics||topics.has('packs')){const pending=(s.packs||[]).filter(x=>x.executable&&x.ok&&!x.trusted).length;setBadge('packs',pending);}
   if(!topics||topics.has('receiver')||topics.has('changes')){
-    const ok=s.receiver===true,feed=store.state.changes;
+    // "Reconnecting" only once the change feed has been open: a first load is still connecting.
+    const ok=s.receiver===true,feed=store.state.changes;if(feed==='open')feedOpened=true;
     document.getElementById('receiverDot').className=`dot ${ok?(feed==='open'?'ok':'warn'):s.receiver===false?'danger':''}`;
-    text(document.getElementById('receiverText'),s.receiver===false?'Receiver offline':ok?(feed==='open'?'Receiver connected':'Reconnecting…'):'Connecting…');
+    text(document.getElementById('receiverText'),s.receiver===false?'Receiver offline':ok?(feed==='open'?'Receiver connected':feedOpened?'Reconnecting…':'Connecting…'):'Connecting…');
     receiverStatus.title=s.receiver===false?'The local receiver does not answer. Start it with: npm start':feed==='open'?'The local receiver answers and announces changes':'Waiting for the receiver';
   }
   if(!topics||topics.has('pairing')||topics.has('pairing-checked')){const unpaired=P.pairing==='unpaired';pairBtn.hidden=!unpaired;
@@ -164,7 +166,10 @@ async function render(){
   view=h('div',{class:'workspace-view',dataset:{ws:r.id}});clear(workspace).append(view);currentId=r.id;
   let mod;
   try{mod=(await import(`./workspaces/${r.id}.js`)).default;}
-  catch(e){console.error(e);view.append(h('div',{class:'page'},h('div',{class:'page-inner'},h('h1',{class:'title-l',text:ws.title}),h('p',{class:'muted',text:`This workspace could not be loaded (${e.message}). Reload the page; if it persists, the receiver may be an older version.`}))));return;}
+  catch(e){console.error(e);
+    // Its module comes from the receiver: while the receiver is down, that is the reason (reloading would not help yet).
+    const down=P.state.receiver===false||e instanceof TypeError&&P.state.receiver!==true;
+    view.append(h('div',{class:'page'},h('div',{class:'page-inner'},h('h1',{class:'title-l',text:ws.title}),h('p',{class:'muted',text:down?'This workspace could not be loaded: the receiver is not answering. Start it again (npm start in the Code Resonance folder); this page reconnects by itself, then open the workspace again.':`This workspace could not be loaded (${e.message}). Reload the page; if it persists, the receiver may be an older version.`}))));return;}
   if(mine!==token)return;
   current=mod.mount(view,{store,player:P,navigate,chrome,params:r.params,stageUrl,toggleRecording})||{};
   slot=view.querySelector('[data-stage-slot]');lastRect='';placeStage();

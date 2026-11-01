@@ -23,6 +23,8 @@
 .ws-visual .vs-browser{flex:1 1 0;min-height:var(--vs-browser-min);display:flex;flex-direction:column;gap:10px;min-width:0}
 .ws-visual .vs-browser-head{display:flex;align-items:center;gap:8px 14px;min-width:0;flex:none}
 .ws-visual .vs-browser-note{flex:1 1 160px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The tabs keep their labels whole (a scrolling segmented control shrinks before the note, and cut Presets at 1024 px). */
+.ws-visual .vs-browser-head>.segmented{flex:none}
 .ws-visual .vs-note-short{display:none}
 @container vs-main (max-width:860px){.ws-visual .vs-note-long{display:none}.ws-visual .vs-note-short{display:inline}}
 .ws-visual .vs-browser-actions{display:flex;gap:6px;flex:none}
@@ -128,7 +130,7 @@
 .ws-visual .vs-sec{display:grid;gap:12px;min-width:0;padding:18px 0;border-top:1px solid var(--line)}
 .ws-visual .vs-sec:first-child{border-top:0;padding-top:14px}
 .ws-visual .vs-sec[hidden]{display:none}
-.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px;min-height:20px}
+.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px;min-height:20px;min-width:0}
 .ws-visual .vs-sec-head h3{flex:none;color:var(--text-2)}
 .ws-visual .vs-sec-head .rule{flex:1;height:1px;background:var(--line)}
 .ws-visual .vs-sub-head{display:flex;align-items:baseline;gap:8px;margin-top:4px}
@@ -189,6 +191,9 @@
    does not move the controls below), then the fringe's strength and, for an older identity, the upgrade. */
 .ws-visual .vs-sec-finish .segmented button{flex:1 1 0;min-width:0;padding:0 6px}
 .ws-visual .vs-finish-line{margin:0;line-height:1.5;min-height:3em;max-width:62ch}
+/* The four finishes in a narrow inspector (1280 px and below): tighter, then two by two, never cut at the edge. */
+@container vs-insp (max-width:330px){.ws-visual #vsFinish button{padding:0 8px;flex:1 1 auto}}
+@container vs-insp (max-width:290px){.ws-visual #vsFinish{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ws-visual .vs-sec-finish.pending .vs-sec-head h3{color:var(--accent)}
 .ws-visual .vs-sec-finish .vs-props .field{padding:2px 0 0}
 .ws-visual .vs-upgrade{display:grid}
@@ -229,7 +234,9 @@
 .ws-visual .vs-ess details.disclosure.pending>summary .vs-sum-name{color:var(--accent)}
 .ws-visual .vs-ess .vs-essentials-note{margin:0 0 4px}
 .ws-visual .vs-ess .field{border-top:1px solid var(--line)}
-.ws-visual .vs-params-count{white-space:nowrap}
+/* The count gives way (ellipsis, full text on one line when there is room) rather than widening the section head: at
+   1024 px, or during a preview ("… (in the preview)"), it made the whole inspector scroll sideways. */
+.ws-visual .vs-params-count{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-error{color:var(--danger);line-height:1.4}
 .ws-visual .vs-error:empty{display:none}
 .ws-visual .vs-input-row .input{flex:1;min-width:0}

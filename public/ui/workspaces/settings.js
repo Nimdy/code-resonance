@@ -131,7 +131,9 @@ export default {mount(view,{store:S,player:P,navigate}){
   // ---- Rendering ---------------------------------------------------------------------------------------------------
   function renderGlobal(){
     const s=st(),off=!s,rec=P.record.active;
-    globalError.replaceChildren(off?callout({kind:'danger',icon:'warn',title:'The settings could not be loaded',body:S.state.errors.settings||'The receiver did not answer.',actions:[button({label:'Try again',size:'sm',onClick:()=>S.loadSettings()})]}):'');
+    // An error only once a load has failed: while the first answer is on its way, the settings are loading, not lost.
+    const failed=off&&!!S.state.errors.settings;
+    globalError.replaceChildren(failed?callout({kind:'danger',icon:'warn',title:'The settings could not be loaded',body:S.state.errors.settings,actions:[button({label:'Try again',size:'sm',onClick:()=>S.loadSettings()})]}):off?h('p',{class:'faint small',role:'status',text:'Loading the settings…'}):'');
     for(const c of [worldSel,captions.input])c.disabled=off;
     for(const g of [labelsSeg,profileSeg,motionSeg])for(const b of g.querySelectorAll('button'))b.disabled=off||(g===profileSeg&&rec);
     guide.input.disabled=off;
@@ -159,7 +161,7 @@ export default {mount(view,{store:S,player:P,navigate}){
   }
   async function loadDataDir(){
     // The data folder is only told to a page holding a control capability (a page of this computer's player).
-    try{const r=await P.api.request('GET','/api/status');dataDir=r?.dataDir||null;}catch{dataDir=null;}
+    try{const r=await P.api.request('GET','/api/status',undefined,{quiet:true});dataDir=r?.dataDir||null;}catch{dataDir=null;}
     renderStorage();
   }
   async function hashOf(id){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(id));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}

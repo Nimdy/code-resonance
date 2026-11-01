@@ -201,6 +201,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   const footStatus=h('div',{class:'vs-foot-status small',role:'status','aria-live':'polite'});
   const cancelBtn=button({label:'Cancel',kind:'ghost',id:'vsCancel',onClick:()=>discard()});
   const applyBtn=button({label:'Apply',kind:'primary',icon:'check',id:'vsApply',onClick:()=>apply()});
+  // Shown only while a preview is pending (renderFoot); with no project, or before its identity loads, there is nothing to apply.
+  cancelBtn.hidden=true;applyBtn.hidden=true;
   const foot=h('div',{class:'inspector-foot vs-foot'},footStatus,cancelBtn,applyBtn);
   const inspector=h('aside',{class:'inspector vs-inspector','aria-label':'World DNA'},inspHead,body,foot);
   view.append(h('div',{class:'split ws-visual'},main,inspector));
@@ -677,7 +679,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     labels.set(shownLabels);
     fIntensity.setModified(o.intensity!==1);fMotion.setModified(o.motion!==1);
     fIntensity.classList.toggle('pending',Object.hasOwn(draft.overrides,'intensity'));fMotion.classList.toggle('pending',Object.hasOwn(draft.overrides,'motion'));fLabels.classList.toggle('pending',Object.hasOwn(draft.overrides,'labels'));
-    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}${ownLabels?'':' Follows the global default (Settings).'}`);
+    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}.${ownLabels?'':' Follows the global default (Settings).'}`);
   }
   function renderFinish(){
     const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
@@ -757,7 +759,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       if(f.scale)for(const st of f.scale.children)st.classList.toggle('on',Math.abs(Number(v)-Number(st.dataset.v))<=.5);
     }
     const n=tuned?Object.keys(tuned.values).length:0;
-    text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);
+    text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);paramsSummary.title=paramsSummary.textContent;
   }
   // A group's summary: its name, how many parameters it holds, and how many of them are customised.
   let purposeParts=new Map();
@@ -957,7 +959,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const key=`${projectId}:${saved.revision}:${f.id}`;if(THUMBS.has(key))continue;
       // The graph the thumbnail draws is the project's, so it waits for the project to load; nothing renders while recording.
       if(P.state.model?.projectId!==projectId||P.state.recording.active)return;
-      try{const r=await P.api.post(`/api/recipe/preview?id=${enc(projectId)}`,{actions:[{type:'family',family:f.id}]});
+      try{const r=await P.api.post(`/api/recipe/preview?id=${enc(projectId)}`,{actions:[{type:'family',family:f.id}]},{quiet:true});
         if(!alive||run!==thumbRun)return;
         const url=await P.thumbnail(r.recipe)||'';THUMBS.set(key,url);if(url)THUMBS.set(`${projectId}:latest:${f.id}`,url);}
       catch(e){if(!alive||run!==thumbRun)return;console.warn(`Thumbnail of ${f.id} not rendered:`,e.message);if(!(e instanceof TypeError))THUMBS.set(key,'');}
