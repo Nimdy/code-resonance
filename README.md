@@ -189,7 +189,7 @@ installed extension uses this receiver and never starts or replaces one while it
    `localhost` link printed under *From Windows (WSL)*. A link works once, within 15 minutes, and `npm run pair`
    prints a new one. A browser that is not paired can still watch, play and record, but changes nothing.
 3. **Load the extension in your project's window.** If `npm run up` could not install it, use *Extensions › … › Install
-   from VSIX* there and pick `code-resonance-0.9.0.vsix` from this folder. If **CR** does not appear in the status bar,
+   from VSIX* there and pick `code-resonance-0.9.1.vsix` from this folder. If **CR** does not appear in the status bar,
    run **Developer: Reload Window**.
 4. **Start capture.** Click **CR stopped** in the status bar, choose **Start Code Performance** and accept local
    capture. The workspace must be trusted. Within seconds the project appears by name, with its files, in the
@@ -219,7 +219,7 @@ symptoms and fixes, including what to do when the picture looks grainy.
 ## The VS Code extension
 
 ```bash
-npm run package:vsix          # writes code-resonance-0.9.0.vsix, with Node only (Windows, Linux, macOS)
+npm run package:vsix          # writes code-resonance-0.9.1.vsix, with Node only (Windows, Linux, macOS)
 ```
 
 The VSIX (about 3 MB) holds the extension and the receiver it starts when none answers: the receiver, engine, player,
@@ -228,10 +228,10 @@ Publishing it to the Marketplace and Open VSX: [docs/PUBLISHING.md](docs/PUBLISH
 
 Or download it from the [latest release](https://github.com/Nimdy/code-resonance/releases/latest), with its SHA-256
 in `SHA256SUMS.txt`: the packager writes fixed timestamps, so a build of the release's tag with the same Node version
-is the same file. Install the VSIX yourself, with `code --install-extension code-resonance-0.9.0.vsix`
+is the same file. Install the VSIX yourself, with `code --install-extension code-resonance-0.9.1.vsix`
 or *Extensions › … › Install from VSIX*. To try it without touching your everyday VS Code, give that instance its own
 folders, as the qualification does: `code --user-data-dir <dir> --extensions-dir <dir>/extensions
---install-extension code-resonance-0.9.0.vsix`, then open your project with the same two options.
+--install-extension code-resonance-0.9.1.vsix`, then open your project with the same two options.
 
 Open a trusted workspace, click the **CR** status-bar item (or run **CODE RESONANCE: Start Code Performance**) and
 accept local capture. The status-bar menu also stops capture, opens the Stage or the OBS view, shows the receiver's
@@ -345,7 +345,7 @@ full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.m
 
 ## Versions
 
-0.9.0 is the product version. Interpretation 11 (a subagent names its parent; 10 brought adapters for nine more languages and deeper Python) is independent of it. The last published
+0.9.1 is the product version. Interpretation 11 (a subagent names its parent; 10 brought adapters for nine more languages and deeper Python) is independent of it. The last published
 GitHub Release before the 0.7 series was 0.6.0 (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (5), digital life's ecology (1 or 2), the
 Visual Pack SDK (1.3) and the data formats have versions of their own, which keep older identities as they were:
 [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
