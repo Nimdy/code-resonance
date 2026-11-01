@@ -207,12 +207,14 @@ export default {mount(view,{store:S,player:P,navigate,params}){
     statusAt=Date.now();statusError=null;renderReceiver();renderStrip();
   }
   const receiverUp=()=>!!status&&!statusError&&P.state.receiver!==false;
+  // No answer yet and nothing failed: still asking (the engine may already have heard from the receiver meanwhile).
+  const asking=()=>!status&&!statusError&&P.state.receiver!==false;
   function renderReceiver(){
     const s=status,up=receiverUp(),now=Date.now(),v=(k,value,cls='')=>h('span',{class:cls,dataset:{k},text:value});
     if(!up){
       rebuild(receiverBody,h('div',{class:'conn-panel'},
-        callout({kind:P.state.receiver===null&&!statusError?'':'danger',icon:'warn',title:P.state.receiver===null&&!statusError?'Asking the receiver…':'The receiver is not answering',
-          body:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back. See “Start and check the receiver”.`:'This page reconnects by itself when it starts. See “Start and check the receiver”.'})));
+        callout({kind:asking()?'':'danger',icon:asking()?'info':'warn',title:asking()?'Asking the receiver…':'The receiver is not answering',
+          body:asking()?null:statusAt?`It last answered ${ago(statusAt,now)}. This page reconnects by itself when it is back. See “Start and check the receiver”.`:'This page reconnects by itself when it starts. See “Start and check the receiver”.'})));
       return;
     }
     const w=s.worker||{},pk=s.packs||{},feed=S.state.changes;
@@ -526,7 +528,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
       h('span',{class:'conn-seg-label'},icon(ic),h('span',{class:'eyebrow',text:label})),h('span',{class:'conn-seg-line'},h('span',{class:['dot',state==='on'?'ok':state==='warn'?'warn':state==='off-danger'?'danger':'']}),h('strong',{text:line})),
       h('span',{class:'faint tiny ellipsis',text:sub}));
     rebuild(strip,
-      seg('receiver','Receiver','cpu',up?'on':P.state.receiver===null&&!statusError?'idle':'off-danger',up?'Running':P.state.receiver===null&&!statusError?'Asking…':'Not answering',up?`${status.version} · ${location.host}`:'npm start'),
+      seg('receiver','Receiver','cpu',up?'on':asking()?'idle':'off-danger',up?'Running':asking()?'Asking…':'Not answering',up?`${status.version} · ${location.host}`:asking()?location.host:'npm start'),
       seg('vscode','VS Code','code',running?'on':quiet?'warn':'idle',running?`${count(running,'capture')} running`:quiet?'Started, but quiet':seen?'No capture running':'No capture observed',
         `${count(real.length,'project')}${quiet&&running?` · ${quiet} quiet`:''}`),
       seg('claude','Claude Code','terminal',clLast&&now-clLast<RUNNING_MS?'on':'idle',cl.length?`Events ${ago(clLast,now)}`:'No events observed',cl.length?`in ${count(cl.length,'project')}`:'hooks not seen yet'),

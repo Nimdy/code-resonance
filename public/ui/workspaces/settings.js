@@ -131,7 +131,9 @@ export default {mount(view,{store:S,player:P,navigate}){
   // ---- Rendering ---------------------------------------------------------------------------------------------------
   function renderGlobal(){
     const s=st(),off=!s,rec=P.record.active;
-    globalError.replaceChildren(off?callout({kind:'danger',icon:'warn',title:'The settings could not be loaded',body:S.state.errors.settings||'The receiver did not answer.',actions:[button({label:'Try again',size:'sm',onClick:()=>S.loadSettings()})]}):'');
+    // An error only once a load has failed: while the first answer is on its way, the settings are loading, not lost.
+    const failed=off&&!!S.state.errors.settings;
+    globalError.replaceChildren(failed?callout({kind:'danger',icon:'warn',title:'The settings could not be loaded',body:S.state.errors.settings,actions:[button({label:'Try again',size:'sm',onClick:()=>S.loadSettings()})]}):off?h('p',{class:'faint small',role:'status',text:'Loading the settings…'}):'');
     for(const c of [worldSel,captions.input])c.disabled=off;
     for(const g of [labelsSeg,profileSeg,motionSeg])for(const b of g.querySelectorAll('button'))b.disabled=off||(g===profileSeg&&rec);
     guide.input.disabled=off;
