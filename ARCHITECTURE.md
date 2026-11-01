@@ -21,7 +21,7 @@ public/         the player, served by the receiver:
   recording.js    live WebM recording
   composition.js  the Artist Studio's data model (allowlists, limits, validation); composition-text.js its words
   construct.js    the Construct (WebGL2, three.js)
-  worlds/         the living worlds: host, renderer core, the three flagship families, director, agents, labels,
+  worlds/         the living worlds: host, renderer core, the six built-in families, director, agents, labels,
                   Monolith (monolith.js, the 2D world and last fallback),
                   musical expression, Artist Studio layers (layers*.js, canvas.js), the pack frame and worker, the
                   Visual Pack SDK (sdk.js); life/ the digital-life simulation
@@ -60,7 +60,7 @@ VS Code extension (workspace host)        Agent hooks (Claude Code, Cursor, Code
                engine (public/app.js) ── one performance clock (live = now − ~10.5 s, replay = playhead)
                  ├── score.js      composition: v2 classic or v3 composed (pure, deterministic)
                  ├── music.js      Web Audio performer, offline renderer
-                 ├── worlds/       living worlds: flagship families, finishes, digital life (life/), Artist Studio
+                 ├── worlds/       living worlds: built-in families, finishes, digital life (life/), Artist Studio
                  │                 layers; packs with code in an isolated frame and worker
                  ├── construct.js  the Construct (WebGL2); worlds/monolith.js is Monolith (Canvas 2D)
                  └── recording.js  live WebM of the stage and the music
@@ -141,7 +141,7 @@ made with, and older versions stay in the code.
 | Product | 0.8.0 | `package.json`, `extension/package.json` | Not bumped for format, score or generator changes. Last published GitHub Release before 0.7: `v0.6.0` |
 | Interpretation | 10 | `engine/reducer.js` `INTERPRETATION_VERSION` | Independent of the product version. A change rebuilds each project's derived files (`performance.jsonl`, `state.json`, `public.json`) from its journal, which is never rewritten. Event kinds are only ever added. v8 assigns CAST seats from the provider catalog and emits `agent.collision` when two providers share a file or district inside 60 s; v9 counts only catalogued providers for it and gives its cue weight 0, so it adds no progress (`tests/reducer.test.js` pins that two agents keep one agent's progress and chapter); v10 adds language adapters for Go, Rust, Java, Kotlin, C#, Swift, C/C++, PHP and Ruby, deeper Python, packages declared by go.mod, Cargo.toml and composer.json, and each language's test-file convention, while every JS/TS file keeps its v9 structure and test flag (`tests/languages-*.test.js`) |
 | Score | 2 (classic, frozen) and 3 (composed) | `public/score.js`; chosen per identity by `genome.music.score` | A recipe without `music.score` plays 2. v2's output is pinned by digest (`tests/score-v3.test.js`). A change that alters what an existing identity plays is a new score version, never an edit of an old one |
-| Visual Recipe | schema `code-resonance.recipe.v1`, generator 4 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune |
+| Visual Recipe | schema `code-resonance.recipe.v1`, generator 5 | `engine/recipe.js` `RECIPE_SCHEMA`, `RECIPE_VERSION` | A stored recipe keeps its values. Each generator adds values from its own random stream (or none), so earlier values are unchanged (`tests/recipe.test.js` pins them); an identity saved before 4 is redrawn with 3 and gains 4's values only through a deliberate tune, one saved by 4 is redrawn with 4. v5 lets the family scores choose Synaptic Storm, Fractal Continuum and Temporal Terrain (each scored from its own stream after the flagships' unchanged draws), gives their new identities digital life and adds the trait `grown`; v4's families, draws and values are unchanged (`tests/generator-v5.test.js` checks them against the generator before it) |
 | Renderer | 1 | `engine/recipe.js` `RENDERER_VERSION` | The world renderers a genome is written for |
 | Finish | absent (Classic), `clean`, `cinematic`, `dreamlike` | `genome.technique.finish` | Absent is the classic composite exactly (`tests/finish.test.js` pins it) |
 | Digital life | simulation 1; ecology 1 or 2 | `public/worlds/life/sim.js` `SIM_VERSION`; `genome.life.ecology` | No `life` (or `enabled: false`) draws no ecosystem. An absent ecology is 1, bit for bit (`tests/life-driver-generations.test.js` pins its digests) |
@@ -233,7 +233,7 @@ node scripts/pack.js validate <dir>            # a visual pack's manifest and fi
 ```
 
 The creative output is pinned: `tests/score-v3.test.js` (the classic score's digest), `tests/recipe.test.js` (every
-generator's values), `tests/life-driver-generations.test.js` (ecology 1), `tests/finish.test.js` (the classic
+generator's values) and `tests/generator-v5.test.js` (v5, and v3 and v4 against the generator before it), `tests/life-driver-generations.test.js` (ecology 1), `tests/finish.test.js` (the classic
 composite), `tests/layers-swarm.test.js` (a composition's particle population). A change that moves one of them changes
 what existing identities look or sound like. For the music, see [docs/MUSIC.md](docs/MUSIC.md#checking-it); for the
 images, `node qualification/visual/unchanged.qual.js --baseline <commit>` renders the built-in worlds against a
@@ -257,7 +257,7 @@ node audio/balance.js --data <dir> --project <id> [--base <git-rev>]       # spe
 node session/history-session.js <repo> /tmp/cr-session 120 30   # build a 30-minute real-code session
 node session/session.qual.js /tmp/cr-session <projectId>          # render and analyse it
 node visual/datasets.js results/datasets --excalidraw <repo> --self <repo> --long 300   # datasets for the visual checks
-node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance]
+node visual/worlds.qual.js [--gpu amd] [--only determinism,idle,live,performance] [--families a,b] [--size WxH] [--fps 15] [--tag name]
 node visual/construct.qual.js [path-to-a-real-repo]   # the Construct (CR_QUAL_GPU=wsl for the GPU under WSL2)
 node visual/life.qual.js [--gpu amd]                  # digital life in the player: determinism, frame rates, idle, seeks
 node visual/life-perf.js / life-cpu.js / life-music.js   # digital life: cost in the player, CPU per tick, what the music changes
@@ -265,7 +265,7 @@ node visual/history.qual.js                           # long histories, syntheti
 node visual/long.qual.js                              # long-history replay in the player (lumen-long fixture)
 node visual/unchanged.qual.js [--baseline <ref>]      # built-in worlds render the same frames as a baseline commit
 node visual/pack.qual.js <pack dir> [--gpu amd]       # visual pack compatibility (= node scripts/pack.js test)
-node visual/catalogue.qual.js                         # every family at the extremes of its parameter catalogue
+node visual/catalogue.qual.js [--families a,b]        # every family at the extremes of its parameter catalogue
 node visual/recording.qual.js [--gpu amd] [--quick] [--pack <dir>]   # live recording of every renderer category, measured from the files
 node visual/robustness.qual.js [--gpu amd] [--quick]  # pack runtime: slow, hanging, failing, context-loss, hostile fixtures
 node visual/soak.qual.js --hours 3 [--gpu amd]        # hours of live playback with packs, idle, recordings, a receiver restart

@@ -14,6 +14,8 @@ const fs=require('node:fs'),fsp=require('node:fs/promises'),os=require('node:os'
 const REPO=path.resolve(__dirname,'..');
 const PUBLIC=path.join(REPO,'public');
 const RECORDING=path.join(REPO,'qualification','recordings','lumen-recipes');
+// The world the demo opens on (the saved identity's family).
+const DEMO_FAMILY='stellar-forge';
 // The recording's public title: what the Stage shows (a recipe has none until someone names it in the Visual Studio).
 const TITLE='Lumen Recipes';
 const MANIFEST_SCHEMA='code-resonance.web-demo.v1';
@@ -91,9 +93,11 @@ async function exportApi(log){
     const post=async(p,body)=>{const r=await fetch(url+p,{method:'POST',headers:{'Content-Type':'application/json',Origin:url,'X-Resonance-Capability':capability},body:JSON.stringify(body)});
       const t=await r.text();if(!r.ok)throw new Error(`POST ${p}: HTTP ${r.status} ${t.slice(0,200)}`);return JSON.parse(t);};
     const enc=encodeURIComponent(id);
-    // The identity as its author would publish it: the recording's public title, given in the Visual Studio's way.
+    // The identity as its author would publish it: the world it opens on and the recording's public title, given in the
+    // Visual Studio's way. Generator 5 would choose Temporal Terrain for this recording; the demo keeps opening on the
+    // world it has opened on since it was first published, and the other worlds are a click away.
     await get(`/api/recipe?id=${enc}`);
-    await post(`/api/recipe?id=${enc}`,{actions:[{type:'title',title:TITLE}]});
+    await post(`/api/recipe?id=${enc}`,{actions:[{type:'family',family:DEMO_FAMILY},{type:'title',title:TITLE}]});
     const project=JSON.parse((await get(`/api/project?id=${enc}`)).text);
     // A recipe's createdAt is the moment it was generated (here: now); it is pinned to the recording's last moment, so
     // the same recording always builds the same files.

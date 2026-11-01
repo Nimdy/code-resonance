@@ -1,4 +1,4 @@
-// Artist Studio: compositions of procedural layers (public/composition.js) over a flagship world or the artist canvas,
+// Artist Studio: compositions of procedural layers (public/composition.js) over a built-in world or the artist canvas,
 // made on the real stage. Three things are kept apart, as in the Visual Studio:
 //   My creations   the receiver's library (compositions.json): saved, versioned (the last five kept), shared by every
 //                  window and announced on the change feed;
@@ -19,8 +19,11 @@ const BASES=[
   {id:'fractal-biosphere',name:'Fractal Biosphere',icon:'fractal',line:'Its living forest, with your layers grown into it'},
   {id:'stellar-forge',name:'Stellar Forge',icon:'spark',line:'Orbits and light at the scale of a galaxy'},
   {id:'machine-cathedral',name:'Machine Cathedral',icon:'structure',line:'Engineered spires, channels and precise light'},
+  {id:'synaptic-storm',name:'Synaptic Storm',icon:'bolt',line:'A neural network the work travels, its signals your layers\' rhythm'},
+  {id:'fractal-continuum',name:'Fractal Continuum',icon:'atmosphere',line:'One recursive form, with your layers around its regions'},
+  {id:'temporal-terrain',name:'Temporal Terrain',icon:'wave',line:'The history as land, your layers over its ranges'},
   {id:'canvas',name:'Artist canvas',icon:'canvas',line:'A quiet horizon and nothing else: everything is yours'}];
-const baseOf=id=>BASES.find(b=>b.id===id)||BASES[3];
+const baseOf=id=>BASES.find(b=>b.id===id)||BASES.find(b=>b.id==='canvas');
 // The few controls of each layer that change it the most; everything else of its group sits under "More".
 const ESSENTIAL={fractal:['form','depth','instances','growth','color','tip','glow','sway','speed'],particles:['count','distribution','behavior','color','colorB','size','glow','speed','cohesion','attraction'],
   ribbons:['field','count','length','color','colorB','glow','speed','turbulence'],structure:['shape','count','radius','color','glow','wire','rotation'],
@@ -47,7 +50,10 @@ const SUGGEST=[{label:'Pulse on the beat',signal:'music.beat',curve:'pulse',amou
 // The base world's controls the studio shows first; every other tunable value is under "All world values".
 const WORLD_FIRST={'fractal-biosphere':['material.bioluminescence','atmosphere.lightShafts','atmosphere.fog','motion.sway','space.canopy'],
   'stellar-forge':['geometry.arrangement','atmosphere.nebulaDensity','material.plasma','motion.orbitSpeed'],
-  'machine-cathedral':['geometry.architecture','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows']};
+  'machine-cathedral':['geometry.architecture','atmosphere.shafts','atmosphere.fog','material.wetness','secondary.windows'],
+  'synaptic-storm':['material.glow','motion.firingRate','space.depth','atmosphere.haze','atmosphere.ghosts'],
+  'fractal-continuum':['fractal.form','fractal.power','fractal.twist','material.glow','material.trap'],
+  'temporal-terrain':['relief.height','contour.interval','contour.glow','atmosphere.mist','camera.personality']};
 const PALETTE=['palette.hue','palette.primary','palette.secondary','palette.accent','palette.highlight','palette.haze'];
 const LIFE=['life.enabled','life.density','life.collective','life.music','life.vitality'];
 const LIFE_LABEL={'life.enabled':'Digital life','life.density':'Population','life.collective':'Gathering','life.music':'Music influence','life.vitality':'Vitality'};
@@ -535,7 +541,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     pad.addEventListener('keydown',e=>{const d={ArrowLeft:[-.05,0],ArrowRight:[.05,0],ArrowUp:[0,-.05],ArrowDown:[0,.05]}[e.key];if(!d)return;e.preventDefault();x=r2(clamp(x+d[0]));z=r2(clamp(z+d[1]));place();onChange(x,z,true);});
     place();return pad;
   }
-  // The base: the flagship world's own values (tuning, over the project's generated identity) or the canvas.
+  // The base: the built-in world's own values (tuning, over the project's generated identity) or the canvas.
   function baseInspector(){
     const w=session.work,b=baseOf(w.base);
     const headEl=h('div',{class:'inspector-head ar-insp-head'},h('div',{class:'ar-insp-top'},h('span',{class:'ar-glyph base'},icon(b.icon)),h('span',{class:'eyebrow',text:'Base'})),
@@ -563,7 +569,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const f=field({label,control:h('div',{class:'ar-param-control'},control),doc:LIFE_DOC[path]||(s.doc&&s.doc.length<90?s.doc:null),modified:has,onReset:()=>setTuning(path,null)});
       if(['number','integer','enum','vec3'].includes(s.type))f.classList.add('stack');return f;};
     if(!genome)body.append(h('p',{class:'tiny faint',text:'Values show the world as generated once the preview is running.'}));
-    body.append(section('Palette',PALETTE.map(wf)),section('World',(WORLD_FIRST[w.base]||[]).map(wf)),section('Digital life',LIFE.map(wf)));
+    // A world whose catalogue has no digital life (yet) shows no empty section for it.
+    body.append(...[['Palette',PALETTE],['World',WORLD_FIRST[w.base]||[]],['Digital life',LIFE]].map(([t,paths])=>[t,paths.map(wf).filter(Boolean)]).filter(([,f])=>f.length).map(([t,f])=>section(t,f)));
     const rest=Object.keys(spec).filter(p=>!PALETTE.includes(p)&&!LIFE.includes(p)&&!(WORLD_FIRST[w.base]||[]).includes(p)&&!p.startsWith('technique.finish'));
     const groups=new Map();for(const p of rest){const g=p.split('.')[0];if(!groups.has(g))groups.set(g,[]);groups.get(g).push(p);}
     body.append(h('section',{class:'ar-insp-sec'},h('h3',{class:'eyebrow',text:`All world values${tuned?` · ${tuned} set`:''}`}),

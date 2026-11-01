@@ -5,8 +5,10 @@ Code Resonance draws each project as its own generative world: a persistent arti
 development actually does. Every structure is real project data; the worlds never invent progress.
 
 **Status:** the three flagship worlds (rebuilt in PR #8) have been reviewed by the owner, and their approved films are
-the baseline later changes are checked against. Technical qualification (determinism, idle life, resources, privacy,
-performance) is separate from that artistic judgement, and no one else has reviewed them yet.
+the baseline later changes are checked against. Synaptic Storm, Fractal Continuum and Temporal Terrain, previews until
+then, graduated with generator 5: they are families like the three (scored for the automatic choice, a base for packs,
+curated looks), but none of them has been reviewed artistically yet. Technical qualification (determinism, idle life,
+resources, privacy, performance) is separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
 
@@ -18,7 +20,7 @@ performance) is separate from that artistic judgement, and no one else has revie
 | 4. Visual Recipe | `engine/recipe.js`, `recipe.json` per project, `GET/POST /api/recipe` | The project's persistent artistic identity |
 | 5. World model | `public/worlds/model.js` | What exists at a performance time (districts, modules, symbols, links, states) |
 | 6. Effect director | `public/worlds/director.js`, `public/worlds/agents.js` | Intents to family effects, proportion and rarity; agent presences |
-| 7. Renderer and camera | `public/worlds/core.js`, `stellar.js`, `biosphere.js`, `cathedral.js` | HDR pipeline, shaders, instancing, cinematic camera |
+| 7. Renderer and camera | `public/worlds/core.js`, `stellar.js`, `biosphere.js`, `cathedral.js`, `synaptic.js`, `fractal.js`, `terrain.js` | HDR pipeline, shaders, instancing, cinematic camera |
 | 8. Music sync | `public/score.js`, `public/music.js` | One performance clock; section and beat drive light and pulse |
 | 9. Presentation | `public/worlds/host.js`, `public/app.js`, `qualification/visual/film.js` | Cinematic, explorer and stream labels; replay; films |
 
@@ -49,13 +51,18 @@ subsystems and a title.
 Traits come from the public projection only (salted ids, no paths): module count, districts, UI-component surface
 (share of modules with components), service endpoints, classes/interfaces/types, functions, language mix (extension
 families), dependency and cross-district density, hubness (largest in-degree), folder branching, symbols per module,
-test share, observed agents and the share of events they produced.
+test share, observed agents and the share of events they produced; from generator 5 also `grown`, the share of the
+project's symbols that were created while it was observed (0 for a repository indexed whole by its first scan, 1 for a
+project recorded from its first file).
 
 | Family | Affinity (weights set by hand, documented in `familyScores`) | Character |
 |---|---|---|
 | Stellar Forge | hubs (0.9), service endpoints (0.7), agent share (1.2), youth (0.45), functions (0.25) | gravity: systems around hubs, work arriving from visiting agents |
 | Fractal Biosphere | UI surface (1.2), folder branching (0.6), size (0.3), TSX/JSX (0.25) | growth: a large surface of small parts |
 | Machine Cathedral | classes/types (0.8), tests (0.7), cross-district coupling (0.5), depth (0.25) | engineering: ordered, coupled, tested structure |
+| Synaptic Storm (from generator 5) | wiring, imports per file beyond one (0.8), cross-district coupling (0.8), agent share (1.3), many districts (0.25) | a network the work travels: tracts between clusters, agents as signals |
+| Fractal Continuum (from generator 5) | symbols per file beyond four (1.0), function share beyond 45 % (0.9), few districts (0.5), little UI surface (0.3) | one intricate recursive form: formula-like code that unfolds |
+| Temporal Terrain (from generator 5) | structure grown while observed (1.4), districts (0.6), tests (0.3), no central hub (0.2) | time is the land: a history to lay down, ranges across it |
 
 A seeded share (up to 0.25) is added to each score so similar projects can still become different universes; when
 the data is ambiguous the seed decides. The weights were chosen by hand with the three demonstration projects in
@@ -70,6 +77,38 @@ exactly: the Cinematic finish (`technique.finish`, built-in identities only: a p
 author's grade), the composed score (`music.score` 3) and, where digital life is generated, the musical ecology
 (`life.ecology` 2). An identity saved before v4 never gains them by itself (a provisional one is redrawn with v3); the
 Visual Studio offers it "Use the Phase 11 finish and ecology", a tune, and the Music Studio the composed score.
+
+Generator v5 graduates the three previews. It draws the flagships' scores exactly as v4 did (one stream, in their
+order), then scores each graduated family from its own random stream (`rng('family', <family>, seed, variant)`), so a
+v5 identity's flagship scores are its v4 scores and only the choice among six is new; the new identities of the three
+get digital life (`genome.life`, from its own stream, as v3 gave the flagships). Their weights were set by hand like the
+flagships', with the three datasets and a synthetic corpus in view. Why these signals: Synaptic Storm's image is the
+dependency graph itself (axons, tracts between clusters) and the agents travelling it, so it wants dense, coupled
+wiring and agents; Fractal Continuum is one form whose recursion unfolds with symbols and whose regions are subsystems,
+so it wants intricate, function-heavy code in few subsystems and not a UI surface (that grows organisms); Temporal
+Terrain draws history as land, and a repository indexed whole by its first scan has none (its own brief calls Excalidraw
+"one massif"), so it wants a project that grew while observed, with subsystems as its ranges. Generator 4 only ever
+chooses among the flagships, and an identity it stored is redrawn with it (`generatorOf`): no existing identity moves to
+a graduated world by itself. Choosing a family, regenerating or going back to automatic is a new identity, drawn with
+v5. Regenerating an identity founded before v5 (no `grown` in its traits) scores the history signal as halfway.
+
+What v5 chooses (`tests/generator-v5.test.js`): over a synthetic corpus of 2,000 founding-time projects of ten kinds
+(`tests/synthetic-projects.js`: UI apps, services, typed libraries, algorithmic cores, monorepos, games and simulations,
+data pipelines, command-line tools, full-stack apps and agent-built prototypes; 64 % opened with their history already
+written and indexed whole, 36 % recorded from their first file and founded small; 46 % with no agent work, 27 % with a
+little, 28 % with most of it):
+
+| Generator | Stellar Forge | Fractal Biosphere | Machine Cathedral | Synaptic Storm | Fractal Continuum | Temporal Terrain |
+|---|---|---|---|---|---|---|
+| 4 | 53.4 % | 20.7 % | 25.9 % | | | |
+| 5 | 29.3 % | 15.6 % | 13.3 % | 15.8 % | 13.9 % | 12.2 % |
+
+A disjoint stretch of 1,000 projects gives the same picture within 1.5 points. Stellar Forge stays the most frequent
+because its v4 weights for young, hub-centred and agent-heavy projects are unchanged by design. The three recorded
+datasets: Excalidraw (450 files indexed whole, dense and coupled) becomes Synaptic Storm, Lumen Recipes and Code
+Resonance itself (both recorded from their first file) Temporal Terrain; generator 4 chose Machine Cathedral, Stellar
+Forge and Machine Cathedral, and the identities stored for them do not change. The corpus is synthetic: these shares
+say how the weights behave, not how often real projects get each world.
 
 ### Finishes
 
@@ -102,7 +141,7 @@ the technique without a finish, or with Classic, gives exactly the grade it alwa
 
 ## World families
 
-The three built-in families are three different universes, each with its own visual grammar: an idle life that is
+The six built-in families are six different universes, each with its own visual grammar: an idle life that is
 ambient only and never suggests new work, events that mean what the data says, failure that is never celebratory,
 recovery that resolves it, and milestones that leave something lasting. Every image is a function of the model, the
 recipe and the performance clock, so seeks, replays and films reproduce it (no `Math.random`, `Date.now` or
@@ -178,17 +217,21 @@ mirror canals), files are towers whose storeys are their symbols; the largest la
 | Agents | A servitor (a lantern inside two brass rings) circling the tower it works on and lighting its facade, staying a few seconds after each touch, its lantern brighter while it works; parked low at the precinct's edge while waiting |
 | Mature history | Islands between mirror canals; three to five grand openwork spires; a low carpet of roofs for the smaller modules of large precincts |
 
-### Synaptic Storm (preview)
+### Synaptic Storm
 
 An immense living neural network: subsystems are clusters of glassy neurons laid out by their real dependencies, files
 their dendrite branches, symbols the boutons, dependencies the axons and tracts between them. Agents are signals in
 their provider's colour and shape, and the neuron whose file an agent edits fires; tests sweep activation waves,
-failures misfire, recovery resynchronises, and a verified milestone can earn a rare synaptic storm. It is a **preview**:
-chosen only explicitly (the Visual Studio, the render lab's `--family`), never by the family scores, with no digital
-life yet; adding it changed no existing identity. Design brief, stills and what remains:
-[worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`, `synaptic-layout.js`).
+failures misfire, recovery resynchronises, and a verified milestone can earn a rare synaptic storm. Agents travel the
+axons between neurons, and two on one file meet as two signals. Its digital life, behind the recipe's `life` values (on
+for new identities): astrocytes settled beside the synapses, vesicles on a slow neuromodulator tide that gather at
+active synapses, and microglia at an inhibited neuron's edge; life withdraws from a failing run's neurons and returns
+after the recovery. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically. Design brief,
+stills and what remains: [worlds/synaptic-storm.md](worlds/synaptic-storm.md) (`public/worlds/synaptic.js`,
+`synaptic-layout.js`, `life/synaptic.js`).
 
-### Fractal Continuum (preview)
+### Fractal Continuum
 
 An evolving 3D fractal universe: one raymarched, distance-estimated fractal whose formula and parameters (a Mandelbulb,
 a Julia bulb, a Mandelbox or a kaleidoscopic crystal, its branching, twist and shape) come from the code's character and
@@ -198,12 +241,15 @@ their files), lit hard from the side like a cut stone, files are sites of light 
 dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
 shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
 decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
-fractal bloom. It is a **preview**: chosen only explicitly (the Visual Studio, the render lab's `--family`), never by
-the family scores, with no digital life yet; adding it changed no existing identity. Design brief, stills, measured GPU
-time and what remains: [worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`,
-`fractal-forms.js`).
+fractal bloom. Its digital life, behind the recipe's `life` values (on for new identities), is motes of light living
+on the surface: they gather at the sites being worked on, leave threads of light between them and withdraw from a
+decohering region. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically since the owner
+found it "gum"-like. Design brief, stills, measured GPU time and what remains:
+[worlds/fractal-continuum.md](worlds/fractal-continuum.md) (`public/worlds/fractal.js`, `fractal-forms.js`,
+`life/fractal.js`).
 
-### Temporal Terrain (preview)
+### Temporal Terrain
 
 The project's history as a contour landscape: time is the land. The present is the front edge, a lit cut through the
 land where new ground is laid down, and the past recedes toward the horizon on a logarithmic scale. Subsystems are
@@ -213,14 +259,17 @@ where code grew fast. Agents survey the land as lights in their provider's colou
 they edit; tests sweep a scan, a failure opens a fault that stays as a scar for as long as the files were stressed,
 recovery heals it, commits leave survey lines and stakes, and a verified milestone can earn a rare sunrise and a beacon.
 A replay's land is its whole recorded history, also after a seek (the host hands built-in worlds that ask for them the
-recorded windows). It is a **preview**: chosen only explicitly (the Visual Studio, the render lab's `--family`), never by
-the family scores, with no digital life yet; adding it changed no existing identity. Design brief, stills, measured GPU
-time and what remains: [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`,
-`terrain-layout.js`, `terrain-glsl.js`).
+recorded windows). Its digital life, behind the recipe's `life` values (on for new identities): grazers that graze
+the pastures of the present against the flow of time and shelter from a fault, swifts over the present and gleaners on
+the receding paths. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
+two curated looks; adding it changed no existing identity, and it has not been reviewed artistically or watched in
+motion by a person. Design brief, stills, measured GPU time and what remains:
+[worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`, `terrain-layout.js`,
+`terrain-glsl.js`, `life/terrain.js`).
 
-The Visual Studio shows why to choose each world, offers six curated looks (two per family, built in and read-only,
-previewed and applied like any preset) and puts the few parameters that change a world the most in an Essentials
-group above the full parameter groups.
+The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
+previewed and applied like any preset; the graduated worlds' six are new and have not been reviewed artistically) and
+puts the few parameters that change a world the most in an Essentials group above the full parameter groups.
 
 Three catalogued values currently draw nothing on one world each: `music.reactivity` (*Reactivity*, offered for every
 world, also in the Music Studio) on Machine Cathedral, and `music.beatPulse` (*Beat pulse*) and
@@ -418,9 +467,10 @@ pause and resumption), `living-excalidraw-biosphere.webm` (1:15), `living-code-r
 
 ## Visual packs
 
-The three families implement the World API of the Visual Pack SDK (`public/worlds/sdk.js`), and the same host runs a
+The built-in families implement the World API of the Visual Pack SDK (`public/worlds/sdk.js`), and the same host runs a
 pack's world inside an isolated frame. Declarative packs tune a family's genome within its catalogue
-(`engine/catalog.js`), shader packs add a background, post passes and procedural effects, world packs add families.
+(`engine/catalog.js`; any of the six since generator 5), shader packs add a background, post passes and procedural
+effects, world packs add families.
 See [docs/packs/README.md](packs/README.md).
 
 ## Qualification

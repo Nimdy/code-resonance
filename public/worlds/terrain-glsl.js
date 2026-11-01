@@ -156,10 +156,12 @@ void main(){
   if(uLant>0.){vec2 c=vec2(vW.x/3.,tp/12.),ce=floor(c),f=fract(c)-.5;float h=vh(ce+17.)*.5+.5;
     if(h>.9)col+=uAcc*exp(-dot(f,f)*90.)*smoothstep(.88,.99,vCrest)*uLant*.8*smoothstep(8.,30.,depth);}
   col+=lc*on;
-  // the agents' touches: rings of light in their colour opening around the touch
+  // the agents' touches: two rings of light in their colour opening around the touch, brightest on the contour lines
+  // they cross (the dome opens the lines into rings), fading over about two seconds
   for(int k=0;k<4;k++){if(float(k)>=uNTch)break;vec4 T=uTch[k],C=uTchC[k];float dk=uL*log(1.+max(uNow-T.y,0.)/uTau),r=length(vec2(vW.x-T.x,depth-dk));
-    float rr=C.w*T.z*2.4,ring=exp(-pow((r-rr)/(.9+.08*rr),2.))*(1.-smoothstep(.6,1.,C.w/1.3)),core=exp(-r*r/(T.z*T.z*.5));
-    col+=C.rgb*(ring*1.1+core*.45*on+core*.08)*T.w*.55;}
+    float rr=C.w*T.z*1.6,ring=exp(-pow((r-rr)/(.9+.08*rr),2.))*(1.-smoothstep(.9,2.4,C.w)),a2=max(C.w-.55,0.),r2=a2*T.z*1.6,
+      ring2=exp(-pow((r-r2)/(.8+.08*r2),2.))*(1.-smoothstep(.7,1.9,a2))*step(.55,C.w)*.6,core=exp(-r*r/(T.z*T.z*.5));
+    col+=C.rgb*((ring+ring2)*(.9+on*2.2)+core*.45*on+core*.08)*T.w*.55;}
   // the agents' surveying light: a pool on the land under each
   for(int k=0;k<6;k++){if(float(k)>=uNAg)break;vec4 Ag=uAg[k];vec3 L=Ag.xyz-vW;float d2=dot(L,L),ll=max(dot(n,normalize(L)),0.);
     float pool=Ag.w*ll/(1.+d2/36.);col+=uAgC[k].rgb*(pool*.5+pool*on*1.2);}

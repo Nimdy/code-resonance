@@ -106,10 +106,12 @@ const LIFE={
   'life.ecology':e([1,2],'ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded')
 };
 for(const f of Object.values(FAMILIES))f.parameters={...f.parameters,...LIFE,...COMMON};
-// Preview families: built in, chosen only explicitly (the Visual Studio, the render lab's --family), never by the
-// family scoring, and not yet a base for declarative packs (their parameters may still change). No digital life yet.
-const PREVIEWS={
-  'synaptic-storm':{name:'Synaptic Storm (preview)',preview:true,parameters:{
+// The families that graduated with generator 5 (previews until then): built in like the three, scored for the automatic
+// choice, and from now on a base for declarative and shader packs, so their parameters are frozen like every other
+// family's (added, never removed or narrowed). Each lists the standard life.* group (WITH_LIFE below; the grammars are
+// public/worlds/life/<world>.js).
+const GRADUATED={
+  'synaptic-storm':{name:'Synaptic Storm',parameters:{
     'geometry.filesPerNeuron':i(2,10,'files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons'),
     'geometry.clustering':n(.4,1.8,'how far the neurons of a cluster stand apart'),'geometry.dendrites':n(.5,1.6,'dendrite length'),
     'geometry.branchAngle':n(.2,1,'angle of the dendrites\' forks (radians)'),'geometry.curl':n(0,1,'how much dendrites and axons wander'),'geometry.somaSize':n(.6,1.6,'soma size'),
@@ -123,7 +125,7 @@ const PREVIEWS={
     'agents.form':e(['signal'],'agent form: a travelling signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
     effects:['neurogenesis','sprout','arborize','prune','axon-link','misfire','activation-wave','resync','consolidate','storm','potentiate','expand'],
     unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
-  'fractal-continuum':{name:'Fractal Continuum (preview)',preview:true,parameters:{
+  'fractal-continuum':{name:'Fractal Continuum',parameters:{
     'fractal.form':e(['bulb','julia','box','kifs'],'the universe: a Mandelbulb, a Julia bulb, a Mandelbox or a kaleidoscopic crystal (each a different recursive geometry, not a colour)'),
     'fractal.power':i(4,10,'branching: the n-fold symmetry of a bulb or a Julia bulb'),'fractal.twist':n(0,1,'twist: a bulb\'s phase, a box\'s or a crystal\'s turn per recursion'),
     'fractal.julia':i(0,5,'which Julia constant a Julia bulb grows around'),'fractal.shape':n(0,1,'shape: a box\'s or a crystal\'s scale, a bulb\'s second phase'),
@@ -142,7 +144,7 @@ const PREVIEWS={
     'agents.form':e(['signal'],'agent form: a signal in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
     effects:['emerge','seed','unfold','erode','thread','decohere','coherence-wave','recohere','refine','bloom','glow','deepen'],
     unlocks:['stardust','inner-light','corona','echoes']},
-  'temporal-terrain':{name:'Temporal Terrain (preview)',preview:true,parameters:{
+  'temporal-terrain':{name:'Temporal Terrain',parameters:{
     'time.scale':n(15,90,'how many seconds of the recent past the land near the front edge holds (τ): smaller, the land flows back faster'),
     'time.depth':n(35,90,'depth of the land per e-fold of age: larger, the past stays wider'),
     'relief.height':n(.4,1.8,'height of the files\' ridges'),'relief.massif':n(.3,1.8,'height of the ranges\' plateaus under their files'),
@@ -159,7 +161,13 @@ const PREVIEWS={
     effects:['range','peak','uplift','erode','road','fault','scan','heal','terrace','sunrise','survey','horizon'],
     unlocks:['dawn','lanterns','stars','aurora']}
 };
-for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
+const WITH_LIFE=['synaptic-storm','fractal-continuum','temporal-terrain'];
+for(const id of WITH_LIFE)GRADUATED[id].parameters={...GRADUATED[id].parameters,...LIFE};
+for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON};
+Object.assign(FAMILIES,GRADUATED);
+// Preview families: built in but still being designed, chosen only explicitly (the Visual Studio, the render lab's
+// --family), never scored, and no base for packs (their parameters may still change). None at present.
+const PREVIEWS={};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.
 function accepts(spec,value){
@@ -177,4 +185,4 @@ function accepts(spec,value){
 function get(obj,path){return path.split('.').reduce((o,k)=>o?.[k],obj);}
 // The class of an effect preset in a family (its effects are listed in EFFECT_TYPES order).
 function effectClass(family,effect){const k=FAMILIES[family]?.effects.indexOf(effect);return k>=0?EFFECT_CLASS[EFFECT_TYPES[k]]:null;}
-module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,PREVIEWS,COMMON,LIFE,accepts,get,effectClass};
+module.exports={CATALOG_VERSION,EFFECT_TYPES,EFFECT_CLASS,FAMILIES,GRADUATED,PREVIEWS,COMMON,LIFE,accepts,get,effectClass};

@@ -116,7 +116,9 @@ function packParameters(p,snap){
 function catalogView(snap){
   const families={},packFamilies={},looks={};
   for(const [id,f] of Object.entries(catalog.FAMILIES))families[id]={name:f.name,builtin:true,parameters:recipes.tunable({family:id}),effects:[...f.effects],unlocks:[...f.unlocks]};
-  // Preview families: built in, chosen only explicitly (never by the scoring), listed apart from the stable three.
+  // Preview families: built in but still being designed, chosen only explicitly (never by the scoring), listed apart
+  // from the families. None at present (Synaptic Storm, Fractal Continuum and Temporal Terrain graduated with generator
+  // 5 and are listed under families); the key stays so every reader of the catalogue keeps working.
   const previews={};for(const [id,f] of Object.entries(catalog.PREVIEWS))previews[id]={name:f.name,builtin:true,preview:true,parameters:recipes.tunable({family:id}),effects:[...f.effects],unlocks:[...f.unlocks]};
   for(const p of snap.packs){
     if(!p.ok||!p.compatible)continue;

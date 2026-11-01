@@ -166,6 +166,7 @@ test('The Visual Studio\'s curated presets and Essentials name real parameters o
     for(const [path,v] of Object.entries(p.payload.tuning)){
       const s=params(p.payload.family)[path];assert.ok(s,`${p.name}: ${path} is a parameter of ${p.payload.family}`);
       if(s.type==='enum')assert.ok(s.values.includes(v),`${p.name}: ${path}=${v}`);
+      else if(s.type==='color')assert.ok(/^#[0-9a-f]{6}$/i.test(v),`${p.name}: ${path}=${v} is a #rrggbb colour`);
       else for(const x of [v].flat())assert.ok(x>=s.min&&x<=s.max,`${p.name}: ${path}=${v} within ${s.min}..${s.max}`);
     }
   }

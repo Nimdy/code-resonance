@@ -1,4 +1,4 @@
-# Fractal Continuum (preview)
+# Fractal Continuum
 
 An evolving 3D fractal universe drawn from the project: one raymarched, distance-estimated fractal in a black void. The
 code's character picks the universe (the recursive geometry itself, not only its colours); development unfolds its
@@ -6,14 +6,16 @@ recursion; subsystems are regions of its surface and files are sites of light on
 work on and ripple the surface in their own colour; tests send a coherent wave of light across the form; failures make
 the covered region lose coherence; a verified milestone can earn a rare fractal bloom.
 
-**Status.** This is a preview: a working prototype family (`public/worlds/fractal.js`, `public/worlds/fractal-forms.js`)
-that a project can choose explicitly in the Visual Studio (marked *Preview*) or with the render lab's `--family`. It is
-never chosen automatically, and adding it changed no existing identity (see [Selection and compatibility](#selection-and-compatibility)).
+**Status.** A built-in family (`public/worlds/fractal.js`, `public/worlds/fractal-forms.js`), a preview until generator 5
+graduated it: the family scores can choose it, it is a base for declarative and shader packs, the Visual Studio offers it
+with two curated looks and the Artist Studio composes over it. Graduating it changed no existing identity (see
+[Selection and compatibility](#selection-and-compatibility)).
 The owner watched it live and found it read as "gum" (one soft purple, even soft light, shapes rounded by the swell, a
 white sugar of sparkle); the finish described here (0.8.0) answers that: each region its own hue on the
 identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
 swell, rare coloured glints. It has not been reviewed artistically since. Everything below marked *prototype* is
-implemented; *planned* is not.
+implemented; *planned* is not. It can be inhabited: [digital life](#digital-life) (motes of light living on the
+surface) behind the recipe's `life` values, off until they turn it on.
 
 ![One project, four universes](fractal-continuum-universes.jpg)
 
@@ -70,6 +72,7 @@ as such.
 | `director.lasting()` | An **inner light** in the crevices of the regions that earned verified milestones | Lasting; rebuilt after a seek |
 | `director.activityAt` | The spontaneous pulse rate (up to 2.4× while work is recent) and whether the idle drift runs | Evaluated per beat |
 | `director.unlockedAt` | Stardust (far points of light), inner light (all crevices), corona (a glow hugging the silhouette), echoes (far soft glows) | Verified milestones only |
+| Ambient life (`life.enabled`): the simulated ecosystem (`public/worlds/life/fractal.js`) | Motes, skimmers and embers of light living on the surface; their light pooled in the relief around their gatherings | Never project data: never labelled, never counted as agents; events reach it only as conditions (see [Digital life](#digital-life)) |
 
 ## Visual grammar
 
@@ -192,6 +195,176 @@ minutes) twists further and volleys four times. Otherwise the milestone is a **l
 volleys around the subject. Known approximation (as in Synaptic Storm): the gap rule reads every milestone time in the
 lasting record, so a milestone the director downgraded can still hold the 4-minute gap (pinned in the test).
 
+## Digital life
+
+*Prototype.* The surface can be inhabited: motes of light that drift with its current, gather at the sites being worked
+on and leave threads of light between them, small flocks that skim the relief, and embers resting in its hollows. The
+grammar is `public/worlds/life/fractal.js` (id `fractal-continuum`, version 1) on the shared simulation and driver
+([LIFE.md](../LIFE.md): the contract, determinism, checkpoints, generations); `fractal.js` draws it. It is off unless
+the recipe has it on (`life.enabled`, the Visual Studio's *Digital life* group or a tuning; the generator draws no
+`life` for the preview). Off, the world is exactly as it was: compared in Node with the world before digital life, the
+same shaders, uniforms, attributes, draw ranges, grade, statistics and API; every life addition in `fractal.js` is
+guarded by `ctx.life`.
+
+| | |
+|---|---|
+| ![Life on a jade Mandelbulb](fractal-continuum-life.jpg) | ![Life on Excalidraw](fractal-continuum-life-excalidraw.jpg) |
+| Lumen, variant 2 (a jade Mandelbulb), at the end of its recording, up close: a stream of motes runs along the left lobe into a gathering in the central valley, whose light pools in the relief around it; threads behind the travellers | Excalidraw (450 files: 9 regions and the 55 most prominent files are sites), 90 s after the last event: gatherings toward the upper regions, motes and skimmers over the sapphire relief |
+| ![A failing run: the void](fractal-continuum-life-failure.jpg) | ![The recovery: the return](fractal-continuum-life-recovery.jpg) |
+| Lumen's first failing run, 6 s on: over the decohering region (the warning colour's static) the life has withdrawn; it waits at the region's edges | Its recovery, 6 s on: the motes come back into the repaired region, those travelling to it in the valid colour |
+
+*Stills: `qualification/visual/lab.js --dataset lumen --family fractal-continuum --gpu amd --tune '{"life.enabled":true}'`
+with `--variant 2 --at 1 --labels off`, `--events --after 6`, and `--dataset excalidraw --idle 90`; 1920×1080, shown
+at 960×540.*
+
+### The map: a closed surface on the simulation's plane
+
+The simulation's fields are 2D grids over a ground plane; this world is a closed surface. The world reaches every point
+of it from the form's centre along one direction (each site is traced outward along its own), so a direction names a
+point of the surface and the life lives on the sphere of directions. The ecosystem's plane is an **azimuthal
+equidistant map** of that sphere around the form's pole (y up, the bulbs' axis of symmetry): the direction at
+colatitude θ and longitude φ is the point (Kθ cos φ, Kθ sin φ), K = 6.4 map units per radian, and the plane's height
+is the altitude above the surface. Why this chart:
+
+- one seam only, a single point (the south pole, torn open into the map's rim), rather than a cylinder's edge and two
+  poles or the octahedral map's folds across the southern hemisphere;
+- arcs from the pole keep their length; across them the map stretches by θ / sin θ: 1 at the pole, 1.57 at the
+  equator, 2.66 at 35° south. An equal-area chart (Lambert's) would stretch the equator by 2 (and 35° south by 4.7)
+  for equal cell areas; a conformal one (stereographic) keeps shapes but shrinks the regions at 35° south 4.7 times.
+  A gathering's orbit is corrected for the stretch (a circle on the surface, not on the map);
+- the regions lie between 35° south and 70° north, and the life is held within **135° of the pole** (85 % of the
+  surface): it is steered back from there, the current turns back before it, and a site beyond it (a file far down its
+  region's spiral) is never chosen, so nothing reaches the seam. The southern polar cap is uninhabited.
+
+Regions and sites keep their directions, so the habitat sits still on the map whatever the form does: it unfolds,
+swells, breathes and blooms under its life.
+
+### Inhabitants (680)
+
+- **Motes** (60 %): ride the surface's current and the trails, choose an active site (strength, novelty, nourishment,
+  lasting conditions, the energy work and gatherings leave there, the trails to it, and a gathering already circling
+  it: winner-take-more up to what a site carries; never a strained site; nearer is better), circle it in a slow halo at
+  their own radius and height (a circle on the surface) and feed, then leave carrying its light (a stronger trail). Those leaving the same site
+  follow the one who left before them, so threads of light run from site to site.
+- **Skimmers** (22 %): small flocks skimming the relief (separation, alignment, cohesion), drawn along the motes'
+  trails and toward the energy of the gatherings; a flock grown too large splits.
+- **Embers** (18 %): slow, heavy glows that settle where the current is calm and rest low, lifted again by a passing
+  flock's wake, a stronger current or a disturbance.
+
+The current: bands of slow differential rotation about the pole (alternating shear, so trails turn into spirals) and
+four drifting eddies (a stream function: the flow circulates, never piles up), turned by the music's swing.
+
+### Habitat and events
+
+Sites come from the world's own layout (`fractal-forms.js` `layoutAt`): one per region at the region's direction, one
+per file at its direction on the region's spiral. The ecosystem holds 64: every region (up to 40), then the most
+prominent files by their symbols, decided on the structure the model holds (not the moment), so an event's file and
+the habitat always agree; a file without a site of its own gives its events to its region's. Events reach the life only
+through the driver (site conditions and field deposits; nothing is ever placed):
+
+| Intent | The life |
+|---|---|
+| `validation.failed` | The file's site is strained: a void opens over it (reach 2.4 site radii + 1.6 map units, about the world's decohering region); everything is pushed out while the strain lasts and the motes wait at its edge (in the test habitat: 7 % of the life inside it, against the same ecosystem without the failure) |
+| `validation.recovered` | The strain is cleared and for about 25 s the repaired site draws the motes back (8 motes within its reach before, 51 ten seconds after); they travel to it in the valid colour |
+| `structure.modified`, an agent's tool use on a file | A small perturbation and energy at the file's site: the active site draws the motes (2.4 times as many travelling to it or circling it as to the same site without the work) |
+| `module.created`, `structure.created`, `validation.passed`, `repository.checkpoint` | Nourishment |
+| `subsystem.created` | Novelty at the new region: explorers come to see |
+| `milestone.achieved` (verified) | A lasting attractor at its region (a new generation inherits it) |
+| `refactor.validated` | The current turns around the site |
+| `subsystem.connected` | A trail laid between the two sites |
+
+### How the world draws it
+
+- **On the surface as drawn.** The CPU hands each inhabitant's direction and altitude to the GPU; the vertex shader
+  traces the point itself: from outside the form to the outermost point within a margin (0.04 fractal units) of it
+  along the direction (the estimator's offset surface, at the drawn recursion, with the region's swell), then back
+  down by the rest of the margin. A pit narrower than about twice the margin is bridged, so the life rides the relief
+  instead of dropping into every hole of a crystal's lace, and it follows the form as it unfolds, swells, breathes and
+  blooms. A ray that slips through the form is not drawn. Each point tests its visibility against the fractal's own
+  depth with the sites' tolerance, so the life is hidden behind the relief. Altitudes: 0.022 + 0.06 × the ecosystem's
+  height (about 2 to 8 % of the form's radius).
+- **Motes**: soft points with a halo in the light's colour (`palette.accent`), turned a little toward the region's hue;
+  brighter while circling a site; a fine tapered thread behind those carrying a site's light or seeking a site, at the
+  inhabitant's present altitude (only its way across the surface shows, never a climb as a streak of rain).
+- **Skimmers**: short tapered streaks in the rim's light. **Embers**: larger, dimmer, warmer glows.
+- **The surface's light**: an octahedral map of directions (64², like the swell table's), rebuilt at each tick from
+  the gatherings, the resting embers and the trail field, read by the shading pass: the life's light pools in the
+  relief around its gatherings, most in the crevices, and along the threads it keeps using.
+- **Music** (ecology 2, `present.js` `musicLook`): `life` scales the surface's light, `bright`, `size` and `trail` the
+  inhabitants. **Generations**: everything is scaled by the view's crossfade, and hidden while restoring.
+- **Quality** decides how many followers and segments are drawn, never the ecosystem (tested):
+
+| Quality | Mote followers | Skimmer followers | Thread segments (motes) | Streak segments (skimmers) |
+|---|---|---|---|---|
+| 0 | 2 | 2 | 4 | 3 |
+| 1 | 1 | 1 | 3 | 2 |
+| 2 | 1 | 0 | 2 | 2 |
+| 3 | 0 | 0 | 2 | 1 |
+
+### Determinism and tests
+
+The grammar is a pure function of its inputs (no `Math.random`, `Date.now` or `performance.now`; its per-tick tables
+are rebuilt from the state; the conditions it adds to a site, revive and strained, are site conditions, so snapshots
+carry them). Tested in Node:
+
+- `tests/life-fractal.test.js`: the map's round trip and arcs; the habitat is a pure function of the model and the
+  time and its sites lie at the world's own directions; at most 64 sites, the other files' events at their region;
+  bounds, bounded lifecycles and a deterministic state with restore; gatherings at an active site; the void and the
+  return after a recovery; influences change trajectories, and nothing else does.
+- `tests/life-fractal-driver.test.js`: on a recorded performance the same digest after continuous play at 15 and 60
+  fps, a far seek, a seek back to a checkpoint and a fresh session; events at their own sites; the world headless at
+  qualities 0 to 3 with the ecosystem's digest unchanged, nothing drawn while restoring, and with life off nothing of
+  it in the scene.
+- `tests/life-fractal-generations.test.js`: across a generation's anchor, continuous play (the next generation
+  prepared in the background, handed over at its anchor) equals a far seek, and the new generation inherits the
+  verified milestone's lasting attractor.
+- `tests/life-fractal-ecology.test.js`: ecology 2 is deterministic and neutral at music 0; the share of motes gathered
+  follows the music's `gather` (correlation 0.78 at music 1, 0.84 at 2) and the share travelling its `explore` (0.65,
+  0.71).
+
+### Cost
+
+Two draw calls (threads and streaks; points) and one texture lookup per shaded pixel. GPU time per frame (the host's
+timer, its moving average after the lab's 4 s of warm-up and 90 frames held at the moment; AMD Radeon iGPU through
+WSL2 D3D12; 1920×1080, quality 0; Lumen's generated identity, a crystal; life off and on alternated in fresh pages,
+three rounds each, load average about 4.5):
+
+| Moment | Life off | Life on | Difference of the medians |
+|---|---|---|---|
+| 50 % of the recording | 18.06, 18.44, 18.26 ms | 18.80, 19.47, 19.71 ms | +1.2 ms |
+| 90 s after the last event | 18.40, 18.30, 18.77 ms | 19.74, 22.17, 19.04 ms | +1.3 ms |
+
+An earlier version of the drawing (smaller points, before the orbits were corrected), two rounds each at load average
+about 3, added 0.4 ms (50 %), 0.5 ms (the end, an event's close-up) and 0.8 ms (idle). Not measured: the lower
+qualities (films always render at quality 0; it would take the live player at a fixed quality) and the other
+identities (the bulbs, Excalidraw): attempts while other agents rendered on the same GPU (load average 8 to 16) varied
+by up to 20 ms between rounds of the same state. The lab's single readings with life on (Excalidraw 39–41 ms, Lumen's
+events 26–46 ms) were taken under that load and are not comparable with [Performance](#performance).
+
+CPU (Node 22 on the recorded performances, continuous play at 30 fps, measured while three other agents worked on the
+same machine, load average about 9): a simulated tick 1.27 ms on average on Lumen (median 1.09, p95 1.87), 1.53 ms on
+Excalidraw (median 1.28, p95 2.99), against 0.73–1.31 ms for the three flagships' ([LIFE.md](../LIFE.md#generations));
+the habitat 0.15 ms per recorded window on Lumen, 1.23 ms on Excalidraw (450 files); a far seek to the end of Lumen
+(4 800 ticks) from a fresh session 7.3 s, the same digest as continuous play. In the browser the lab reports 0.9–1.25 ms
+a tick. Presentation: the world's update at a fixed moment 1.15–1.25 ms with life against 0.26–0.33 ms without (about
+1 750 points and 1 100 segments written a frame, the surface's light rebuilt at each tick).
+
+### What remains
+
+- An artistic review with the owner, on films of whole sessions rather than stills.
+- **The chart's stretch**: across the arcs from the pole the map stretches by up to 1.57 at the equator (2.66 at 35°
+  south). A gathering's orbit is drawn out to the map ellipse that the stretch turns back into a circle on the surface
+  (between 60° and 110° from the pole a halo's spread east-west against north-south went from 0.71 to 0.86 of a
+  circle; separation and the orbit's tangential drive still act on the map); travel, flocks and the fields'
+  diffusion still see the stretch.
+- **The limb**: inhabitants at their altitude seen edge-on gather along the silhouette into a fringe of light.
+- **Bright identities**: on a light, glittering crystal (Lumen's generated identity) the motes over the lit faces read
+  less than over its dark side and on the darker bulbs.
+- Skimmer flocks near busy gatherings still merge into groups of up to about 60 (the split keeps most flocks small).
+- Not in the browser's qualification (`visual/life.qual.js` covers the three), not measured live at Auto, in OBS or
+  over a soak; only the AMD iGPU was used.
+- The generator does not draw `life` for the preview (generator v5, step 7).
+
 ## Labels and privacy
 
 Words come only from generic phrases, roles, counts, CAST catalog names and `ctx.name(id)` (the user's alias or the
@@ -214,6 +387,22 @@ share of the resolution (smaller when it fills the frame). Films seek and warm u
 The finish keeps this: region hues come from the region's id and creation order, the swell amplitude from the unfolding
 at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
 and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
+
+**The camera after a seek** (fixed after 0.8.0). The world read the camera the host's rig left behind in two places: the
+level of detail (from the camera's distance, with the form's scale of the previous frame) and a close-up's dolly
+(`facing()`: the camera comes in once it already faces the event's site). After a rebuild (a seek, a new performance,
+a world switch) the rig snaps to the next goal, but both were read before that snap, from the camera of the moment
+played before. Two sessions seeking to the same moment could snap to different cameras, and the springs kept them
+apart: `visual/worlds.qual.js`'s determinism check on Lumen at 160 s rendered different frames in two sessions (the
+second first played the recording's end: `4211376e…` / `b7ee03ab…`), as the code at 1226b8a already did. Now, until the
+rig has placed the camera for this state, the level of detail is taken at the framing distance (at the identity's own
+lens, the form's scale cancelling) and the dolly at the direction the goal turns to (where the snap puts the camera);
+from the next frame on everything reads the camera as before, so continuous play is unchanged. The same check passes
+on SwiftShader at 960×540, life off and on (`c381adf7…` and `a445bef3…` in both sessions), and
+`tests/fractal-seek.test.js` drives the world as the host does (update, camera goal, rig, afterCamera; a seek rebuilds,
+snaps and refolds the director): after a close-up was played, after the recording's end, with a target small enough
+for the pixels to limit the detail, and with digital life on, every frame after the seek matches a fresh session's
+(each case failed at its first frame before the fix).
 
 ## Performance
 
@@ -262,20 +451,36 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 
 ## Selection and compatibility
 
-- `engine/recipe.js` `PREVIEWS = ['synaptic-storm', 'fractal-continuum']`: accepted by `generate({family})` and the
-  `family` action, **never** part of `FAMILIES`, so the family scores, their random draws, automatic and a plain
-  regenerate are exactly what they were. Its genome comes from `rng('genome', 'fractal-continuum', …)` and its palette
-  from its own stream. `RECIPE_VERSION` stays 4: no existing input produces a different output (`tests/recipe.test.js`
-  unchanged and passing).
-- `engine/catalog.js` `PREVIEWS`: its parameters plus the common ones, no digital life, and not a base for declarative
-  packs (they may still change). `/api/catalog` lists it under `previews`, apart from `families`.
-- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it after the three with an *In design* pill and a
-  thumbnail rendered from the project, like the three's (no Artist Studio or look packs yet: its panel says so).
-- A recipe that chose it is stored like any user choice (locked, founded) with the v4 additions (Cinematic finish,
-  composed score).
+- **Generator 5** (`engine/recipe.js`, `RECIPE_VERSION` 5) graduated it from `PREVIEWS` into `FAMILIES` (`GRADUATED`).
+  Its score, from its own random stream (`rng('family', 'fractal-continuum', seed, variant)`) after the flagships'
+  unchanged draws: symbols per file beyond four (1.0 at twelve), a function share beyond 45 % (0.9 at 85 %), few
+  subsystems (0.5 for one, nothing from seven) and little UI surface (0.3, gone at a third of the files with components):
+  one intricate recursive form, whose recursion unfolds with the symbols and whose regions are the subsystems, suits
+  dense, formula-like code in a few subsystems; component code grows organisms instead. Over the synthetic corpus of
+  `tests/generator-v5.test.js` it is chosen for 13.9 % of projects, most of them algorithmic cores, data pipelines and
+  command-line tools ([WORLDS.md](../WORLDS.md#from-data-to-identity)); none of the three datasets is one.
+- **No existing identity changes.** Generator 4 scores the flagships alone, with the same draws: every v4 value is as
+  pinned (`tests/recipe.test.js`, and `tests/generator-v5.test.js` against the generator at 1226b8a). An identity stored
+  by generator 4 is redrawn with 4 (`generatorOf`), so it never becomes a Fractal Continuum by itself; choosing it,
+  regenerating or going back to automatic is a new identity on generator 5. A recipe that chose it before graduation is
+  served as stored (its name still says "(preview)", without digital life).
+- Its genome comes from `rng('genome', 'fractal-continuum', …)` and its palette from its own stream, as before; a new
+  identity also gets `genome.life` from `rng('life', 'fractal-continuum', …)` (enabled, ecology 2): the motes of
+  [Digital life](#digital-life).
+- `engine/catalog.js` `FAMILIES`: its parameters, the digital-life group (`life.*`, the same values as the three's)
+  and the common ones, frozen (added to, never removed or narrowed), so a declarative or shader look can name it as its
+  base. `/api/catalog` lists it under `families`; `previews` is empty.
+- `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it with the flagships (thumbnail, the code's-match
+  star, two curated looks: *Teal Mandelbulb*, the owner's reference tuning, and *Kaleidoscope crystal*, and an
+  Essentials group), and the Artist Studio offers it as a base.
 
 ## Known gaps
 
+- **Determinism across seeks**: `visual/worlds.qual.js` renders Lumen at 160 s in two sessions, the second after
+  rendering the end of the recording first, and the frames differ (the code before generator 5 too; the world's
+  reported state is the same in both). Not diagnosed; the world's update and camera goal read the live camera (level of
+  detail, `facing()`), which would make the camera the host snaps to after a seek depend on where it was before
+  ([QUALIFICATION.md](../QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Sharpness**: the fractal is drawn at 0.6 of the resolution (0.48 when it fills the frame) and upsampled; the finest
   relief is softer than a full-resolution render. The crystal's small facets still glitter where the key's highlight
   falls on them (tinted by their region, no longer a white coat over the whole form).
@@ -290,6 +495,7 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 - **Threads** are arcs over the surface; in a dense project they can read as lines drawn over the form.
 - **Julia constants**: six directions near the bulb's surface; only some were looked at.
 - Only the AMD iGPU and SwiftShader were tried; nothing was rendered on the NVIDIA adapter, in OBS or at Auto.
+- **Digital life**: its own gaps are listed under [Digital life › What remains](#what-remains).
 
 ## Path to shipping
 
@@ -298,13 +504,14 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 2. **Sharpness and cost**: a temporal-free way to recover detail (an adaptive share by the form's coverage is in place;
    a cheaper estimator or a precomputed distance field for the approach could buy a larger share), measured on the
    target machines at Auto, in OBS and over a long soak.
-3. **Qualification parity** with the three families: determinism across seeks in the browser, idle checks, privacy of
-   every label, the catalogue's extremes (`catalogue.qual.js` covers `catalog.FAMILIES` today).
+3. **Qualification parity** with the three families: `catalogue.qual.js` and `worlds.qual.js` (determinism across seeks,
+   idle, privacy of every label, resources) now cover all six families; see
+   [QUALIFICATION.md](../QUALIFICATION.md) for what was run.
 4. **Agents**: travel along the threads between sites, `agent.collision` as two signals meeting.
 5. **Music**: rhythm-gated subdivisions and section onsets.
-6. **Digital life**: a grammar for the surface (drifting motes of light gathering at active sites, avoiding decohering
-   regions), behind the recipe's `life` values; until then the preview has no ecosystem and offers no life parameters.
-7. **Generator inclusion**: a new generator version (5) that scores it from its own random stream, so every v4
-   identity's scores, family and values stay as pinned; stored identities never switch by themselves.
-8. **Graduation**: from `PREVIEWS` to `FAMILIES` only together with step 7, its parameters frozen into the catalogue,
-   curated looks and Essentials, thumbnails and the Artist Studio.
+6. **Digital life** ([Digital life](#digital-life)): a grammar for the surface behind the recipe's `life` values, on for
+   new identities (generator 5), tested in Node. Remains: an artistic review on films, the browser's qualification
+   (`life.qual.js` covers the three flagships) and live playback at Auto.
+7. **Generator inclusion**: done in generator 5 (above).
+8. **Graduation**: done with generator 5: in `FAMILIES`, its parameters frozen in the catalogue (a base for packs),
+   curated looks and Essentials, the Artist Studio. The curated looks have not been reviewed artistically.

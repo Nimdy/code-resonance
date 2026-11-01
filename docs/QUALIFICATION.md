@@ -1210,6 +1210,61 @@ libpulse's default socket here (`$XDG_RUNTIME_DIR/pulse/native`) is a link to WS
 fell back to their own output, and their clocks ran at 0.995-1.005× real time, with or without `PULSE_SERVER` and
 `XDG_RUNTIME_DIR`. A browser started while the server was healthy has not been checked.
 
+## Graduation: generator 5 and qualification parity
+
+Synaptic Storm, Fractal Continuum and Temporal Terrain became families with generator 5 (`docs/WORLDS.md`, From data
+to identity). What was checked, on the development machine with three other tracks running on it:
+
+- **Unit** (`npm test`): `tests/generator-v5.test.js` (8 tests) pins generator 5 (the graduated genomes, the automatic
+  choice over 300 synthetic projects × 2 variants), checks generator 4 and 3 bit for bit against fingerprints computed
+  with the generator at 1226b8a (whole recipes of automatic and flagship identities, the graduated worlds' genomes),
+  that v5 keeps every flagship score and genome, that stored identities never switch by themselves, the family
+  distribution, and that curated looks, declarative and shader looks and compositions work on the graduated worlds.
+  `tests/recipe.test.js` holds unedited except its three assertions of the current generator's number (4 → 5).
+- **Catalogue extremes** (`visual/catalogue.qual.js`, all six families, SwiftShader, 960×540,
+  `results/visual/catalogue-qualification.json`): **12/12**. Mean luma at 60, 160 and 235 s: Synaptic Storm 47.1-47.6
+  (minimum) and 118.3-124.4 (maximum), Fractal Continuum 36.4-36.6 and 65.0-66.4, Temporal Terrain 35.9-37.3 and
+  72.6-88.3; the flagships as before (41.8-98.1).
+- **Worlds** (`visual/worlds.qual.js --only determinism,idle --families synaptic-storm,fractal-continuum,temporal-terrain
+  --size 960x540 --fps 15 --tag graduated`, on copies of the datasets, SwiftShader, 29.6 minutes,
+  `results/visual/worlds-qualification-graduated.json`): **21/22**.
+  - Determinism across seeks (the same frame in two sessions, the second having rendered the end of the recording
+    first): Synaptic Storm on Excalidraw at 5 s and Temporal Terrain on Self at 600 s pass. **Fractal Continuum on Lumen
+    at 160 s fails** (frames `4211376e2c1e81d6` / `b7ee03ab54248282`). The code at 1226b8a, before generator 5, renders
+    the same two frames, so it predates the graduation; the world's reported state (iterations, sites, threads,
+    firing, decoherence) is identical in both sessions. Not diagnosed. A likely place, from reading the code: the
+    world's update and its camera goal read the live camera (the level of detail from the camera's distance;
+    `facing()` in the close-up), so the goal the host snaps to after a seek depends on where the camera was before.
+    The restart and rebuild checks of `visual/identity.qual.js` (15/15 earlier) do not seek.
+  - Idle life, 10-100 s after Lumen's last event: all three keep changing (mean |Δluma| between samples Synaptic Storm
+    3.7-4.6, Fractal Continuum 10.7-11.1, Temporal Terrain 5.1-8.2), their own structure counts, the intents (205),
+    the lasting transformations and the unlocks stay the same, the director reports idle, no page error.
+  - Privacy: no label of any of the three (cinematic through the whole session, then stream mode) contains a path, a
+    file name, a source identifier or the folder name (46, 49 and 45 distinct strings).
+  - Resources: switching between all six worlds twelve times leaves geometries (29 → 29) and textures (19 → 19).
+  - Not run: the flagships' new idle and privacy checks (Stellar Forge's ran before), the live-player performance of the
+    graduated worlds on a GPU (`--gpu amd`: the GPU was shared with other tracks), and the live priming section.
+- **Worlds again, on the integrated branch** (`feat/worlds-graduate` at `9c400f8`, the three worlds' digital life
+  merged and on for their generator 5 identities; `--only determinism,idle,privacy`, the same families, size, fps and
+  copies of the datasets; `results/visual/worlds-qualification-integrated.json`): **22/22**, 2026-10-31.
+  - Determinism across seeks passes for all three, Fractal Continuum included, after its fix (the camera read before
+    the rig snapped after a seek; `docs/worlds/fractal-continuum.md` › Determinism): Synaptic Storm on Excalidraw
+    `69097a39bbc73c60` twice, Fractal Continuum on Lumen `b3a7be29511d6a8f` twice, Temporal Terrain on Self
+    `03057340a0926361` twice. No page errors.
+  - Idle life with the ecosystems on: mean |Δluma| between samples Synaptic Storm 4.2-5.1, Fractal Continuum 10.9-11.2,
+    Temporal Terrain 5.4-8.8; structure counts, intents (205), lasting transformations and unlocks unchanged; the
+    director reports idle.
+  - Privacy: 46, 49 and 45 distinct label strings, none with a path, file name, source identifier or the folder name.
+  - Resources: switching between the six worlds twelve times leaves geometries 29 → 29 and textures 19 → 19.
+- **Visual Studio** (`ui/workspaces/visual.qual.js`, an isolated installation, SwiftShader,
+  `results/ui/visual.json`): **79/79**, including the graduated worlds' thumbnails rendered from the project, no *In
+  design* pill on any card, twelve read-only curated looks, and a new identity's life on generator 5. The first run
+  failed 2 of 79 on the suite's own expectations (six curated looks, generator 4), which were then updated.
+- **Curated looks**: the six new looks rendered on Lumen with the render lab (SwiftShader, 960×540, at the end and
+  after 30 s of idle), looked at by the agent that made them, not by the owner. The *Survey map* look first stayed at an
+  oblique view (the idle drift travels between vantages); it now sets `motion.drift` 0 and the highest elevation. On
+  Lumen, whose generated Fractal Continuum is already a crystal, *Kaleidoscope crystal* differs little from it.
+
 ## Not verified
 
 > Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI

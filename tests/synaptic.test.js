@@ -1,5 +1,5 @@
 'use strict';
-// Synaptic Storm (preview): chosen only explicitly, so no existing identity changes; its layout, dendrites and firing
+// Synaptic Storm: graduated with generator 5 (scored from its own stream, so no existing identity changes); its layout, dendrites and firing
 // schedule are pure functions of the model and the time; the world runs headless and keeps the failure language honest.
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
@@ -18,16 +18,17 @@ function project(id,{modules=10,ui=0,classes=0,fns=3,tests=0,dirs=3,hub=0,cross=
   for(let i=0;i<cross;i++)edges.push({a:`m${i%modules}`,b:`m${(i+1)%modules}`,kind:'depends',cross:true});
   return {projectId:sha(id),graph:{nodes,edges},stats:{raw:100,agentEvents,testsPassed:0,testsFailed:0},agents:Array.from({length:agents},(_,i)=>({id:`a${i}`}))};
 }
-test('Synaptic Storm is chosen only explicitly: never by the family scores, automatic or a plain regenerate',()=>{
-  assert.deepEqual(recipe.FAMILIES,['stellar-forge','fractal-biosphere','machine-cathedral']);assert(recipe.PREVIEWS.includes(ID));
+test('Synaptic Storm is scored from generator 5 on (never by generator 4); choosing it is a lasting, living identity',()=>{
+  assert.deepEqual(recipe.FLAGSHIPS,['stellar-forge','fractal-biosphere','machine-cathedral']);assert(recipe.GRADUATED.includes(ID)&&recipe.FAMILIES.includes(ID));
   const shapes=[{modules:120,ui:70,dirs:40},{modules:12,hub:10,agents:5,agentEvents:80},{modules:60,classes:40,tests:20,cross:50},{modules:3},{modules:400,cross:300,agents:8,agentEvents:90}];
-  for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0});
-    assert(recipe.FAMILIES.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FAMILIES);}
+  for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0,version:4});
+    assert(recipe.FLAGSHIPS.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FLAGSHIPS);
+    assert.deepEqual(Object.keys(recipe.generate(p,{variant:k%4,now:0}).familyScores),recipe.FAMILIES);}
   const p=project('chosen',{modules:30,ui:10});
   const chosen=recipe.update(recipe.generate(p,{now:0}),{type:'family',family:ID},p,0);
-  assert.equal(chosen.family,ID);assert.equal(chosen.familyName,'Synaptic Storm (preview)');assert.equal(chosen.familyKind,'builtin');
+  assert.equal(chosen.family,ID);assert.equal(chosen.familyName,'Synaptic Storm');assert.equal(chosen.familyKind,'builtin');
   assert.equal(chosen.source,'user');assert.equal(chosen.locked,true);assert.equal(chosen.founded,true);
-  assert.equal(chosen.genome.life,undefined,'no digital life for the preview yet');assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
+  assert.equal(chosen.genome.life.enabled,true,'a new identity lives (generator 5)');assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
   // A stored choice is served as stored; automatic and a plain regenerate go back to the scored families.
   assert.equal(recipe.resolve(chosen,p,5).recipe,chosen);
   assert(recipe.FAMILIES.includes(recipe.update(chosen,{type:'automatic'},p,0).family));
@@ -36,23 +37,28 @@ test('Synaptic Storm is chosen only explicitly: never by the family scores, auto
   // The render lab's --family path, and the same choice twice, give the same identity.
   assert.deepEqual({...recipe.generate(p,{family:ID,now:1})},{...recipe.generate(p,{family:ID,now:1})});
 });
-test('Adding the preview changes no existing identity (the generator fingerprints of tests/recipe.test.js still hold)',()=>{
+test('Graduating it changes no existing identity (the generator fingerprints of tests/recipe.test.js still hold)',()=>{
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
-  // Drawing a preview first shares no state with the scored families.
+  // Drawing it first shares no state with the flagships.
   recipe.generate(p,{family:ID,now:0});
-  assert.equal(h(recipe.FAMILIES.map(f=>recipe.generate(p,{family:f,now:0}).genome)),'d27fb424f09b9362');
-  assert.equal(h(recipe.FAMILIES.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
+  assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0}).genome)),'d27fb424f09b9362');
+  assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
   const q=project('scores',{modules:40,classes:30,tests:10});assert.deepEqual(recipe.generate(q,{now:0}).familyScores,recipe.familyScores(recipe.traitsOf(q),recipe.generate(q,{now:0}).projectSeed,0));
 });
-test('The preview\'s catalogue covers every value its generator draws; tuning offers it without digital life',()=>{
-  const cat=catalog.PREVIEWS[ID];assert(cat&&cat.preview);assert.equal(catalog.FAMILIES[ID],undefined,'not a base for declarative packs');
+test('Its catalogue covers every value its generator draws; tuning offers it, digital life included',()=>{
+  const cat=catalog.FAMILIES[ID];assert(cat&&!cat.preview,'a family of the catalogue: a base for declarative packs');assert.equal(catalog.PREVIEWS[ID],undefined);
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
+    // (the digital-life group too: generator 5 draws life for a new identity)
     for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);}
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the standard digital-life group, as the flagships offer it (public/worlds/life/synaptic.js)
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());
+  const living=recipe.update(r,{type:'tune',values:{'life.enabled':true,'life.density':.6}},project('tune'),0);
+  assert.deepEqual([living.genome.life.enabled,living.genome.life.density],[true,.6]);assert.equal(living.family,ID);
   const tuned=recipe.update(r,{type:'tune',values:{'geometry.filesPerNeuron':7,'motion.sync':.9}},project('tune'),0);
   assert.deepEqual([tuned.genome.geometry.filesPerNeuron,tuned.genome.motion.sync],[7,.9]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'geometry.filesPerNeuron':12}},project('tune'),0),/filesPerNeuron/);
@@ -138,10 +144,10 @@ test('A project with no dependencies yet (or no files at all) is drawn: no axon 
     assert(w.stats().neurons>=0);w.dispose();
   }
 });
-test('The player and the receiver know the preview: the host loads it, /api/catalog lists it apart from the three',async t=>{
+test('The player and the receiver know it: the host loads it, /api/catalog lists it with the families',async t=>{
   assert.match(fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8'),/'synaptic-storm':'\.\/synaptic\.js'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-synaptic-'),quiet:true});
   const c=await (await fetch(`http://127.0.0.1:${svc.port}/api/catalog`)).json();
-  assert.deepEqual(Object.keys(c.families).sort(),['fractal-biosphere','machine-cathedral','stellar-forge']);
-  assert.equal(c.previews[ID].preview,true);assert.equal(c.previews[ID].name,'Synaptic Storm (preview)');assert(c.previews[ID].parameters['motion.firingRate']);
+  assert.deepEqual(Object.keys(c.families),recipe.FAMILIES);assert.deepEqual(c.previews,{},'no preview is left');
+  assert.equal(c.families[ID].builtin,true);assert.equal(c.families[ID].name,'Synaptic Storm');assert(c.families[ID].parameters['motion.firingRate']);
 });

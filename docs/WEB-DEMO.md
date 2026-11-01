@@ -9,8 +9,8 @@ four-minute session in which six Claude Code agents built a small recipe app
 silently behind a short introduction; **Start the performance** turns the music on (browsers need a click for sound)
 and plays it from the beginning, and it starts again when it ends.
 
-On the Stage: the six world families (Stellar Forge, Fractal Biosphere, Machine Cathedral, and the previews Synaptic
-Storm, Fractal Continuum and Temporal Terrain), the Construct and Monolith; replay speed (1×, 4×, 16×) and scrubbing; information modes;
+On the Stage: the six world families (Stellar Forge, Fractal Biosphere, Machine Cathedral, Synaptic Storm, Fractal
+Continuum and Temporal Terrain), the Construct and Monolith; replay speed (1×, 4×, 16×) and scrubbing; information modes;
 quality (Auto lowers it while frames are slow, and offers Monolith on a machine that cannot draw the living world
 smoothly); sound; full screen; recording the stage to a WebM file (in the browser, as in the application). On a phone
 the worlds are a menu instead of seven buttons.
@@ -26,8 +26,10 @@ in the demo lasts until the page is closed. To watch your own project: [Getting 
 1. The recording is copied into a temporary data directory (`/tmp/cr-site-*`, removed afterwards) and a receiver is
    started on it in the same process, on a free loopback port (never 4174). It interprets the journal as it would on
    your machine.
-2. The recording gets its public title, *Lumen Recipes*, the way the Visual Studio gives one (a recipe has none until
-   someone names it).
+2. The recording gets the world it opens on, Stellar Forge, and its public title, *Lumen Recipes*, the way the Visual
+   Studio gives them (a recipe has no title until someone names it). Generator 5 alone would choose Temporal Terrain
+   for this recording; choosing Stellar Forge keeps the genome the demo has served since 0.8.0
+   (`DEMO_FAMILY` in `scripts/build-site.js`).
 3. Every answer the Stage reads for a replay is fetched from that receiver and written to `site/api/`, with
    `site/api/index.json`, which maps each request (its path and its query parameters, sorted) to its file:
 

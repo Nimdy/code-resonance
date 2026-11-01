@@ -272,6 +272,262 @@ Effect presets (in the order of the intents they express by default): `foundatio
 
 Ambient layers unlocked by verified milestones, in order: `searchlights`, `mechanisms`, `beacons`, `aurora-glass`.
 
+## Synaptic Storm (`synaptic-storm`)
+
+| Parameter | Values | What it does |
+|---|---|---|
+| `geometry.filesPerNeuron` | integer 2 … 10 | files per neuron: each file is one dendrite branch, a subsystem with more files becomes a cluster of neurons |
+| `geometry.clustering` | number 0.4 … 1.8 | how far the neurons of a cluster stand apart |
+| `geometry.dendrites` | number 0.5 … 1.6 | dendrite length |
+| `geometry.branchAngle` | number 0.2 … 1 | angle of the dendrites' forks (radians) |
+| `geometry.curl` | number 0 … 1 | how much dendrites and axons wander |
+| `geometry.somaSize` | number 0.6 … 1.6 | soma size |
+| `space.spread` | number 0.7 … 1.5 | distance between clusters |
+| `space.depth` | number 0.2 … 1.2 | depth of the network: a flat sheet of cortex (low) or a volume (high) |
+| `material.translucency` | number 0.2 … 1 | how glassy membranes are: bright rims over a dim, clear body |
+| `material.glow` | number 0.5 … 1.6 | inner light of the somas and the branches near them |
+| `atmosphere.particles` | number 0 … 1.5 | motes and bokeh in the void |
+| `atmosphere.haze` | number 0 … 1.5 | violet haze in the void |
+| `atmosphere.depthOfField` | number 0 … 1.5 | depth of field: how soft the near and far network is |
+| `atmosphere.ghosts` | number 0 … 1.5 | the far network: dim, out-of-focus neurons around the project's own (ambient, never the code) |
+| `motion.firingRate` | number 0.2 … 2 | spontaneous firing (always on the beat grid; work and recent events raise it) |
+| `motion.conduction` | number 0.5 … 1.8 | speed of the signals along dendrites and axons |
+| `motion.drift` | number 0 … 1.5 | slow drift of the neurons |
+| `motion.breath` | `2`, `4`, `8` | breathing period of the glow (bars) |
+| `motion.sync` | number 0 … 1 | how tightly spontaneous firing locks to the beat |
+| `camera.personality` | `orbit`, `glide` | camera behaviour |
+| `camera.distance` | number 0.7 … 1.4 | distance |
+| `camera.elevation` | number 0.05 … 0.8 | elevation |
+| `camera.fov` | integer 24 … 50 | field of view |
+| `camera.drift` | number 0 … 1.5 | idle drift |
+| `agents.form` | `signal` | agent form: a travelling signal in its provider's colour and shape |
+| `agents.trail` | number 0.2 … 2 | agent trail length |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
+| `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
+| `palette.hue` | number 0 … 360 | base hue (degrees) |
+| `palette.primary` | `#rrggbb` | main structure colour |
+| `palette.secondary` | `#rrggbb` | second structure colour |
+| `palette.accent` | `#rrggbb` | effects and highlights |
+| `palette.highlight` | `#rrggbb` | bright details |
+| `palette.deep` | `#rrggbb` | background depth |
+| `palette.haze` | `#rrggbb` | atmosphere |
+| `palette.warning` | `#rrggbb` | failures and strain |
+| `palette.valid` | `#rrggbb` | validation and success |
+| `light.exposure` | number 0.5 … 2 | overall exposure |
+| `light.bloom` | number 0 … 2.5 | bloom strength |
+| `light.bloomThreshold` | number 0.3 … 1.2 | brightness where bloom starts |
+| `light.contrast` | number 0.7 … 1.4 | contrast |
+| `light.grain` | number 0 … 0.1 | film grain |
+| `light.vignette` | number 0 … 0.8 | vignette |
+| `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
+| `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
+| `agentProminence` | number 0 … 1 | how prominent agent presences are |
+| `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
+| `technique.exposure` | number 0.5 … 2 | exposure multiplier |
+| `technique.bloom` | number 0 … 3 | bloom multiplier |
+| `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
+| `technique.saturation` | number 0 … 2 | saturation multiplier |
+| `technique.vignette` | number 0 … 2 | vignette multiplier |
+| `technique.grain` | number 0 … 3 | grain multiplier |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
+| `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
+| `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
+
+Effect presets (in the order of the intents they express by default): `neurogenesis` (subsystem.created, growth), `sprout` (module.created, growth), `arborize` (structure.created, growth), `prune` (structure.removed, removal), `axon-link` (subsystem.connected, growth), `misfire` (validation.failed, failure), `activation-wave` (validation.passed, success), `resync` (validation.recovered, success), `consolidate` (refactor.validated, success), `storm` (milestone.achieved, success), `potentiate` (repository.checkpoint, growth), `expand` (world.expanded, growth).
+
+Ambient layers unlocked by verified milestones, in order: `glial-stars`, `neuromodulator-tide`, `myelin-sheen`, `deep-network`.
+
+## Fractal Continuum (`fractal-continuum`)
+
+| Parameter | Values | What it does |
+|---|---|---|
+| `fractal.form` | `bulb`, `julia`, `box`, `kifs` | the universe: a Mandelbulb, a Julia bulb, a Mandelbox or a kaleidoscopic crystal (each a different recursive geometry, not a colour) |
+| `fractal.power` | integer 4 … 10 | branching: the n-fold symmetry of a bulb or a Julia bulb |
+| `fractal.twist` | number 0 … 1 | twist: a bulb's phase, a box's or a crystal's turn per recursion |
+| `fractal.julia` | integer 0 … 5 | which Julia constant a Julia bulb grows around |
+| `fractal.shape` | number 0 … 1 | shape: a box's or a crystal's scale, a bulb's second phase |
+| `fractal.detail` | number 0.7 … 1.3 | how far the recursion unfolds as the project grows |
+| `geometry.spacing` | number 0.05 … 0.6 | angular spacing of the files' sites on the surface (radians) |
+| `geometry.regions` | number 0.6 … 1.5 | how far each subsystem's region spreads |
+| `geometry.swell` | number 0 … 0.6 | how far a subsystem's region swells outward with its files |
+| `geometry.siteSize` | number 0.5 … 1.8 | size of the files' sites of light |
+| `geometry.threads` | number 0 … 1.5 | brightness of the dependency threads between sites |
+| `material.occlusion` | number 0.5 … 1.6 | ambient occlusion: how deep the crevices are shaded |
+| `material.trap` | number 0 … 1 | how much the surface's colour follows its recursion (orbit traps) |
+| `material.sheen` | number 0 … 1 | specular sheen of the surface |
+| `material.rim` | number 0 … 1.5 | rim light along the silhouette and ridges |
+| `material.glow` | number 0.5 … 1.6 | light of the sites and events |
+| `atmosphere.haze` | number 0 … 1.5 | haze in the void |
+| `atmosphere.particles` | number 0 … 1.5 | dust in the void |
+| `atmosphere.halo` | number 0 … 1.5 | soft halo around the form |
+| `motion.breath` | `2`, `4`, `8` | breathing period (bars) |
+| `motion.drift` | number 0 … 1.5 | how far the camera drifts in toward a region while nothing happens |
+| `motion.shimmer` | number 0 … 1.5 | glints on the surface, on the beat |
+| `motion.resonance` | number 0.2 … 2 | spontaneous pulses of the sites (always on the beat grid; work and recent events raise them) |
+| `motion.light` | number 0 … 1.5 | how fast the key light circles |
+| `motion.sync` | number 0 … 1 | how tightly the spontaneous pulses lock to the beat |
+| `camera.personality` | `orbit`, `glide`, `pole` | camera behaviour (pole: looking down the symmetry axis) |
+| `camera.distance` | number 0.7 … 1.4 | distance |
+| `camera.elevation` | number 0.05 … 1.2 | elevation |
+| `camera.fov` | integer 24 … 50 | field of view |
+| `camera.drift` | number 0 … 1.5 | idle drift |
+| `agents.form` | `signal` | agent form: a signal in its provider's colour and shape |
+| `agents.trail` | number 0.2 … 2 | agent trail length |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
+| `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
+| `palette.hue` | number 0 … 360 | base hue (degrees) |
+| `palette.primary` | `#rrggbb` | main structure colour |
+| `palette.secondary` | `#rrggbb` | second structure colour |
+| `palette.accent` | `#rrggbb` | effects and highlights |
+| `palette.highlight` | `#rrggbb` | bright details |
+| `palette.deep` | `#rrggbb` | background depth |
+| `palette.haze` | `#rrggbb` | atmosphere |
+| `palette.warning` | `#rrggbb` | failures and strain |
+| `palette.valid` | `#rrggbb` | validation and success |
+| `light.exposure` | number 0.5 … 2 | overall exposure |
+| `light.bloom` | number 0 … 2.5 | bloom strength |
+| `light.bloomThreshold` | number 0.3 … 1.2 | brightness where bloom starts |
+| `light.contrast` | number 0.7 … 1.4 | contrast |
+| `light.grain` | number 0 … 0.1 | film grain |
+| `light.vignette` | number 0 … 0.8 | vignette |
+| `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
+| `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
+| `agentProminence` | number 0 … 1 | how prominent agent presences are |
+| `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
+| `technique.exposure` | number 0.5 … 2 | exposure multiplier |
+| `technique.bloom` | number 0 … 3 | bloom multiplier |
+| `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
+| `technique.saturation` | number 0 … 2 | saturation multiplier |
+| `technique.vignette` | number 0 … 2 | vignette multiplier |
+| `technique.grain` | number 0 … 3 | grain multiplier |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
+| `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
+| `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
+
+Effect presets (in the order of the intents they express by default): `emerge` (subsystem.created, growth), `seed` (module.created, growth), `unfold` (structure.created, growth), `erode` (structure.removed, removal), `thread` (subsystem.connected, growth), `decohere` (validation.failed, failure), `coherence-wave` (validation.passed, success), `recohere` (validation.recovered, success), `refine` (refactor.validated, success), `bloom` (milestone.achieved, success), `glow` (repository.checkpoint, growth), `deepen` (world.expanded, growth).
+
+Ambient layers unlocked by verified milestones, in order: `stardust`, `inner-light`, `corona`, `echoes`.
+
+## Temporal Terrain (`temporal-terrain`)
+
+| Parameter | Values | What it does |
+|---|---|---|
+| `time.scale` | number 15 … 90 | how many seconds of the recent past the land near the front edge holds (τ): smaller, the land flows back faster |
+| `time.depth` | number 35 … 90 | depth of the land per e-fold of age: larger, the past stays wider |
+| `relief.height` | number 0.4 … 1.8 | height of the files' ridges |
+| `relief.massif` | number 0.3 … 1.8 | height of the ranges' plateaus under their files |
+| `relief.detail` | number 0 … 2 | fine relief from the files' symbols |
+| `relief.spacing` | number 0.3 … 9 | spacing of the files across a range (world units, from the project's size) |
+| `contour.interval` | number 0.4 … 1.6 | height between two contour lines |
+| `contour.index` | integer 3 … 6 | every n-th contour line is an index line (brighter) |
+| `contour.width` | number 0.5 … 2 | contour line width (pixels at 1080 lines) |
+| `contour.glow` | number 0.4 … 1.8 | light of the contour lines |
+| `material.rock` | number 0.2 … 1.4 | how much light the relief takes |
+| `material.sheen` | number 0 … 1 | sheen of the slopes facing the light |
+| `material.cut` | number 0 … 1.8 | light of the front edge's cut |
+| `atmosphere.mist` | number 0 … 1.6 | mist in the valleys |
+| `atmosphere.haze` | number 0 … 1.5 | haze toward the horizon |
+| `atmosphere.motes` | number 0 … 1.6 | drifting motes over the land |
+| `motion.breath` | `2`, `4`, `8` | breathing period of the light (bars) |
+| `motion.light` | number 0 … 1.5 | how fast the key light travels its arc |
+| `motion.shimmer` | number 0 … 1.5 | contour shimmer on the beat |
+| `motion.drift` | number 0 … 1.5 | how far the camera drifts between vantage points while nothing happens |
+| `camera.personality` | `survey`, `valley`, `map` | camera behaviour (survey: oblique from the front edge; valley: low along the land; map: from high above) |
+| `camera.distance` | number 0.7 … 1.4 | distance |
+| `camera.elevation` | number 0.05 … 1.2 | elevation |
+| `camera.fov` | integer 24 … 50 | field of view |
+| `camera.drift` | number 0 … 1.5 | idle drift |
+| `agents.form` | `surveyor` | agent form: a surveyor's light in its provider's colour and shape |
+| `agents.trail` | number 0.2 … 2 | agent trail length |
+| `life.enabled` | true / false | digital life: autonomous inhabitants that sense, move, gather, leave traces and react to the world and to each other (off: the world exactly as before) |
+| `life.density` | number 0 … 1 | population: the share of the world's inhabitants that live (1: all of them) |
+| `life.vitality` | number 0.2 … 2 | vitality: how active they are (speed, curiosity, how often they move on) |
+| `life.collective` | number 0 … 2 | collective behaviour: how strongly groups form, align and move the currents together |
+| `life.environment` | number 0 … 2 | environmental influence: how strongly currents and engineering events move them |
+| `life.trails` | number 0 … 2 | trails: how much they mark their way and follow each other's, and how visible the trails are |
+| `life.persistence` | number 0.25 … 2 | field memory: how long trails, energy and disturbances last |
+| `life.music` | number 0 … 2 | music influence: 0 an independent ecology (the music changes nothing), 1 a musical ecology (sections visibly change how the inhabitants gather, roam and glow; the default), 2 an expressive ecology (unmistakable, still autonomous) |
+| `life.attraction` | number 0 … 2 | advanced: attraction to favourable places and to other species they chase |
+| `life.repulsion` | number 0 … 2 | advanced: avoidance of disturbed places and of species they avoid |
+| `life.separation` | number 0 … 2 | advanced: personal space between neighbours |
+| `life.alignment` | number 0 … 2 | advanced: matching neighbours' headings |
+| `life.cohesion` | number 0 … 2 | advanced: staying with the group |
+| `life.current` | number 0 … 2 | advanced: strength of the world's large-scale current |
+| `life.diffusion` | number 0 … 2 | advanced: how fast traces spread out |
+| `life.radius` | number 0.5 … 1.5 | advanced: how far an inhabitant perceives its neighbours |
+| `life.ecology` | `1`, `2` | ecology: 2 the musical ecology (the music shapes gatherings, migration, currents, field memory and light as conditions; the default for new identities), 1 the earlier climate (currents, turbulence and cohesion only) an identity saved before it keeps until it is upgraded |
+| `palette.scheme` | `analogous`, `complementary`, `split`, `triad` | colour harmony (documentation only once colours are set) |
+| `palette.hue` | number 0 … 360 | base hue (degrees) |
+| `palette.primary` | `#rrggbb` | main structure colour |
+| `palette.secondary` | `#rrggbb` | second structure colour |
+| `palette.accent` | `#rrggbb` | effects and highlights |
+| `palette.highlight` | `#rrggbb` | bright details |
+| `palette.deep` | `#rrggbb` | background depth |
+| `palette.haze` | `#rrggbb` | atmosphere |
+| `palette.warning` | `#rrggbb` | failures and strain |
+| `palette.valid` | `#rrggbb` | validation and success |
+| `light.exposure` | number 0.5 … 2 | overall exposure |
+| `light.bloom` | number 0 … 2.5 | bloom strength |
+| `light.bloomThreshold` | number 0.3 … 1.2 | brightness where bloom starts |
+| `light.contrast` | number 0.7 … 1.4 | contrast |
+| `light.grain` | number 0 … 0.1 | film grain |
+| `light.vignette` | number 0 … 0.8 | vignette |
+| `music.reactivity` | number 0 … 1 | how strongly visuals follow the music |
+| `music.beatPulse` | number 0 … 1 | pulse on the beat |
+| `music.score` | `2`, `3` | generative score: 3 the composed score (long-form sections, phrasing, counter-melody and arrangement; the default for new identities), 2 the classic score an identity saved before it keeps until it is upgraded |
+| `agentProminence` | number 0 … 1 | how prominent agent presences are |
+| `limits.maxLabels` | integer 0 … 8 | callouts on screen at once |
+| `technique.finish` | `classic`, `clean`, `cinematic`, `dreamlike` | finish: a lens and colour profile over the world's own grade. Classic is the grade as it was before finishes (also when absent); clean is crisp with restrained bloom and almost no fringe; cinematic (the default for new identities) rolls highlights off in AgX with a subtle optical fringe, warm halation and a gentle vignette; dreamlike is luminous, with soft diffusion, richer colour separation and an artistic fringe |
+| `technique.exposure` | number 0.5 … 2 | exposure multiplier |
+| `technique.bloom` | number 0 … 3 | bloom multiplier |
+| `technique.contrast` | number 0.7 … 1.4 | contrast multiplier |
+| `technique.saturation` | number 0 … 2 | saturation multiplier |
+| `technique.vignette` | number 0 … 2 | vignette multiplier |
+| `technique.grain` | number 0 … 3 | grain multiplier |
+| `technique.aberration` | number 0 … 0.02 | chromatic aberration: with a finish, the strength of its optical fringe (0.004 is the finish as designed, 0 turns it off); classic: the colour offset toward the edges (default 0.004) |
+| `technique.tint` | [r, g, b], each 0.5 … 1.5 | colour multiplier before tone mapping [r,g,b] |
+| `technique.lift` | [r, g, b], each -0.05 … 0.05 | shadow lift after tone mapping [r,g,b] |
+
+Effect presets (in the order of the intents they express by default): `range` (subsystem.created, growth), `peak` (module.created, growth), `uplift` (structure.created, growth), `erode` (structure.removed, removal), `road` (subsystem.connected, growth), `fault` (validation.failed, failure), `scan` (validation.passed, success), `heal` (validation.recovered, success), `terrace` (refactor.validated, success), `sunrise` (milestone.achieved, success), `survey` (repository.checkpoint, growth), `horizon` (world.expanded, growth).
+
+Ambient layers unlocked by verified milestones, in order: `dawn`, `lanterns`, `stars`, `aurora`.
+
 ## Effect polarity
 
 An intent may only be expressed by an effect of the same class: a failure never looks like success, a removal never looks like growth.

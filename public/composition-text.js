@@ -23,7 +23,8 @@
     nodes:'Structural nodes',boundary:'Environment boundary',camera:'The camera (moves with the view)',point:'A fixed point you choose'};
   const BLEND_WORDS={add:'Add (light adds up)',screen:'Screen (soft light)',normal:'Normal (covers)'};
   const FINISH_WORDS={clean:'Clean',cinematic:'Cinematic',dreamlike:'Dreamlike'};
-  const BASE_WORDS={'fractal-biosphere':'Fractal Biosphere','stellar-forge':'Stellar Forge','machine-cathedral':'Machine Cathedral',canvas:'Artist canvas'};
+  const BASE_WORDS={'fractal-biosphere':'Fractal Biosphere','stellar-forge':'Stellar Forge','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum',
+    'temporal-terrain':'Temporal Terrain',canvas:'Artist canvas'};
   // Signals: what they are called inside a sentence, and how they move (a pulse, an event's swell, a ramp or a level).
   const SIGNAL_WORDS={
     'music.beat':['every beat','pulse'],'music.bar':['the start of every bar','pulse'],'music.phrase':['each four-bar phrase','ramp'],

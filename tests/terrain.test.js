@@ -1,5 +1,5 @@
 'use strict';
-// Temporal Terrain (preview): chosen only explicitly, so no existing identity changes; the land (time to depth, the rows of
+// Temporal Terrain: graduated with generator 5 (scored from its own stream, so no existing identity changes); the land (time to depth, the rows of
 // the history pyramid, the ranges and ridges across it) is a pure function of the model and the time; a replay's land is
 // its whole recorded history whether played through or sought; the world runs headless, keeps its effects on their own
 // files and the failure language honest, and never draws a path or an identifier.
@@ -20,38 +20,40 @@ function project(id,{modules=10,ui=0,classes=0,fns=3,tests=0,dirs=3,hub=0,cross=
   for(let i=0;i<cross;i++)edges.push({a:`m${i%modules}`,b:`m${(i+1)%modules}`,kind:'depends',cross:true});
   return {projectId:sha(id),graph:{nodes,edges},stats:{raw:100,agentEvents,testsPassed:0,testsFailed:0},agents:Array.from({length:agents},(_,i)=>({id:`a${i}`}))};
 }
-test('Temporal Terrain is chosen only explicitly: never by the family scores, automatic or a plain regenerate',()=>{
-  assert.deepEqual(recipe.FAMILIES,['stellar-forge','fractal-biosphere','machine-cathedral']);assert(recipe.PREVIEWS.includes(ID));
+test('Temporal Terrain is scored from generator 5 on (never by generator 4); choosing it is a lasting, living identity',()=>{
+  assert.deepEqual(recipe.FLAGSHIPS,['stellar-forge','fractal-biosphere','machine-cathedral']);assert(recipe.GRADUATED.includes(ID)&&recipe.FAMILIES.includes(ID));
   const shapes=[{modules:120,ui:70,dirs:40},{modules:12,hub:10,agents:5,agentEvents:80},{modules:60,classes:40,tests:20,cross:50},{modules:3},{modules:400,cross:300,agents:8,agentEvents:90}];
-  for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0});
-    assert(recipe.FAMILIES.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FAMILIES);}
+  for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0,version:4});
+    assert(recipe.FLAGSHIPS.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FLAGSHIPS);
+    assert.deepEqual(Object.keys(recipe.generate(p,{variant:k%4,now:0}).familyScores),recipe.FAMILIES);}
   const p=project('chosen',{modules:30,ui:10});
   const chosen=recipe.update(recipe.generate(p,{now:0}),{type:'family',family:ID},p,0);
-  assert.equal(chosen.family,ID);assert.equal(chosen.familyName,'Temporal Terrain (preview)');assert.equal(chosen.familyKind,'builtin');
+  assert.equal(chosen.family,ID);assert.equal(chosen.familyName,'Temporal Terrain');assert.equal(chosen.familyKind,'builtin');
   assert.equal(chosen.source,'user');assert.equal(chosen.locked,true);assert.equal(chosen.founded,true);
-  assert.equal(chosen.genome.life,undefined,'no digital life for the preview yet');assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
+  assert.equal(chosen.genome.life.enabled,true,'a new identity lives (generator 5)');assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
   assert.equal(recipe.resolve(chosen,p,5).recipe,chosen);
   assert(recipe.FAMILIES.includes(recipe.update(chosen,{type:'automatic'},p,0).family));
   assert(recipe.FAMILIES.includes(recipe.update(chosen,{type:'regenerate'},p,0).family));
   const again=recipe.update(chosen,{type:'regenerate',keepFamily:true},p,0);assert.equal(again.family,ID);assert.notDeepEqual(again.genome,chosen.genome);
   assert.deepEqual({...recipe.generate(p,{family:ID,now:1})},{...recipe.generate(p,{family:ID,now:1})});
 });
-test('Adding the preview changes no existing identity (the generator fingerprints of tests/recipe.test.js still hold)',()=>{
+test('Graduating it changes no existing identity (the generator fingerprints of tests/recipe.test.js still hold)',()=>{
   const p={projectId:'pal-test-1234567',graph:{nodes:[],edges:[]},stats:{}},h=x=>require('node:crypto').createHash('sha256').update(JSON.stringify(x)).digest('hex').slice(0,16);
-  for(const f of recipe.PREVIEWS)recipe.generate(p,{family:f,now:0});
-  assert.equal(h(recipe.FAMILIES.map(f=>recipe.generate(p,{family:f,now:0}).genome)),'d27fb424f09b9362');
-  assert.equal(h(recipe.FAMILIES.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
-  assert.equal(recipe.RECIPE_VERSION,4);
+  for(const f of recipe.GRADUATED)recipe.generate(p,{family:f,now:0});
+  assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0}).genome)),'d27fb424f09b9362');
+  assert.equal(h(recipe.FLAGSHIPS.map(f=>recipe.generate(p,{family:f,now:0,version:3}).genome)),'ccb6221a53e0c619');
+  assert.equal(recipe.RECIPE_VERSION,5);
   const q=project('scores',{modules:40,classes:30,tests:10});assert.deepEqual(recipe.generate(q,{now:0}).familyScores,recipe.familyScores(recipe.traitsOf(q),recipe.generate(q,{now:0}).projectSeed,0));
 });
-test('The preview\'s catalogue covers every value its generator draws; the palette keeps a fault away from the lamps\' colour',()=>{
-  const cat=catalog.PREVIEWS[ID];assert(cat&&cat.preview);assert.equal(catalog.FAMILIES[ID],undefined,'not a base for declarative packs');
+test('Its catalogue covers every value its generator draws; the palette keeps a fault away from the lamps\' colour',()=>{
+  const cat=catalog.FAMILIES[ID];assert(cat&&!cat.preview,'a family of the catalogue: a base for declarative packs');assert.equal(catalog.PREVIEWS[ID],undefined);
   const hue=hex=>{const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255),mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;if(!d)return 0;
     const h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;return (h*60+360)%360;};
   const dh=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
   const spacing=[];
   for(let seed=1;seed<=200;seed++){
     const r=recipe.generate(project(`cat-${seed}`,{modules:seed*3,classes:seed%7,tests:seed%5,cross:seed%11,ui:seed%4,groups:1+seed%9}),{family:ID,seed:seed*7919,variant:seed%3,now:0});
+    // (the digital-life group too: generator 5 draws life for a new identity)
     for(const [p,spec] of Object.entries(cat.parameters)){if(p.startsWith('technique.')&&p!=='technique.finish')continue;const v=catalog.get(r.genome,p);
       assert(v!==undefined,`${p} missing`);assert(catalog.accepts(spec,v),`${p}=${JSON.stringify(v)}`);}
     assert.deepEqual(Object.values(r.genome.effects),cat.effects);assert.deepEqual(r.genome.ambient.unlocks,cat.unlocks);
@@ -61,7 +63,11 @@ test('The preview\'s catalogue covers every value its generator draws; the palet
   // the files' spacing follows the project's size at generation: a large project's files stand closer
   const at=n=>spacing.filter(([m])=>Math.abs(m-n)<10).map(x=>x[1]);assert(Math.max(...at(450))<Math.min(...at(30)));
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the flagships' digital-life group: generator 5 draws it for a new identity, and a tuning turns it off or on
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());assert.equal(r.genome.life.enabled,true,'a new identity lives');
+  const quiet=recipe.update(r,{type:'tune',values:{'life.enabled':false}},project('tune'),0);assert.equal(quiet.genome.life.enabled,false);
+  assert.deepEqual(recipe.update(quiet,{type:'tune-reset'},project('tune'),0).genome.life,r.genome.life,'reset gives its own life back');
   const tuned=recipe.update(r,{type:'tune',values:{'camera.personality':'map','contour.interval':1.2}},project('tune'),0);
   assert.deepEqual([tuned.genome.camera.personality,tuned.genome.contour.interval],['map',1.2]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'contour.index':9}},project('tune'),0),/index/);
@@ -248,14 +254,13 @@ test('The earned sunrise is rare: the director\'s token and a four-minute gap; o
   w.onPrime();w.update(frame(T0+10000+500200));assert.equal(w.stats().lastSunrise,null,'after a seek no transient survives');assert(w.stats().monuments>=4,'the monuments do');
   w.dispose();
 });
-test('The player and the receiver know the preview: the host loads it and hands it a replay\'s history, /api/catalog lists it',async t=>{
+test('The player and the receiver know it: the host loads it and hands it a replay\'s history, /api/catalog lists it with the families',async t=>{
   const host=fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8');
   assert.match(host,/'temporal-terrain':'\.\/terrain\.js'/);assert.match(host,/onHistory\(recorded,t\)/);
   assert.match(fs.readFileSync(path.join(__dirname,'../public/ui/workspaces/visual.js'),'utf8'),/id:'temporal-terrain'/);
   assert.match(fs.readFileSync(path.join(__dirname,'../public/web-demo/demo.js'),'utf8'),/'temporal-terrain':'Temporal Terrain'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-terrain-'),quiet:true});
   const c=await (await fetch(`http://127.0.0.1:${svc.port}/api/catalog`)).json();
-  assert.deepEqual(Object.keys(c.families).sort(),['fractal-biosphere','machine-cathedral','stellar-forge']);
-  assert.equal(c.previews[ID].preview,true);assert.equal(c.previews[ID].name,'Temporal Terrain (preview)');assert(c.previews[ID].parameters['contour.interval']);
-  assert(c.previews['synaptic-storm']&&c.previews['fractal-continuum'],'the other previews stay listed');
+  assert.deepEqual(Object.keys(c.families),recipe.FAMILIES);assert.deepEqual(c.previews,{},'no preview is left');
+  assert.equal(c.families[ID].builtin,true);assert.equal(c.families[ID].name,'Temporal Terrain');assert(c.families[ID].parameters['contour.interval']);
 });

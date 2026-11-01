@@ -1,4 +1,4 @@
-// World host: runs a family world (Stellar Forge, Fractal Biosphere, Machine Cathedral, or a visual pack's world) for
+// World host: runs a family world (one of the six built-in families, or a visual pack's world) for
 // the player with the same contract as the Construct (reset / applyDelta / cue / setMood / render / resize / stats),
 // plus intents, priming after a seek, recipes, label modes, picking and peeking (what is under a point, for the Control
 // Center's hover card: it never selects and never draws). One host per canvas; switching worlds disposes
@@ -15,8 +15,8 @@ import {createLifeTimeline} from './life/timeline.js';
 import {createLifeDriver} from './life/driver.js';
 import {createMusical} from './musical.js';
 import {createQualityGovernor} from './quality.js';
-// Synaptic Storm, Fractal Continuum and Temporal Terrain are previews: built in like the three, but a recipe names one
-// only when chosen (engine/recipe.js PREVIEWS).
+// The six built-in families (engine/recipe.js FAMILIES): the three flagships, and Synaptic Storm, Fractal Continuum and
+// Temporal Terrain, previews until generator 5 graduated them.
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js','synaptic-storm':'./synaptic.js',
   'fractal-continuum':'./fractal.js','temporal-terrain':'./terrain.js'};
 // Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
@@ -151,7 +151,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   function gpuPoll(){while(queries.length&&gl.getQueryParameter(queries[0],gl.QUERY_RESULT_AVAILABLE)){const q=queries.shift(),ns=gl.getQueryParameter(q,gl.QUERY_RESULT);gl.deleteQuery(q);
     if(!gl.getParameter(timer.GPU_DISJOINT_EXT)){const ms=ns/1e6;gpuMs=gpuMs===null?ms:gpuMs+(ms-gpuMs)*.1;}}}
   const contextFor=next=>({THREE,renderer,scene,camera,model,recipe:next,get director(){return director;},get agents(){return agents;},pipeline,film,
-    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id),life:lifeFor(next)});
+    speed:()=>speedK,name:id=>next.aliases?.[id]||generatedName(id),life:lifeFor(next),musicAt:T=>musical.at(T)});
   // A shader pack's slots: shared uniforms (time, beat, energy, palette, camera) plus the pack's own values.
   function extensionFor(next,ctx){
     if(!extension)return null;
