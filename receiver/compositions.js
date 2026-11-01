@@ -5,7 +5,7 @@
 // never destroys the one before it. Every composition is stored normalize()d (public/composition.js): allowlisted
 // layer types, signals and targets, clamped values, sanitised names. Nothing here is ever evaluated.
 //
-// Export: a composition becomes a data-only visual pack (declarative, SDK ^1.2) the Visual Packs import installs
+// Export: a composition becomes a data-only visual pack (declarative, SDK ^1.2, or ^1.3 over a family graduated in 0.8.1) the Visual Packs import installs
 // anywhere: pack.json and a README. It carries the composition and its words only: no project, path, recipe or person
 // beyond the author name the artist types.
 const path=require('node:path');
@@ -13,6 +13,7 @@ const crypto=require('node:crypto');
 const store=require('./store');
 const Composition=require('../public/composition.js');
 const Words=require('../public/composition-text.js');
+const packs=require('../engine/packs');
 const SCHEMA='code-resonance.compositions.v1',MAX=100,HISTORY=Composition.LIMITS.versions;
 const ID=/^c-[0-9a-f]{12}$/,REF=/^[a-z0-9][a-z0-9.-]{0,63}$/;
 const ORIGINS=['blank','starter','world','pack','copy','composition'];
@@ -120,8 +121,11 @@ function exportPack(entry,{author='',license='CC-BY-4.0',description=null}={}){
   const name=label(c.name,'Untitled composition'),who=label(author,'A Code Resonance artist');
   const id=`creator.${slug(c.name)||'composition'}-${entry.id.slice(2,8)}`,version=`1.0.${Math.min(entry.version,99999)}`;
   const about=String(description??c.description??'').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,280);
-  const manifest={schema:'code-resonance.pack.v1',id,name,version,kind:'declarative',sdk:'^1.2',author:{name:who},...(about?{description:about}:{}),
-    license:LICENSE.test(license)?license:'CC-BY-4.0',declarative:{base:c.base==='canvas'?'fractal-biosphere':c.base,composition:c}};
+  const declarative={base:c.base==='canvas'?'fractal-biosphere':c.base,composition:c};
+  // Compositions came with SDK 1.2; a base that graduated later asks for the SDK that knows it.
+  const sdk=`^1.${Math.max(2,...packs.needs({declarative}).map(([n])=>n))}`;
+  const manifest={schema:'code-resonance.pack.v1',id,name,version,kind:'declarative',sdk,author:{name:who},...(about?{description:about}:{}),
+    license:LICENSE.test(license)?license:'CC-BY-4.0',declarative};
   const folder=id.replace(/^creator\./,'');
   const text={'pack.json':JSON.stringify(manifest,null,2)+'\n','README.md':Words.readme(c,{packId:id,author:who,license:manifest.license,version})};
   return {id,name,version,folder,manifest,files:Object.entries(text).map(([p,s])=>({path:p,data:Buffer.from(s,'utf8').toString('base64'),size:Buffer.byteLength(s)}))};

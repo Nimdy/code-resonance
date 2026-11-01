@@ -21,6 +21,13 @@ async function start(t,name){
   return {svc,dir,base,projectId,send,get};
 }
 const decode=f=>Buffer.from(f.data,'base64').toString('utf8');
+test('Export asks for SDK 1.2, or 1.3 over a family that graduated in 0.8.1 (an older receiver then says which SDK it needs)',()=>{
+  const {exportPack}=require('../receiver/compositions');
+  const over=b=>exportPack({id:'c-0123456789',version:1,composition:C.normalize({...starter('starter-blank'),base:b})}).manifest;
+  for(const b of ['stellar-forge','fractal-biosphere','machine-cathedral','canvas'])assert.equal(over(b).sdk,'^1.2',b);
+  for(const b of ['synaptic-storm','fractal-continuum','temporal-terrain']){const m=over(b);assert.equal(m.sdk,'^1.3',b);assert.equal(m.declarative.base,b);
+    assert.equal(packs.compatible(m,'1.2.0').ok,false);assert.equal(packs.compatible(m).ok,true);}
+});
 test('Export → import → install: another installation gets the identical composition and uses it on its own project',async t=>{
   const a=await start(t,'a'),b=await start(t,'b');
   // A composition made from a starter, edited, applied to a project (so a recipe and private paths exist to leak).
@@ -87,7 +94,7 @@ test('Unsafe content is refused: code in a data pack, unknown layer types or sig
   assert(write('object',m({layers:[{type:'light',seed:odd,params:{intensity:odd},anchor:{kind:'point',x:odd},mappings:[{signal:odd}]},{type:odd}],music:{profile:{mood:odd}}})).some(e=>/unknown signal/.test(e)));
   assert.equal(C.normalize({layers:[{type:'light',params:{intensity:odd}}]}).layers[0].params.intensity,C.specOf('light').find(p=>p.key==='intensity').default);
   assert(write('base',m(C.exportable(starter('starter-celestial-motion')))).some(e=>/must be the composition's base, "stellar-forge"/.test(e)));
-  assert(write('old-sdk',m(C.exportable(starter('starter-bioluminescent-dream')),{sdk:'^1.3'})).some(e=>/needs SDK 1\.3/.test(e)));
+  assert(write('old-sdk',m(C.exportable(starter('starter-bioluminescent-dream')),{sdk:'^1.4'})).some(e=>/needs SDK 1\.4/.test(e)));
   assert(write('shape',m('layers')).some(e=>/composition: must be object/.test(e)));
   // A finish in a data pack's technique (SDK 1.2) is accepted; an unknown one is not.
   assert.deepEqual(write('finish',{...m(undefined),declarative:{base:'stellar-forge',technique:{finish:'dreamlike'}}}),[]);

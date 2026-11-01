@@ -1,4 +1,16 @@
-# SDK 1.2 and 1.1: what changed, and migrating
+# SDK 1.3, 1.2 and 1.1: what changed, and migrating
+
+## SDK 1.3: the graduated worlds and `grown`
+
+SDK 1.3 names two things that became available in Code Resonance 0.8.1 and changes nothing else: Synaptic
+Storm, Fractal Continuum and Temporal Terrain as the `base` of a declarative or shader pack (`synaptic-storm`,
+`fractal-continuum`, `temporal-terrain`), and the project trait `grown` for a world pack's parameters (`from`), the share
+of the project's symbols created while it was observed (generator 5). A pack that uses either declares `"sdk": "^1.3"`,
+so that an older receiver refuses it with *needs SDK 1.3 or later* instead of an unknown family or trait. A pack that
+uses them and declares less still installs, with a warning that says what to declare (`node scripts/pack.js validate`
+and the Visual Packs import show it). The Artist Studio's *Export* writes `^1.3` for a composition over one of the
+three and `^1.2` otherwise. Every pack written for `^1.0`, `^1.1` or `^1.2` runs unchanged, and `sdk.version` is
+`'1.3.0'` (`sdk.api` stays `1`).
 
 ## SDK 1.2: creations and finishes
 

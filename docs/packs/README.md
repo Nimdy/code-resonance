@@ -1,4 +1,4 @@
-# Visual Pack SDK 1 (current: 1.2)
+# Visual Pack SDK 1 (current: 1.3)
 
 Make your own Code Resonance visuals without touching Code Resonance. A visual pack is a folder with a `pack.json`
 manifest; you install it locally in **Visual Packs** (a `.zip` or a folder) or with `scripts/pack.js`, and choose it in
@@ -75,8 +75,8 @@ timings. Never file names, paths, source, prompts, the project's folder name, cr
 - [Security](security.md): isolation, approvals, what the browser cannot sandbox.
 - [Performance](performance.md): budgets, adaptive quality, what the tests measure.
 - [Parameter catalogue](catalogue.md): what declarative packs may set on the built-in families.
-- [SDK 1.2 and 1.1](migration.md): what changed from 1.0 (code runs in a worker) and in 1.2 (creations, finishes), and
-  how to migrate.
+- [SDK 1.3, 1.2 and 1.1](migration.md): what changed from 1.0 (code runs in a worker), in 1.2 (creations, finishes)
+  and in 1.3 (the graduated worlds as bases, the trait `grown`), and how to migrate.
 
 ## Compatibility tests
 

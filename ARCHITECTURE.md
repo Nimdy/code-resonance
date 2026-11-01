@@ -146,7 +146,7 @@ made with, and older versions stay in the code.
 | Finish | absent (Classic), `clean`, `cinematic`, `dreamlike` | `genome.technique.finish` | Absent is the classic composite exactly (`tests/finish.test.js` pins it) |
 | Digital life | simulation 1; ecology 1 or 2 | `public/worlds/life/sim.js` `SIM_VERSION`; `genome.life.ecology` | No `life` (or `enabled: false`) draws no ecosystem. An absent ecology is 1, bit for bit (`tests/life-driver-generations.test.js` pins its digests) |
 | Parameter catalogue | 1.0 | `engine/catalog.js` `CATALOG_VERSION` | Parameters are added, never removed: stored recipes and packs carry them |
-| Visual Pack SDK | 1.2.0, World API 1 | `engine/packs.js` and `public/worlds/sdk.js` `SDK_VERSION` (kept equal) | Packs declare `^1.0`, `^1.1` or `^1.2`; older packs run unchanged ([migration](docs/packs/migration.md)) |
+| Visual Pack SDK | 1.3.0, World API 1 | `engine/packs.js` and `public/worlds/sdk.js` `SDK_VERSION` (kept equal) | Packs declare `^1.0` to `^1.3`; older packs run unchanged ([migration](docs/packs/migration.md)) |
 | Artist composition | `code-resonance.composition.v1`; the library `code-resonance.compositions.v1` | `public/composition.js`; `receiver/compositions.js` | Normalised on every read and write: allowlisted types, signals and targets, clamped values |
 | Receiver documents | `code-resonance.settings.v1`, `preferences.v1`, `presets.v1` | `receiver/store.js` | Validated on read and write, written atomically, `revision`-checked |
 | Exchange formats | `frame.v1`, `intent.v1`, `timeline.v1`, `performance.v1`, `evidence.v1`, `export.v2` | `engine/`, `receiver/` | Each document names its schema (`code-resonance.<name>.v<n>`) |

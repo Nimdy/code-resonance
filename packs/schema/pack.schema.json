@@ -41,7 +41,7 @@
     "effects": {"type": "object", "propertyNames": {"$ref": "#/$defs/effectType"}, "additionalProperties": {"$ref": "#/$defs/name"},
       "description": "How each canonical intent is expressed: intent type -> effect name."},
     "trait": {"enum": ["modules", "districts", "symbols", "ui", "uiModules", "routes", "model", "functions", "dependencyDensity", "crossDensity", "hubness",
-      "branching", "depth", "tests", "agents", "agentShare"]},
+      "branching", "depth", "tests", "agents", "agentShare", "grown"]},
     "parameter": {"oneOf": [
       {"type": "object", "required": ["type", "min", "max"], "additionalProperties": false, "properties": {
         "type": {"enum": ["number", "integer"]}, "min": {"type": "number"}, "max": {"type": "number"}, "description": {"type": "string", "maxLength": 120},

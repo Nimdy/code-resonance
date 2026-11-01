@@ -20,7 +20,7 @@
 // Determinism: draw only from sdk.model, sdk.director, sdk.agents, the frame and sdk.random(key); time comes from the
 // frame (never Date.now, performance.now or animation-frame timestamps). See docs/packs/determinism.md.
 import {THREE,NOISE,ORBIT,BACKGROUND_VS,clamp,lerp,smooth,easeOut,easeInOut,hash,rand,rng,color,orbitPos,pool,instancedBuffers,pointBuffers} from './core.js';
-export const SDK_VERSION='1.2.0';
+export const SDK_VERSION='1.3.0';
 export const WORLD_API=1;
 export const REQUIRED=['rebuild','update','cameraGoal','effect','dispose'];
 export const OPTIONAL=['afterCamera','background','grade','describe','agentPosition','agentColor','subsystemLabels','status','pick','inspect','onPrime','onDelta','onCue','stats'];

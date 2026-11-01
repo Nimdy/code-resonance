@@ -102,7 +102,7 @@ pictures. The Control Center screenshots were taken at 1920×1080.
   ecosystem of simulated inhabitants (digital life, which you can turn off) lives in it. The Construct (WebGL2) and
   Monolith, a flat architectural elevation drawn in Canvas 2D, remain available.
 - **Lets you make your own.** The Artist Studio composes original looks from procedural layers that react to the music
-  and to real events, without code. Visual packs (SDK 1.2) add looks, shaders and whole worlds; packs with code run
+  and to real events, without code. Visual packs (SDK 1.3) add looks, shaders and whole worlds; packs with code run
   isolated, only after you approve their exact files.
 - **One clock for sound and image.** Interpretation runs about 10.5 s behind the work; every event is played at its
   true time on a shared performance clock. Replay covers the whole recorded history, and re-interpreting a journal
@@ -273,8 +273,8 @@ atmospheres, lights) over a world or a blank canvas, decide what each one reacts
 project, export it as a data-only pack. [docs/ARTIST-STUDIO.md](docs/ARTIST-STUDIO.md).
 
 **Visual Packs.** Your creations and installed packs: import a `.zip` or a folder, review a code pack's files and
-digest, allow it, revoke or remove it, read its documentation. Make your own with the SDK (1.2; [what changed from
-1.0 and 1.1](docs/packs/migration.md)): [docs/packs/README.md](docs/packs/README.md).
+digest, allow it, revoke or remove it, read its documentation. Make your own with the SDK (1.3; [what changed from
+1.0](docs/packs/migration.md)): [docs/packs/README.md](docs/packs/README.md).
 
 ```bash
 node scripts/pack.js new my-world --kind world --id yourname.my-world
@@ -339,7 +339,7 @@ full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.m
 
 0.8.1 is the product version. Interpretation 10 (adapters for nine more languages, deeper Python) is independent of it. The last published
 GitHub Release before the 0.7 series was 0.6.0 (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (5), digital life's ecology (1 or 2), the
-Visual Pack SDK (1.2) and the data formats have versions of their own, which keep older identities as they were:
+Visual Pack SDK (1.3) and the data formats have versions of their own, which keep older identities as they were:
 [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).
 
 ## Documentation
