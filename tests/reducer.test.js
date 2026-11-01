@@ -168,8 +168,8 @@ test('Only catalogued providers collide: unspecified, external-agent, a demo or 
     assert(last.length&&last.every(c=>c.detail.agentId!==Object.values(s.agents).find(a=>a.provider==='claude-code').id),`${other}: the last writer still attributes`);
   }
 });
-test('Interpretation v10 is current; two apply() runs of a collision journal match',()=>{
-  assert.equal(INTERPRETATION_VERSION,10);
+test('Interpretation v11 is current; two apply() runs of a collision journal match',()=>{
+  assert.equal(INTERPRETATION_VERSION,11);
   function run(){
     let n=0;const ev=(kind,extras={})=>({v:1,kind,id:`det-event-${++n}`,ts:1741100000000+n*1000,projectId,sessionId:'session1',origin:'test',...extras});
     const state=newState(projectId);state.salt='det-salt';state.createdAt=0;
@@ -202,7 +202,7 @@ test('Project name labels the local project list but never enters the recorded p
   apply(state,e('workspace.started',{}));
   assert.equal(publicProjection(state).name,'my-app','an unnamed restart keeps the known name');
 });
-test('Rebuild v9 to v10 from a journal is byte-stable; two providers on the same files keep the progress and chapter of one',async t=>{
+test('Rebuild v10 to v11 from a journal is byte-stable; two providers on the same files keep the progress and chapter of one',async t=>{
   const fs=require('node:fs/promises'),path=require('node:path');
   const {tempDir,startService}=require('./helpers');
   const dir=tempDir(t,'cr-cast-rebuild-');
@@ -234,17 +234,17 @@ test('Rebuild v9 to v10 from a journal is byte-stable; two providers on the same
   await s.service.stop();
   const read=async p=>JSON.parse(await fs.readFile(path.join(dir,'projects',sha(p),'state.json'),'utf8'));
   const state=await read(id),alone=await read(solo);
-  assert.equal(state.interpretationVersion,10);
+  assert.equal(state.interpretationVersion,11);
   assert.equal(Object.values(alone.agents).length,2,'two Claude sessions');
   assert.equal(state.performance.progress,alone.performance.progress);
   assert.equal(state.performance.chapter,alone.performance.chapter);
   assert.equal(state.performance.chapter,2);
   const stateFile=path.join(dir,'projects',sha(id),'state.json');
-  state.interpretationVersion=9;await fs.writeFile(stateFile,JSON.stringify(state));
+  state.interpretationVersion=10;await fs.writeFile(stateFile,JSON.stringify(state));
   await fs.rm(perf,{force:true});
   s=await start();await s.flush(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
-  assert.equal((await read(id)).interpretationVersion,10);
+  assert.equal((await read(id)).interpretationVersion,11);
   await s.rebuild(id);
   assert.equal(await fs.readFile(perf,'utf8'),live);
 });

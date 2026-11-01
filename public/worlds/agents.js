@@ -4,6 +4,8 @@
 // three minutes without an observation a busy agent reads "status unknown" and dims; a waiting agent goes dormant;
 // a disconnected or completed agent departs, and any presence leaves after thirty minutes without an observation (a
 // session that ended without telling us never lingers). Labels are categories, never prompts, file names or reasoning.
+// A subagent names its parent (`parent`: the public id of the agent whose session started it) once a recorded intent
+// carries it (subject.parentAgentId, interpretation 11); otherwise, and for every other agent, `parent` is null.
 //
 // A fold over intents in time order with bounded memory: each agent keeps its last ten minutes of events plus a
 // summary of older ones (arrival, last state, last file). An agent that has departed leaves the fold; the last 512
@@ -25,12 +27,13 @@ export function createAgents(){
     let n=1;while(used.has(n))n++;return n;}
   function record(intent){
     if(intent.type!=='agent.state')return;
-    const sub=intent.subject||{},d=intent.detail||{};
+    const sub=intent.subject||{},d=intent.detail||{},parent=typeof sub.parentAgentId==='string'&&sub.parentAgentId!==sub.agentId?sub.parentAgentId:null;
     for(const [id,x] of s.agents)if(id!==sub.agentId&&gone(x,intent.ts)){s.agents.delete(id);s.retired.set(id,x.number);if(s.retired.size>RETIRED_MAX)s.retired.delete(s.retired.keys().next().value);}
     let a=s.agents.get(sub.agentId);
     if(!a){const back=s.retired.get(sub.agentId);if(back!==undefined)s.retired.delete(sub.agentId);
       const provider=d.provider||'agent';
-      a={id:sub.agentId,voice:sub.voice??0,provider,number:back??++s.ordinal,slot:slotOf(catalog(provider).chip,!!d.subagent),subagent:!!d.subagent,events:[],first:intent.ts,past:null,home:null};s.agents.set(sub.agentId,a);}
+      a={id:sub.agentId,voice:sub.voice??0,provider,number:back??++s.ordinal,slot:slotOf(catalog(provider).chip,!!d.subagent),subagent:!!d.subagent,parent,events:[],first:intent.ts,past:null,home:null};s.agents.set(sub.agentId,a);}
+    if(parent&&!a.parent)a.parent=parent;
     let i=a.events.length;while(i>0&&a.events[i-1].ts>intent.ts)i--;
     a.events.splice(i,0,{ts:intent.ts,state:d.state||'connected',activity:d.activity||null,fileId:sub.fileId||null});
     a.first=Math.min(a.first,intent.ts);
@@ -48,7 +51,7 @@ export function createAgents(){
     else if((e.state==='processing'||e.state==='tool'||e.state==='thinking')&&since>UNKNOWN_MS){display='unknown';alpha=.35;}
     else if((e.state==='waiting'||e.state==='connected')&&since>DORMANT_MS){display='dormant';alpha=.25;}
     const label=display==='tool'?(e.activity||'using a tool'):LABEL[display]||display;
-    return {id:a.id,voice:a.voice,number:a.number,slot:a.slot,provider:a.provider,subagent:a.subagent,state:e.state,display,label,activity:e.activity,fileId:e.state==='tool'?e.fileId:null,
+    return {id:a.id,voice:a.voice,number:a.number,slot:a.slot,provider:a.provider,subagent:a.subagent,parent:a.parent??null,state:e.state,display,label,activity:e.activity,fileId:e.state==='tool'?e.fileId:null,
       home,since,arrived:a.first,alpha,busy:display==='processing'||display==='tool'||display==='thinking'};
   }
   function list(t){const out=[];for(const a of s.agents.values()){const p=presence(a,t);if(p)out.push(p);}return out;}

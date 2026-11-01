@@ -8,7 +8,8 @@
 //  - evidence: 'observed' (a raw observation), 'derived' (a deterministic structural fact, e.g. an AST diff),
 //    'inferred' (an interpretation with confidence < 1), 'verified' (an observed validation result: exit code 0
 //    or non-zero). Nothing is 'verified' unless a command or task outcome was observed;
-//  - subject: salted public ids only (fileId, groupId, targetId, targetGroupId, agentId, voice, fileIds).
+//  - subject: salted public ids only (fileId, groupId, targetId, targetGroupId, agentId, voice, fileIds; since v11 a
+//    subagent's parentAgentId, the public id of the agent whose session started it).
 // Intents are recorded with the timeline (performance.jsonl), so replay and films see exactly what live saw.
 const INTENT_SCHEMA='code-resonance.intent.v1';
 const TYPES=new Set([
