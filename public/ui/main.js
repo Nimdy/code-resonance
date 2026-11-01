@@ -164,7 +164,10 @@ async function render(){
   view=h('div',{class:'workspace-view',dataset:{ws:r.id}});clear(workspace).append(view);currentId=r.id;
   let mod;
   try{mod=(await import(`./workspaces/${r.id}.js`)).default;}
-  catch(e){console.error(e);view.append(h('div',{class:'page'},h('div',{class:'page-inner'},h('h1',{class:'title-l',text:ws.title}),h('p',{class:'muted',text:`This workspace could not be loaded (${e.message}). Reload the page; if it persists, the receiver may be an older version.`}))));return;}
+  catch(e){console.error(e);
+    // Its module comes from the receiver: while the receiver is down, that is the reason (reloading would not help yet).
+    const down=P.state.receiver===false||e instanceof TypeError&&P.state.receiver!==true;
+    view.append(h('div',{class:'page'},h('div',{class:'page-inner'},h('h1',{class:'title-l',text:ws.title}),h('p',{class:'muted',text:down?'This workspace could not be loaded: the receiver is not answering. Start it again (npm start in the Code Resonance folder); this page reconnects by itself, then open the workspace again.':`This workspace could not be loaded (${e.message}). Reload the page; if it persists, the receiver may be an older version.`}))));return;}
   if(mine!==token)return;
   current=mod.mount(view,{store,player:P,navigate,chrome,params:r.params,stageUrl,toggleRecording})||{};
   slot=view.querySelector('[data-stage-slot]');lastRect='';placeStage();
