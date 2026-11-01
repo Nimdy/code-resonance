@@ -181,7 +181,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   // in view); with more rows the browser shows the first row (the first card of every group) and a peek of the next,
   // scrolls vertically, fades at its lower edge and says how many cards are below.
   const cards=h('div',{class:'vs-cards scroll'});
-  const moreBtn=h('button',{type:'button',class:'vs-more',hidden:true,onClick:()=>cards.scrollTo({top:cards.scrollHeight,behavior:reducedMotion()?'auto':'smooth'})},icon('chevron'),h('span',{class:'vs-more-label'}));
+  const moreBtn=h('button',{type:'button',class:'vs-more',hidden:true,onClick:()=>cards.scrollTo({top:cards.scrollHeight,behavior:reducedMotion()?'auto':'smooth'})},icon('chevron'),h('span',{class:'vs-more-n'}),h('span',{class:'vs-more-word',text:' more below'}));
   const CARD_MIN=130,CARD_MAX=260,CARD_GAP=10,GROUP_GAP=20,GROUP_HEAD=32,PEEK=24;
   // The world tab's layout for a width, from the number of cards in each group: the rows, the card size, each group's columns.
   function plan(width,counts){
@@ -197,7 +197,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function fadeCards(){
     const over=cards.scrollHeight-cards.clientHeight,more=over>2&&cards.scrollTop<over-2;cards.classList.toggle('fade-b',more);
     const box=cards.getBoundingClientRect(),below=more?[...cards.querySelectorAll('.vs-card')].filter(c=>c.getBoundingClientRect().bottom>box.bottom+1).length:0;
-    moreBtn.hidden=!below;if(below){const t=`${below} more below`;text(moreBtn.querySelector('.vs-more-label'),t);moreBtn.setAttribute('aria-label',`Show ${below} more ${(S.state.ui.visualTab||'living')==='presets'?'looks':(S.state.ui.visualTab||'living')==='classic'?'stages':'worlds'} below`);}
+    moreBtn.hidden=!below;if(below){text(moreBtn.querySelector('.vs-more-n'),String(below));moreBtn.setAttribute('aria-label',`Show ${below} more ${(S.state.ui.visualTab||'living')==='presets'?'looks':(S.state.ui.visualTab||'living')==='classic'?'stages':'worlds'} below`);}
   }
   // Sizes the groups for the column's width; the browser's height (and so the stage's) follows the world tab's plan,
   // whichever tab is shown, so switching tabs never resizes the stage.
