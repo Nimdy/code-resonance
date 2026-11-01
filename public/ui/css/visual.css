@@ -49,8 +49,6 @@
 .ws-visual .vs-more:hover{background:var(--bg-4);border-color:var(--accent-line)}
 .ws-visual .vs-more svg{width:14px;height:14px;color:var(--accent)}
 .ws-visual .vs-more-word{white-space:pre}
-/* A narrow column keeps the head on one line: the button shows the number (its name still says "N more below"). */
-@container vs-main (max-width:700px){.ws-visual .vs-more-word{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 .ws-visual .vs-more[hidden]{display:none}
 .ws-visual .vs-card{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;
   transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-1)}
@@ -78,6 +76,9 @@
 .ws-visual .vs-chips{position:absolute;left:7px;top:7px;right:34px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
 /* Without the code's-match star the chips may use the whole width (a pack's Needs approval on a narrow card). */
 .ws-visual .vs-thumb:not(:has(.vs-match)) .vs-chips{right:7px}
+/* On a narrow card (1024 px) a chip drops its dot and some padding, so Needs approval fits whole. */
+.ws-visual .vs-shelf:not(.full) .vs-card{container-type:inline-size}
+@container (max-width:150px){.ws-visual .vs-chips .pill{padding:0 6px}.ws-visual .vs-chips .pill::before{display:none}}
 .ws-visual .vs-chips .pill{height:20px;font-size:12px;padding:0 7px;gap:5px;background:rgba(6,9,14,.82);backdrop-filter:blur(6px);pointer-events:auto}
 .ws-visual .vs-chips .pill::before{width:5px;height:5px}
 .ws-visual .vs-match{position:absolute;right:7px;top:7px;z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.82);color:var(--warn);backdrop-filter:blur(6px)}
@@ -176,7 +177,7 @@
 .ws-visual .vs-sec-finish .segmented button{flex:1 1 0;min-width:0;padding:0 6px}
 .ws-visual .vs-finish-line{margin:0;line-height:1.5;min-height:3em;max-width:62ch}
 /* The four finishes in a narrow inspector (1280 px and below): tighter, then two by two, never cut at the edge. */
-@container vs-insp (max-width:330px){.ws-visual #vsFinish button{padding:0 8px;flex:1 1 auto}.ws-visual #vsQuality button{padding:0 9px}}
+@container vs-insp (max-width:330px){.ws-visual #vsFinish button{padding:0 8px;flex:1 1 auto}}
 @container vs-insp (max-width:290px){.ws-visual #vsFinish{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ws-visual .vs-sec-finish.pending .vs-sec-head h3{color:var(--accent)}
 .ws-visual .vs-sec-finish .vs-props .field{padding:2px 0 0}
@@ -234,6 +235,8 @@
 /* The segmented track scrolls (overflow:auto), which clips an outside focus ring: draw it inside the button. */
 .ws-visual .segmented button:focus-visible{outline-offset:-2px}
 .ws-visual #vsQuality{display:flex}.ws-visual #vsQuality button{flex:1;padding:0 6px}
+/* A narrow inspector (1024 px): the five qualities take their own widths, so the switch never scrolls sideways. */
+@container vs-insp (max-width:330px){.ws-visual #vsQuality button{flex:1 1 auto;padding:0 5px}}
 /* Apply and Cancel: always at the foot of the inspector; a pending preview lights the bar. */
 .ws-visual .vs-foot{gap:8px;padding:12px 20px;min-height:60px;transition:background var(--t-2),border-color var(--t-2)}
 .ws-visual .vs-foot.pending{background:linear-gradient(0deg,rgba(117,237,255,.09),var(--bg-1));border-top-color:var(--accent-line)}

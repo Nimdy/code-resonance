@@ -207,6 +207,8 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       main.style.setProperty('--vs-browser-min',`${34+10+GROUP_HEAD+8+p.h+(p.rows>1?PEEK:0)+12}px`);}
     for(const g of cards.querySelectorAll('.vs-shelf:not(.full)')){const n=g.querySelectorAll('.vs-card').length,list=g.querySelector('.vs-shelf-cards');
       const rows=p?.rows||1,cols=Math.max(1,Math.min(n,Math.ceil(n/rows)));list.style.setProperty('--cols',String(cols));}
+    // A narrow column keeps the head on one line: "more below" shows its number (its name still says "N more below").
+    moreBtn.querySelector('.vs-more-word').classList.toggle('visually-hidden',cards.clientWidth<=690);
     fadeCards();
   }
   cards.addEventListener('scroll',fadeCards,{passive:true});
