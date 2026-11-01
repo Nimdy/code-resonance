@@ -196,7 +196,7 @@ export default {mount(view,{store,player:P,navigate,params}){
     let p=current();
     // Nothing chosen (or the chosen pack was removed): the first pack, without changing the address.
     if(!p&&!params[0]&&packs().length){p=packs()[0];selected=p.id;}
-    const c=context(),mine=!!(p&&c.stopped&&c.stopped.id===p.id),key=`${sig(p)}|${mine?c.stopped.reason:''}|${c.running===p?.id}|${c.here.has(p?.id)}|${c.sdk}|${store.state.catalog?1:0}`;
+    const c=context(),mine=!!(p&&c.stopped&&c.stopped.id===p.id),key=`${sig(p)}|${mine?c.stopped.reason:''}|${c.running===p?.id}|${c.here.has(p?.id)}|${c.sdk}|${store.state.catalog?1:0}|${loaded}`;
     if(!force&&key===inspectKey)return;inspectKey=key;
     inspector.replaceChildren();
     if(!p){inspector.append(h('div',{class:'inspector-body'},h('div',{class:'pk-none'},icon('packs'),h('p',{class:'muted',text:!packs().length?(loaded?'Nothing is installed yet. An imported pack shows its files, approval and parameters here.':'Reading the installed packs…'):selected?'This pack is no longer installed.':'Choose a pack to see its files, approval and parameters.'}))));return;}
