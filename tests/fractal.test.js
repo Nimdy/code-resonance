@@ -270,6 +270,6 @@ test('The player and the receiver know it: the host loads it, /api/catalog lists
   assert.match(fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8'),/'fractal-continuum':'\.\/fractal\.js'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-fractal-'),quiet:true});
   const c=await (await fetch(`http://127.0.0.1:${svc.port}/api/catalog`)).json();
-  assert.deepEqual(Object.keys(c.families),recipe.FAMILIES);assert.deepEqual(c.previews,{},'no preview is left');
+  assert.deepEqual(Object.keys(c.families),recipe.FAMILIES);assert.deepEqual(Object.keys(c.previews),['aurora'],'it is no preview: only Aurora is listed apart');
   assert.equal(c.families[ID].builtin,true);assert.equal(c.families[ID].name,'Fractal Continuum');assert(c.families[ID].parameters['fractal.form']);
 });

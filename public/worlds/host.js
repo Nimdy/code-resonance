@@ -16,9 +16,10 @@ import {createLifeDriver} from './life/driver.js';
 import {createMusical} from './musical.js';
 import {createQualityGovernor} from './quality.js';
 // The six built-in families (engine/recipe.js FAMILIES): the three flagships, and Synaptic Storm, Fractal Continuum and
-// Temporal Terrain, previews until generator 5 graduated them.
+// Temporal Terrain, previews until generator 5 graduated them; and Aurora, a preview: built in like them, but a recipe
+// names it only when chosen (engine/recipe.js PREVIEWS).
 const BUILTIN={'stellar-forge':'./stellar.js','fractal-biosphere':'./biosphere.js','machine-cathedral':'./cathedral.js','synaptic-storm':'./synaptic.js',
-  'fractal-continuum':'./fractal.js','temporal-terrain':'./terrain.js'};
+  'fractal-continuum':'./fractal.js','temporal-terrain':'./terrain.js','aurora':'./aurora.js'};
 // Artist compositions (layers.js): a recipe's composition draws its layers into the world it runs on. A composition
 // whose base is the artist canvas runs on the canvas world (canvas.js) instead of the family's; the canvas is never
 // chosen for a project otherwise.
@@ -122,7 +123,7 @@ export async function createWorld(canvas,{overlayCanvas=null,film=false,speed=1,
   const model=createModel({speed});
   let world=null,scene=null,current=null,snapCamera=true,startedAt=null,pinnedStart=null,titleFrom=null,info=null,selected=null,ext=null;
   // A replay's recorded windows from the last prime: a built-in world that draws the whole history (onHistory, Temporal
-  // Terrain) rebuilds it from them, also when it loads into a replay already under way. Packs never get them.
+  // Terrain, Aurora) rebuilds it from them, also when it loads into a replay already under way. Packs never get them.
   let recorded=null;
   const history_=(w,t)=>{if(recorded&&w?.onHistory&&BUILTIN[current?.family]&&!families[current?.family]&&Number.isFinite(t))w.onHistory(recorded,t);};
   // After a reset, prime or new epoch the world still holds the frame before it: the first intent brings it up to date at

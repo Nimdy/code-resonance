@@ -23,9 +23,9 @@ test('Generator 5: six families, the flagships first in their order; generator 4
   assert.equal(recipe.RECIPE_VERSION,5);
   assert.deepEqual(recipe.FLAGSHIPS,['stellar-forge','fractal-biosphere','machine-cathedral']);
   assert.deepEqual(recipe.GRADUATED,['synaptic-storm','fractal-continuum','temporal-terrain']);
-  assert.deepEqual(recipe.FAMILIES,[...recipe.FLAGSHIPS,...recipe.GRADUATED]);assert.deepEqual(recipe.PREVIEWS,[]);
+  assert.deepEqual(recipe.FAMILIES,[...recipe.FLAGSHIPS,...recipe.GRADUATED]);assert.deepEqual(recipe.PREVIEWS,['aurora'],'Aurora waits as a preview (tests/aurora.test.js)');
   for(const v of [1,2,3,4])assert.deepEqual(recipe.familiesOf(v),recipe.FLAGSHIPS);assert.deepEqual(recipe.familiesOf(5),recipe.FAMILIES);
-  assert.deepEqual(Object.keys(catalog.FAMILIES),recipe.FAMILIES,'the catalogue lists the six in the same order');assert.deepEqual(catalog.PREVIEWS,{});
+  assert.deepEqual(Object.keys(catalog.FAMILIES),recipe.FAMILIES,'the catalogue lists the six in the same order');assert.deepEqual(Object.keys(catalog.PREVIEWS),recipe.PREVIEWS);
   for(const f of recipe.GRADUATED)assert.equal(recipe.FAMILY_NAMES[f],catalog.FAMILIES[f].name);
 });
 test('Generator 4 and 3 are unchanged: the same recipes, bit for bit, as the generator before graduation (1226b8a)',()=>{

@@ -1,6 +1,7 @@
 'use strict';
 // Technical qualification of the living worlds in a real browser (artistic acceptance is a separate, human judgement),
-// for each of the six built-in families (engine/recipe.js FAMILIES) unless --families names some:
+// for each of the six built-in families (engine/recipe.js FAMILIES) unless --families names some (which may also name a
+// preview, engine/recipe.js PREVIEWS: Aurora):
 //  1. determinism  - the same recording, recipe and time render the same frame in two independent sessions, whatever
 //                    the second session played before (its seek history);
 //  2. idle life    - after the last event the image keeps moving while structure and effects stay exactly the same;
@@ -11,7 +12,8 @@
 // node visual/worlds.qual.js [--datasets results/datasets] [--gpu amd] [--only determinism,idle,live,performance]
 //                            [--families a,b] [--size 1280x720] [--fps 15] [--tag name]
 // --only re-runs some sections and replaces their checks in the existing results file (noted under "reruns").
-// --families: the families qualified in determinism, idle, privacy and performance (resources always switches all six).
+// --families: the families qualified in determinism, idle, privacy and performance (resources always switches all six);
+// a preview is qualified only when named.
 // --size and --fps: the film page's size and the idle sampling rate (frames per second of view time); a smaller page or
 // a lower rate makes a software-rendered run of the raymarched worlds affordable, and the results file records both.
 // --tag: results in worlds-qualification-<tag>.json (with --gpu: -<gpu>-<tag>), leaving the main file as it is.
@@ -28,7 +30,7 @@ const OUT=path.join(__dirname,'..','results','visual');
 const GPU=arg('gpu',null);
 const ONLY=arg('only',null)?new Set(arg('only').split(',')):null,run=k=>!ONLY||ONLY.has(k);
 const FAMILIES=arg('families',null)?arg('families').split(','):recipes.FAMILIES;
-for(const f of FAMILIES)if(!recipes.FAMILIES.includes(f))throw new Error(`unknown family ${f} (one of ${recipes.FAMILIES.join(', ')})`);
+for(const f of FAMILIES)if(!recipes.FAMILIES.includes(f)&&!recipes.PREVIEWS.includes(f))throw new Error(`unknown family ${f} (one of ${[...recipes.FAMILIES,...recipes.PREVIEWS].join(', ')})`);
 const [W,H]=arg('size','1280x720').split('x').map(Number),FPS=Number(arg('fps',15)),TAG=arg('tag',null);
 const {checks,check}=checker(),measurements={};
 const launch=()=>launchBrowser(GPU);
@@ -38,7 +40,8 @@ const launch=()=>launchBrowser(GPU);
   for(const s of Object.values(sets))if(!fs.existsSync(s.dir))throw new Error(`missing dataset ${s.dir} (run visual/datasets.js)`);
   // Determinism: one dataset per family (the flagships as before; each graduated world on the dataset generator 5 gives
   // it, or on Lumen for Fractal Continuum).
-  const DETERMINISM={'stellar-forge':'lumen','fractal-biosphere':'excalidraw','machine-cathedral':'self','synaptic-storm':'excalidraw','fractal-continuum':'lumen','temporal-terrain':'self'};
+  const DETERMINISM={'stellar-forge':'lumen','fractal-biosphere':'excalidraw','machine-cathedral':'self','synaptic-storm':'excalidraw','fractal-continuum':'lumen','temporal-terrain':'self',
+    'aurora':'self'};
   measurements.options={families:FAMILIES,size:`${W}x${H}`,idleFps:FPS};
   const browser=await launch();
   try{
@@ -61,7 +64,8 @@ const launch=()=>launchBrowser(GPU);
     // the effects expressed and the lasting transformations: none may change while idle.
     const STRUCTURE={'stellar-forge':['planets','moons','links','systems'],'fractal-biosphere':['organisms','segments','crowns','cords','bloomSegments'],
       'machine-cathedral':['districts','towers','stones','pinnacles','naves','spires','bridges','crowns','roses'],'synaptic-storm':['clusters','neurons','files','segments','boutons','axons','storms'],
-      'fractal-continuum':['form','power','regions','blooms'],'temporal-terrain':['ranges','files','roads','commits','monuments','sunrises']};
+      'fractal-continuum':['form','power','regions','blooms'],'temporal-terrain':['ranges','files','roads','commits','monuments','sunrises'],
+      'aurora':['curtains','rays','arcs','lanterns','breakups']};
     const structureOf=(family,st)=>JSON.stringify({...Object.fromEntries((STRUCTURE[family]||[]).map(k=>[k,st?.[k]])),intents:st?.intents,lasting:st?.lasting,unlocked:st?.unlocked,effects:st?.effects});
     if(!GPU&&run('idle'))for(const family of FAMILIES)await withService(sets.lumen.dir,async svc=>{
       const project=projectOf(sets.lumen.dir);await setFamily(svc,project,family);
