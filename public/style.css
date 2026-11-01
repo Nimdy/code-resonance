@@ -79,6 +79,8 @@ p{margin:0}
 .textarea{height:auto;padding:8px 10px;resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.5}
 .input:hover,.select:hover{border-color:var(--line-3)}
 .input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--accent-line);background:var(--bg-2)}
+/* Keyboard focus (and typing) is unmistakable: the faint focused border alone was hard to find on a dark field. */
+.input:focus-visible,.select:focus-visible,.textarea:focus-visible{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .input[aria-invalid="true"]{border-color:rgba(255,116,132,.6)}
 .select{appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,var(--text-3) 50%),linear-gradient(135deg,var(--text-3) 50%,transparent 50%);
   background-position:calc(100% - 15px) 14px,calc(100% - 10px) 14px;background-size:5px 5px;background-repeat:no-repeat}
@@ -102,6 +104,8 @@ p{margin:0}
 .range::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text-1);border:0}
 .range:hover::-webkit-slider-thumb,.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 5px rgba(117,237,255,.18)}
 .range:focus-visible{outline:none}.range:focus-visible::-webkit-slider-runnable-track{outline:1px solid var(--accent-line);outline-offset:3px}
+/* The focused slider's thumb carries a clear ring (the track's outline and the hover glow alone were faint). */
+.range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--bg-0),0 0 0 4px var(--accent)}.range:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--bg-0),0 0 0 4px var(--accent)}
 .range:disabled{opacity:.4;cursor:not-allowed}
 /* Switch */
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
@@ -257,6 +261,8 @@ body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .workspace-view{position:absolute;inset:0;display:flex;flex-direction:column;min-width:0;min-height:0;animation:view-in var(--t-3) var(--ease)}
 @keyframes view-in{from{opacity:0;transform:translateY(6px)}}
 .page{flex:1;overflow:auto;padding:28px var(--gutter) 48px;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
+/* A control reached with Tab is scrolled fully into view, its focus ring included (not cut at the scroller's edge). */
+.page,.inspector-body{scroll-padding-block:24px}
 .page-inner{max-width:var(--page-max);margin:0 auto;display:grid;gap:24px;align-content:start}
 .page-head{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
 .page-head .grow{flex:1;min-width:240px;display:grid;gap:6px}
