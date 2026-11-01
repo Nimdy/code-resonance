@@ -1265,6 +1265,59 @@ to identity). What was checked, on the development machine with three other trac
   oblique view (the idle drift travels between vantages); it now sets `motion.drift` 0 and the highest elevation. On
   Lumen, whose generated Fractal Continuum is already a crystal, *Kaleidoscope crystal* differs little from it.
 
+## Finishing the graduated worlds
+
+The three graduated worlds' agents travel their own paths, and the music reaches Fractal Continuum and Temporal Terrain.
+Temporal Terrain flies over its history when idle, and Synaptic Storm's subagents are tethered to their parent
+(interpretation 11). Visual Pack SDK 1.3. Branch `feat/worlds-finish`, 2026-10-31 to 2026-11-01.
+
+- **Node** (`npm test`): **649/649**: 621 on main, plus 2 for SDK 1.3, 7 Synaptic, 7 Fractal and 12 Terrain. `npm run
+  check`: no syntax errors.
+- **Worlds** (`visual/worlds.qual.js --only determinism,idle --families synaptic-storm,fractal-continuum,temporal-terrain
+  --size 960x540 --fps 15 --tag finish`, on copies of the datasets, SwiftShader, digital life on, 30 minutes,
+  `results/visual/worlds-qualification-finish.json`): **22/22**.
+  - **Determinism across seeks**, the same frame in two sessions:
+    - Synaptic Storm on Excalidraw: `69097a39bbc73c60` twice, the same frame as before (no subagents there).
+    - Fractal Continuum on Lumen: `f93fdd90729ae59a` twice (new: the veins).
+    - Temporal Terrain on Self: `cd5d9e9bc6832381` twice (new: the roads).
+  - **Idle life**, mean |Δluma| between samples: Synaptic Storm 4.2–5.1, Fractal Continuum 10.9–11.2, Temporal Terrain
+    5.4–8.9. Structure counts, intents (205), lasting transformations and unlocks are unchanged, and the director
+    reports idle.
+  - **Privacy:** 46, 49 and 45 distinct label strings, none with a path, file name, source identifier or the folder name.
+  - **Resources:** switching between the six worlds twelve times leaves geometries at 29 → 29 and textures at 19 → 19.
+- **Digital life in the browser, for the three for the first time** (`visual/life.qual.js --families
+  synaptic-storm,fractal-continuum,temporal-terrain --tag graduated`, SwiftShader, 78 minutes,
+  `results/visual/life-graduated.json`; `--tag` is new and leaves the flagships' `life.json` as it is): **47/47**.
+  - **Same ecosystem and image** after playing near the end and seeking back, after continuous play from the start, in
+    a fresh session and after a browser restart, with these digests:
+    - Synaptic Storm: digest `2d003439`, image `80dfe8f7b1a694ee`, 813 alive;
+    - Fractal Continuum: digest `5a1a09f4`, image `9918f2771f871f70`, 602 alive;
+    - Temporal Terrain: digest `ae2770ad`, image `10999dae223d60f2`, 702 alive.
+  - **Frame rates and quality:** 15, 30, 60 and 120 fps reach the same ecosystem; changing the quality while it lives
+    never changes it.
+  - **Ten minutes idle:**
+    - the population lives and moves (Temporal Terrain's between 700 and 705, as its herds are born and drift away);
+    - the image keeps changing (mean |Δluma| 5.8–10.7, 7.3–18.3 and 6.1–12.1);
+    - no intent is created;
+    - GPU resources stay constant and the heap is flat (45, 26 and 37 MB).
+  - **Life off** runs no ecosystem, the labels are the same with life on and off, and there are no page errors.
+  - **The shared checks:** switching worlds, replay to live, and the far seek (restoring shown, then current).
+  - A first run on the main branch (`ea515a3`) was stopped by its own 50-minute time limit in Fractal Continuum's idle
+    phase, after 21 checks had passed and none had failed. It was not a failure.
+- **Films** (`visual/film.js`, AMD iGPU, 1920×1080, Lumen Recipes at 2×, digital life on): the three identities the
+  owner accepted for 0.8.1, rendered again from the same recipes (their genomes compared equal), and Temporal Terrain on
+  Self from 10 s before its last event plus 140 s of quiet (one whole idle flight). These are for the owner's review;
+  they are not tracked.
+- **GPU cost** (AMD iGPU, 1080p, quality 0, a shared GPU, so the noise is about ±0.5 ms):
+  - Fractal Continuum: +0.05 ms at Lumen half way, +0.35 ms on Excalidraw's idle (480 veins);
+  - Temporal Terrain: +0.1 ms at Self half way, and about 2 ms less at the flight's far point;
+  - Synaptic Storm: the tether reuses the signal points (no new draw call).
+- **Not run:**
+  - subagent tethers and agent meetings on a real recording (none has subagents or an `agent.collision`; seen on
+    constructed data);
+  - a Temporal Terrain flight interrupted by a real event in the browser (Node only);
+  - live playback at Auto on a slower machine, OBS, a soak.
+
 ## Not verified
 
 > Accumulated over the milestones and kept as written. Since superseded: OBS Studio itself ran on Linux in CI
