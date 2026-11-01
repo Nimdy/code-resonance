@@ -88,4 +88,18 @@ function fingerprint(W,moments){
       for(const [k,a] of Object.entries(G.attributes)){const b=Buffer.from(a.array.buffer,a.array.byteOffset,a.array.byteLength);h2.update(`${k}:${b.length}:${crypto.createHash('sha1').update(b).digest('hex')}`);}}}
   return {objects:objs.length,shader,state:h2.digest('hex').slice(0,16)};
 }
-module.exports={load,loadWorld,T0,T1,ID,project,identity,graph,network,setup,run,recording,player,world,fingerprint,score};
+// The state at AT is the same after continuous play (15, 30, 60 and 120 fps for ecology 2; 30 for ecology 1), seeks back
+// and forth with a restored checkpoint, and a fresh session (shared by the two driver test files, one ecology each).
+const AT=T0+137300;   // after the failure (90 s), the recovery (130 s); before the milestone
+async function sameMoment(params){
+  const assert=require('node:assert/strict');
+  const ref=await player({params});ref.at(AT);const want=ref.driver.digest();
+  const st=ref.driver.stats();assert(st.ecosystem.alive>60,'alive');assert.equal(st.ecosystem.sites,3,'a site per curtain (the fourth subsystem comes at 180 s)');assert.equal(st.grammar,'aurora');
+  for(const fps of [15,30,60,120]){if(params.ecology!==2&&fps!==30)continue;const p=await player({params});
+    // (from a while before the moment: the earlier frames are simulated the same either way)
+    for(let t=fps===30?T0:AT-20000;t<AT;t+=1000/fps)p.at(t);p.at(AT);assert.equal(p.driver.digest(),want,`continuous play at ${fps} fps`);}
+  const seek=await player({params});seek.at(T0+200000);seek.at(T0+40000);seek.at(AT+15000);seek.at(AT);
+  assert.equal(seek.driver.digest(),want,'seeks back and forth');assert(seek.driver.stats().fromCheckpoint>0,'a checkpoint was restored');
+  const fresh=await player({params});fresh.at(AT);assert.equal(fresh.driver.digest(),want,'a fresh session');
+}
+module.exports={load,loadWorld,T0,T1,ID,project,identity,graph,network,setup,run,recording,player,world,fingerprint,score,sameMoment};
