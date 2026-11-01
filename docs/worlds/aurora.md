@@ -521,14 +521,10 @@ Films always render at quality 0.
 
 ## What is not done
 
-- **Seen by no one but its author, and only in stills.** The owner asked for "some amazing other world, high quality"
-  and has not seen it yet; no film was rendered (films are rendered separately), so it was judged from render-lab stills
-  and contact sheets, not in motion. Its motion (the folds, the drift, the ripples on the bars, the shimmer on the
-  eighths, the surge at a section's onset, the pulsating patches of a passing run, a meteor crossing) was checked in Node
-  tests and by the idle qualification's frame differences, not by eye.
-- **Its digital life was judged from stills only**, like the world: no film; the foxes' gait, the hares' hops, the owl's
-  flight, the glimmers' drift and the tracks fading were checked in Node tests and in stills and contact sheets, not
-  watched in motion. Nobody else has looked at it.
+- **Watched by the owner on films** (2026-11-01): the world on the whole Lumen Recipes session (landscape and 9:16) and
+  Self's end with a minute of quiet, accepted ("aurora looks good"), with chromatic aberration then made the default at
+  the owner's request; and the digital life on films of the same sessions, accepted ("looks great"). The motion was
+  otherwise checked in Node tests and by the idle qualification's frame differences.
 - **The animals are small at the default framing.** A fox out on the ice is about 15–60 pixels long at 1920×1080 (they keep
   at least 14 units from the camera and roam within about 60); hares by the cabin's spruces, 120–170 units away, are a
   few pixels, and the owl perched on a spruce's top is a white speck. In a portrait frame the foxes are smaller still.

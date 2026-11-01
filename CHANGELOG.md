@@ -16,6 +16,10 @@
   moment, so the port could be taken before the receiver bound it (a test's two receivers both found it occupied).
   They now share one helper (`tests/helpers.js` `freePort`) that picks a port below every platform's ephemeral range,
   at random, checked free and never twice in a file.
+- **A test file may take five minutes** (`--test-timeout=300000` in `npm test` and CI; it was 120 s): the limit also
+  bounds each test file, and Windows runners take three to four times as long as a desktop for the digital-life
+  simulations (one 15–22 s test took 53–70 s there), so Aurora's life tests, two to a file, passed 120 s on Windows
+  while Linux passed. A hang still fails the run, after five minutes.
 - **Curated looks of the graduated worlds reworked** to do what their one-line descriptions say, each holding on
   Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU; the owner has not reviewed them yet).
   *Kaleidoscope crystal* (Fractal Continuum) read as a soft pink-violet lump, close to the "gum" look: it is now a
