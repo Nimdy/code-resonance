@@ -6,7 +6,7 @@
   color-scheme:dark;
   --bg-0:#05070b;--bg-1:#0a0d13;--bg-2:#0e1219;--bg-3:#141923;--bg-4:#1a2030;--bg-5:#222a3b;
   --line:rgba(170,190,230,.075);--line-2:rgba(170,190,230,.13);--line-3:rgba(170,190,230,.22);
-  --text-1:#e9edf5;--text-2:#aab3c5;--text-3:#7d879c;--text-4:#4e576a;
+  --text-1:#e9edf5;--text-2:#aab3c5;--text-3:#8892a9;--text-4:#4e576a;
   --accent:#75edff;--accent-2:#4fd6ea;--accent-soft:rgba(117,237,255,.11);--accent-line:rgba(117,237,255,.34);--accent-ink:#031216;
   --ok:#8af8c9;--ok-soft:rgba(138,248,201,.1);--warn:#ffc27d;--warn-soft:rgba(255,194,125,.1);--danger:#ff7484;--danger-soft:rgba(255,116,132,.1);
   --agent:#ed94ff;--record:#ff4d61;--record-soft:rgba(255,77,97,.14);

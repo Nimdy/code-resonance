@@ -168,12 +168,12 @@
 .ws-connections .conn-plan-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ws-connections .diff{font:13px/1.55 var(--mono);background:var(--bg-0);border:1px solid var(--line-2);border-radius:var(--r-2);max-height:440px;overflow:auto;scrollbar-width:thin;padding:4px 0}
 .ws-connections .diff-line{display:grid;grid-template-columns:36px 36px 16px minmax(0,1fr);align-items:baseline}
-.ws-connections .diff-line .ln{color:var(--text-4);text-align:right;padding-right:6px;user-select:none;font-size:12px}
+.ws-connections .diff-line .ln{color:var(--text-3);text-align:right;padding-right:6px;user-select:none;font-size:12px}
 .ws-connections .diff-line .sign{text-align:center;color:var(--text-3);user-select:none}
 .ws-connections .diff-line .code{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text-2);padding-right:10px}
 .ws-connections .diff-line.add{background:rgba(138,248,201,.07)}.ws-connections .diff-line.add .sign,.ws-connections .diff-line.add .code{color:var(--ok)}
 .ws-connections .diff-line.del{background:rgba(255,116,132,.07)}.ws-connections .diff-line.del .sign,.ws-connections .diff-line.del .code{color:var(--danger)}
-.ws-connections .diff-line.gap .code,.ws-connections .diff-line.gap .sign{color:var(--text-4);font-style:italic}
+.ws-connections .diff-line.gap .code,.ws-connections .diff-line.gap .sign{color:var(--text-3);font-style:italic}
 .ws-connections .conn-pre{margin:0;max-height:320px;overflow:auto;padding:10px 12px;background:var(--bg-0);border:1px solid var(--line-2);border-radius:var(--r-2);font-size:13px}
 .ws-connections .conn-pre code{background:none;border:0;padding:0;white-space:pre}
 .ws-connections .conn-agents-info .kv{grid-template-columns:max-content minmax(0,1fr)}

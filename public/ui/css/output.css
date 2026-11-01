@@ -45,7 +45,7 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-readouts{display:grid;grid-template-columns:repeat(4,minmax(78px,auto));gap:4px 0;margin-left:auto}
 .ws-output .out-readout{display:grid;gap:4px;padding:2px 18px;border-left:1px solid var(--line-2)}
 .ws-output .out-readout b{font-size:15px;font-weight:550;color:var(--text-1)}
-.ws-output .out-deck:not(.active) .out-readout b{color:var(--text-4)}
+.ws-output .out-deck:not(.active) .out-readout b{color:var(--text-3)}
 .ws-output .out-readout b.ok{color:var(--ok)}.ws-output .out-readout b.warn{color:var(--warn)}
 .ws-output .out-notice:empty{display:none}
 /* What this window will record: one line of facts under the recorder (wraps on a narrow frame) */
