@@ -130,7 +130,7 @@
 .ws-visual .vs-sec{display:grid;gap:12px;min-width:0;padding:18px 0;border-top:1px solid var(--line)}
 .ws-visual .vs-sec:first-child{border-top:0;padding-top:14px}
 .ws-visual .vs-sec[hidden]{display:none}
-.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px;min-height:20px}
+.ws-visual .vs-sec-head{display:flex;align-items:center;gap:8px;min-height:20px;min-width:0}
 .ws-visual .vs-sec-head h3{flex:none;color:var(--text-2)}
 .ws-visual .vs-sec-head .rule{flex:1;height:1px;background:var(--line)}
 .ws-visual .vs-sub-head{display:flex;align-items:baseline;gap:8px;margin-top:4px}
@@ -234,7 +234,9 @@
 .ws-visual .vs-ess details.disclosure.pending>summary .vs-sum-name{color:var(--accent)}
 .ws-visual .vs-ess .vs-essentials-note{margin:0 0 4px}
 .ws-visual .vs-ess .field{border-top:1px solid var(--line)}
-.ws-visual .vs-params-count{white-space:nowrap}
+/* The count gives way (ellipsis, full text on one line when there is room) rather than widening the section head: at
+   1024 px, or during a preview ("… (in the preview)"), it made the whole inspector scroll sideways. */
+.ws-visual .vs-params-count{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-error{color:var(--danger);line-height:1.4}
 .ws-visual .vs-error:empty{display:none}
 .ws-visual .vs-input-row .input{flex:1;min-width:0}

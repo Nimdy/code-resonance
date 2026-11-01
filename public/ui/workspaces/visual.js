@@ -679,7 +679,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     labels.set(shownLabels);
     fIntensity.setModified(o.intensity!==1);fMotion.setModified(o.motion!==1);
     fIntensity.classList.toggle('pending',Object.hasOwn(draft.overrides,'intensity'));fMotion.classList.toggle('pending',Object.hasOwn(draft.overrides,'motion'));fLabels.classList.toggle('pending',Object.hasOwn(draft.overrides,'labels'));
-    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}${ownLabels?'':' Follows the global default (Settings).'}`);
+    text(fLabels.querySelector('.field-doc')||fLabels.appendChild(h('div',{class:'field-doc'})),`${LABEL_DOCS[shownLabels]}.${ownLabels?'':' Follows the global default (Settings).'}`);
   }
   function renderFinish(){
     const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
@@ -759,7 +759,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       if(f.scale)for(const st of f.scale.children)st.classList.toggle('on',Math.abs(Number(v)-Number(st.dataset.v))<=.5);
     }
     const n=tuned?Object.keys(tuned.values).length:0;
-    text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);
+    text(paramsSummary,`${count(Object.keys(spec).length,'parameter')} · ${n?`${n} customised`:'all as generated'}${candidate?' (in the preview)':''}`);paramsSummary.title=paramsSummary.textContent;
   }
   // A group's summary: its name, how many parameters it holds, and how many of them are customised.
   let purposeParts=new Map();
