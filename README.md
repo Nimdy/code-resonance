@@ -337,7 +337,7 @@ full list, with data locations, backup, updates and rollback: [docs/OPERATIONS.m
 
 ## Versions
 
-0.8.1 is the product version. Interpretation 10 (adapters for nine more languages, deeper Python) is independent of it. The last published
+0.8.1 is the product version. Interpretation 11 (a subagent names its parent; 10 brought adapters for nine more languages and deeper Python) is independent of it. The last published
 GitHub Release before the 0.7 series was 0.6.0 (`v0.6.0`). The score (2 or 3), the Visual Recipe generator (5), digital life's ecology (1 or 2), the
 Visual Pack SDK (1.3) and the data formats have versions of their own, which keep older identities as they were:
 [ARCHITECTURE.md › Versions and compatibility](ARCHITECTURE.md#versions-and-compatibility).

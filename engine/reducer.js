@@ -12,7 +12,9 @@ const {presence,catalogued} = require('./providers');
 // v10: language adapters for Go, Rust, Java, Kotlin, C#, Swift, C/C++, PHP and Ruby; deeper Python (Protocol/ABC, typed
 //      aliases, Django and Flask routes); go.mod/Cargo.toml/composer.json packages; each language's test-file convention.
 //      The CAST catalog names twelve more providers (Gemini, Copilot, Droid, Goose, ...): their seats, chips and collisions.
-const INTERPRETATION_VERSION=10;
+// v11: a subagent names its parent: once a subagent event ties it to an observed agent of its session (parentOf), its
+//      agent.state intents carry subject.parentAgentId, that agent's public id. Nothing else changes.
+const INTERPRETATION_VERSION=11;
 const RENAME_WINDOW_MS=60000;
 // Test files: test folders anywhere and *.test / *.spec scripts, plus (v10) each language's own convention. Every form
 // added in v10 is limited to that language's extensions, so a JS/TS file is a test exactly when it was before.
@@ -91,12 +93,21 @@ function transferIdentity(state,from,to){
   delete state.docs[from];
   state.recentlyDeleted=(state.recentlyDeleted||[]).filter(d=>d.origin!==origin);
 }
+const agentKey=event=>String(event.meta?.agent||event.sessionId||'');
 function agentFor(state,event){
   const p=presence(event.meta?.provider),provider=p.id;
-  const id=sha(`${provider}/${event.meta?.agent||event.sessionId||''}`).slice(0,10);
+  const id=sha(`${provider}/${agentKey(event)}`).slice(0,10);
   if(!state.agents[id]){state.agents[id]={id,provider,voice:p.seat,first:event.ts,last:event.ts,events:0};state.stats.agents=Object.keys(state.agents).length;}
   const a=state.agents[id];a.last=Math.max(a.last,event.ts);a.events++;
   return a;
+}
+// A subagent's parent (v11). Every adapter that observes subagents (scripts/hooks: Claude Code, Codex, Qwen, Copilot,
+// Cursor, Droid) keys one as its session's own key, a '/' and the subagent's id, type or task, in the same session.
+// So the parent is the agent of the same provider whose key is the shortest such prefix of the subagent's and that this
+// project has already observed: no guess. Null when that session was never observed or the key has no '/'.
+function parentOf(state,agent,key){
+  for(let i=key.indexOf('/');i>0;i=key.indexOf('/',i+1)){const id=sha(`${agent.provider}/${key.slice(0,i)}`).slice(0,10);if(id!==agent.id&&state.agents[id])return id;}
+  return null;
 }
 function pruneRing(ring,now){
   return (Array.isArray(ring)?ring:[]).filter(x=>now-x.ts>=0&&now-x.ts<=AGENT_ATTRIBUTION_MS);
@@ -373,6 +384,7 @@ function apply(state,event) {
     case 'agent.session.started':case 'agent.session.ended':case 'agent.subagent.started':case 'agent.subagent.stopped': {
       state.stats.agentEvents++;
       const agent=agentFor(state,event);
+      if(!agent.parent&&event.kind.startsWith('agent.subagent')){const parent=parentOf(state,agent,agentKey(event));if(parent)agent.parent=parent;}
       const tool=typeof event.meta?.tool==='string'?event.meta.tool:'';
       if(event.file&&(event.kind==='agent.file.modified'||(event.kind==='agent.tool.completed'&&!READ_ONLY_TOOLS.has(tool)))){
         rememberWriter(state,event.file,agent,event.ts);
@@ -387,7 +399,7 @@ function apply(state,event) {
       else if(agent.state!=='tool')agent.activity=null;
       const touched=event.file&&state.docs[event.file]?moduleId(state,event.file):undefined;
       if(agent.state!==before.state||agent.activity!==before.activity||(touched&&event.kind==='agent.tool.started'))
-        intent('agent.state',{tier:0,magnitude:event.kind==='agent.tool.started'?.2:.1,evidence:'observed',subject:{agentId:agent.id,voice:agent.voice,...(touched?{fileId:touched}:{})},
+        intent('agent.state',{tier:0,magnitude:event.kind==='agent.tool.started'?.2:.1,evidence:'observed',subject:{agentId:agent.id,voice:agent.voice,...(agent.parent?{parentAgentId:agent.parent}:{}),...(touched?{fileId:touched}:{})},
           detail:{state:agent.state,activity:agent.activity,provider:agent.provider,...(event.kind.startsWith('agent.subagent')?{subagent:true}:{})}});
       c(event.kind,'observed',0,{provider:event.meta?.provider||'unspecified',source:event.meta?.source||'hook',agentId:agent.id,voice:agent.voice,...(event.meta?.tool?{tool:String(event.meta.tool).slice(0,40)}:{}),
         ...(event.file&&state.docs[event.file]?{fileId:moduleId(state,event.file)}:{})});

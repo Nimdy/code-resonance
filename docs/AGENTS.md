@@ -111,4 +111,9 @@ Any other id is shown as *Agent*. The Control Center names it by the id it repor
 - **Copilot** shows tools and categories but no files. **Grok Build** shows tools by name only. **Droid** names files
   only for `Create`.
 - **Subagents.** Copilot subagents are identified by name (two of the same name share a voice), and so are Droid
-  sub-droids (by task). Grok subagents are not observed.
+  sub-droids (by task). Grok subagents are not observed. Every adapter keys a subagent as its session's key, a `/` and
+  the subagent's id, name, type or task, in its parent's session. Since interpretation 11 the receiver uses that to name
+  a subagent's parent (`subject.parentAgentId`, the parent's public id, on the subagent's `agent.state` intents) once it
+  has observed the parent's session; it never guesses one. Cursor and Droid report only a subagent's stop, so their
+  subagents appear, with their parent, only as they finish. A Codex `SubagentStart` without an agent id is the
+  session's own event and names no parent.

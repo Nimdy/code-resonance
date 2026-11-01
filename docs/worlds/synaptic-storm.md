@@ -12,8 +12,9 @@ it with two curated looks and the Artist Studio composes over it. Graduating it 
 [digital life](#digital-life) (behind the recipe's `life` values, on for new identities) and agents that travel the
 network's own axon pathways, with `agent.collision` drawn as two signals meeting (2026-10-31). The owner watched it,
 inhabited, on a film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it
-(2026-10-31); its curated looks have not been reviewed. Everything below marked *prototype* is implemented; *planned*
-is not.
+(2026-10-31); its curated looks have not been reviewed. After 0.8.1: [subagents](#agents) are smaller signals tethered
+to their parent's (interpretation 11 names the parent), not yet reviewed. Everything described below is implemented;
+what remains is in [Path to shipping](#path-to-shipping).
 
 ![A large project as a network](synaptic-storm-network.jpg)
 
@@ -48,7 +49,7 @@ Every structure is project data from the world model (`public/worlds/model.js`);
 | `m.lastAgent`, `m.agentVoice` (a **correlated** edit, the model's cue) | The edit lands: an input pulse in the agent's colour, more on each beat for 4.5 s (dwell), the branch glowing in that colour (fading over about 10 s), the neuron firing | The agent signal goes to that branch for the dwell |
 | `m.lastHuman` | A warm white input pulse along the branch | |
 | File born, symbol born or modified | A gold input pulse (growth) | |
-| Agent presences (`frame.agents`: `provider`, `display`, `activity`, `fileId`, `home`, `since`, `alpha`, `busy`, `subagent`) | A **travelling signal** per agent: CAST seat colour and shape, a trail, an injection stream into the branch it works on | See [Agents](#agents) |
+| Agent presences (`frame.agents`: `provider`, `display`, `activity`, `fileId`, `home`, `since`, `alpha`, `busy`, `subagent`, `parent`) | A **travelling signal** per agent: CAST seat colour and shape, a trail, an injection stream into the branch it works on; a subagent smaller, with a **tether** to its parent's signal | See [Agents](#agents) |
 | Director commands (`effect`) | The vocabulary below | Never time alone |
 | `director.lasting()` | **Myelin** on the axons of clusters that earned verified milestones (beaded sheaths); the storm's rarity | Lasting; rebuilt after a seek |
 | `director.activityAt` | The spontaneous firing rate (up to 2.4× while work is recent) | Evaluated per beat, so a pulse in flight never changes |
@@ -145,7 +146,7 @@ null in a pack frame):
 
 - **Each provider its own colour and shape** (CAST seat, `public/providers.js`): Claude rose four-point spark, Cursor
   cyan ring, Codex lime diamond, Grok white six-point star, Qwen azure triangle, Kimi magenta double ring, unknown
-  providers amber or grey dots. Subagents are smaller. Chips show catalog names only.
+  providers amber or grey dots. Subagents are smaller (0.6 of a session's signal). Chips show catalog names only.
 - **Where it is**: at the branch of the file it works on while a tool runs on a file, or for 4.5 s after one of its edits
   lands (the model's correlated cue for its seat); otherwise orbiting its home neuron (working on a request) or parked
   farther out (waiting), or circling the network.
@@ -158,8 +159,35 @@ null in a pack frame):
   dwell, the branch keeps a glow in its colour, the neuron fires, the spike runs to the files it imports, a spark jumps
   each synapse. Reading draws particles out of the branch instead of into it. The camera moves in to a medium close-up
   of the work.
+- **Subagents are tethered to their parent**: a faint filament in the subagent's colour runs from its parent's signal
+  to its own (soft three-pixel points every 0.1 units, far dimmer than a signal), along the axon pathway
+  between their neurons when the graph joins them (the route its travel would take, at most four hops), otherwise a
+  shallow arc; a bead of light runs down it from the parent every five seconds of view time. While either signal
+  travels between goals the filament eases to the arc by mid-way, where it changes neuron, and back to the pathway from
+  the new one, so it never jumps. It fades with the fainter of the two signals and is drawn only while the data names
+  the parent (`parent`, from the intents' `subject.parentAgentId`, interpretation 11; see
+  [AGENTS.md](../AGENTS.md#known-limits)) and the parent has not ended: none for a parent that is unknown, not drawn
+  (beyond the first twelve agents) or disconnected. The parent is known for the adapters that observe subagents
+  (Claude Code, Codex, Qwen, Copilot, Cursor, Droid) once the parent's session has been observed; Cursor and Droid
+  report only a subagent's stop, so theirs appear, tethered, only as they finish.
+
+  ![A subagent tethered to its parent](synaptic-storm-subagents.jpg)
+
+  *A crop at full resolution of a 1920×1080 GPU still (AMD iGPU): the parent (Claude, right) and two of its subagents,
+  one at the lower left, the other off the left edge, each tether along its own way. **A synthetic fixture**: the Lumen
+  Recipes recording with two background Claude Code subagents added to its last session (reads of existing files, keyed
+  as the hook keys them); no recording with subagents exists.*
 - Real data is sparse here: in the recorded datasets an agent's tool state lasts about 40 ms and rarely names a file,
-  which is why the attributed edit (not the tool state) drives the dwell. Several agents on one file share it.
+  which is why the attributed edit (not the tool state) drives the dwell. Several agents on one file share it, and so do
+  agents of one provider (the edits are found per CAST seat, as the model records them): for 4.5 s after a session's
+  edit lands its subagents' signals go to that branch too, and their tethers are short.
+- **What the one recording shows** (a look, no new behaviour): Lumen Recipes, re-derived at interpretation 11, has six
+  Claude Code sessions and 59 tool states, 7 of them naming a file (edits of files that already existed: a write that
+  creates a file names none, the file being unknown when its tool starts; the recording predates the hook naming a
+  read's file). The sessions' attributed edits move between consecutive files 14 times: 11 within one subsystem and
+  joined by the dependency graph (5 direct imports, the rest two or three hops), 3 between files it does not join. So
+  most moves an agent makes there could ride the axons, counted between files (two files on one neuron do not travel).
+  No recording yet has a session with reads naming files or with subagents.
 - **Two agents on one file** (`agent.collision`; the director gives it the family's integration look, `axon-link`, which
   is otherwise drawn from the model's own times): each agent's signal, in its colour and shape, runs in toward that
   file's branch from its own side along one line (seeded by the event) over 1.2 s with a short trail; where they meet a
@@ -193,7 +221,8 @@ approximation: the gap rule reads every milestone time in the lasting record, so
 Behind the recipe's `life` values, as in the flagship worlds (contract: [LIFE.md](../LIFE.md)): a grammar of the shared
 simulation, `public/worlds/life/synaptic.js`, and the world's presentation of it in `synaptic.js`. The catalogue's
 Synaptic Storm entry offers the standard `life.*` group, so the Visual Studio and the lab turn it on with a tuning
-(`--tune '{"life.enabled":true}'`); the generator does not add `genome.life` to the preview yet. Ambient life, never
+(`--tune '{"life.enabled":true}'`), and generator 5 gives every new identity of it life (`genome.life`, see
+[Selection and compatibility](#selection-and-compatibility)). Ambient life, never
 progress: the inhabitants are never labelled, never agents and never placed from an event; events reach them only as
 the driver's bounded influences at their sites.
 
@@ -267,7 +296,8 @@ more vesicles over a minute (797 against 653).
 Words come only from generic phrases, roles, counts, CAST catalog names and `ctx.name(id)` (the user's alias or the
 generated name). Callouts: "A new cluster of neurons forms", "Tests fail · 8 branches misfire", "Synaptic storm ·
 Recovery"; explorer labels name each cluster with its role, neurons and files; inspecting a soma says "A neuron of
-Vauos · hub · 4 branches". No file name, path or identifier is drawn (tested on every intent's words).
+Vauos · hub · 4 branches". No file name, path or identifier is drawn (tested on every intent's words). A subagent's
+tether draws no words; its chip is the existing "Claude · subagent".
 
 ## Determinism
 
@@ -275,7 +305,9 @@ No `Math.random`, `Date.now` or `performance.now`: every value is a function of 
 fold and the frame's time. Seeds come from ids (`hash`), spontaneous firing from (neuron, beat), jitter from (neuron,
 beat), storm timing from (command time, neuron). Per-frame state (positions, the two latest firings of every neuron
 and inputs of every file, conditions) is recomputed from scratch each frame into two float textures, so the state at a
-moment does not depend on what was drawn before (tested by drawing other moments first). After a seek, transient
+moment does not depend on what was drawn before (tested by drawing other moments first). A subagent's tether is a
+function of the two signals' positions, their moves and the view time: the same drawn alone, after other moments or at
+the end of a run at 60 frames per second (`tests/synaptic-subagents.test.js`). After a seek, transient
 effects are dropped and the lasting myelin comes back from the director's record.
 
 ## Performance
@@ -403,7 +435,7 @@ without: on this path every millisecond counts.
 
 ## Path to shipping
 
-What remains after this prototype:
+What remains:
 
 1. **Artistic review**: done (2026-10-31): the owner accepted a film of the whole Lumen Recipes session with life on
    (`qualification/visual/film.js`, 1920×1080 on the AMD iGPU). Its curated looks have not been reviewed.
@@ -413,13 +445,19 @@ What remains after this prototype:
    idle, privacy of every label, resources) now cover all six families; see
    [QUALIFICATION.md](../QUALIFICATION.md) for what was run.
 4. **Agents**: done (2026-10-31): they travel the actual axon pathways between neurons and `agent.collision` is two
-   signals meeting (see [Agents](#agents)). Remaining: subagents as smaller signals tethered to their parent; a look at
-   real sessions where agents move between connected files (the recorded datasets rarely name a file in a tool state).
+   signals meeting (see [Agents](#agents)). Subagents are smaller signals tethered to their parent (after 0.8.1,
+   interpretation 11; `tests/agent-parents.test.js`, `tests/synaptic-subagents.test.js`), seen only on a synthetic
+   fixture, not reviewed. A look at the one recording (Lumen Recipes): most of its agents' moves between files are
+   between files the dependency graph joins (see [Agents](#agents)). Remaining: a recorded session with reads that name
+   files and with subagents, and the owner's look at the tether; a subagent is drawn to its parent's attributed edits
+   (one seat), which needs the model to keep the edit's agent to change.
 5. **Music**: done (2026-10-31): rhythm-gated subdivisions and section onsets (see [Music](#music)). Remaining: a check
    with `life-music.js`-style measurements on films, and listening to whether the eighths read as rhythm and not noise.
 6. **Digital life**: done (2026-10-31; see [Digital life](#digital-life)), behind the recipe's `life` values with the
-   standard catalogue group, and accepted on a film (item 1). Remaining: a qualification run of
-   `visual/life.qual.js` in a browser (determinism across seeks and generations is tested in Node only).
+   standard catalogue group, and accepted on a film (item 1). Determinism across seeks with life on passed in a browser
+   (`visual/worlds.qual.js` on the integrated branch, 22/22, SwiftShader; [QUALIFICATION.md](../QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
+   Remaining: a run of `visual/life.qual.js` in a browser (generations, frame rates and long idle are tested in Node
+   only).
 7. **Generator inclusion**: done in generator 5 (above).
 8. **Graduation**: done with generator 5: in `FAMILIES`, its parameters frozen in the catalogue (a base for packs),
    curated looks and Essentials, the Artist Studio. The curated looks have not been reviewed artistically.
