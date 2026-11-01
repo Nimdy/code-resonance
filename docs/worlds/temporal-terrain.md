@@ -8,23 +8,25 @@ ridges that run back through time from the moment they were created, symbols the
 ridges. A replay lays the land down: every file that arrives raises a ridge at the front edge that then travels back
 with the rest of history; where a ridge grew, its contour lines turn and crowd.
 
-**Status.** The sixth built-in world family (`public/worlds/terrain.js`, `terrain-layout.js`, `terrain-glsl.js`), a
-preview until generator 5 graduated it: the family scores can choose it, it is a base for declarative and shader packs,
-the Visual Studio offers it with two curated looks and the Artist Studio composes over it. Graduating it changed no
-existing identity (see [Selection and compatibility](#selection-and-compatibility)). It can be inhabited: its
-[digital life](#digital-life) (herds of light on the land of time) is on when the recipe's life values say so (new
-identities from generator 5 have it on), and off the world is exactly as it was. The owner watched it, inhabited, on a
-film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); before
-that it was judged from stills only, and its curated looks have not been reviewed (see [What is not done](#what-is-not-done)).
-Everything described here is implemented unless marked *planned*.
+**Status.** The sixth built-in world family (`public/worlds/terrain.js`, `terrain-layout.js`, `terrain-roads.js`,
+`terrain-glsl.js`), a preview until generator 5 graduated it: the family scores can choose it, it is a base for
+declarative and shader packs, the Visual Studio offers it with two curated looks and the Artist Studio composes over it.
+Graduating it changed no existing identity (see [Selection and compatibility](#selection-and-compatibility)). It can be
+inhabited: its [digital life](#digital-life) (herds of light on the land of time) is on when the recipe's life values
+say so (new identities from generator 5 have it on), and off the world is exactly as it was. The owner watched it,
+inhabited, on a film of the whole Lumen Recipes session (life on, 1920×1080 on the AMD iGPU) and accepted it
+(2026-10-31); before that it was judged from stills only, and its curated looks have not been reviewed (see [What is not
+done](#what-is-not-done)). Everything described here is implemented unless marked *planned*.
 
 ![Self, halfway through its session](temporal-terrain-hero.jpg)
 
 *Self (92 files in 10 subsystems, a 20-minute recorded session) at 50 %: rose, magenta and amber ranges on its
 analogous harmony, the present's skyline lit in the identity's cool lamp colour at the front edge, the roads of its
-cross-subsystem dependencies arching over it, and the survey stakes and dotted survey lines of its commits laid back
-through its history. Every still on this page: GPU (AMD Radeon iGPU through WSL2 D3D12, ANGLE's EGL backend),
-rendered at 1920×1080 at quality 0 on the film path, shown at 960×540.*
+cross-subsystem dependencies as paths of the same light climbing from the peaks at the front edge into the land (at
+the right), and the survey stakes and dotted survey lines of its commits laid back through its history. Every still on
+this page: GPU (AMD Radeon iGPU through WSL2 D3D12, ANGLE's EGL backend), rendered at 1920×1080 at quality 0 on the
+film path, shown at 960×540. The six stills below predate the roads as paths in the land and the idle flight: where
+they show roads, they are arcs over the front edge.*
 
 | | |
 |---|---|
@@ -76,12 +78,13 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
 | File state over time (`stateAt`): stressed | A **fault**: warning-coloured contours and a glowing fissure along the ridge for exactly as long as it was stressed, hot at the front, cooling to an ember scar with age | The scar stays in history between the failure and its recovery |
 | File state: validated | A calm sheen in the valid colour on the ridge's index contours | |
 | Commits: the recorded `repository.commit.observed` cues (live: the files the model saw committed, and the director's recent checkpoints) | A **survey line** across the land at the commit's moment, and a **stake** of light on each committed ridge | They recede with the land: the cadence of commits reads as a line of markers through history |
-| Dependency: `model.links` across subsystems (`a` imports `b`) | A **road of light** arching from the importing file's peak to the imported one's just behind the front edge | Pulses run along it from the importer when its file fires; at most 32, newest first; dimmer the more there are |
+| Dependency: `model.links` across subsystems (`a` imports `b`) | A **road**: a path of light in the land just behind the front edge, from the importing file's peak down into the valley beside its range, across at a depth of its own and up to the imported peak | Pulses run along it from the importer when its file fires; at most 32, newest first; dimmer the more there are. See [Roads](#roads) |
 | Agent presences (`frame.agents`) and their tool events (`public/worlds/touch.js`) | A **surveyor**: a light in the agent's CAST colour and shape hovering over the ridge it works on, its beam and a pool of its colour on the ground; its edit **raises the ground** there | See [Agents](#agents) |
 | Director commands (`effect`) | The vocabulary below | Never time alone |
 | `director.lasting()` | **Monuments**: a beacon on the subject's ridge at the milestone's moment (a cairn for a validated refactor), with a pool of warm light | Lasting; they recede with the land; rebuilt after a seek |
 | `director.unlockedAt` | Dawn (the horizon and the key light warm), lanterns (small lights along the ridges in history), stars, aurora | Verified milestones only, in that order |
-| `director.activityAt`, the score (`frame.music`) | The beat shimmer's strength; whether the idle drift runs | |
+| `director.activityAt`, the score (`frame.music`) | The beat shimmer's strength; whether the idle drift and the idle flight run | See [Idle behaviour](#idle-behaviour) |
+| The host's musical clock (`ctx.musicAt`: rhythm and section per bar) | The present's contour lines shimmer on the eighths the arrangement plays; a section's onset sends a soft wave back over the land | See [Music](#music) |
 | Digital life (`genome.life`, ambient) | Grazers, swifts and gleaners on the land, their light and paths | Simulated inhabitants, never agents, files or events: see [Digital life](#digital-life) |
 
 ## Visual grammar
@@ -130,6 +133,33 @@ Pure functions of the recipe, the model and the time (`terrain-layout.js`, no TH
    cubic B-splines across and along, then adds the relief's texture (`reliefAt` is its JS twin, so lights, stakes and
    beacons stand on the drawn surface). Smooth effects are computed per vertex; the fragments draw the lines.
 
+## Roads
+
+The present's dependencies between subsystems (`model.links` whose two files lie in different ranges; at most 32, the
+newest first) are paths in the land near the front edge (`terrain-roads.js`, pure functions of the layout; pinned in
+`tests/terrain-roads.test.js`):
+
+- **The path.** A road leaves the importing file's peak at the front edge, runs down into the valley beside its range on
+  the imported file's side (half way between its outermost ridge and the facing ridge of the next range), crosses the
+  land at a depth of its own and climbs from the valley beside the imported file's range to its peak. The depth grows
+  with the distance between the two files (3 to 15 units, about 2 to 12 s behind the present), so a longer road passes
+  behind the shorter ones it spans instead of crossing them; between neighbouring ranges both valleys are one and the
+  road dips into the valley between them. Roads that share a route add up: a busy route is brighter.
+- **Drawn by the land.** The land's shader reads the roads from a light map in the layout's frame (1024 × 64 cells over
+  the lane grid and the first 18 units of depth) at the place where it reads the land itself, so a road lies on the
+  drawn ground and the ground hides it where it hides the ground: a fine core in the lamps' colour with a faint halo,
+  the contour lines it crosses a little brighter. Each road's stamp is kept with its plan; the map is drawn again only
+  when a plan, a road's draw-in or the lane grid changed, on a lattice of 100 ms of view time (the land eases under the
+  roads after a birth; between lattice points they hold still).
+- **Life.** A new road draws itself from the importer over 2.4 s; a removed one fades over 1.6 s; when the importing
+  file fires (an edit), a pulse runs along the path to the imported peak, where a small glow stays.
+- **Intra-subsystem dependencies** are not drawn.
+
+![Roads in the land at the front edge](temporal-terrain-roads.jpg)
+
+*Self at 50 %, a detail of the hero still at full resolution (1920×1080, uncropped pixels): roads climb from the
+peaks at the front edge into the land and cross over to other ranges behind them.*
+
 ## Agents
 
 - **Each provider its own colour and shape** (CAST seat, `public/providers.js`): Claude rose four-point spark, Cursor
@@ -142,6 +172,20 @@ Pure functions of the recipe, the model and the time (`terrain-layout.js`, no TH
   dome for about three seconds (the contour lines open into rings around it), two rings of its colour open from it over
   about two seconds, brightest on the contour lines they cross, its beam and pool brighten. An edit's touch brings the camera to a medium close-up unless a failure, a recovery or a
   milestone-tier event holds it. Reading is quieter (0.45 of an edit).
+- **How it travels.** When its goal moves from one range to another (from the file it worked on, or from its home range
+  while it circled there, to the file it works on now) and the roads join those ranges (at most three roads, found
+  breadth first in the roads' own order, on each hop the road whose end lies nearest), it flies down to the road's end
+  in its range, along the road's own path 1.7 units above the drawn ground (and along the front edge between two roads
+  in one range), and up to its new goal, over the time the path takes at 26 units a second (1.8 to 4.5 s), its trail
+  following the road; its beam is short and its pool on the land stays lit. Otherwise it travels a lifted arc over 1.8 s,
+  as before.
+- **Two agents on one file** (`agent.collision`; the director gives it the family's integration look, `road`, which is
+  otherwise drawn from the model's own times): each agent's signal, in its colour and shape, runs in over the ground
+  toward that file's peak from its own side (seeded by the event) over 1.2 s with a short trail; where they meet a ring
+  in both colours spreads and fades over about three seconds. A pure function of the time since the event.
+- Real data is sparse here: in the recorded datasets no agent ever moves between two ranges that a road joins at that
+  moment (Lumen Recipes: 54 attributed edits, two roads, both into one range; *lumen-long*: 4,838 attributed edits),
+  so road journeys were seen only in the tests and on a constructed scene ([What is not done](#what-is-not-done)).
 
 ## Events, failure, recovery and the earned sunrise
 
@@ -155,6 +199,7 @@ Pure functions of the recipe, the model and the time (`terrain-layout.js`, no TH
 | `repository.checkpoint` (survey) | The commit's survey line flashes across the land and its stakes light |
 | `milestone.achieved` (sunrise), `refactor.validated` (terrace) | The **earned sunrise** or a local glow (below); a beacon (a cairn for a refactor) stays |
 | `world.expanded` (horizon) | A brief lift of exposure |
+| `agent.collision` (the integration look, `road`) | Two signals in the agents' colours run in over the ground to the shared file's peak and meet in a ring of both colours (see [Agents](#agents)) |
 
 **The sunrise rule.** As in Synaptic Storm and Fractal Continuum: a sunrise needs the director's milestone tier (3 or more, one of its
 three spectacle tokens) and, in the director's lasting record, the milestone is the first or comes at least **4 minutes
@@ -171,6 +216,55 @@ extends so its contours simply run straight; the key light travels a slow arc (`
 valleys; the contours shimmer on the score's beat grid (on each beat one contour level in four brightens, climbing the
 land beat by beat); motes drift; and the camera drifts between its vantage points (oblique, low along the land, high
 above) every 170 s (`motion.drift`). Nothing grows.
+
+**The flight over history.** Once the performance has been idle a while, the camera flies back along the time axis over
+the land's history, the older land that the logarithmic depth compresses into the haze, and returns to the present:
+
+- **When.** The quiet begins at the latest happening the world observes: an effect the director decided, an event of
+  the land's history (a birth, a removal, a symbol, a state), an edit, an agent's state. An agent at work (processing,
+  using a tool, reasoning) holds it until its state is unknown (three minutes without an observation). The first flight
+  starts once the quiet has lasted 24 s of view time and the director's activity has fallen below 0.06 (the host calls
+  the performance idle below 0.08); then 48 s at the present, and later flights on a lattice of view time (every 120 s,
+  from a whole period after the first), so a flight never depends on how long ago a happening was forgotten. It flies
+  only where there is history to fly over: the land's first recorded change must lie at least 40 units beyond where
+  the camera's own vantage looks, at the flight's start. Self flies 60 s after its last event; Lumen Recipes' four
+  minutes lie within its default view (its land is 247 units wide) and it first flies 361 s after its last event; a land
+  whose structure all stood before time has no recorded change and never flies (Excalidraw: none in a 200 s idle tail
+  replayed in Node).
+- **The path.** The camera's target travels back over 28 s (eased) to 12 units short of the land's first recorded change
+  (at most 78 % of the deepest row), over the land as it was then (its centre and width at that moment), with a slow
+  sway across; the camera rises (elevation at least 0.56, looking down on the old land), comes a little closer and looks
+  more along the time axis. It lingers 16 s where the land began (its birth slopes the skyline ahead, the empty plain
+  beyond) and returns over 28 s. The land's haze and mist count from the depth the camera has flown back to (0 at the
+  present, so the land is as before when it does not fly), and so do the digital life's fade and the motes.
+- **It yields at once.** Any happening ends it: the goal is the present's again at that moment (with whatever close-up
+  the happening brings), and for a few seconds the camera returns at a higher rig rate, the faster the farther out it
+  was. The viewer's motion at 0 keeps it at the present.
+- **Framing.** Portrait (9:16) keeps its steep view (time runs up the frame) and frames the middle of the old land; the
+  labels at the front edge leave the frame while the camera is out over the past.
+- The goal is a pure function of the performance and the moment (tested: the same goal whatever was drawn before and
+  at any frame rate); the camera rig eases toward it as it does toward every goal.
+
+![The flight over history, at its far point](temporal-terrain-flight.jpg)
+
+*Self 91 s after its last event, the flight at its far point, about 190 units back: the old ranges close up, their
+contours running back like grain and turning where they changed, the dotted survey lines of its commits across them,
+and ahead the skyline of the slopes where its ranges rose out of the plain (where the land began), the dark empty plain
+beyond. Rendered with a scratch copy of `qualification/visual/lab.js` that prints the world's flight state (continuous
+frames at 15 fps from 59 s after the last event).*
+
+## Music
+
+With the host's musical clock (`ctx.musicAt`, a pure function of the performance's frames; absent in a pack frame or
+headless), read per bar as in Synaptic Storm:
+
+- **The eighths.** The present's contour lines (the hot land near the front edge) shimmer on each off-beat eighth, as
+  strongly as the arrangement plays rhythm in that eighth's own bar (read at its bar, so a shimmer under way never
+  changes), decaying within the eighth; scaled by `motion.shimmer` and `music.reactivity`.
+- **A section's onset.** When a new section starts, a soft wave of light travels back over the land from the front edge
+  (26 units a second, fading over six seconds), brightening the contour lines it passes in their own colours.
+
+Pinned in `tests/terrain-music.test.js` against a stub clock; not yet seen or heard in a film with the score.
 
 ## Digital life
 
@@ -282,6 +376,21 @@ Transient effects are cleared after a seek; commits come back from the model, mo
 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone, and the three projects
 structurally different).
 
+The idle flight's goal is a pure function of the performance and the moment: when the quiet began comes from what the
+director, the land's history, the edits and the agents' lifecycle hold at the moment, later flights sit on a lattice of
+view time, and nothing is integrated over frames (tested: the same goal whatever was drawn before and at any frame
+rate); the haze follows the camera the rig eased toward that goal. The roads' light map is a pure function of the roads
+at the moment's lattice point (tested: the same map reached directly or after other moments); an agent's road journey
+is a pure function of its lifecycle and the time, as before. On this branch, `qualification/visual/worlds.qual.js
+--only determinism,idle,privacy --families temporal-terrain --size 640x360` on SwiftShader, on copies of the datasets:
+**8/8** (the same frame on Self in two sessions whatever the second played before; idle for 90 s on Lumen Recipes the
+image keeps changing while no structure or event appears and the director reports idle; no page errors; 42 distinct
+label strings with no path, file name, identifier or folder name; switching between the six worlds 12 times leaves
+GPU geometries and textures at their level). Lumen's idle samples do not reach its first flight
+(six minutes into the quiet), so the flight was not part of that run; the same determinism procedure at two moments of
+Self's flight (70 and 91 s after its last event, a scratch script, SwiftShader at 640×360) gives the same frame in both
+sessions.
+
 ## Performance
 
 GPU time per frame (the host's timer: background, scene, post, bloom, grade), AMD Radeon iGPU through WSL2 D3D12,
@@ -298,6 +407,16 @@ of these readings; they agree with earlier readings of the same build within 0.5
 quality 0, one reading after 4 s of warm-up): 14.0–16.1 ms over the final stills of the three projects. CPU
 (`updateMs`): 0.15–0.5 ms on Lumen and Self, 0.85–0.98 on Excalidraw; a full refill of the rows after a seek about 2 ms
 once warm (Self, 104 rows computed, Node).
+
+**Roads in the land and the idle flight** (this branch against main at ea515a3, the same moments, film path, quality
+0, 1920×1080, AMD iGPU; other agents shared the machine, load average 2–18). GPU, Self at 50 % (32 roads on screen),
+four readings a second apart after 6 s of warm-up, two runs each: main 16.29–16.40 ms, this branch 16.40–16.52 ms (the
+light map's one texture read per land fragment). At the flight's far point (Self 91 s after its last event) 14.18–14.33
+ms, against 16.05–16.16 ms for main's view of that moment. CPU, Self's whole recorded history replayed into the world in
+Node at 5 frames a second (every frame a new lattice point for the roads), update and camera together: mean 0.53 ms
+(main 0.46), p95 1.73–1.78 (main 0.88), maximum about 5 ms in both; the difference is the light map drawn again while
+ranges ease after a birth (each road's stamp is kept until its plan changes). The player's own `updateMs` on these film
+renders read 1.8–2.7 ms for both builds alike.
 
 How it got there: the first version, with the relief's noise per fragment, the effects looped per pixel and a grid whose
 far rows were sub-pixel, measured 34 ms; profiling by elimination found the fragment noise (about 7.5 ms), the far grid
@@ -359,8 +478,14 @@ about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this n
 
 - **Watched in motion once:** the owner accepted a film of the whole Lumen Recipes session with life on (2026-10-31);
   the judgements in this document were made from stills before it. The owner's reference images were not available.
-- **The far history of a long session** is compressed by the logarithmic depth: Self's first fifteen minutes lie past
-  depth 150, in the haze; the camera never travels back along the time axis (*planned*: an idle flight over history).
+  The idle flight, the roads as paths in the land, the agents' road journeys and the music came after that film: they
+  were judged from stills, contact sheets and short scratch clips only, not by the owner.
+- **The flight over history** was seen on Self (stills every 8 s through a whole flight, landscape and portrait) but
+  not on Lumen (it first flies six minutes into an idle tail) or on a long history (*lumen-long*). The land's grid is
+  spaced for the view from the present: at depth 200 its rows are about 2.4 units apart at quality 0 (0.5 at the front
+  edge), and in the far-point stills some contour bends look angular. A flight interrupted by a real event was not seen
+  on the GPU: no recorded dataset has an event during a flight (tested in Node only, including the faster return). It
+  always flies to where the land began; it does not visit particular moments (a failure's scar, a milestone).
 - **The commit's survey line** lies right behind the front edge while it flashes: it reads across the ranges there, but
   a single file's stake is small from the default three-quarter view; the lasting dotted lines read better further back.
 - **The touch's rings** now last about two seconds and cross the contour lines (checked in stills only, not in motion);
@@ -368,23 +493,28 @@ about 1.3 ticks a frame). The shared GPU hides the life's own GPU cost in this n
   seen from afar.
 
   ![An edit's rings, 1.4 s on](temporal-terrain-touch-rings.jpg)
-- **Roads** are arcs over the front edge, not paths in the land; in a dense project (Excalidraw: 32 roads) they read as a
-  web. Intra-subsystem dependencies are not drawn.
+- **Roads** are paths in the land near the front edge; seen in stills of Self and Excalidraw (32 roads each), where in
+  their close default views they read as bands of the lamps' colour several pixels wide climbing the ridges and running
+  along behind the front edge (on Excalidraw's wide massif, near the present's lit skyline, in the same colour); not
+  watched in motion. The six
+  older stills above still show them as arcs. Intra-subsystem dependencies are not drawn. **An agent's road journey**
+  never happens in the recorded datasets (no agent moves between two ranges a road joins at that moment): it was seen in
+  the tests and in one scratch render of Lumen Recipes with a dependency added to the world's history model (not in this
+  document).
 - **A ridge's birth slope** shifts by up to about two units when its row passes from one level of the pyramid to the next
   (the levels filter over different spans).
 - **Auto** was only seen holding level 0 at 60 fps; it was not seen stepping down on a slower machine. Only the AMD iGPU
   and the shader compile path were exercised: nothing was rendered on the NVIDIA adapter, in OBS, on SwiftShader at
   1920×1080, or over a long soak. The web demo and Visual Studio UI suites (`qualification/site/web-demo.qual.js`,
   `qualification/ui/workspaces/visual.qual.js`) were updated for the sixth world but not run.
-- **Digital life**, built and tested in Node, seen in stills only: nobody has watched it move (the herds' walk against
-  the flow of time, the murmurations, the gleaners' slow rides were judged from single frames and contact sheets too
-  small to read). Its GPU cost was not isolated from the other renders on the shared GPU. At the widest framing (the
+- **Digital life**, built and tested in Node; the owner watched it move in the film of the whole Lumen Recipes session
+  with life on and accepted it (2026-10-31). Its GPU cost was not isolated from the other renders on the shared GPU. At the widest framing (the
   idle vantage points) a grazer is a few pixels, and on Excalidraw's dense massif the herds have little contrast. The
   land's profile the herds steer by is the present's (deeper, where the land was narrower, they do not know its old
   valleys); the paths show only through the contour lines (the fields are 2 units a cell). In replays faster than 1.5×
   the life lags the land (its paths fade). Not run: the qualification's browser suites for life
   (`qualification/visual/life.qual.js`), a live session, the soak.
+- **Music**: the eighths' shimmer and the section's wave are pinned against a stub clock in Node; they were not seen
+  with the real score in a film, nor heard alongside it.
 - **Generator inclusion and graduation** are done (generator 5, above); its curated looks have not been reviewed
   artistically.
-</content>
-</invoke>

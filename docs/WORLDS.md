@@ -259,13 +259,15 @@ the moment they were created, their height from their live symbols; luminous con
 where code grew fast. Agents survey the land as lights in their provider's colour and shape and raise the ground where
 they edit; tests sweep a scan, a failure opens a fault that stays as a scar for as long as the files were stressed,
 recovery heals it, commits leave survey lines and stakes, and a verified milestone can earn a rare sunrise and a beacon.
-A replay's land is its whole recorded history, also after a seek (the host hands built-in worlds that ask for them the
+Dependencies between subsystems are roads, paths of light in the land near the present that agents travel along
+between ranges; once the performance has been idle a while, the camera flies back over the land's history to where it
+began and returns. A replay's land is its whole recorded history, also after a seek (the host hands built-in worlds that ask for them the
 recorded windows). Its digital life, behind the recipe's `life` values (on for new identities): grazers that graze
 the pastures of the present against the flow of time and shelter from a fault, swifts over the present and gleaners on
 the receding paths. A preview until generator 5, which graduated it: scored for the automatic choice, a base for packs,
 two curated looks; adding it changed no existing identity, and the owner accepted it on a film. Design brief, stills, measured GPU time and what remains:
 [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`, `terrain-layout.js`,
-`terrain-glsl.js`, `life/terrain.js`).
+`terrain-roads.js`, `terrain-glsl.js`, `life/terrain.js`).
 
 The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
 previewed and applied like any preset; the graduated worlds' six are new and have not been reviewed artistically) and
