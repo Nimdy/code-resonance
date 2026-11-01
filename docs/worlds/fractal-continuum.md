@@ -560,7 +560,9 @@ again after the finish (only the fixed-quality readings above). Not yet measured
   kept the project's palette and swell and read as a soft pink-violet lump, close to the "gum" look. It now draws the
   crystal unswollen, at its largest scale and lowest detail (a faceted cube of square, mirrored openings), in a sapphire
   palette whose light turns toward ice cyan, with full sheen and rim, deep occlusion, almost no halo, a narrow lens and a
-  camera that does not drift in.
+  camera that does not drift in. *Teal Mandelbulb* now also sets its gold light (`palette.accent`) and an analogous
+  harmony: it took both from the project, so on Self, whose light is magenta, it showed magenta sites and no gold, and
+  on Lumen its regions turned toward violet.
 
 ## Known gaps
 

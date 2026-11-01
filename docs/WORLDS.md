@@ -8,10 +8,10 @@ development actually does. Every structure is real project data; the worlds neve
 the baseline later changes are checked against. Synaptic Storm, Fractal Continuum and Temporal Terrain, previews until
 then, graduated with generator 5: they are families like the three (scored for the automatic choice, a base for packs,
 curated looks); the owner watched each on a film of a whole session, inhabited, and accepted them (2026-10-31), while
-their six curated looks have not been reviewed (four were reworked on 2026-11-01, see the world docs). Aurora is a new
-preview, chosen only explicitly: built and judged from stills only, not yet seen by the owner. Technical qualification
-(determinism, idle life, resources, privacy, performance) is separate from that artistic judgement, and no one else has
-reviewed them yet.
+their six curated looks have not been reviewed (on 2026-11-01 four were reworked and a fifth now sets its own light, see
+the world docs). Aurora is a new preview, chosen only explicitly: built and judged from stills only, not yet seen by the
+owner. Technical qualification (determinism, idle life, resources, privacy, performance) is separate from that artistic
+judgement, and no one else has reviewed them yet.
 
 ## Layers
 
@@ -294,8 +294,8 @@ measured GPU time and what remains: [worlds/aurora.md](worlds/aurora.md) (`publi
 `aurora-layout.js`, `aurora-glsl.js`).
 
 The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
-previewed and applied like any preset; the graduated worlds' six have not been reviewed by the owner, and four of them
-were reworked on 2026-11-01 to do what their lines say) and
+previewed and applied like any preset; the graduated worlds' six have not been reviewed by the owner, and five of them
+were retuned on 2026-11-01 to do what their lines say) and
 puts the few parameters that change a world the most in an Essentials group above the full parameter groups.
 
 Three catalogued values currently draw nothing on one world each: `music.reactivity` (*Reactivity*, offered for every

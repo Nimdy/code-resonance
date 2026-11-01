@@ -10,8 +10,9 @@
   violet network and *Storm front*'s fire read pink: *Storm front* is now gold fire in a deep violet volume, close and
   low, firing at the highest rate on the beat; *Glass cortex* a flat silver sheet on black seen from above, sharp from
   near to far, firing slowly. *Misty valley* (Temporal Terrain) barely showed its mist: a dusky rose haze now colours
-  the mist and a warm dusk horizon, with the most mist and higher ridges. Tuning only: no world, parameter or identity
-  changes.
+  the mist and a warm dusk horizon, with the most mist and higher ridges. *Teal Mandelbulb* now sets its gold light
+  and an analogous harmony: on Self it showed magenta light, on Lumen violet regions. Tuning only: no world, parameter
+  or identity changes.
 
 ## 0.9.0 — 2026-11-01
 
