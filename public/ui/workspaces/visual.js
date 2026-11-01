@@ -9,7 +9,7 @@
 // Pending changes are kept as a small structured draft (identity choices, tuning, presentation, lock) and compiled into
 // the action list in a fixed order, so the same draft always means the same candidate; a change that the receiver
 // refuses is rolled back and its message shown where it was made.
-import {h,text,clear,button,field,select,segmented,slider,parameterControl,humanize,formatParam,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles} from '../dom.js';
+import {h,text,clear,button,field,select,segmented,slider,parameterControl,humanize,formatParam,disclosure,pill,callout,emptyState,modal,confirmDialog,toast,styles,reducedMotion} from '../dom.js';
 import {icon} from '../icons.js';
 import {WORLD_NAMES,LABEL_NAMES,LABEL_DOCS,QUALITY_NAMES,publicName,count} from '../format.js';
 import {roleOf} from '../../worlds/model.js';
@@ -168,29 +168,68 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       .map(([k,a,b])=>h('span',{class:`vs-term ${k}`,title:`${a}: ${b}`},h('i'),h('strong',{text:a}),h('span',{text:b}))));
   const head=h('div',{class:'vs-head'},h('h1',{class:'title-l',id:'vsTitle',text:'Visual Studio'}),legend);
   const stageBox=h('div',{class:'vs-stage'},slot);
-  const tabs=segmented({label:'Browse',value:S.state.ui.visualTab||'living',options:[{value:'living',label:'Living worlds'},{value:'classic',label:'Classic stages'},{value:'presets',label:'Presets'}],
-    onChange:v=>{S.setUi({visualTab:v});renderBrowser();}});
+  // Worlds (the living worlds, with their count), Looks (curated looks and your presets), Classic stages. The stored
+  // values stay those of earlier versions (living, presets, classic), so a remembered tab still opens.
+  const tabs=segmented({label:'Browse',value:S.state.ui.visualTab||'living',options:[{value:'living',label:'Worlds'},{value:'presets',label:'Looks'},{value:'classic',label:'Classic stages'}],
+    onChange:v=>{S.setUi({visualTab:v});cards.scrollTop=0;renderBrowser();}});
   const browserActions=h('div',{class:'vs-browser-actions'});
   const browserNote=h('div',{class:'vs-browser-note faint small'});
   // The strip's note in full, and a shorter form a narrow column shows instead (the full one is its tooltip).
   const note=(t,short=t)=>{clear(browserNote);browserNote.append(h('span',{class:'vs-note-long',text:t}),h('span',{class:'vs-note-short',text:short}));browserNote.title=t;};
-  const cards=h('div',{class:'vs-cards scroll',role:'list'});
-  // A strip wider than the column fades at the edge it continues past, so a cut card reads as "scroll for more".
-  function fadeCards(){const over=cards.scrollWidth-cards.clientWidth;cards.classList.toggle('fade-r',over>2&&cards.scrollLeft<over-2);cards.classList.toggle('fade-l',over>2&&cards.scrollLeft>2);}
-  // Why to choose shows on a card only when it fits whole: never a cut sentence (it stays the card's tooltip). The world
-  // cards show it on all of them or none, so their names keep one baseline; a preset card (text from the top) on its own.
-  function fitWhy(){
-    const whys=[...cards.querySelectorAll('.vs-card-why')];
-    for(const w of whys)w.classList.remove('cut');
-    const isCut=w=>w.clientHeight>0&&w.scrollHeight>w.clientHeight+1;
-    const worlds=whys.filter(w=>!w.closest('.preset'));
-    if(worlds.some(isCut))for(const w of worlds)w.classList.add('cut');
-    for(const w of whys.filter(w=>w.closest('.preset')&&isCut(w)))w.classList.add('cut');
+  // The cards, in groups (Built in, Previews, From packs; Curated and Your presets): never a sideways strip. The groups
+  // sit side by side in as few rows as keep every card at least CARD_MIN wide (one row at 1920 x 1080, so every world is
+  // in view); with more rows the browser shows the first row (the first card of every group) and a peek of the next,
+  // scrolls vertically, fades at its lower edge and says how many cards are below.
+  const cards=h('div',{class:'vs-cards scroll'});
+  const moreBtn=h('button',{type:'button',class:'vs-more',hidden:true,onClick:()=>cards.scrollTo({top:cards.scrollHeight,behavior:reducedMotion()?'auto':'smooth'})},icon('chevron'),h('span',{class:'vs-more-label'}));
+  const CARD_MIN=130,CARD_MAX=260,CARD_GAP=10,GROUP_GAP=20,GROUP_HEAD=32,PEEK=24;
+  // The world tab's layout for a width, from the number of cards in each group: the rows, the card size, each group's columns.
+  function plan(width,counts){
+    const g=counts.filter(n=>n>0);if(!g.length||width<=0)return null;
+    for(let rows=1;rows<=Math.max(...g);rows++){
+      const cols=g.map(n=>Math.ceil(n/rows)),total=cols.reduce((a,b)=>a+b,0);
+      const w=(width-GROUP_GAP*(g.length-1)-CARD_GAP*(total-g.length))/total;
+      if(w>=CARD_MIN||rows===Math.max(...g)){const cw=Math.floor(Math.min(CARD_MAX,Math.max(w,CARD_MIN)));return {rows,cols,w:cw,h:Math.round(Math.max(104,Math.min(150,cw*.68)))};}
+    }
+    return null;
   }
-  const layoutCards=()=>{fitWhy();fadeCards();};
+  const worldCounts=()=>[FAMILIES.length,PREVIEW_FAMILIES.length,P.state.packs.filter(x=>x.kind==='world').length];
+  function fadeCards(){
+    const over=cards.scrollHeight-cards.clientHeight,more=over>2&&cards.scrollTop<over-2;cards.classList.toggle('fade-b',more);
+    const box=cards.getBoundingClientRect(),below=more?[...cards.querySelectorAll('.vs-card')].filter(c=>c.getBoundingClientRect().bottom>box.bottom+1).length:0;
+    moreBtn.hidden=!below;if(below){const t=`${below} more below`;text(moreBtn.querySelector('.vs-more-label'),t);moreBtn.setAttribute('aria-label',`Show ${below} more ${(S.state.ui.visualTab||'living')==='presets'?'looks':(S.state.ui.visualTab||'living')==='classic'?'stages':'worlds'} below`);}
+  }
+  // Sizes the groups for the column's width; the browser's height (and so the stage's) follows the world tab's plan,
+  // whichever tab is shown, so switching tabs never resizes the stage.
+  function layoutCards(){
+    const width=cards.clientWidth-4,p=plan(width,worldCounts());
+    if(p){cards.style.setProperty('--card-w',`${p.w}px`);cards.style.setProperty('--card-h',`${p.h}px`);
+      main.style.setProperty('--vs-browser-min',`${34+10+GROUP_HEAD+8+p.h+(p.rows>1?PEEK:0)+12}px`);}
+    for(const g of cards.querySelectorAll('.vs-shelf:not(.full)')){const n=g.querySelectorAll('.vs-card').length,list=g.querySelector('.vs-shelf-cards');
+      const rows=p?.rows||1,cols=Math.max(1,Math.min(n,Math.ceil(n/rows)));list.style.setProperty('--cols',String(cols));}
+    fadeCards();
+  }
   cards.addEventListener('scroll',fadeCards,{passive:true});
   const cardsObserver=new ResizeObserver(()=>layoutCards());cardsObserver.observe(cards);
-  const browser=h('section',{class:'vs-browser','aria-label':'World browser'},h('div',{class:'vs-browser-head'},tabs,browserNote,browserActions),cards);
+  // A group: its header (what it is, in one line) and its cards, a list of its own.
+  function group(id,title,line,{full=false}={}){
+    const list=h('div',{class:'vs-shelf-cards',role:'list','aria-labelledby':`vsGroup-${id}`});
+    cards.append(h('section',{class:['vs-shelf',full?'full':''],dataset:{group:id},'aria-labelledby':`vsGroup-${id}`},
+      h('div',{class:'vs-shelf-head'},h('span',{class:'eyebrow',id:`vsGroup-${id}`,text:title}),line?h('span',{class:'vs-shelf-line faint small',text:line,title:line}):null),list));
+    return list;
+  }
+  // The arrow keys move between cards as they are laid out (left and right in order, up and down by row), Home and End to
+  // the first and last; Tab still moves card by card.
+  cards.addEventListener('keydown',e=>{
+    const k=e.key;if(!e.target.matches?.('.vs-card-main')||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(k))return;
+    const all=[...cards.querySelectorAll('.vs-card-main:not(:disabled)')],i=all.indexOf(e.target);if(i<0)return;let j=i;
+    if(k==='ArrowRight')j=Math.min(all.length-1,i+1);else if(k==='ArrowLeft')j=Math.max(0,i-1);else if(k==='Home')j=0;else if(k==='End')j=all.length-1;
+    else{const r=e.target.getBoundingClientRect(),cx=r.left+r.width/2,dir=k==='ArrowDown'?1:-1;let best=-1,bd=Infinity;
+      all.forEach((b,n)=>{if(n===i)return;const q=b.getBoundingClientRect(),dy=(q.top-r.top)*dir;if(dy<=4)return;const d=dy*4+Math.abs(q.left+q.width/2-cx);if(d<bd){bd=d;best=n;}});
+      if(best>=0)j=best;}
+    if(j!==i){e.preventDefault();all[j].focus();all[j].scrollIntoView({block:'nearest'});}
+  });
+  const browser=h('section',{class:'vs-browser','aria-label':'World browser'},h('div',{class:'vs-browser-head'},tabs,browserNote,browserActions),cards,moreBtn);
   const main=h('div',{class:'main vs-main'},head,stageBox,browser);
   // Inspector
   const statePill=h('span',{class:'pill plain'});
@@ -850,21 +889,23 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderBrowser(){
     // The cards are rebuilt with their state; the control that had the keyboard focus gets it back.
     const active=document.activeElement,label=cards.contains(active)||browserActions.contains(active)?active.getAttribute('aria-label')||active.textContent:null;
-    const tab=S.state.ui.visualTab||'living';tabs.set(tab);clear(cards);clear(browserActions);clear(browserNote);
-    cards.setAttribute('aria-label',tab==='living'?'Living worlds':tab==='classic'?'Classic stages':'Presets');
+    const tab=S.state.ui.visualTab||'living',top=cards.scrollTop;tabs.set(tab);clear(cards);clear(browserActions);clear(browserNote);
+    // The Worlds tab counts what it offers: the built-in worlds, the previews and the installed world packs.
+    text(tabs.querySelector('[data-value="living"]'),`Worlds · ${worldCounts().reduce((a,b)=>a+b,0)}`);
+    cards.setAttribute('aria-label',tab==='living'?'Worlds':tab==='classic'?'Classic stages':'Looks');
     if(!S.state.selected)cards.append(h('p',{class:'faint small vs-cards-empty',text:'Select a project to choose its world.'}));
     else if(tab==='living')renderLiving();else if(tab==='classic')renderClassic();else renderPresets();
+    cards.scrollTop=top;
     if(label)[...browser.querySelectorAll('button')].find(b=>(b.getAttribute('aria-label')||b.textContent)===label)?.focus({preventScroll:true});
     layoutCards();
   }
   // A card: the picture, its name and line over it (state chips at the top); the whole card is one button. Why to choose
-  // the world shows when the strip is tall enough and it fits whole (fitWhy), on the cards other than the one shown (the
-  // inspector tells that one); it is always the card's tooltip.
+  // the world is its tooltip (the inspector tells the whole story of the one shown).
   function card({id,title,line,why=null,media,pills=[],onChoose,active=false,shown=false,disabled=false,choose='Preview',match=false}){
-    const b=h('button',{type:'button',class:'vs-card-main',disabled,'aria-pressed':String(active),'aria-label':`${choose} ${title}`,title:why?`${title}: ${why}`:null,onClick:onChoose},
+    const b=h('button',{type:'button',class:'vs-card-main',disabled,'aria-pressed':String(active),'aria-label':`${choose} ${title}`,title:why?`${title}: ${why}`:`${title}: ${line}`,onClick:onChoose},
       h('span',{class:'vs-thumb'},media,pills.length?h('span',{class:'vs-chips'},...pills):null,
         match?h('span',{class:'vs-match',title:'The code\'s match: the family this project\'s code scores highest for (the automatic choice)'},icon('star'),h('span',{class:'visually-hidden',text:'The code\'s match'})):null),
-      h('span',{class:'vs-card-text'},h('strong',{text:title}),h('span',{class:'vs-card-line',text:line}),why?h('span',{class:'vs-card-why',text:why}):null));
+      h('span',{class:'vs-card-text'},h('strong',{text:title}),h('span',{class:'vs-card-line',text:line})));
     return h('div',{class:['vs-card',active?'active':'',shown?'shown':''],role:'listitem',dataset:{card:id}},b);
   }
   // A tile (no picture): the icon and its caption together in the part of the card above the name.
@@ -872,11 +913,14 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   // While a newer revision renders, the previous picture of this project stays (it is real, and says it is updating).
   function thumbMedia(fid){
     const url=THUMBS.get(`${projectId}:${saved?.revision}:${fid}`),older=THUMBS.get(`${projectId}:latest:${fid}`);
-    // The strip's note says the pictures are rendered from this project; a card says so itself only while it updates.
+    // The browser's note says the pictures are rendered from this project; a card says so itself only while it updates.
     if(url||url!==''&&older)return h('span',{class:'vs-thumb-media',dataset:{thumb:fid}},h('img',{src:url||older,alt:`${familyName(fid)}, rendered from this project`}),
       url?null:h('span',{class:'vs-thumb-cap',text:'Updating…',title:'A newer revision is rendering: this is the previous picture of this project'}));
-    const el=tile('visual',url===''?'No thumbnail on this device':'Rendering from this project…');el.dataset.thumb=fid;return el;
+    const el=tile('visual',url===''?'No thumbnail on this device':'Rendering…');el.dataset.thumb=fid;return el;
   }
+  // Digital life is on only where the identity says so (genome.life.enabled): never assumed for a world not chosen.
+  const lifeOn=r=>r?.genome?.life?.enabled===true;
+  const lifePill=()=>pill('Life on','agent',{title:'Digital life is on in this identity: its ecosystem lives on the stage'});
   function renderLiving(){
     const s=saved;if(!s){cards.append(h('p',{class:'faint small vs-cards-empty',text:'Loading the identity…'}));return;}
     const previewFam=hasIdentity(draft)?candidate?.family:null,eff=savedWorld();
@@ -884,27 +928,32 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(eff==='living')note('Rendered from this project; Apply saves the choice.','Rendered from this project.');
     else note(`This project's stage is ${WORLD_NAMES[eff]}: choosing a world shows the living world for the preview.`,`This project's stage is ${WORLD_NAMES[eff]}.`);
     browserActions.append(button({label:'Visual Packs',icon:'packs',size:'sm',kind:'ghost',onClick:()=>navigate('packs')}));
+    // The chips say only what is true here: the saved world, its life (and a previewed identity's), what is previewing.
+    const chips=(id,prev)=>[s.family===id?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,
+      prev?pill('Previewing','accent'):null,(s.family===id&&lifeOn(s))||(prev&&lifeOn(candidate))?lifePill():null].filter(Boolean);
+    const built=group('built-in','Built in','The code picks one; any can be chosen');
     for(const f of FAMILIES){
       const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
-        onChoose:()=>chooseFamily(f.id),choose:'Preview',
-        match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
+      built.append(card({id:f.id,title:familyName(f.id),line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
+        onChoose:()=>chooseFamily(f.id),choose:'Preview',match:top===f.id,pills:chips(f.id,prev)}));
     }
+    // Preview worlds: still being designed, chosen only here, never generated from the code (the group says so).
+    const previews=group('previews','Previews','Still being designed');
     for(const f of PREVIEW_FAMILIES){
       const isSaved=s.family===f.id,prev=previewFam===f.id;
-      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
-        onChoose:()=>chooseFamily(f.id),choose:'Preview',
-        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('In design','warn',{title:'A preview world, still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
+      // Its card drops "(preview)" from the name: the group it is in already says so.
+      previews.append(card({id:f.id,title:f.name.replace(/ \(preview\)$/,''),line:f.line,why:`${f.why} A preview world, still being designed: chosen only here, never generated from the code; it may change.`,media:thumbMedia(f.id),
+        active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),onChoose:()=>chooseFamily(f.id),choose:'Preview',pills:chips(f.id,prev)}));
     }
-    for(const p of P.state.packs.filter(x=>x.kind==='world')){
-      const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
-      const meta=`Pack · ${p.author?.name||'unknown author'} · v${p.version}${p.executable?' · code':''}`;
-      cards.append(card({id:p.id,title:p.family?.name||p.name,line:meta,disabled:!usable,active:prev,onChoose:()=>chooseFamily(p.id),
-        media:tile('packs',usable?(approved?'Preview on the stage':'Not run until approved'):'Unavailable','pack'),
-        pills:[isSaved?pill('Saved','ok'):null,prev?pill('Previewing','accent'):null,!usable?pill('Problem','danger',{title:(p.problems||[]).join('; ')}):approved?pill(p.executable?'Approved':'Data only','plain',{plain:true}):pill('Needs approval','warn',{title:'An unapproved pack can be chosen; the stage shows the saved identity until it is approved'})].filter(Boolean)}));
-    }
-    if(!P.state.packs.some(x=>x.kind==='world'))cards.append(h('div',{class:'vs-card ghost',role:'listitem'},h('span',{class:'vs-thumb'},tile('packs','No world pack installed')),
-      h('span',{class:'vs-card-text'},h('strong',{text:'World packs'}),h('span',{class:'vs-card-line',text:'Installed world packs appear here as families you can choose.'}))));
+    const worldPacks=P.state.packs.filter(x=>x.kind==='world');
+    if(worldPacks.length){const packs=group('packs','From packs','Installed here');
+      for(const p of worldPacks){
+        const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
+        const meta=`Pack · ${p.author?.name||'unknown author'} · v${p.version}${p.executable?' · code':''}`;
+        packs.append(card({id:p.id,title:p.family?.name||p.name,line:meta,disabled:!usable,active:prev,onChoose:()=>chooseFamily(p.id),
+          media:tile('packs',usable?(approved?'Preview on the stage':'Not run until approved'):'Unavailable','pack'),
+          pills:[isSaved?pill('Saved','ok'):null,prev?pill('Previewing','accent'):null,!usable?pill('Problem','danger',{title:(p.problems||[]).join('; ')}):approved?null:pill('Needs approval','warn',{title:'An unapproved pack can be chosen; the stage shows the saved identity until it is approved'})].filter(Boolean)}));
+      }}
   }
   function renderClassic(){
     const eff=savedWorld(),src=S.effective().sources?.world;
@@ -913,9 +962,10 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(src==='project'){const g=S.state.settings?.stage?.world||'living';
       browserActions.append(button({label:`Use the global default (${WORLD_NAMES[g]})`,size:'sm',kind:'ghost',id:'vsWorldGlobal',disabled:pending(),
         title:pending()?'Apply or cancel the preview first':'Forget this project\'s own stage: it follows Settings › Default world again',onClick:()=>followGlobalWorld()}));}
+    const list=group('classic','Classic stages','Not drawn from World DNA');
     for(const c of CLASSIC){
       const isSaved=eff===c.id,prev=draft.world===c.id;
-      cards.append(card({id:c.id,title:WORLD_NAMES[c.id],line:c.line,active:prev,onChoose:()=>chooseClassic(c.id),
+      list.append(card({id:c.id,title:WORLD_NAMES[c.id],line:c.line,active:prev,onChoose:()=>chooseClassic(c.id),
         media:tile(c.icon,'Preview on the stage','classic'),
         pills:[isSaved?pill(src==='url'?'Shown (URL pin)':src==='global'?'Saved · global default':'Saved for this project','ok'):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
     }
@@ -927,22 +977,24 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     note('For every project; a preview changes nothing until Apply.','For every project.');
     const saveBtn=button({label:'Save as preset',icon:'save',size:'sm',id:'vsSavePreset',disabled:!saved||pending(),title:pending()?'Apply or cancel the preview first: a preset records the saved identity':'Save this project\'s saved identity as a reusable preset',onClick:()=>savePresetDialog()});
     browserActions.append(saveBtn);
-    const presetCard=(p,curated)=>{
+    const presetCard=(into,p,curated)=>{
       const x=p.payload||{},n=Object.keys(x.tuning||{}).length,err=presetErrors.get(p.id),prev=presetPreview===p.id;
       const summary=[x.family?familyName(x.family):'Automatic family',x.look?(packOf(x.look)?.name||x.look):null,n?count(n,'parameter'):null,x.overrides?.intensity!==undefined&&x.overrides.intensity!==1?`Spectacle ${pct(x.overrides.intensity)}`:null].filter(Boolean).join(' · ');
-      cards.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
-        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name}),h('span',{class:'vs-card-line',text:summary,title:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line}):null)),
+      into.append(h('div',{class:['vs-card','preset',curated?'curated':'',prev?'active':''],role:'listitem',dataset:{preset:p.id}},
+        h('div',{class:'vs-preset-body'},h('span',{class:'vs-preset-icon'},icon(curated?'spark':'star')),h('span',{class:'vs-card-text'},h('strong',{text:p.name,title:p.name}),h('span',{class:'vs-card-line',text:summary,title:summary}),curated&&p.line?h('span',{class:'vs-card-why',text:p.line,title:p.line}):null)),
         err?h('div',{class:'vs-error small',text:err}):null,
-        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):curated?pill('Curated','plain',{plain:true,title:'Built in and read-only: preview it, then apply or save your own'}):null,h('span',{class:'grow'}),
+        h('div',{class:'vs-card-foot'},prev?pill('Previewing','accent'):null,h('span',{class:'grow'}),
           button({label:'Preview',size:'sm',kind:'outline',icon:'eye',attrs:{'aria-label':`Preview the preset ${p.name}`},onClick:()=>previewPreset(p)}),
           curated?null:button({icon:'doc',size:'sm',kind:'ghost',title:'Rename',attrs:{'aria-label':`Rename the preset ${p.name}`},onClick:()=>renamePreset(p)}),
           curated?null:button({icon:'trash',size:'sm',kind:'ghost',title:'Delete',attrs:{'aria-label':`Delete the preset ${p.name}`},onClick:()=>deletePreset(p)}))));
     };
-    for(const p of CURATED)presetCard(p,true);
-    if(!S.state.presets){cards.append(h('p',{class:'faint small vs-cards-empty',text:S.state.errors?.presets?`Presets could not be loaded: ${S.state.errors.presets}`:'Loading presets…'}));return;}
-    if(!list.length){cards.append(h('div',{class:'vs-cards-empty'},h('p',{class:'small muted',text:'No saved presets yet. Save the identity you like as a preset to reuse it on other projects.'})));return;}
-    for(const p of list)presetCard(p,false);
-    fadeCards();
+    const curated=group('curated','Curated','Built in and read-only: preview one, then Apply',{full:true});
+    for(const p of CURATED)presetCard(curated,p,true);
+    const yours=group('yours','Your presets','Saved from an identity, for every project',{full:true});
+    if(!S.state.presets)yours.append(h('p',{class:'faint small vs-cards-empty',text:S.state.errors?.presets?`Presets could not be loaded: ${S.state.errors.presets}`:'Loading presets…'}));
+    else if(!list.length)yours.append(h('p',{class:'small muted vs-cards-empty',text:'No saved presets yet. Save the identity you like as a preset to reuse it on other projects.'}));
+    else for(const p of list)presetCard(yours,p,false);
+    layoutCards();
   }
   function renderAll(){
     if(!alive)return;
