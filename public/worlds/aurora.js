@@ -620,7 +620,9 @@ export function createFamily(ctx){
     return {tonemap:'agx',bloom:clamp(num(LT.bloom,1),.3,2)*.72*(1+.35*breakNow+.15*coronaNow),threshold:clamp(num(LT.bloomThreshold,.65),.5,.9)*1.25,
       exposure:(1+(clamp(num(LT.exposure,1.05),.4,2.2)-1)*.5)*1.15*(1+.12*breakNow)*(sec==='breath'?.97:sec==='lift'?1.03:1),
       contrast:clamp(num(LT.contrast,1),.85,1.3)*1.04,saturation:1.06*(1-.08*stormNow),vignette:num(LT.vignette,.3)*1.1,grain:num(LT.grain,.025)*.55,
-      flash:flash*inten,tint,aberration:.0012,bloomTint:{x:.92,y:1,z:.96},streak:.03};
+      // a night sky through a real lens: chromatic aberration on by default, twice the finish's designed fringe (red and
+      // cyan edges on the bright rays toward the corners); technique.aberration tunes it, 0 turns it off
+      flash:flash*inten,tint,aberration:.008,bloomTint:{x:.92,y:1,z:.96},streak:.03};
   }
   // ---- Words -------------------------------------------------------------------------------------------------------------
   const role=id=>M().districts.get(id)?.role||model.districts.get(id)?.role||'logic';

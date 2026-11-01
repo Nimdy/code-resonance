@@ -97,6 +97,10 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
   more air: its foot is soft and broken by its rays, with no hem line. Where a fold
   turns edge-on the sheet is brighter (the line of sight runs through more of it, up to three times). The ends and the
   top fade over a long, perceptual distance: under the tone curve a tenth of a bright curtain still shows.
+- **The lens**: chromatic aberration is on by default, as a night sky photographed through a real lens. The world's
+  grade asks for `aberration` 0.008, twice the finish's designed fringe (with the Cinematic finish an optical fringe of
+  0.6 % of the image height in the corners, about the Dreamlike finish's), so the bright rays carry red and cyan edges
+  toward the corners. `technique.aberration` tunes it in the Visual Studio, and 0 turns it off.
 - **Palette** (its own stream, `auroraPalette` in `engine/recipe.js`): the curtains' foot (`primary`: emerald, green or
   teal, 124–180°), the fringe (`secondary`: violet to magenta, 270–330°), the cabin's and the lanterns' warm light
   (`accent`), pale snow and stars (`highlight`), the night (`deep`, `haze`), `warning` a deep red at least 40° from the

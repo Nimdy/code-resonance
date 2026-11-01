@@ -4,7 +4,8 @@
 
 - **Aurora, a new world (preview):** a polar night over a frozen lake, and the software is the aurora. Subsystems are
   curtains of light across the sky (folded sheets hanging along the magnetic field, a sharp bright lower edge, rays with dark
-  sky between them, green to teal at their foot and violet to magenta toward their tops), each in its own hue, layered in depth by order of
+  sky between them, green to teal at their foot and violet to magenta toward their tops, seen through a lens whose
+  chromatic aberration is on by default), each in its own hue, layered in depth by order of
   birth and as long as their files; files are the rays inside them, as tall as their symbols, igniting when born;
   dependencies are long, gentle field lines, barely there at rest and lit behind a wisp
   travelling along them. Agents are wisps that hover over the ice while waiting and fly up to ignite the ray
