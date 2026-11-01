@@ -5,7 +5,7 @@
     {
       "name": "determinism: self (aurora) renders the same frame in two sessions, regardless of seek history",
       "pass": true,
-      "detail": "323361baad6ac03a / 323361baad6ac03a"
+      "detail": "143474cd34cd158b / 143474cd34cd158b"
     },
     {
       "name": "no page errors: self (aurora)",
@@ -15,7 +15,7 @@
     {
       "name": "idle life: aurora keeps changing for 90 s with no events",
       "pass": true,
-      "detail": "mean |Δluma| between samples 4.07, 3.23, 3.1 (0-255)"
+      "detail": "mean |Δluma| between samples 4.13, 3.33, 3.38 (0-255)"
     },
     {
       "name": "idle life: aurora shows no new structure or event while idle",
@@ -35,7 +35,7 @@
     {
       "name": "privacy: no label of aurora contains a path, file name, source identifier or the project folder name",
       "pass": true,
-      "detail": "49 distinct label strings checked"
+      "detail": "50 distinct label strings checked"
     },
     {
       "name": "resources: switching between the 6 worlds 12 times leaves GPU geometries and textures at their level",
@@ -57,9 +57,9 @@
         "seconds": "10-100 after the last event",
         "fps": 15,
         "meanAbsLumaDiff": [
-          4.07,
-          3.23,
-          3.1
+          4.13,
+          3.33,
+          3.38
         ],
         "structure": "{\"curtains\":6,\"rays\":17,\"arcs\":3,\"lanterns\":2,\"breakups\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
         "phases": [
@@ -92,6 +92,7 @@
         "Claude · connected",
         "Claude · disconnected",
         "Claude · editing",
+        "Claude · reading",
         "Claude · running",
         "Claude · testing",
         "Claude · waiting for the next prompt",
@@ -129,85 +130,92 @@
       {
         "geometries": 16,
         "textures": 19,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "stellar-forge",
         "geometries": 29,
         "textures": 19,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "fractal-biosphere",
         "geometries": 35,
         "textures": 15,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "machine-cathedral",
         "geometries": 22,
         "textures": 16,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "synaptic-storm",
         "geometries": 15,
         "textures": 15,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "fractal-continuum",
         "geometries": 14,
         "textures": 18,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "temporal-terrain",
         "geometries": 11,
         "textures": 17,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "stellar-forge",
         "geometries": 29,
         "textures": 19,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "fractal-biosphere",
         "geometries": 35,
         "textures": 15,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "machine-cathedral",
         "geometries": 22,
         "textures": 16,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "synaptic-storm",
         "geometries": 15,
         "textures": 15,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "fractal-continuum",
         "geometries": 14,
         "textures": 18,
-        "heap": 16100000
+        "heap": 18200000
       },
       {
         "family": "temporal-terrain",
         "geometries": 11,
         "textures": 17,
-        "heap": 16100000
+        "heap": 18200000
       }
     ]
   },
   "reruns": [
     {
       "at": "2026-11-01T05:29:44.749Z",
+      "sections": [
+        "determinism",
+        "idle"
+      ]
+    },
+    {
+      "at": "2026-11-01T13:00:39.748Z",
       "sections": [
         "determinism",
         "idle"
