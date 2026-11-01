@@ -9,9 +9,8 @@ window sits on a point of the near shore, and every verified milestone leaves a 
 **Status.** A preview (`public/worlds/aurora.js`, `aurora-layout.js`, `aurora-glsl.js`): built in, chosen only
 explicitly (the Visual Studio, where it carries an *In design* pill; the render lab's `--family aurora`; the web demo),
 never by the automatic choice. Adding it changed no existing identity (see [Selection and
-compatibility](#selection-and-compatibility)). It was built and judged from stills and contact sheets only: no film was
-rendered and nobody else has looked at it yet (see [What is not done](#what-is-not-done)). After 0.9.0 it became
-inhabited (see [Digital life](#digital-life)): foxes, hares and a snowy owl on the shore, faint light under the ice.
+compatibility](#selection-and-compatibility)). The owner watched it on films and accepted it, and then its digital life (2026-11-01; see [What is not
+done](#what-is-not-done)). In 0.9.1 it became inhabited (see [Digital life](#digital-life)): foxes, hares and a snowy owl on the shore, faint light under the ice.
 Everything described here is implemented unless marked *planned*.
 
 ![Self at the end of its session](aurora-hero.jpg)

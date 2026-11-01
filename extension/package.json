@@ -2,7 +2,7 @@
   "name": "code-resonance",
   "displayName": "Code Resonance",
   "description": "Turns your real development work into a live, private audiovisual performance: a world that grows with your code and a score that follows it. Everything runs on your machine.",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "publisher": "zerobandwidth",
   "license": "MIT",
   "icon": "icon.png",

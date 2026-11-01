@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.9.1 — 2026-11-01
+
+Product 0.9.1, for use on your own machine; not stable. This tag is `v0.9.1`. **Aurora is inhabited**: arctic foxes,
+hares, a snowy owl and faint light under the ice that answers the curtains above, the work's failures and its
+recoveries. New Aurora identities live; one chosen in 0.9.0 keeps none until its *Digital life* switch turns it on.
+The graduated worlds' **curated looks** do what their lines say (Kaleidoscope crystal, Storm front, Glass cortex, Misty
+valley, Teal Mandelbulb). **CI** takes about half the time, and a port race and a per-file time limit no longer fail
+runs at random. Interpretation is still 11, generator 5, Visual Pack SDK 1.3: no derived file is rebuilt and no
+existing identity changes. The VS Code extension is 0.9.1 (`code-resonance-0.9.1.vsix`); it is not published to the
+Marketplace or Open VSX yet ([docs/PUBLISHING.md](docs/PUBLISHING.md)).
 
 - **CI in about half the time:** the unit and integration suite ran as one job per platform and took 9–10 minutes on
   a two-core runner, most of it a few long digital-life simulations. It now runs as three parallel shards per platform
@@ -21,7 +30,7 @@
   simulations (one 15–22 s test took 53–70 s there), so Aurora's life tests, two to a file, passed 120 s on Windows
   while Linux passed. A hang still fails the run, after five minutes.
 - **Curated looks of the graduated worlds reworked** to do what their one-line descriptions say, each holding on
-  Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU; the owner has not reviewed them yet).
+  Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU, with alternatives on a review page; merged by the owner).
   *Kaleidoscope crystal* (Fractal Continuum) read as a soft pink-violet lump, close to the "gum" look: it is now a
   faceted sapphire crystal with ice-blue light (no swell, the crystal at its largest scale and lowest detail, full sheen
   and rim, deep occlusion, almost no halo). *Storm front* and *Glass cortex* (Synaptic Storm) were both the project's
@@ -42,7 +51,7 @@
   generation's anchor). New Aurora identities live (generator 5 draws their life from its own stream, as for the
   graduated worlds; `RECIPE_VERSION` stays 5 and no other value of any identity changes); an Aurora chosen in 0.9.0
   keeps none until the Visual Studio's *Digital life* switch, now in Aurora's Essentials, turns it on, and without life
-  it renders exactly as in 0.9.0. Judged from stills only; design, measurements and what remains in
+  it renders exactly as in 0.9.0. The owner watched it on films and accepted it; design, measurements and what remains in
   [docs/worlds/aurora.md](docs/worlds/aurora.md#digital-life).
 
 ## 0.9.0 — 2026-11-01
