@@ -42,7 +42,8 @@
   const api=(()=>{let capability=null,pending=null,pendingQuiet=false;
     // A request the receiver never answered (stopped, restarting) is said in words; it stays a TypeError, which callers
     // tell apart from a refusal (offline marks it for unreachable() below).
-    const offline=e=>{if(!(e instanceof TypeError))throw e;const t=new TypeError(OFFLINE_TEXT);t.offline=true;throw t;};
+    // (The web demo's own files failing keep the demo's message: there is no receiver to start there.)
+    const offline=e=>{if(!(e instanceof TypeError)||/web demo/.test(e.message))throw e;const t=new TypeError(OFFLINE_TEXT);t.offline=true;throw t;};
     function failure(status,data){const e=new Error(data?.error||`HTTP ${status}`);e.status=status;e.code=data?.code||null;e.data=data||null;return e;}
     // quiet: a check made in the background (a remembered key, a view reading what it may show) is refused without
     // announcing it; a change the person asked for announces its refusal (the interface then offers to pair).
