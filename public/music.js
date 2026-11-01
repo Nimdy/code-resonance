@@ -549,7 +549,9 @@
       m.ctx=ctx;const g=m.buildGraph(ctx,ctx.destination);m.graph=g;
       const stepDur=m.stepSeconds(),barMs=stepDur*STEPS*1000;
       let i=0;const events=timeline.slice().sort((a,b)=>a.atMs-b.atMs);
-      m.barIndex=Math.ceil(startMs/barMs);t=speed===1?(m.barIndex*barMs-startMs)/1000:0;
+      // (startMs is an epoch time, about 1.8e12 ms, where a double resolves 2^-12 ms: the first bar's offset can round to
+      // a hair below zero, which AudioParam scheduling refuses)
+      m.barIndex=Math.ceil(startMs/barMs);t=speed===1?Math.max(0,(m.barIndex*barMs-startMs)/1000):0;
       // The score is scheduled a window ahead of the rendering, as the live scheduler does, and finished voices are
       // disconnected as it goes (an offline context never says a voice ended): scheduling the whole piece up front left
       // every voice of it in the graph, and each render quantum then walked all of them (renders slowed with length).

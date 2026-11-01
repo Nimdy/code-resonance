@@ -69,7 +69,7 @@ That one command, on loopback only:
    already there. If any other program holds the port, it **refuses**: it does not write a token, mint a pairing link, or
    open a browser. Free the port and run it again. `RESONANCE_DATA` / `--data` and `RESONANCE_PORT` / `--port` change the
    directory and port.
-3. Builds `code-resonance-0.8.1.vsix` (Node only) and, when the `code` command works, installs it unless you pass
+3. Builds `code-resonance-0.9.0.vsix` (Node only) and, when the `code` command works, installs it unless you pass
    `--no-install`. If the install does not succeed, it says so; install the file from VS Code (step 1 below).
 4. Prints a **pairing link** (`http://127.0.0.1:4174/#pair=…`, single use, 15 minutes) and tries to open it unless you
    pass `--no-open`. Inside WSL it also prints a `localhost` link *From Windows (WSL)*: open that one in your Windows
@@ -82,7 +82,7 @@ Leave that terminal open: `Ctrl+C` stops a receiver this command started. A rece
 Then, in the VS Code window of the project you want to watch:
 
 1. **The extension.** *Extensions* should list **Code Resonance** (under *WSL* for a WSL window). If it is missing,
-   use *Extensions › … › Install from VSIX* and pick `code-resonance-0.8.1.vsix` from the Code Resonance folder. If the
+   use *Extensions › … › Install from VSIX* and pick `code-resonance-0.9.0.vsix` from the Code Resonance folder. If the
    status bar shows no **CR** item, run **Developer: Reload Window**.
 2. **Capture.** The item reads **CR stopped** until you start: click it, choose **Start Code Performance** (also in the
    Command Palette as **CODE RESONANCE: Start Code Performance**) and accept local capture. The workspace must be
@@ -164,7 +164,7 @@ for Code Resonance. In a second terminal:
 
 ```bash
 npm run package:vsix
-code --install-extension code-resonance-0.8.1.vsix
+code --install-extension code-resonance-0.9.0.vsix
 ```
 
 Open a trusted workspace, click **CR** and accept local capture. With no project yet, `npm run demo` in a second
@@ -314,7 +314,7 @@ Broadcast › OBS as a Browser Source: the OBS view shows what is applied, never
 | *Code Resonance could not start its receiver* | the receiver stopped while starting | **Show Log** (`~/.code-resonance/logs/receiver.log`) and the **Code Resonance** Output channel say why |
 | `npm run up` refuses the port | another program (not Code Resonance) is on 4174 | free `RESONANCE_PORT` (default 4174) and run it again |
 | `npm run up` refuses leftover on the port | a Code Resonance receiver answers, but `--data` has no `receiver-auth.json` (another data directory, or a leftover process) | pass the matching `--data` / `RESONANCE_DATA`, or free the port |
-| `npm run up` says *code --install-extension did not succeed*, after *Unable to connect to VS Code server … ENOENT … vscode-ipc-….sock* | the terminal was restored from an earlier VS Code session and points at a VS Code connection that no longer exists | open a new terminal (**+** in the terminal panel) and run it again, or in VS Code use *Extensions › … › Install from VSIX* with `code-resonance-0.8.1.vsix` from the Code Resonance folder |
+| `npm run up` says *code --install-extension did not succeed*, after *Unable to connect to VS Code server … ENOENT … vscode-ipc-….sock* | the terminal was restored from an earlier VS Code session and points at a VS Code connection that no longer exists | open a new terminal (**+** in the terminal panel) and run it again, or in VS Code use *Extensions › … › Install from VSIX* with `code-resonance-0.9.0.vsix` from the Code Resonance folder |
 | `npm run up` says *VS Code CLI (code) is not on PATH* | it ran outside VS Code's terminal, or VS Code's `code` command is not installed | *Extensions › … › Install from VSIX* in VS Code, or run it from VS Code's integrated terminal |
 | No **CR** item in the status bar | the window was already open when the extension was installed, or the extension is installed on the other side (Windows instead of WSL) | **Developer: Reload Window**; *Extensions* should list Code Resonance under *WSL* for a WSL window |
 | No project appears | capture not started, or the extension cannot reach the receiver | CR status-bar item → Start; `npm run doctor` shows the port the receiver uses; the extension's port setting is `resonance.receiverPort` |

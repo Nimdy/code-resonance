@@ -1,6 +1,6 @@
 {
   "name": "code-resonance",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": true,
   "description": "Local-first software development sonification and generative visual performance player",
   "license": "MIT",
