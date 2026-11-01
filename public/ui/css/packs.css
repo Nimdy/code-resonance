@@ -121,6 +121,8 @@
 .ws-packs .pk-readme .markdown{font-size:14px}
 /* Tables (files, overrides): monospace, dense, scroll sideways inside their own box only */
 .pk-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r-2);max-height:320px;scrollbar-width:thin;scrollbar-color:var(--bg-5) transparent}
+/* In the inspector, which scrolls itself, a table never scrolls inside it as well (as the README does not). */
+.ws-packs .pk-inspector .pk-table-wrap{max-height:none}
 .pk-table{border-collapse:collapse;width:100%;font-size:12.5px}
 .pk-table th{position:sticky;top:0;background:var(--bg-3);color:var(--text-3);font:600 11.5px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:7px 10px}
 .pk-table td{padding:5px 10px;border-top:1px solid var(--line);vertical-align:baseline;overflow-wrap:anywhere}
