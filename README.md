@@ -9,7 +9,7 @@ develops as the software does: structure grows, failures bring tension, fixes re
 something lasting. Everything runs locally, with no account, cloud service, model API, Docker or Signal/3 dependency.
 
 **Try it in your browser:** <https://nimdy.github.io/code-resonance/> replays a real recorded project in the real
-player, with its music, in any of the eight worlds; nothing to install, nothing sent anywhere. *(How it is built:
+player, with its music, in any of the nine worlds; nothing to install, nothing sent anywhere. *(How it is built:
 [docs/WEB-DEMO.md](docs/WEB-DEMO.md).)*
 
 **At a glance**
@@ -19,9 +19,9 @@ player, with its music, in any of the eight worlds; nothing to install, nothing 
   once are numbered. What each tool documents and what its adapter reads: [docs/AGENTS.md](docs/AGENTS.md).
 - **Your language.** TypeScript and JavaScript through the compiler; Python, Go, Rust, Java, Kotlin, C#, Swift, C and
   C++, PHP and Ruby through dependency-free scanners: classes, functions, routes, imports and test files.
-- **Eight worlds.** Six living world families the code chooses from: Fractal Biosphere, Stellar Forge and Machine
-  Cathedral, and Synaptic Storm, Fractal Continuum and Temporal Terrain (new); and two
-  fixed stages, the Construct and Monolith.
+- **Nine worlds.** Six living world families the code chooses from: Fractal Biosphere, Stellar Forge and Machine
+  Cathedral, and Synaptic Storm, Fractal Continuum and Temporal Terrain (new); Aurora, a preview you choose yourself; and
+  two fixed stages, the Construct and Monolith.
 - **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
   music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
   OBS takes the Stage as a browser source.

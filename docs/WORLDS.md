@@ -8,7 +8,8 @@ development actually does. Every structure is real project data; the worlds neve
 the baseline later changes are checked against. Synaptic Storm, Fractal Continuum and Temporal Terrain, previews until
 then, graduated with generator 5: they are families like the three (scored for the automatic choice, a base for packs,
 curated looks); the owner watched each on a film of a whole session, inhabited, and accepted them (2026-10-31), while
-their six curated looks have not been reviewed. Technical qualification (determinism, idle life, resources, privacy,
+their six curated looks have not been reviewed. Aurora is a new preview, chosen only explicitly: built and judged from
+stills only, not yet seen by the owner. Technical qualification (determinism, idle life, resources, privacy,
 performance) is separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
@@ -21,7 +22,7 @@ performance) is separate from that artistic judgement, and no one else has revie
 | 4. Visual Recipe | `engine/recipe.js`, `recipe.json` per project, `GET/POST /api/recipe` | The project's persistent artistic identity |
 | 5. World model | `public/worlds/model.js` | What exists at a performance time (districts, modules, symbols, links, states) |
 | 6. Effect director | `public/worlds/director.js`, `public/worlds/agents.js` | Intents to family effects, proportion and rarity; agent presences |
-| 7. Renderer and camera | `public/worlds/core.js`, `stellar.js`, `biosphere.js`, `cathedral.js`, `synaptic.js`, `fractal.js`, `terrain.js` | HDR pipeline, shaders, instancing, cinematic camera |
+| 7. Renderer and camera | `public/worlds/core.js`, `stellar.js`, `biosphere.js`, `cathedral.js`, `synaptic.js`, `fractal.js`, `terrain.js`, `aurora.js` | HDR pipeline, shaders, instancing, cinematic camera |
 | 8. Music sync | `public/score.js`, `public/music.js` | One performance clock; section and beat drive light and pulse |
 | 9. Presentation | `public/worlds/host.js`, `public/app.js`, `qualification/visual/film.js` | Cinematic, explorer and stream labels; replay; films |
 
@@ -142,7 +143,7 @@ the technique without a finish, or with Classic, gives exactly the grade it alwa
 
 ## World families
 
-The six built-in families are six different universes, each with its own visual grammar: an idle life that is
+The six built-in families (and the Aurora preview) are different universes, each with its own visual grammar: an idle life that is
 ambient only and never suggests new work, events that mean what the data says, failure that is never celebratory,
 recovery that resolves it, and milestones that leave something lasting. Every image is a function of the model, the
 recipe and the performance clock, so seeks, replays and films reproduce it (no `Math.random`, `Date.now` or
@@ -269,6 +270,26 @@ the receding paths. A preview until generator 5, which graduated it: scored for 
 two curated looks; adding it changed no existing identity, and the owner accepted it on a film. Design brief, stills, measured GPU time and what remains:
 [worlds/temporal-terrain.md](worlds/temporal-terrain.md) (`public/worlds/terrain.js`, `terrain-layout.js`,
 `terrain-roads.js`, `terrain-glsl.js`, `life/terrain.js`).
+
+### Aurora (preview)
+
+A polar night over a frozen lake, and the software is the aurora. Subsystems are curtains of light across the sky,
+folded draperies hanging along the magnetic field (a sharp bright lower edge, fine rays, green to teal at their foot and
+violet to magenta toward their tops), each in its own hue on the identity's harmony, layered in depth by order of birth
+and as long as their files make them; files are the rays inside a curtain, as tall as their live symbols, igniting when
+they are born and fading when removed; dependencies between subsystems are faint field lines. Agents are wisps in their
+provider's colour and shape: waiting, they hover low over the ice; at work they fly up to the ray they edit and their
+touch ignites it; between curtains joined by field lines they fly along them; a subagent is a smaller wisp tethered to
+its parent, and two agents on one file are two wisps meeting at its ray. The music ripples and folds the curtains on
+the bars (with the host's musical clock), their rays shimmer on the eighths the arrangement plays and a section's onset
+surges along them; the work's activity brightens them and quickens their folds. Passing tests send pulsating patches
+along a curtain; a failure turns it storm-red and ragged while its files are stressed; a recovery gathers the sky into
+a corona overhead; a commit is a meteor and flares the cabin's window; a verified milestone leaves a lantern on the
+shore and can earn a rare auroral breakup. The lake is mirror ice that doubles it all, under mountains whose snow takes
+the aurora's colour. A preview: chosen only explicitly (the Visual Studio, the render lab's `--family aurora`, the web
+demo), never by the automatic choice; adding it changed no existing identity; no digital life. Design brief, stills,
+measured GPU time and what remains: [worlds/aurora.md](worlds/aurora.md) (`public/worlds/aurora.js`,
+`aurora-layout.js`, `aurora-glsl.js`).
 
 The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
 previewed and applied like any preset; the graduated worlds' six are new and have not been reviewed artistically) and

@@ -10,10 +10,10 @@ silently behind a short introduction; **Start the performance** turns the music 
 and plays it from the beginning, and it starts again when it ends.
 
 On the Stage: the six world families (Stellar Forge, Fractal Biosphere, Machine Cathedral, Synaptic Storm, Fractal
-Continuum and Temporal Terrain), the Construct and Monolith; replay speed (1×, 4×, 16×) and scrubbing; information modes;
-quality (Auto lowers it while frames are slow, and offers Monolith on a machine that cannot draw the living world
-smoothly); sound; full screen; recording the stage to a WebM file (in the browser, as in the application). On a phone
-the worlds are a menu instead of seven buttons.
+Continuum and Temporal Terrain), the Aurora preview, the Construct and Monolith; replay speed (1×, 4×, 16×) and
+scrubbing; information modes; quality (Auto lowers it while frames are slow, and offers Monolith on a machine that
+cannot draw the living world smoothly); sound; full screen; recording the stage to a WebM file (in the browser, as in
+the application). On a phone the worlds are a menu instead of nine buttons.
 
 What is not there, because it needs Code Resonance running on your own computer: the Control Center (Home, the
 Visual, Artist and Music Studios, packs, connections, settings), live mode, pairing, and anything saved. A world chosen
@@ -41,7 +41,7 @@ in the demo lasts until the page is closed. To watch your own project: [Getting 
    | `GET /api/timeline?id=&after=-1&limit=500` | the replay, page by page as the player asks (one page: 41 windows) |
    | `GET /api/timeline?id=&after=-1&limit=2000&fields=intents` | the history's intents (live mode, before the switch to the replay) |
    | `GET /api/timeline?id=&after=40&limit=200` | the live poll after the last window (empty) |
-   | `GET /api/recipe?id=` | the identity: the saved one, and the same identity in each of the six families |
+   | `GET /api/recipe?id=` | the identity: the saved one, and the same identity in each of the six families and the preview |
    | `POST /api/recipe/preview?id=` with one `family` action | each family's preview (recipe, tunable parameters, runtime) |
    | `GET /api/catalog`, `/api/settings`, `/api/presets`, `/api/compositions`, `/api/packs` | what the interface loads at start |
    | `GET /api/preferences?id=`, `/api/evidence?id=`, `/api/highlight?id=` | what selecting a project loads |
@@ -73,7 +73,7 @@ and work under any path in the site.
   own computer. The change feed (`EventSource /api/changes`) is a stand-in that opens once and stays quiet. Any route
   other than `#/stage` leads back to the Stage.
 - **`demo.js`** and **`demo.css`** are the landing: the introduction, the site's name and links in the Stage's top bar,
-  the eight worlds in place of the Stage's three-way choice, no Live, Control Center or new-window controls, Esc that
+  the nine worlds in place of the Stage's three-way choice, no Live, Control Center or new-window controls, Esc that
   never leaves the Stage, and the replay starting again at its end.
 
 ## Rebuild and preview
