@@ -13,7 +13,8 @@
 //                    resources return to their level;
 //  7. far seek     - in the live player, a far seek reports "restoring" until the state for the new moment is exact,
 //                    and how long that took (bounded by generations: at most one generation and its warm start).
-// node visual/life.qual.js [--gpu amd] [--only determinism,framerate,quality,idle,off,switching,seek] [--families a,b]
+// node visual/life.qual.js [--gpu amd] [--only determinism,framerate,quality,idle,off,switching,seek] [--families a,b] [--tag name]
+// --tag: results in life-<tag>.json, leaving life.json as it is.
 // Works on temporary copies of the datasets (their recipes are never changed).
 const path=require('node:path');
 const fs=require('node:fs');
@@ -152,6 +153,6 @@ function copy(name){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cr-life-'));
       });}
   }finally{await browser.close();for(const d of temps)fs.rmSync(d,{recursive:true,force:true});}
   const failed=checks.filter(c=>!c.pass);
-  fs.writeFileSync(path.join(OUT,'life.json'),JSON.stringify({checks,measurements},null,1));
+  fs.writeFileSync(path.join(OUT,`life${arg('tag',null)?`-${arg('tag',null)}`:''}.json`),JSON.stringify({checks,measurements},null,1));
   console.log(`${checks.length-failed.length}/${checks.length} checks passed`);process.exitCode=failed.length?1:0;
 })().catch(e=>{console.error(e);process.exitCode=1;});
