@@ -26,10 +26,14 @@
 // director's fold and the performance clock.
 import {THREE,clamp,lerp,smooth,hash,rand} from './core.js';
 import {MAG,ALT,layoutConfig,prepare,historyFrom,recordCue,curtainsAt,curtainPoint,fieldLine,mountainLayers,shoreOf,landHeight,lanternAt,
-  meteorOf,idleMeteors,breakupAllowed,SHORE_Z} from './aurora-layout.js';
-import {CURTAIN_VS,CURTAIN_FS,SKY_FS,STAR_VS,STAR_FS,ICE_VS,ICE_FS,LAND_VS,LAND_FS,MTN_VS,MTN_FS,TREE_VS,TREE_FS,CABIN_VS,CABIN_FS,POINT_VS,POINT_FS,RIB_VS,RIB_FS} from './aurora-glsl.js';
+  meteorOf,idleMeteors,breakupAllowed,SHORE_Z,sprucesOf,cabinOf} from './aurora-layout.js';
+import {CURTAIN_VS,CURTAIN_FS,SKY_FS,STAR_VS,STAR_FS,ICE_VS,ICE_FS,LAND_VS,LAND_FS,MTN_VS,MTN_FS,TREE_VS,TREE_FS,CABIN_VS,CABIN_FS,POINT_VS,POINT_FS,RIB_VS,RIB_FS,
+  BEAST_VS,BEAST_FS,GLIM_VS,GLIM_FS,LIFE_UNIFORMS,lifeLookup,ICE_LIFE,LAND_LIFE} from './aurora-glsl.js';
 import {touchesAt,touchGain} from './touch.js';
 import {presence} from '../providers.js';
+import {createAuroraGrammar,FOX,HARE,OWL,GLIMMER,LOOK,SHELTERING,X0 as LX0,X1 as LX1,Z0 as LZ0,Z1 as LZ1,NXF,NZF} from './life/aurora.js';
+import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
+import {u01,MODE,CH} from './life/sim.js';
 const TAU=Math.PI*2,MAXC=48,RAYW=512,MAX_FX=4000,MAX_RIB=3000,MAX_ARCS=32,DWELL=4500,TRAVEL=1800,TRAVEL_MAX=4500,FLY_V=520;
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers).
 const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
@@ -42,8 +46,15 @@ const SEQ=[0,1,-1,.5,-.5,.75,-.75,.25,-.25,.9,-.9];
 const SPAN={analogous:9,complementary:13,split:16,triad:18};
 // The breakup's and the corona's spans (view seconds).
 const CORONA_S=11,BREAKUP_S=16;
+// The ice's and the land's shaders with digital life (only when it is on): the tracks in the snow and the light under the
+// ice (aurora-glsl.js ICE_LIFE, LAND_LIFE), read from the ecosystem's fields and the world's map of the glimmers' light.
+function withLife(src,kind){const u=src.replace('float h21(',`${LIFE_UNIFORMS}\nfloat h21(`),k=u.lastIndexOf('gl_FragColor=vec4(col,1.);');
+  return `${u.slice(0,k)}${lifeLookup(LX0,LX1,LZ0,LZ1)}${kind==='ice'?ICE_LIFE:LAND_LIFE}\n  ${u.slice(k)}`;}
 export function createFamily(ctx){
   const {scene,camera,model,recipe,renderer}=ctx;const G=recipe.genome||{},P0=G.palette||{};
+  // Digital life (life/aurora.js): only when the recipe has it on. Off, nothing below differs from the world without it
+  // (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
+  const LIFE=ctx.life||null;
   const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
   const au=G.aurora||{},sk=G.sky||{},lk=G.lake||{},ld=G.land||{},mot=G.motion||{},cam=G.camera||{},LT=G.light||{},MU=G.music||{};
   const col=(c,d)=>new THREE.Color(typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)?c:d);
@@ -104,6 +115,7 @@ export function createFamily(ctx){
     uAurD:{value:new THREE.Vector3(0,.4,-1).normalize()},uAcc:{value:V3(pal.accent,1)},uGlow:{value:arr(10,v4)},uNG:{value:0},uFrost:{value:0},uHazeC:{value:new THREE.Vector3()},uTree:{value:0},
     uIce:{value:V3(pal.deep.clone().lerp(new THREE.Color('#0a1a2a'),.5),.6)},uGloss:{value:clamp(num(lk.gloss,.8),0,1)},uSnow:{value:clamp(num(lk.snow,.7),0,1.6)},uCracks:{value:clamp(num(lk.cracks,.8),0,1.6)},
     uRefl:{value:null},uWin:{value:1}};
+  if(LIFE)Object.assign(U,{uLifeF:{value:null},uLifeG:{value:null},uLifeX:{value:new THREE.Vector4(0,0,0,0)}});
   const mat=(vertexShader,fragmentShader,o={})=>keep(new THREE.ShaderMaterial({uniforms:U,vertexShader,fragmentShader,side:THREE.DoubleSide,...o}));
   const glowMat=(vs,fs)=>mat(vs,fs,{transparent:true,depthWrite:false,depthTest:true,blending:THREE.AdditiveBlending});
   // ---- The reflection: the night mirrored in the ice, drawn before the frame (background()) ------------------------------
@@ -146,17 +158,14 @@ export function createFamily(ctx){
       const n=new THREE.Vector3().crossVectors(new THREE.Vector3(c[0]-d[0],c[1]-d[1],c[2]-d[2]),new THREE.Vector3(a[0]-b[0],a[1]-b[1],a[2]-b[2])).normalize();if(n.y<0)n.negate();pos.push(...p);nrm.push(n.x,n.y,n.z);}
     for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const a=j*(NX+1)+i,b=a+NX+1;if(Math.max(hs[a],hs[a+1],hs[b],hs[b+1])<-.25)continue;idx.push(a,b,a+1,a+1,b,b+1);}
     const g=keep(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('aN',new THREE.Float32BufferAttribute(nrm,3));g.setIndex(idx);
-    add(new THREE.Mesh(g,mat(LAND_VS,LAND_FS)),1);}
+    add(new THREE.Mesh(g,mat(LAND_VS,LIFE?withLife(LAND_FS,'land'):LAND_FS)),1);}
   // spruces: on the point around the cabin and along the bank toward it, and a few far along the near bank
-  const trees=[];{const r=rngOf(hash(`trees/${seed}`)),n=Math.round(14*clamp(num(ld.trees,1),0,1.6));
-    for(let k=0;k<n;k++){const t=.45+.55*r(),p=S.spine(t),w=(30-14*t)*.7,x=p[0]+(r()-.5)*w,z=p[1]+(r()-.5)*w*.8;
-      if(Math.hypot(x-S.cabin[0],z-S.cabin[1])<9)continue;const y=landHeight(S,x,z);if(y<.4)continue;trees.push([x,y-.2,z,7+8*r(),r()]);}
-    for(let k=0;k<3;k++){const x=S.side*(150+40*r()),z=-8-30*r();trees.push([x,landHeight(S,x,z)-.2,z,10+8*r(),r()]);}}
+  const trees=sprucesOf(S,seed,num(ld.trees,1));
   if(trees.length){const pos=[],at=[],idx=[];trees.forEach(([x,y,z,h,s],k)=>{for(const [qx,qy] of [[-1,0],[1,0],[-1,1],[1,1]]){pos.push(x,y,z);at.push(qx,qy,s,h);}const b=k*4;idx.push(b,b+1,b+2,b+2,b+1,b+3);});
     const g=keep(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('aT',new THREE.Float32BufferAttribute(at,4));g.setIndex(idx);
     add(new THREE.Mesh(g,mat(TREE_VS,TREE_FS)),1);}
   // the cabin, its front to the shore: log walls, a snowy gable roof, a chimney, one warm window
-  const cabinY=landHeight(S,...S.cabin)-.15,cabinYaw=Math.atan2(0-S.cabin[0],6-S.cabin[1]);
+  const {y:cabinY,yaw:cabinYaw}=cabinOf(S);
   const cabinFront=new THREE.Vector3(Math.sin(cabinYaw),0,Math.cos(cabinYaw)),cabinRight=new THREE.Vector3(Math.cos(cabinYaw),0,-Math.sin(cabinYaw));
   const windowAt=new THREE.Vector3();
   {const W=3.6,D=2.8,H=3,R=5.1,pos=[],ak=[],idx=[];
@@ -177,7 +186,7 @@ export function createFamily(ctx){
   const chimneyAt=new THREE.Vector3(S.cabin[0],cabinY+6.6,S.cabin[1]).addScaledVector(cabinRight,1.6).addScaledVector(cabinFront,-.85);
   // the ice: from the near bank to the far shore (opaque; never in its own reflection)
   {const g=keep(new THREE.BufferGeometry()),X=2600;g.setAttribute('position',new THREE.Float32BufferAttribute([-X,0,30,X,0,30,-X,0,SHORE_Z-40,X,0,SHORE_Z-40],3));g.setIndex([0,2,1,1,2,3]);
-    const m=new THREE.Mesh(g,mat(ICE_VS,ICE_FS));m.frustumCulled=false;m.renderOrder=2;scene.add(m);}
+    const m=new THREE.Mesh(g,mat(ICE_VS,LIFE?withLife(ICE_FS,'ice'):ICE_FS));m.frustumCulled=false;m.renderOrder=2;scene.add(m);}
   // ---- The curtains: one mesh, columns shared out among the curtains present (rebuilt when their number changes) --------
   const curtainMat=glowMat(CURTAIN_VS,CURTAIN_FS),curtainMirror=glowMat(CURTAIN_VS,`#define MIRROR\n${CURTAIN_FS}`);
   let curtainMesh=null,curtainKey='';
@@ -499,6 +508,84 @@ export function createFamily(ctx){
       for(let k=0;k<6;k++){const u=(a*1.1+k/6+r)%1,ang=(r+k*.17)*TAU;point([q[0]+Math.cos(ang)*u*40,q[1]-u*70-u*u*30,q[2]+Math.sin(ang)*u*20],pal.warning,(1-u)*1.4*Math.exp(-a*.5)*x.s,5,8);}}}
     lastStats={...lastStats,validated,stressed,arcs:arcs.length,lanterns:ls.length,meteors:list.filter(m=>tv-m.t0>=0&&tv-m.t0<=m.dur).length};
   }
+  // ---- Digital life: life on the shore, the snow and under the ice (life/aurora.js; only when the recipe has it on) ----
+  // The ecosystem lives on the world's own ground plane. Foxes, hares and the owl are drawn as silhouettes (BEAST_VS/FS:
+  // white fur at night, backlit by the aurora, a bright rim where they meet the sky, warm by the lanterns and the window)
+  // standing on the land or the ice and doubled in its reflection; the glimmers as faint motes at the ice's surface,
+  // seen through the clear ice, with the light they and their gatherings give the ice beneath the curtains (a map drawn
+  // each frame from the ecosystem: in each site's own curtain colour, dimmed where the site is strained, blooming where
+  // it revives after a recovery); the tracks in the snow are the ecosystem's trail field, drawn by the ice's and the
+  // land's shaders. Everything the ecosystem draws is scaled by the view's fadeIn (generation crossfades, restoring) and
+  // presentation only reads the ecosystem: quality decides how many motes follow each glimmer, never what lives. A fox
+  // turns to watch an agent's wisp passing low (its heading and head, drawn: the ecosystem never reads agents).
+  const lifePart=LIFE?(()=>{
+    const grammar=createAuroraGrammar(recipe);LIFE.create(grammar);
+    const FOLLOW=[1,1,0,0],HQ=[1,.62,.72],GW=NXF,GZ=NZF,gw=(LX1-LX0)/GW,gh=(LZ1-LZ0)/GZ;
+    const bq=keep(new THREE.BufferGeometry());bq.setAttribute('position',new THREE.Float32BufferAttribute([-1,0,0,1,0,0,-1,1,0,1,1,0],3));bq.setIndex([0,1,2,2,1,3]);
+    const beasts=instancedBuffersOf(bq,{bP:4,bF:4,bQ:4});
+    add(new THREE.Mesh(beasts.geometry,mat(BEAST_VS,BEAST_FS,{transparent:true,depthWrite:true,depthTest:true,blending:THREE.NormalBlending,premultipliedAlpha:true})),3.5);
+    const glim=pointBuffersOf({gC:4,gS:2},512);add(new THREE.Points(glim.geometry,mat(GLIM_VS,GLIM_FS,{transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending})),2.5,false);
+    const glow=new Float32Array(GW*GZ*3),glowPx=new Uint8Array(GW*GZ*4),glowTex=keep(new THREE.DataTexture(glowPx,GW,GZ,THREE.RGBAFormat,THREE.UnsignedByteType));
+    glowTex.magFilter=glowTex.minFilter=THREE.LinearFilter;glowTex.needsUpdate=true;U.uLifeG.value=glowTex;
+    let ftex=null,texEco=null,texTick=-1;const P3=[0,0,0],P4=[0,0,0],cols=new Map(),fallback=[pal.primary.r,pal.primary.g,pal.primary.b];
+    const statsNow={drawn:0,followers:0,animals:0,glimmers:0,looking:0,sheltering:0,flying:0,drawCalls:3};
+    // a soft pool of light under the ice at (x, z), radius R, colour c, amount a
+    // (the rows the light touched this frame and the last: only those are cleared and uploaded again)
+    let rowA=GZ,rowB=-1,rowA0=GZ,rowB0=-1;
+    function pool(x,z,R,c,a){if(!(a>1e-4))return;const i0=Math.max(0,Math.floor((x-R-LX0)/gw)),i1=Math.min(GW-1,Math.ceil((x+R-LX0)/gw)),j0=Math.max(0,Math.floor((z-R-LZ0)/gh)),j1=Math.min(GZ-1,Math.ceil((z+R-LZ0)/gh));
+      if(j0<rowA)rowA=j0;if(j1>rowB)rowB=j1;
+      for(let j=j0;j<=j1;j++){const dz=LZ0+(j+.5)*gh-z;for(let i=i0;i<=i1;i++){const dx=LX0+(i+.5)*gw-x,d2=(dx*dx+dz*dz)/(R*R);if(d2>=1)continue;const w=(1-d2)*(1-d2)*a,o=(j*GW+i)*3;glow[o]+=c[0]*w;glow[o+1]+=c[1]*w;glow[o+2]+=c[2]*w;}}}
+    const hide=()=>{beasts.commit(0);glim.commit(0);U.uLifeX.value.set(0,0,0,0);Object.assign(statsNow,{drawn:0,followers:0,animals:0,glimmers:0,looking:0,sheltering:0,flying:0});};
+    const groundY=(x,z)=>Math.max(0,landHeight(S,x,z));
+    function update(i){
+      const v=i.life,eco=v&&v.eco;if(!eco||v.restoring)return hide();
+      if(texEco!==eco){ftex?.dispose();ftex=lifeFieldTexture(THREE,eco,{scale:[2.4,3,3,6]});texEco=eco;texTick=-1;U.uLifeF.value=ftex.texture;}
+      if(texTick!==eco.tick){ftex.update();texTick=eco.tick;}
+      const M=musicLook(eco,v),q=clamp(Math.round(i.quality||0),0,3),alpha=v.alpha,tv=i.tview,fade=v.fadeIn,inten=clamp(i.overrides.intensity??1,.4,1.3);
+      U.uLifeX.value.set(1,.6*M.life*fade*inten,Math.min(1.6,M.trail)*fade,0);
+      // the sites' colours: each its own curtain's
+      cols.clear();for(const c of curtains)cols.set(c.id,curtainColor(c.id,c.rank));
+      const Sx=eco.sites,nS=Sx.count,sc=[],sk=[];
+      for(let k=0;k<nS;k++){const st=Sx.state(k)||{},col=cols.get(Sx.ids[k])||fallback,dim=1-.85*clamp((st.stress||0)*5);sc.push(col);sk.push([dim,st.revive||0,st.nourish||0]);}
+      if(rowB0>=rowA0)glow.fill(0,rowA0*GW*3,(rowB0+1)*GW*3);rowA=GZ;rowB=-1;
+      // the gatherings' light: the energy the work and the life leave under each curtain, a bloom where it revives
+      for(let k=0;k<nS;k++){const [dim,rev,nou]=sk[k],e=Math.min(1.5,eco.sample(CH.energy,Sx.x[k],Sx.z[k]));pool(Sx.x[k],Sx.z[k],Sx.r[k]*2.2,sc[k],(Math.min(30,Sx.visits[k])*.035+e*.1+.9*rev+.15*nou)*dim*M.life);}
+      // the glimmers: a mote each (and its followers), and the light it gives the ice around it
+      let ng=0,nf=0,na=0,look=0,shel=0,fly=0;const F=FOLLOW[q];
+      for(let e=0;e<eco.capacity;e++){
+        const vis=lifeVisibility(eco,e,v);if(vis<=.003)continue;const s=eco.sp[e];
+        lifePosition(eco,e,alpha,P3);
+        if(s===GLIMMER){const m=eco.mode[e],t=eco.tgt[e];let c,dim=1,rev=0;
+          if((m===MODE.seek||m===MODE.orbit)&&t>=0&&t<nS){c=sc[t];dim=sk[t][0];rev=sk[t][1];}
+          else{// between the curtains: the colours of the sites around it, by distance
+            let wr=0,wg=0,wb=0,ws=0;for(let k=0;k<nS;k++){const d2=(Sx.x[k]-P3[0])**2+(Sx.z[k]-P3[2])**2,w=1/(d2+80);wr+=sc[k][0]*w;wg+=sc[k][1]*w;wb+=sc[k][2]*w;ws+=w;}
+            c=ws>0?[wr/ws,wg/ws,wb/ws]:fallback;}
+          const fl=.72+.28*Math.sin(tv*(.6+.9*u01(eco.seed,e,eco.gen[e],5))+u01(eco.seed,e,eco.gen[e],6)*TAU);
+          const b=vis*M.bright*inten*(m===MODE.orbit?1.2:m===MODE.seek?.85:.45)*dim*(1+1.4*rev)*fl;
+          glim.write('position',ng,P3[0],.03,P3[2]);glim.write('gC',ng,c[0],c[1],c[2],b*.9);glim.write('gS',ng,.2*M.size,0);ng++;
+          for(let f=0;f<F;f++){if(!lifeFollower(eco,e,f,F,alpha,tv,P4,{spread:1.1,lag:.85}))break;glim.write('position',ng,P4[0],.03,P4[2]);glim.write('gC',ng,c[0],c[1],c[2],b*.5);glim.write('gS',ng,.16*M.size,0);ng++;nf++;}
+          continue;}
+        // the animals: on the land or the ice (the owl at its own height), their heading from their motion
+        const m=eco.mode[e],vx=eco.vx[e],vz=eco.vz[e],sp=Math.hypot(vx,vz),fl=eco.ia[e*2];let head=Math.atan2(vz,vx),pose=0,amp=0,lk=0,y=0,H=HQ[s],ph=tv*TAU*(s===FOX?2.4:s===HARE?2.1:1.1)+u01(eco.seed,e,eco.gen[e],7)*TAU;
+        if(s===OWL){const flying=m!==MODE.settle;pose=flying?1:0;y=eco.qy[e]+(eco.py[e]-eco.qy[e])*alpha-(flying?H*.5:.04);amp=flying?clamp(.25+eco.vy[e]*.35+(sp<3?.45:0),.15,1):0;if(flying){fly++;H=.8;}}
+        else{y=groundY(P3[0],P3[2])-.03;
+          if(s===FOX){if(fl&SHELTERING)shel++;
+            if(m===MODE.settle){pose=fl&LOOK?1:3;lk=fl&LOOK?1:0;if(fl&LOOK)look++;}else if(m===MODE.rest)pose=2;else{pose=0;amp=clamp(sp/1.7,0,1.25);}
+            // an agent's wisp passing low: it turns to watch
+            let best=0,wa=0;for(const st of agentState.values()){const p=st.pos,dx=p.x-P3[0],dz=p.z-P3[2],d=Math.hypot(dx,dz),w=smooth((34-d)/14)*smooth((18-p.y)/8);if(w>best){best=w;wa=Math.atan2(dz,dx);}}
+            if(best>.02){const k2=pose===0?.45*best:best;let da=wa-head;da=Math.atan2(Math.sin(da),Math.cos(da));head+=da*k2;if(pose===3&&best>.3){pose=1;lk=.55*best;}}}
+          else{pose=m===MODE.route?1:0;amp=pose?clamp(sp/2,.3,1):0;lk=m===MODE.rest?-1:1;}}
+        beasts.write('bP',na,P3[0],y,P3[2],H);beasts.write('bF',na,head,ph,amp,s);beasts.write('bQ',na,pose,lk,vis,1);na++;
+      }
+      // (a soft saturation of the light into the map's eight bits)
+      const ja=Math.min(rowA,rowA0),jb=Math.max(rowB,rowB0);
+      if(jb>=ja){for(let o=ja*GW,n=(jb+1)*GW;o<n;o++){const r=glow[o*3],g=glow[o*3+1],b=glow[o*3+2];glowPx[o*4]=(255*r/(1+r)+.5)|0;glowPx[o*4+1]=(255*g/(1+g)+.5)|0;glowPx[o*4+2]=(255*b/(1+b)+.5)|0;}glowTex.needsUpdate=true;}
+      rowA0=rowA;rowB0=rowB;beasts.commit(na);glim.commit(ng);
+      Object.assign(statsNow,{drawn:na+ng,followers:nf,animals:na,glimmers:ng-nf,looking:look,sheltering:shel,flying:fly});
+    }
+    function dispose(){ftex?.dispose();ftex=null;texEco=null;}
+    return {update,stats:()=>({...statsNow}),dispose};
+  })():null;
   // ---- Frame ------------------------------------------------------------------------------------------------------------
   function update(i){
     info=i;const sp=ctx.speed(),qi=clamp(Math.round(i.quality||0),0,3),tv=i.tview;shoreAt(i,camPos);
@@ -527,6 +614,7 @@ export function createFamily(ctx){
     // the ambient layers verified milestones unlock: airglow, the Milky Way, diamond dust, hoarfrost
     const un=k=>i.unlocks[k]?.level||0;skyU.uAG.value=clamp(num(sk.airglow,.5),0,1.6)*(1+1.4*un(0));skyU.uMW.value=clamp(num(sk.milkyWay,.8),0,1.6)*(1+.6*un(1))*(qi<3?1:0);U.uFrost.value=un(3)*clamp(i.overrides.atmosphere??1,0,2);
     nFx=0;nRib=0;writeCurtains(i);slots(i);writeScene(i);updateAgents(i);diamondDust(i,un(2));fx.commit(nFx);rib.commit(nRib);
+    if(lifePart)lifePart.update(i);
     stars.material.uniforms.uStarK.value=clamp(num(sk.stars,1),0,1.6)*(1-.35*breakNow);starGeo.setDrawRange(0,QUALITY[qi].stars);
     stormNow=0;for(const c of curtains)stormNow=Math.max(stormNow,c.storm);
     lightOf(i);
@@ -666,7 +754,7 @@ export function createFamily(ctx){
     lastBreakup:breakups.length?(breakups.at(-1).full?'breakup':'local'):null,corona:+coronaNow.toFixed(2),breakup:+breakNow.toFixed(2),storm:+stormNow.toFixed(2),travel:travelNow,fieldTravel:lineNow,touches:touches.length,
     tethers:lastStats.tethers||0,wakes:lastStats.wakes||0,meteors:lastStats.meteors||0,fx:nFx,ribbons:nRib,vertices:curtainMesh?curtainMesh.geometry.attributes.aC.count:0};}
   function rebuild(){hist=null;prep=null;prepKey='';lnSig='';jMid.clear();jT=null;}
-  function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);}mirrorScene.clear();curtainMesh?.geometry.dispose();for(const x of disposables)x.dispose?.();}
+  function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);}mirrorScene.clear();curtainMesh?.geometry.dispose();for(const x of disposables)x.dispose?.();lifePart?.dispose();}
   // After a seek: no transient survives (lanterns come back from the director's record).
   function onPrime(){for(const l of [pulses,storms,coronas,settles,breakups,meteors,kindles,widens,meetings])l.length=0;agentState.clear();lnSig='';}
   // A replay's recorded windows (the host after a seek, or when this world loads into a replay): its model of the history,
@@ -679,6 +767,6 @@ export function createFamily(ctx){
   function composeAnchors(i){composeA.center.copy(centre());composeA.subsystems=curtains.map(c=>({id:c.id,pos:new THREE.Vector3(...at3(c,0,c.H*.3)),size:c.len*.3}));
     composeA.nodes=[...files.values()].slice(0,64).map(f=>({pos:new THREE.Vector3(...footOf(f,f.h*.4))}));const att=i?ctx.director.attentionAt(i.t,1):null,p=att&&attentionPoint(att);composeA.active.pos.copy(p?new THREE.Vector3(...p):composeA.center);return composeA;}
   return {framesPortrait:true,rebuild,update,afterCamera,background,grade,cameraGoal,effect,describe,agentPosition,agentColor,subsystemLabels,status,pick,inspect,stats,dispose,onPrime,onHistory,onDelta,onCue,
-    compose:{camera,scene,anchors:composeAnchors}};
+    compose:{camera,scene,anchors:composeAnchors},...(lifePart?{lifeStats:lifePart.stats,onLifeParams(){}}:{})};
 }
 function rngOf(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}

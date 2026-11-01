@@ -9,9 +9,9 @@ the baseline later changes are checked against. Synaptic Storm, Fractal Continuu
 then, graduated with generator 5: they are families like the three (scored for the automatic choice, a base for packs,
 curated looks); the owner watched each on a film of a whole session, inhabited, and accepted them (2026-10-31), while
 their six curated looks have not been reviewed (on 2026-11-01 four were reworked and a fifth now sets its own light, see
-the world docs). Aurora is a new preview, chosen only explicitly: built and judged from stills only, not yet seen by the
-owner. Technical qualification (determinism, idle life, resources, privacy, performance) is separate from that artistic
-judgement, and no one else has reviewed them yet.
+the world docs). Aurora is a new preview, chosen only explicitly; the owner watched its films and accepted it, and then
+its digital life (2026-11-01). Technical qualification (determinism, idle life, resources, privacy, performance) is
+separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
 
@@ -289,9 +289,14 @@ along a curtain; a failure turns it storm-red and ragged while its files are str
 a corona overhead, its rays converging on the magnetic zenith; a commit is a meteor and flares the cabin's window; a verified milestone leaves a lantern on the
 shore and can earn a rare auroral breakup. The lake is mirror ice that doubles it all, under mountains whose snow takes
 the aurora's colour. A preview: chosen only explicitly (the Visual Studio, the render lab's `--family aurora`, the web
-demo), never by the automatic choice; adding it changed no existing identity; no digital life. Design brief, stills,
-measured GPU time and what remains: [worlds/aurora.md](worlds/aurora.md) (`public/worlds/aurora.js`,
-`aurora-layout.js`, `aurora-glsl.js`).
+demo), never by the automatic choice; adding it changed no existing identity. It is inhabited: arctic foxes trot along
+the shore and out onto the ice, leave tracks in the snow and sit to look up at a bright curtain, hares keep to their
+spruces, a snowy owl perches on the spruces and the cabin's roof, and faint glimmers under the ice gather beneath the
+liveliest curtains in their colours; a failing run sends the animals to shelter and dims the light under its curtain,
+a recovery sends the owl out over the ice and the light blooms (new identities live; one chosen in 0.9.0 keeps none
+until the Digital life switch turns it on). Design brief, stills, measured GPU time and what remains:
+[worlds/aurora.md](worlds/aurora.md) (`public/worlds/aurora.js`, `aurora-layout.js`, `aurora-glsl.js`,
+`life/aurora.js`).
 
 The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
 previewed and applied like any preset; the graduated worlds' six have not been reviewed by the owner, and five of them

@@ -166,7 +166,8 @@ for(const id of WITH_LIFE)GRADUATED[id].parameters={...GRADUATED[id].parameters,
 for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON};
 Object.assign(FAMILIES,GRADUATED);
 // Preview families: built in but still being designed, chosen only explicitly (the Visual Studio, the render lab's
-// --family, the web demo), never scored, and no base for packs (their parameters may still change).
+// --family, the web demo), never scored, and no base for packs (their parameters may still change). Aurora lists the
+// standard life.* group (its grammar: public/worlds/life/aurora.js).
 const PREVIEWS={
   'aurora':{name:'Aurora (preview)',preview:true,parameters:{
     'aurora.height':n(.4,1.8,'height of the curtains: how far their rays reach up along the field'),'aurora.folds':n(0,1.8,'how deeply the curtains fold'),
@@ -184,6 +185,7 @@ const PREVIEWS={
     effects:['kindle','ray','brighten','fade','field-line','storm','pulsate','corona','settle','breakup','meteor','widen'],
     unlocks:['airglow','milky-way','diamond-dust','hoarfrost']}
 };
+PREVIEWS.aurora.parameters={...PREVIEWS.aurora.parameters,...LIFE};
 for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.

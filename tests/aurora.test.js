@@ -31,7 +31,9 @@ test('Aurora is chosen only explicitly: never by the family scores, automatic or
   const chosen=recipe.update(recipe.generate(p,{now:0}),{type:'family',family:ID},p,0);
   assert.equal(chosen.family,ID);assert.equal(chosen.familyName,'Aurora (preview)');assert.equal(chosen.familyKind,'builtin');
   assert.equal(chosen.source,'user');assert.equal(chosen.locked,true);assert.equal(chosen.founded,true);
-  assert.equal(chosen.genome.life,undefined,'no digital life for the preview');assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
+  // (a new Aurora identity lives, as the graduated worlds' do: generator 5 draws its life from its own stream; a stored one
+  // keeps what it had, tests/life-aurora.test.js)
+  assert.equal(chosen.genome.life.enabled,true,'digital life for a new identity');assert.equal(chosen.genome.life.ecology,2);assert.equal(chosen.genome.technique.finish,'cinematic');assert.equal(chosen.genome.music.score,3);
   assert.equal(recipe.resolve(chosen,p,5).recipe,chosen);
   assert(recipe.FAMILIES.includes(recipe.update(chosen,{type:'automatic'},p,0).family));
   assert(recipe.FAMILIES.includes(recipe.update(chosen,{type:'regenerate'},p,0).family));
@@ -68,7 +70,9 @@ test('The preview\'s catalogue covers every value its generator draws; the palet
   // the rays' spacing follows the project's size at generation: a large project's rays stand closer
   const at=n=>spacing.filter(([m])=>Math.abs(m-n)<10).map(x=>x[1]);assert(Math.max(...at(450))<Math.min(...at(30)));
   const r=recipe.generate(project('tune'),{family:ID,now:0}),spec=recipe.tunable(r);
-  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());assert(!Object.keys(spec).some(k=>k.startsWith('life.')));
+  assert.deepEqual(Object.keys(spec).sort(),Object.keys(cat.parameters).sort());
+  // the standard digital-life group (its grammar: public/worlds/life/aurora.js)
+  assert.deepEqual(Object.keys(spec).filter(k=>k.startsWith('life.')).sort(),Object.keys(catalog.LIFE).sort());
   const tuned=recipe.update(r,{type:'tune',values:{'camera.personality':'wide','aurora.folds':1.4}},project('tune'),0);
   assert.deepEqual([tuned.genome.camera.personality,tuned.genome.aurora.folds],['wide',1.4]);
   assert.throws(()=>recipe.update(r,{type:'tune',values:{'land.layers':9}},project('tune'),0),/layers/);

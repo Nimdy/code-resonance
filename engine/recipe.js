@@ -505,10 +505,11 @@ function generate(project,{seed,variant=0,family=null,pack=null,source='generate
   const applied=overlay?.overlay&&overlay.overlay.base===chosen?overlay:null;
   if(applied)g=applyOverlay(g,applied.overlay,rng('pack',applied.id,s,variant),t);
   // Digital life is part of a new built-in identity (a pack's world or look is its author's: never added to it): the
-  // flagships' from generator 3, the graduated families' from 5. A stored identity keeps exactly what it had; the Visual
-  // Studio can turn life on for it (tuning `life.enabled`).
+  // flagships' from generator 3, the graduated families' and Aurora's (a preview, chosen only explicitly) from 5, each
+  // from its own random stream. A stored identity keeps exactly what it had; the Visual Studio can turn life on for it
+  // (tuning `life.enabled`).
   const unpacked=!world&&!applied;
-  const builtin=unpacked&&(FLAGSHIPS.includes(chosen)||(version>=5&&GRADUATED.includes(chosen)));
+  const builtin=unpacked&&(FLAGSHIPS.includes(chosen)||(version>=5&&(GRADUATED.includes(chosen)||chosen==='aurora')));
   if(builtin)g={...g,life:lifeGenome(chosen,s,variant,version)};
   // v4: the cinematic finish is a new built-in identity's lens, never a pack's (an author's world or look keeps its own
   // grade until a finish is chosen for it); the composed score is every new identity's music.
@@ -611,7 +612,12 @@ function update(recipe,action,project,now=Date.now(),registry=null){
     case 'pack':{
       // A look is drawn over the same identity: it keeps the identity's generator (family, regenerate and automatic are
       // new identities, drawn with the current one).
-      if(action.pack===null)return keep(generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:recipe.family,traits:recipe.traits,now,registry,version:generatorOf(recipe)}));
+      // (an Aurora identity drawn before Aurora had digital life, by the same generator, keeps none when it is redrawn; one
+      // that has life from a tuning only keeps exactly that)
+      if(action.pack===null){const r=generate(project,{seed:recipe.projectSeed,variant:recipe.variant,family:recipe.family,traits:recipe.traits,now,registry,version:generatorOf(recipe)});
+        const lifeless=PREVIEWS.includes(recipe.family)&&(!recipe.genome?.life||recipe.tuning?.family===recipe.family&&recipe.tuning.base?.['life.enabled']===null);
+        if(lifeless&&r.genome.life){const {life:_,...g}=r.genome;r.genome=g;}
+        return keep(r);}
       const p=typeof action.pack==='string'?usable(registry,action.pack):null;
       if(!p||!p.overlay)throw new Error('Unknown or unusable pack');
       // A creation (a data-only pack carrying a composition) is applied as its composition, never as an overlay: the

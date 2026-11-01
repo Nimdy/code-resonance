@@ -8,7 +8,9 @@ name: validation
 # The suite runs in three shards per platform (`node --test --test-shard=i/3`, every third test file), in parallel: on a
 # two-core runner the whole suite took 9-10 minutes, most of it a few long digital-life simulations. The syntax check,
 # the package and the smoke test run once, in shard 1. The test command is `npm test`'s, with the glob quoted so Node
-# expands it on every platform.
+# expands it on every platform. --test-timeout also bounds each test file (a file is a test of the run): 300 s, since
+# Windows runners take three to four times as long as a desktop for the digital-life simulations (one 15-22 s test took
+# 53-70 s there, and a file of two of them passed 120 s).
 # Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   push:
@@ -36,7 +38,7 @@ jobs:
           node-version: '22'
       - if: matrix.shard == 1
         run: npm run check
-      - run: node --test --test-timeout=120000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
+      - run: node --test --test-timeout=300000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
       - if: matrix.shard == 1
         run: npm run package:vsix
       - if: matrix.shard == 1
@@ -57,7 +59,7 @@ jobs:
           node-version: '22'
       - if: matrix.shard == 1
         run: npm run check
-      - run: node --test --test-timeout=120000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
+      - run: node --test --test-timeout=300000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
       - if: matrix.shard == 1
         run: npm run package:vsix
       - if: matrix.shard == 1

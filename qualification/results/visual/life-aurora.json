@@ -1,0 +1,402 @@
+{
+ "checks": [
+  {
+   "name": "aurora: life is on for a recipe with life enabled",
+   "pass": true,
+   "detail": "aurora tick 2882, 116 alive"
+  },
+  {
+   "name": "aurora: after playing near the end and seeking back, the ecosystem and the image are the same",
+   "pass": true,
+   "detail": "749b062c/749b062c image 9867f936b76f6138/9867f936b76f6138"
+  },
+  {
+   "name": "aurora: continuous play from the start reaches the same ecosystem",
+   "pass": true,
+   "detail": "749b062c (144 s of performance at 6 fps, 190 s)"
+  },
+  {
+   "name": "aurora: a fresh session renders the same ecosystem and image",
+   "pass": true,
+   "detail": "749b062c 9867f936b76f6138"
+  },
+  {
+   "name": "aurora: after a browser restart, the same ecosystem and image",
+   "pass": true,
+   "detail": "749b062c 9867f936b76f6138"
+  },
+  {
+   "name": "aurora: 15, 30, 60 and 120 fps reach the same ecosystem",
+   "pass": true,
+   "detail": "749b062c 749b062c 749b062c 749b062c"
+  },
+  {
+   "name": "aurora: changing the quality while it lives never changes the ecosystem",
+   "pass": true,
+   "detail": "749b062c/749b062c; presented per level: [0,104,0,104,0,104]"
+  },
+  {
+   "name": "aurora: idle ten minutes, the population lives and moves",
+   "pass": true,
+   "detail": "30s 114 alive v 0.581, 120s 117 alive v 0.644, 240s 116 alive v 0.645, 360s 116 alive v 0.621, 480s 115 alive v 0.734, 600s 117 alive v 0.666"
+  },
+  {
+   "name": "aurora: idle, the image keeps changing",
+   "pass": true,
+   "detail": "mean |Δluma| 6.75, 7.45, 8.55, 7.69, 7.71"
+  },
+  {
+   "name": "aurora: idle, no intent is created and the director, once idle, stays idle",
+   "pass": true,
+   "detail": "30s 205/active, 120s 205/idle, 240s 205/idle, 360s 205/idle, 480s 205/idle, 600s 205/idle"
+  },
+  {
+   "name": "aurora: idle, GPU resources are constant and memory bounded",
+   "pass": true,
+   "detail": "geometries/textures 18/21; heap MB 37 37 37 37 37 37; checkpoints {\"recent\":6,\"sparse\":24}"
+  },
+  {
+   "name": "aurora: life off runs no ecosystem",
+   "pass": true,
+   "detail": "null"
+  },
+  {
+   "name": "aurora: the labels are the same with life on and off (inhabitants are never labelled)",
+   "pass": true,
+   "detail": "1/1"
+  },
+  {
+   "name": "aurora: no page errors",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "switching: the running ecosystem is always the shown world's",
+   "pass": true,
+   "detail": "stellar-forge:stellar-forge, machine-cathedral:machine-cathedral, fractal-biosphere:fractal-biosphere, stellar-forge:stellar-forge, machine-cathedral:machine-cathedral, fractal-biosphere:fractal-biosphere"
+  },
+  {
+   "name": "switching: geometries and textures return to their level",
+   "pass": true,
+   "detail": "31/15 -> 31/15"
+  },
+  {
+   "name": "replay -> live: the live ecosystem starts at the switch (no restoring, a new origin, not the replay's inputs)",
+   "pass": true,
+   "detail": "{\"wallMs\":3078,\"tick\":60,\"restoring\":false,\"inputs\":0,\"replayInputs\":75138,\"resets\":6}"
+  },
+  {
+   "name": "far seek: restoring is reported, then the ecosystem is current again (within 180 s a seek)",
+   "pass": true,
+   "detail": "[{\"fraction\":0.85,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":24841,\"wallMs\":24841,\"lastRestoreMs\":24740,\"ticks\":7750,\"generation\":1626,\"historyMs\":37.9,\"fromCheckpoint\":0},{\"fraction\":0.15,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":5248,\"wallMs\":5248,\"lastRestoreMs\":5178,\"ticks\":1650,\"generation\":287,\"historyMs\":5.2,\"fromCheckpoint\":0},{\"fraction\":0.6,\"restoringShown\":true,\"restored\":true,\"restoreWallMs\":9526,\"wallMs\":9526,\"lastRestoreMs\":9453,\"ticks\":3000,\"generation\":1148,\"historyMs\":13.8,\"fromCheckpoint\":0}]"
+  },
+  {
+   "name": "far seek: no page errors",
+   "pass": true,
+   "detail": ""
+  }
+ ],
+ "measurements": {
+  "families": {
+   "aurora": {
+    "digest": "749b062c",
+    "image": "9867f936b76f6138",
+    "tick": 2882,
+    "framerates": [
+     "749b062c",
+     "749b062c",
+     "749b062c",
+     "749b062c"
+    ],
+    "qualityPresented": [
+     {
+      "drawn": 115,
+      "followers": 0,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 1,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     },
+     {
+      "drawn": 219,
+      "followers": 104,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 2,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     },
+     {
+      "drawn": 115,
+      "followers": 0,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 2,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     },
+     {
+      "drawn": 219,
+      "followers": 104,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 1,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     },
+     {
+      "drawn": 115,
+      "followers": 0,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 2,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     },
+     {
+      "drawn": 219,
+      "followers": 104,
+      "animals": 11,
+      "glimmers": 104,
+      "looking": 3,
+      "sheltering": 0,
+      "flying": 0,
+      "drawCalls": 3
+     }
+    ],
+    "idle": [
+     {
+      "at": 30,
+      "alive": 114,
+      "speed": 0.581,
+      "modes": {
+       "explore": 16,
+       "seek": 26,
+       "orbit": 60,
+       "disperse": 0,
+       "rest": 0,
+       "settle": 7,
+       "route": 5
+      },
+      "intents": 205,
+      "phase": "active",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 13
+      },
+      "tickMs": 0.745
+     },
+     {
+      "at": 120,
+      "alive": 117,
+      "speed": 0.644,
+      "modes": {
+       "explore": 15,
+       "seek": 28,
+       "orbit": 61,
+       "disperse": 0,
+       "rest": 0,
+       "settle": 8,
+       "route": 5
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 18
+      },
+      "tickMs": 0.655
+     },
+     {
+      "at": 240,
+      "alive": 116,
+      "speed": 0.645,
+      "modes": {
+       "explore": 15,
+       "seek": 36,
+       "orbit": 53,
+       "disperse": 0,
+       "rest": 1,
+       "settle": 6,
+       "route": 5
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 0.679
+     },
+     {
+      "at": 360,
+      "alive": 116,
+      "speed": 0.621,
+      "modes": {
+       "explore": 14,
+       "seek": 14,
+       "orbit": 75,
+       "disperse": 0,
+       "rest": 0,
+       "settle": 8,
+       "route": 5
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.04
+     },
+     {
+      "at": 480,
+      "alive": 115,
+      "speed": 0.734,
+      "modes": {
+       "explore": 17,
+       "seek": 55,
+       "orbit": 32,
+       "disperse": 0,
+       "rest": 0,
+       "settle": 7,
+       "route": 4
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.054
+     },
+     {
+      "at": 600,
+      "alive": 117,
+      "speed": 0.666,
+      "modes": {
+       "explore": 8,
+       "seek": 37,
+       "orbit": 59,
+       "disperse": 0,
+       "rest": 0,
+       "settle": 6,
+       "route": 7
+      },
+      "intents": 205,
+      "phase": "idle",
+      "geometries": 18,
+      "textures": 21,
+      "heap": 37300000,
+      "checkpoints": {
+       "recent": 6,
+       "sparse": 24
+      },
+      "tickMs": 1.091
+     }
+    ],
+    "idleMotion": [
+     6.75,
+     7.45,
+     8.55,
+     7.69,
+     7.71
+    ],
+    "off": {
+     "drawCallsOff": 9,
+     "drawCallsOn": 11,
+     "gpuOff": null,
+     "gpuOn": null
+    }
+   }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "switching": {
+   "seen": [
+    "stellar-forge:stellar-forge",
+    "machine-cathedral:machine-cathedral",
+    "fractal-biosphere:fractal-biosphere",
+    "stellar-forge:stellar-forge",
+    "machine-cathedral:machine-cathedral",
+    "fractal-biosphere:fractal-biosphere"
+   ],
+   "base": {
+    "geometries": 31,
+    "textures": 15,
+    "heap": 20500000
+   },
+   "after": {
+    "geometries": 31,
+    "textures": 15,
+    "heap": 20500000
+   }
+  },
+  "replayToLive": {
+   "wallMs": 3078,
+   "tick": 60,
+   "restoring": false,
+   "inputs": 0,
+   "replayInputs": 75138,
+   "resets": 6
+  },
+  "farSeek": [
+   {
+    "fraction": 0.85,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 24841,
+    "wallMs": 24841,
+    "lastRestoreMs": 24740,
+    "ticks": 7750,
+    "generation": 1626,
+    "historyMs": 37.9,
+    "fromCheckpoint": 0
+   },
+   {
+    "fraction": 0.15,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 5248,
+    "wallMs": 5248,
+    "lastRestoreMs": 5178,
+    "ticks": 1650,
+    "generation": 287,
+    "historyMs": 5.2,
+    "fromCheckpoint": 0
+   },
+   {
+    "fraction": 0.6,
+    "restoringShown": true,
+    "restored": true,
+    "restoreWallMs": 9526,
+    "wallMs": 9526,
+    "lastRestoreMs": 9453,
+    "ticks": 3000,
+    "generation": 1148,
+    "historyMs": 13.8,
+    "fromCheckpoint": 0
+   }
+  ]
+ }
+}

@@ -275,3 +275,130 @@ export const RIB_VS=`uniform float uPx,uMirror;uniform vec2 uRes;attribute vec4 
     vp.xyz+=sd*position.y*wp*1.6;vY=position.y*1.6;vAl=mix(rD.x,rD.y,position.x)*min(1.,w/wp*1.4+.25);vCore=rD.z;vC=rC;gl_Position=projectionMatrix*vp;}`;
 // rD.z: a fine bright core inside the soft glow (field lines), its share
 export const RIB_FS=`varying vec4 vC;varying float vY,vAl,vCore;void main(){float a=exp(-vY*vY*2.6)*(1.-vCore)+exp(-vY*vY*90.)*vCore*2.2;gl_FragColor=vec4(vC.rgb*a*vAl*vC.a,1.);}`;
+// ---- Digital life (life/aurora.js; only when the recipe has it on: aurora.js) -----------------------------------------
+// The animals: foxes, hares and the owl, each a vertical billboard (they stand upright) drawing a procedural silhouette
+// in its own frame (facing +x, the ground at 0, its height 1), foreshortened as it turns toward or away from the camera.
+// Per instance: bP its foot (x, y, z) and height; bF its heading (yaw in the ground plane), its gait's phase and
+// amplitude, its species (0 fox, 1 hare, 2 owl); bQ its pose (fox: 0 trot, 1 sit, 2 curled, 3 a sniff; hare: 0 sit, 1 a
+// hop; owl: 0 perched, 1 flying), how far it looks up, its visibility, the light on it. White fur at night, the aurora
+// behind them: a dim side toward the shore and a bright rim where the silhouette meets the sky, warm near the lanterns
+// and the window; a soft contact shadow on the snow (not in the reflection). Premultiplied alpha.
+export const BEAST_VS=`
+attribute vec4 bP,bF,bQ;uniform float uMirror,uNG;uniform vec3 uSkyAmb,uAurL,uAcc;uniform vec4 uGlow[10];
+varying vec2 vQ;varying vec4 vF,vB;varying vec3 vLit,vWarm;
+void main(){vec3 base=bP.xyz;float H=bP.w,sp=bF.w,asp=sp<.5?2.:sp<1.5?1.5:(bQ.x>.5?2.4:1.2);
+  vec3 toC=cameraPosition-base;vec3 rt=normalize(vec3(toC.z,0.,-toC.x)+1e-5);
+  vec2 hv=vec2(cos(bF.x),sin(bF.x));float side=dot(hv,rt.xz),away=-dot(hv,normalize(toC.xz+1e-5));
+  vec3 p=base+rt*position.x*H*asp*.5+vec3(0.,position.y*H,0.);
+  vQ=vec2(position.x*asp*.5,position.y);vF=vec4(side,bF.y,bF.z,sp);vB=vec4(bQ.x,bQ.y,bQ.z,away);
+  vec3 w=vec3(0.);for(int k=0;k<10;k++){if(float(k)>=uNG)break;vec4 G=uGlow[k];vec2 dd=base.xz-G.xy;w+=uAcc*G.w*exp(-dot(dd,dd)/(G.z*G.z*5.))*2.4;}
+  vLit=(uSkyAmb*1.7+uAurL*1.15)*bQ.w;vWarm=w;
+  p.y*=uMirror;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`;
+export const BEAST_FS=`
+uniform float uMirror;uniform vec3 uSnowC,uAurL;
+varying vec2 vQ;varying vec4 vF,vB;varying vec3 vLit,vWarm;
+float sdE(vec2 p,vec2 c,vec2 r){vec2 q=(p-c)/r;return (length(q)-1.)*min(r.x,r.y);}
+float sdC(vec2 p,vec2 a,vec2 b,float ra,float rb){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);return length(pa-ba*h)-mix(ra,rb,h);}
+float smin(float a,float b,float k){float h=clamp(.5+.5*(b-a)/k,0.,1.);return mix(b,a,h)-k*h*(1.-h);}
+vec2 rot(vec2 p,float a){float c=cos(a),s=sin(a);return vec2(c*p.x-s*p.y,s*p.x+c*p.y);}
+// a fox, facing +x, in a frame a metre high (an arctic fox: about 30 cm at the shoulder, 55 cm long, its brush 30 cm);
+// b: its pose, how far it looks up, -, how far it faces away (seen from the front or behind when it heads toward or away
+// from the camera: k, its side's foreshortening, below .42)
+float fox(vec2 q,float ph,float amp,vec4 b,float k){float pose=b.x,d;
+  if(k<.42&&pose<2.5&&pose!=2.){// from the front or from behind
+    q.x=abs(q.x);
+    if(pose>.5&&pose<1.5){vec2 hc=vec2(0.,.39+.02*b.y);d=sdE(q,vec2(0.,.12),vec2(.12,.12));d=smin(d,sdE(q,vec2(0.,.26),vec2(.08,.1)),.05);d=smin(d,sdE(q,hc,vec2(.065,.055)),.03);
+      d=min(d,sdC(q,hc+vec2(.03,.03),hc+vec2(.05,.075),.022,.007));d=min(d,sdE(q,vec2(.06,.03),vec2(.15,.03)));return d;}
+    q.y-=amp*.012*abs(sin(ph));float dn=pose>2.5?1.:0.;vec2 hc=vec2(0.,.31-.14*dn);
+    d=sdE(q,vec2(0.,.24),vec2(.085,.085));d=smin(d,sdE(q,hc,vec2(.06,.052)),.04);
+    d=min(d,sdC(q,hc+vec2(.03,.03),hc+vec2(.048,.075),.022,.007));
+    float s1=sin(ph)*amp*.03;d=min(d,sdC(q,vec2(.045,.2),vec2(.045,.005+max(0.,s1)),.022,.015));
+    if(b.w>0.)d=smin(d,sdE(q,vec2(0.,.15),vec2(.045,.09)),.03);
+    return d;}
+  if(pose<.5||pose>2.5){q.y-=amp*.012*abs(sin(ph));
+    float dn=pose>2.5?1.:0.;vec2 hc=mix(vec2(.22,.31),vec2(.25,.13),dn);
+    d=sdE(q,vec2(-.02,.24),vec2(.2,.082));d=smin(d,sdE(q,vec2(.11,.255),vec2(.085,.082)),.04);
+    d=smin(d,sdC(q,vec2(.12,.27),hc+vec2(-.03,-.005),.05,.042),.03);d=min(d,sdE(q,hc,vec2(.058,.05)));
+    d=min(d,sdC(q,hc+vec2(.03,-.008),hc+vec2(.09,-.022-.03*dn),.027,.011));
+    d=min(d,sdC(q,hc+vec2(-.02,.03),hc+vec2(-.03,.083),.022,.007));d=min(d,sdC(q,hc+vec2(.012,.032),hc+vec2(.01,.085),.022,.007));
+    float s1=sin(ph)*amp*.075,s2=-s1;
+    d=min(d,sdC(q,vec2(.105,.22),vec2(.105+s1,.006),.03,.018));d=min(d,sdC(q,vec2(.075,.22),vec2(.075+s2,.006),.028,.017));
+    d=min(d,sdC(q,vec2(-.13,.22),vec2(-.13+s2,.006),.034,.018));d=min(d,sdC(q,vec2(-.16,.22),vec2(-.16+s1,.006),.032,.017));
+    d=smin(d,sdC(q,vec2(-.19,.25),vec2(-.44,.18+.02*sin(ph*.5)),.038,.056),.035);
+    return d;}
+  if(pose<1.5){float L=b.y;vec2 hc=vec2(.085,.4+.02*L);
+    d=sdE(q,vec2(-.06,.11),vec2(.13,.11));d=smin(d,sdE(q,vec2(.035,.24),vec2(.075,.12)),.05);
+    d=smin(d,sdC(q,vec2(.04,.3),hc,.05,.045),.03);d=min(d,sdE(q,hc,vec2(.058,.05)));
+    d=min(d,sdC(q,hc+rot(vec2(.03,-.008),.6*L),hc+rot(vec2(.09,-.022),.6*L),.027,.011));
+    d=min(d,sdC(q,hc+rot(vec2(-.02,.03),.45*L),hc+rot(vec2(-.03,.083),.45*L),.022,.007));d=min(d,sdC(q,hc+rot(vec2(.012,.032),.45*L),hc+rot(vec2(.01,.085),.45*L),.022,.007));
+    d=min(d,sdC(q,vec2(.065,.2),vec2(.075,.006),.021,.014));d=min(d,sdC(q,vec2(.035,.2),vec2(.045,.006),.02,.014));
+    d=smin(d,sdE(q,vec2(.0,.035),vec2(.17,.035)),.02);return d;}
+  // curled up in the snow, its brush over its nose
+  d=sdE(q,vec2(-.01,.075),vec2(.2,.075));d=smin(d,sdE(q,vec2(.07,.045),vec2(.2,.045)),.03);
+  d=min(d,sdC(q,vec2(.13,.11),vec2(.12,.15),.018,.006));return d;}
+// a hare (its height 1: about sixty centimetres to the tips of its ears), facing +x
+float hare(vec2 q,float ph,float amp,vec4 b){float d;
+  if(b.x>.5){float hop=max(0.,sin(ph));q.y-=.22*hop*amp;vec2 bq=rot(q-vec2(0.,.3),-.25*hop);
+    d=sdE(bq,vec2(0.),vec2(.33,.15));d=smin(d,sdE(q,vec2(.28,.42+.05*hop),vec2(.1,.085)),.05);
+    d=min(d,sdC(q,vec2(.25,.48),vec2(.1,.82),.045,.02));d=min(d,sdC(q,vec2(.28,.48),vec2(.16,.83),.045,.02));
+    d=min(d,sdC(q,vec2(-.2,.24),vec2(-.42-.12*hop,.03+.1*hop),.05,.03));d=min(d,sdC(q,vec2(.18,.26),vec2(.34+.08*hop,.05),.035,.02));
+    d=min(d,sdE(q,vec2(-.33,.36),vec2(.06,.06)));return d;}
+  // sitting: a round crouch, the ears up (down when it shelters: b.y < 0)
+  float up=b.y<0.?0.:1.;
+  d=sdE(q,vec2(-.04,.25),vec2(.3,.23));d=smin(d,sdE(q,vec2(.2,.4),vec2(.12,.11)),.06);
+  d=min(d,sdC(q,vec2(.17,.47),mix(vec2(-.08,.5),vec2(.09,.78),up),.042,.02));d=min(d,sdC(q,vec2(.2,.47),mix(vec2(-.05,.53),vec2(.15,.79),up),.042,.02));
+  d=min(d,sdE(q,vec2(.02,.03),vec2(.3,.045)));d=min(d,sdE(q,vec2(-.34,.24),vec2(.06,.06)));return d;}
+// the snowy owl: perched (its height 1: about seventy centimetres), or flying, its wings spread across its frame
+float owl(vec2 q,float ph,float amp,vec4 b){float d;
+  if(b.x>.5){float f=sin(ph)*amp,ax=abs(q.x);
+    d=sdE(q,vec2(.05,.5),vec2(.2,.075));d=min(d,sdE(q,vec2(.24,.52),vec2(.075,.07)));d=min(d,sdC(q,vec2(-.12,.5),vec2(-.28,.49),.05,.03));
+    vec2 w=vec2(ax,q.y);float tip=.5+.28*f,mid=.5+.1*f+.05*(1.-amp);
+    d=smin(d,min(sdC(w,vec2(.03,.52),vec2(.5,mid+.02),.075,.06),sdC(w,vec2(.5,mid+.02),vec2(.97,tip),.06,.012)),.04);
+    return d;}
+  q.x=abs(q.x);d=sdE(q,vec2(0.,.42),vec2(.27,.36));d=smin(d,sdE(q,vec2(0.,.78),vec2(.21,.18)),.08);
+  d=min(d,sdE(q,vec2(.1,.05),vec2(.08,.05)));return d;}
+float shape(vec2 q,float k){float sp=vF.w;return sp<.5?fox(q,vF.y,vF.z,vB,k):sp<1.5?hare(q,vF.y,vF.z,vB):owl(q,vF.y,vF.z,vB);}
+void main(){
+  float side=vF.x,k0=abs(side),fl=side<0.?-1.:1.,sp=vF.w;
+  // (a fox heading toward or away from the camera is drawn from the front or behind; otherwise its side, foreshortened)
+  float k=sp<.5&&k0<.42?1.:max(k0,.3);vec2 q=vec2(vQ.x*fl/k,vQ.y);float d=shape(q,k0);
+  float aa=fwidth(d)*1.1+.0015,a=1.-smoothstep(-aa,aa,d);
+  // a soft contact shadow on the snow under it (a bird in flight casts none worth drawing; none in the reflection)
+  float sh=0.;if(uMirror>0.&&!(sp>1.5&&vB.x>.5)){vec2 s=vec2(vQ.x/(sp<.5?.62:.42),vQ.y/.03);sh=exp(-dot(s,s))*.5;}
+  if(a<.004&&sh<.004)discard;
+  // the light on the fur: a rim where the silhouette meets the sky (backlit by the aurora), its underside darker
+  vec2 e=vec2(.006,0.);vec2 n=vec2(shape(q+e.xy,k0)-d,shape(q+e.yx,k0)-d);n=n/max(length(n),1e-6);
+  float rim=smoothstep(-.03,-.003,d)*max(0.,n.y*.9+.1);
+  float under=smoothstep(.32,.08,q.y)*.3*(sp>1.5&&vB.x>.5?0.:1.);
+  // (lit from above by the curtains: the back and the head brighter than the legs)
+  float top=.72+.6*smoothstep(.05,.42,q.y);
+  vec3 col=uSnowC*(vLit*top*(1.-under)+vWarm*.8+.006)+(uAurL*1.4+uSnowC*.008+vWarm*.5)*rim;
+  float al=a*vB.z;gl_FragColor=vec4(col*al,al+sh*(1.-a)*vB.z);}`;
+// The glimmers: faint bioluminescent motes under the ice, drawn at its surface (without a depth test: the ice is their
+// own surface, and what stands on it is drawn after them), seen only through the clear ice (not under the drifted snow,
+// little where the ice mirrors the sky at a glancing angle), flattened into the ice's plane. Additive.
+export const GLIM_VS=`
+attribute vec4 gC;attribute vec2 gS;uniform float uPx,uSnow;uniform vec2 uRes;uniform sampler2D uNoise;varying vec4 vC;varying float vSq;
+void main(){vec3 p=position;vec4 mv=viewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;float ppu=projectionMatrix[1][1]*uRes.y*.5/max(-mv.z,.1);
+  vec3 V=normalize(cameraPosition-p);float graze=1.-clamp(V.y,0.,1.),F=.025+.975*pow(graze,5.);
+  vec2 w=vec2(p.x*.0031+p.z*.0012,p.z*.0088-p.x*.0013);
+  float sn=textureLod(uNoise,w,0.).x*.58+textureLod(uNoise,w*2.9+.5,0.).y*.27+textureLod(uNoise,p.xz*.011+.71,0.).z*.15;
+  float near=smoothstep(-470.,-560.,p.z)*.3,drift=smoothstep(.79-.12*uSnow-near,.88-.12*uSnow-near,sn);
+  float px=max(gS.x*ppu,1.4*uPx);vC=vec4(gC.rgb,gC.a*(1.-F)*(1.-drift)*min(1.,gS.x*ppu/(1.4*uPx)+.35));
+  // (a light lying in the ice: flattened as the ice is seen at a glancing angle)
+  vSq=clamp(.55/max(V.y,.05),1.,3.5);gl_PointSize=clamp(px*2.6,1.,40.*uPx);}`;
+export const GLIM_FS=`varying vec4 vC;varying float vSq;void main(){vec2 q=gl_PointCoord*2.-1.;float r2=q.x*q.x+q.y*q.y*vSq*vSq;if(r2>1.)discard;
+  gl_FragColor=vec4(vC.rgb*vC.a*(exp(-r2*12.)*1.4+exp(-r2*2.6)*.3),1.);}`;
+// What the life gives the ice and the land (spliced into ICE_FS and LAND_FS by aurora.js, only with life on): tracks in
+// the snow (the ecosystem's trail field: a trodden groove, a little darker, broken into prints, fading as the field
+// does) and, under the ice, the light of the glimmers and their gatherings (a map aurora.js draws each frame from the
+// ecosystem), seen through the clear ice (none through the drifted snow, little where the ice mirrors the sky, more along
+// its cracks). uLifeX: on, the light's strength, the tracks' strength, -.
+export const LIFE_UNIFORMS='uniform sampler2D uLifeF,uLifeG;uniform vec4 uLifeX;';
+export function lifeLookup(X0,X1,Z0,Z1){return `vec2 lu=vec2((p.x-(${X0.toFixed(1)}))/${(X1-X0).toFixed(1)},(p.y-(${Z0.toFixed(1)}))/${(Z1-Z0).toFixed(1)});bool inL=uLifeX.x>0.&&lu.x>0.&&lu.x<1.&&lu.y>0.&&lu.y<1.;`;}
+export const ICE_LIFE=`
+  if(inL){float tr=smoothstep(.03,.42,texture(uLifeF,lu).r)*uLifeX.z,pr=smoothstep(.32,.68,texture(uNoise,p*.065+.27).w);
+    col*=1.-min(.85,tr*max(drift,thin*.8)*(.34+.46*pr));
+    vec3 Lg=texture(uLifeG,lu).rgb;col+=Lg*(1.-F)*(1.-drift)*(1.-.55*thin)*(1.+2.4*crack)*uLifeX.y;}`;
+export const LAND_LIFE=`
+  if(inL&&uMirror>0.){float tr=smoothstep(.03,.42,texture(uLifeF,lu).r)*uLifeX.z,pr=smoothstep(.32,.68,texture(uNoise,p*.065+.27).w);col*=1.-min(.85,tr*(1.-rock)*(.34+.46*pr));}`;

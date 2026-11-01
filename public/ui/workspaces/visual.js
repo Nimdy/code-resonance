@@ -55,6 +55,7 @@ const ESSENTIALS={
   'synaptic-storm':['material.glow','motion.firingRate','space.depth','atmosphere.haze','atmosphere.ghosts','geometry.dendrites','life.enabled','life.music'],
   'fractal-continuum':['fractal.form','fractal.power','fractal.twist','material.trap','material.glow','camera.personality','life.enabled','life.music'],
   'temporal-terrain':['relief.height','contour.interval','contour.glow','atmosphere.mist','time.scale','camera.personality','life.enabled','life.music'],
+  'aurora':['aurora.brightness','aurora.height','aurora.folds','aurora.rays','lake.gloss','camera.personality','life.enabled','life.music'],
   common:['technique.exposure','music.reactivity']};
 const CLASSIC=[
   {id:'construct',icon:'grid',line:'The software as an illuminated architectural model (WebGL)'},
@@ -88,9 +89,9 @@ const TECHNIQUE_IDENTITY={'technique.exposure':1,'technique.bloom':1,'technique.
 // Digital life (generator v3): an older identity has none, so its controls start from off and neutral scales.
 const LIFE_OFF={'life.enabled':false,'life.density':1,'life.vitality':1,'life.collective':1,'life.environment':1,'life.trails':1,'life.persistence':1,'life.music':1,
   'life.attraction':1,'life.repulsion':1,'life.separation':1,'life.alignment':1,'life.cohesion':1,'life.current':1,'life.diffusion':1,'life.radius':1,'life.ecology':1};
-// The graduated worlds' identities saved before generator 5 have no life either.
+// The graduated worlds' identities saved before generator 5 have no life either, nor an Aurora chosen before it had life.
 const ADDED_DEFAULTS={'machine-cathedral':{'atmosphere.shafts':.8,'material.wetness':.6,...LIFE_OFF},'fractal-biosphere':{...LIFE_OFF},'stellar-forge':{...LIFE_OFF},
-  'synaptic-storm':{...LIFE_OFF},'fractal-continuum':{...LIFE_OFF},'temporal-terrain':{...LIFE_OFF}};
+  'synaptic-storm':{...LIFE_OFF},'fractal-continuum':{...LIFE_OFF},'temporal-terrain':{...LIFE_OFF},'aurora':{...LIFE_OFF}};
 // Parameters whose last path segment alone would not say what they are (the Essentials list them out of their group).
 const LABEL_OF={'life.enabled':'Digital life','life.music':'Music influence','life.ecology':'Ecology'};
 // Where a catalogue description says more than the control needs (the music influence explains its scale itself).
