@@ -274,17 +274,18 @@ two curated looks; adding it changed no existing identity, and the owner accepte
 ### Aurora (preview)
 
 A polar night over a frozen lake, and the software is the aurora. Subsystems are curtains of light across the sky,
-folded draperies hanging along the magnetic field (a sharp bright lower edge, fine rays, green to teal at their foot and
-violet to magenta toward their tops), each in its own hue on the identity's harmony, layered in depth by order of birth
+folded draperies hanging along the magnetic field (a sharp bright lower edge, rays carrying the light upward with dark
+sky between them, green to teal at their foot and violet to magenta toward their tops), each in its own hue on the identity's harmony, layered in depth by order of birth
 and as long as their files make them; files are the rays inside a curtain, as tall as their live symbols, igniting when
-they are born and fading when removed; dependencies between subsystems are faint field lines. Agents are wisps in their
+they are born and fading when removed; dependencies between subsystems are long, gentle field lines, barely there at
+rest and lit behind a pulse or a wisp travelling along them. Agents are wisps in their
 provider's colour and shape: waiting, they hover low over the ice; at work they fly up to the ray they edit and their
-touch ignites it; between curtains joined by field lines they fly along them; a subagent is a smaller wisp tethered to
+touch ignites it; between curtains joined by field lines they fly along them, lighting the line behind them; a subagent is a smaller wisp tethered to
 its parent, and two agents on one file are two wisps meeting at its ray. The music ripples and folds the curtains on
 the bars (with the host's musical clock), their rays shimmer on the eighths the arrangement plays and a section's onset
 surges along them; the work's activity brightens them and quickens their folds. Passing tests send pulsating patches
 along a curtain; a failure turns it storm-red and ragged while its files are stressed; a recovery gathers the sky into
-a corona overhead; a commit is a meteor and flares the cabin's window; a verified milestone leaves a lantern on the
+a corona overhead, its rays converging on the magnetic zenith; a commit is a meteor and flares the cabin's window; a verified milestone leaves a lantern on the
 shore and can earn a rare auroral breakup. The lake is mirror ice that doubles it all, under mountains whose snow takes
 the aurora's colour. A preview: chosen only explicitly (the Visual Studio, the render lab's `--family aurora`, the web
 demo), never by the automatic choice; adding it changed no existing identity; no digital life. Design brief, stills,

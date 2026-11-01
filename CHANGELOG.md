@@ -3,10 +3,11 @@
 ## Unreleased
 
 - **Aurora, a new world (preview):** a polar night over a frozen lake, and the software is the aurora. Subsystems are
-  curtains of light across the sky (folded sheets hanging along the magnetic field, a sharp bright lower edge, fine rays,
-  green to teal at their foot and violet to magenta toward their tops), each in its own hue, layered in depth by order of
+  curtains of light across the sky (folded sheets hanging along the magnetic field, a sharp bright lower edge, rays with dark
+  sky between them, green to teal at their foot and violet to magenta toward their tops), each in its own hue, layered in depth by order of
   birth and as long as their files; files are the rays inside them, as tall as their symbols, igniting when born;
-  dependencies are faint field lines. Agents are wisps that hover over the ice while waiting and fly up to ignite the ray
+  dependencies are long, gentle field lines, barely there at rest and lit behind a wisp
+  travelling along them. Agents are wisps that hover over the ice while waiting and fly up to ignite the ray
   they edit; subagents are tethered to their parent. Passing tests pulse along a curtain, a failure turns it storm-red
   while its files are stressed, a recovery gathers the sky into a corona overhead, a commit is a meteor, a verified
   milestone leaves a lantern on the shore and can earn a rare auroral breakup; the curtains ripple, shimmer and surge with

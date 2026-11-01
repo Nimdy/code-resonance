@@ -16,28 +16,29 @@ Everything described here is implemented unless marked *planned*.
 ![Self at the end of its session](aurora-hero.jpg)
 
 *Self (92 files, a 20-minute recorded session) at its end: its curtains across the sky in greens and
-teals on its harmony, their rays reaching high with violet at their tops, the faint field lines of its dependencies
-above them, the cabin on the point among its spruces, and the whole night mirrored in the ice. Every still on this
+teals on its harmony, each with a bright lower edge and its rays reaching high with violet at their tops, the cabin on
+the point among its spruces, and the whole night mirrored in the ice. Every still on this
 page: GPU (AMD Radeon iGPU through WSL2 D3D12, ANGLE's EGL backend), the render lab on the film path at quality 0,
 1920×1080 (portraits 1080×1920), with Cinematic labels; one was cropped (stated below).*
 
 | | |
 |---|---|
 | ![A vertical frame](aurora-portrait.jpg) | ![The corona](aurora-corona.jpg) |
-| Lumen Recipes (17 files; six curtains, its tests among them) at the end, 9:16: a tall sky over its reflection, the cabin with the two lanterns its verified milestones left, their light doubled in the ice | The recovery, 2.5 s on, 9:16: the sky gathers into a corona overhead (rays converging on the magnetic zenith, green at their foot, magenta toward the zenith), the camera looks up, the land and the snow light with it; in Lumen the same moment earns the breakup |
+| Lumen Recipes (17 files; six curtains, its tests among them) at the end, 9:16: a tall sky over its reflection, the cabin with the two lanterns its verified milestones left, their light doubled in the ice | The recovery, 2.5 s on, 9:16: the sky gathers into a corona overhead (rays of uneven length converging on the magnetic zenith, green at their foot, magenta toward the zenith, their lower ends dissolving into the dark), the camera looks up, the land and the snow light with it; in Lumen the same moment earns the breakup |
 
 | | |
 |---|---|
 | ![The opening](aurora-opening.jpg) | ![Excalidraw](aurora-excalidraw.jpg) |
-| Lumen at 6 %: the first curtain kindles; two Claude sessions' wisps fly toward their work, reflected in the ice; the Milky Way, faint, upper left; the snow by starlight | Excalidraw (450 files in 9 subsystems, one baseline window), 30 s after its last event: a teal identity, its curtains dense with rays, 32 field lines |
+| Lumen at 6 %: the first curtain kindles; two Claude sessions' wisps fly toward their work, reflected in the ice; the Milky Way, faint, upper left; the snow by starlight | Excalidraw (450 files in 9 subsystems, one baseline window), 30 s after its last event: a teal identity, its curtains dense with rays; its 32 field lines are at rest, so they do not show |
 
 
 ## Reading the sky
 
-- **A curtain is a subsystem.** A sheet of light hanging along the magnetic field: a sharp, bright lower edge with a
-  fine hem, a bright band over it, fine rays carrying a dimmer light upward, fading into a violet to magenta fringe
-  toward the top. Its hue is the subsystem's own on the identity's harmony, always within the greens and teals an
-  aurora's foot can be. Its length grows with its files.
+- **A curtain is a subsystem.** A sheet of light hanging along the magnetic field: a sharp, bright lower edge (its hem
+  and a short fringe of light over it), then rays carrying the light upward with dark sky between them, fading into a
+  violet to magenta fringe toward the top. Below the lower edge the sky is what it would be without the curtain. Its hue
+  is the subsystem's own on the identity's harmony, always within the greens and teals an aurora's foot can be. Its
+  length grows with its files.
 - **A ray is a file.** Brighter streaks at fixed places along the curtain, as tall as the file's live symbols make them;
   between them, the aurora's own finer rays (ambient). A new file's ray ignites: a pulse runs up it. A removed file's
   ray fades over 1.6 s.
@@ -46,8 +47,9 @@ page: GPU (AMD Radeon iGPU through WSL2 D3D12, ANGLE's EGL backend), the render 
   low arc over the mountains, dimmed by the air near the horizon.
 - **Brightness and motion are the work.** The director's activity and the music's energy brighten the curtains and
   deepen a fast fold: a quiet arc becomes a substorm. A curtain whose files were edited lately is brighter still.
-- **Faint arcs between curtains are dependencies**: field lines from the importing ray up along the field and down
-  into the imported ray.
+- **Long, gentle arcs between curtains are dependencies**: field lines from the importing ray to the imported one.
+  At rest they are barely there (with many dependencies, not drawn at all); one shows while it draws itself in, behind a
+  pulse when the importer's file fires, and behind a wisp flying along it, fading after.
 
 ## Mapping: what drives what
 
@@ -63,7 +65,7 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
 | File born / removed | The ray **ignites** (a pulse runs up it in pale green, 3.6 s) / **fades** (1.6 s) | From the model's own times |
 | File state: stressed | The curtain turns **storm-red** around the stressed rays (their neighbourhood of 1.6 spacings + 70 units): deep red, a ragged lower edge, a faster flicker, its folds deeper | Sets in over 1.5 s, stays while stressed, clears over 2.5 s after the files pass |
 | File state: validated | A pale valid tone at the hem near the ray | |
-| Dependency: `model.links` across subsystems | A **field line**: a faint arc (a cubic from a third of the way up each ray, rising along the field) | At most 32, newest first, dimmer the more there are; draws itself over 2.4 s, fades over 1.6 s; a pulse runs along it when the importer's file fires |
+| Dependency: `model.links` across subsystems | A **field line**: a long, gentle arc (a cubic from a third of the way up each ray, lifted along the field by a sixth of its span) | At most 32, newest first. At rest a trace (alpha 0.005, less the more there are: with more than about 11 it is not drawn); draws itself over 2.4 s and settles to rest over 4 s; fades over 1.6 s; a pulse runs along it when the importer's file fires, the line lit behind the pulse; a wisp flying along it lights it behind itself (its wake, about 2 s) |
 | Agent presences (`frame.agents`) and their tool events (`touch.js`) | A **wisp** in the agent's CAST colour and shape | See [Agents](#agents) |
 | Director commands (`effect`) | The vocabulary below | Never time alone |
 | `director.lasting()` | A **lantern** on the shore for each verified milestone (a smaller candle for a validated refactor), in order of first occurrence, at most 8 | Lasting; rebuilt from the record after a seek |
@@ -80,12 +82,19 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
   curtain by 50–65°, so it sweeps from the horizon up into the sky; the others by 9–30°) and bowing away from the shore
   at its ends. Its rays run along the magnetic field, which leans north toward the magnetic zenith at 77°: in
   perspective they converge toward it. Three folds of the sheet (wavelengths of about 600, 220 and 90 units: a slow one,
-  a middle one and a fast one that deepens with the work) move along it; they ease toward the ends, and their depth
-  scales with the curtain's distance so every curtain folds through about the same angle.
-- **The light of a curtain**: a thin bright hem, a bright band (falling off over about a tenth of the curtain's height)
-  and a dim body that the rays carry upward, with knots along the lower edge (brighter and dimmer stretches drifting);
-  toward the top, the fringe colour. Fine rays come from a striation texture of discrete rays of varied width (two
-  drifting sets; the faster takes a larger share as the work quickens) and flicker along their length. Where a fold
+  a middle one and a fast one) move along it; the slow one makes the long S-curves and the edge-on pleats, the middle
+  and fast ones are shallow at rest (so a lower edge is a smooth line, not a jagged one) and deepen with the work. They
+  ease toward the ends, and their depth scales with the curtain's distance so every curtain folds through about the
+  same angle; a far, low curtain folds less.
+- **The light of a curtain**: a thin bright hem and a short fringe of diffuse light over it (falling off over about a
+  thirtieth of the curtain's height), with knots along the lower edge (brighter and dimmer stretches drifting); above
+  it the light is in the rays, which carry it upward with dark sky between them; toward the top, the fringe colour, in
+  the rays. Below the lower edge the curtain adds nothing but its rays' slight dip and the low air's glow (the sky's
+  lobes): stars show there and the airglow runs on down to the mountains. Rays come from a striation texture of discrete
+  rays of varied width (two drifting sets; the faster takes a larger share as the work quickens; mipmapped, so on a far
+  curtain they average out instead of shimmering), with broad bands varying their strength along the curtain, and
+  flicker along their length. A far, low curtain (its lower edge under about 11.5° up, fully below 6.3°) is seen through
+  more air: its foot is soft and broken by its rays, with no hem line. Where a fold
   turns edge-on the sheet is brighter (the line of sight runs through more of it, up to three times). The ends and the
   top fade over a long, perceptual distance: under the tone curve a tenth of a bright curtain still shows.
 - **Palette** (its own stream, `auroraPalette` in `engine/recipe.js`): the curtains' foot (`primary`: emerald, green or
@@ -102,8 +111,9 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
   aurora's light). Drifted snow in long wind-aligned patches with sastrugi and a thin dusting around them; faint
   wandering cracks in some places, catching the light, fading with distance.
 - **The land**: a spruce treeline along the far shore; two to five mountain layers on arcs around the lake, each
-  farther, taller and paler (their snow on the upper slopes and shoulders, gullies down the fall line, lit by the
-  aurora from across the lake, the farther ones melting into the horizon's glow); the near bank at the camera's feet
+  farther, taller and paler, now and then a massif standing above its range (their snow on the upper slopes and
+  shoulders, gullies down the fall line, bare rock on the steepest faces, lit by the aurora from across the lake, the
+  farther ones melting into the horizon's glow); the near bank at the camera's feet
   and a point running out toward the cabin, snow over a heightfield; a few spruces on the point (camera-facing
   silhouettes with snowy tiers); the cabin (log walls, a snowy gable roof, a chimney with faint smoke, one warm window
   that casts a pool of light on the snow and a streak in the ice).
@@ -117,6 +127,22 @@ history, see [Determinism](#determinism)) or the recipe; ambient life is labelle
   tilts it a little warm and desaturates; a breakup lifts exposure and bloom and flashes. The recipe's finish
   (Cinematic by default) applies on top.
 
+## The lower edges
+
+The first version's stills showed a dark band under the curtains whose jagged top followed their lower edges exactly,
+like extra mountain ranges stacked in the sky. Rendering the same frame with the curtains hidden (Excalidraw, the
+film path near its end) showed the band was never dark: under each lowest edge the sky measured the same with and
+without the curtains (the median difference over 18 columns 0.6 of 255 in sRGB luma, larger only where another curtain's
+rays cross). The cause was above the edge: a bright band falling off over a tenth of the curtain's height, a dim body
+falling off over almost half of it with a constant floor, and the files' rays adding a broad fill, made each curtain a
+lit slab 3–5 times brighter than the sky; its thin hem was hardly brighter than the slab (the edge's luma 1.25 times
+the light 30–70 px above it, median), so the edge read as the bottom of a lit shape, a silhouette, and stacked curtains
+gave stacked silhouettes. Now the diffuse light is a short fringe over the hem and the rest is in the rays: in the same
+frame the edge is 1.44 times the light above it (median), and the sky under it is the curtain-free sky or brighter
+(median +14 of 255, at most +25: the farther curtains' rays crossing it), never darker. Far, low
+curtains have soft feet without a hem, and the middle and fast folds are shallow at rest, so a lower edge is a smooth
+fringe rather than a jagged ridge.
+
 ## Layout
 
 Pure functions of the recipe, the model and the time (`aurora-layout.js`, no THREE; pinned in `tests/aurora.test.js`):
@@ -124,10 +150,10 @@ Pure functions of the recipe, the model and the time (`aurora-layout.js`, no THR
 1. **The model's history** (`prepare`, shared with Temporal Terrain's `terrain-layout.js`): per file its birth,
    removal, symbol births and removals, and state segments, sorted.
 2. **The curtains at a moment** (`curtainsAt`): each subsystem with a live file, in order of birth, with its place
-   (`placeOf`: distance, azimuth, tilt, lower-edge altitude 235 ± 8 % units, height 560 · `aurora.height` ± 14 %, a fold
-   seed), its half-length, and its rays (signed place along the trace, how alive, live symbols, height, storm and
-   validated shares). Every birth and removal rises over a fixed span (2.6 s for a ray, 1.6 s for a fade), so nothing
-   pops.
+   (`placeOf`: distance, azimuth, tilt, lower-edge altitude 235 ± 8 % units (up to 24 % lower for the farthest, so they
+   rise from behind the far shore), height 560 · `aurora.height` ± 14 %, a fold seed), its half-length, and its rays
+   (signed place along the trace, how alive, live symbols, height, storm and validated shares). Every birth and removal
+   rises over a fixed span (2.6 s for a ray, 1.6 s for a fade), so nothing pops.
 3. **The folds** (`foldAt`, the JS twin of the vertex shader's `fold`; `curtainPoint`): a ray's foot, a wisp's goal, a
    field line's ends and a label stand exactly where the shader draws the sheet.
 4. **Field lines** (`fieldLine`), **lantern places** (`lanternAt`: along the point's lake shore, from near the cabin
@@ -154,7 +180,10 @@ Pure functions of the recipe, the model and the time (`aurora-layout.js`, no THR
   never makes it jump (tested: the largest step in 50 ms stays under 120 units; with the look-back disabled it was 908).
   Between curtains joined by field lines (at most three, breadth first), once it had reached its previous goal, it flies
   along them (1.8 to 4.5 s at 520 units a second); a change that keeps its goal at the same ray lets it fly on along the
-  lines it is on; otherwise it flies a lifted arc up through the night.
+  lines it is on; otherwise it flies a lifted arc up through the night. Along field lines it leaves a **wake**: the
+  stretch of line it has flown lights behind it in its colour and fades (about 2 s after it passed); the wake of a move
+  cut short by the next one fades on from where it ended. Both come from the same look-back, so they are as pure as the
+  wisp's place (tested: during and after a journey between two curtains the line is lit, and 20 s later nothing is).
 - **Subagents** are smaller (0.6) and tethered to their parent's wisp by a faint filament in their colour (a shallow arc),
   a bead of light running down it from the parent every five seconds, while the data names the parent and the parent
   has not ended.
@@ -173,7 +202,7 @@ Pure functions of the recipe, the model and the time (`aurora-layout.js`, no THR
 | `subsystem.connected` (field-line) | The field line draws itself from the importer over 2.4 s |
 | `validation.passed` (pulsate) | **Pulsating patches** sweep the covered curtain from one end to the other: patches of pale green-cyan light blinking on and off behind a moving front, for about six seconds |
 | `validation.failed` (storm) | The covered curtain turns **storm-red** and ragged around the stressed rays, and stays so while they are stressed; red embers fall from its lower edge as it breaks. Never gold, never a sweep |
-| `validation.recovered` (corona) | **The sky gathers into a corona**: a folded ring of curtain overhead, its rays converging on the magnetic zenith, green at their foot and the fringe colour toward the zenith; it gathers over about two seconds (the ring contracts), holds, and settles over four (it widens and fades); the camera looks up into it and the land lights with it |
+| `validation.recovered` (corona) | **The sky gathers into a corona**: a barely folded ring overhead whose rays converge on the magnetic zenith, green at their foot and the fringe colour toward the zenith. It has no sheet at its foot: its rays (twice as dense as a curtain's, with a little glow between them) start at uneven heights and dissolve downward, and their lengths vary along the ring. It gathers over about two seconds (the ring contracts), holds, and settles over four (it widens and fades); the camera looks up into it and the land lights with it |
 | `repository.checkpoint` (meteor) | A **meteor** crosses the sky (its direction from the commit's moment) and the cabin's window flares |
 | `milestone.achieved` (breakup), `refactor.validated` (settle) | The **earned breakup** or a glow on the subject's curtain (below); a lantern (a candle for a refactor) stays on the shore |
 | `world.expanded` (widen) | The view widens a little and a surge runs along every curtain |
@@ -189,9 +218,9 @@ In Lumen Recipes the first verified milestone (a recovery) earns it, together wi
 | | |
 |---|---|
 | ![A failing run](aurora-storm.jpg) | ![An agent's touch](aurora-touch.jpg) |
-| A failing run, 2.5 s on (Lumen): the covered curtains turn storm-red around their stressed rays, their lower edges ragged, red doubled in the ice; the label says so; they stay red until the files pass | An edit, 0.5 s on (Lumen): Claude's wisp at the ray it edits, the ray ignited in its colour; another ray, touched a moment before, still lit |
+| A failing run, 2.5 s on (Lumen): the covered curtains turn storm-red around their stressed rays, their lower edges ragged, red doubled in the ice; the label says so; they stay red until the files pass | An edit, 0.5 s on (Lumen): Claude's wisp at the ray it edits; a ray touched a moment before, under the near curtain to the left, still lit in its colour (faint: the ignition is a thin streak among bright rays) |
 | ![Lanterns](aurora-lanterns.jpg) | ![A wisp on a field line](aurora-path.jpg) |
-| Lumen 20 s after its last event (a crop, 960×540 of the 1920×1080 frame): the cabin's window and the two lanterns of its verified milestones on the point, their streaks in the ice | **A constructed scene**: a scratch copy of the Lumen recording with a session added that edits files in three subsystems, about 1.5 s into its journey: *Claude 2* flies along the field line between two curtains, its trail behind it. The recorded datasets never move an agent between curtains a field line joins |
+| Lumen 20 s after its last event (a crop, 960×540 of the 1920×1080 frame): the cabin's window and the two lanterns of its verified milestones on the point, their streaks in the ice | **A constructed scene**: a scratch copy of the Lumen recording with a session added that edits files in three subsystems, about 1.5 s into its journey: *Claude 2* flies along the gentle arc of the field line between two curtains, its trail and the line's wake behind it. The recorded datasets never move an agent between curtains a field line joins |
 
 *Stills: `qualification/visual/lab.js --dataset self --family aurora --at 1`, `--dataset lumen --family aurora --at
 0.06,1 --touch --idle 20 --events --after 2.5 --warm 6` (and `--size 1080x1920`), `--dataset excalidraw --idle 30`; the
@@ -254,46 +283,53 @@ after a seek; lanterns come back from the director's record. Caches (the prepare
 lanterns) only avoid recomputing pure functions.
 
 `qualification/visual/worlds.qual.js --only determinism,idle --families aurora --size 960x540 --fps 15 --tag aurora` on
-SwiftShader, on a temporary copy of the datasets, at the final code: **8/8**
-(`qualification/results/visual/worlds-qualification-aurora.json`): the same frame on Self in two sessions whatever the
-second played before (`323361baad6ac03a` both); idle for 90 s after Lumen Recipes' last event the image keeps changing
-(mean |Δluma| between samples 30 s apart: 4.05, 3.21, 3.10 of 255) while no structure, intent, effect or lasting change
-appears and the director reports idle; no page errors; 49 distinct label strings over the whole Lumen session
-(cinematic and stream) with no path, file name, identifier or folder name; switching between the six worlds 12 times
-leaves GPU geometries (29) and textures (19) at their level. An earlier run of the same command, before the agents'
-moves began where the wisp is, also passed 8/8. `qualification/visual/catalogue.qual.js --families aurora --tag aurora`
-(SwiftShader, 960×540): **2/2** (`catalogue-qualification-aurora.json`): with every parameter at its minimum and at its
-maximum the Lumen recording renders without page errors, mean luma 43–44 and 72–89. In Node,
-`tests/aurora.test.js` (16 tests) pins the layout's purity, the history rebuild, the headless state at a moment
-whatever was drawn before, and that a wisp never jumps.
+SwiftShader, on a temporary copy of the datasets, at the final code of the second pass (the lower edges, the field
+lines, the corona, the mountains): **8/8** (`qualification/results/visual/worlds-qualification-aurora.json`): the same
+frame on Self in two sessions whatever the second played before (`143474cd34cd158b` both); idle for 90 s after Lumen
+Recipes' last event the image keeps changing (mean |Δluma| between samples 30 s apart: 4.13, 3.33, 3.38 of 255) while no
+structure, intent, effect or lasting change appears and the director reports idle; no page errors; 50 distinct label
+strings over the whole Lumen session (cinematic and stream) with no path, file name, identifier or folder name;
+switching between the six worlds 12 times leaves GPU geometries (29) and textures (19) at their level. The first version
+passed the same 8/8 (`323361baad6ac03a`), as did a run before the agents' moves began where the wisp is.
+`qualification/visual/catalogue.qual.js --families aurora --tag aurora` (SwiftShader, 960×540): **2/2**
+(`catalogue-qualification-aurora.json`): with every parameter at its minimum and at its maximum the Lumen recording
+renders without page errors, mean luma 43–44 and 72–89 (run on the first version, not again after the second pass). In
+Node, `tests/aurora.test.js` (17 tests) pins the layout's purity, the history rebuild, the headless state at a moment
+whatever was drawn before, that a wisp never jumps, and that field lines are gentle arcs, barely there at rest and lit
+only behind a wisp's journey.
 
 ## Performance
 
 GPU time per frame (the host's timer: background, the reflection pass, scene, post, bloom, grade), AMD Radeon iGPU
 through WSL2 D3D12, 1920×1080, the film path at a fixed quality: six readings (each after 20 more frames at the same
-moment) after 3 s of warm-up, at 60 % of Lumen Recipes, 50 % of Self and the end of Excalidraw. Two runs on the final
-code, the machine otherwise quiet (load average 1–5); means, with the range of all twelve readings:
+moment) after 3 s of warm-up, at 60 % of Lumen Recipes, 50 % of Self and the end of Excalidraw. Means, with the range of
+the six readings. The second pass was measured against the first version in the same session (the first version's
+files checked out, then this code), the machine otherwise quiet (load average 2–4):
 
-| Project | Quality 0 | Quality 1 | Quality 2 | Quality 3 |
-|---|---|---|---|---|
-| Lumen (17 files, 6 curtains) | 13.8–13.9 ms (13.5–14.6) | 10.5 (10.4–10.6) | 6.3–6.5 (6.1–6.7) | 3.6–3.9 (3.5–4.1) |
-| Self (92 files, 9 curtains at 50 %) | 14.8–15.0 (14.6–15.6) | 11.2 (11.0–11.5) | 6.8–6.9 (6.7–7.1) | 4.1–4.5 (4.0–4.8) |
-| Excalidraw (450 files, 9 curtains) | 15.1–16.6 (15.0–17.1) | 11.4–12.1 (11.0–12.7) | 7.1 (6.8–7.5) | 4.3–4.5 (4.1–4.7) |
+| Project | | Quality 0 | Quality 1 | Quality 2 | Quality 3 |
+|---|---|---|---|---|---|
+| Lumen (17 files, 6 curtains) | first version | 13.80 ms (13.42–14.67) | 10.41 | 6.26 | 3.80 |
+| | second pass | 13.83, 13.87 (13.43–14.65) | 10.53, 10.47 | 6.44, 6.38 | 3.73, 3.74 |
+| Self (92 files, 9 curtains at 50 %) | first version | 14.78 (14.62–15.28) | 11.03 | 6.85 | 3.98 |
+| | second pass | 14.59, 14.60 (14.37–15.05) | 11.13, 11.13 | 6.82, 6.69 | 3.89, 3.96 |
+| Excalidraw (450 files, 9 curtains) | first version | 15.01 (14.80–15.21) | 11.39 | 7.07 | 4.10 |
+| | second pass | 14.76, 14.86 (14.53–15.15) | 11.47, 11.43 | 7.10, 6.95 | 4.19, 4.20 |
 
-Excalidraw's second run read 1.5 ms higher than its first and third at quality 0 (another run, minutes later, gave 15.1
-again; an earlier quiet run of the code before the last commit gave 15.0); the other two projects agreed within 0.3 ms.
-CPU (`updateMs`): 0.5–0.6 ms on Lumen and Self, 0.9 on Excalidraw (quality 1: 1.3). Draw calls: 9 in the scene.
+The second pass's two runs bracket its last two changes (fuller rays, a brighter ignition). At quality 0 it is 0.15–0.4
+ms cheaper on Self and Excalidraw and within 0.1 ms on Lumen, inside the spread of the readings; at qualities 1–3 the
+differences are within ±0.2 ms. CPU (`updateMs`): 0.4–0.5 ms on Lumen and Self, 0.8 on Excalidraw. Draw calls: 9 in
+the scene (8 when no field line or ribbon is drawn).
 
 How it got there, profiling by elimination (hiding parts of the world in the film page; Lumen Recipes at 60 % and Self
-at its end, quality 0, during development, with a debugging handle since removed): with every object hidden, the host's pipeline and the half-resolution sky alone take about 8.5–9
-ms on this GPU at quality 0 (6.5 at quality 1, which drops MSAA). The first version measured 20.9 ms on Lumen. The
-curtains cost 4.4 ms with up to 512 columns a curtain; with a trivial fragment shader they still cost 3.6, so the cost
-was not shading but the thin triangles where folds turn edge-on and the 4× MSAA blending (at quality 1 the same
-curtains cost 2.7): 1,920 columns shared out among the curtains (48–224 each) and 10 rows (the vertical light is per
-fragment) brought them to about 3 ms. The reflection pass costs about 1.5 ms (a third of the resolution, drawn only
-below the horizon, without stars or field lines); the ice about 1 ms; the mountains and the land about 0.6 (a `discard`
-for the reflection had disabled early depth rejection there: vertex clamping replaced it); stars, wisps and ribbons
-about 0.3–0.5.
+at its end, quality 0, during development, with a debugging handle since removed): with every object hidden, the host's
+pipeline and the half-resolution sky alone take about 8.5–9 ms on this GPU at quality 0 (6.5 at quality 1, which drops
+MSAA). The first version measured 20.9 ms on Lumen. The curtains cost 4.4 ms with up to 512 columns a curtain; with a
+trivial fragment shader they still cost 3.6, so the cost was not shading but the thin triangles where folds turn edge-on
+and the 4× MSAA blending (at quality 1 the same curtains cost 2.7): 1,920 columns shared out among the curtains (48–224
+each) and 10 rows (the vertical light is per fragment) brought them to about 3 ms. The reflection pass costs about 1.5
+ms (a third of the resolution, drawn only below the horizon, without stars or field lines); the ice about 1 ms; the
+mountains and the land about 0.6 (a `discard` for the reflection had disabled early depth rejection there: vertex
+clamping replaced it); stars, wisps and ribbons about 0.3–0.5.
 
 | Quality | What changes |
 |---|---|
@@ -333,16 +369,22 @@ Films always render at quality 0.
   tests and by the idle qualification's frame differences, not by eye.
 - **No digital life.** The brief's stretch (foxes and hares leaving tracks, a snowy owl, luminous life under the ice) was
   not started; the preview has no `life` values and the catalogue no `life.*` group.
-- **Stacked lower edges.** Where several curtains overlap (Self, Excalidraw), the dark sky between one curtain's bright
-  lower edge and the next can read as a ridge of mountains in the sky. A glow in the low sky under the curtains and
-  knotted, uneven lower edges soften it; it is not gone.
-- **The corona** is a folded ring of curtain overhead: from below, its folds give its lower edge a scalloped crown,
-  softened but still regular. In a landscape frame the camera looks so far up that the horizon leaves the frame for a few
-  seconds (a portrait keeps both). In Lumen Recipes the earned breakup coincides with the recovery's corona; a breakup on
-  its own was not seen.
+- **Stacked lower edges.** The false ridges are gone (see [The lower edges](#the-lower-edges)), but where curtains stack
+  (Self, Excalidraw, Lumen's last minutes) the plain sky under one curtain's bright lower edge, above the next curtain's
+  light or the airglow, is still a darker strip whose top follows that edge. It now reads as sky (stars in it, rays of
+  the farther curtains crossing it), not as mountains, at full size; at thumbnail size it can still read as a band.
+- **Less light overall.** With the light in the rays instead of a lit body, the curtains give 0.6–1.1 times their
+  earlier mean light in the sky (Excalidraw 0.64, Lumen 0.84, Self 1.08; the brightest 1 % 0.87–1.25 times), and the
+  ice's reflection 0.56–0.67 times: the reflected rays, drawn at a third of the resolution, blur together less brightly
+  than the old lit body did. Nobody else has judged whether the curtains now look too sparse or combed.
+- **The corona** has no crown any more; its rays are discrete spokes with a little glow between them, which may read as
+  too sparse beside a real corona's diffuse glow. In a landscape frame the camera looks so far up that the horizon
+  leaves the frame for a few seconds (a portrait keeps both). In Lumen Recipes the earned breakup coincides with the
+  recovery's corona; a breakup on its own was not seen.
 - **Field-line journeys** never happen in the recorded datasets (a scan of Lumen Recipes at 4 frames a second found
-  none); they were seen in the tests and in one constructed scene (above). Field lines are drawn between curtains only;
-  dependencies inside a subsystem are not drawn.
+  none); they and their wakes were seen in the tests and in one constructed scene (above). So in the recorded projects
+  the field lines show only while one draws itself in and behind a file's pulse; at rest they are effectively invisible.
+  Field lines are drawn between curtains only; dependencies inside a subsystem are not drawn.
 - **Music** was pinned against a stub clock in Node; it was not seen or heard with the real score in a film.
 - **Performance**: at quality 0 Self and Excalidraw measure about 15 ms on the AMD iGPU, under 16 ms and in the other
   worlds' range, but not far under it; the host's pipeline (MSAA, bloom, grade) and the half-resolution sky are about 9
@@ -353,8 +395,9 @@ Films always render at quality 0.
   run; nor a live session, the Explorer selection's pull on the view, or the stream label mode by eye.
 - **A tuned palette is held to an aurora**: the curtains' hues are clamped to 116–168° (foot) and 262–334° (fringe)
   whatever colour `palette.primary` or `palette.secondary` is tuned to, and the night's `deep` and `haze` are kept dark.
-- **The land is simple**: procedural mountain layers (their gullies can look regular at full size), one cabin and a
-  few spruces on the point; the near bank is mostly out of view (the camera stands at the water's edge for the
+- **The land is simple**: procedural mountain layers (a few massifs and bare rock on the steepest faces since the
+  second pass; the farther layers are still pale low bands, and their gullies can look regular at full size), one cabin
+  and a few spruces on the point; the near bank is mostly out of view (the camera stands at the water's edge for the
   reflection). The reflection is drawn at a third of the resolution and blurred along the vertical: reflected rays are
   soft. Stars and field lines are not reflected (they are faint there, and the pass is cheaper without them).
 - **Portraits** have a band of starry sky above the curtains, and the ice nearest the camera (which reflects the empty
