@@ -2,9 +2,10 @@
 
 An evolving 3D fractal universe drawn from the project: one raymarched, distance-estimated fractal in a black void. The
 code's character picks the universe (the recursive geometry itself, not only its colours); development unfolds its
-recursion; subsystems are regions of its surface and files are sites of light on it. Agents ride to the sites they
-work on and ripple the surface in their own colour; tests send a coherent wave of light across the form; failures make
-the covered region lose coherence; a verified milestone can earn a rare fractal bloom.
+recursion; subsystems are regions of its surface, files are sites of light on it and dependencies veins of light
+between them. Agents travel the veins to the sites they work on and ripple the surface in their own colour; tests send
+a coherent wave of light across the form; failures make the covered region lose coherence; a verified milestone can
+earn a rare fractal bloom.
 
 **Status.** A built-in family (`public/worlds/fractal.js`, `public/worlds/fractal-forms.js`), a preview until generator 5
 graduated it: the family scores can choose it, it is a base for declarative and shader packs, the Visual Studio offers it
@@ -14,9 +15,12 @@ The owner watched it live and found it read as "gum" (one soft purple, even soft
 white sugar of sparkle); the finish described here (0.8.0) answers that: each region its own hue on the
 identity's harmony, a hard key light with a traced shadow, deep occlusion, glassy ridges and matte depths, a gentler
 swell, rare coloured glints. The owner watched it again, inhabited, on a film of the whole Lumen Recipes session (life
-on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); its curated looks have not been reviewed. Everything
-below marked *prototype* is implemented; *planned* is not. It can be inhabited: [digital life](#digital-life) (motes
-of light living on the surface) behind the recipe's `life` values, on for new identities (generator 5).
+on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31); its curated looks have not been reviewed. Since then
+(after 0.8.1, not yet reviewed by the owner): the threads are veins along the surface, agents travel them (with
+`agent.collision` drawn as two signals meeting) and sites fire on the eighth notes where the music plays rhythm (see
+[Agents](#agents) and [Music](#music)). Everything below marked *prototype* is implemented; *planned* is not. It can be
+inhabited: [digital life](#digital-life) (motes of light living on the surface) behind the recipe's `life` values, on
+for new identities (generator 5).
 
 ![One project, four universes](fractal-continuum-universes.jpg)
 
@@ -66,7 +70,7 @@ as such.
 | A region's live files | The region **swells** outward (up to `geometry.swell`, log-scaled against the largest region), the amplitude halved as the recursion unfolds from 3.5 to 7.5 iterations | The radial swell keeps the surface's detail; a gentler one shears it less (an intricate form keeps its structure, a smooth seed may bulge) |
 | File: `model.modules` | A **site of light** on its region's surface: a direction on a golden spiral around the region's (index *j* in creation order), traced to the surface with the JS twin of the estimator | A file never moves on its spiral; its size from its live symbols; fades in at birth, out at removal |
 | File state (`stateAt`): draft, committed, validated, stressed | Site light: pale, the light's colour, the light's colour toward valid, flickering in the warning colour | Stressed also drives decoherence (below) |
-| Dependency: `model.links` (`a` imports `b`) | A faint **thread** of light arcing from the importing file's site to the imported one's (lifted more between regions) | One per pair of sites, at most 480 |
+| Dependency: `model.links` (`a` imports `b`) | A faint **thread** of light: a vein along the surface from the importing file's site to the imported one's (within a region it hugs the form, between regions it arcs gently over it) | One per pair of sites, at most 480; see [Visual grammar](#visual-grammar) |
 | Site firings: an attributed edit (`m.lastAgent`, `m.agentVoice`), a human edit, a birth, a symbol born or modified | The site flares in the cause's colour; the pulse runs down its threads to what it imports | |
 | Agent presences (`frame.agents`) and their tool events (`public/worlds/touch.js`) | A **signal** per agent (CAST seat colour and shape) and its **touch** on the surface | See [Agents](#agents) |
 | Director commands (`effect`) | The vocabulary below | Never time alone |
@@ -112,6 +116,18 @@ as such.
   the beat, more of them in a region that holds more files.
 - **Sites**: jewel-like points of light with a soft pool around them (additive); each tests its own visibility against
   the fractal's depth with a small tolerance, so its light spills over the relief around it.
+- **Threads** (veins): a thread runs on the great circle between its two sites' directions, in segments of about 4.5°
+  (4 to 40), at the form's radius along it: traced with the JS twin of the estimator at a coarse recursion (at most 5,
+  which for the bulbs and the crystal is the outer envelope of the finer relief, so a vein bridges its pits instead of
+  diving into every crevice; a Mandelbox grows outward as it unfolds, so it is traced at the drawn recursion), draped
+  over the relief (each point at least as high as its neighbours, then eased), swollen with the regions, scaled so
+  that its ends meet the sites exactly, and lifted a little toward its middle (1 % of the form's radius within a region,
+  3 % between regions). Measured on a test identity (a bulb, no swell): every point of a vein at or above the drawn
+  surface, the straight segments between them a median 10 % above it and dipping under a lobe for a moment at most (5th
+  percentile 1.01, minimum 0.89 of the surface's radius, `tests/fractal-agents.test.js`). Before, a thread was a
+  quadratic arc over the chord between its sites, which for sites more than about 95° apart (45° within a region) dips
+  below the sites' own radius halfway, into the form: by that measure 22 of the 63 threads at the end of Code
+  Resonance's own history, 4 of Lumen's 12. A pulse runs down a vein at the same speed as before.
 - **Atmosphere** (never code): the void with a faint haze behind the form, a soft halo hugging the silhouette, a little
   dust.
 - **Grade**: AgX, a little more contrast and saturation than the other worlds (jewel tones), bloom from a high threshold
@@ -158,7 +174,18 @@ The world reads the performance clock and the score's expression (`frame.music`,
 - **Energy** sets how bright spontaneous pulses are (never their schedule); the downbeat (`frame.beat`, scaled by
   `music.beatPulse`) brightens the glints; the breath follows the bars; the section tints the grade (tension warmer,
   resolve cooler, breath dimmer, lift brighter).
-- *Planned*: rhythm-gated subdivisions and section onsets, as for Synaptic Storm.
+- *Prototype.* **Subdivisions**: sites also pulse spontaneously on the eighth notes between the beats, gated by the
+  rhythm the arrangement plays in that bar (`rhythm`^1.5 of the musical expression: hats, drums, arpeggios), read at
+  the candidate's own bar through the host's musical clock (`ctx.musicAt`, the pure function of the performance's
+  frames the artist layers and Synaptic Storm read), so a pulse in flight never changes and the state at a moment never
+  depends on the music after it. Each pulse runs down the site's veins like any other. On the test project (18 sites):
+  76 off-beat pulses in a minute at full rhythm, none without rhythm or without the clock
+  (`tests/fractal-music.test.js`).
+- *Prototype.* **Section onsets**: the start of a section (the first bar of the run of bars in its section, found within
+  64 bars) is a soft volley (every site pulses within a third of a beat after it) and a brief shimmer of the glints
+  over the surface: for about two seconds many more facets catch the key (`uSect`: two to seven times as many glints,
+  over more of the lit side; none at quality 3, which draws no glints).
+- Without the musical clock (a pack's isolated frame, headless) neither happens and the pulses are as before.
 
 ## Agents
 
@@ -167,11 +194,39 @@ The world reads the performance clock and the score's expression (`frame.music`,
   providers amber or grey dots. Subagents are smaller. Chips show catalog names only.
 - **Where it is**: just above the site of the file it works on while a tool runs on a file, or for 4.5 s after one of
   its edits lands (the model's correlated cue); otherwise circling its home site (working on a request) or farther out
-  (waiting), or circling the form. Between goals it travels in spherical coordinates over 1.8 s (it never cuts through
-  the form), with a trail.
+  (waiting), or circling the form.
+- *Prototype.* **How it travels**: between the sites of two goals that the threads join (the shortest path through the
+  threads drawn in full when the move begins, at most four, either way along them), once it has reached the goal
+  before, the signal runs down to the first site and along those veins, the very points the GPU draws, to the last
+  site and up to its goal, over the time the path takes at conduction speed (6 world units a second, about half the
+  form's radius: 1.8 to 3.2 s, so it still rests at an edit's site before the 4.5 s dwell ends), a denser, brighter
+  comet of its colour behind it; the light it pours into the site it edits waits until it arrives. Between sites the
+  threads do not join (or around the same site) it travels in spherical coordinates over 1.8 s (it never cuts through
+  the form), as before.
+![An agent travelling the veins](fractal-continuum-travel.jpg)
+
+*Lumen Recipes, 148.5 to 149.7 s (0.4 s apart), the region of the frame around the signal, the camera turning toward
+the edit: Claude's signal (rose four-point spark) leaves the site at the top right, runs down the veins (fine gold
+lines) and reaches the edited site inside its touch's rings, its comet behind it. `visual/lab.js --dataset lumen
+--family fractal-continuum --gpu amd --size 1920x1080 --labels off --at 0.61875,0.62042,0.62208,0.62375`, cropped
+(480×600 each), shown at 1440 wide; life on, as the generated identity has it.*
+
+- **No jumps**: a move begins where the signal is, not where its previous goal was. Where it was is the same function
+  at the moment before the change (computed once a frame; at most 48 changes back), so a change that interrupts a
+  move, which real data is full of (a tool is reported for about 40 ms, the edit's cue lands a moment later), never
+  makes it jump; a change that only moves its goal at the same site (the edit landing at the file it travels to) lets
+  it run on along the veins it is on. On Lumen Recipes (the replay in Node at 15 fps), steps of more than 5 world units
+  in one frame went from 24 to 2 (the two at one moment, 20.5 s, two agents circling the form stepping together: there
+  before this change too, not diagnosed); the agent spends 8 s of the session on the veins.
 - **Its touch** (the agent's own tool event, `touch.js`, or an attributed edit landing): rings in its colour ripple
   across the surface from the site, the crevices around it light up, the site flares, its threads carry the pulse, and
   the camera comes to a medium close-up of an edit. Reading is quieter (0.45 of an edit).
+- *Prototype.* **Two agents on one file** (`agent.collision`; the director gives it the family's integration look,
+  `thread`, which is otherwise drawn from the model's own times): each agent's signal, in its colour and shape, swoops
+  down to that file's site from its own side (along one line over the surface, seeded by the event) over 1.2 s with a
+  short trail; where they meet a flash marks the site and rings in both colours (the second a fifth of a second behind)
+  ripple across the surface from it for three seconds, in the touch slots before the touches. A pure function of the
+  time since the event; no recorded dataset has one, so it has been seen only in Node (`tests/fractal-agents.test.js`).
 
 ## Events, failure, recovery and the earned bloom
 
@@ -185,6 +240,7 @@ The world reads the performance clock and the score's expression (`frame.music`,
 | `milestone.achieved` (bloom), `refactor.validated` (refine) | The **earned bloom** or a local unfolding (below); a lasting inner light in the subject's regions |
 | `repository.checkpoint` (glow) | A warm glow rises from the crevices of the committed sites (of the whole form when the commit names no files) |
 | `world.expanded` (deepen) | A brief lift of exposure |
+| `agent.collision` (thread) | Two signals meeting at the shared file's site, rings of both colours (see [Agents](#agents)) |
 
 **The bloom rule.** A full bloom needs both: the director granted the milestone its tier (3 or more, which spends one of
 its three spectacle tokens), and in the director's lasting record the milestone is the first or comes at least
@@ -352,7 +408,6 @@ a tick. Presentation: the world's update at a fixed moment 1.15–1.25 ms with l
 
 ### What remains
 
-- An artistic review with the owner, on films of whole sessions rather than stills.
 - **The chart's stretch**: across the arcs from the pole the map stretches by up to 1.57 at the equator (2.66 at 35°
   south). A gathering's orbit is drawn out to the map ellipse that the stretch turns back into a circle on the surface
   (between 60° and 110° from the pole a halo's spread east-west against north-south went from 0.71 to 0.86 of a
@@ -370,8 +425,8 @@ a tick. Presentation: the world's update at a fixed moment 1.15–1.25 ms with l
 
 Words come only from generic phrases, roles, counts, CAST catalog names and `ctx.name(id)` (the user's alias or the
 generated name): "A new region unfolds", "Tests fail · 8 sites decohere", "Fractal bloom · Recovery", "Committed · the
-work glows"; region labels name each region facing the camera with its role and files; inspecting a site says "A site
-of Vauos · committed" with its symbols and threads. No file name, path or identifier is drawn (tested on every intent's
+work glows", "Two agents meet at one site"; region labels name each region facing the camera with its role and files;
+inspecting a site says "A site of Vauos · committed" with its symbols and threads. No file name, path or identifier is drawn (tested on every intent's
 words and the region labels).
 
 ## Determinism
@@ -388,6 +443,16 @@ share of the resolution (smaller when it fills the frame). Films seek and warm u
 The finish keeps this: region hues come from the region's id and creation order, the swell amplitude from the unfolding
 at *t*, and no shading term reads the wall clock. After it, `visual/identity.qual.js --gpu amd` on Lumen, Excalidraw
 and Self passed 15/15 (the same frame bit for bit after a receiver restart and after a rebuild from the journal alone).
+
+**Agents, veins and the music** (after 0.8.1). The veins' caches (directions, radii per integer recursion, the swell
+at the swell table's quantized weights) hold pure functions of their keys; a route is a breadth-first search over the
+threads in their structural order, filtered by the moment its move began; where a signal was before a change is the
+same function at that moment (memoized within a frame only); the rhythm and section of a bar come from the musical
+clock, a pure function of the performance's frames. `tests/fractal-agents.test.js` draws the same signal, trail and
+veins at a moment whatever was drawn before, and `tests/fractal-music.test.js` the same pulses before a change of the
+music as without it. The film path on SwiftShader (960×540, life on) renders the same frame in two sessions, the second
+after playing the recording's end, on Lumen at 149 s (an agent on the veins), 153 s and 160 s (`8b2eba20…`,
+`bf36f576…`, `f93fdd90…` in both).
 
 **The camera after a seek** (fixed in 0.8.1). The world read the camera the host's rig left behind in two places: the
 level of detail (from the camera's distance, with the form's scale of the previous frame) and a close-up's dolly
@@ -433,6 +498,24 @@ one reading): 17.8 → 18.1 ms at 0, 13.9 → 13.3 at 1, 7.3 → 6.7 at 2, 3.8 �
 SwiftShader (no `--gpu`, 960×540): the world compiles and draws (lab still, no GPU timer there). CPU: lab `updateMs`
 0.2–1.1 ms on Lumen, 1.4–2.2 ms on Excalidraw. Draw calls in the lab: 8–9.
 
+**Veins, agents on them and the music** (after 0.8.1), measured against the code at 0.8.1 alternated in fresh pages,
+three rounds each (lab `gpuMs`, AMD iGPU through WSL2 D3D12, 1920×1080, quality 0, generated identities with life on,
+load average 9–11 from other work on the machine):
+
+| Moment | 0.8.1 | With veins | Difference of the medians |
+|---|---|---|---|
+| Lumen, 50 % of the recording | 17.64, 17.69, 20.38 ms | 17.74, 17.63, 18.08 ms | +0.05 ms |
+| Lumen, 90 s after the last event | 17.44, 16.67, 16.70 ms | 16.64, 16.70, 17.00 ms | 0 |
+| Excalidraw (480 veins), 90 s after the last event | 18.06, 18.04, 17.98 ms | 18.77, 18.17, 18.39 ms | +0.35 ms |
+
+The veins are more segments than the old arcs where threads are long (4.5° each, 4 to 40), drawn by the same one
+instanced draw call; the shimmer is two terms in the glints' test. CPU (Node, the world's update on the recorded
+performances, 60 frames at 30 fps after the end): a vein is traced once per thread and recursion, so the first frame of
+Excalidraw's end took 176 ms against 96 ms at 0.8.1 (Code Resonance's own history 84 against 67, Lumen 39 against 36),
+then about the same per frame (medians 2.5 against 2.6 ms, 0.51 against 0.52, 0.22 against 0.18); the musical clock's
+eighth notes add about 0.1 ms on Excalidraw (2.89 against 2.81 ms with a stub clock at full rhythm). Not measured:
+the lower qualities, live playback at Auto, OBS.
+
 How the share was chosen: during development, the same framed scenes measured about 11 ms with the fractal's passes
 turned off (the host's HDR pipeline, MSAA, bloom and grade, and the sprites), about 27–29 ms at a share of 0.66 and
 20–24 ms at 0.6 (before the last shading changes); at full resolution, before the coarse pass and the split into
@@ -477,11 +560,6 @@ again after the finish (only the fixed-quality readings above). Not yet measured
 
 ## Known gaps
 
-- **Determinism across seeks**: `visual/worlds.qual.js` renders Lumen at 160 s in two sessions, the second after
-  rendering the end of the recording first, and the frames differ (the code before generator 5 too; the world's
-  reported state is the same in both). Not diagnosed; the world's update and camera goal read the live camera (level of
-  detail, `facing()`), which would make the camera the host snaps to after a seek depend on where it was before
-  ([QUALIFICATION.md](../QUALIFICATION.md#graduation-generator-5-and-qualification-parity)).
 - **Sharpness**: the fractal is drawn at 0.6 of the resolution (0.48 when it fills the frame) and upsampled; the finest
   relief is softer than a full-resolution render. The crystal's small facets still glitter where the key's highlight
   falls on them (tinted by their region, no longer a white coat over the whole form).
@@ -493,23 +571,39 @@ again after the finish (only the fixed-quality readings above). Not yet measured
   which turn the camera toward their region.
 - **Sites on very rough surfaces** can be hidden by the relief around them (a visibility test with a small tolerance);
   during a bloom's twist and in a decohering region they follow the base shape, so they float a little off it.
-- **Threads** are arcs over the surface; in a dense project they can read as lines drawn over the form.
+- **Threads** are veins along the surface now, draped over the relief: a lobe that rises between two of a vein's
+  points still hides it (and an agent on it) for a moment, and over a deep gap a vein floats (up to about 1.35 times the
+  surface's radius on the test identity, a bulb; 2.2 over a Julia bulb's hole on another identity tried). A
+  Mandelbox's veins are traced at the drawn recursion and are not draped over an envelope. Tracing them costs CPU once
+  per thread and recursion (below, [Performance](#performance)). Not reviewed by the owner; in a dense project they may
+  still read as many lines.
+- **Agents on the veins in real data**: Lumen Recipes, the only dataset with an agent, has two trips along the veins
+  in its 240 s (at 148 s and 153 s); they run near the silhouette as the camera turns to the edit, so a film shows them
+  briefly. No recorded dataset has an `agent.collision`; the meeting has been checked only in Node. The camera does not
+  follow a signal along the veins.
+- **An edit's cue lands a step late**: the model snaps an edit's time up to the score's step grid, so for up to one
+  step after its cue an agent's newest edit lies in the future and the world reads the edit before it instead (a
+  one-frame flicker of its goal, about 3 world units once in Lumen; as before this change).
 - **Julia constants**: six directions near the bulb's surface; only some were looked at.
 - Only the AMD iGPU and SwiftShader were tried; nothing was rendered on the NVIDIA adapter, in OBS or at Auto.
 - **Digital life**: its own gaps are listed under [Digital life › What remains](#what-remains).
 
 ## Path to shipping
 
-1. **Artistic review** with the owner against the reference; films of whole sessions (`qualification/visual/film.js`)
-   rather than stills; a pole still at rest.
+1. **Artistic review**: done for the world as of 0.8.1: the owner watched a film of the whole Lumen Recipes session
+   (life on, 1920×1080 on the AMD iGPU) and accepted it (2026-10-31). Remains: the curated looks, a pole still at rest,
+   and the agents' travel, the veins and the music below (after 0.8.1), on a film.
 2. **Sharpness and cost**: a temporal-free way to recover detail (an adaptive share by the form's coverage is in place;
    a cheaper estimator or a precomputed distance field for the approach could buy a larger share), measured on the
    target machines at Auto, in OBS and over a long soak.
 3. **Qualification parity** with the three families: `catalogue.qual.js` and `worlds.qual.js` (determinism across seeks,
    idle, privacy of every label, resources) now cover all six families; see
    [QUALIFICATION.md](../QUALIFICATION.md) for what was run.
-4. **Agents**: travel along the threads between sites, `agent.collision` as two signals meeting.
-5. **Music**: rhythm-gated subdivisions and section onsets.
+4. **Agents**: *prototype*: they travel the veins between sites the threads join (and never jump), `agent.collision`
+   is two signals meeting ([Agents](#agents)); tested in Node. Remains: the owner's eye on a film, a dataset with a
+   collision, and whether the camera should follow a long trip.
+5. **Music**: *prototype*: rhythm-gated eighth notes and section onsets through the host's musical clock
+   ([Music](#music)); tested in Node. Remains: the owner's ear and eye on a film with the soundtrack.
 6. **Digital life** ([Digital life](#digital-life)): a grammar for the surface behind the recipe's `life` values, on for
    new identities (generator 5), tested in Node; the owner accepted it on a film (2026-10-31). Remains: the browser's qualification
    (`life.qual.js` covers the three flagships) and live playback at Auto.

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Fractal Continuum's agents travel the threads:** a dependency thread is now a vein of light along the surface
+  (traced at a coarse recursion and draped over the relief, its ends on the sites; within a region it hugs the form,
+  between regions it arcs gently over it) instead of an arc that could run through the form. Between two sites the
+  threads join (at most four), an agent's signal runs down to the first site and along those veins at conduction
+  speed (1.8 to 3.2 s, a comet of its colour behind it); elsewhere it keeps its ride. A move now begins where the
+  signal is, so a change that interrupts one (a tool reported for 40 ms, the edit's cue a moment later) no longer
+  makes it jump: on Lumen Recipes, steps of more than 5 world units in one frame went from 24 to 2. Two agents on one
+  file (`agent.collision`) are two signals in their colours swooping down to its site, with rings of both colours
+  rippling across the surface. With the host's musical clock, sites also pulse on the eighth notes between the beats
+  where the arrangement plays rhythm (read at their own bar: a pulse in flight never changes), and a section's onset
+  is a soft volley of every site and a brief shimmer of glints over the surface. Tested in Node
+  (`tests/fractal-agents.test.js`, `tests/fractal-music.test.js`; `docs/worlds/fractal-continuum.md`); not yet seen
+  by the owner.
 - **Synaptic Storm: subagents tethered to their parent.** A subagent is a smaller signal (0.6 of a session's), and a
   faint filament in its colour ties it to its parent's signal: along the axon pathway between their neurons when the
   graph joins them, otherwise a shallow arc, easing between the two while either travels, with a bead of light running
