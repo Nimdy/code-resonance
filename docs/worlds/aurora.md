@@ -423,6 +423,24 @@ Node, `tests/aurora.test.js` (17 tests) pins the layout's purity, the history re
 whatever was drawn before, that a wisp never jumps, and that field lines are gentle arcs, barely there at rest and lit
 only behind a wisp's journey.
 
+**With digital life** (on its final code, SwiftShader, the generator's own life values):
+`qualification/visual/life.qual.js --families aurora --tag aurora`: **19/19** (`life-aurora.json`). On Lumen Recipes at
+60 %: the ecosystem's digest and the image are the same after playing near the end and seeking back, after continuous
+play from the start (144 s of performance at 6 fps), in a fresh session and after a browser restart (`749b062c`, image
+`9867f936b76f6138`); 15, 30, 60 and 120 fps reach the same digest; changing the quality while it lives never changes it
+(104 followers drawn at quality 0, none at 3); idle for ten minutes the population lives and moves (114–117 alive) and
+the image keeps changing (mean |Δluma| 6.8–8.6 of 255) while no intent appears and the director stays idle, GPU
+resources constant (18 geometries, 21 textures), heap 37 MB throughout, checkpoints bounded (6 recent, 24 spread); life
+off runs no ecosystem; the labels are the same with life on and off; no page errors. (The script's last three checks,
+switching worlds, replay to live and the far seek in the live player, run on the flagship worlds whatever is named:
+they passed, and they are not Aurora's.) `qualification/visual/worlds.qual.js --only determinism,idle --families aurora
+--size 960x540 --fps 15 --tag aurora-life` on a temporary copy of the datasets: **8/8**
+(`worlds-qualification-aurora-life.json`): the same frame on Self in two sessions whatever the second played before
+(`3ca354d921df7f9e` both; the frame now includes the life); idle for 90 s after Lumen's last event the image keeps changing
+(4.39, 3.45, 3.66 of 255) with no new structure, intent, effect or lasting change and the director idle; no page
+errors; 50 distinct label strings over the whole session with no path, file name, identifier or folder name; switching
+between the six worlds 12 times leaves GPU geometries (29) and textures (19) at their level.
+
 ## Performance
 
 GPU time per frame (the host's timer: background, the reflection pass, scene, post, bloom, grade), AMD Radeon iGPU

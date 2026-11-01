@@ -1,0 +1,209 @@
+{
+  "at": "2026-11-01T17:46:55.347Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "determinism: self (aurora) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "3ca354d921df7f9e / 3ca354d921df7f9e"
+    },
+    {
+      "name": "no page errors: self (aurora)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "idle life: aurora keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 4.39, 3.45, 3.66 (0-255)"
+    },
+    {
+      "name": "idle life: aurora shows no new structure or event while idle",
+      "pass": true,
+      "detail": "{\"curtains\":6,\"rays\":17,\"arcs\":3,\"lanterns\":2,\"breakups\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}"
+    },
+    {
+      "name": "idle life: the director reports idle (aurora)",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "no page errors while idle: aurora",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "privacy: no label of aurora contains a path, file name, source identifier or the project folder name",
+      "pass": true,
+      "detail": "50 distinct label strings checked"
+    },
+    {
+      "name": "resources: switching between the 6 worlds 12 times leaves GPU geometries and textures at their level",
+      "pass": true,
+      "detail": "geometries 29->29, textures 19->19"
+    }
+  ],
+  "measurements": {
+    "options": {
+      "families": [
+        "aurora"
+      ],
+      "size": "960x540",
+      "idleFps": 15
+    },
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "idleByFamily": {
+      "aurora": {
+        "seconds": "10-100 after the last event",
+        "fps": 15,
+        "meanAbsLumaDiff": [
+          4.39,
+          3.45,
+          3.66
+        ],
+        "structure": "{\"curtains\":6,\"rays\":17,\"arcs\":3,\"lanterns\":2,\"breakups\":0,\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
+        "phases": [
+          "active",
+          "idle",
+          "idle",
+          "idle"
+        ]
+      }
+    },
+    "privacyFolderName": true,
+    "labelsByFamily": {
+      "aurora": [
+        "1 agent present",
+        "1 component",
+        "1 ray in a storm",
+        "10 validated",
+        "3 rays in a storm",
+        "5 rays in a storm",
+        "7 rays in a storm",
+        "8 rays in a storm",
+        "A generative world from this project's code",
+        "A new curtain kindles",
+        "Alyror · logic",
+        "Alyror → Vauos",
+        "Aurora (preview)",
+        "Building",
+        "Claude 2 · disconnected",
+        "Claude 2 · working on a request",
+        "Claude · connected",
+        "Claude · disconnected",
+        "Claude · editing",
+        "Claude · reading",
+        "Claude · running",
+        "Claude · testing",
+        "Claude · waiting for the next prompt",
+        "Claude · working on a request",
+        "Claude: testing",
+        "Claude: working on a request",
+        "Code Resonance · Aurora (preview)",
+        "Committed · a meteor crosses the sky",
+        "Deen · tests",
+        "Integration validated",
+        "Integration · a field line joins two curtains",
+        "Ioeoel · logic",
+        "Recovered · the sky gathers into a corona",
+        "Recovery",
+        "Tests fail · the curtain turns storm-red over 8 rays",
+        "Tests pass · pulsating light sweeps 2 rays",
+        "The curtain brightens · Integration validated",
+        "The ray grows",
+        "The sky widens · chapter 2",
+        "The sky widens · chapter 3",
+        "Vauos · logic",
+        "Zaulel · interface",
+        "accumulated structure",
+        "commit observed",
+        "commit observed · 1 file",
+        "milestone · verified by a passing test run",
+        "observed failing run",
+        "observed passing run",
+        "the tests pass again",
+        "verified by a passing test run · a lantern stays on the shore"
+      ]
+    },
+    "privacyPatterns": 44,
+    "worldSwitching": [
+      {
+        "geometries": 18,
+        "textures": 21,
+        "heap": 44700000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 44700000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 44700000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 44700000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 44700000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 44700000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 44700000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 44700000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 44700000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 44700000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 44700000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 44700000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 44700000
+      }
+    ]
+  }
+}
