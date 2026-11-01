@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **Aurora is inhabited (digital life):** arctic foxes trot along the cabin's point and out onto the mirror ice, leave
+  tracks in the snow that fade, pause to sniff and sit to look up at a bright curtain (a new curtain draws every fox's
+  eyes); hares keep to their spruces and flee a fox; a snowy owl perches on the spruces' tops and the cabin's roof; faint
+  glimmers under the ice gather beneath the liveliest curtains, glowing in their colours through the clear ice. A failing
+  run sends the animals to shelter by the cabin and the spruces and dims the light under its curtain; the recovery sends
+  the owl out over the ice, the foxes come out to look up and the light blooms; a fox turns to watch an agent's wisp
+  passing low. The music moves them as in the other worlds (ecology 2, `life.music`). Deterministic like every
+  ecosystem (the same state after continuous play at any frame rate, seeks, checkpoints, a fresh session and across a
+  generation's anchor). New Aurora identities live (generator 5 draws their life from its own stream, as for the
+  graduated worlds; `RECIPE_VERSION` stays 5 and no other value of any identity changes); an Aurora chosen in 0.9.0
+  keeps none until the Visual Studio's *Digital life* switch, now in Aurora's Essentials, turns it on, and without life
+  it renders exactly as in 0.9.0. Judged from stills only; design, measurements and what remains in
+  [docs/worlds/aurora.md](docs/worlds/aurora.md#digital-life).
+
 ## 0.9.0 — 2026-11-01
 
 Product 0.9.0, for use on your own machine; not stable. This tag is `v0.9.0`. **Aurora**, a new world, as a preview

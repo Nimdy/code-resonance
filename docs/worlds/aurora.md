@@ -10,7 +10,8 @@ window sits on a point of the near shore, and every verified milestone leaves a 
 explicitly (the Visual Studio, where it carries an *In design* pill; the render lab's `--family aurora`; the web demo),
 never by the automatic choice. Adding it changed no existing identity (see [Selection and
 compatibility](#selection-and-compatibility)). It was built and judged from stills and contact sheets only: no film was
-rendered and nobody else has looked at it yet (see [What is not done](#what-is-not-done)). It has no digital life.
+rendered and nobody else has looked at it yet (see [What is not done](#what-is-not-done)). After 0.9.0 it became
+inhabited (see [Digital life](#digital-life)): foxes, hares and a snowy owl on the shore, faint light under the ice.
 Everything described here is implemented unless marked *planned*.
 
 ![Self at the end of its session](aurora-hero.jpg)
@@ -266,6 +267,126 @@ headless), read per bar as in Synaptic Storm:
 
 Pinned in `tests/aurora.test.js` against a stub clock; not seen or heard in a film with the score.
 
+## Digital life
+
+Life on the shore, the snow and under the ice, reacting to the sky and to the work. The grammar is
+`public/worlds/life/aurora.js` on the shared simulation ([LIFE.md](../LIFE.md): the contract, determinism, checkpoints,
+generations); the world draws it behind the recipe's `life` values. Off (or absent) the world is exactly as it was
+before: no ecosystem, resource, uniform, draw call or shader text (pinned against fe95cc0, 0.9.0, in
+`tests/life-aurora-world.test.js`: every shader, uniform, texture, buffer and draw range, the grade and the camera, in a
+landscape and a portrait frame).
+
+**New identities live; stored ones keep what they had.** Generator 5 draws `genome.life` for a new Aurora identity from
+its own random stream (`rng('life', 'aurora', …)`: enabled, ecology 2, the per-project character of `density`,
+`vitality`, `collective` and `trails`), exactly as it does for the graduated worlds, so no other value of any identity
+changes and `RECIPE_VERSION` stays 5. Aurora is a preview chosen explicitly, but whoever chooses it chooses the world,
+and every other built-in world's new identities are inhabited. An Aurora chosen in 0.9.0 has no `life` and keeps none:
+it is served as stored, and a redraw without a look keeps none (an identity with life from a tuning keeps exactly that);
+the Visual Studio's Essentials for Aurora carry the *Digital life* switch, which turns it on or off. The catalogue lists
+the standard `life.*` group on Aurora's entry.
+
+![Self at its end, inhabited](aurora-life.jpg)
+
+*Self at its end (life on, ecology 2, the generator's own life values): three white foxes trotting out on the mirror
+ice, doubled in its reflection; faint glimmers lying in the clear ice beneath the curtains, in their colours; the cabin
+on its point.*
+
+![Foxes on the ice, at full resolution](aurora-life-foxes.jpg)
+
+*A detail of the still above (1080×390 of the 1920×1080 frame, uncropped pixels): the foxes trot with their brushes
+out, the glimmers' small flat lights around them.*
+
+| | |
+|---|---|
+| ![A vertical frame](aurora-life-portrait.jpg) | ![The recovery's bloom](aurora-life-bloom.jpg) |
+| Lumen at its end, 9:16: three foxes, small (one by the lanterns' reflection, two farther out on the ice), the glimmers faint in the ice | The recovery, 20 s on, 9:16: the light under the revived curtains blooms (a soft glow in the ice, the glimmers coming back); the owl, small at the left, gliding back from its flight |
+| ![A failing run](aurora-life-storm.jpg) | ![The owl under the corona](aurora-life-owl.jpg) |
+| A failing run, 3.5 s on (Lumen): the curtains to the right turn storm-red and the light under them thins out as the glimmers leave; two foxes, small left of the centre, on their way to shelter by the cabin | The recovery, 12 s on, 9:16 (540×304 of the frame, uncropped pixels): the owl, off the cabin's roof, flying out under the corona, a small silhouette |
+
+*Stills: `qualification/visual/lab.js --gpu amd --family aurora` with `--dataset self --at 1`, `--dataset lumen --at
+1 --size 1080x1920`, `--dataset lumen --events --size 1080x1920 --after 5,12,20 --warm 22` (the recovery's) and
+`--dataset lumen --events` (the failure's); AMD Radeon iGPU through WSL2 D3D12, film path, quality 0.*
+
+**The frame** is the world's own ground plane: x and z as `aurora-layout.js` lays out the lake, the point and the cabin
+(about a metre a unit; the camera at the water's edge at (0, 6) looking north), y the height above the snow or the ice
+for the animals, the owl's height above the ice, and for the glimmers their depth below it. A fox or a hare is drawn on
+the land as `landHeight` gives it, or on the ice.
+
+**Who lives there** (120 slots; `life.density` the share that live):
+
+- **Foxes** (6): arctic foxes. They trot along the shore of the cabin's point (the part the camera sees) and out onto the
+  ice in front of it, often to the light under a lively curtain (they are curious about it), and follow the tracks they
+  and the others left in the snow. They pause to sniff, sit to look up at a bright curtain (a lively one: its subsystem
+  strong, new, nourished or lasting, the energy the work leaves under it; a new curtain draws every fox's eyes for its
+  first seconds), and lie down to rest. The first of each slot (a new ecosystem's population) is out on the ice; later
+  ones come from the woods at either end of the shore, out of the frame, and old ones go back there to end. A mild
+  interest in hares.
+- **Hares** (6): snowshoe hares, each by a spruce of its own on the point, hopping a few metres at a time and sitting
+  still between hops; now and then one moves to another spruce near the cabin; they flee a fox.
+- **The owl** (1): a snowy owl on a spruce's top, the cabin's roof ridge or its chimney, gliding low between them now
+  and then.
+- **Glimmers** (the rest, about 107): faint bioluminescent life under the ice. They drift with a slow current under it (a
+  gyre about the lake's middle, turned by the music's swing), gather beneath the liveliest curtains (winner-take-more,
+  never more than a site carries), circle there feeding on the energy the work leaves, drift on, and part under a fox's
+  steps.
+
+**Habitat** (after each recorded window, a pure function of the model and the moment): a site per curtain on the near
+ice, 15 to 39 units from the shore along the curtain's bearing (spread a little wider than the curtains stand, so the
+gatherings stand apart; a nearer curtain's nearer), never under the land: from the shore the light under the ice lies
+in the curtain's reflection, beneath it, in its colour. A file's or a subsystem's events land on its curtain's site.
+The shore (the path along the point's lake edge, the woods, the spruces, the cabin, its roof, the perches) comes from
+the recipe's own layout (`sprucesOf`, `cabinOf`, `shoreOf`), constant for the identity.
+
+**Reactions** (conditions, never choreography: the driver's influences set site conditions; nothing places an
+inhabitant). Measured in Node on four subsystems (`tests/life-aurora.test.js`):
+
+| Event | What the ecosystem does | Measured |
+|---|---|---|
+| A failing run (the curtain storm-red; its site strained) | While any site is strained the animals shelter toward the woods and the cabin: foxes trot to the cabin's lee or the foot of the spruces and lie down there, hares crouch under their spruces, the owl takes the cabin's roof. The glimmers leave the strained site (its disturbance) and its light dims (the world also dims it by the strain) | every young fox sheltering 20 s on, their distance to shelter 104 → 71 units (109 without the failure); the strained site's glimmers 0 (38 without) |
+| Recovery (the corona; the strain cleared) | The site revives (a condition fading over about 25 s): the owl takes off and flies out over the near ice in a wide circle 7–12 units up before it perches again; the foxes come out of shelter and sit to look up; the glimmers come back to the revived site and its light blooms (the energy the recovery leaves) | the owl over the near ice within 20 s; the revived site's glimmers 33 half a minute later (33 without the failure) |
+| A new subsystem (a curtain kindles) | The foxes stop and look up at it | summed over ten samples a second apart: 37 foxes looking at the new curtain, 0 at another |
+| Edits, passing runs, new files, commits | Energy and nourishment at the site: its light and its appeal to glimmers and to curious foxes | |
+| An agent's wisp passing low | A fox turns to watch it: its drawn heading turns toward the wisp, and one that was sniffing sits up (presentation only: the ecosystem never reads agents) | in 344 frames with a fox within 18 units of a low wisp, 306 drew it turned toward it (`tests/life-aurora-world.test.js`) |
+
+Over a run the foxes are within the landscape frame's fan 89 % of the time and within 60 units of the shore 95 %,
+sitting to look up 23 %; hares within 16 units of their spruce 96 %; the owl perched 93 %; the glimmers per site follow
+the curtains' strength (26, 49, 13 and 9 for weights 0.59, 0.83, 0.43 and 0.49).
+
+**The music** (ecology 2, `life.music`) reaches them as in the other worlds, as conditions each species feels its own
+way: foxes exploration and activity (farther excursions, a livelier trot), glimmers gathering, exploration, cohesion
+and the current (and the turning attractor moves which curtains' sites appeal), hares and the owl hardly at all; the
+drawing follows `musicLook` (the glimmers' brightness and size, the light under the ice, how long the tracks show).
+Ecology 1 has its own slow climate.
+
+**What the world shows.** Foxes, hares and the owl as silhouettes (`BEAST_VS/FS` in `aurora-glsl.js`: vertical
+billboards drawing a procedural side view, or a fox from the front or behind when it heads toward or away from the
+camera, foreshortened as it turns; a trotting fox's legs and brush in a gait, a hare's hop, the owl perched or with
+its wings spread). White fur at night, lit from above by the curtains and backlit by them (a bright rim where the
+silhouette meets the sky), warm by the lanterns and the window, a soft contact shadow on the snow; doubled in the mirror
+ice. The glimmers as faint lights lying in the ice (flattened into its plane), seen through the clear ice only (not
+under the drifted snow, little where the ice mirrors the sky at a glancing angle), and the light their gatherings give
+the ice around them in their curtain's colour (a map drawn each frame from the ecosystem and read by the ice's shader:
+dimmed where the site is strained, blooming where it revives, brighter along the cracks). The tracks are the
+ecosystem's trail field: a trodden groove in the drifted snow on the ice and on the point's snow, a little darker and
+broken into prints, fading over a minute or two as the field decays. Everything the ecosystem draws is scaled by the
+view's `fadeIn` (generation crossfades, restoring) and nothing is drawn while restoring. Quality decides only how many
+motes follow each glimmer on its own path (1, 1, 0, 0), never the state (tested). Inhabitants are never labelled; the
+labels and the status are the same with life on and off (tested). The camera does not follow the life.
+
+**Determinism.** As for every grammar ([LIFE.md](../LIFE.md#contract)): the state at a view time is the same after
+continuous play at 15, 30, 60 and 120 frames a second, seeks back and forth, a restored checkpoint and a fresh session,
+in ecology 1 and 2, and continuous play through a generation's anchor reaches what a far seek reaches
+(`tests/life-aurora-driver.test.js`, on a recorded performance with a failure, its recovery and a verified milestone).
+Snapshots give back the same future (also the conditions the grammar keeps on its sites, revival and strain); nothing
+grows with time (fixed arrays, at most 64 sites, bounded fields: a five-minute run is tested). The life values and the
+music change the state; music 0 is exactly neutral. In the browser: see [Determinism](#determinism).
+
+**Cost.** Simulated tick in Node (continuous play at 30 fps over the whole performance and a minute after it): Lumen
+0.77 ms mean (p95 1.06), Self 1.06 ms (p95 1.39), with 112–117 inhabitants and a 160×120 field (1.5 units a cell);
+the habitat 0.18 and 0.52 ms a window. A far seek to the end of *lumen-long* (13 days, 12 796 windows; generation 1913,
+8 200 ticks) takes 6.5 s in Node, the history pass 79 ms; to 15 % and 60 %: 2.3 and 4.1 s. GPU: within the readings' spread on Lumen and 0.1–0.3 ms on Self at 1920×1080,
+quality 0, on the AMD iGPU; two more draw calls (see [Performance](#performance)).
+
 ## Labels and privacy
 
 Subsystem labels follow the existing label modes: under each curtain's lower edge, at its middle, its generated name
@@ -319,6 +440,21 @@ files checked out, then this code), the machine otherwise quiet (load average 2�
 | Excalidraw (450 files, 9 curtains) | first version | 15.01 (14.80–15.21) | 11.39 | 7.07 | 4.10 |
 | | second pass | 14.76, 14.86 (14.53–15.15) | 11.47, 11.43 | 7.10, 6.95 | 4.19, 4.20 |
 
+**With digital life** (the same timer, the same method, after Aurora was inhabited; life off and on alternately on the
+same moment, two rounds each, a fresh page each run, the machine otherwise quiet, load average about 1):
+
+| Project, moment | Life off | Life on |
+|---|---|---|
+| Lumen at 60 % | 13.95, 13.72 ms | 13.84, 13.85 ms |
+| Lumen at its end | 13.99, 14.05 | 14.10, 14.04 |
+| Self at 50 % | 14.67, 14.62 | 14.79, 14.74 |
+| Self at its end | 14.95, 14.93 | 15.17, 15.22 |
+
+On Lumen the difference is inside the readings' spread; on Self life costs 0.1–0.3 ms. Draw calls: two more in the scene
+(the animals and the glimmers; the animals are drawn again in the reflection pass), 11 against 9 on Lumen. The world's
+update at a held moment (no tick: presentation only) 0.49–0.68 ms against 0.43–0.58; each simulated tick costs 0.8–1.1
+ms more on the CPU (Node, see [Digital life](#digital-life)), 20 a second.
+
 The second pass's two runs bracket its last two changes (fuller rays, a brighter ignition). At quality 0 it is 0.15–0.4
 ms cheaper on Self and Excalidraw and within 0.1 ms on Lumen, inside the spread of the readings; at qualities 1–3 the
 differences are within ±0.2 ms. CPU (`updateMs`): 0.4–0.5 ms on Lumen and Self, 0.8 on Excalidraw. Draw calls: 9 in
@@ -351,7 +487,8 @@ Films always render at quality 0.
   (`rng('genome', 'aurora', …)`, `rng('palette', 'aurora', …)`): every identity of every generator is unchanged
   (`tests/aurora.test.js` repeats the fingerprints of `tests/recipe.test.js` and `tests/generator-v5.test.js`; both
   suites pass unchanged except their statement that no preview is left, which now names Aurora). A chosen Aurora is a
-  user identity (locked, founded), with the cinematic finish and the composed score, without digital life.
+  user identity (locked, founded), with the cinematic finish and the composed score. A new one now also has digital
+  life, drawn from its own random stream (see [Digital life](#digital-life)); one chosen in 0.9.0 keeps none.
 - The genome from the project's traits at generation: symbols per file make the curtains taller, coupling folds them
   deeper, the agents' share of the work makes the rays shimmer more, many subsystems favour the wide view, the project's
   size sets the rays' spacing.
@@ -371,8 +508,28 @@ Films always render at quality 0.
   and contact sheets, not in motion. Its motion (the folds, the drift, the ripples on the bars, the shimmer on the
   eighths, the surge at a section's onset, the pulsating patches of a passing run, a meteor crossing) was checked in Node
   tests and by the idle qualification's frame differences, not by eye.
-- **No digital life.** The brief's stretch (foxes and hares leaving tracks, a snowy owl, luminous life under the ice) was
-  not started; the preview has no `life` values and the catalogue no `life.*` group.
+- **Its digital life was judged from stills only**, like the world: no film; the foxes' gait, the hares' hops, the owl's
+  flight, the glimmers' drift and the tracks fading were checked in Node tests and in stills and contact sheets, not
+  watched in motion. Nobody else has looked at it.
+- **The animals are small at the default framing.** A fox out on the ice is about 15–60 pixels long at 1920×1080 (they keep
+  at least 14 units from the camera and roam within about 60); hares by the cabin's spruces, 120–170 units away, are a
+  few pixels, and the owl perched on a spruce's top is a white speck. In a portrait frame the foxes are smaller still.
+  The silhouettes are procedural (signed distances in a billboard); they were not seen close up.
+- **The recovery's owl is seen mostly after the corona in a landscape frame**: the corona (and in Lumen the earned
+  breakup with it) turns the camera up for 11–16 s, so the owl's flight out over the ice and the bloom under the ice are
+  seen as the camera comes down; a portrait frame keeps the ice in view and shows the owl under the corona. The owl
+  never perches on a lantern: the lanterns come from the director's record, which the ecosystem does not read.
+- **Shelter is a direction, not always an arrival**: a fox out on the ice needs 30–50 s to reach the cabin's lee, so in
+  a short failure (Lumen's lasts 20 s) the foxes are seen trotting toward the cabin and the spruces, then sitting up to
+  look at the sky when it clears. The cabin's side of the point is partly out of a portrait frame.
+- **Tracks** are the ecosystem's trail field at 1.5 units a cell: a trodden band in the drifted snow and the point's
+  snow, darker and broken into prints by a noise, not individual paw prints; they show only where there is snow (an
+  identity with little drifted snow shows little), and no still was examined closely for them.
+- **The glimmers' gatherings** stand under each curtain's bearing on the near ice; with many curtains across the sky
+  they read as a scatter of faint lights across the lake more than as distinct gatherings at the default framing.
+- **Not run for the life**: `catalogue.qual.js` (every `life.*` value at its extremes), the Visual Studio browser suite
+  with Aurora's new Essentials, a live session, Auto quality stepping down with life on, and the NVIDIA adapter, OBS or
+  SwiftShader at 1920×1080.
 - **Stacked lower edges.** The false ridges are gone (see [The lower edges](#the-lower-edges)), but where curtains stack
   (Self, Excalidraw, Lumen's last minutes) the plain sky under one curtain's bright lower edge, above the next curtain's
   light or the airglow, is still a darker strip whose top follows that edge. It now reads as sky (stars in it, rays of
