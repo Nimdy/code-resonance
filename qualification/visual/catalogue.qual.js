@@ -4,6 +4,8 @@
 // value, false / true), and the Lumen Recipes recording is rendered with it. Each must render without page errors and
 // without a black or blown-out frame.
 //
+// A preview family (engine/catalog.js PREVIEWS: Aurora), which no pack may take as its base, is chosen and tuned to every
+// parameter's end instead (only when --families names it).
 // node visual/catalogue.qual.js [--families a,b] [--tag name]
 // --families: some families only; --tag: results in catalogue-qualification-<tag>.json instead of the main file.
 const path=require('node:path');
@@ -16,7 +18,7 @@ const {lumen}=require('./datasets');
 const OUT=path.join(__dirname,'..','results','visual');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const FAMILIES=arg('families',null)?arg('families').split(','):Object.keys(catalog.FAMILIES),TAG=arg('tag',null);
-for(const f of FAMILIES)if(!Object.hasOwn(catalog.FAMILIES,f))throw new Error(`unknown family ${f}`);
+for(const f of FAMILIES)if(!Object.hasOwn(catalog.FAMILIES,f)&&!Object.hasOwn(catalog.PREVIEWS,f))throw new Error(`unknown family ${f}`);
 const {checks,check}=checker();const measurements={};
 function extreme(spec,end){
   switch(spec.type){case 'number':case 'integer':return end?spec.max:spec.min;case 'enum':return end?spec.values.at(-1):spec.values[0];
@@ -26,14 +28,16 @@ function extreme(spec,end){
   const browser=await launch();
   try{
     measurements.renderer=await rendererOf(browser);
-    for(const family of FAMILIES)for(const end of [0,1]){const cat=catalog.FAMILIES[family];
+    for(const family of FAMILIES)for(const end of [0,1]){const preview=!Object.hasOwn(catalog.FAMILIES,family),cat=preview?catalog.PREVIEWS[family]:catalog.FAMILIES[family];
       const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'cr-catalogue-'));lumen(tmp);const dir=path.join(tmp,'lumen');
       const id=`qual.${family}-${end?'max':'min'}`,src=path.join(tmp,'pack');fs.mkdirSync(src);
       const overrides=Object.fromEntries(Object.entries(cat.parameters).map(([k,s])=>[k,extreme(s,end)]));
-      fs.writeFileSync(path.join(src,'pack.json'),JSON.stringify({schema:'code-resonance.pack.v1',id,name:`${family} ${end?'max':'min'}`,version:'1.0.0',kind:'declarative',sdk:'^1.0',declarative:{base:family,overrides}}));
-      packs.install(src,dir);
+      if(!preview){fs.writeFileSync(path.join(src,'pack.json'),JSON.stringify({schema:'code-resonance.pack.v1',id,name:`${family} ${end?'max':'min'}`,version:'1.0.0',kind:'declarative',sdk:'^1.0',declarative:{base:family,overrides}}));
+        packs.install(src,dir);}
       await withService(dir,async svc=>{
-        const project=projectOf(dir);await recipeAction(svc,project,{type:'pack',pack:id});
+        const project=projectOf(dir);
+        if(preview){await recipeAction(svc,project,{type:'family',family});await recipeAction(svc,project,{type:'tune',values:overrides});}
+        else await recipeAction(svc,project,{type:'pack',pack:id});
         const {page,info,errors}=await filmPage(browser,svc,project,{width:960,height:540});
         const lumas=[];
         for(const at of [60000,160000,235000]){const t=info.start+at;await page.evaluate(x=>window.__film.seek(x),t-2000);let img;for(let x=t-2000;x<=t;x+=250)img=await page.evaluate(([x])=>window.__film.frame(x,.25),[x]);

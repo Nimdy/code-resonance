@@ -27,6 +27,11 @@ const FAMILIES=[
     why:'The code\'s character picks the universe (a Mandelbulb, a Julia bulb, a Mandelbox or a crystal) and its branching; subsystems are regions of the surface, files sites of light on it. Growth unfolds the recursion, agents touch their files with ripples in their own colour, tests send a coherent wave of light, failures distort the region they cover, verified milestones earn a rare fractal bloom. For intricate, function-heavy code in a few subsystems.'},
   {id:'temporal-terrain',name:'Temporal Terrain',line:'The project\'s history as a contour landscape',
     why:'Time is the land: the present is the lit front edge, the past recedes toward the horizon. Subsystems are ranges in their own hues, files the ridges that run back from the moment they were made, luminous contour lines crowd where code grew fast. Agents survey the land in their own colour and raise the ground where they edit; tests sweep a scan, failures open a fault that stays as a scar, commits leave survey stakes, verified milestones earn a rare sunrise and a beacon. For projects whose history was recorded from the start.'}];
+// Preview families: built in, chosen only here (never generated from the code), still being designed. Their thumbnails
+// are rendered from the project like the others'; the Artist Studio and look packs do not take them as a base yet.
+const PREVIEW_FAMILIES=[
+  {id:'aurora',name:'Aurora (preview)',line:'A polar night over a frozen lake, the code as the aurora',
+    why:'Subsystems are curtains of the aurora across the sky, each in its own hue, files the rays inside them, their height from their symbols; dependencies are faint field lines between curtains. Agents are wisps in their own colour that fly up to the ray they edit and ignite it; tests send pulsating light along a curtain, failures turn it storm-red, a recovery gathers the sky into a corona overhead, commits are meteors, verified milestones leave a lantern on the shore and can earn a rare auroral breakup. The mirror ice reflects it all. A preview: still changing, never chosen automatically.'}];
 // Curated looks for the built-in worlds, two each: built in, read-only, previewed and applied like a saved preset. Every
 // path is a real parameter of its family, within its range (checked in tests/recipe-tuning.test.js).
 const CURATED=[
@@ -131,7 +136,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   import('../../worlds/host.js').then(m=>{nameOf=m.generatedName;if(alive)renderAliases(true);}).catch(e=>console.warn('Generated names unavailable',e));
   const shown=()=>candidate||saved;
   const shownSpec=()=>candidate?candidateSpec:savedSpec?.tunable||null;
-  const familyName=id=>S.state.catalog?.families?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
+  const familyName=id=>S.state.catalog?.families?.[id]?.name||S.state.catalog?.previews?.[id]?.name||FAMILIES.find(f=>f.id===id)?.name||PREVIEW_FAMILIES.find(f=>f.id===id)?.name||P.state.packs.find(p=>p.id===id)?.family?.name||P.state.packs.find(p=>p.id===id)?.name||id;
   const packOf=id=>P.state.packs.find(p=>p.id===id)||null;
   const savedWorld=()=>S.effective().world;
   const hasIdentity=d=>d.identity.length>0;
@@ -601,7 +606,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
   function renderIdentity(){
     const s=shown();if(!s)return;clear(identityBox);
     const state=s.locked?['Locked','ok','Kept as it is: never re-derived from the code']:s.founded?['Permanent','plain','Founded: the project is large enough that this identity is never re-derived']:['Provisional','warn','Re-derived from the code until the project has 6 modules'];
-    const why=FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
+    const why=FAMILIES.find(f=>f.id===s.family)?.why||PREVIEW_FAMILIES.find(f=>f.id===s.family)?.why||packOf(s.family)?.description||'';
     text(whyBox,why);whyBox.title=why;whyBox.hidden=!why;
     const tuned=s.tuning?.values?Object.keys(s.tuning.values).length:0;
     // The family, its source and the revision are in the inspector's heading; this says what can still change it: the
@@ -677,7 +682,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     const s=shown(),spec=shownSpec(),builtin=!!s&&FAMILIES.some(f=>f.id===s.family);
     artistBtn.disabled=!builtin;
     artistBtn.title=builtin?`Compose your own layers and reactive mappings over ${familyName(s.family)} in the Artist Studio`:'The Artist Studio composes over the built-in worlds';
-    text(composeLine,builtin||!s?COMPOSE_LINE:'The Artist Studio composes over the built-in worlds, not over a world pack.');
+    text(composeLine,builtin||!s?COMPOSE_LINE:PREVIEW_FAMILIES.some(f=>f.id===s.family)?'The Artist Studio composes over the built-in worlds; not over a preview world yet.':'The Artist Studio composes over the built-in worlds, not over a world pack.');
     finishSection.hidden=!s||!spec?.['technique.finish'];
     if(finishSection.hidden)return;
     const t=s.genome?.technique||{},finish=FINISH_LOOKS.some(f=>f.value===t.finish)?t.finish:'classic',tuned=s.tuning?.family===s.family?s.tuning.values:{};
@@ -882,6 +887,12 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
         onChoose:()=>chooseFamily(f.id),choose:'Preview',
         match:top===f.id,pills:[isSaved?pill('Saved','ok',{title:s.source==='user'?'This project\'s identity, chosen by you':'This project\'s identity, generated from the code'}):null,prev?pill('Previewing','accent'):null].filter(Boolean)}));
     }
+    for(const f of PREVIEW_FAMILIES){
+      const isSaved=s.family===f.id,prev=previewFam===f.id;
+      cards.append(card({id:f.id,title:f.name,line:f.line,why:f.why,media:thumbMedia(f.id),active:prev||(!previewFam&&isSaved&&draft.world==='living'),shown:prev||(!previewFam&&isSaved),
+        onChoose:()=>chooseFamily(f.id),choose:'Preview',
+        pills:[isSaved?pill('Saved','ok',{title:'This project\'s identity, chosen by you'}):null,prev?pill('Previewing','accent'):null,pill('In design','warn',{title:'A preview world, still being designed: chosen only here, never generated from the code; it may change'})].filter(Boolean)}));
+    }
     for(const p of P.state.packs.filter(x=>x.kind==='world')){
       const usable=p.ok&&p.compatible,approved=!p.executable||p.trusted,isSaved=s.family===p.id,prev=previewFam===p.id;
       const meta=`Pack · ${p.author?.name||'unknown author'} · v${p.version}${p.executable?' · code':''}`;
@@ -936,11 +947,11 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
     if(!saved)return;
     renderLook();renderOverrides();renderFinish();renderParams();renderTitle();renderAliases();renderQuality();
   }
-  // ---- Thumbnails: the built-in families rendered from this project, one at a time ----------------------------------
+  // ---- Thumbnails: the built-in families (then the previews) rendered from this project, one at a time ---------------
   async function runThumbs(){
     const run=++thumbRun;
     await new Promise(r=>setTimeout(r,700));
-    for(const f of FAMILIES){
+    for(const f of [...FAMILIES,...PREVIEW_FAMILIES]){
       if(!alive||run!==thumbRun||!saved)return;
       const key=`${projectId}:${saved.revision}:${f.id}`;if(THUMBS.has(key))continue;
       // The graph the thumbnail draws is the project's, so it waits for the project to load; nothing renders while recording.
@@ -953,7 +964,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       await new Promise(r=>setTimeout(r,80));
     }
   }
-  const thumbsWaiting=()=>saved&&FAMILIES.some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
+  const thumbsWaiting=()=>saved&&[...FAMILIES,...PREVIEW_FAMILIES].some(f=>!THUMBS.has(`${projectId}:${saved.revision}:${f.id}`));
   // ---- Routes: #/visual/family/<id> and #/visual/look/<packId> start a preview ---------------------------------------
   function consumeRoute(){
     if(!wantedRoute||!saved)return;const [kind,id]=wantedRoute;wantedRoute=null;

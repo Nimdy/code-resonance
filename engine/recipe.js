@@ -34,8 +34,9 @@
 // scores, family and values (tests/recipe.test.js pins them; tests/generator-v5.test.js pins v5 and proves v4
 // unchanged). An identity stored by an earlier generator is redrawn with that generator (generatorOf), so it never
 // switches to a graduated family by itself; choosing a family, regenerating or going back to automatic is a new identity,
-// drawn with the current generator. PREVIEWS (empty now) is where a future world still being designed would wait: chosen
-// only explicitly, never scored, its genome and palette from its own streams.
+// drawn with the current generator. PREVIEWS is where a world still being designed waits (Aurora now): chosen only
+// explicitly, never scored, its genome and palette from its own streams, so adding one changes no existing identity
+// (tests/aurora.test.js pins that with the fingerprints of tests/recipe.test.js and tests/generator-v5.test.js).
 //
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
@@ -62,10 +63,10 @@ const FOUNDING_MODULES=6;
 const FLAGSHIPS=['stellar-forge','fractal-biosphere','machine-cathedral'];
 const GRADUATED=['synaptic-storm','fractal-continuum','temporal-terrain'];
 const FAMILIES=[...FLAGSHIPS,...GRADUATED];
-const PREVIEWS=[];
+const PREVIEWS=['aurora'];
 const familiesOf=(version=RECIPE_VERSION)=>version>=5?FAMILIES:FLAGSHIPS;
 const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum',
-  'temporal-terrain':'Temporal Terrain'};
+  'temporal-terrain':'Temporal Terrain','aurora':'Aurora (preview)'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -194,7 +195,20 @@ function terrainPalette(r,family,traits){
   return {scheme,hue:round(hue,1),primary:hsl(hue,sat,.6),secondary:hsl(rock,.2,between(r,.12,.17)),accent:hsl(lamp,.92,.62),highlight:hsl(hue+6,.32,.86),
     deep:hsl(sky,.55,between(r,.018,.03)),haze:hsl(sky+8,.38,between(r,.1,.14)),warning:hsl(warn,.88,.57),valid:hsl(pick(r,[160,172,150,186]),.68,.66)};
 }
-const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette,'temporal-terrain':terrainPalette};
+// Aurora (preview): curtains of light over a frozen lake. The curtains' foot (emerald, green or teal), their fringe
+// (violet to magenta), the cabin's warm light and the night's blue are the identity's own, from its own stream; a storm
+// stays red, at least 40 degrees from the warm light and never the fringe's magenta.
+function auroraPalette(r,family,traits){
+  const scheme=weighted(r,[['analogous',3],['complementary',2],['split',1]]);
+  const hue=pick(r,[136,142,148,154,128,160,168,176])+between(r,-4,4),fringe=pick(r,[276,288,300,312,324,296])+between(r,-6,6);
+  const lamp=pick(r,[32,38,28,42])+between(r,-3,3),sky=pick(r,[226,234,242,218])+between(r,-5,5);
+  const sat=between(r,.72,.9)*(1-.08*clamp(traits.tests*2));
+  const dist=h=>{const d=Math.abs((((h-lamp)%360)+360)%360);return Math.min(d,360-d);};
+  const warn=[352,358,346,4].find(h=>dist(h)>=40)??344;
+  return {scheme,hue:round(hue,1),primary:hsl(hue,sat,.54),secondary:hsl(fringe,.72,.56),accent:hsl(lamp,.94,.6),highlight:hsl(sky-12,.26,.88),
+    deep:hsl(sky,.6,between(r,.012,.022)),haze:hsl(sky+6,.42,between(r,.07,.1)),warning:hsl(warn,.9,.56),valid:hsl(pick(r,[176,186,168]),.62,.7)};
+}
+const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette,'temporal-terrain':terrainPalette,'aurora':auroraPalette};
 // ---- Family genomes: the structural language of each universe -------------------------------------------------------
 const GENOMES={
   'stellar-forge'(r,t){
@@ -313,6 +327,25 @@ const GENOMES={
         'subsystem.connected':'road','validation.failed':'fault','validation.passed':'scan','validation.recovered':'heal',
         'refactor.validated':'terrace','milestone.achieved':'sunrise','repository.checkpoint':'survey','world.expanded':'horizon'}
     };
+  },
+  // Preview (chosen only explicitly). The project's size at generation sets how closely the rays stand along a curtain (so
+  // a project of 17 files and one of 450 both fill the sky), symbols per file how high the curtains reach, coupling how
+  // deeply they fold, the agents' share of the work how much their rays shimmer; many subsystems favour the wide view.
+  'aurora'(r,t){
+    return {
+      aurora:{height:round(between(r,.88,1.1)*(.92+.16*clamp((t.depth||0)/10))),folds:round(clamp(between(r,.72,1.02)+.3*clamp(t.crossDensity||0),0,1.6)),
+        rays:between(r,.8,1.2),brightness:between(r,.9,1.1),fringe:between(r,.65,1.1),edge:between(r,.85,1.2),spread:between(r,.88,1.12),
+        spacing:round(clamp(3600/Math.max(12,(t.modules||0)+3*Math.max(1,t.districts||1)),12,160))},
+      sky:{stars:between(r,.85,1.15),milkyWay:between(r,.55,1.05),airglow:between(r,.3,.8),wheel:between(r,.6,1.2)},
+      lake:{gloss:between(r,.65,.95),snow:between(r,.45,1),cracks:between(r,.55,1.1)},
+      land:{mountains:between(r,.85,1.2),layers:pick(r,[3,3,4,4,5]),trees:between(r,.7,1.2)},
+      motion:{breath:pick(r,[2,4,4,8]),drift:between(r,.5,1),shimmer:round(between(r,.55,1)*(.85+.3*clamp((t.agentShare||0)*2))),ripple:between(r,.5,1)},
+      camera:{personality:weighted(r,[['shore',3],['low',2],['wide',(t.districts||0)>=8?2:1]]),elevation:between(r,.3,.6),fov:pick(r,[52,56,60]),drift:between(r,.4,1)},
+      agents:{form:'wisp',trail:between(r,.6,1.4)},
+      effects:{'subsystem.created':'kindle','module.created':'ray','structure.created':'brighten','structure.removed':'fade',
+        'subsystem.connected':'field-line','validation.failed':'storm','validation.passed':'pulsate','validation.recovered':'corona',
+        'refactor.validated':'settle','milestone.achieved':'breakup','repository.checkpoint':'meteor','world.expanded':'widen'}
+    };
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
@@ -322,7 +355,8 @@ const AMBIENT={
   'machine-cathedral':{base:['motes','window-breath','conduit-flow','fog'],unlocks:['searchlights','mechanisms','beacons','aurora-glass']},
   'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
   'fractal-continuum':{base:['breathing','light-drift','shimmer','resonance','motes'],unlocks:['stardust','inner-light','corona','echoes']},
-  'temporal-terrain':{base:['light-path','mist','shimmer','flow','motes'],unlocks:['dawn','lanterns','stars','aurora']}
+  'temporal-terrain':{base:['light-path','mist','shimmer','flow','motes'],unlocks:['dawn','lanterns','stars','aurora']},
+  'aurora':{base:['drift','folding','star-wheel','meteors','reflections'],unlocks:['airglow','milky-way','diamond-dust','hoarfrost']}
 };
 function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);

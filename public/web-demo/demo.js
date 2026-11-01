@@ -3,8 +3,8 @@
 // Performance Stage replaying the recording, with what a first visit needs and nothing that needs a receiver.
 // - An introduction over the world (it replays silently behind it): what this is, Start (the music needs a click),
 //   and that it is a recording of a real project and nothing is sent anywhere.
-// - On the Stage's own controls: the site's name and links in the top bar, the six world families with the Construct
-//   and Monolith in place of the Stage's three-way choice, and no Live, Control Center or new-window controls (they
+// - On the Stage's own controls: the site's name and links in the top bar, the six world families and the Aurora
+//   preview with the Construct and Monolith in place of the Stage's three-way choice, and no Live, Control Center or new-window controls (they
 //   need a receiver of your own). Speed, scrubbing, information modes, quality, sound and recording are the Stage's.
 // - The replay starts again when it reaches the end.
 (()=>{
@@ -19,9 +19,10 @@
     'synaptic-storm':'Glassy neurons wired by the real dependencies; agents travel as signals.',
     'fractal-continuum':'One raymarched fractal whose recursion unfolds with the live code.',
     'temporal-terrain':'The history as a contour landscape: the present at the front edge, the past toward the horizon.',
+    'aurora':'A polar night over a frozen lake: subsystems are curtains of the aurora, agents wisps that ignite their rays.',
     construct:'The software as an illuminated architectural model being built.',
     city:'A flat architectural elevation in Canvas 2D, light on any device.'};
-  const NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum','temporal-terrain':'Temporal Terrain',construct:'The Construct',city:'Monolith'};
+  const NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum','temporal-terrain':'Temporal Terrain','aurora':'Aurora',construct:'The Construct',city:'Monolith'};
   let worlds=[],ui=null,busyWorld=null;
   const el=(tag,props={},...children)=>{const e=document.createElement(tag);
     for(const [k,v] of Object.entries(props)){if(v===null||v===undefined||v===false)continue;if(k==='class')e.className=v;else if(k==='text')e.textContent=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v===true?'':String(v));}

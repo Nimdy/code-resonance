@@ -21,7 +21,8 @@ public/         the player, served by the receiver:
   recording.js    live WebM recording
   composition.js  the Artist Studio's data model (allowlists, limits, validation); composition-text.js its words
   construct.js    the Construct (WebGL2, three.js)
-  worlds/         the living worlds: host, renderer core, the six built-in families, director, agents, labels,
+  worlds/         the living worlds: host, renderer core, the six built-in families and the Aurora preview, director,
+                  agents, labels,
                   Monolith (monolith.js, the 2D world and last fallback),
                   musical expression, Artist Studio layers (layers*.js, canvas.js), the pack frame and worker, the
                   Visual Pack SDK (sdk.js); life/ the digital-life simulation

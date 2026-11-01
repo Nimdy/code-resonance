@@ -166,8 +166,25 @@ for(const id of WITH_LIFE)GRADUATED[id].parameters={...GRADUATED[id].parameters,
 for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON};
 Object.assign(FAMILIES,GRADUATED);
 // Preview families: built in but still being designed, chosen only explicitly (the Visual Studio, the render lab's
-// --family), never scored, and no base for packs (their parameters may still change). None at present.
-const PREVIEWS={};
+// --family, the web demo), never scored, and no base for packs (their parameters may still change).
+const PREVIEWS={
+  'aurora':{name:'Aurora (preview)',preview:true,parameters:{
+    'aurora.height':n(.4,1.8,'height of the curtains: how far their rays reach up along the field'),'aurora.folds':n(0,1.8,'how deeply the curtains fold'),
+    'aurora.rays':n(.3,1.6,'how sharply the curtains split into fine rays'),'aurora.brightness':n(.4,1.8,'brightness of the curtains'),
+    'aurora.fringe':n(0,1.6,'the violet to magenta fringe toward the curtains\' tops'),'aurora.edge':n(.4,1.6,'sharpness of the curtains\' lower edge'),
+    'aurora.spread':n(.5,1.6,'how far apart the curtains stand across the sky and in depth'),'aurora.spacing':n(8,200,'spacing of the rays along a curtain (world units, from the project\'s size)'),
+    'sky.stars':n(0,1.6,'brightness of the stars'),'sky.milkyWay':n(0,1.6,'the Milky Way'),'sky.airglow':n(0,1.6,'the faint airglow above the horizon'),'sky.wheel':n(0,1.6,'how fast the stars wheel about the pole'),
+    'lake.gloss':n(0,1,'how mirror-like the ice is'),'lake.snow':n(0,1.6,'snow drifted on the ice'),'lake.cracks':n(0,1.6,'cracks in the clear ice'),
+    'land.mountains':n(.4,1.6,'height of the far shore\'s mountains'),'land.layers':i(2,5,'layers of mountains behind the far shore'),'land.trees':n(0,1.6,'spruces on the cabin\'s point'),
+    'motion.breath':e([2,4,8],'breathing period (bars)'),'motion.drift':n(0,1.6,'how far the curtains drift while nothing happens'),
+    'motion.shimmer':n(0,1.6,'the rays\' shimmer on the eighths the music plays'),'motion.ripple':n(0,1.6,'the ripples the bars send along the curtains'),
+    'camera.personality':e(['shore','low','wide'],'camera behaviour (shore: from the shore across the lake; low: near the ice, more of the reflection; wide: higher and wider, more sky)'),
+    'camera.elevation':n(0,1.2,'how far the view tilts up toward the sky'),'camera.fov':i(40,72,'field of view (landscape; a portrait frame widens it)'),'camera.drift':n(0,1.6,'the camera\'s breathing while nothing happens'),
+    'agents.form':e(['wisp'],'agent form: a wisp in its provider\'s colour and shape'),'agents.trail':n(.2,2,'agent trail length')},
+    effects:['kindle','ray','brighten','fade','field-line','storm','pulsate','corona','settle','breakup','meteor','widen'],
+    unlocks:['airglow','milky-way','diamond-dust','hoarfrost']}
+};
+for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;
 // Is `value` acceptable for a parameter spec? Ranges ([min,max]) are accepted for numbers: the recipe draws inside.
 function accepts(spec,value){

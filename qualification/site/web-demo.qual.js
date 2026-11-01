@@ -91,11 +91,11 @@ async function picture(analyser,png){
       const controls=await page.evaluate(()=>({live:!!document.querySelector('#liveBtn')?.offsetParent,back:!!document.querySelector('.stage-back')?.offsetParent,
         worlds:[...document.querySelectorAll('[data-wd-world]')].map(b=>b.dataset.wdWorld),brand:!!document.querySelector('.wd-brand'),speed:!!document.querySelector('#speedSelect')?.offsetParent,
         links:[...document.querySelectorAll('.wd-links-top a')].map(a=>a.href)}));
-      check('Stage: no Live or Control Center control; a speed menu; eight worlds; links to the repository',!controls.live&&!controls.back&&controls.speed&&controls.worlds.length===8&&controls.brand&&controls.links.length===2,JSON.stringify(controls));
+      check('Stage: no Live or Control Center control; a speed menu; nine worlds; links to the repository',!controls.live&&!controls.back&&controls.speed&&controls.worlds.length===9&&controls.brand&&controls.links.length===2,JSON.stringify(controls));
       // Esc never leaves the Stage (there is no Control Center in the site).
       await page.keyboard.press('Escape');await page.keyboard.press('Escape');await wait(400);
       check('Stage: Esc twice stays on the Stage',await page.evaluate(()=>location.hash==='#/stage'&&!!document.querySelector('.stage-chrome-ui')));
-      for(const id of ['stellar-forge','fractal-biosphere','machine-cathedral','synaptic-storm','fractal-continuum','temporal-terrain','construct','city']){
+      for(const id of ['stellar-forge','fractal-biosphere','machine-cathedral','synaptic-storm','fractal-continuum','temporal-terrain','aurora','construct','city']){
         await page.mouse.move(800,450);await page.click(`[data-wd-world="${id}"]`);
         await page.waitForFunction(id=>{const s=window.ResonancePlayer.state;return id==='construct'||id==='city'?s.world===id:s.world==='living'&&s.recipe?.family===id&&s.worldStatus.running&&!s.worldStatus.loading;},id,{timeout:60000});
         const before=await state(page);

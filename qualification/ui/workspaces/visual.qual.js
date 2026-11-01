@@ -54,7 +54,10 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     // The graduated worlds are rendered after the three (a raymarched world may take a while in software).
     const graduated=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
     check('Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too',graduated,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
-    check('no world card carries an "In design" pill (no preview world is left)',await A.evaluate(()=>![...document.querySelectorAll('.vs-card .pill')].some(p=>/In design/.test(p.textContent))));
+    check('only the Aurora preview carries an "In design" pill',await A.evaluate(()=>[...document.querySelectorAll('.vs-card')].filter(c=>[...c.querySelectorAll('.pill')].some(p=>/In design/.test(p.textContent))).map(c=>c.dataset.card).join(',')==='aurora'));
+    // The preview is rendered after the others.
+    const preview=await until(async()=>(await imgOf(['aurora'])).length===1,120000,500);
+    check('the Aurora preview shows a thumbnail rendered from this project too',preview,(await imgOf(['aurora'])).join(', ')||'none yet');
     const r0=await recipe();measurements.initial={family:r0.family,revision:r0.revision,source:r0.source};
     check('the page shows the saved identity at first',(await badge(A))==='Saved identity'&&(await A.textContent('.vs-family'))===r0.familyName,`${r0.familyName}, revision ${r0.revision}`);
     await shot(A,'saved-1440');
