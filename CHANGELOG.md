@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Curated looks of the graduated worlds reworked** to do what their one-line descriptions say, each holding on
+  Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU; the owner has not reviewed them yet).
+  *Kaleidoscope crystal* (Fractal Continuum) read as a soft pink-violet lump, close to the "gum" look: it is now a
+  faceted sapphire crystal with ice-blue light (no swell, the crystal at its largest scale and lowest detail, full sheen
+  and rim, deep occlusion, almost no halo). *Storm front* and *Glass cortex* (Synaptic Storm) were both the project's
+  violet network and *Storm front*'s fire read pink: *Storm front* is now gold fire in a deep violet volume, close and
+  low, firing at the highest rate on the beat; *Glass cortex* a flat silver sheet on black seen from above, sharp from
+  near to far, firing slowly. *Misty valley* (Temporal Terrain) barely showed its mist: a dusky rose haze now colours
+  the mist and a warm dusk horizon, with the most mist and higher ridges. Tuning only: no world, parameter or identity
+  changes.
+
 ## 0.9.0 — 2026-11-01
 
 Product 0.9.0, for use on your own machine; not stable. This tag is `v0.9.0`. **Aurora**, a new world, as a preview
