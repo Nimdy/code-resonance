@@ -12,6 +12,7 @@
 /* ---- Library ---- */
 .ws-packs .pk-library{container:pklib/inline-size;overflow:hidden}
 .ws-packs .pk-library .panel-head{flex-wrap:wrap;row-gap:10px}
+.ws-packs .pk-library .panel-head .grow{flex:1 1 200px}
 .ws-packs .pk-filter:empty{display:none}
 .ws-packs .pk-filter .segmented{background:var(--bg-1)}
 /* Row geometry, shared by the column labels and every row. Narrow: identity left, status right, description below. */
@@ -20,7 +21,9 @@
 .ws-packs .pk-cols{display:none;padding:9px 18px 9px 20px;border-bottom:1px solid var(--line);background:var(--bg-1);font:600 11.5px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
 .ws-packs .pk-cols>:nth-child(1){grid-area:glyph}.ws-packs .pk-cols>:nth-child(2){grid-area:title}.ws-packs .pk-cols>:nth-child(3){grid-area:kind}
 .ws-packs .pk-cols>:nth-child(4){grid-area:state}.ws-packs .pk-cols>:nth-child(5){grid-area:use;display:none}.ws-packs .pk-cols>:nth-child(6){grid-area:date;display:none}
-.ws-packs .pk-list{list-style:none;margin:0;padding:0;display:grid}
+/* One column that may be narrower than a group's one-line description (it ellipsizes): that line's full length set the
+   column's minimum, and every row grew wider than a narrow library and was cut off at its right. */
+.ws-packs .pk-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr)}
 .ws-packs .pk-list>li+li{border-top:1px solid var(--line)}
 .ws-packs .pk-row{position:relative;row-gap:4px;align-items:center;width:100%;padding:14px 18px 14px 20px;border:0;background:transparent;text-align:left;color:inherit;transition:background var(--t-1)}
 .ws-packs .pk-row>.pk-glyph{grid-area:glyph;align-self:start}
