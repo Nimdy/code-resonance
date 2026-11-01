@@ -33,7 +33,8 @@ restart resume. The browser job passed every Stage check and the 60-second audio
 The commands for every harness, and what CI runs today, are in [ARCHITECTURE.md](../ARCHITECTURE.md#qualification) (moved
 there at the final consolidation, with the harnesses added since). As run during these milestones:
 
-**Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows):
+**Test categories.** *Unit and integration* (`npm test`, no dependencies, every push, Linux and native Windows, in CI
+as three parallel shards per platform with `--test-shard`):
 modules and the receiver's HTTP API in-process. *Platform smoke* (`platform/smoke.js`, every push, both platforms): the
 product as real processes. *Browser qualification* (headless Chromium, software rendering): the Stage, audio, visual
 pack compatibility (each reference pack), the pack runtime's robustness, live recording; quick variants on every pull

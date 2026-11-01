@@ -5,6 +5,10 @@ name: validation
 # Native Windows runs on pull requests and on main only (Windows runner minutes count double): the same suite plus the
 # platform smoke test (the receiver as a real process, paths with spaces, the token, a restart, the pack CLI and
 # integrity). No test is retried: a failure fails the run.
+# The suite runs in three shards per platform (`node --test --test-shard=i/3`, every third test file), in parallel: on a
+# two-core runner the whole suite took 9-10 minutes, most of it a few long digital-life simulations. The syntax check,
+# the package and the smoke test run once, in shard 1. The test command is `npm test`'s, with the glob quoted so Node
+# expands it on every platform.
 # Linux runs on ubuntu-24.04, the image every qualification ran on, not ubuntu-latest: move it in its own pull request.
 on:
   push:
@@ -18,32 +22,48 @@ concurrency:
   cancel-in-progress: true
 jobs:
   node:
+    name: node (${{ matrix.shard }}/3)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm run check
-      - run: npm test
-      - run: npm run package:vsix
-      - run: node qualification/platform/smoke.js
+      - if: matrix.shard == 1
+        run: npm run check
+      - run: node --test --test-timeout=120000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
+      - if: matrix.shard == 1
+        run: npm run package:vsix
+      - if: matrix.shard == 1
+        run: node qualification/platform/smoke.js
   windows:
+    name: windows (${{ matrix.shard }}/3)
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm run check
-      - run: npm test
-      - run: npm run package:vsix
-      - run: node qualification/platform/smoke.js
+      - if: matrix.shard == 1
+        run: npm run check
+      - run: node --test --test-timeout=120000 --test-shard=${{ matrix.shard }}/3 "tests/*.test.js"
+      - if: matrix.shard == 1
+        run: npm run package:vsix
+      - if: matrix.shard == 1
+        run: node qualification/platform/smoke.js
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && matrix.shard == 1
         with:
           name: windows-validation
           path: qualification/results/platform
