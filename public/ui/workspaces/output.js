@@ -9,14 +9,14 @@ import {timecode,duration,bytes,clockTime,publicName,WORLD_NAMES,STYLE_NAMES} fr
 import {openDoc} from '../markdown.js';
 // The engine's sizes and bitrates (app.js RECORD_SIZES / RECORD_BITRATE; "stage" in proportion, 2.5-8 Mbit/s).
 const PROFILES=[
-  {id:'720p',name:'Standard',tag:'720p',size:[1280,720],rate:5e6,note:'Holds 30 frames per second on modest GPUs. The default.'},
-  {id:'1080p',name:'High quality',tag:'1080p',size:[1920,1080],rate:8e6,note:'Sharper. The built-in worlds may not hold 30 fps on an integrated GPU.'},
-  {id:'vertical',name:'Vertical',tag:'9:16',size:[1080,1920],rate:8e6,note:'For Reels, Shorts and TikTok: every world frames the project upright, its words clear of their buttons.'},
-  {id:'stage',name:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
+  {id:'720p',name:'Standard',label:'720p',tag:'720p',size:[1280,720],rate:5e6,note:'Holds 30 frames per second on modest GPUs. The default.'},
+  {id:'1080p',name:'High quality',label:'1080p',tag:'1080p',size:[1920,1080],rate:8e6,note:'Sharper. The built-in worlds may not hold 30 fps on an integrated GPU.'},
+  {id:'vertical',name:'Vertical',label:'Vertical',tag:'9:16',size:[1080,1920],rate:8e6,note:'For Reels, Shorts and TikTok: every world frames the project upright, its words clear of their buttons.'},
+  {id:'stage',name:'Stage size',label:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
 // Where the recording is written (this device's choice; recording.js disk). Memory is the default.
 const DESTS=[
-  {id:'disk',name:'Record to a file on disk',tag:'Long sessions',note:'Recommended for long sessions. You choose the file when you press Record; each second goes to disk as it is recorded: memory stays flat, the length is bounded by the disk, and a crash keeps what was recorded.'},
-  {id:'memory',name:'Keep in memory, download when stopped',tag:'Up to ½ hour',note:'The browser holds the file in memory until you stop (about 60 MB a minute at 720p, 90 MB at 1080p), then downloads it. A crash or a closed tab loses it.'}];
+  {id:'disk',name:'Record to a file on disk',label:'File on disk',tag:'Long sessions',note:'Recommended for long sessions. You choose the file when you press Record; each second goes to disk as it is recorded: memory stays flat, the length is bounded by the disk, and a crash keeps what was recorded.'},
+  {id:'memory',name:'Keep in memory, download when stopped',label:'Download at the end',tag:'Up to ½ hour',note:'The browser holds the file in memory until you stop (about 60 MB a minute at 720p, 90 MB at 1080p), then downloads it. A crash or a closed tab loses it.'}];
 const even=n=>Math.max(2,Math.round(n/2)*2);
 const mbit=n=>`${(n/1e6).toFixed(n%1e6?1:0)} Mbit/s`;
 const OBS_LABELS=[{value:'stream',label:'Stream',title:'A lower third with the public title (the OBS default)'},{value:'cinematic',label:'Cinematic',title:'Titles and major moments only'},{value:'off',label:'Off',title:'The world alone'}];
@@ -46,42 +46,51 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   const monitor=h('section',{class:'out-monitor panel','aria-label':'Monitor and recorder'},slot,deck,facts,lastLine,notice);
   // Overlay on the slot (not recorded either): what this window is doing with the stage.
   const badge=h('div',{class:'slot-badge'});chrome.append(h('div',{class:'chrome-pass out-chrome'},badge));
-  // ---- Profiles: the recording's dimensions, saved globally (every window records at the same profile) -------------
-  const cards=PROFILES.map(p=>{const dims=h('span',{class:'num out-dims'}),rate=h('span',{class:'num out-rate'});
-    const b=h('button',{type:'button',class:'out-profile',role:'radio','aria-checked':'false',dataset:{profile:p.id}},
-      h('span',{class:'out-profile-head'},h('strong',{text:p.name}),h('span',{class:'out-tag num',text:p.tag})),h('span',{class:'out-profile-meta'},dims,rate),h('span',{class:'out-profile-note',text:p.note}));
-    b.dims=dims;b.rate=rate;b.addEventListener('click',()=>chooseProfile(p.id));
+  // ---- Profile and destination: two switches under the recorder ---------------------------------------------------
+  // The profile (the recording's dimensions) is saved globally: every window records at the same profile. Each option shows
+  // its size under its name; what each one is for is under About profiles.
+  const cards=PROFILES.map(p=>{const dims=h('span',{class:'num out-dims'});
+    const b=h('button',{type:'button',class:'out-opt',role:'radio','aria-checked':'false',dataset:{profile:p.id},title:`${p.name}: ${p.note}`},
+      h('span',{class:'out-opt-label',text:p.label}),dims);
+    b.dims=dims;b.addEventListener('click',()=>chooseProfile(p.id));
     b.addEventListener('keydown',e=>{const k=e.key==='ArrowDown'||e.key==='ArrowRight'?1:e.key==='ArrowUp'||e.key==='ArrowLeft'?-1:0;if(!k)return;e.preventDefault();
       const i=(PROFILES.indexOf(p)+k+PROFILES.length)%PROFILES.length;cards[i].focus();if(!cards[i].disabled)chooseProfile(PROFILES[i].id);});
     return b;});
-  const profiles=h('div',{class:'out-profiles',role:'radiogroup','aria-label':'Recording profile','aria-describedby':'outProfileHelp'},...cards);
+  const profiles=h('div',{class:'out-switch out-profiles',role:'radiogroup','aria-labelledby':'outProfileTitle','aria-describedby':'outProfileHelp'},...cards);
+  const profileHelp=h('p',{class:'field-doc',id:'outProfileHelp'});
+  // Where it is written (this browser's choice; recording.js disk): a file on disk, or memory downloaded at the end.
+  const destCards=DESTS.map(d=>{const meta=h('span',{class:'out-dest-meta num'});
+    const b=h('button',{type:'button',class:'out-opt out-dest',role:'radio','aria-checked':'false',dataset:{dest:d.id},title:`${d.name}: ${d.note}`},
+      h('span',{class:'out-opt-label',text:d.label}),meta);
+    b.meta=meta;b.addEventListener('click',()=>chooseDest(d.id));
+    b.addEventListener('keydown',e=>{const k=e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowLeft';if(!k)return;e.preventDefault();
+      const o=destCards[(DESTS.indexOf(d)+1)%DESTS.length];o.focus();if(!o.disabled)chooseDest(o.dataset.dest);});
+    return b;});
+  const dests=h('div',{class:'out-switch out-dests',role:'radiogroup','aria-labelledby':'outDestTitle','aria-describedby':'outDestHelp'},...destCards);
+  const destHelp=h('p',{class:'field-doc',id:'outDestHelp'});
+  const switchField=(titleId,title,note,control)=>h('div',{class:'out-switch-field'},
+    h('div',{class:'out-switch-head'},h('span',{class:'field-label',id:titleId,text:title}),h('span',{class:'faint small',text:note})),control);
+  const switches=h('div',{class:'out-switches'},
+    switchField('outProfileTitle','Recording profile','every window',profiles),switchField('outDestTitle','Where it is written','this browser',dests));
+  // What each profile is for, and the limits: on demand, so the recorder's controls stay together in the first view.
+  const aboutRows=h('div',{class:'out-about-rows'});
+  const about=disclosure({summary:'About profiles'},aboutRows,
+    h('div',{},button({label:'Recording guide',icon:'doc',kind:'ghost',size:'sm',title:'How recording works',onClick:()=>openDoc('RECORDING.md')})));
+  const last=h('div',{class:'out-last',id:'outLast'});
+  const perf=disclosure({summary:'Performance and limits'},
+    h('p',{class:'field-doc',text:'720p is the default because it holds 30 frames per second on modest GPUs. At 1080p the built-in worlds (drawn on this page) may keep only 26-28 frames per second on an integrated GPU; visual packs, drawn in their own worker, usually hold 30. A recording that cannot keep up for ten seconds says so once.'}),
+    h('p',{class:'field-doc',text:'Kept in memory, the file grows in the browser until you stop: about 60 MB a minute at 720p and 90 MB at 1080p, so for sessions longer than half an hour record to a file on disk, or use OBS. Written to disk, a recording takes about 35-60 MB of disk a minute and no memory beyond the browser’s usual; it is copied into your file when you stop (a few seconds per gigabyte).'}));
+  const helps=h('div',{class:'out-helps'},profileHelp,destHelp,h('div',{class:'out-discl'},about,perf));
+  monitor.insertBefore(h('div',{class:'out-controls'},switches,helps),facts);
   // Not a recording profile: the way to the OBS view (the stage alone, live, in OBS's own recordings and streams).
   const obsCard=h('button',{type:'button',class:'out-obs-link',id:'outObsProfile'},
     h('span',{class:'out-obs-link-icon'},icon('broadcast')),
     h('span',{class:'out-obs-link-body'},h('strong',{text:'OBS presentation'}),h('span',{text:'Not a recording: the stage alone at 1920 × 1080 in an OBS Browser Source.'})),
     h('span',{class:'out-obs-link-go','aria-hidden':'true'},h('span',{text:'Set up'}),icon('chevron-right')));
   obsCard.addEventListener('click',()=>presentObs());
-  const profileHelp=h('p',{class:'field-doc',id:'outProfileHelp'});
-  // ---- Where it is written: a file on disk, or memory until it stops (this browser's choice) ------------------------
-  const destCards=DESTS.map(d=>{const meta=h('span',{class:'out-dest-meta num'});
-    const b=h('button',{type:'button',class:'out-profile out-dest',role:'radio','aria-checked':'false',dataset:{dest:d.id}},
-      h('span',{class:'out-profile-head'},h('strong',{text:d.name}),h('span',{class:'out-tag',text:d.tag})),h('span',{class:'out-profile-note',text:d.note}),meta);
-    b.meta=meta;b.addEventListener('click',()=>chooseDest(d.id));
-    b.addEventListener('keydown',e=>{const k=e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowLeft';if(!k)return;e.preventDefault();
-      const o=destCards[(DESTS.indexOf(d)+1)%DESTS.length];o.focus();if(!o.disabled)chooseDest(o.dataset.dest);});
-    return b;});
-  const dests=h('div',{class:'out-profiles out-dests',role:'radiogroup','aria-label':'Where the recording is written','aria-describedby':'outDestHelp'},...destCards);
-  const destHelp=h('p',{class:'field-doc',id:'outDestHelp'});
-  const destField=h('div',{class:'out-dest-field'},h('span',{class:'field-label',id:'outDestTitle',text:'Where it is written'}),dests,destHelp);
-  const last=h('div',{class:'out-last',id:'outLast'});
-  const perf=disclosure({summary:'Performance and limits'},
-    h('p',{class:'field-doc',text:'720p is the default because it holds 30 frames per second on modest GPUs. At 1080p the built-in worlds (drawn on this page) may keep only 26-28 frames per second on an integrated GPU; visual packs, drawn in their own worker, usually hold 30. A recording that cannot keep up for ten seconds says so once.'}),
-    h('p',{class:'field-doc',text:'Kept in memory, the file grows in the browser until you stop: about 60 MB a minute at 720p and 90 MB at 1080p, so for sessions longer than half an hour record to a file on disk, or use OBS. Written to disk, a recording takes about 35-60 MB of disk a minute and no memory beyond the browser’s usual; it is copied into your file when you stop (a few seconds per gigabyte).'}));
-  const side=h('aside',{class:'out-side panel','aria-labelledby':'outProfileTitle'},
-    h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'outProfileTitle',text:'Recording profile'}),h('span',{class:'note',text:'Saved for every window'})),
-      button({label:'Guide',icon:'doc',kind:'ghost',size:'sm',title:'How recording works',onClick:()=>openDoc('RECORDING.md')})),
-    h('div',{class:'panel-body out-side-profiles'},profiles,profileHelp,destField,perf,obsCard),
-    h('div',{class:'panel-body out-side-last'},last));
+  const side=h('aside',{class:'out-side panel','aria-labelledby':'outLastTitle'},
+    h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{id:'outLastTitle',text:'Last recording'}),h('span',{class:'note',text:'In this window'}))),
+    h('div',{class:'panel-body out-side-last'},last,obsCard));
   // ---- OBS -----------------------------------------------------------------------------------------------------------
   const obsPrefs={labels:'stream',world:false,style:false,...(S.state.ui.obs||{})};
   const obsLabels=segmented({label:'Information shown in the OBS view',id:'obsLabels',options:OBS_LABELS,value:obsPrefs.labels,onChange:v=>setObs({labels:v})});
@@ -135,10 +144,10 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
   view.append(h('div',{class:'page ws-output'},h('div',{class:'page-inner'},
     h('header',{class:'page-head'},h('div',{class:'grow'},h('span',{class:'eyebrow',text:'Output'}),h('h1',{class:'title-l',text:'Record & Broadcast'}),
       h('p',{class:'muted out-lede',text:'Record the stage and its music to a file, or show it live in OBS. The frame is exactly what is recorded.'}))),
-    // Two columns that fill independently: the monitor, then OBS; the profile inspector, then the exports (stacked in
-    // the narrower column), so neither column leaves a hole beside the other. In the document the profile comes right
-    // after the recorder, so Tab reaches it next. One column on a narrow screen, in the document's order (so Tab follows
-    // what is seen): monitor, profile, exports, OBS. On a tall screen OBS spans both columns under them.
+    // Two columns that fill independently: the monitor (with Record, the profile and where it is written together under
+    // the frame), then OBS; the last recording, then the exports (stacked in the narrower column), so neither column
+    // leaves a hole beside the other. One column on a narrow screen, in the document's order (so Tab follows what is
+    // seen): monitor, last recording, exports, OBS. On a tall screen OBS spans both columns under them.
     h('div',{class:'out-grid'},monitor,h('div',{class:'out-rail'},side,exportSection),obsSection))));
   // ---- Behaviour ---------------------------------------------------------------------------------------------
   // A choice being saved stays shown as chosen (other updates arrive meanwhile, four a second while recording).
@@ -170,7 +179,13 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     const r=P.state.recording,current=saved(),locked=r.active;
     for(const b of cards){const id=b.dataset.profile,on=id===current,s=sizeOf(id);
       b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;b.disabled=locked;
-      text(b.dims,s?`${s[0]} × ${s[1]}`:'—');const rate=rateOf(id,s);text(b.rate,rate?mbit(rate):'');}
+      text(b.dims,s?`${s[0]} × ${s[1]}`:'—');}
+    // About profiles: each one's name, size, bit rate and what it is for (the Stage size follows the frame).
+    const aboutKey=`${current}|${sizeOf('stage')}`;if(aboutKey!==aboutRows.dataset.key){aboutRows.dataset.key=aboutKey;
+    aboutRows.replaceChildren(...PROFILES.map(p=>{const s=sizeOf(p.id),rate=rateOf(p.id,s);
+      return h('div',{class:['out-about',p.id===current?'current':''],dataset:{about:p.id}},
+        h('div',{class:'out-about-head'},h('strong',{text:p.name}),h('span',{class:'out-tag num',text:p.tag}),h('span',{class:'num out-about-meta',text:[s?`${s[0]} × ${s[1]}`:null,rate?mbit(rate):null].filter(Boolean).join(' · ')})),
+        h('p',{class:'field-doc',text:p.note}));}));}
     text(profileHelp,locked?`Recording at ${r.stats.width} × ${r.stats.height}: the profile can change once this recording stops.`:
       current==='stage'?'Stage size follows the stage where recording starts: here, this frame; on the Performance Stage, the whole window.':
       current==='vertical'?'The world renders upright at 1080 × 1920 while recording, framed for a phone and its words clear of the platforms’ buttons; the stage shows it with bars at the sides. The browser saves WebM: for an MP4 of the night’s best moment, use the vertical clip under Export.':
@@ -180,7 +195,9 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     const r=P.state.recording,d=r.disk||{},chosen=S.state.device.recordTo==='disk'?'disk':'memory',on=chosen==='disk'&&d.ok!==false?'disk':'memory';
     for(const b of destCards){const id=b.dataset.dest,checked=id===on;b.setAttribute('aria-checked',String(checked));b.tabIndex=checked?0:-1;
       b.disabled=r.active||(id==='disk'&&d.ok===false);}
-    text(destCards[0].meta,d.ok===false?'Not available in this browser':d.ok?(d.space?`${bytes(d.space.free)} of disk this browser allows here`:'Available in this browser'):'Checking this browser…');
+    text(destCards[0].meta,d.ok===false?'Not in this browser':d.ok?(d.space?`${bytes(d.space.free)} allowed here`:'Long sessions'):'Checking…');
+    destCards[0].title=d.ok===false?`Record to a file on disk: not available in this browser. ${d.reason||''}`.trim():`${DESTS[0].name}: ${DESTS[0].note}${d.space?` This browser allows ${bytes(d.space.free)} of disk here.`:''}`;
+    text(destCards[1].meta,'Up to ½ hour');
     text(destHelp,d.ok===false?d.reason:r.active?(r.stats.target==='disk'?`Writing as it records; copied into ${r.file||'your file'} when you stop.`:'This recording is kept in memory until you stop.'):
       on==='disk'?'Press Record, then choose the file in the browser’s Save dialog. While recording, the browser keeps a working copy in its own storage for this page; when you stop it is copied into your file (seekable, with its duration) and deleted.':
       'The browser downloads the file when you stop. Recording to a file on disk keeps memory flat and survives a crash.');
@@ -238,10 +255,10 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     renderLastLine(l);
     const where=h('p',{class:'field-doc',text:r.target==='disk'&&r.disk?.ok!==false?'A recording to disk is written to the file you choose; the working copy the browser keeps while recording is deleted once your file is saved. Code Resonance keeps no copy and no library.':
       'Recordings kept in memory are saved by the browser to its downloads folder. Code Resonance keeps no copy and no library.'});
-    if(!l){last.replaceChildren(h('div',{class:'out-last-empty'},h('span',{class:'eyebrow',text:'Last recording'}),h('span',{class:'small muted',text:'None in this window yet.'})),where);return;}
+    if(!l){last.replaceChildren(h('div',{class:'out-last-empty'},h('span',{class:'small muted',text:'None in this window yet.'})),where);return;}
     // The file, its size, length and time are on the line under Record: here only what that line does not say.
     const early=l.reason&&l.reason!=='stopped'&&!l.recovered;
-    last.replaceChildren(...[h('div',{class:'out-last-head'},h('span',{class:'eyebrow',text:'Last recording'})),
+    last.replaceChildren(...[
       early?callout({kind:'warn',icon:'warn',title:'Finished early',body:`Recording finished early (${l.reason}); ${Math.round(l.durationMs/1000)} s saved.`}):null,
       l.kept?callout({kind:'warn',icon:'warn',title:'Not saved yet',body:`It could not be copied into your file (${l.error}). It is kept in this browser: save it again above.`}):null,
       l.recovered?callout({kind:'accent',icon:'check',title:'Interrupted recording saved',body:'Everything written before its window closed or crashed, made seekable.'}):null,
