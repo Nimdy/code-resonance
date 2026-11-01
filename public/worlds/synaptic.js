@@ -12,6 +12,9 @@
 //                            it works on, injects pulses into it on the beat while a tool runs (inward along the branch,
 //                            in its colour), and that neuron fires: the soma flashes and the spike runs down its axons to
 //                            the synapses of what the file imports, where a spark jumps the gap
+//  - subagent             -> a smaller signal, tethered to its parent's signal by a faint filament in its colour (along
+//                            the axon pathway between their neurons when the graph joins them), while the data names
+//                            the parent (subject.parentAgentId) and the parent has not ended
 //  - human edit, new file, new symbols -> an input pulse along that branch (warm white, gold)
 //  - tests passing        -> an activation wave sweeping across the covered branches; their neurons fire in its order
 //  - failure              -> the covered branches misfire: static crackles along them, their neurons fire off the beat
@@ -638,20 +641,47 @@ export function createFamily(ctx){
   // From the goal before the latest change (a state, an edit landing, its dwell ending) to this one: along the axon
   // pathways between their neurons when the graph joins them (at conduction speed, 1.8 to 4.5 s), otherwise over 1.8 s
   // along a lifted arc: a signal travelling the network.
-  const TRAVEL=1800,TRAVEL_MAX=4500;
-  function agentAt(id,t,tv,out){const a=ctx.agents.presence(id,t);if(!a)return null;goalOf(a,tv,out,t);
+  // TRAV: the move the last position was on (the two goals' neurons and its progress), for the subagents' tethers.
+  const TRAVEL=1800,TRAVEL_MAX=4500,TRAV={on:false,from:-1,to:-1,k:0};
+  function agentAt(id,t,tv,out){TRAV.on=false;const a=ctx.agents.presence(id,t);if(!a)return null;goalOf(a,tv,out,t);
     const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
     if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){goalOf(prev,tv,ga,tc-1);
-      const route=routeOf(goalNeuron(prev,tc-1),goalNeuron(a,t));
+      const from=goalNeuron(prev,tc-1),to=goalNeuron(a,t),route=routeOf(from,to),moving=k=>{TRAV.on=true;TRAV.from=from;TRAV.to=to;TRAV.k=k;};
       if(route){const L=legsOf(route),P=L.pts,total=(P.length?dist3(ga,P[0])+L.len+dist3(P[P.length-1],out):dist3(ga,out)),T=clamp(total/VA*1000*1.4,TRAVEL,TRAVEL_MAX)*sp;
-        if(t-tc<T&&P.length){along(L,smooth((t-tc)/T)*total,out);return a;}}
+        if(t-tc<T&&P.length){along(L,smooth((t-tc)/T)*total,out);moving((t-tc)/T);return a;}}
       if(t-tc<TRAVEL*sp){const k=smooth((t-tc)/(TRAVEL*sp)),lift=Math.sin(k*Math.PI)*Math.min(14,dist3(ga,out)*.3);
-        for(let c=0;c<3;c++)out[c]=lerp(ga[c],out[c],k);out[1]+=lift;}}}
+        for(let c=0;c<3;c++)out[c]=lerp(ga[c],out[c],k);out[1]+=lift;moving((t-tc)/(TRAVEL*sp));}}}
     return a;}
+  // A subagent's tether: a faint filament in its colour from its parent's signal to its own, along the axon pathway
+  // between their neurons when the graph joins them (the route its travel takes), otherwise a shallow arc; while either
+  // signal is on its way between goals the filament eases to the arc by mid-way (where it changes neuron) and back to
+  // the pathway from the new one, so it never jumps. A bead of light runs down it from the parent every five seconds of
+  // view time. Drawn only while both signals are, the subagent names its parent (the data's subject.parentAgentId: none
+  // for a parent it does not give) and the parent has not ended. A pure function of the frame.
+  const TETHER_STEP=.1,TETHER_MAX=320,TETHER_PERIOD=5,arcP=[],routeP=[],tq=[0,0,0],tr=[0,0,0];let tethers=0;
+  const lengths=P=>{const c=[0];for(let j=1;j<P.length;j++)c.push(c[j-1]+dist3(P[j-1],P[j]));return c;};
+  function polyAt(P,cum,s,out){let j=1;while(j<cum.length-1&&cum[j]<s)j++;const u=clamp((s-cum[j-1])/Math.max(1e-6,cum[j]-cum[j-1])),X=P[j-1],Y=P[j];
+    for(let c=0;c<3;c++)out[c]=X[c]+(Y[c]-X[c])*u;return out;}
+  // A signal's neuron for its tether and how far the tether follows the pathway: its goal's (1) at rest; on its way, the
+  // goal it left until mid-way and then the one it goes to, the weight easing to 0 at mid-way and back to 1 on arrival.
+  const anchor=(x,st,t)=>st.tk>=0?[st.tk<.5?st.tf:st.tt,smooth(Math.abs(2*st.tk-1))]:[goalNeuron(x,t),1];
+  function tether(n,p,a,i,c,alpha){
+    const SP=agentState.get(p.id),SA=agentState.get(a.id),A=SP.pos,B=SA.pos,[np,wp]=anchor(p,SP,i.t),[na,wa]=anchor(a,SA,i.t),w=Math.min(wp,wa),route=w>.001?routeOf(np,na):null;
+    const lift=Math.min(5,Math.hypot(B.x-A.x,B.y-A.y,B.z-A.z)*.18);arcP.length=0;
+    for(let j=0;j<=12;j++){const u=j/12;arcP.push([lerp(A.x,B.x,u),lerp(A.y,B.y,u)+Math.sin(u*Math.PI)*lift,lerp(A.z,B.z,u)]);}
+    const cA=lengths(arcP),LA=cA[12];let cR=null,LR=0;
+    if(route){routeP.length=0;routeP.push([A.x,A.y,A.z]);for(const x of legsOf(route).pts)routeP.push(x);routeP.push([B.x,B.y,B.z]);cR=lengths(routeP);LR=cR[cR.length-1];}
+    const L=route?lerp(LA,LR,w):LA;if(L<.5)return n;
+    const N=clamp(Math.ceil(L/TETHER_STEP),12,TETHER_MAX),ph=i.tview/TETHER_PERIOD,bead=(ph-Math.floor(ph))*(L+8)-4;
+    for(let k=0;k<N;k++){const u=(k+.5)/N,s=u*L;polyAt(arcP,cA,u*LA,tq);
+      if(route){polyAt(routeP,cR,u*LR,tr);for(let c2=0;c2<3;c2++)tq[c2]=lerp(tq[c2],tr[c2],w);}
+      const ends=smooth(s/1.5)*smooth((L-s)/1.5),b=Math.exp(-(((s-bead)/1.4)**2));
+      n=fxPoint(n,tq,c,alpha*ends*(.13+.5*b),3+2*b,8);}
+    return n;}
   function updateAgents(i,n){
-const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1);const seen=new Set(),head=[0,0,0],q=[0,0,0],site=[0,0,0];
-    for(const a of i.agents.slice(0,12)){if(!agentAt(a.id,i.t,i.tview,head))continue;seen.add(a.id);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...head);
-      const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent?.75:1;
+const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1);const seen=new Map(),head=[0,0,0],q=[0,0,0],site=[0,0,0];
+    for(const a of i.agents.slice(0,12)){if(!agentAt(a.id,i.t,i.tview,head))continue;seen.set(a.id,a);let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...head);st.tk=TRAV.on?TRAV.k:-1;st.tf=TRAV.from;st.tt=TRAV.to;
+      const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent||a.parent?.6:1;
       // the trail: where the signal was (sampled from its pure path)
       for(let k=22;k>=1;k--){const tt=i.t-k*60*sp*trailK;if(!agentAt(a.id,tt,i.tview-k*.06*trailK,q))continue;const f=1-k/23;n=fxPoint(n,q,c,alpha*f*f*1.1,(3+8*f)*sub,8);}
       n=fxPoint(n,head,c,alpha*.5,90*sub,8);n=fxPoint(n,head,c,alpha*1.6,46*sub,seat<6?seat:6);n=fxPoint(n,head,{r:1,g:1,b:1},alpha,8*sub,8);
@@ -660,6 +690,9 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
         for(let k=0;k<10;k++){let f=(i.tview*1.1+k/10)%1;if(!inward)f=1-f;for(let c2=0;c2<3;c2++)q[c2]=lerp(head[c2],site[c2],f);q[1]+=Math.sin(f*Math.PI)*.6;
           n=fxPoint(n,q,c,alpha*Math.sin(f*Math.PI)*1.1,4.5,8);}
         n=fxPoint(n,site,c,alpha*(.6+.4*Math.pow(1-((i.t/(60000/tempoOf(i)))%1),3)),14,9);}}
+    tethers=0;
+    for(const a of seen.values()){const p=a.parent?seen.get(a.parent):null;if(!p||p.state==='disconnected'||p.state==='completed')continue;
+      n=tether(n,p,a,i,agentCol[seatOf(a)],Math.min(a.alpha,p.alpha)*prom);tethers++;}
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
     // agent.collision: each agent's signal, in its colour, runs in toward the neuron from its own side along one line
     // (seeded by the event) over 1.2 s, trailing; where they meet at the branch, a ring in both colours spreads and fades
@@ -932,7 +965,7 @@ const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(
     const st=n.files.map(f=>model.modules.get(f)).filter(Boolean).map(m=>model.stateAt(m,i.t)),stressed=st.filter(x=>x==='stressed').length;
     return {position:new THREE.Vector3(...neuronWorld(ni,[0,0,0])),text:`A neuron of ${ctx.name(n.cluster)}${n.k===0?' · hub':''}`,sub:`${n.files.length} branch${n.files.length===1?'':'es'}${stressed?` · ${stressed} misfiring`:''}`};}
   function stats(){return {clusters:net?.clusters.length||0,neurons:net?.neurons.length||0,ghosts:GH,files:fileList.filter(f=>!f.ghost).length,segments:realSegs,ghostSegments:ghostSegs,boutons:realTips,
-    axons:axons.length,fx:fxCount,storms:storms.filter(s=>s.full).length,firing:lastStats.fires||0,radius:+(net?.radius||0).toFixed(1)};}
+    axons:axons.length,fx:fxCount,tethers,storms:storms.filter(s=>s.full).length,firing:lastStats.fires||0,radius:+(net?.radius||0).toFixed(1)};}
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const x of disposables)x.dispose?.();NS.dispose();FS.dispose();}
   // After a seek: no transient survives (lasting myelin comes back from the director's record).

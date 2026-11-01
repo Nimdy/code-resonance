@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- **Synaptic Storm: subagents tethered to their parent.** A subagent is a smaller signal (0.6 of a session's), and a
+  faint filament in its colour ties it to its parent's signal: along the axon pathway between their neurons when the
+  graph joins them, otherwise a shallow arc, easing between the two while either travels, with a bead of light running
+  down it from the parent every five seconds. No tether when the parent is unknown or has ended; no words, so labels,
+  the OBS view and recordings show nothing new. The parent comes from **interpretation 11**: every adapter that observes
+  subagents (Claude Code, Codex, Qwen, Copilot, Cursor, Droid) keys one as its session's key plus its own, in the
+  parent's session, so once the receiver has observed that session a subagent's `agent.state` intents carry
+  `subject.parentAgentId` (the parent's public id, never a name or path; packs receive it as an opaque token). On its
+  first start the receiver rebuilds each project's derived files once from its journal; nothing else changes. Seen only
+  on a synthetic fixture (no recording has subagents), not reviewed. Tests: `tests/agent-parents.test.js`,
+  `tests/synaptic-subagents.test.js` ([docs/worlds/synaptic-storm.md](docs/worlds/synaptic-storm.md#agents),
+  [docs/AGENTS.md](docs/AGENTS.md#known-limits)).
+
 ## 0.8.1 — 2026-10-31
 
 Product 0.8.1, for use on your own machine; not stable. This tag is `v0.8.1`. Visual Recipe generator **5**: Synaptic
