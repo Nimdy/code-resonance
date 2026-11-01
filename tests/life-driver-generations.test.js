@@ -41,7 +41,10 @@ test('Generations: preparing the next generation spreads its stages over frames 
   const [{GEN_TICKS,WARM_TICKS}]=await load();
   const p=await player({entries:recording(80)});p.at(T0+509000);   // the next generation is prepared from 8:30 (90 s before its anchor)
   const seen=[];for(let k=0;k<=120;k++){p.at(T0+509000+k*1000/60,6);const s=p.driver.stats();if(s.next)seen.push([s.next.tick,s.backgroundTicks]);}
-  const s0=GEN_TICKS-WARM_TICKS;
-  assert.deepEqual(seen.slice(0,2),[[null,0],[s0,0]],'the shadow brought to the warm start, then the history pass alone (no tick)');
-  assert(seen[2][1]>=1&&seen.slice(2).every(([t,n])=>t===s0+n),'then the ticks, from the warm start');
+  // The shadow takes as many frames as its deltas need within the frame's budget: one on a fast machine, more on a loaded
+  // one (a Windows runner took two), so the stages are checked in order, not at fixed frames.
+  const s0=GEN_TICKS-WARM_TICKS,h=seen.findIndex(([t])=>t!==null);
+  assert(h>=1&&seen.slice(0,h).every(([t,n])=>t===null&&n===0),'first the shadow brought to the warm start, alone');
+  assert.deepEqual(seen[h],[s0,0],'then the history pass alone (no tick)');
+  assert(seen[h+1][1]>=1&&seen.slice(h+1).every(([t,n])=>t===s0+n),'then the ticks, from the warm start');
 });
