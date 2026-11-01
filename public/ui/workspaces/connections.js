@@ -202,7 +202,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // ---- Receiver ---------------------------------------------------------------------------------------------------
   async function loadStatus(){
     // With the control capability the receiver also says where its data lives; a window without one still gets the rest.
-    try{status=await P.api.request('GET','/api/status');}
+    try{status=await P.api.request('GET','/api/status',undefined,{quiet:true});}
     catch(e){try{status=await S.get('/api/status');}catch(e2){statusError=e2.message;renderReceiver();renderStrip();return;}}
     statusAt=Date.now();statusError=null;renderReceiver();renderStrip();
   }
@@ -540,7 +540,7 @@ export default {mount(view,{store:S,player:P,navigate,params}){
   // ---- Loading and staying current ----------------------------------------------------------------------------------
   async function loadIntegrations(){
     // With the capability the response also names the adapter's path (shown as the hook command).
-    try{integ=await P.api.request('GET','/api/integrations');integError=null;}
+    try{integ=await P.api.request('GET','/api/integrations',undefined,{quiet:true});integError=null;}
     catch{try{integ=await S.get('/api/integrations');integError=null;}catch(e){integError=e.message;}}
     claude.updateCli();cursor.updateCli();codex.updateCli();renderVsGuide();renderClaude();renderCursor();renderCodex();renderMore();more.refresh();renderAgents();renderEditors();renderStrip();
   }

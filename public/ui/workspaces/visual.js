@@ -959,7 +959,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,params}){
       const key=`${projectId}:${saved.revision}:${f.id}`;if(THUMBS.has(key))continue;
       // The graph the thumbnail draws is the project's, so it waits for the project to load; nothing renders while recording.
       if(P.state.model?.projectId!==projectId||P.state.recording.active)return;
-      try{const r=await P.api.post(`/api/recipe/preview?id=${enc(projectId)}`,{actions:[{type:'family',family:f.id}]});
+      try{const r=await P.api.post(`/api/recipe/preview?id=${enc(projectId)}`,{actions:[{type:'family',family:f.id}]},{quiet:true});
         if(!alive||run!==thumbRun)return;
         const url=await P.thumbnail(r.recipe)||'';THUMBS.set(key,url);if(url)THUMBS.set(`${projectId}:latest:${f.id}`,url);}
       catch(e){if(!alive||run!==thumbRun)return;console.warn(`Thumbnail of ${f.id} not rendered:`,e.message);if(!(e instanceof TypeError))THUMBS.set(key,'');}

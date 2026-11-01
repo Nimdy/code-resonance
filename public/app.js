@@ -38,21 +38,25 @@
   }
   takePairFragment();
   let pairing=readPairing()||pendingCode?'unknown':'unpaired';
-  const api=(()=>{let capability=null,pending=null;
+  const api=(()=>{let capability=null,pending=null,pendingQuiet=false;
     function failure(status,data){const e=new Error(data?.error||`HTTP ${status}`);e.status=status;e.code=data?.code||null;e.data=data||null;return e;}
-    function session({quiet=false}={}){if(!pending){const code=pendingCode;pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(code?{code}:{pairing:readPairing()||undefined})})
+    // quiet: a check made in the background (a remembered key, a view reading what it may show) is refused without
+    // announcing it; a change the person asked for announces its refusal (the interface then offers to pair).
+    function session({quiet=false}={}){if(!pending){pendingQuiet=quiet;const code=pendingCode;pending=fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(code?{code}:{pairing:readPairing()||undefined})})
       .then(async r=>{const data=await r.json().catch(()=>null);if(code)pendingCode=null;
         // A refusal announces itself (the interface offers to pair), except the silent check of a remembered key.
         if(!r.ok){if(data?.code==='pairing-required'){pairing='unpaired';changed(quiet&&!code?'pairing-checked':'pairing');}throw failure(r.status,data);}
         if(data.pairing){try{localStorage.setItem(PAIR_KEY,data.pairing);}catch{}}
         capability=data.capability;if(pairing!=='paired'){pairing='paired';changed('pairing');}return capability;}).finally(()=>{pending=null;});}
+      // A change asked for while a background check is on its way: the refusal is announced as the change's own.
+      else if(!quiet&&pendingQuiet){pendingQuiet=false;return pending.catch(e=>{if(e?.code==='pairing-required')changed('pairing');throw e;});}
       return pending;}
-    async function request(method,url,body,{retry=true,type=null}={}){
-      if(!capability)await session();
+    async function request(method,url,body,{retry=true,type=null,quiet=false}={}){
+      if(!capability)await session({quiet});
       const init={method,headers:{'X-Resonance-Capability':capability},cache:'no-store'};
       if(body!==undefined){if(type){init.headers['Content-Type']=type;init.body=body;}else{init.headers['Content-Type']='application/json';init.body=JSON.stringify(body);}}
       const r=await fetch(url,init);
-      if(r.status===401&&retry){capability=null;return request(method,url,body,{retry:false,type});}
+      if(r.status===401&&retry){capability=null;return request(method,url,body,{retry:false,type,quiet});}
       const data=await r.json().catch(()=>null);
       if(!r.ok)throw failure(r.status,data);
       return data;}

@@ -159,7 +159,7 @@ export default {mount(view,{store:S,player:P,navigate}){
   }
   async function loadDataDir(){
     // The data folder is only told to a page holding a control capability (a page of this computer's player).
-    try{const r=await P.api.request('GET','/api/status');dataDir=r?.dataDir||null;}catch{dataDir=null;}
+    try{const r=await P.api.request('GET','/api/status',undefined,{quiet:true});dataDir=r?.dataDir||null;}catch{dataDir=null;}
     renderStorage();
   }
   async function hashOf(id){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(id));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
