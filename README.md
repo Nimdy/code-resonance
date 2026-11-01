@@ -23,7 +23,7 @@ player, with its music, in any of the nine worlds; nothing to install, nothing s
   Cathedral, and Synaptic Storm, Fractal Continuum and Temporal Terrain (new); Aurora, a preview you choose yourself; and
   two fixed stages, the Construct and Monolith.
 - **Made to share.** `npm run film -- --vertical` renders the night's best moment as a 30-second 9:16 clip with its
-  music, for Reels, Shorts and TikTok. Record & Broadcast can record straight to a file on disk, kept through a crash.
+  music, for Reels and Shorts. Record & Broadcast can record straight to a file on disk, kept through a crash.
   OBS takes the Stage as a browser source.
 - **One install.** The VS Code extension carries the receiver and starts it on your machine when none is running.
   Download the VSIX from the [latest release](https://github.com/Nimdy/code-resonance/releases/latest), or build the
@@ -312,7 +312,7 @@ second window for another monitor.
   [docs/OBS.md](docs/OBS.md).
 - **Last night** (Home) is a sped-up replay of a scored highlight. **`npm run film`** renders that same window for a
   README hero (needs a public title, always `--copy`); **`npm run film -- --vertical`** cuts a 30-second 1080 × 1920
-  MP4 of its key moment, with the music and an end card, for Reels, Shorts and TikTok
+  MP4 of its key moment, with the music and an end card, for Reels and Shorts
   ([docs/RECORDING.md](docs/RECORDING.md#vertical-clips-916)). Neither is Record.
 - **Exports:** up to ten minutes of the recorded performance rendered offline to WAV; the derived timeline as JSON (no
   source, paths or prompts).

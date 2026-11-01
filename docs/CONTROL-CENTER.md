@@ -24,8 +24,8 @@ The OBS view (`/?overlay=1…`) is the stage alone, with no interface at all; ex
 | Performance Stage | `#/stage` | The immersive stage: live/replay, labels, world, sound, record, full screen |
 
 **Record & Broadcast** in detail: the monitor shows the stage exactly as it is recorded, with the recorder under it.
-The recording profile is saved for every window; **Vertical** records the stage upright at 1080 × 1920 for Reels,
-Shorts and TikTok (every world frames portraits, its words inside the platforms' safe area; the slot shows it with
+The recording profile is saved for every window; **Vertical** records the stage upright at 1080 × 1920 for Reels
+and Shorts (every world frames portraits, its words inside the platforms' safe area; the slot shows it with
 bars at the sides; the browser saves WebM). **Where it is written** is this browser's choice: *Record to a file on
 disk* (recommended for long sessions: Record opens the browser's Save dialog, the recording is written to disk as it
 is recorded and copied into your file, seekable, when you stop; the recorder shows the bytes on disk and the file) or

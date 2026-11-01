@@ -20,6 +20,7 @@
     reading packs when none are installed; a pack's numeric values keep their decimal point (1.25, not "1 25"); a
     project's page names its export and its studios as the rest of the interface does, and the Visual Studio's
     information-mode note no longer runs two sentences together.
+- The vertical format names Reels and Shorts only.
 
 ## 0.9.1 — 2026-11-01
 
@@ -442,7 +443,7 @@ chosen only explicitly. The extension is not published to the Marketplace or Ope
 - **Known limit.** Copilot (and Grok Build, Devin) also read the repository's Claude Code hook files. With Claude Code's
   hooks installed, a Copilot session in that project can also appear as Claude.
 - **Vertical clips (9:16):** `npm run film -- --project <id> --vertical` (or `--aspect 9:16`) renders the night's best
-  moment for Instagram Reels, YouTube Shorts and TikTok: 1080 × 1920, `--duration` seconds of film (default 30) at the
+  moment for Instagram Reels and YouTube Shorts: 1080 × 1920, `--duration` seconds of film (default 30) at the
   highlight's speed, centred on its key moment (of the moments that made the night score, the one whose clip scores
   highest by the same rules; `engine/highlight.js` `clip`), opening on the title card and ending on a 3-second end card
   with the public title and *Code Resonance*, the music faded in (1 s) and out (2.5 s). H.264 and AAC in MP4

@@ -117,8 +117,8 @@ failure paths are checked with stand-ins in `tests/record-to-disk.test.js`, not 
 
 ## Vertical clips (9:16)
 
-A coding night, posted: a 1080×1920 clip of the project's best moment with its music, for Instagram Reels, YouTube
-Shorts and TikTok. Two ways to make one:
+A coding night, posted: a 1080×1920 clip of the project's best moment with its music, for Instagram Reels and YouTube
+Shorts. Two ways to make one:
 
 - **`npm run film -- --project <id> --vertical`** (or `--aspect 9:16`): the publish path. The same highlight Home plays
   (`engine/highlight.js`), cut to `--duration` seconds of film (default 30, from 3 to 180) at the highlight's speed and
@@ -135,7 +135,7 @@ Shorts and TikTok. Two ways to make one:
   *Code Resonance*), always renders from a `--copy`, and accepts `--gpu`, `--labels`, `--world living|construct|city`
   and `--family <id>`.
 - **Record** with the **Vertical** profile: the live recorder at 1080×1920 (8 Mbit/s), what the stage plays now. The
-  browser saves WebM (VP9 and Opus), which YouTube and TikTok take; Instagram wants MP4, so use the film for Reels or
+  browser saves WebM (VP9 and Opus), which YouTube takes; Instagram wants MP4, so use the film for Reels or
   convert the file.
 
 **Framing.** A frame taller than it is wide is a portrait, and every world frames it for itself; a landscape frame is
@@ -158,7 +158,7 @@ point (or under it near the top), clear of the words already placed, and becomes
 rules are in `public/worlds/labels.js` (`textScale`, `safeArea`, `portraitPlaces`) and tested in
 `tests/vertical.test.js`.
 
-**Not verified:** uploading to Instagram, YouTube or TikTok (nothing here talks to them), and how each platform's
+**Not verified:** uploading to Instagram or YouTube (nothing here talks to them), and how each platform's
 interface overlaps a clip on a given phone: the safe area is a conservative common margin, not a platform
 specification.
 

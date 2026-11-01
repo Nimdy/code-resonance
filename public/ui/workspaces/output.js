@@ -11,7 +11,7 @@ import {openDoc} from '../markdown.js';
 const PROFILES=[
   {id:'720p',name:'Standard',label:'720p',tag:'720p',size:[1280,720],rate:5e6,note:'Holds 30 frames per second on modest GPUs. The default.'},
   {id:'1080p',name:'High quality',label:'1080p',tag:'1080p',size:[1920,1080],rate:8e6,note:'Sharper. The built-in worlds may not hold 30 fps on an integrated GPU.'},
-  {id:'vertical',name:'Vertical',label:'Vertical',tag:'9:16',size:[1080,1920],rate:8e6,note:'For Reels, Shorts and TikTok: every world frames the project upright, its words clear of their buttons.'},
+  {id:'vertical',name:'Vertical',label:'Vertical',tag:'9:16',size:[1080,1920],rate:8e6,note:'For Reels and Shorts: every world frames the project upright, its words clear of their buttons.'},
   {id:'stage',name:'Stage size',label:'Stage size',tag:'Stage',size:null,rate:null,note:'The stage as it is on screen when recording starts, any shape.'}];
 // Where the recording is written (this device's choice; recording.js disk). Memory is the default.
 const DESTS=[
@@ -326,7 +326,7 @@ export default {mount(view,{store:S,player:P,navigate,chrome,toggleRecording}){
     filmGate.replaceChildren(!id?h('p',{class:'field-doc',text:'Choose a project first.'}):
       titled?h('div',{class:'out-cmds'},
         h('span',{class:'out-cmd-label'},h('strong',{text:'Film'}),h('span',{class:'faint',text:' · 16:9 WebM, the whole highlight'})),filmCmd,
-        h('span',{class:'out-cmd-label',id:'outVerticalLabel'},h('strong',{text:'Vertical clip'}),h('span',{class:'faint',text:' · 9:16 MP4, 30 s around the key moment, an end card with the public title: for Reels, Shorts and TikTok'})),verticalCmd):
+        h('span',{class:'out-cmd-label',id:'outVerticalLabel'},h('strong',{text:'Vertical clip'}),h('span',{class:'faint',text:' · 9:16 MP4, 30 s around the key moment, an end card with the public title: for Reels and Shorts'})),verticalCmd):
       callout({kind:'warn',icon:'info',title:'Set a public title to export this film',
         body:'Play on Home still works without one. A film for a README or OBS hero does not.',
         actions:[button({label:'Set the public title',size:'sm',onClick:()=>navigate('visual')})]}));

@@ -87,7 +87,7 @@ export function createMonolith({canvas=(w,h)=>typeof OffscreenCanvas==='function
       const ht=heightOf(t.storeys)+mastOf(t.storeys);if(ht>top)top+=(ht-top)*k;}
     if(!list.length){x0=x1=z0=z1=0;}
     // Rows further back stand higher, up to an eighth of the frame however deep the site. A portrait frame (a vertical
-    // clip) keeps the skyline inside the area Reels, Shorts and TikTok leave clear: under the header, above the bottom fifth.
+    // clip) keeps the skyline inside the area Reels and Shorts leave clear: under the header, above the bottom fifth.
     const portrait=h>w,left=w*.07,right=w*.93,ground=h*(portrait?.6:text?.7:.74),ceiling=h*(portrait?(text?.34:.2):text?.27:.12),depth=z1-z0;
     const rise=Math.min(depth*RISE*(ground-ceiling)/(top+depth*RISE+.4),h*.125);
     const u=Math.min((right-left)/(x1-x0+WIDTH+1.4),(ground-ceiling-rise)/(top+.4),h*.13),k=depth?rise/depth:0;
