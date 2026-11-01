@@ -239,8 +239,9 @@ a Julia bulb, a Mandelbox or a kaleidoscopic crystal, its branching, twist and s
 the identity's own stream, so projects become different universes, not only different colours. Development unfolds its
 recursion; subsystems are regions of its surface, each in its own hue on the identity's harmony (swelling with
 their files), lit hard from the side like a cut stone, files are sites of light on it,
-dependencies faint threads between them. Agents ride to the sites they work on as signals in their provider's colour and
-shape and ripple the surface when they edit; tests send a coherent wave of light, failures make the covered region
+dependencies faint veins of light along the surface between them. Agents travel those veins to the sites they work on
+(elsewhere they ride over the form) as signals in their provider's colour and shape and ripple the surface when they
+edit; tests send a coherent wave of light, failures make the covered region
 decohere in the warning colour, recovery restores coherence, a commit glows, and a verified milestone can earn a rare
 fractal bloom. Its digital life, behind the recipe's `life` values (on for new identities), is motes of light living
 on the surface: they gather at the sites being worked on, leave threads of light between them and withdraw from a
