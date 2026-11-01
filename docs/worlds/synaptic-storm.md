@@ -431,14 +431,19 @@ without: on this path every millisecond counts.
   its base. `/api/catalog` lists it under `families`; `previews` is empty.
 - `public/worlds/host.js` `BUILTIN` loads it; the Visual Studio lists it with the flagships (thumbnail, the code's-match
   star, two curated looks: *Storm front* and *Glass cortex*, and an Essentials group), and the Artist Studio offers it
-  as a base.
+  as a base. The two looks set their own palette, so they read the same on every project and apart from each other:
+  *Storm front* is gold fire (the somas and spikes) in a deep violet volume, seen close and low with a shallow depth of
+  field, firing at the highest rate locked to the beat; *Glass cortex* is a flat silver sheet on black, seen from above
+  and sharp from near to far (no depth of field, no far network, no haze), firing slowly. Both were reworked on
+  2026-11-01: before, both were the project's own violet network and *Storm front*'s fire read pink.
 
 ## Path to shipping
 
 What remains:
 
 1. **Artistic review**: done (2026-10-31): the owner accepted a film of the whole Lumen Recipes session with life on
-   (`qualification/visual/film.js`, 1920×1080 on the AMD iGPU). Its curated looks have not been reviewed.
+   (`qualification/visual/film.js`, 1920×1080 on the AMD iGPU). Its curated looks have not been reviewed by the owner
+   (both reworked on 2026-11-01, above).
 2. **Performance on the target machines**: GPU time at Auto on an integrated GPU and in OBS (`worlds.qual.js`,
    `recording.qual.js`), long soak; then the CPU cost on large projects (incremental signatures, spike heads on the GPU).
 3. **Qualification parity** with the three families: `catalogue.qual.js` and `worlds.qual.js` (determinism across seeks,

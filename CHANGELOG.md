@@ -16,6 +16,17 @@
   moment, so the port could be taken before the receiver bound it (a test's two receivers both found it occupied).
   They now share one helper (`tests/helpers.js` `freePort`) that picks a port below every platform's ephemeral range,
   at random, checked free and never twice in a file.
+- **Curated looks of the graduated worlds reworked** to do what their one-line descriptions say, each holding on
+  Lumen, Self and Excalidraw (stills from the render lab on the AMD iGPU; the owner has not reviewed them yet).
+  *Kaleidoscope crystal* (Fractal Continuum) read as a soft pink-violet lump, close to the "gum" look: it is now a
+  faceted sapphire crystal with ice-blue light (no swell, the crystal at its largest scale and lowest detail, full sheen
+  and rim, deep occlusion, almost no halo). *Storm front* and *Glass cortex* (Synaptic Storm) were both the project's
+  violet network and *Storm front*'s fire read pink: *Storm front* is now gold fire in a deep violet volume, close and
+  low, firing at the highest rate on the beat; *Glass cortex* a flat silver sheet on black seen from above, sharp from
+  near to far, firing slowly. *Misty valley* (Temporal Terrain) barely showed its mist: a dusky rose haze now colours
+  the mist and a warm dusk horizon, with the most mist and higher ridges. *Teal Mandelbulb* now sets its gold light
+  and an analogous harmony: on Self it showed magenta light, on Lumen violet regions. Tuning only: no world, parameter
+  or identity changes.
 - **Aurora is inhabited (digital life):** arctic foxes trot along the cabin's point and out onto the mirror ice, leave
   tracks in the snow that fade, pause to sniff and sit to look up at a bright curtain (a new curtain draws every fox's
   eyes); hares keep to their spruces and flee a fox; a snowy owl perches on the spruces' tops and the cabin's roof; faint
