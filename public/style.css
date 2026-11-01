@@ -205,6 +205,12 @@ details.disclosure>.disclosure-body{display:grid;gap:14px;padding:10px 0 4px}
 body:has(.workspace .inspector-foot) .toasts{bottom:86px}
 .toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-radius:var(--r-2);background:var(--bg-3);border:1px solid var(--line-2);box-shadow:var(--shadow-1);font-size:13.5px;color:var(--text-1);animation:rise-in var(--t-3) var(--ease)}
 .toast .grow{flex:1;min-width:0;line-height:1.45}
+/* A message with an action keeps the toast's width for its words: the action goes under them, the dismiss button
+   stays at the top right (an action beside the words squeezed them into a column of one or two words a line). */
+.toast:has(>.btn:not(:last-child)){flex-wrap:wrap;row-gap:8px}
+.toast:has(>.btn:not(:last-child)) .grow{flex-basis:calc(100% - 60px)}
+.toast>.btn:last-child{order:1}
+.toast>.btn:not(:last-child){order:2;margin-left:18px}
 .toast.warning{border-color:rgba(255,194,125,.3)}.toast.warning .dot{background:var(--warn)}
 .toast.error{border-color:rgba(255,116,132,.35)}.toast.error .dot{background:var(--danger)}
 .toast.ok .dot{background:var(--ok)}.toast .dot{margin-top:5px;background:var(--accent)}
