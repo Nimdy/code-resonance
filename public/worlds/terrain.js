@@ -8,11 +8,12 @@
 //  - file (module)        -> a ridge at its slot in its range, running back through time from its birth, its height
 //                            from its live symbols; a settlement light on its peak at the front edge
 //  - symbol               -> the ridge's height and its fine relief (the amplitude of small anchored ridges)
-//  - dependency           -> a road of light over the land near the front edge, from the importing peak to the
-//                            imported one; pulses run along it when the importer's file fires
+//  - dependency           -> a road: a path of light in the land just behind the front edge, from the importing peak
+//                            down into the valley beside its range, across, and up to the imported peak
+//                            (terrain-roads.js); pulses run along it when the importer's file fires
 //  - agent                -> a surveyor's light in its provider's colour and shape (CAST seat) over the ridge it works
 //                            on, its beam on the ground; its edit raises the ground there (a dome: the contours open
-//                            into rings of its colour)
+//                            into rings of its colour); between files of ranges the roads join it travels along them
 //  - tests passing        -> a scan: a front of valid light sweeping across the land near the present
 //  - failure              -> a fault: the ground shudders, a fissure opens along the covered ridges in the warning
 //                            colour and its contours turn warning-coloured for as long as they are stressed; the scar
@@ -23,18 +24,31 @@
 //                            runs over every range), at most once per SUNRISE_GAP of performance time and only with the
 //                            director's milestone token; otherwise a local glow. A monument stays (lasting)
 // Ambient life (never progress): the land keeps flowing back with time, the key light travels a slow arc, mist drifts in
-// the valleys, the contours shimmer on the score's beat grid, motes drift, the camera drifts between its vantage points.
+// the valleys, the contours shimmer on the score's beat grid (and, with the host's musical clock, the present's lines on
+// the eighths the arrangement plays), motes drift, the camera drifts between its vantage points and, once the
+// performance has been idle a while, flies back over the land's history to where it began and returns.
 // Every image is a function of the model (in a replay its whole recorded history, rebuilt after a seek: onHistory),
 // the recipe, the director's fold and the performance clock.
 import {THREE,clamp,lerp,smooth,hash,rand} from './core.js';
 import {LANES,LEVELS,ROWS,EASE,MAX_AGE,layoutConfig,depthOf,ageOf,levelBin,createLand,historyFrom,recordCue,rangesAt,reliefAt,meanderAt,reliefHeight} from './terrain-layout.js';
+import {ZR as ROAD_Z,Z0 as ROAD_Z0,valleysOf,roadPlan,along as planAlong,rasterRoads,routeOf} from './terrain-roads.js';
 import {LAND_VS,LAND_FS,SKY_FS} from './terrain-glsl.js';
 import {touchesAt,touchGain} from './touch.js';
 import {presence} from '../providers.js';
 import {createTerrainGrammar,kxOf,GRAZER,SWIFT,GLEANER,RN as LIFE_RN,Z0 as LIFE_Z0,Z1 as LIFE_Z1,SPEED_MAX} from './life/terrain.js';
 import {position as lifePosition,follower as lifeFollower,fieldTexture as lifeFieldTexture,visibility as lifeVisibility,musicLook} from './life/present.js';
 import {u01} from './life/sim.js';
-const TAU=Math.PI*2,SUNRISE_GAP=240000,DWELL=4500,MAX_FX=4000,MAX_RIB=3000,MAX_ROADS=32,ROAD_SEG=28,MOTES=420,BASE=7;
+const TAU=Math.PI*2,SUNRISE_GAP=240000,DWELL=4500,MAX_FX=4000,MAX_RIB=3000,MAX_ROADS=32,MOTES=420,BASE=7;
+// The roads' light map (cells across the land's lane grid x depth near the front edge); agents travelling along a road
+// fly HOVER above it at ROAD_V units a second (1.8 to 4.5 s a journey).
+const ROAD_W=1024,ROAD_H=64,HOVER=1.7,ROAD_V=26,TRAVEL=1800,TRAVEL_MAX=4500;
+// The idle flight (view seconds): once nothing has happened for `wait` and the director's activity has fallen below
+// IDLE_A (the host calls the performance idle below .08), the camera flies back over the land's history for `out`,
+// lingers where the land began for `hold` and returns for `back`; then it rests at the present for `rest` before the
+// next flight (later flights on a fixed lattice of view time). An agent at work holds it (until its state is unknown,
+// agents.js: three minutes without an observation).
+export const FLIGHT={wait:24,out:28,hold:16,back:28,rest:48};
+const FLY_LEN=FLIGHT.out+FLIGHT.hold+FLIGHT.back,FLY_P=FLY_LEN+FLIGHT.rest,IDLE_A=.06,AGENT_UNKNOWN=180000,BUSY=new Set(['processing','tool','thinking']);
 // Each CAST provider its own colour and shape (seat: Claude, Cursor, Codex, Grok, Qwen, Kimi, then unknown providers).
 const AGENT_COLORS=['#ff5f8a','#3fe6ff','#8dff6a','#f2f4ff','#59a8ff','#ff5cf0','#ffb35c','#c0c8d8'];
 const LIGHT=new Set(['reading','searching','researching']);
@@ -97,7 +111,12 @@ export function createFamily(ctx){
     uSkyC:{value:V3(pal.haze.clone().lerp(pal.primary,.25),1.6)},uKey:{value:new THREE.Vector3(.5,.3,-.8).normalize()},uKeyC:{value:V3(keyC,.9)},uAcc:{value:V3(pal.accent)},
     uDeep:{value:V3(pal.deep)},uHaze:{value:V3(pal.haze)},uDawn:{value:0},uSun:{value:0},uSunX:{value:0},
     uMist:{value:clamp(num(atm.mist,.8),0,1.6)},uHazeK:{value:clamp(num(atm.haze,.8),0,1.5)},uBeat:{value:0},uBeatL:{value:0},uShim:{value:clamp(num(mot.shimmer,.8),0,1.5)},uLant:{value:0},uStress:{value:0},
-    uFx:{value:arr(8,v4)},uFxB:{value:arr(8,v4)},uFxC:{value:arr(8,v4)},uTch:{value:arr(4,v4)},uTchC:{value:arr(4,v4)},uAg:{value:arr(6,v4)},uAgC:{value:arr(6,v4)},uCm:{value:arr(16,v4)},uMn:{value:arr(8,v4)}};
+    uFx:{value:arr(8,v4)},uFxB:{value:arr(8,v4)},uFxC:{value:arr(8,v4)},uTch:{value:arr(4,v4)},uTchC:{value:arr(4,v4)},uAg:{value:arr(6,v4)},uAgC:{value:arr(6,v4)},uCm:{value:arr(16,v4)},uMn:{value:arr(8,v4)},
+    uFlyZ:{value:0},uEighth:{value:0},uSweep:{value:new THREE.Vector2(0,0)},uRoad:{value:null},uRoadX:{value:new THREE.Vector4(0,0,ROAD_Z,0)},uRoadC:{value:V3(pal.accent,1)}};
+  // The roads' light map (layout x across the land's lane grid, depth to ROAD_Z), drawn when the roads change.
+  const roadAcc=new Float32Array(ROAD_W*ROAD_H),roadPx=new Uint8Array(ROAD_W*ROAD_H);
+  const roadTex=new THREE.DataTexture(roadPx,ROAD_W,ROAD_H,THREE.RedFormat,THREE.UnsignedByteType);roadTex.magFilter=roadTex.minFilter=THREE.LinearFilter;roadTex.generateMipmaps=false;roadTex.needsUpdate=true;
+  U.uRoad.value=roadTex;disposables.push(roadTex);
   // Digital life (life/terrain.js): only when the recipe has it on. Off, nothing below differs from the world without it
   // (no resource, no draw call, no uniform, no shader text): every life addition is guarded by LIFE.
   const LIFE=ctx.life||null;
@@ -178,7 +197,7 @@ export function createFamily(ctx){
   function ribbon(a,b,wa,wb,c,alpha,aa=1,ab=1){if(nRib>=MAX_RIB||!(alpha>.003))return;const k=C3(c);rib.write('rA',nRib,a[0],a[1],a[2],wa);rib.write('rB',nRib,b[0],b[1],b[2],wb);rib.write('rC',nRib,k.x,k.y,k.z,alpha);rib.write('rD',nRib,aa,ab,0,0);nRib++;}
   // ---- Per-frame state -------------------------------------------------------------------------------------------------
   let info={t:0,tsec:0,tview:0,overrides:{},agents:[]},present={ranges:[],left:0,right:0},files=new Map(),crest=new Map(),peak=10;
-  const scans=[],faults=[],heals=[],surveys=[],sunrises=[],glows=[],horizons=[];
+  const scans=[],faults=[],heals=[],surveys=[],sunrises=[],glows=[],horizons=[],meetings=[];
   const push=(list,x,max=6)=>{list.push(x);if(list.length>max)list.shift();};
   const tempoOf=i=>Math.max(40,i.mood?.tempo||92);
   const near=(list,i,ms)=>list.filter(x=>x.at<=i.t&&i.t-x.at<ms*ctx.speed());
@@ -195,6 +214,16 @@ export function createFamily(ctx){
   let stressNow=0,sunNow=0,lastStats={};
   // Which verified milestones may earn a sunrise: the first, then each at least SUNRISE_GAP of performance time after the
   // last that did (a pure fold over the director's lasting record).
+  // The music per bar (ctx.musicAt: the host's musical clock, a pure function of the performance's frames): how much rhythm
+  // the arrangement plays there, and which section it belongs to. Cached per bar.
+  const barMusic=new Map();
+  function musicOfBar(k,bar){const key=`${k}|${bar}`;let v=barMusic.get(key);
+    if(!v){const ex=ctx.musicAt(k*bar+bar*.5);v={rhythm:ex?Math.pow(clamp(+ex.rhythm||0),1.5):0,section:ex?ex.section:null};barMusic.set(key,v);if(barMusic.size>512)barMusic.delete(barMusic.keys().next().value);}
+    return v;}
+  const rhythmAt=(k,bar)=>musicOfBar(k,bar).rhythm;
+  // The start of the section in force at t (the first bar of the run of bars with its section), within 64 bars.
+  function sectionStart(t,bar){const b=Math.floor(t/bar),s0=musicOfBar(b,bar).section;if(s0===null||s0===undefined)return null;
+    for(let k=b-1;k>=b-64;k--)if(musicOfBar(k,bar).section!==s0)return (k+1)*bar;return null;}
   function sunriseAllowed(at){const times=[];for(const l of ctx.director.lasting())for(const x of new Set([l.first,...(l.times||[])]))if(x<=at)times.push(x);
     times.sort((a,b)=>a-b);let last=-Infinity,ok=false;for(const x of times){const can=x-last>=SUNRISE_GAP;if(can)last=x;if(x===at)ok=can;}return ok;}
   // The present's files and ranges (positions, crests); the subjects of events by their files.
@@ -214,7 +243,7 @@ export function createFamily(ctx){
     return out.sort((a,b)=>b.k-a.k||a.at-b.at).slice(0,4);}
   let touches=[];
   // ---- Agents: surveyors over the ridge they work on (pure functions of the observed lifecycle and time) -----------------
-  const agentState=new Map();
+  const agentState=new Map();let travelNow=0;
   let editsT=null;const edits=new Map();
   function editsOf(voice){if(editsT!==info.t){edits.clear();editsT=info.t;}let l=edits.get(voice);
     if(!l){l=[...M().modules.values()].filter(m=>m.agentVoice===voice&&Number.isFinite(m.lastAgent)&&files.has(m.id)).sort((a,b)=>b.lastAgent-a.lastAgent).slice(0,4);edits.set(voice,l);}return l;}
@@ -226,26 +255,64 @@ export function createFamily(ctx){
     const ph=rand(hash(p.id))*TAU,home=p.home&&files.has(p.home)?files.get(p.home):null,waiting=p.display==='waiting'||p.display==='dormant'||p.display==='connected';
     if(home){const r=home.range,R=Math.max(4,r.w*.35),a=ph+tv*(p.busy?.3:.08);return [r.cd+Math.cos(a)*R,(crest.get(home.id)??0)+(waiting?17:11),5+(waiting?6:3)*(1+Math.sin(a))];}
     const c=(present.left+present.right)/2,R=Math.max(10,(present.right-present.left)*.3);return [c+Math.cos(ph+tv*.05)*R,peak+14,9];}
+  // From the goal before the latest change (a state, an edit landing, its dwell ending) to this one: between files of two
+  // ranges the roads join (at most three roads), down to the road and along the roads' own paths, HOVER above the drawn
+  // ground, to the other file, over the time the path takes at ROAD_V (1.8 to 4.5 s); otherwise a lifted arc over 1.8 s.
   function agentAt(id,t,tv){const a=ctx.agents.presence(id,t);if(!a)return null;let g=goalOf(a,tv,t);
     const sp=ctx.speed(),m=lastEdit(a,t);let tc=t-a.since;if(m){tc=Math.max(tc,m.lastAgent);if(m.lastAgent+DWELL*sp<=t)tc=Math.max(tc,m.lastAgent+DWELL*sp);}
-    if(t-tc<1800*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const k=smooth((t-tc)/(1800*sp)),q=goalOf(prev,tv,tc-1),lift=Math.sin(k*Math.PI)*Math.min(8,Math.abs(q[0]-g[0])*.25);
-      g=[lerp(q[0],g[0],k),lerp(q[1],g[1],k)+lift,lerp(q[2],g[2],k)];}}
+    if(t-tc<TRAVEL_MAX*sp){const prev=ctx.agents.presence(id,tc-1);if(prev){const q=goalOf(prev,tv,tc-1),path=journey(spotOf(prev,tc-1),spotOf(a,t),q,g);
+      if(path){const T=clamp(path.len/ROAD_V*1000,TRAVEL,TRAVEL_MAX)*sp;if(t-tc<T)return {a,p:pathAt(path,smooth((t-tc)/T)*path.len),travel:true};}
+      else if(t-tc<TRAVEL*sp){const k=smooth((t-tc)/(TRAVEL*sp)),lift=Math.sin(k*Math.PI)*Math.min(8,Math.abs(q[0]-g[0])*.25);
+        g=[lerp(q[0],g[0],k),lerp(q[1],g[1],k)+lift,lerp(q[2],g[2],k)];}}}
     return {a,p:g};}
+  // Where a goal is on the land, for a journey: the range and layout x of the file it works on, or of its home file while
+  // it circles over its home range; null when it circles the whole land.
+  function spotOf(p,t){const w=workOf(p,t)||(p.home&&files.has(p.home)?p.home:null),f=w&&files.get(w);return f?{range:f.range.id,x:f.xl}:null;}
+  // A journey between two ranges along the roads: from q (the goal it leaves, [x, height, depth]) down to the first road,
+  // along each road's path (and along the front edge between two roads in one range), up to g. The roads' part is a pure
+  // function of the present's roads and land, built once per frame.
+  let jT=null;const jMid=new Map();
+  function journey(A,B,q,g){
+    if(!A||!B||A.range===B.range)return null;
+    if(jT!==info.t){jMid.clear();jT=info.t;}const key=`${A.range}:${A.x}>${B.range}:${B.x}`;let mid=jMid.get(key);
+    if(mid===undefined){mid=null;const route=routeOf(roads.filter(r=>r.usable),A,B);
+      if(route){const pts=[],P3=[0,0,0],put=(xl,z)=>{onRoad(xl,z,HOVER,P3);pts.push([P3[0],P3[1],z]);};let x=null;
+        for(const {road,rev} of route){const P=rev?[...road.plan.pts].reverse():road.plan.pts;
+          // along the front edge from where the last road ended to where this one starts, in one range
+          if(x!==null){const n=Math.ceil(Math.abs(P[0][0]-x)/1.5);for(let k=1;k<n;k++)put(lerp(x,P[0][0],k/n),ROAD_Z0+.8);}
+          for(const p of P)put(p[0],p[1]);x=P[P.length-1][0];}
+        let len=0;for(let k=1;k<pts.length;k++)len+=dist3(pts[k-1],pts[k]);mid={pts,len};}
+      jMid.set(key,mid);}
+    if(!mid)return null;const P=mid.pts;return {pts:[q,...P,g],len:dist3(q,P[0])+mid.len+dist3(P[P.length-1],g)};}
+  const dist3=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
+  function pathAt(path,s){const P=path.pts;for(let k=1;k<P.length;k++){const d=dist3(P[k-1],P[k]);if(s<=d||k===P.length-1){const u=d>1e-9?clamp(s/d):1;
+    return [lerp(P[k-1][0],P[k][0],u),lerp(P[k-1][1],P[k][1],u),lerp(P[k-1][2],P[k][2],u)];}s-=d;}return P[P.length-1].slice();}
   function updateAgents(i){
-    const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Set();let k=0;
+    const sp=ctx.speed(),trailK=clamp(num(G.agents?.trail,1),.2,2.2),prom=clamp(num(G.agentProminence,.8),.3,1),seen=new Set();let k=0;travelNow=0;
     for(const v of U.uAg.value)v.set(0,0,0,0);
-    for(const a of i.agents.slice(0,12)){const h=agentAt(a.id,i.t,i.tview);if(!h)continue;seen.add(a.id);
+    for(const a of i.agents.slice(0,12)){const h=agentAt(a.id,i.t,i.tview);if(!h)continue;seen.add(a.id);if(h.travel)travelNow++;
       const pos=[h.p[0],h.p[1],-h.p[2]];let st=agentState.get(a.id);if(!st){st={pos:new THREE.Vector3()};agentState.set(a.id,st);}st.pos.set(...pos);
       const seat=seatOf(a),c=agentCol[seat],alpha=a.alpha*(a.busy?1:.65)*prom,sub=a.subagent?.75:1,tk=touches.find(x=>x.agentId===a.id)?.k||0;
       // its trail: where it was, carried back with the land since
       for(let s=18;s>=1;s--){const dt=s*90*sp*trailK,q=agentAt(a.id,i.t-dt,i.tview-s*.09*trailK);if(!q)continue;const f=1-s/19;point([q.p[0],q.p[1],-depthOf(ageOf(q.p[2],cfg)+dt,cfg)],c,alpha*f*f*.9,(2.5+6*f)*sub,8);}
       point(pos,c,alpha*.45,78*sub,11);point(pos,c,alpha*(1.5+tk),40*sub,seat<6?seat:6);point(pos,{r:1,g:1,b:1},alpha,7*sub,8);
-      // its beam on the land, brighter while it works there
-      const work=workOf(a,i.t),gy=work?(crest.get(work)??0):groundAt(pos[0],i.t-ageOf(h.p[2],cfg));
-      ribbon(pos,[pos[0],gy,pos[2]],.25,1.6,c,alpha*(work?.55+.6*tk:.18),1,.15);
-      if(k<6){U.uAg.value[k].set(pos[0],pos[1],pos[2],alpha*(work?1.4+2*tk:.5));U.uAgC.value[k].set(c.r,c.g,c.b,0);k++;}}
+      // its beam on the land, brighter while it works there (travelling along a road: a short beam to the road)
+      const work=h.travel?null:workOf(a,i.t),gy=work?(crest.get(work)??0):groundAt(pos[0],i.t-ageOf(h.p[2],cfg));
+      ribbon(pos,[pos[0],gy,pos[2]],.25,1.6,c,alpha*(work?.55+.6*tk:h.travel?.4:.18),1,.15);
+      if(k<6){U.uAg.value[k].set(pos[0],pos[1],pos[2],alpha*(work?1.4+2*tk:h.travel?.9:.5));U.uAgC.value[k].set(c.r,c.g,c.b,0);k++;}}
     U.uNAg.value=k;
     for(const id of agentState.keys())if(!seen.has(id))agentState.delete(id);
+    // agent.collision (two agents on one file): each agent's signal, in its colour and shape, runs in over the ground
+    // toward that file's peak from its own side (seeded by the event) over 1.2 s, trailing; where they meet a ring in
+    // both colours spreads and fades over about three seconds. A pure function of the time since the event.
+    const Q=[0,0,0];
+    for(const mt of near(meetings,i,4200)){const f=files.get(mt.fileId);if(!f)continue;const a0=(i.t-mt.at)/1000/sp,ph=rand(hash(`${mt.at}/${mt.fileId}`)),P=mt.providers.length?mt.providers:['a','b'];
+      const kk=smooth(a0/1.2),fade=1-smooth((a0-2.6)/1.6),cols=P.map(pv=>agentCol[presence(pv).seat%8]),site=[f.x,(crest.get(f.id)??0)+.9,-.6];
+      P.forEach((pv,j)=>{const ang=(ph+j/P.length)*TAU,seat=presence(pv).seat%8;
+        for(let tr=5;tr>=0;tr--){const d=Math.min(9,9*(1-kk)+tr*.6*(1-kk*.6));onRoad(f.xl+Math.cos(ang)*d,ROAD_Z0+Math.abs(Math.sin(ang))*d*.8,.9,Q);if(d<.4)for(let c2=0;c2<3;c2++)Q[c2]=lerp(site[c2],Q[c2],d/.4);
+          point(Q,cols[j],(tr?.5*(1-tr/6):1.4)*fade*mt.s*(a0<1.25?1:.35),tr?4+2*(6-tr)/6:24,tr?8:seat<6?seat:6);}});
+      if(a0>=1.1){const b=a0-1.1,c0=cols[0],c1=cols[1%cols.length],mix={r:(c0.r+c1.r)/2,g:(c0.g+c1.g)/2,b:(c0.b+c1.b)/2};
+        point(site,mix,1.8*Math.exp(-b*2.2)*mt.s,20+60*smooth(b/1.4),10);point(site,{r:1,g:1,b:1},1.2*Math.exp(-b*4)*mt.s,10,8);}}
   }
   // ---- Effects: recorded intents only -------------------------------------------------------------------------------------
   function effect(cmd,i){
@@ -261,7 +328,10 @@ export function createFamily(ctx){
       case 'peak':case 'uplift':push(glows,{at,files:ids,s:s*.8,c:'accent',r:.9},10);break;
       case 'erode':push(glows,{at,files:ids,s:s*.6,c:'highlight',r:.8},10);break;
       case 'horizon':push(horizons,{at,s});break;
-      default:break;// roads draw themselves from the model's own times
+      // two agents on one file (agent.collision; the director gives it the family's integration look): two signals
+      // meeting at that file's peak. A real connection's road draws itself from the model's own times.
+      case 'road':if(cmd.intent==='agent.collision'&&subj.fileId)push(meetings,{at,fileId:subj.fileId,providers:(cmd.detail?.providers||[]).slice(0,4),s},4);break;
+      default:break;
     }
   }
   function slots(i){
@@ -306,11 +376,36 @@ export function createFamily(ctx){
           if(xs.length)x=xs.reduce((a,b)=>a+b,0)/xs.length;if(x!==null)monuments.push({t:tm,x,kind:l.type==='milestone.achieved'?1:0,count:l.count});}}
       monuments.sort((a,b)=>b.t-a.t);}
     return monuments.filter(m=>m.t<=i.t&&i.t-m.t<MAX_AGE).slice(0,8);}
-  // ---- Roads: the present's cross-subsystem dependencies, draped over the land near the front edge -------------------------
+  // ---- Roads: the present's cross-subsystem dependencies, paths in the land near the front edge (terrain-roads.js) -------
   function roadsOf(i){const src=M(),out=[];
     for(const l of src.links.values()){if(!src.alive(l,i.t))continue;const a=files.get(l.a),b=files.get(l.b);if(!a||!b||a.range.id===b.range.id)continue;
       out.push({key:l.key,a,b,born:src.bornAt(l),removed:l.removed});}
     out.sort((x,y)=>y.born-x.born||(x.key<y.key?-1:1));return out.slice(0,MAX_ROADS);}
+  // The roads with their plans (layout x, depth), how much of each is drawn (it draws itself from the importer over 2.4
+  // s) and how present it is (a removed road fades over 1.6 s); for routes, each end's file x and range. Laid out on a
+  // lattice of ROAD_STEP of view time (the land eases under them; their light map is drawn again at most that often),
+  // so a pure function of the moment's lattice point; plans are kept while their ends and valleys stay where they are.
+  const ROAD_STEP=100;let roads=[],roadKey='',roadP=null;const plans=new Map();
+  function roadsAt(i){const sp=ctx.speed(),step=ROAD_STEP*sp,tq=ep()+Math.floor((i.t-ep())/step)*step,P=land.prepared,key=`${tq}|${step}`;
+    if(key===roadKey&&roadP===P)return roads;roadKey=key;roadP=P;
+    const R=rangesAt(P,tq,EASE,cfg),V=valleysOf(R.ranges,cfg.sp),at=new Map(),src=M(),list=[],used=new Set();
+    for(const r of R.ranges)for(const f of r.files)at.set(f.id,{x:f.x,range:r.id});
+    for(const l of src.links.values()){if(!src.alive(l,tq))continue;const a=at.get(l.a),b=at.get(l.b);if(!a||!b||a.range===b.range)continue;list.push({l,a,b,born:src.bornAt(l)});}
+    list.sort((x,y)=>y.born-x.born||(x.l.key<y.l.key?-1:1));const out=[];
+    for(const {l,a,b,born} of list.slice(0,MAX_ROADS)){const s=Math.sign(b.x-a.x)||1,va=V.get(a.range)[s>0?1:0],vb=V.get(b.range)[s>0?0:1],pk=`${a.x}|${b.x}|${va}|${vb}`;
+      const drawn=born===-Infinity?1:smooth((tq-born)/(2400*sp)),gone=l.removed!==null?1-smooth((tq-l.removed)/(1600*sp)):1;if(drawn*gone<=.003)continue;
+      let plan=plans.get(l.key);if(plan?.key!==pk){plan=roadPlan(a.x,b.x,va,vb);plan.key=pk;plans.set(l.key,plan);}used.add(l.key);
+      out.push({key:l.key,a:{id:l.a,x:a.x,range:a.range},b:{id:l.b,x:b.x,range:b.range},plan,drawn,alpha:gone,usable:drawn>=1&&gone>=1});}
+    for(const k of plans.keys())if(!used.has(k))plans.delete(k);
+    return roads=out;}
+  // The light map: drawn again only when a road, a plan or the lane grid changed (a pure function of what is drawn).
+  let roadSig='';
+  function drawRoads(i,inten){const X=land.extent,x0=X.Xc-X.Xh,w=2*X.Xh;let sig=`${x0}|${w}`;
+    for(const r of roads)sig+=`|${r.plan.key},${r.drawn},${r.alpha}`;
+    if(sig!==roadSig){roadSig=sig;rasterRoads(roads,x0,w,ROAD_W,ROAD_H,roadAcc);for(let k=0;k<roadAcc.length;k++){const v=roadAcc[k];roadPx[k]=v<=0?0:(255*(1-Math.exp(-v*1.1))+.5)|0;}roadTex.needsUpdate=true;}
+    U.uRoadX.value.set(x0,w>0?1/w:0,ROAD_Z,roads.length?clamp(Math.sqrt(12/roads.length),.35,1)*inten:0);}
+  // A plan's point (layout x, depth) on the drawn ground, `lift` above it: [x, y, z] in the scene.
+  function onRoad(xl,z,lift,out=[0,0,0]){const x=drawnX(xl,z);out[0]=x;out[1]=groundAt(x,info.t-ageOf(z,cfg))+lift;out[2]=-z;return out;}
   // ---- Frame ----------------------------------------------------------------------------------------------------------------
   function writeScene(i){
     const t=i.t,sp=ctx.speed(),tv=i.tview,inten=clamp(i.overrides.intensity??1,.4,1.3);nFx=0;nRib=0;
@@ -330,24 +425,20 @@ export function createFamily(ctx){
       const p=at3(m.x,m.t,0),hgt=m.kind?24+6*Math.min(3,m.count-1):7,lv=clamp(.6+.4*Math.min(3,m.count));U.uMn.value[k].set(p[0],(m.t-ep())/1000,m.kind,lv);
       ribbon(p,[p[0],p[1]+hgt,p[2]],m.kind?.6:.4,m.kind?.25:.3,pal.accent,.7*lv,1,0);ribbon(p,[p[0],p[1]+hgt*.45,p[2]],m.kind?1.8:1,.4,pal.accent,.25*lv,1,0);
       point([p[0],p[1]+hgt,p[2]],pal.accent,1.2*lv,m.kind?14:8,12);point([p[0],p[1]+.6,p[2]],pal.accent,.9*lv,m.kind?30:16,11);}
-    // roads: arcs of light between the two peaks just behind the front edge, pulses running from the importer
-    const roads=roadsOf(i),pulse=[],roadK=.16*clamp(Math.sqrt(12/Math.max(1,roads.length)),.3,1);let nr=0;
-    for(const r of roads){const life=r.born===-Infinity?1:smooth((t-r.born)/(2400*sp)),gone=r.removed!==null?1-smooth((t-r.removed)/(1600*sp)):1;if(life*gone<=.003)continue;
-      const hh=hash(r.key),d=.7+1.6*rand(hh),ya=(crest.get(r.a.id)??0)+.8,yb=(crest.get(r.b.id)??0)+.8,span=Math.abs(r.b.x-r.a.x),lift=Math.abs(ya-yb)*.5+2.2+span*.045;let prev=null;
-      const m=src.modules.get(r.a.id),fired=m?Math.max(m.lastAgent,m.lastHuman):-Infinity,pa=Number.isFinite(fired)?(t-fired)/1000/sp:Infinity;
-      for(let s2=0;s2<=ROAD_SEG;s2++){const u=s2/ROAD_SEG;if(u>life+1e-6)break;const p=[lerp(r.a.x,r.b.x,u),lerp(ya,yb,u)+Math.sin(u*Math.PI)*lift,-d-Math.sin(u*Math.PI)*1.2];
-        if(prev)ribbon(prev,p,.09,.09,pal.accent,roadK*gone*inten,1,1);prev=p;
-        if(pa<4&&Math.abs(u-clamp(pa/1.6))<.6/ROAD_SEG)pulse.push(p);}
-      // where it lands, a small glow on the imported peak
-      if(life>=1)point([r.b.x,yb,-.6],pal.accent,.35*gone*inten,9,8);nr++;}
-    for(const p of pulse)point(p,pal.accent,1.4*inten,12,8);
+    // roads: paths of light in the land (its shader draws them from the light map); a pulse runs along each from the
+    // importer when its file fires, and a small glow stays on the imported peak
+    roadsAt(i);drawRoads(i,inten);const P3=[0,0,0],PL=[0,0];let nr=0;
+    for(const r of roads){nr++;const b=files.get(r.b.id);if(r.drawn>=1&&b)point([b.x,(crest.get(b.id)??0)+.8,-.6],pal.accent,.35*r.alpha*inten,9,8);
+      const m=src.modules.get(r.a.id),fired=m?Math.max(m.lastAgent,m.lastHuman):-Infinity,pa=Number.isFinite(fired)?(t-fired)/1000/sp:Infinity;if(!(pa>=0&&pa<1.9))continue;
+      const L=r.plan.len*r.drawn,s0=L*smooth(pa/1.6);for(let k=0;k<4;k++){const s1=s0-k*.9;if(s1<0)break;planAlong(r.plan,Math.min(s1,L),PL);onRoad(PL[0],PL[1],.45,P3);
+        point(P3,pal.accent,(k?.55*(1-k/4):1.4)*inten*r.alpha*(1-smooth((pa-1.6)/.3)),k?7:12,8);}}
     // the scan and the fault: light on the covered ridges' peaks; a fault's sparks
     for(const x of near(faults,i,4000)){const a=(t-x.at)/1000/sp;for(const id of x.files){const f=files.get(id);if(!f)continue;const h=crest.get(id)??0,r=rand(hash(`${x.at}/${id}`));
       for(let k=0;k<6;k++){const q=(a*1.7+k/6+r)%1,ang=(r+k*.17)*TAU;point([f.x+Math.cos(ang)*q*3,h+.6+q*2.4-q*q*3,-.6-Math.sin(ang)*q*2],pal.warning,(1-q)*1.6*Math.exp(-a*.6)*x.s,5,8);}}}
     // motes over the land (ambient)
     const nm=Math.round(MOTES*.4*clamp(num(atm.motes,.7),0,1.6)*clamp(i.overrides.atmosphere??1,0,2)/1.6*QUALITY[clamp(Math.round(i.quality||0),0,3)].motes),cx=(present.left+present.right)/2,wd=Math.max(60,present.right-present.left);
     for(let k=0;k<nm;k++){const r1=rand(hash(`mote/${seed}/${k}`)),r2=rand(hash(`mote/${seed}/${k}/b`)),r3=rand(hash(`mote/${seed}/${k}/c`)),ph=r3*TAU;
-      const x=cx+(r1-.5)*wd*1.3+Math.sin(tv*.05+ph)*4,d=5+Math.pow(r2,1.6)*150+Math.sin(tv*.04+ph*1.3)*3,y=groundAt(x,t-ageOf(d,cfg))+1.5+5*r3+Math.sin(tv*.3+ph)*.8;
+      const x=cx+(r1-.5)*wd*1.3+Math.sin(tv*.05+ph)*4,d=flyZ+5+Math.pow(r2,1.6)*150+Math.sin(tv*.04+ph*1.3)*3,y=groundAt(x,t-ageOf(d,cfg))+1.5+5*r3+Math.sin(tv*.3+ph)*.8;
       point([x,y+4,-d],pal.highlight,(.2+.2*Math.sin(tv*.7+ph*3))*.45,1.5+1.5*r3,8);}
     lastStats={validated,stressed,roads:nr,commits:cms.length,monuments:mns.length};
   }
@@ -401,7 +492,8 @@ export function createFamily(ctx){
       kx=kxOf(present.left,present.right);warp=U.uWarp.value;tNow=i.t;e0=ep();
       // (the paths fade in replays faster than the life can follow the land: they would slide over its contours)
       U.uLifeX.value.set(kx,v.fadeIn,Math.min(1,(SPEED_MAX/Math.max(sp,1e-3))**2)*Math.min(1.8,M.trail),M.life);
-      const hazeK=Math.max(U.uHazeK.value,.2),haze=z=>(1-clamp(1-Math.exp(-Math.pow(Math.max(0,z)/(Zmax*.6/hazeK),1.8))))*Math.exp(-Math.max(0,z-45)/55);
+      // (the haze as the land's: counted from the depth the camera has flown back to, the last frame's)
+      const hazeK=Math.max(U.uHazeK.value,.2),haze=z=>{z-=flyZ;return (1-clamp(1-Math.exp(-Math.pow(Math.max(0,z)/(Zmax*.6/hazeK),1.8))))*Math.exp(-Math.max(0,z-45)/55);};
       const MB=M.bright,MS=M.size,F=FOLLOW[q];nP=0;nR=0;let drawn=0,fol=0,awake=0,asleep=0,grazing=0;
       const K=eco.K,head=eco.trailHead;lmBuf.fill(0);
       for(let e=0;e<eco.capacity;e++){
@@ -452,13 +544,23 @@ export function createFamily(ctx){
     sunNow=0;let sunX=0;for(const s of near(sunrises,i,16000)){if(!s.full)continue;const a=(i.t-s.at)/1000/sp;const k=smooth(a/1.5)*(1-smooth((a-9)/5));if(k>sunNow){sunNow=k;sunX=clamp(((centreOf(s.files)??0)-(present.left+present.right)/2)/Math.max(30,present.right-present.left),-.6,.6);}}
     U.uSun.value=sunNow;U.uSunX.value=sunX;U.uStress.value=stressNow;
     const beatMs=60000/tempoOf(i),reactive=clamp(num(MU.reactivity,.6),0,1);U.uBeat.value=i.beat*(.35+.65*num(MU.beatPulse,.4))*reactive;U.uBeatL.value=Math.floor(i.t/beatMs)%4;
+    // the music, only where the host gives its clock (ctx.musicAt): the present's contour lines shimmer on each off-beat
+    // eighth as strongly as the arrangement plays rhythm in that eighth's own bar (so a shimmer under way never
+    // changes), and a section's onset sends a soft wave of light back over the land (6 s)
+    U.uEighth.value=0;U.uSweep.value.set(0,0);
+    if(ctx.musicAt&&i.music){const eMs=beatMs/2,bar=beatMs*4,e=Math.floor(i.t/eMs),eo=((e%2)+2)%2===1?e:e-1,at=eo*eMs,ra=.4+.6*reactive;
+      U.uEighth.value=rhythmAt(Math.floor(at/bar),bar)*Math.exp(-(i.t-at)/eMs*2.2)*U.uShim.value*.55*ra;
+      const ts=sectionStart(i.t,bar);if(ts!==null){const a=(i.t-ts)/1000/sp;if(a>=0&&a<6)U.uSweep.value.set(a*26,.4*smooth(a/.3)*Math.exp(-a*.45)*ra);}}
     U.uDawn.value=i.unlocks[0]?.level||0;U.uLant.value=i.unlocks[1]?.level||0;bgU.uStars.value=i.unlocks[2]?.level||0;bgU.uAurora.value=i.unlocks[3]?.level||0;
     const atmo=clamp(i.overrides.atmosphere??1,0,2);U.uMist.value=clamp(num(atm.mist,.8),0,1.6)*atmo;U.uHazeK.value=clamp(num(atm.haze,.8),0,1.5)*Math.max(.3,atmo);
+    fly=flightAt(i.t,clamp(i.overrides.motion??1,0,2),flightNeed());
     slots(i);writeScene(i);updateAgents(i);fx.commit(nFx);rib.commit(nRib);
     if(lifePart)lifePart.update(i);
   }
   const fwd=new THREE.Vector3(),rightV=new THREE.Vector3();
   function afterCamera(i){camera.updateMatrixWorld();
+    // the haze and mist count from the depth the camera is over (0 unless it has flown back over the history)
+    flyZ=Math.max(0,-camera.position.z-10);U.uFlyZ.value=flyZ;
     // the key light: low, from the side of the land toward the horizon, travelling a slow arc (ambient); the sunrise swings it behind the land
     const la=(i?.tview||0)*.012*clamp(num(mot.light,.6),0,1.6)+rand(seed+3)*TAU,az=-Math.PI/2+.95*Math.sin(la),el=.2+.07*Math.sin(la*1.7+1);
     const k=new THREE.Vector3(Math.cos(az)*Math.cos(el),Math.sin(el),Math.sin(az)*Math.cos(el));
@@ -477,6 +579,49 @@ export function createFamily(ctx){
       contrast:clamp(num(LT.contrast,1),.85,1.3)*1.06,saturation:1.08*(1-.22*stressNow),vignette:num(LT.vignette,.3)*1.2,grain:num(LT.grain,.025)*.5,
       flash:flash*inten,tint,aberration:.0015,bloomTint:{x:1,y:.95,z:.9},streak:.06};
   }
+  // ---- The idle flight over history: a pure function of the performance and the moment ------------------------------
+  // When the quiet began at T: the latest observed happening at or before T (an effect the director decided, an event
+  // of the land's history, an edit, an agent's state), an agent at work holding it until its state is unknown. Agents
+  // are read from the lifecycle's own records (a departed agent's last state still counts).
+  const upperOf=(a,v)=>{let lo=0,hi=a.length;while(lo<hi){const m=(lo+hi)>>1;if(a[m]<=v)lo=m+1;else hi=m;}return lo;};
+  function quietOf(T){let last=-Infinity,from=-Infinity;
+    for(const c of ctx.director.commands||[])if(c.at<=T&&c.at>last)last=c.at;
+    const E=land.prepared?.events;if(E){const k=upperOf(E,T);if(k>0&&E[k-1]>last)last=E[k-1];}
+    for(const m of M().modules.values()){if(m.lastAgent<=T&&m.lastAgent>last)last=m.lastAgent;if(m.lastHuman<=T&&m.lastHuman>last)last=m.lastHuman;}
+    from=last;const recs=ctx.agents?.agents;
+    if(recs&&typeof recs.values==='function')for(const a of recs.values()){let e=a.past&&a.past.ts<=T?a.past:null;for(const x of a.events||[]){if(x.ts>T)break;e=x;}
+      if(e){if(e.ts>last)last=e.ts;from=Math.max(from,e.ts+(BUSY.has(e.state)?AGENT_UNKNOWN:0));}}
+    else for(const p of info.agents||[]){const at=T-p.since;if(at>last)last=at;from=Math.max(from,at+(BUSY.has(p.state)?AGENT_UNKNOWN:0));}
+    return {last,from:Math.max(from,last)};}
+  // The moment after `from` at which the director's activity has fallen to IDLE_A (it only decays while nothing happens).
+  function idleFrom(from){const A=T=>ctx.director.activityAt?ctx.director.activityAt(T):0;if(A(from)<=IDLE_A)return from;let lo=from,hi=from+600000*ctx.speed();if(A(hi)>IDLE_A)return hi;
+    for(let k=0;k<20;k++){const m=(lo+hi)/2;if(A(m)>IDLE_A)lo=m;else hi=m;}return hi;}
+  // The flight at T: none, or {w (how fully it holds the camera: the director's activity, the viewer's motion), p (how far
+  // back: 0 at the present, 1 where the land began), ph (view seconds into it)}. The first flight starts once the quiet
+  // has lasted FLIGHT.wait and the activity is idle; later ones on a lattice of view time (every FLY_P, from a whole
+  // period after the first), so they never depend on how long ago a happening was forgotten. A flight starts only when
+  // the land's recorded history (its first change) lies at least `need` deep at its start: something to fly over.
+  const NO_FLIGHT={w:0,p:0,ph:-1};
+  function flightAt(T,motion=1,need=0){
+    const E=land.prepared?.events;if(!E?.length)return NO_FLIGHT;
+    const sp=ctx.speed(),q=quietOf(T),from=Number.isFinite(q.from)?q.from:ep(),start=from+FLIGHT.wait*1000*sp;if(T<start||!(motion>0))return NO_FLIGHT;
+    const s1=Math.max(start,idleFrom(from));if(T<s1)return NO_FLIGHT;
+    const tv=(T-ep())/1000/sp,s1v=(s1-ep())/1000/sp;let ph=tv-s1v,began=s1;
+    if(ph>=FLY_LEN){const k=Math.floor(tv/FLY_P);ph=k*FLY_P>=s1v+FLY_P-1e-9?tv-k*FLY_P:Infinity;began=ep()+k*FLY_P*1000*sp;}
+    if(!(ph<FLY_LEN)||depthOf(began-E[0],cfg)<need)return NO_FLIGHT;
+    const A=ctx.director.activityAt?ctx.director.activityAt(T):0,w=(1-smooth((A-IDLE_A-.005)/.035))*clamp(motion);if(w<=0)return NO_FLIGHT;
+    const ease=x=>.5-.5*Math.cos(Math.PI*clamp(x)),{out,hold}=FLIGHT;
+    return {w,p:ph<out?ease(ph/out):ph<out+hold?1:ease(1-(ph-out-hold)/FLIGHT.back),ph};}
+  // How the camera returns after a happening ends a flight: faster the farther out it was (the flight just before it).
+  let yieldAt=null,yieldK=0;
+  function yieldOf(i){const q=quietOf(i.t);if(!Number.isFinite(q.last))return 0;
+    if(yieldAt!==q.last){yieldAt=q.last;const f=flightAt(q.last-1,clamp(i.overrides.motion??1,0,2),flightNeed());yieldK=f.w*smooth(f.p*3);}
+    return yieldK*(1-smooth((i.t-q.last)/(5000*ctx.speed())));}
+  // Where the land began: the depth of its first recorded change (or of the performance's start), now; and how deep it
+  // must lie for a flight (40 units beyond where the camera's own vantage looks).
+  function beginning(i){const E=land.prepared?.events||[],t0=E.length?E[0]:ep();return depthOf(i.t-Math.min(t0,i.t),cfg);}
+  const flightNeed=()=>(Math.max(40,present.right-present.left)+16)*(VANTAGE[cam.personality]||VANTAGE.survey).back*.6+40;
+  let fly=NO_FLIGHT,flyZ=0;
   // ---- Camera: the present's front edge and the land behind it; close to what changed; vantage points while idle ----------
   const baseAz=Math.PI/2+(rand(seed+11)<.5?-1:1)*(.5+.25*rand(seed+12)),tmp=new THREE.Vector3();
   const VANTAGE={survey:{el:.44,back:.7},valley:{el:.24,back:.9},map:{el:1.05,back:.6}};
@@ -494,6 +639,16 @@ export function createFamily(ctx){
     let distance=Math.max(wd*.62/Math.tan(hx),peak*5.5)*clamp(num(cam.distance,1),.6,1.6)*lerp(1.02,.9,smooth((el-.3)/.7))*(portrait?.82:1);
     const target=new THREE.Vector3(cx,peak*.25,-wd*back*.6);
     let az=baseAz+Math.sin(i.tview/150)*.22*drift*motion*(1-.6*smooth((el-.6)/.4));
+    // idle: the flight over the land's history. The target travels back along the time axis to just short of where the
+    // land began, over the land as it was then (its centre and width at that moment), the camera a little closer, higher
+    // (looking down on the old land) and more along the time axis, with a slow sway across; then it returns. Portrait
+    // keeps its steep view and frames the middle of the old land (its whole width would hold the camera far back).
+    if(fly.w>0){const k=fly.w,s=smooth(Math.min(1,fly.p*2.5)),Z0=wd*back*.6,Zf=Math.max(Z0+30,Math.min(beginning(i)-12,Zmax*.78)),Zt=lerp(Z0,Zf,fly.p),tp=i.t-ageOf(Zt,cfg);
+      const R=rangesAt(land.prepared,tp,EASE,cfg),wf=Math.max(30,R.right-R.left)+16,sway=Math.sin(fly.ph/FLY_LEN*TAU)*.14*wf*s,xf=lerp(cx,(R.left+R.right)/2,s)+sway;
+      const yf=lerp(peak*.25,Math.max(0,groundAt(drawnX(xf,Zt),tp))*.6+1,s),df=Math.max(wf*(portrait?.28:.5)/Math.tan(hx),56,peak*4.2)*clamp(num(cam.distance,1),.6,1.6)*(portrait?.82:1);
+      target.set(lerp(target.x,xf,k),lerp(target.y,yf,k),lerp(target.z,-Zt,k));
+      distance=lerp(distance,Math.min(distance,df),s*k);el=lerp(el,clamp(el,.56,.85),s*k);if(portrait)el=Math.max(el,.74);
+      az=lerp(az,Math.PI/2+(az-Math.PI/2)*.55+.1*Math.sin(fly.ph/FLY_LEN*TAU+1),s*k);}
     // what changed is seen up close: the front edge where it happened. An agent's edit (its touch raising the ground) is
     // this world's signature moment: a medium close-up that only a failure, a recovery or a milestone overrides.
     const att=ctx.director.attentionAt(i.t,2),since=att?(i.t-att.at)/ctx.speed()/1000:Infinity;let k=0;
@@ -506,7 +661,9 @@ export function createFamily(ctx){
     if(k<.01){const busy=i.agents.map(a=>workOf(a,i.t)).find(Boolean);
       if(busy&&files.has(busy)){const f=files.get(busy);target.lerp(tmp.set(f.x,(crest.get(busy)??0)*.6,-6),.45);distance=lerp(distance,Math.min(distance,Math.max(110,wd*.55)),.5);}}
     if(sunNow>0)distance*=1+.15*sunNow;
-    return {target,distance,azimuth:az,elevation:el,fov,omega:k>.01?1.1:.5};
+    // (during a flight the rig follows its moving goal closely; after a happening ends one, it returns quickly)
+    let omega=k>.01?1.1:fly.w>0?.9:.5;const y=yieldOf(i);if(y>0)omega=lerp(omega,Math.max(omega,1.5),y);
+    return {target,distance,azimuth:az,elevation:el,fov,omega};
   }
   function attentionPoint(c){const s=c.subject||{};let x=null;
     if(s.fileId&&files.has(s.fileId))x=files.get(s.fileId).x;
@@ -552,15 +709,16 @@ export function createFamily(ctx){
     const f=files.get(id),m=M().modules.get(id);if(!f||!m)return null;let roads=0;for(const r of roadsOf(i||info))if(r.a.id===id||r.b.id===id)roads++;
     return {position:new THREE.Vector3(f.x,(crest.get(id)??0)+.5,-.4),text:`A peak of ${ctx.name(f.range.id)} · ${M().stateAt(m,(i||info).t)}`,sub:`${plural(Math.round(f.n),'symbol')} · ${plural(roads,'road')}`};}
   function stats(){const X=land.extent;return {ranges:present.ranges.length,files:files.size,history:!!hist,rows:land.computed,extent:+X.Xh.toFixed(1),width:+(present.right-present.left).toFixed(1),peak:+peak.toFixed(1),
+    flight:+(fly.w*fly.p).toFixed(3),flightPhase:fly.w>0?+fly.ph.toFixed(2):null,hazeFrom:+flyZ.toFixed(1),travel:travelNow,
     touches:touches.length,roads:lastStats.roads||0,commits:lastStats.commits||0,monuments:lastStats.monuments||0,sunrises:sunrises.filter(s=>s.full).length,lastSunrise:sunrises.length?(sunrises.at(-1).full?'sunrise':'local'):null,
     fault:+stressNow.toFixed(2),fx:nFx,ribbons:nRib,grid:QUALITY[gridQ].nx*QUALITY[gridQ].nz};}
-  function rebuild(){hist=null;land.reset();cmSig='';mnSig='';}
+  function rebuild(){hist=null;land.reset();cmSig='';mnSig='';roadSig='';roadKey='';plans.clear();yieldAt=null;}
   function dispose(){const objs=[];scene.traverse(o=>{if(o!==scene)objs.push(o);});for(const o of objs){scene.remove(o);o.material?.dispose?.();}
     for(const g of grids.values())g.dispose();for(const x of disposables)x.dispose?.();lifePart?.dispose();}
   // After a seek: no transient survives (commits and monuments come back from the model and the director's record).
-  function onPrime(){for(const l of [scans,faults,heals,surveys,sunrises,glows,horizons])l.length=0;agentState.clear();cmSig='';mnSig='';}
+  function onPrime(){for(const l of [scans,faults,heals,surveys,sunrises,glows,horizons,meetings])l.length=0;agentState.clear();cmSig='';mnSig='';}
   // A replay's recorded windows (the host after a seek, or when this world loads into a replay): the land's history.
-  function onHistory(entries,t){hist=historyFrom(entries,t);land.reset();cmSig='';mnSig='';}
+  function onHistory(entries,t){hist=historyFrom(entries,t);land.reset();cmSig='';mnSig='';roadKey='';yieldAt=null;}
   function onDelta(d,s,e){hist?.applyDelta(d,s,e);}
   function onCue(c,t){if(hist)recordCue(hist,c,t);}
   // Composition anchors (layers.js): the land, its ranges, the peaks at the front edge. Read-only.

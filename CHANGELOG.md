@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- **Temporal Terrain flies over its history when the performance is idle:** once nothing has happened for 24 s and the
+  director's activity is idle, the camera travels back along the time axis over the older land that the logarithmic
+  depth compresses into the haze, to where the land's recorded history began, lingers there and returns (72 s in all;
+  later flights every 120 s while the quiet lasts). Any happening ends it at once, an agent at work holds it, and it
+  flies only where the history reaches well beyond the camera's own view (Self 60 s after its last event, Lumen
+  Recipes after six minutes, never a project indexed whole by its first scan). Portrait keeps its steep view; the
+  haze counts from where the camera is, so the old land is clear around it. A pure function of the performance and
+  the moment, like the rest of the world.
+- **Roads in the land:** Temporal Terrain's dependencies between subsystems are paths of light in the land near the
+  front edge instead of arcs over it: from the importing peak down into the valley beside its range, across at a depth
+  of its own (a longer road behind the shorter ones it spans) and up to the imported peak, drawn by the land's own
+  shader. An agent moving between ranges the roads join travels along them; two agents on one file are two signals in
+  their colours meeting at its peak. The recorded datasets never move an agent along a road, so this was seen only in
+  tests and a constructed scene.
+- **Temporal Terrain hears the music:** with the host's musical clock, the present's contour lines shimmer on the
+  off-beat eighths the arrangement plays, and a new section sends a soft wave of light back over the land. Tests:
+  `tests/terrain-flight.test.js`, `tests/terrain-roads.test.js`, `tests/terrain-music.test.js`; design and what is not
+  done in [docs/worlds/temporal-terrain.md](docs/worlds/temporal-terrain.md).
 - **Fractal Continuum's agents travel the threads:** a dependency thread is now a vein of light along the surface
   (traced at a coarse recursion and draped over the relief, its ends on the sites; within a region it hugs the form,
   between regions it arcs gently over it) instead of an arc that could run through the form. Between two sites the
