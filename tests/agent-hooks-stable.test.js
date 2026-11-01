@@ -4,12 +4,12 @@
 // that path; and the extension installs and removes them through the receiver's own plan/apply, sending the pairing key
 // only to a receiver that proved itself. Temporary data directories and free ports only.
 const test=require('node:test'),assert=require('node:assert/strict');
-const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),net=require('node:net'),http=require('node:http'),cp=require('node:child_process');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),http=require('node:http'),cp=require('node:child_process');
 const hooks=require('../extension/agent-hooks');
 const host=require('../extension/receiver-host');
 const REPO=path.join(__dirname,'..');
 const VERSION=require('../extension/package.json').version;
-const freePort=()=>new Promise((resolve,reject)=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const {port}=s.address();s.close(()=>resolve(port));});s.on('error',reject);});
+const {freePort}=require('./helpers');
 function temp(t,prefix='cr-hooks-'){
   const dir=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),prefix)));
   t.after(async()=>{

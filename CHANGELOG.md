@@ -9,9 +9,13 @@
   pull request. Measured on its own pull request: the validation jobs took 4.1 minutes (about 10 before) and the
   whole check 6.9 minutes (10–13 before), now set by the Ember Observatory pack's compatibility test.
 - **Timing:** the two failures 0.9.0's pull request met (the audio export's first bar a hair below zero, and a test
-  that expected the life driver's background stage in one frame) were fixed there. A search for more found none: the
-  suite passed 666/666 in eight stressed runs (three suites at once on 24 cores, twice, and confined to two cores each
-  with a busy loop competing, twice).
+  that expected the life driver's background stage in one frame) were fixed there. The suite then passed 666/666 in
+  eight stressed runs (three suites at once on 24 cores, twice, and confined to two cores each with a busy loop
+  competing, twice), but a later run met one more: the tests that start a receiver on a port of their own took it from
+  `listen(0)`, the system's ephemeral range, which the connections of the other test files draw from at the same
+  moment, so the port could be taken before the receiver bound it (a test's two receivers both found it occupied).
+  They now share one helper (`tests/helpers.js` `freePort`) that picks a port below every platform's ephemeral range,
+  at random, checked free and never twice in a file.
 
 ## 0.9.0 — 2026-11-01
 
