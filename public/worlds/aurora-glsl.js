@@ -215,7 +215,9 @@ void main(){float x=vM.x,y=vW.y,f=vM.y;
   float gx=x*.0067+(a.x-.5)*2.2+(c.z-.5)*4.;vec4 b=texture(uNoise,vec2(gx,y*.0042+(a.w-.5)*.6)+.6);
   float gul=smoothstep(.55,.85,b.x*.6+a.z*.4)*smoothstep(.15,.6,f);
   float sl=clamp(.7-.3*abs(vM.w)+.32*vM.w*uAurD.x,0.,1.);
-  float snow=smoothstep(.22,.55,f+(a.y-.5)*.45+(c.x-.5)*.25)*(1.-gul*.8);
+  // (the steepest faces hold no snow: dark rock bands and buttresses under the crests)
+  float cliff=smoothstep(.9,1.8,abs(vM.w)+(b.w-.5)*1.2)*smoothstep(.25,.6,f);
+  float snow=smoothstep(.22,.55,f+(a.y-.5)*.45+(c.x-.5)*.25)*(1.-gul*.8)*(1.-.75*cliff);
   // the snow takes the aurora's light (and the sky's), most on the slopes facing it and along the crests
   vec3 lit=uSkyAmb*.8+uAurL*(.22+.75*sl)*(.75+.35*c.y);float rim=smoothstep(.93,1.,f)*.4;
   vec3 col=mix(uSnowC*.03*(.7+.3*b.y),uSnowC*.62,snow*(.75+.25*b.z))*lit*(1.+rim);

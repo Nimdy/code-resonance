@@ -127,10 +127,12 @@ export function mountainLayers(seed,{layers=4,height=1}={}){
   for(let l=1;l<=n;l++){const R=MTN_R[l-1],K=1200,X=MTN_A,ys=new Float32Array(K),s=`${seed}/mtn/${l}`,off=rand(hash(s+'o'))*500;
     const H=height*R*(.058+.022*rand(hash(s)))*(l===1?.85:1),scale=R/(260+70*l);
     for(let i=0;i<K;i++){const a=-X+2*X*i/(K-1);
-      // ridges with peaks, a broad swell, and the valley of the lake's outlet kept low in the middle of the nearest layer
+      // ridges with peaks, a broad swell, now and then a massif standing above its range, and the valley of the lake's
+      // outlet kept low in the middle of the nearest layer
       const r=ridged(a*scale+off,s,5),sw=.5+.5*vn1(a*R/(950+320*l)+off,s+'s'),mid=l===1?1-.5*Math.exp(-((a/.42)**2)):1;
-      ys[i]=H*Math.pow(r,1.4)*sw*mid*1.35;}
-    out.push({l,tree:false,R,X,K,ys,haze:clamp(.16+.24*(l-1)/Math.max(1,n-1)*1.8,0,.85)});}
+      const ms=Math.pow(vn1(a*R/(2300+400*l)+off*1.7,s+'m'),3);
+      ys[i]=H*Math.pow(r,1.4)*sw*mid*1.35*(1+.6*ms);}
+    out.push({l,tree:false,R,X,K,ys,haze:clamp(.14+.2*(l-1)/Math.max(1,n-1)*1.8,0,.85)});}
   return out;
 }
 export function profileAt(L,x){const u=(x+L.X)/(2*L.X)*(L.K-1),i=Math.max(0,Math.min(L.K-2,Math.floor(u))),f=clamp(u-i);return L.ys[i]+(L.ys[i+1]-L.ys[i])*f;}
