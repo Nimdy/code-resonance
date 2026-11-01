@@ -127,6 +127,10 @@
 @container ar-main (max-width:1280px){.ws-artist .ar-foot-more .btn:not(#arExport) span{display:none}.ws-artist .ar-foot-more .btn:not(#arExport){width:30px;padding:0}}
 @container ar-main (max-width:1000px){.ws-artist .ar-foot-more .btn span{display:none}.ws-artist .ar-foot-more .btn{width:30px;padding:0}}
 @container ar-main (max-width:860px){.ws-artist .ar-strip{grid-template-columns:1fr}.ws-artist .ar-status{display:none}}
+/* A laptop's centre column (about 630 px at 1366 wide, 540 px at 1280) cannot hold every action on one line: the footer
+   wraps instead of cutting off Apply to project, which keeps the right edge of its own row, and the stage gives up the
+   height of that row. */
+@container ar-main (max-width:700px){.ws-artist .ar-foot{height:auto;flex-wrap:wrap;row-gap:6px}.ws-artist .ar-foot #arApply{margin-left:auto}.ws-artist .ar-slot{--ar-foot:82px}}
 /* ---- Right: the selected layer ---- */
 .ws-artist .ar-insp{min-width:0}
 .ws-artist .ar-insp-head{padding:14px 18px 12px;gap:6px}
@@ -200,7 +204,9 @@
 @media (max-height:900px){.ws-artist .ar-main{--ar-strip-min:206px}}
 @media (max-height:780px){.ws-artist .ar-main{--ar-strip-min:178px;--ar-head:32px;padding:8px 14px 6px}.ws-artist .ar-name{font-size:17px}.ws-artist .ar-layer{min-height:40px}}
 @media (max-width:1280px){.ws-artist{--ar-left:252px;--ar-insp:320px}}
-@media (max-width:1100px){.ws-artist{grid-template-columns:var(--ar-left) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;overflow:auto}
+/* Narrower, the selected layer goes under the library and the stage, which keep the whole height of the window (the
+   page scrolls to it): sharing the height with it left the stage a few pixels tall at 1024 x 700. */
+@media (max-width:1100px){.ws-artist{grid-template-columns:var(--ar-left) minmax(0,1fr);grid-template-rows:calc(100vh - var(--topbar)) auto;overflow:auto}
   .ws-artist .ar-insp{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}.ws-artist .ar-insp .inspector-body{overflow:visible}}
 @media (max-width:900px){.ws-artist{grid-template-columns:1fr;grid-template-rows:auto auto auto}.ws-artist .ar-left{grid-template-rows:auto auto}
   .ws-artist .ar-lib-list,.ws-artist .ar-stack-list{max-height:320px}
