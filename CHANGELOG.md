@@ -19,6 +19,12 @@
   authoritative, fixed-step, bounded simulation on the CPU whose state hashes agree between Node, real time and offline
   rendering (`public/worlds/genesis-field.js`, `genesis-field-view.js`; the proof in `qualification/visual/genesis-field/`;
   [docs/worlds/genesis-field.md](docs/worlds/genesis-field.md)). The player still shows the first Genesis preview.
+- **Genesis field, G1.5** (the model accepted as the experimental foundation): a dependency is now a supply line
+  (nutrient released along its current, taken up by the dependent territory, which grows from it); music acts at two
+  scales (a struck territory rings in a small elastic vibration over the slow shape, which no longer flaps, and its
+  resonator makes its folds breathe); a vault boundary (the rim held in a ring, gently inflated) gives an interior
+  lit by the light the matter transmits. Comparisons with and without the recorded dependency and the music, the tenth
+  minute of inactivity, and a continuous interior experiment, with their hashes and costs.
 
 ## 0.9.2 — 2026-11-01
 

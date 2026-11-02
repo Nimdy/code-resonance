@@ -1,0 +1,149 @@
+{
+ "film": "genesis-field-self-music",
+ "title": "Code Resonance: music as force, on and off",
+ "fieldVersion": 2,
+ "dataset": "self",
+ "variants": [
+  {
+   "music": true
+  },
+  {
+   "music": false
+  }
+ ],
+ "idle": false,
+ "window": {
+  "from": 0,
+  "to": 28
+ },
+ "field": {},
+ "vertices": 5941,
+ "hashes": [
+  {
+   "4": "1fbb41dec396434e",
+   "8": "21b99a59773cd47e",
+   "12": "9fc47aecfb9b1ce7",
+   "14": "e8adb65d0fc36937",
+   "18": "63579c8877218dab",
+   "20": "b35c1f90b2b86518",
+   "22": "da6b80a3c2f2dc09",
+   "24": "eb4c919f5f3102c3",
+   "26": "cb6fc5bdb0cd4e6a",
+   "28": "ffd48076a7eb749f"
+  },
+  {
+   "4": "1fbb41dec396434e",
+   "8": "21b99a59773cd47e",
+   "12": "9fc47aecfb9b1ce7",
+   "14": "e8adb65d0fc36937",
+   "18": "63579c8877218dab",
+   "20": "10e4ec787cdc8b6d",
+   "22": "24b08a78868c41b7",
+   "24": "fffab5b01d9ce55e",
+   "26": "c12d4981f53d03d1",
+   "28": "f8d3c79538bc9095"
+  }
+ ],
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": false,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": [
+  5.608,
+  6.936
+ ],
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 53.2,
+  "frames": 1510,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 31.7,
+   "p99": 47.2,
+   "max": 170.5,
+   "over34": 2.98
+  },
+  "cpuMs": {
+   "p50": 15.5,
+   "p95": 31.4,
+   "max": 136.6
+  },
+  "stepMs": {
+   "p50": 14,
+   "p95": 15.95,
+   "max": 52.1
+  },
+  "gpuMs": {
+   "n": 1508,
+   "p50": 13.58,
+   "p95": 15.54,
+   "max": 102.7
+  },
+  "heapMB": 29.8
+ },
+ "realtimeRecorded": {
+  "fps": 40.2,
+  "frames": 1143,
+  "frameMs": {
+   "p50": 18.2,
+   "p95": 48,
+   "p99": 99,
+   "max": 201.1,
+   "over34": 10.76
+  },
+  "cpuMs": {
+   "p50": 16.5,
+   "p95": 46.8,
+   "max": 182.9
+  },
+  "gpuMs": {
+   "n": 1142,
+   "p50": 14.37,
+   "p95": 15.95,
+   "max": 105.83
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 22445796,
+   "file": "genesis-field-self-music-realtime.webm"
+  }
+ },
+ "strikes": [
+  [
+   {
+    "at": 18,
+    "territory": 1,
+    "velocity": 0.36,
+    "before": 0,
+    "peak": 2.26,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 23.28,
+    "territory": 1,
+    "velocity": 0.3,
+    "before": 0,
+    "peak": 0.74,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 23.63,
+    "territory": 3,
+    "velocity": 0.4,
+    "before": 0.02,
+    "peak": 2.45,
+    "peakAfterMs": 133
+   }
+  ],
+  []
+ ]
+}

@@ -468,5 +468,431 @@
    "chapter": 3,
    "milestone": false
   }
- ]
+ ],
+ "idle": {
+  "at": 1792785655000,
+  "structure": {
+   "subsystems": [
+    {
+     "k": 0,
+     "files": 2,
+     "role": "core",
+     "born": 1792785415108.6956
+    },
+    {
+     "k": 1,
+     "files": 1,
+     "role": "logic",
+     "born": 1792785425054.348
+    },
+    {
+     "k": 2,
+     "files": 4,
+     "role": "logic",
+     "born": 1792785435000
+    },
+    {
+     "k": 3,
+     "files": 6,
+     "role": "interface",
+     "born": 1792785435489.1304
+    },
+    {
+     "k": 4,
+     "files": 1,
+     "role": "tests",
+     "born": 1792785485706.5217
+    },
+    {
+     "k": 5,
+     "files": 3,
+     "role": "logic",
+     "born": 1792785530054.348
+    }
+   ],
+   "deps": [
+    {
+     "a": 4,
+     "b": 2,
+     "w": 1
+    },
+    {
+     "a": 5,
+     "b": 2,
+     "w": 2
+    }
+   ]
+  },
+  "frames": [
+   {
+    "kind": 1,
+    "t": 1792785415000,
+    "end": 1792785420000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 1,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785425000,
+    "end": 1792785430000,
+    "energy": 0.6014613621613957,
+    "tension": 0,
+    "chapter": 1,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785430000,
+    "end": 1792785435000,
+    "energy": 0.45192659037890615,
+    "tension": 0,
+    "chapter": 1,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785435000,
+    "end": 1792785440000,
+    "energy": 0.5249742953380644,
+    "tension": 0,
+    "chapter": 1,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785440000,
+    "end": 1792785445000,
+    "energy": 0.4651585909443891,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785445000,
+    "end": 1792785450000,
+    "energy": 0.3698065107605838,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785455000,
+    "end": 1792785460000,
+    "energy": 0.4534112255645724,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785465000,
+    "end": 1792785470000,
+    "energy": 0.1,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785470000,
+    "end": 1792785475000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785485000,
+    "end": 1792785490000,
+    "energy": 0.30403287705364945,
+    "tension": 0.6,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785490000,
+    "end": 1792785495000,
+    "energy": 0.05,
+    "tension": 0.6,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785495000,
+    "end": 1792785500000,
+    "energy": 0.05,
+    "tension": 0.6,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785500000,
+    "end": 1792785505000,
+    "energy": 0.05,
+    "tension": 0.6,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785505000,
+    "end": 1792785510000,
+    "energy": 0.50546845206097,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785510000,
+    "end": 1792785515000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785515000,
+    "end": 1792785520000,
+    "energy": 0.1,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785520000,
+    "end": 1792785525000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785525000,
+    "end": 1792785530000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785530000,
+    "end": 1792785535000,
+    "energy": 0.24646848471455107,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785535000,
+    "end": 1792785540000,
+    "energy": 0.41891256450192166,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785540000,
+    "end": 1792785545000,
+    "energy": 0.32723518585767775,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785545000,
+    "end": 1792785550000,
+    "energy": 0.1319822341482707,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785550000,
+    "end": 1792785555000,
+    "energy": 0.13016219409591573,
+    "tension": 0,
+    "chapter": 2,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785555000,
+    "end": 1792785560000,
+    "energy": 0.2614414878559533,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785560000,
+    "end": 1792785565000,
+    "energy": 0.19158169246182113,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785565000,
+    "end": 1792785570000,
+    "energy": 0.1747088915854909,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785570000,
+    "end": 1792785575000,
+    "energy": 0.2877908534520683,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785575000,
+    "end": 1792785580000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785580000,
+    "end": 1792785585000,
+    "energy": 0.07500000000000001,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785585000,
+    "end": 1792785590000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785595000,
+    "end": 1792785600000,
+    "energy": 0.1383874757704843,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785600000,
+    "end": 1792785605000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785605000,
+    "end": 1792785610000,
+    "energy": 0.07500000000000001,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785610000,
+    "end": 1792785615000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785615000,
+    "end": 1792785620000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785620000,
+    "end": 1792785625000,
+    "energy": 0.24646848471455107,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785625000,
+    "end": 1792785630000,
+    "energy": 0.3363132867919214,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785630000,
+    "end": 1792785635000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785635000,
+    "end": 1792785640000,
+    "energy": 0.05,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785645000,
+    "end": 1792785650000,
+    "energy": 0.06517904313208164,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   },
+   {
+    "kind": 1,
+    "t": 1792785650000,
+    "end": 1792785655000,
+    "energy": 0.025,
+    "tension": 0,
+    "chapter": 3,
+    "milestone": false
+   }
+  ]
+ }
 }

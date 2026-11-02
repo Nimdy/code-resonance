@@ -61,7 +61,10 @@ const SRC=path.join(__dirname,'..','..','results','datasets',ds);
     const out={dataset:ds,seed:recipe.projectSeed>>>0,variant:recipe.variant||0,laws:recipe.genome.laws,material:recipe.genome.material,palette:recipe.genome.palette||null,
       music:{version:recipe.music?.scoreVersion??3,style:recipe.music?.style||recipe.style||'ambient',profile:recipe.music?.profile||null,seed:projectSeed},
       start,end,change:{...pick,offset:pick.at-start},before:structureAt(pick.at-1),after:structureAt(pick.at+4000),
-      frames:frames.filter(f=>f.end>=pick.at-120000&&f.t<=pick.at+120000)};
+      frames:frames.filter(f=>f.end>=pick.at-120000&&f.t<=pick.at+120000),
+      // the recording's end: its whole structure, and the frames of its last five minutes (the score after it is the
+      // score of inactivity)
+      idle:{at:end,structure:structureAt(end),frames:frames.filter(f=>f.end>=end-300000)}};
     const file=arg('out',path.join(__dirname,'inputs',`${ds}.json`));fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(out,null,1));
     console.log(`${ds}: change ${pick.kind} at +${(out.change.offset/1000).toFixed(1)} s; before ${out.before.subsystems.length} subsystems/${out.before.deps.length} deps, after ${out.after.subsystems.length}/${out.after.deps.length} -> ${path.relative(process.cwd(),file)}`);
   });}finally{fs.rmSync(dir,{recursive:true,force:true});}

@@ -1,0 +1,173 @@
+{
+ "film": "genesis-field-lumen-idle",
+ "title": "Lumen Recipes: the tenth minute of inactivity",
+ "fieldVersion": 2,
+ "dataset": "lumen",
+ "variants": [
+  {}
+ ],
+ "idle": true,
+ "window": {
+  "from": 600,
+  "to": 630
+ },
+ "field": {},
+ "vertices": 5941,
+ "hashes": [
+  {
+   "60": "669349709ea39485",
+   "120": "4edfe9ea7e7dac2b",
+   "180": "9e60ad5e898869ca",
+   "240": "2ef6e3879208ba69",
+   "300": "18ec9bcc5ee7d39b",
+   "360": "f392da15461dc39d",
+   "420": "678b22f1dae8e1c4",
+   "480": "c6836a5445b8cf26",
+   "540": "25d377bbd7c11ece",
+   "600": "d88e9bced854f046",
+   "610": "96edb3326941ce75",
+   "620": "9d87fe2ecf8099fd",
+   "630": "60478453d999a40d"
+  }
+ ],
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": false,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": [
+  3.558
+ ],
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 57,
+  "frames": 1731,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 16.9,
+   "max": 1389.2,
+   "over34": 0.17
+  },
+  "cpuMs": {
+   "p50": 4.4,
+   "p95": 5,
+   "max": 1388.1
+  },
+  "stepMs": {
+   "p50": 3.6,
+   "p95": 4.1,
+   "max": 7
+  },
+  "gpuMs": {
+   "n": 1730,
+   "p50": 8.88,
+   "p95": 9.14,
+   "max": 98.81
+  },
+  "heapMB": 16.3
+ },
+ "realtimeRecorded": {
+  "fps": 57.3,
+  "frames": 1742,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.9,
+   "p99": 17.1,
+   "max": 1221,
+   "over34": 0.17
+  },
+  "cpuMs": {
+   "p50": 4.6,
+   "p95": 5.5,
+   "max": 1211.3
+  },
+  "gpuMs": {
+   "n": 1741,
+   "p50": 8.76,
+   "p95": 9.3,
+   "max": 93.05
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 28030323,
+   "file": "genesis-field-lumen-idle-realtime.webm"
+  }
+ },
+ "strikes": [
+  [
+   {
+    "at": 600,
+    "territory": 3,
+    "velocity": 0.43,
+    "before": 0.02,
+    "peak": 4.33,
+    "peakAfterMs": 167
+   },
+   {
+    "at": 605.92,
+    "territory": 3,
+    "velocity": 0.31,
+    "before": 0,
+    "peak": 2.47,
+    "peakAfterMs": 167
+   },
+   {
+    "at": 606.3,
+    "territory": 1,
+    "velocity": 0.44,
+    "before": 0.08,
+    "peak": 3.86,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 612.62,
+    "territory": 4,
+    "velocity": 0.42,
+    "before": 0.02,
+    "peak": 3.62,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 615.78,
+    "territory": 0,
+    "velocity": 0.42,
+    "before": 0.01,
+    "peak": 3.67,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 618.55,
+    "territory": 5,
+    "velocity": 0.3,
+    "before": 0.03,
+    "peak": 2.25,
+    "peakAfterMs": 167
+   },
+   {
+    "at": 618.93,
+    "territory": 0,
+    "velocity": 0.41,
+    "before": 0.12,
+    "peak": 3.58,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 625.25,
+    "territory": 0,
+    "velocity": 0.35,
+    "before": 0.09,
+    "peak": 2.97,
+    "peakAfterMs": 150
+   }
+  ]
+ ]
+}

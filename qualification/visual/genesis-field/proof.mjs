@@ -9,6 +9,10 @@
 //   music .. end    the score's own passage plays (bars chosen after the change, see passageOf); its notes are forces
 export const SCHEDULE={change:12,music:18,end:28};
 export const CHECKPOINTS=[4,8,12,14,18,20,22,24,26,28];
+// The idle experiment (G1.5): the identity's whole recorded structure from flat, then nothing but the score of
+// inactivity (the bars after the recording's end) for `minutes`; checkpoints every minute and through the filmed window.
+export const IDLE={minutes:10,film:30};
+export const idleCheckpoints=m=>[...Array(m).keys()].map(k=>(k+1)*60).concat([m*60+10,m*60+20,m*60+30]);
 // The passage: the run of `bars` bars, starting within 90 s after the change, with the most notes that strike matter
 // (bass, pad, melody, arpeggio; a bass note weighs most), on the score's own bar grid.
 export function passageOf(musical,barMs,changeAt,bars){
@@ -19,15 +23,22 @@ export function passageOf(musical,barMs,changeAt,bars){
   return best&&{bar:best.bar,from:best.bar*barMs,bars,score:best.score};
 }
 // deps: {createField, DT, degreeOfMidi, score, createMusical}
-export function createProof(deps,inputs,{R=44,schedule=SCHEDULE}={}){
+// options: change (apply the recorded change; false for the comparison without it), music (the notes as forces; false
+// for the comparison without them: the score still plays), idle (the idle experiment instead of the proof), field
+// (extra options for the simulation: the interior experiment's boundary)
+export function createProof(deps,inputs,{R=44,schedule=SCHEDULE,change=true,music=true,idle=false,field={}}={}){
   const {createField,DT,degreeOfMidi}=deps;
   const id=deps.score.createIdentity(inputs.music.seed),tempo=id.tempo[inputs.music.style]||92,barMs=240000/tempo;
-  const musical=deps.createMusical({timeline:{version:1,items:inputs.frames},score:deps.score});
+  const musical=deps.createMusical({timeline:{version:1,items:idle?inputs.idle.frames:inputs.frames},score:deps.score});
   musical.configure({version:inputs.music.version,style:inputs.music.style,profile:inputs.music.profile,seed:inputs.music.seed,tempo});
   const key=musical.key();
   const bars=Math.ceil((schedule.end-schedule.music)*1000/barMs)+1;
-  const passage=passageOf(musical,barMs,inputs.change.at,bars);
-  const sim=createField({laws:inputs.laws,structure:inputs.before,seed:inputs.seed,R,tempo});
+  // the idle experiment's music: the score from the first bar after the recording's end, as it plays during inactivity
+  const passage=idle?{bar:Math.ceil(inputs.idle.at/barMs),from:Math.ceil(inputs.idle.at/barMs)*barMs,bars:Math.ceil((IDLE.minutes*60+IDLE.film)*1000/barMs),idle:true}
+    :passageOf(musical,barMs,inputs.change.at,bars);
+  const sim=createField({laws:inputs.laws,structure:idle?inputs.idle.structure:inputs.before,seed:inputs.seed,R,tempo,...field});
+  // a longer schedule (the interior experiment) keeps the proof's checkpoints and adds one every 4 s after them
+  const checkpoints=idle?idleCheckpoints(IDLE.minutes):CHECKPOINTS.filter(c=>c<=schedule.end).concat([...Array(Math.max(0,Math.floor((schedule.end-28)/4)))].map((_,i)=>32+4*i)),start=idle?0:schedule.music;
   const DEG=[0,4,2,5,3,1,6];
   // the territory a note of scale degree d strikes: those whose degree it is (subsystem order), the largest for a low
   // voice; without one, the d-th (so every degree has a home)
@@ -56,13 +67,13 @@ export function createProof(deps,inputs,{R=44,schedule=SCHEDULE}={}){
   function advanceTo(tau){
     while(sim.step*DT+1e-9<tau){
       const t=sim.step*DT;
-      if(!applied&&t>=schedule.change){sim.setStructure(inputs.after,{at:sim.time});applied=true;log.push({at:t,kind:'change',change:inputs.change.kind});}
-      const m=t>=schedule.music&&passage?musicAt(passage.from+(t-schedule.music)*1000):null;
+      if(!idle&&change&&!applied&&t>=schedule.change){sim.setStructure(inputs.after,{at:sim.time});applied=true;log.push({at:t,kind:'change',change:inputs.change.kind});}
+      const m=music&&t>=start&&passage?musicAt(passage.from+(t-start)*1000):null;
       sim.advance(m);
-      const t2=sim.step*DT;for(const c of CHECKPOINTS)if(hashes[c]===undefined&&t2>=c-1e-9)hashes[c]=sim.hash();
+      const t2=sim.step*DT;for(const c of checkpoints)if(hashes[c]===undefined&&t2>=c-1e-9)hashes[c]=sim.hash();
     }
   }
-  return {sim,tempo,barMs,key,passage,schedule,advanceTo,hashes,log,musical,
+  return {sim,tempo,barMs,key,passage,schedule,advanceTo,hashes,log,musical,variant:{change,music,idle},checkpoints,
     get tau(){return sim.step*DT;},
     phase(tau){return tau<schedule.change?'self-organisation':tau<schedule.music?'architectural change':'music';}};
 }

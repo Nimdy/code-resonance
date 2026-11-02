@@ -1,0 +1,161 @@
+{
+ "film": "genesis-field-self-interior",
+ "title": "Code Resonance: the interior, one continuous take (44 s)",
+ "fieldVersion": 2,
+ "dataset": "self",
+ "variants": [
+  {}
+ ],
+ "idle": false,
+ "window": {
+  "from": 0,
+  "to": 44
+ },
+ "field": {
+  "boundary": "vault",
+  "inflate": 1.4
+ },
+ "vertices": 8269,
+ "hashes": [
+  {
+   "4": "f4df555147e157fa",
+   "8": "ee7a2c938c01bdb1",
+   "12": "20a102ee8a589eff",
+   "14": "1cc86f60d7e653c3",
+   "18": "ab2db423a94d24dd",
+   "20": "13ae78e35cb32f2c",
+   "22": "351183278a589eff",
+   "24": "1202bad2681474f8",
+   "26": "3fc96e2371eede45",
+   "28": "f805e112f39c78bd",
+   "32": "e87829b307dafd8a",
+   "36": "2191fe6e7e8de78d",
+   "40": "29c766892371cfa0",
+   "44": "47500c150c85bd66"
+  }
+ ],
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": true,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": [
+  6.752
+ ],
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 26.8,
+  "frames": 1189,
+  "frameMs": {
+   "p50": 37.8,
+   "p95": 75,
+   "p99": 76.9,
+   "max": 91.5,
+   "over34": 73.09
+  },
+  "cpuMs": {
+   "p50": 16.5,
+   "p95": 33.4,
+   "max": 90.7
+  },
+  "stepMs": {
+   "p50": 6.95,
+   "p95": 8.5,
+   "max": 37.1
+  },
+  "gpuMs": {
+   "n": 1184,
+   "p50": 36.75,
+   "p95": 37.52,
+   "max": 115.69
+  },
+  "heapMB": 28
+ },
+ "realtimeRecorded": {
+  "fps": 22.8,
+  "frames": 1012,
+  "frameMs": {
+   "p50": 44.5,
+   "p95": 48.1,
+   "p99": 65.2,
+   "max": 111.9,
+   "over34": 95.45
+  },
+  "cpuMs": {
+   "p50": 24.2,
+   "p95": 33.1,
+   "max": 108.7
+  },
+  "gpuMs": {
+   "n": 1010,
+   "p50": 37.42,
+   "p95": 38.17,
+   "max": 129.39
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 43722605,
+   "file": "genesis-field-self-interior-realtime.webm"
+  }
+ },
+ "strikes": [
+  [
+   {
+    "at": 22,
+    "territory": 1,
+    "velocity": 0.36,
+    "before": 0,
+    "peak": 1.6,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 27.28,
+    "territory": 1,
+    "velocity": 0.3,
+    "before": 0,
+    "peak": 1.31,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 27.63,
+    "territory": 3,
+    "velocity": 0.4,
+    "before": 0.03,
+    "peak": 2.1,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 33.28,
+    "territory": 4,
+    "velocity": 0.37,
+    "before": 0.06,
+    "peak": 1.26,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 38.58,
+    "territory": 5,
+    "velocity": 0.3,
+    "before": 0,
+    "peak": 1.47,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 38.93,
+    "territory": 7,
+    "velocity": 0.46,
+    "before": 0.02,
+    "peak": 2,
+    "peakAfterMs": 133
+   }
+  ]
+ ]
+}

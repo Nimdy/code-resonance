@@ -1,0 +1,149 @@
+{
+ "film": "genesis-field-lumen-music",
+ "title": "Lumen Recipes: music as force, on and off",
+ "fieldVersion": 2,
+ "dataset": "lumen",
+ "variants": [
+  {
+   "music": true
+  },
+  {
+   "music": false
+  }
+ ],
+ "idle": false,
+ "window": {
+  "from": 0,
+  "to": 28
+ },
+ "field": {},
+ "vertices": 5941,
+ "hashes": [
+  {
+   "4": "7f81b25fbdb71123",
+   "8": "e7ef412e981a4e91",
+   "12": "841e457a8df6201c",
+   "14": "eaba4c4adbe33fcb",
+   "18": "eaa7d5459b44e9b3",
+   "20": "a095c9d233f21bd5",
+   "22": "1b52c25bb4dc11a2",
+   "24": "dc9783ad69d1d1ab",
+   "26": "fac52ca42f544be8",
+   "28": "d438c0dcd51cbe48"
+  },
+  {
+   "4": "7f81b25fbdb71123",
+   "8": "e7ef412e981a4e91",
+   "12": "841e457a8df6201c",
+   "14": "eaba4c4adbe33fcb",
+   "18": "eaa7d5459b44e9b3",
+   "20": "334ba051911f8767",
+   "22": "2af83be799ff14d8",
+   "24": "99a1465f765e067c",
+   "26": "9fab81545a8dd214",
+   "28": "a2cd9bc2ba7a6fda"
+  }
+ ],
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": false,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": [
+  3.98,
+  4.437
+ ],
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 58.8,
+  "frames": 1669,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 30.1,
+   "max": 113.3,
+   "over34": 0.84
+  },
+  "cpuMs": {
+   "p50": 10.6,
+   "p95": 11.9,
+   "max": 89.1
+  },
+  "stepMs": {
+   "p50": 9.5,
+   "p95": 10.3,
+   "max": 43.1
+  },
+  "gpuMs": {
+   "n": 1668,
+   "p50": 13.81,
+   "p95": 14.57,
+   "max": 117.57
+  },
+  "heapMB": 26.3
+ },
+ "realtimeRecorded": {
+  "fps": 50.7,
+  "frames": 1439,
+  "frameMs": {
+   "p50": 20,
+   "p95": 25.5,
+   "p99": 40.7,
+   "max": 139,
+   "over34": 1.25
+  },
+  "cpuMs": {
+   "p50": 11.5,
+   "p95": 21.6,
+   "max": 90.4
+  },
+  "gpuMs": {
+   "n": 1437,
+   "p50": 13.98,
+   "p95": 14.9,
+   "max": 115.16
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 31457474,
+   "file": "genesis-field-lumen-music-realtime.webm"
+  }
+ },
+ "strikes": [
+  [
+   {
+    "at": 18,
+    "territory": 4,
+    "velocity": 0.44,
+    "before": 0,
+    "peak": 3.97,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 23.92,
+    "territory": 1,
+    "velocity": 0.33,
+    "before": 0,
+    "peak": 2.25,
+    "peakAfterMs": 150
+   },
+   {
+    "at": 24.3,
+    "territory": 0,
+    "velocity": 0.43,
+    "before": 0.12,
+    "peak": 3.58,
+    "peakAfterMs": 150
+   }
+  ],
+  []
+ ]
+}

@@ -1,0 +1,125 @@
+{
+ "film": "genesis-field-self-idle",
+ "title": "Code Resonance: the tenth minute of inactivity",
+ "fieldVersion": 2,
+ "dataset": "self",
+ "variants": [
+  {}
+ ],
+ "idle": true,
+ "window": {
+  "from": 600,
+  "to": 630
+ },
+ "field": {},
+ "vertices": 5941,
+ "hashes": [
+  {
+   "60": "942f541dad66c60b",
+   "120": "be64fa4e0cdf94b1",
+   "180": "7f53b2461f740081",
+   "240": "f23890a384e4e0ef",
+   "300": "6df05ed2f4dcb9af",
+   "360": "0de7a93b27f6f620",
+   "420": "aaf18ba537dc107f",
+   "480": "79f61123ecc99506",
+   "540": "9242ab8eaf9b06ce",
+   "600": "543edd9f12de5d51",
+   "610": "f7ede567200ec92b",
+   "620": "b95f706fee753f27",
+   "630": "9ceffddbaa9c7744"
+  }
+ ],
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": false,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": [
+  5.019
+ ],
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 53.8,
+  "frames": 1637,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 17,
+   "max": 2352.3,
+   "over34": 0.43
+  },
+  "cpuMs": {
+   "p50": 6.7,
+   "p95": 8,
+   "max": 2351.2
+  },
+  "stepMs": {
+   "p50": 5.8,
+   "p95": 6.8,
+   "max": 10.8
+  },
+  "gpuMs": {
+   "n": 1636,
+   "p50": 9.72,
+   "p95": 10.08,
+   "max": 123.38
+  },
+  "heapMB": 16.3
+ },
+ "realtimeRecorded": {
+  "fps": 55.5,
+  "frames": 1686,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 16.8,
+   "p99": 17,
+   "max": 1795.6,
+   "over34": 0.3
+  },
+  "cpuMs": {
+   "p50": 5.7,
+   "p95": 6.4,
+   "max": 1785.6
+  },
+  "gpuMs": {
+   "n": 1685,
+   "p50": 9.08,
+   "p95": 9.63,
+   "max": 97.53
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 27596820,
+   "file": "genesis-field-self-idle-realtime.webm"
+  }
+ },
+ "strikes": [
+  [
+   {
+    "at": 615.52,
+    "territory": 4,
+    "velocity": 0.37,
+    "before": 0,
+    "peak": 1.5,
+    "peakAfterMs": 133
+   },
+   {
+    "at": 621.17,
+    "territory": 7,
+    "velocity": 0.33,
+    "before": 0,
+    "peak": 1.86,
+    "peakAfterMs": 150
+   }
+  ]
+ ]
+}
