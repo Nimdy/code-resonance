@@ -13,13 +13,15 @@
 //    region's (feed, kill) comes from its role, its seed and the Lawbook, so regions grow different architectures
 //    (layered strata, tunnel networks, dividing cells, foam, drifting fronts) that meet and interact at their borders;
 //  - a dependency is a passage: along the line between the two seats the chemistry is fed (a tunnel opens and stays
-//    open), a current runs through it from the region depended on to the dependent one, and it carries a nutrient the
-//    dependent region feeds on (its cavities grow);
+//    open), and it drives a circulation (version 2): the medium streams through the passage from the region depended on
+//    to the dependent one and returns through the matter around it, carrying the activity, the substrate and a nutrient
+//    the dependent region feeds on. Matter carried into the passage dissolves and re-forms downstream, so the walls
+//    around a passage never settle (without it every regime freezes into a still pattern within about a minute);
 //  - music is pressure: a wave equation through the whole medium; a bass note strikes its region at its seat and the
 //    wave crosses the world, a region rings at the matter's natural frequency (tuned toward the beat by the resonance
 //    law), and the walls (the matter's boundary) move with the pressure. Linear and damped: nothing is left changed.
 import {dexp,dsin,dcos,dpow,dlog,stream,hashString,physicsOf} from './genesis-field.js';
-export const VOLUME_VERSION=1;
+export const VOLUME_VERSION=2;
 export const DT=1/60;
 const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -39,6 +41,12 @@ export const REGIMES={
 // each role's architecture, and the livelier one a region takes when its project's stability law is low
 const ROLE_REGIME={core:['open','open'],interface:['labyrinth','tide'],services:['worms','tide'],model:['chambers','worms'],logic:['tubes','labyrinth'],tests:['chambers','tide']};
 export const GAIN={strike:9,tap:3};
+// the circulation a dependency drives (version 2): the speed on its axis (cells per second, before the coupling law and
+// the dependency's weight), the radius of its forward core (cells), the return sheath's radius as a multiple of it, and
+// how far beyond the seats it turns (cells)
+export const FLOW={U:8,a:4,b:2,turn:6};
+// the length scale of the chemistry (version 2): both diffusions times this (a pattern's wavelength scales with its root)
+export const GRAIN=.3;
 // regionLaw: a subsystem's chemistry from its role, its own seed and the Lawbook (a fractional position on REGIMES and
 // a speed). Distinct projects mix distinct regimes in distinct proportions.
 export function regionLaw(sub,laws,seed){
@@ -52,10 +60,14 @@ export function regionLaw(sub,laws,seed){
   return {F:g.F+j,k:g.k,regime:name,speed:Math.min(.82,lerp(.55,.8,L('morphogenesis'))*(.95+.1*r()))};
 }
 // nx x ny x nz cells; laws, structure ({subsystems, deps}) and seed as for the field.
-export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}={}){
+export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92,flow=FLOW}={}){
   const P=physicsOf(laws),rnd=stream(seed^0x51A7),NC=nx*ny*nz,sx=1,sy=nx,sz=nx*ny;
-  const u=new Float32Array(NC),v=new Float32Array(NC),u2=new Float32Array(NC),v2=new Float32Array(NC);
+  // the chemistry writes into the second pair and the pairs swap (read-outs are getters)
+  let u=new Float32Array(NC),v=new Float32Array(NC),u2=new Float32Array(NC),v2=new Float32Array(NC);
   const F=new Float32Array(NC),Kf=new Float32Array(NC),rate=new Float32Array(NC);
+  // the medium's grain (version 2): diffusion along each axis (the three sum to 3); a region whose chemistry spreads more
+  // easily in a plane than across it builds its architecture in layers stacked across that plane
+  const gw=new Float32Array(3*NC).fill(1);
   const nut=new Float32Array(NC),nut2=new Float32Array(NC);
   const p=new Float32Array(NC),pd=new Float32Array(NC);
   // life: how fast the matter is changing here (a running average of the activity's change), what the view lights
@@ -64,6 +76,8 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
   const MAXK=16;let subs=[],K=0,seats=new Float64Array(0),born=new Float64Array(0),laws_=[];
   let deps=[],tubes=[],step=0,time=0;
   const res=new Float64Array(MAXK*2),omega=new Float64Array(MAXK);
+  // the circulation: one step of each passage's current gathered here before it is written (see advectBy)
+  let gather=new Float32Array(0);
   // periodic differences in x and z
   const dwrap=(d,n)=>d>n/2?d-n:d<-n/2?d+n:d;
   // ---- the world before anything: rock everywhere, a little activity scattered (deterministic) -------------------
@@ -98,9 +112,13 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
     return sh.map(x=>{const r=dpow(x/tot*NC*3/(4*Math.PI),1/3);return r*r;});}
   function lawField(){
     const L=laws_;
-    for(let i=0;i<NC;i++){const a=L[reg[i]],b=L[reg2[i]],t=blend[i];F[i]=lerp(a.F,b.F,t);Kf[i]=lerp(a.k,b.k,t);rate[i]=lerp(a.speed,b.speed,t);}
-    // the passages: along each dependency the chemistry is fed, so a tunnel opens (ramped from its birth)
-    for(const T of tubes){const g=T.grow;if(g<=0)continue;for(let q=0;q<T.cells.length;q++){const i=T.cells[q],s=T.w[q]*g;F[i]=lerp(F[i],.039,s);Kf[i]=lerp(Kf[i],.058,s);}}
+    for(let i=0;i<NC;i++){const a=L[reg[i]],b=L[reg2[i]],t=blend[i];F[i]=lerp(a.F,b.F,t);Kf[i]=lerp(a.k,b.k,t);rate[i]=lerp(a.speed,b.speed,t);
+      gw[3*i]=lerp(a.grain[0],b.grain[0],t);gw[3*i+1]=lerp(a.grain[1],b.grain[1],t);gw[3*i+2]=lerp(a.grain[2],b.grain[2],t);}
+    // the passages: along each dependency the chemistry takes the open regime (ramped from its birth), so a tunnel opens
+    // through whatever architecture it crosses (version 2: at the finer grain a merely richer feed builds a labyrinth
+    // inside the tube instead of a tunnel)
+    const O=REGIMES.open;
+    for(const T of tubes){const g=T.grow;if(g<=0)continue;for(let q=0;q<T.cells.length;q++){const i=T.cells[q],s=T.w[q]*g;F[i]=lerp(F[i],O.F,s);Kf[i]=lerp(Kf[i],O.k,s);}}
   }
   function tubeOf(d){
     // the cells near the shortest (periodic) segment from the dependent's seat (a) to the depended-on's seat (b)
@@ -117,7 +135,57 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
     // order the cells (deterministic) by index
     const ord=cells.map((c,j)=>j).sort((p1,p2)=>cells[p1]-cells[p2]);
     return {cells:Int32Array.from(ord.map(j=>cells[j])),w:Float32Array.from(ord.map(j=>w[j])),along:Float32Array.from(ord.map(j=>along[j])),
-      dir:[-dx/len,-dy/len,-dz/len],born:d.born,grow:0,weight:d.w};
+      dir:[-dx/len,-dy/len,-dz/len],mid:[ax+dx/2,ay+dy/2,az+dz/2],len,born:d.born,grow:0,weight:d.w,phase:(hashString(d.key)%1000)/1000,acc:0};
+  }
+  // the circulation a passage drives, at unit speed: the discrete curl of a vector potential about its axis,
+  // A = Phi(r) g(z) (dir x r) / r², Phi = a² (exp(-r²/2b²) - exp(-r²/2a²)), so the axial velocity is
+  // exp(-r²/2a²) - (a/b)² exp(-r²/2b²): forward through the passage, back through a sheath around it, no net flux, and
+  // divergence-free; g turns it around beyond the seats
+  let Ax=null,Ay=null,Az=null;
+  function circulationOf(T){
+    if(!Ax){Ax=new Float64Array(NC);Ay=new Float64Array(NC);Az=new Float64Array(NC);}
+    const a0=flow.a,b0=a0*flow.b,half=T.len/2,turn2=flow.turn*flow.turn,[dx,dy,dz]=T.dir,[mx,my,mz]=T.mid,reach=9*b0*b0,touched=[];
+    for(let z=0;z<nz;z++)for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){
+      const px=dwrap(x-mx,nx),py=dwrap(y-my,ny),pz=dwrap(z-mz,nz),t=px*dx+py*dy+pz*dz,rx=px-t*dx,ry=py-t*dy,rz=pz-t*dz,r2=rx*rx+ry*ry+rz*rz;
+      if(r2>reach)continue;const e=Math.max(0,Math.abs(t)-half);if(e>3*flow.turn)continue;const g=dexp(-e*e/(2*turn2));
+      const c=r2>1e-9?a0*a0*(dexp(-r2/(2*b0*b0))-dexp(-r2/(2*a0*a0)))*g/r2:.5*(1-a0*a0/(b0*b0))*g;
+      const i=x+y*sy+z*sz;Ax[i]=c*(dy*rz-dz*ry);Ay[i]=c*(dz*rx-dx*rz);Az[i]=c*(dx*ry-dy*rx);touched.push(i);}
+    const cells=[],v3=[];
+    for(const i of touched){const x=i%nx,y=Math.floor(i/sy)%ny,z=Math.floor(i/sz);
+      const X1=(x+1)%nx+y*sy+z*sz,X0=(x+nx-1)%nx+y*sy+z*sz,Y1=x+((y+1)%ny)*sy+z*sz,Y0=x+((y+ny-1)%ny)*sy+z*sz,Z1=x+y*sy+((z+1)%nz)*sz,Z0=x+y*sy+((z+nz-1)%nz)*sz;
+      const ux=.5*((Az[Y1]-Az[Y0])-(Ay[Z1]-Ay[Z0])),uy=.5*((Ax[Z1]-Ax[Z0])-(Az[X1]-Az[X0])),uz=.5*((Ay[X1]-Ay[X0])-(Ax[Y1]-Ax[Y0]));
+      if(ux*ux+uy*uy+uz*uz<1e-6)continue;cells.push(i);v3.push(ux,uy,uz);}
+    for(const i of touched){Ax[i]=0;Ay[i]=0;Az[i]=0;}
+    return {cells:Int32Array.from(cells),v:Float32Array.from(v3)};
+  }
+  // a passage's current at full strength (the coupling law, the dependency's weight) as one semi-Lagrangian step of two
+  // fixed steps (the currents move every other step): for every cell it moves (at least a quarter of a cell a second),
+  // the eight cells (and weights) it comes from
+  const ADV=2*DT;
+  function stencilOf(T){
+    if(!T.flow)T.flow=circulationOf(T);
+    const S=flow.U*(P.current/.24)*T.weight,{cells,v:w3}=T.flow,m=[],f=[],w=[];
+    for(let q=0;q<cells.length;q++){const ux=S*w3[3*q],uy=S*w3[3*q+1],uz=S*w3[3*q+2];if(ux*ux+uy*uy+uz*uz<.0625)continue;
+      const i=cells[q],x=i%nx,y=Math.floor(i/sy)%ny,z=Math.floor(i/sz),bx=x-ux*ADV,by=y-uy*ADV,bz=z-uz*ADV,X=Math.floor(bx),Y=Math.floor(by),Z=Math.floor(bz),fx=bx-X,fy=by-Y,fz=bz-Z;
+      m.push(i);
+      for(let c=0;c<8;c++){const ox=c&1,oy=(c>>1)&1,oz=(c>>2)&1;
+        f.push(((X+ox)%nx+nx)%nx+((Y+oy)%ny+ny)%ny*sy+((Z+oz)%nz+nz)%nz*sz);w.push((ox?fx:1-fx)*(oy?fy:1-fy)*(oz?fz:1-fz));}}
+    if(gather.length<m.length)gather=new Float32Array(m.length);
+    return {cells:Int32Array.from(m),from:Int32Array.from(f),wt:Float32Array.from(w)};
+  }
+  // one step of a passage's current: every moving cell takes the value upstream (trilinear), all read before any write
+  function advectBy(A,a){
+    const {cells,from:fr,wt}=A,n=cells.length;
+    for(let q=0;q<n;q++){const o=8*q;gather[q]=wt[o]*a[fr[o]]+wt[o+1]*a[fr[o+1]]+wt[o+2]*a[fr[o+2]]+wt[o+3]*a[fr[o+3]]+wt[o+4]*a[fr[o+4]]+wt[o+5]*a[fr[o+5]]+wt[o+6]*a[fr[o+6]]+wt[o+7]*a[fr[o+7]];}
+    for(let q=0;q<n;q++)a[cells[q]]=gather[q];
+  }
+  // the currents blink, as on the sheet (the accepted model): each pulses between a quarter and its full strength on the
+  // stability law's period, in its own phase, so the flow never lets the walls settle into its streamlines (a steady
+  // current does: measured). A strength s is the share of steps on which the current's full step is taken (its
+  // accumulator), so a current's step is computed once, not every step.
+  function gateOf(T){
+    const g=T.born>-1e8?clamp((time-T.born)/5):1;
+    return g*(tubes.length>1?.25+.75*Math.max(0,dsin(TAU*(time/P.blink+T.phase))):.7+.3*dsin(TAU*time/P.blink));
   }
   function setStructure(next,{at=time,initial=false}={}){
     const list=(next.subsystems||[]).slice(0,MAXK),old=new Map(subs.map((s,i)=>[s.k,i])),fresh=seatsOf(list,next.deps||[]);
@@ -132,12 +200,23 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
     for(const e of next.deps||[]){const a=idx.get(e.a),b=idx.get(e.b);if(a===undefined||b===undefined||a===b)continue;
       const key=`${e.a}>${e.b}`,w=Math.min(1,.45+.3*dlog(1+e.w)/.6931471805599453),pd0=prev.get(key);
       deps.push(pd0?{...pd0,a,b,w}:{key,a,b,w,born:initial?-1e9:at});}
-    tubes=deps.map(d=>tubeOf(d));
+    const before=new Map(tubes.map(T=>[T.key,T]));
+    tubes=deps.map(d=>{const T=tubeOf(d),o=before.get(d.key);T.key=d.key;if(o&&o.len===T.len&&o.dir.join()===T.dir.join()){T.flow=o.flow;T.adv=o.adv;T.acc=o.acc;}return T;});
+    grains();
     if(initial){for(let k=0;k<K;k++)seedAt(seats[3*k],seats[3*k+1],seats[3*k+2],5);}
     for(let k=0;k<K;k++){const own=lerp(.9,2.2,clamp(1-Math.sqrt(1/Math.max(1,K))));omega[k]=TAU*lerp(own*lerp(.8,1.3,clamp(laws?.elasticity??.5)),tempo/60,P.tune*.85);}
     assignRegions();
     for(const T of tubes){T.grow=T.born>-1e8?clamp((time-T.born)/5):1;if(!T.seeded){T.seeded=true;for(let q=0;q<T.cells.length;q+=7)if(T.w[q]>.6&&T.born<=-1e8){const i=T.cells[q];u[i]=.5;v[i]=.3;}}}
-    lawField();
+    lawField();for(const T of tubes)if(!T.adv)T.adv=stencilOf(T);
+  }
+  // each region's grain: its layers lie across the currents through it (the axis nearest their weighted directions; with
+  // none, the direction toward the core), as strongly as the anisotropy law says; the core's open hall has none
+  function grains(){
+    const an=clamp(laws?.anisotropy??.5),across=lerp(.7,.15,an),along=(3-across)/2,core=subs.findIndex(s=>s.role==='core');
+    for(let k=0;k<K;k++){const l=laws_[k];if(subs[k].role==='core'||l.regime==='open'){l.grain=[1,1,1];l.axis=-1;continue;}
+      const d=[0,0,0];for(let j=0;j<deps.length;j++){const D=deps[j];if(D.a!==k&&D.b!==k)continue;const T=tubes[j];for(let c=0;c<3;c++)d[c]+=Math.abs(T.dir[c])*D.w;}
+      if(d[0]+d[1]+d[2]===0&&core>=0)for(let c=0;c<3;c++)d[c]=Math.abs(dwrap(seats[3*k+c]-seats[3*core+c],[nx,ny,nz][c]));
+      const ax=d[0]>=d[1]&&d[0]>=d[2]?0:d[1]>=d[2]?1:2;l.axis=ax;l.grain=[0,1,2].map(c=>c===ax?across:along);}
   }
   // ---- one fixed step ---------------------------------------------------------------------------------------------
   // music: {bass:[{k,v}], kick:[v], melody:[{angle,v}]} onsets in this step (the field's format), or null
@@ -145,7 +224,8 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
     // the passages open over five seconds after their dependency's birth
     let regrow=false;for(const T of tubes){const g=T.born>-1e8?clamp((time-T.born)/5):1;if(g!==T.grow){T.grow=g;regrow=true;}}
     if(regrow)lawField();
-    for(let s=0;s<2;s++)chemistry();
+    chemistry(false);chemistry(true);
+    if(step%2===0)for(const T of tubes){T.acc+=gateOf(T);if(T.acc>=1){T.acc-=1;advectBy(T.adv,u);advectBy(T.adv,nut);}}
     currents();
     if(music){for(const b of music.bass||[])if(b.k>=0&&b.k<K){res[2*b.k+1]+=b.v*omega[b.k];strike(b.k,b.v*GAIN.strike);}
       for(const v0 of music.kick||[])for(let k=0;k<K;k++)strike(k,v0*GAIN.strike*.5);
@@ -154,40 +234,34 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
     for(let s=0;s<2;s++)waves(DT/2);
     step++;time=step*DT;
   }
-  // Gray-Scott, one step (dt = 1 in the chemistry's own time, times the region's speed)
-  const Du=.2,Dv=.1;
-  function chemistry(){
+  // Gray-Scott, one step (dt = 1 in the chemistry's own time, times the region's speed). Version 2 scales both diffusions
+  // by GRAIN: the same regimes (a change of length only), with features about half as large, so the world holds about
+  // eight times as many structures and the hall's walls are built finely rather than of a few smooth cavities
+  const Du=.2*GRAIN,Dv=.1*GRAIN;
+  // (life, how fast the matter is changing, is measured on the second of a step's two)
+  function chemistry(measure){
     for(let z=0;z<nz;z++){const zm=((z+nz-1)%nz)*sz,zp=((z+1)%nz)*sz,zo=z*sz;
-      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy;
-        for(let x=0;x<nx;x++){const xm=(x+nx-1)%nx,xp=(x+1)%nx,i=x+yo+zo;
+      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy,row=yo+zo,a1=ym+zo,a2=yp+zo,a3=yo+zm,a4=yo+zp;
+        for(let x=0;x<nx;x++){const i=x+row,xm=x?i-1:i+nx-1,xp=x<nx-1?i+1:i-nx+1;
           const uc=u[i],vc=v[i];
-          const lu=u[xm+yo+zo]+u[xp+yo+zo]+u[x+ym+zo]+u[x+yp+zo]+u[x+yo+zm]+u[x+yo+zp]-6*uc;
-          const lv=v[xm+yo+zo]+v[xp+yo+zo]+v[x+ym+zo]+v[x+yp+zo]+v[x+yo+zm]+v[x+yo+zp]-6*vc;
+          const wx=gw[3*i],wy=gw[3*i+1],wz=gw[3*i+2];
+          const lu=wx*(u[xm]+u[xp])+wy*(u[x+a1]+u[x+a2])+wz*(u[x+a3]+u[x+a4])-6*uc;
+          const lv=wx*(v[xm]+v[xp])+wy*(v[x+a1]+v[x+a2])+wz*(v[x+a3]+v[x+a4])-6*vc;
           const uvv=uc*vc*vc,r=rate[i],f=F[i]+.012*nut[i];
           u2[i]=uc+r*(Du*lu-uvv+f*(1-uc));const nv=vc+r*(Dv*lv+uvv-(f+Kf[i])*vc);v2[i]=nv;
-          const dv=nv>vc?nv-vc:vc-nv;life[i]=life[i]*.985+dv*1.5;}}}
-    u.set(u2);v.set(v2);
+          if(measure){const dv=nv>vc?nv-vc:vc-nv;life[i]=life[i]*.97+dv*3;}}}}
+    const a=u;u=u2;u2=a;const b=v;v=v2;v2=b;
   }
-  // the currents: through each passage, from the region depended on toward the dependent one, carrying the activity and
-  // a nutrient released at the depended-on end; the nutrient decays and is taken up where it arrives
+  // the supply: each passage releases a nutrient at its depended-on end; the circulation carries it through the passage
+  // and around it, it spreads a little, decays, and feeds the chemistry where it arrives (the feed rises with it)
   function currents(){
     nut2.set(nut);
-    for(const T of tubes){if(T.grow<=0)continue;const sp=(2.2+2*T.weight)*T.grow*DT*60*.05,[ux,uy,uz]=T.dir;
-      for(let q=0;q<T.cells.length;q++){const i=T.cells[q],w=T.w[q];
-        // semi-Lagrangian along the passage's axis: the value upstream
-        const x=i%nx,y=Math.floor(i/sy)%ny,z=Math.floor(i/sz),bx=x-ux*sp*w,by=y-uy*sp*w,bz=z-uz*sp*w;
-        const X=Math.floor(bx),Y=Math.floor(by),Z=Math.floor(bz),fx=bx-X,fy=by-Y,fz=bz-Z;
-        const c=(xx,yy,zz)=>((xx%nx+nx)%nx)+((yy%ny+ny)%ny)*sy+((zz%nz+nz)%nz)*sz;
-        const s3=(a)=>{const c00=a[c(X,Y,Z)]*(1-fx)+a[c(X+1,Y,Z)]*fx,c10=a[c(X,Y+1,Z)]*(1-fx)+a[c(X+1,Y+1,Z)]*fx,c01=a[c(X,Y,Z+1)]*(1-fx)+a[c(X+1,Y,Z+1)]*fx,c11=a[c(X,Y+1,Z+1)]*(1-fx)+a[c(X+1,Y+1,Z+1)]*fx;
-          return (c00*(1-fy)+c10*fy)*(1-fz)+(c01*(1-fy)+c11*fy)*fz;};
-        // the value upstream, then the release at the depended-on end (along near 1)
-        nut2[i]=s3(nut);v[i]=v[i]+(s3(v)-v[i])*.5;
-        if(T.along[q]>.85)nut2[i]+=(1-nut2[i])*.08*w*T.grow;}}
-    // the nutrient spreads a little from the passages (diffusion) and decays
+    for(const T of tubes){if(T.grow<=0)continue;
+      for(let q=0;q<T.cells.length;q++)if(T.along[q]>.85){const i=T.cells[q];nut2[i]+=(1-nut2[i])*.08*T.w[q]*T.grow;}}
     for(let z=0;z<nz;z++){const zm=((z+nz-1)%nz)*sz,zp=((z+1)%nz)*sz,zo=z*sz;
-      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy;
-        for(let x=0;x<nx;x++){const i=x+yo+zo,c=nut2[i];
-          const l=nut2[(x+nx-1)%nx+yo+zo]+nut2[(x+1)%nx+yo+zo]+nut2[x+ym+zo]+nut2[x+yp+zo]+nut2[x+yo+zm]+nut2[x+yo+zp]-6*c;
+      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy,row=yo+zo,a1=ym+zo,a2=yp+zo,a3=yo+zm,a4=yo+zp;
+        for(let x=0;x<nx;x++){const i=x+row,c=nut2[i];
+          const l=nut2[x?i-1:i+nx-1]+nut2[x<nx-1?i+1:i-nx+1]+nut2[x+a1]+nut2[x+a2]+nut2[x+a3]+nut2[x+a4]-6*c;
           const n=(c+.05*l)*(1-.25*DT);nut[i]=n<1e-6?0:n;}}}
   }
   // the pressure: a damped wave through the whole medium with a restoring term (the matter's own ring)
@@ -199,9 +273,9 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
   function waves(dt){
     const c2=sq(P.sound*.8),g=2*P.hush*.6,w2=sq(TAU*1.2);
     for(let z=0;z<nz;z++){const zm=((z+nz-1)%nz)*sz,zp=((z+1)%nz)*sz,zo=z*sz;
-      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy;
-        for(let x=0;x<nx;x++){const xm=(x+nx-1)%nx,xp=(x+1)%nx,i=x+yo+zo,pc=p[i];
-          const lp=p[xm+yo+zo]+p[xp+yo+zo]+p[x+ym+zo]+p[x+yp+zo]+p[x+yo+zm]+p[x+yo+zp]-6*pc;
+      for(let y=0;y<ny;y++){const yo=y*sy,ym=((y+ny-1)%ny)*sy,yp=((y+1)%ny)*sy,row=yo+zo,a1=ym+zo,a2=yp+zo,a3=yo+zm,a4=yo+zp;
+        for(let x=0;x<nx;x++){const i=x+row,pc=p[i];
+          const lp=p[x?i-1:i+nx-1]+p[x<nx-1?i+1:i-nx+1]+p[x+a1]+p[x+a2]+p[x+a3]+p[x+a4]-6*pc;
           pd[i]=pd[i]+dt*(c2*lp-g*pd[i]-w2*pc);}}}
     for(let i=0;i<NC;i++)p[i]=p[i]+dt*pd[i];
   }
@@ -215,6 +289,6 @@ export function createVolume({laws,structure,seed=1,nx=64,ny=48,nz=64,tempo=92}=
   }
   function metrics(){let hollow=0,act=0,np=0;for(let i=0;i<NC;i++){if(v[i]>.15)hollow++;act+=v[i];np+=p[i]*p[i];}return {hollow:hollow/NC,activity:act/NC,pressure:Math.sqrt(np/NC)};}
   setStructure(structure,{initial:true});
-  return {nx,ny,nz,NC,u,v,nut,p,life,reg,reg2,blend,seats:()=>seats,weights:()=>wts,subs:()=>subs,K:()=>K,laws:()=>laws_,tubes:()=>tubes,physics:P,res,
+  return {nx,ny,nz,NC,get u(){return u;},get v(){return v;},nut,p,life,reg,reg2,blend,flow:()=>tubes.map(T=>({key:T.key,cells:T.adv.cells.length,gate:gateOf(T)})),seats:()=>seats,weights:()=>wts,subs:()=>subs,K:()=>K,laws:()=>laws_,tubes:()=>tubes,physics:P,res,
     get step(){return step;},get time(){return time;},advance,setStructure,hash:hashState,metrics,MAXK};
 }

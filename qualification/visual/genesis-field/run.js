@@ -95,6 +95,18 @@ const stem=()=>arg('name',`genesis-field-${ds}${IDLE?'-idle':''}`);
       console.log('checkpoints',JSON.stringify(await page.evaluate(()=>window.__gf.hashes())));});
     return;
   }
+  if(mode==='bench'){
+    // the shader's and the upload's costs apart, at proof time t, under several looks (--looks), written to <file>
+    const t=Number(process.argv[4]),file=process.argv[5],list=json('looks',[{}]);
+    const r=await withPage(ds,async(page,info)=>({renderer:info.glRenderer,size:`${W}x${Hh}`,look:LOOK,rows:await page.evaluate(([t,l])=>window.__gf.bench(t,{looks:l}),[t,list])}));
+    fs.writeFileSync(file,JSON.stringify(r,null,1));console.log(JSON.stringify(r.rows.map(x=>({upload:x.upload,still:x.still,packMs:x.packMs}))));return;
+  }
+  if(mode==='looks'){
+    // lab: frames at proof time t under several looks (--looks '[{...},...]', applied in turn; uniforms and camera only)
+    const t=Number(process.argv[4]),out=process.argv[5]||'.',list=json('looks',[{}]);fs.mkdirSync(out,{recursive:true});
+    await withPage(ds,async page=>{const imgs=await page.evaluate(([t,l])=>window.__gf.looks(t,l),[t,list]);imgs.forEach((im,i)=>save(path.join(out,`${stem()}-${String(t).padStart(5,'0')}-${i}.jpg`),im));});
+    return;
+  }
   if(mode==='realtime'){
     const out=process.argv[4]||'.';fs.mkdirSync(out,{recursive:true});const record=process.argv.includes('--record'),win=await windowOf();
     const res=await withPage(ds,async(page,info)=>{

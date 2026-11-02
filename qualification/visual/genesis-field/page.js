@@ -46,6 +46,25 @@ window.__gf={
       gpuTimer:!!gpu.ext,glRenderer:(gl.getExtension('WEBGL_debug_renderer_info')&&gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL))||null};
   },
   // lab: advance to tau as fast as possible and draw (the same states as real time; only the speed differs)
+  // bench: the costs apart on one state, frame by frame on the display's clock. Per look: the GPU time of a frame with the
+  // state uploaded and without it (the texture left as it is), the CPU time of the draw call (the driver's copy of the
+  // upload lands there), and the CPU time of packing the state into the upload's array.
+  async bench(tau,{frames=90,looks=[{}]}={}){
+    stepAll(tau);drawAll(tau);const gl=renderer.getContext(),out=[];
+    const frame=()=>new Promise(r=>requestAnimationFrame(r));
+    for(const o of looks){for(const r of runs)r.view.set?.(o);const row={look:o};
+      for(const mode of ['upload','still']){for(const r of runs)r.view.bench.skipUpload=mode==='still';
+        gpu.samples.length=0;const cpu=[];
+        for(let i=0;i<frames;i++){await frame();const c0=performance.now();const q=gpuBegin(gl);drawAll(tau);gpuEnd(gl,q);cpu.push(performance.now()-c0);}
+        for(let i=0;i<30&&gpu.queries.length;i++){await frame();gpuPoll(gl);}
+        row[mode]={gpuMs:pct(gpu.samples,.5),gpuP95:pct(gpu.samples,.95),n:gpu.samples.length,cpuMs:pct(cpu,.5)};}
+      for(const r of runs)r.view.bench.skipUpload=false;
+      const pk=[];for(let i=0;i<30;i++){const c0=performance.now();for(const r of runs)r.view.bench.pack();pk.push(performance.now()-c0);}
+      row.packMs=pct(pk,.5);row.bytes=runs[0].view.bench.bytes;out.push(row);}
+    return out;
+  },
+  // lab: the same state under several looks (view.set: uniforms and camera only)
+  looks(tau,list){stepAll(tau);return list.map(o=>{for(const r of runs)r.view.set?.(o);drawAll(tau);return canvas.toDataURL('image/jpeg',.92);});},
   still(tau,type='image/jpeg'){stepAll(tau);drawAll(tau);
     return {image:canvas.toDataURL(type,.92),metrics:runs.map(r=>r.proof.sim.metrics()),hash:runs.map(r=>r.proof.sim.hash()),step:first().sim.step};},
   // fast-forward without drawing (the idle experiment reaches its tenth minute this way)
