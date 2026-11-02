@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.9.2 — 2026-11-01
+
+Product 0.9.2, for use on your own machine; not stable. This tag is `v0.9.2`. A **Control Center** release: the
+Visual Studio shows **every world** at once, grouped, instead of a strip that scrolled sideways; a **first run** starts
+with the stage (and the demo, when it is there) beside a short setup checklist; **Record & Broadcast** keeps Record,
+the recording profile and where the file goes together. Laptop layouts, text contrast, keyboard focus and loading and
+offline messages are fixed across every workspace. Both rounds were reviewed on before/after screenshots and merged by
+the owner. Interpretation is still 11, generator 5, Visual Pack SDK 1.3: no derived file is rebuilt and no existing
+identity changes. The VS Code extension is 0.9.2 (`code-resonance-0.9.2.vsix`); it is not published to the
+Marketplace or Open VSX yet ([docs/PUBLISHING.md](docs/PUBLISHING.md)).
 
 - **Control Center UX pass** (every workspace screenshotted at 1920 × 1080, 1366 × 768, 1280 × 800 and 1024 × 700, on a
   fresh install, with projects, unpaired, with the receiver stopped and while loading; contrast, focus and accessible
@@ -36,6 +45,8 @@
     holds the explanations, beside *Performance and limits*. The last recording, the way to OBS and the exports fill the
     right column.
 - The vertical format names Reels and Shorts only.
+- The documentation's screenshots of Home, the first run, the Visual Studio and Record & Broadcast show the new layouts
+  (`docs/control-center/`, software rendering; `docs/desktop/after/`, the AMD integrated GPU).
 
 ## 0.9.1 — 2026-11-01
 

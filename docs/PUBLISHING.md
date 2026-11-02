@@ -8,7 +8,7 @@ prepare it.
 
 - **The package.** `npm run package:vsix` writes `code-resonance-<version>.vsix` with Node alone
   ([scripts/package-vsix.js](../scripts/package-vsix.js)): the extension and, under `extension/runtime/`, the receiver
-  it starts when none is running (3.21 MB, 214 files at 0.9.1). One package for every platform: the receiver is
+  it starts when none is running (3.22 MB, 214 files at 0.9.2). One package for every platform: the receiver is
   plain JavaScript run by VS Code's own runtime, so no `--target` builds are needed. It does not run in VS Code for the
   Web (no `browser` entry; capture needs a local extension host).
 - **The manifest** ([extension/package.json](../extension/package.json)): publisher `zerobandwidth`, name
