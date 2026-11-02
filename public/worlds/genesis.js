@@ -391,7 +391,9 @@ export function createFamily(ctx){
     const ax=axis,up=new THREE.Vector3(0,1,0),perp=up.clone().addScaledVector(ax,-up.dot(ax));if(perp.lengthSq()<1e-4)perp.set(1,0,0);perp.normalize();
     const beta=(.62+.35*clamp(num(cam.elevation,.4),0,1.2))+.05*Math.sin(tv/41)*drift,spin=rand(book.seed)*TAU+tv*(pers==='orbit'?.03:.012)*drift;
     const dir=ax.clone().multiplyScalar(Math.cos(beta)).addScaledVector(perp,Math.sin(beta)).applyAxisAngle(ax,spin).normalize();
-    let distance=R/Math.sin(half)*(portrait?.98:.9)*(pers==='orbit'?1.06:1),az=Math.atan2(dir.z,dir.x),el=Math.asin(clamp(dir.y,-.95,.95));
+    // (a portrait frame keeps this field of view across its width, host.js portraitGoal: the coil is wider than tall, so
+    // it stands farther back there)
+    let distance=R/Math.sin(half)*(portrait?1.22:.9)*(pers==='orbit'?1.06:1),az=Math.atan2(dir.z,dir.x),el=Math.asin(clamp(dir.y,-.95,.95));
     let target=C.clone(),k=0,omega=.55;
     // idle exploration: a chamber close up, then (sometimes) into the newest through its aperture, then back out
     const ph=((tv%PERIOD)+PERIOD)%PERIOD/PERIOD,interior=clamp(num(cam.interior,.6),0,1)*(pers==='pilgrim'?1.3:1),cycle=Math.floor(tv/PERIOD);

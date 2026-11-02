@@ -1,7 +1,7 @@
 'use strict';
 // Technical qualification of the living worlds in a real browser (artistic acceptance is a separate, human judgement),
 // for each of the six built-in families (engine/recipe.js FAMILIES) unless --families names some (which may also name a
-// preview, engine/recipe.js PREVIEWS: Aurora):
+// preview, engine/recipe.js PREVIEWS: Aurora, Genesis):
 //  1. determinism  - the same recording, recipe and time render the same frame in two independent sessions, whatever
 //                    the second session played before (its seek history);
 //  2. idle life    - after the last event the image keeps moving while structure and effects stay exactly the same;
@@ -41,7 +41,7 @@ const launch=()=>launchBrowser(GPU);
   // Determinism: one dataset per family (the flagships as before; each graduated world on the dataset generator 5 gives
   // it, or on Lumen for Fractal Continuum).
   const DETERMINISM={'stellar-forge':'lumen','fractal-biosphere':'excalidraw','machine-cathedral':'self','synaptic-storm':'excalidraw','fractal-continuum':'lumen','temporal-terrain':'self',
-    'aurora':'self'};
+    'aurora':'self','genesis':'self'};
   measurements.options={families:FAMILIES,size:`${W}x${H}`,idleFps:FPS};
   const browser=await launch();
   try{

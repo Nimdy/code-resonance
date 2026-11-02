@@ -4,7 +4,7 @@
 // value, false / true), and the Lumen Recipes recording is rendered with it. Each must render without page errors and
 // without a black or blown-out frame.
 //
-// A preview family (engine/catalog.js PREVIEWS: Aurora), which no pack may take as its base, is chosen and tuned to every
+// A preview family (engine/catalog.js PREVIEWS: Aurora, Genesis), which no pack may take as its base, is chosen and tuned to every
 // parameter's end instead (only when --families names it).
 // node visual/catalogue.qual.js [--families a,b] [--tag name]
 // --families: some families only; --tag: results in catalogue-qualification-<tag>.json instead of the main file.
