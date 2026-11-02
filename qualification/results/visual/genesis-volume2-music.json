@@ -1,0 +1,146 @@
+{
+ "experiment": "genesis volumetric art gate (volume 2)",
+ "film": "The music's forces off and on",
+ "dataset": "self-dependency",
+ "fieldVersion": "volume 2",
+ "schedule": {
+  "change": 36,
+  "music": 48,
+  "end": 130
+ },
+ "window": {
+  "from": 50,
+  "to": 78
+ },
+ "variants": [
+  {
+   "music": false
+  },
+  {}
+ ],
+ "look": {
+  "material": "glass",
+  "format": "byte",
+  "depth": 0.012,
+  "lit": 12,
+  "ambient": "#8d8a83",
+  "keyColor": "#fff6e8",
+  "fog": 0.012,
+  "fogColor": "#0b0e12",
+  "glow": 0.1,
+  "life": 40,
+  "scatter": 0,
+  "sigma": 2.5,
+  "skin": 0.95,
+  "skinBase": 0.55,
+  "breath": 1,
+  "camera": {
+   "pos": [
+    40,
+    26,
+    30
+   ],
+   "target": [
+    18,
+    28,
+    40
+   ],
+   "fov": 70
+  }
+ },
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "size": "1920x1080",
+ "runs": [
+  {
+   "variant": {
+    "music": false
+   },
+   "hashes": {
+    "4": "39b7de0eb4a6cd7a",
+    "8": "c28ad7be01a8ecab",
+    "12": "5b1e7137b0f4f6b3",
+    "14": "e904846887561116",
+    "18": "6ae0b631ccc35f42",
+    "20": "54c6eee38536c8d0",
+    "22": "0d8be82e6c1d7093",
+    "24": "6b76d65e63efe00b",
+    "26": "4c53f609d1aa7987",
+    "28": "c5ba4025fa7fa7ed",
+    "32": "54dafff781c144f0",
+    "36": "05d6082b938c70c9",
+    "40": "b1d82fe4d8b1eb8d",
+    "44": "9a181394cff19f46",
+    "48": "b13c728ae4314ec6",
+    "52": "f95aece2d1846d93",
+    "56": "91c596c7c5756bb4",
+    "60": "8ecd45d0bb6d91fd",
+    "64": "a863d651984d3d9e",
+    "68": "99799b9fc7a6df04",
+    "72": "5866b89357efc2b1",
+    "76": "a4034451a748caff"
+   },
+   "realtimeAndOfflineAgree": true,
+   "nodeStepMs": 7.156
+  },
+  {
+   "variant": {},
+   "hashes": {
+    "4": "39b7de0eb4a6cd7a",
+    "8": "c28ad7be01a8ecab",
+    "12": "5b1e7137b0f4f6b3",
+    "14": "e904846887561116",
+    "18": "6ae0b631ccc35f42",
+    "20": "54c6eee38536c8d0",
+    "22": "0d8be82e6c1d7093",
+    "24": "6b76d65e63efe00b",
+    "26": "4c53f609d1aa7987",
+    "28": "c5ba4025fa7fa7ed",
+    "32": "54dafff781c144f0",
+    "36": "05d6082b938c70c9",
+    "40": "b1d82fe4d8b1eb8d",
+    "44": "9a181394cff19f46",
+    "48": "b13c728ae4314ec6",
+    "52": "2b4b44ad8a68a181",
+    "56": "8c00594caa570093",
+    "60": "6c850f5960ca68e3",
+    "64": "c570a1bb5461748b",
+    "68": "ac626b0a8fd298ae",
+    "72": "db575cc8d7b06300",
+    "76": "c877a7066ea8f952"
+   },
+   "realtimeAndOfflineAgree": true,
+   "nodeStepMs": 8.229
+  }
+ ],
+ "realtime": {
+  "fps": 4.1,
+  "frameMs": {
+   "p50": 82.1,
+   "p95": 1117.7,
+   "p99": 1215.5,
+   "max": 1267.3,
+   "over34": 76.07
+  },
+  "cpuMs": {
+   "p50": 86.9,
+   "p95": 1130.2,
+   "max": 1266.7
+  },
+  "stepMs": {
+   "p50": 16.64,
+   "p95": 19.1,
+   "max": 25.4
+  },
+  "gpuMs": {
+   "n": 117,
+   "p50": 15.4,
+   "p95": 15.91,
+   "max": 25.75
+  },
+  "heapMB": 149.7
+ },
+ "offline": {
+  "fps": 60,
+  "file": "genesis-art-music.mp4 (local: qualification/results/films/genesis/art2/)"
+ }
+}

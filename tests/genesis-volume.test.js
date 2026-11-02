@@ -2,7 +2,9 @@
 // Genesis volume (docs/worlds/genesis-volume.md): the art-direction experiment's universe as a body of matter in three
 // dimensions. Authoritative and deterministic like the field (its own elementary functions, bit-identical runs); its
 // open space forms one connected network (what a sheet cannot); each region's chemistry follows its role and the
-// Lawbook; a dependency opens a passage; the music is a pressure wave that crosses the world and dies away.
+// Lawbook; a dependency opens a passage; the music is a pressure wave that crosses the world and dies away. Version 2
+// (the volumetric art gate): the dependencies' blinking currents keep the walls moving where a still world settles, a
+// passage is a clean tunnel, the anisotropy law builds a region in layers, and a bass note rings its region's resonance.
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const load=name=>import(`../public/worlds/${name}.js`);
@@ -60,4 +62,39 @@ test('the music is a pressure wave: a strike rings its region, crosses the world
   let pm=0;for(let i=0;i<A.NC;i++)pm=Math.max(pm,Math.abs(A.p[i]));assert(pm<reach*.25,`and dies away (${pm})`);
   // the pressure moves the walls in the view; the chemistry is not pushed by it: the matter is the same
   let dv=0;for(let i=0;i<A.NC;i++)dv=Math.max(dv,Math.abs(A.v[i]-B.v[i]));assert.equal(dv,0);
+});
+test('the currents keep the walls moving: with them the world never settles, without them it freezes',async()=>{
+  const {createVolume,FLOW}=await load('genesis-volume');const inp=inputsOf('self-dependency');
+  // cells changing side of a wall per second over the last five seconds of a minute
+  const moving=flow=>{const V=createVolume({laws:inp.laws,structure:inp.after,seed:inp.seed,...small,flow});let prev=null,f=0,w=0;
+    for(let s=0;s<3600;s++){V.advance(null);if(s>=3300&&s%60===0){const o=V.v.map(x=>x>.13?1:0);if(prev){for(let i=0;i<o.length;i++)if(o[i]!==prev[i])f++;w++;}prev=o;}}return f/w;};
+  const on=moving(FLOW),off=moving({...FLOW,U:0});
+  assert(on>20*off&&on>500,`cells changing a second: ${on} with the currents, ${off} without`);
+});
+test('a passage is a clean tunnel: open along its axis through the architecture it crosses',async()=>{
+  const {createVolume}=await load('genesis-volume');const inp=inputsOf('self-dependency');
+  const V=createVolume({laws:inp.laws,structure:inp.after,seed:inp.seed});for(let i=0;i<1800;i++)V.advance(null);
+  let open=0,n=0;for(const T of V.tubes())for(let q=0;q<T.cells.length;q++)if(T.w[q]>.85&&T.along[q]>.15&&T.along[q]<.85){n++;if(V.v[T.cells[q]]>.13)open++;}
+  assert(open/n>.9,`open along the passages' axes: ${(open/n).toFixed(3)} of ${n} cells`);
+});
+test('the anisotropy law builds a region in layers stacked along its axis, and the core\'s hall has none',async()=>{
+  const {createVolume}=await load('genesis-volume');const inp=inputsOf('lumen');
+  const V=createVolume({laws:inp.laws,structure:inp.after,seed:inp.seed});for(let i=0;i<1800;i++)V.advance(null);
+  const L=V.laws(),{nx,ny,nz}=V,dims=[nx,ny,nz];assert.deepEqual(L.find((l,k)=>V.subs()[k].role==='core').grain,[1,1,1]);
+  // for each layered region: how much the open share changes from one slab to the next across its axis, against the
+  // other two axes (layers: alternating slabs across the axis, little change along the sheets)
+  for(let k=0;k<V.K();k++){if(L[k].axis<0)continue;
+    const jump=a=>{const share=new Float64Array(dims[a]),cnt=new Float64Array(dims[a]);
+      for(let i=0;i<V.NC;i++){if(V.reg[i]!==k||V.blend[i]>.05)continue;const c=[i%nx,Math.floor(i/nx)%ny,Math.floor(i/(nx*ny))][a];cnt[c]++;if(V.v[i]>.13)share[c]++;}
+      let s=0,m=0;for(let c=0;c<dims[a];c++){const d=(c+1)%dims[a];if(cnt[c]<30||cnt[d]<30)continue;s+=Math.abs(share[c]/cnt[c]-share[d]/cnt[d]);m++;}return m?s/m:0;};
+    const across=jump(L[k].axis),along=Math.max(...[0,1,2].filter(a=>a!==L[k].axis).map(jump));
+    assert(across>1.5*along,`region ${k} (${L[k].regime}, axis ${L[k].axis}): slab-to-slab change ${across.toFixed(3)} across its layers, ${along.toFixed(3)} along them`);}
+});
+test('a bass note rings its region\'s resonance, which dies away; no note, no ring',async()=>{
+  const {createVolume}=await load('genesis-volume');const inp=inputsOf('lumen');
+  const V=createVolume({laws:inp.laws,structure:inp.after,seed:inp.seed,...small});for(let i=0;i<60;i++)V.advance(null);
+  V.advance({bass:[{k:1,v:1}]});let peak=0;for(let i=0;i<30;i++){V.advance(null);peak=Math.max(peak,Math.abs(V.res[2]));}
+  for(let i=0;i<240;i++)V.advance(null);
+  assert(peak>.5,`the struck region rings (${peak})`);assert(Math.abs(V.res[2])<peak*.05,`and settles (${V.res[2]})`);
+  for(let k=0;k<V.K();k++)if(k!==1)assert.equal(V.res[2*k],0,`region ${k} was not struck`);
 });

@@ -1,0 +1,129 @@
+{
+ "experiment": "genesis volumetric art gate (volume 2)",
+ "film": "Locked evolution, Code Resonance",
+ "dataset": "self-dependency",
+ "fieldVersion": "volume 2",
+ "schedule": {
+  "change": 36,
+  "music": 48,
+  "end": 130
+ },
+ "window": {
+  "from": 100,
+  "to": 130
+ },
+ "variants": [
+  {
+   "music": false
+  }
+ ],
+ "look": {
+  "material": "glass",
+  "format": "byte",
+  "depth": 0.012,
+  "lit": 12,
+  "ambient": "#8d8a83",
+  "keyColor": "#fff6e8",
+  "fog": 0.012,
+  "fogColor": "#0b0e12",
+  "glow": 0.1,
+  "life": 40,
+  "scatter": 0,
+  "sigma": 2.5,
+  "skin": 0.95,
+  "skinBase": 0.55,
+  "breath": 1,
+  "camera": {
+   "pos": [
+    34,
+    10,
+    26
+   ],
+   "target": [
+    20,
+    8,
+    8
+   ],
+   "fov": 70
+  }
+ },
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "size": "1920x1080",
+ "runs": [
+  {
+   "variant": {
+    "music": false
+   },
+   "hashes": {
+    "4": "39b7de0eb4a6cd7a",
+    "8": "c28ad7be01a8ecab",
+    "12": "5b1e7137b0f4f6b3",
+    "14": "e904846887561116",
+    "18": "6ae0b631ccc35f42",
+    "20": "54c6eee38536c8d0",
+    "22": "0d8be82e6c1d7093",
+    "24": "6b76d65e63efe00b",
+    "26": "4c53f609d1aa7987",
+    "28": "c5ba4025fa7fa7ed",
+    "32": "54dafff781c144f0",
+    "36": "05d6082b938c70c9",
+    "40": "b1d82fe4d8b1eb8d",
+    "44": "9a181394cff19f46",
+    "48": "b13c728ae4314ec6",
+    "52": "f95aece2d1846d93",
+    "56": "91c596c7c5756bb4",
+    "60": "8ecd45d0bb6d91fd",
+    "64": "a863d651984d3d9e",
+    "68": "99799b9fc7a6df04",
+    "72": "5866b89357efc2b1",
+    "76": "a4034451a748caff",
+    "80": "043d96b6e6e3dee2",
+    "84": "8436209744c5534f",
+    "88": "0f37b997b7ef10b8",
+    "92": "3bfb5e8bce9168f5",
+    "96": "45b4bb68fa33c964",
+    "100": "6e0edf3dc948db8f",
+    "104": "334c7408efb985df",
+    "108": "fb01e17a3ee812b3",
+    "112": "4028c3b36ccb7759",
+    "116": "2a88463b0b6c92f7",
+    "120": "1a4879cfb38645cc",
+    "124": "24003b597f686bb4",
+    "128": "29a96a90c0654464"
+   },
+   "realtimeAndOfflineAgree": true,
+   "nodeStepMs": 5.203
+  }
+ ],
+ "realtime": {
+  "fps": 56.7,
+  "frameMs": {
+   "p50": 16.7,
+   "p95": 29.8,
+   "p99": 35,
+   "max": 86.3,
+   "over34": 3.3
+  },
+  "cpuMs": {
+   "p50": 7.1,
+   "p95": 13.4,
+   "max": 85.8
+  },
+  "stepMs": {
+   "p50": 6.1,
+   "p95": 8.1,
+   "max": 23.2
+  },
+  "gpuMs": {
+   "n": 1722,
+   "p50": 16.33,
+   "p95": 16.69,
+   "max": 23.14
+  },
+  "heapMB": 61
+ },
+ "offline": {
+  "fps": 60,
+  "file": "genesis-art-evolution-self.mp4 (local: qualification/results/films/genesis/art2/)"
+ }
+}

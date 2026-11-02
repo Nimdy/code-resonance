@@ -1,0 +1,129 @@
+{
+ "experiment": "genesis volumetric art gate (volume 2)",
+ "film": "Locked evolution, Lumen Recipes",
+ "dataset": "lumen",
+ "fieldVersion": "volume 2",
+ "schedule": {
+  "change": 36,
+  "music": 48,
+  "end": 130
+ },
+ "window": {
+  "from": 100,
+  "to": 130
+ },
+ "variants": [
+  {
+   "music": false
+  }
+ ],
+ "look": {
+  "material": "glass",
+  "format": "byte",
+  "depth": 0.012,
+  "lit": 12,
+  "ambient": "#8d8a83",
+  "keyColor": "#fff6e8",
+  "fog": 0.012,
+  "fogColor": "#0b0e12",
+  "glow": 0.1,
+  "life": 40,
+  "scatter": 0,
+  "sigma": 2.5,
+  "skin": 0.95,
+  "skinBase": 0.55,
+  "breath": 1,
+  "camera": {
+   "pos": [
+    46,
+    22,
+    36
+   ],
+   "target": [
+    30,
+    24,
+    14
+   ],
+   "fov": 70
+  }
+ },
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "size": "1920x1080",
+ "runs": [
+  {
+   "variant": {
+    "music": false
+   },
+   "hashes": {
+    "4": "fa9ac7fbd4c9ff24",
+    "8": "40d01e2550bf20ff",
+    "12": "e403e7a44b43b07d",
+    "14": "8ab440a0f255ee51",
+    "18": "02895d57e8370d47",
+    "20": "ec60f2df043f584c",
+    "22": "f87afe51f100ae39",
+    "24": "36b6becb87a4b5c1",
+    "26": "e589a0bbfe026b06",
+    "28": "8043e111d212ce5e",
+    "32": "48e24ff05da89038",
+    "36": "3fb979e6d92d64a5",
+    "40": "11b39b69f815d9a7",
+    "44": "72ddc93aae59ecb8",
+    "48": "72e03167d5f1ff66",
+    "52": "4a851e6c70aec2aa",
+    "56": "a36be3d82c1c5180",
+    "60": "52fd8b7646115eeb",
+    "64": "52ab5d3e22e1567e",
+    "68": "c1c5ee095b2bb8b6",
+    "72": "60596eb77713ccd6",
+    "76": "3f58f8719ac8c084",
+    "80": "a34059ffed364f98",
+    "84": "ce47d6b1e955fe7b",
+    "88": "ff095a9d9f963bd8",
+    "92": "bf2237d361b31021",
+    "96": "3aa181b519062642",
+    "100": "73c52a0c0192eece",
+    "104": "7196815af62ae064",
+    "108": "e7a2387a95b7dda2",
+    "112": "850e92827a0d4b7d",
+    "116": "9f98d30f43c24137",
+    "120": "03ac957a98aa0f6d",
+    "124": "be7c41644587582c",
+    "128": "452d42c671b323c9"
+   },
+   "realtimeAndOfflineAgree": true,
+   "nodeStepMs": 4.993
+  }
+ ],
+ "realtime": {
+  "fps": 34.2,
+  "frameMs": {
+   "p50": 29.2,
+   "p95": 57.4,
+   "p99": 58.5,
+   "max": 98.5,
+   "over34": 8.75
+  },
+  "cpuMs": {
+   "p50": 12.4,
+   "p95": 24.5,
+   "max": 97.9
+  },
+  "stepMs": {
+   "p50": 5.85,
+   "p95": 10.9,
+   "max": 25.7
+  },
+  "gpuMs": {
+   "n": 1035,
+   "p50": 27.9,
+   "p95": 28.11,
+   "max": 36.33
+  },
+  "heapMB": 35.6
+ },
+ "offline": {
+  "fps": 60,
+  "file": "genesis-art-evolution-lumen.mp4 (local: qualification/results/films/genesis/art2/)"
+ }
+}

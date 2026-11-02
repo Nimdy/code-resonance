@@ -31,6 +31,14 @@
   architecture; dependencies open passages that carry their supply; the score's notes are a pressure wave through the
   whole world. Authoritative and deterministic like the field; drawn by a raymarcher
   (`public/worlds/genesis-volume.js`, `genesis-volume-view.js`; [docs/worlds/genesis-volume.md](docs/worlds/genesis-volume.md)).
+- **Genesis volume, version 2** (the volumetric art gate, after the volume was accepted as a feasibility result): the
+  universe was still because the core's hall is a uniform regime and every other regime froze within about a minute
+  (measured). Its dependencies' currents now blink, as on the accepted sheet, and carry substrate and nutrient, so the
+  walls around them keep remodelling; the anisotropy law builds each region in layers across its currents, at about
+  half the former feature size; passages are clean tunnels; each region's resonance (computed before, never shown)
+  dilates its architecture on its bass notes. A translucent material in the view, an 8-bit state upload and the
+  regions' materials in a static texture. Four comparisons (a locked evolution for each of two identities, the recorded
+  dependency on and off, the music's forces on and off, one continuous traversal), with their hashes and costs.
 
 ## 0.9.2 — 2026-11-01
 

@@ -1,0 +1,233 @@
+{
+ "experiment": "genesis volumetric art gate (volume 2)",
+ "film": "Traversal",
+ "dataset": "self-dependency",
+ "fieldVersion": "volume 2",
+ "schedule": {
+  "change": 36,
+  "music": 48,
+  "end": 130
+ },
+ "window": {
+  "from": 60,
+  "to": 100
+ },
+ "variants": [
+  {}
+ ],
+ "look": {
+  "material": "glass",
+  "format": "byte",
+  "depth": 0.012,
+  "lit": 12,
+  "ambient": "#8d8a83",
+  "keyColor": "#fff6e8",
+  "fog": 0.012,
+  "fogColor": "#0b0e12",
+  "glow": 0.1,
+  "life": 40,
+  "scatter": 0,
+  "sigma": 2.5,
+  "skin": 0.95,
+  "skinBase": 0.55,
+  "breath": 1,
+  "path": [
+   {
+    "t": 60,
+    "pos": [
+     48,
+     8,
+     44
+    ],
+    "target": [
+     20,
+     9,
+     20
+    ],
+    "fov": 66
+   },
+   {
+    "t": 65,
+    "pos": [
+     48,
+     8,
+     44
+    ],
+    "target": [
+     20,
+     9,
+     20
+    ],
+    "fov": 66
+   },
+   {
+    "t": 71,
+    "pos": [
+     42.1,
+     32.3,
+     46.9
+    ],
+    "target": [
+     33.7,
+     23.9,
+     56.8
+    ],
+    "fov": 70
+   },
+   {
+    "t": 78,
+    "pos": [
+     34.1,
+     24.3,
+     56.3
+    ],
+    "target": [
+     26.8,
+     17,
+     64.9
+    ],
+    "fov": 72
+   },
+   {
+    "t": 84,
+    "pos": [
+     26.8,
+     17,
+     64.9
+    ],
+    "target": [
+     21.1,
+     11.3,
+     71.6
+    ],
+    "fov": 72
+   },
+   {
+    "t": 88,
+    "pos": [
+     23.4,
+     13.6,
+     68.9
+    ],
+    "target": [
+     21,
+     16,
+     82.2
+    ],
+    "fov": 72
+   },
+   {
+    "t": 92,
+    "pos": [
+     20.7,
+     14,
+     79.1
+    ],
+    "target": [
+     22.1,
+     21.8,
+     91.5
+    ],
+    "fov": 72
+   },
+   {
+    "t": 96,
+    "pos": [
+     21.7,
+     19.8,
+     88.4
+    ],
+    "target": [
+     23.1,
+     27.6,
+     100.8
+    ],
+    "fov": 74
+   },
+   {
+    "t": 100,
+    "pos": [
+     22.4,
+     23.7,
+     94.6
+    ],
+    "target": [
+     52,
+     20,
+     108
+    ],
+    "fov": 76
+   }
+  ]
+ },
+ "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+ "size": "1920x1080",
+ "runs": [
+  {
+   "variant": {},
+   "hashes": {
+    "4": "39b7de0eb4a6cd7a",
+    "8": "c28ad7be01a8ecab",
+    "12": "5b1e7137b0f4f6b3",
+    "14": "e904846887561116",
+    "18": "6ae0b631ccc35f42",
+    "20": "54c6eee38536c8d0",
+    "22": "0d8be82e6c1d7093",
+    "24": "6b76d65e63efe00b",
+    "26": "4c53f609d1aa7987",
+    "28": "c5ba4025fa7fa7ed",
+    "32": "54dafff781c144f0",
+    "36": "05d6082b938c70c9",
+    "40": "b1d82fe4d8b1eb8d",
+    "44": "9a181394cff19f46",
+    "48": "b13c728ae4314ec6",
+    "52": "2b4b44ad8a68a181",
+    "56": "8c00594caa570093",
+    "60": "6c850f5960ca68e3",
+    "64": "c570a1bb5461748b",
+    "68": "ac626b0a8fd298ae",
+    "72": "db575cc8d7b06300",
+    "76": "c877a7066ea8f952",
+    "80": "6077fa0b95741a8b",
+    "84": "eb78ee2208074c64",
+    "88": "8af3dc461a0543ce",
+    "92": "7e566d54dcb58de2",
+    "96": "e5f6adb0c8b0f6f5",
+    "100": "acbb080c69aa5031"
+   },
+   "realtimeAndOfflineAgree": true,
+   "nodeStepMs": 5.857
+  }
+ ],
+ "realtime": {
+  "fps": 49.9,
+  "frameMs": {
+   "p50": 16.9,
+   "p95": 33.2,
+   "p99": 49.1,
+   "max": 126.2,
+   "over34": 4.75
+  },
+  "cpuMs": {
+   "p50": 11.7,
+   "p95": 25.7,
+   "max": 125.7
+  },
+  "stepMs": {
+   "p50": 7.8,
+   "p95": 13.1,
+   "max": 38.4
+  },
+  "gpuMs": {
+   "n": 2014,
+   "p50": 18.16,
+   "p95": 23.79,
+   "max": 29.13
+  },
+  "heapMB": 64.8
+ },
+ "offline": {
+  "fps": 60,
+  "file": "genesis-art-traversal.mp4 (local: qualification/results/films/genesis/art2/)"
+ }
+}

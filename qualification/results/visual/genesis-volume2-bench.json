@@ -1,0 +1,393 @@
+{
+ "experiment": "genesis volume 2: the shader and the upload apart",
+ "proofTime": 54,
+ "dataset": "self-dependency",
+ "runs": {
+  "gate-stone-float-loop": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "stone",
+    "format": "float",
+    "toneLoop": true,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 23.11,
+      "gpuP95": 23.3,
+      "n": 90,
+      "cpuMs": 3.5
+     },
+     "still": {
+      "gpuMs": 22.93,
+      "gpuP95": 22.98,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3,
+     "bytes": 3145728
+    }
+   ]
+  },
+  "glass-byte-1280": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1280x720",
+   "look": {
+    "material": "glass",
+    "format": "byte",
+    "depth": 0.012,
+    "lit": 12,
+    "ambient": "#8d8a83",
+    "keyColor": "#fff6e8",
+    "fog": 0.012,
+    "fogColor": "#0b0e12",
+    "glow": 0.1,
+    "life": 40,
+    "scatter": 0,
+    "sigma": 2.5,
+    "skin": 0.95,
+    "skinBase": 0.55,
+    "breath": 1,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 9.3,
+      "gpuP95": 9.6,
+      "n": 90,
+      "cpuMs": 5
+     },
+     "still": {
+      "gpuMs": 9.22,
+      "gpuP95": 9.48,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 4.7,
+     "bytes": 786432
+    }
+   ]
+  },
+  "glass-byte-1600": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1600x900",
+   "look": {
+    "material": "glass",
+    "format": "byte",
+    "depth": 0.012,
+    "lit": 12,
+    "ambient": "#8d8a83",
+    "keyColor": "#fff6e8",
+    "fog": 0.012,
+    "fogColor": "#0b0e12",
+    "glow": 0.1,
+    "life": 40,
+    "scatter": 0,
+    "sigma": 2.5,
+    "skin": 0.95,
+    "skinBase": 0.55,
+    "breath": 1,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 13.35,
+      "gpuP95": 13.92,
+      "n": 90,
+      "cpuMs": 4.2
+     },
+     "still": {
+      "gpuMs": 13.55,
+      "gpuP95": 13.81,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3.9,
+     "bytes": 786432
+    }
+   ]
+  },
+  "glass-byte": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "glass",
+    "format": "byte",
+    "depth": 0.012,
+    "lit": 12,
+    "ambient": "#8d8a83",
+    "keyColor": "#fff6e8",
+    "fog": 0.012,
+    "fogColor": "#0b0e12",
+    "glow": 0.1,
+    "life": 40,
+    "scatter": 0,
+    "sigma": 2.5,
+    "skin": 0.95,
+    "skinBase": 0.55,
+    "breath": 1,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 18.41,
+      "gpuP95": 18.48,
+      "n": 90,
+      "cpuMs": 4.3
+     },
+     "still": {
+      "gpuMs": 18.33,
+      "gpuP95": 18.39,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3.9,
+     "bytes": 786432
+    }
+   ]
+  },
+  "glass-float": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "glass",
+    "format": "float",
+    "depth": 0.012,
+    "lit": 12,
+    "ambient": "#8d8a83",
+    "keyColor": "#fff6e8",
+    "fog": 0.012,
+    "fogColor": "#0b0e12",
+    "glow": 0.1,
+    "life": 40,
+    "scatter": 0,
+    "sigma": 2.5,
+    "skin": 0.95,
+    "skinBase": 0.55,
+    "breath": 1,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 24.89,
+      "gpuP95": 24.98,
+      "n": 90,
+      "cpuMs": 4.2
+     },
+     "still": {
+      "gpuMs": 24.71,
+      "gpuP95": 24.79,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3.5,
+     "bytes": 3145728
+    }
+   ]
+  },
+  "glass-half": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "glass",
+    "format": "half",
+    "depth": 0.012,
+    "lit": 12,
+    "ambient": "#8d8a83",
+    "keyColor": "#fff6e8",
+    "fog": 0.012,
+    "fogColor": "#0b0e12",
+    "glow": 0.1,
+    "life": 40,
+    "scatter": 0,
+    "sigma": 2.5,
+    "skin": 0.95,
+    "skinBase": 0.55,
+    "breath": 1,
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 18.48,
+      "gpuP95": 18.58,
+      "n": 90,
+      "cpuMs": 5.3
+     },
+     "still": {
+      "gpuMs": 18.38,
+      "gpuP95": 18.46,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 4.8,
+     "bytes": 1572864
+    }
+   ]
+  },
+  "stone-byte": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "stone",
+    "format": "byte",
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 12.68,
+      "gpuP95": 13.27,
+      "n": 90,
+      "cpuMs": 4.4
+     },
+     "still": {
+      "gpuMs": 12.85,
+      "gpuP95": 13.24,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3.9,
+     "bytes": 786432
+    }
+   ]
+  },
+  "stone-float": {
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "size": "1920x1080",
+   "look": {
+    "material": "stone",
+    "format": "float",
+    "camera": {
+     "pos": [
+      54,
+      26,
+      30
+     ],
+     "target": [
+      28,
+      26,
+      30
+     ],
+     "fov": 60
+    }
+   },
+   "rows": [
+    {
+     "look": {},
+     "upload": {
+      "gpuMs": 23.31,
+      "gpuP95": 23.47,
+      "n": 90,
+      "cpuMs": 4
+     },
+     "still": {
+      "gpuMs": 23.11,
+      "gpuP95": 23.17,
+      "n": 90,
+      "cpuMs": 0.2
+     },
+     "packMs": 3.4,
+     "bytes": 3145728
+    }
+   ]
+  }
+ }
+}
