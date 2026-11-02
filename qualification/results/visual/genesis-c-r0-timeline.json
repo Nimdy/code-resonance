@@ -1,0 +1,2429 @@
+{
+ "concept": "metamorphic-r0",
+ "size": "1920x1080",
+ "params": {
+  "profile": true
+ },
+ "rows": [
+  {
+   "t": 0,
+   "gpu": {
+    "shadow": 0.00084,
+    "spires": 0.00008,
+    "ray": 9.65756
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.300000011920929,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 0.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 9.6958
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 0.5,
+   "gpu": {
+    "shadow": 0.00156,
+    "spires": 0.00012,
+    "ray": 9.67608
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 0.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 9.681
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.5999999940395355,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 1,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.6926
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.4000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 1.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 9.67016
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 1.5,
+   "gpu": {
+    "shadow": 0.00156,
+    "spires": 0.00008,
+    "ray": 9.68916
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 1.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 9.61116
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 2,
+   "gpu": {
+    "shadow": 0.00048,
+    "spires": 0.00044,
+    "ray": 9.61044
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 2.25,
+   "gpu": {
+    "shadow": 0.00056,
+    "spires": 0.00008,
+    "ray": 9.60472
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 2.5,
+   "gpu": {
+    "shadow": 0.00184,
+    "spires": 0.00012,
+    "ray": 9.6302
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.800000011920929,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 2.75,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00012,
+    "ray": 9.61556
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 3,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00044,
+    "ray": 9.92284
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.6000000089406967,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 3.25,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00012,
+    "ray": 9.93808
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 3.5,
+   "gpu": {
+    "shadow": 0.00156,
+    "spires": 0.00012,
+    "ray": 9.93444
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 3.75,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00044,
+    "ray": 9.94352
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 4,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 9.94856
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 4.25,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00048,
+    "ray": 9.952
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 4.5,
+   "gpu": {
+    "shadow": 0.00132,
+    "spires": 0.00056,
+    "ray": 9.83772
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 4.75,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00012,
+    "ray": 9.85776
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 5,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.63924
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 5.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00048,
+    "ray": 9.6548
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 5.5,
+   "gpu": {
+    "shadow": 0.00116,
+    "spires": 0.00008,
+    "ray": 9.9766
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 5.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00048,
+    "ray": 10.2928
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 6,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00056,
+    "ray": 10.32148
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 6.25,
+   "gpu": {
+    "shadow": 0.0004,
+    "spires": 0.00012,
+    "ray": 10.31772
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 6.5,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00044,
+    "ray": 10.31396
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 6.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00068,
+    "ray": 10.33428
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 7,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 10.23504
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.800000011920929,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 7.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 10.14572
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 7.5,
+   "gpu": {
+    "shadow": 0.0014,
+    "spires": 0.00044,
+    "ray": 10.11568
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 7.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 10.11912
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 8,
+   "gpu": {
+    "shadow": 0.00116,
+    "spires": 0.00044,
+    "ray": 9.92716
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 0.6000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 8.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.91532
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 8.5,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00008,
+    "ray": 10.23088
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.800000011920929,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 8.75,
+   "gpu": {
+    "shadow": 0.00056,
+    "spires": 0.00072,
+    "ray": 10.268
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 9,
+   "gpu": {
+    "shadow": 0.00136,
+    "spires": 0.012,
+    "ray": 10.26936
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 9.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 10.27104
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 9.5,
+   "gpu": {
+    "shadow": 0.0014,
+    "spires": 0.00048,
+    "ray": 10.2826
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 9.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.0006,
+    "ray": 10.28576
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 10,
+   "gpu": {
+    "shadow": 0.00116,
+    "spires": 0.00008,
+    "ray": 10.17352
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 10.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 10.1956
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 10.5,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00056,
+    "ray": 9.96852
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 10.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 9.7576
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 11,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 10.06628
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 11.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00092,
+    "ray": 10.07772
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 11.5,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 10.39632
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 11.75,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00044,
+    "ray": 10.39924
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 12,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00088,
+    "ray": 10.40636
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 12.25,
+   "gpu": {
+    "shadow": 0.00144,
+    "spires": 0.00008,
+    "ray": 10.39632
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 12.5,
+   "gpu": {
+    "shadow": 0.00164,
+    "spires": 0.00012,
+    "ray": 10.29216
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 12.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00076,
+    "ray": 10.29848
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 13,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00008,
+    "ray": 10.19028
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 13.25,
+   "gpu": {
+    "shadow": 0.0014,
+    "spires": 0.00012,
+    "ray": 10.20088
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 13.5,
+   "gpu": {
+    "shadow": 0.00176,
+    "spires": 0.00012,
+    "ray": 9.98192
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 13.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.99452
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 14,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 9.985
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 14.25,
+   "gpu": {
+    "shadow": 0.00128,
+    "spires": 0.00012,
+    "ray": 10.3164
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 14.5,
+   "gpu": {
+    "shadow": 0.00144,
+    "spires": 0.0006,
+    "ray": 10.29356
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 14.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 10.31672
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 15,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00012,
+    "ray": 10.30548
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 15.25,
+   "gpu": {
+    "shadow": 0.0004,
+    "spires": 0.00048,
+    "ray": 10.3072
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 15.5,
+   "gpu": {
+    "shadow": 0.00136,
+    "spires": 0.0006,
+    "ray": 10.2866
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 15.75,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00044,
+    "ray": 10.2268
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 16,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00048,
+    "ray": 10.00448
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 16.25,
+   "gpu": {
+    "shadow": 0.00116,
+    "spires": 0.00044,
+    "ray": 9.98016
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 16.5,
+   "gpu": {
+    "shadow": 0.00144,
+    "spires": 0.0006,
+    "ray": 9.78208
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 16.75,
+   "gpu": {
+    "shadow": 0.0014,
+    "spires": 0.00048,
+    "ray": 9.78208
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0.10000000894069672
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 17,
+   "gpu": {
+    "shadow": 0.00132,
+    "spires": 0.00044,
+    "ray": 9.80228
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 17.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.8078
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 17.5,
+   "gpu": {
+    "shadow": 0.00144,
+    "spires": 0.0006,
+    "ray": 9.78656
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 17.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.79328
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 18,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.81544
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 18.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00048,
+    "ray": 9.80832
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 18.5,
+   "gpu": {
+    "shadow": 0.0004,
+    "spires": 0.0006,
+    "ray": 9.82916
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 18.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00068,
+    "ray": 9.82212
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 19,
+   "gpu": {
+    "shadow": 0.00128,
+    "spires": 0.00044,
+    "ray": 9.81424
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 19.25,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00048,
+    "ray": 9.59816
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 19.5,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.0006,
+    "ray": 9.62008
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 19.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00056,
+    "ray": 9.60808
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 20,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00044,
+    "ray": 9.60224
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 20.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00068,
+    "ray": 9.621
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 20.5,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00056,
+    "ray": 9.61468
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 20.75,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00048,
+    "ray": 9.60504
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 21,
+   "gpu": {
+    "shadow": 0.00048,
+    "spires": 0.0004,
+    "ray": 9.62392
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 21.25,
+   "gpu": {
+    "shadow": 0.0012,
+    "spires": 0.00052,
+    "ray": 9.60124
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 21.5,
+   "gpu": {
+    "shadow": 0.0014,
+    "spires": 0.00056,
+    "ray": 9.59716
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 21.75,
+   "gpu": {
+    "shadow": 0.00124,
+    "spires": 0.00048,
+    "ray": 9.621
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 22,
+   "gpu": {
+    "shadow": 0.00116,
+    "spires": 0.00044,
+    "ray": 9.62152
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 22.25,
+   "gpu": {
+    "shadow": 0.00044,
+    "spires": 0.00044,
+    "ray": 9.91144
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 22.5,
+   "gpu": {
+    "shadow": 0.00144,
+    "spires": 0.00056,
+    "ray": 9.95304
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 0,
+   "calls": 1
+  },
+  {
+   "t": 22.75,
+   "gpu": {
+    "shadow": 0.02676,
+    "spires": 0.00756,
+    "ray": 10.26828
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0.20000000298023224
+   },
+   "instances": 34,
+   "calls": 3
+  },
+  {
+   "t": 23,
+   "gpu": {
+    "shadow": 0.03596,
+    "spires": 0.0086,
+    "ray": 10.50944
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 34,
+   "calls": 3
+  },
+  {
+   "t": 23.25,
+   "gpu": {
+    "shadow": 0.0184,
+    "spires": 0.01464,
+    "ray": 12.33796
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1,
+    "instances": 0
+   },
+   "instances": 101,
+   "calls": 3
+  },
+  {
+   "t": 23.5,
+   "gpu": {
+    "shadow": 0.02108,
+    "spires": 0.0252,
+    "ray": 12.27564
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0.09999999403953552
+   },
+   "instances": 202,
+   "calls": 3
+  },
+  {
+   "t": 23.75,
+   "gpu": {
+    "shadow": 0.074,
+    "spires": 0.04172,
+    "ray": 12.19704
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.09999999403953552
+   },
+   "instances": 302,
+   "calls": 3
+  },
+  {
+   "t": 24,
+   "gpu": {
+    "shadow": 0.03724,
+    "spires": 0.06528,
+    "ray": 12.532
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.29999999701976776
+   },
+   "instances": 498,
+   "calls": 3
+  },
+  {
+   "t": 24.25,
+   "gpu": {
+    "shadow": 0.0304,
+    "spires": 0.07608,
+    "ray": 12.25116
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.29999999701976776
+   },
+   "instances": 498,
+   "calls": 3
+  },
+  {
+   "t": 24.5,
+   "gpu": {
+    "shadow": 0.03784,
+    "spires": 0.09668,
+    "ray": 12.3308
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.20000000298023224
+   },
+   "instances": 562,
+   "calls": 3
+  },
+  {
+   "t": 24.75,
+   "gpu": {
+    "shadow": 0.1081,
+    "spires": 0.13276,
+    "ray": 12.69352
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.29999999701976776
+   },
+   "instances": 790,
+   "calls": 3
+  },
+  {
+   "t": 25,
+   "gpu": {
+    "shadow": 0.1942,
+    "spires": 0.17708,
+    "ray": 12.37688
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.29999999701976776
+   },
+   "instances": 1083,
+   "calls": 3
+  },
+  {
+   "t": 25.25,
+   "gpu": {
+    "shadow": 0.24372,
+    "spires": 0.22404,
+    "ray": 12.78172
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5
+   },
+   "instances": 1376,
+   "calls": 3
+  },
+  {
+   "t": 25.5,
+   "gpu": {
+    "shadow": 0.30112,
+    "spires": 0.27112,
+    "ray": 12.51376
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5999999940395355
+   },
+   "instances": 1670,
+   "calls": 3
+  },
+  {
+   "t": 25.75,
+   "gpu": {
+    "shadow": 0.3823,
+    "spires": 0.34184,
+    "ray": 12.79608
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.6000000089406967
+   },
+   "instances": 2003,
+   "calls": 3
+  },
+  {
+   "t": 26,
+   "gpu": {
+    "shadow": 0.39523,
+    "spires": 0.42744,
+    "ray": 12.46608
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.2999999970197678,
+    "instances": 0.7000000029802322
+   },
+   "instances": 2559,
+   "calls": 3
+  },
+  {
+   "t": 26.25,
+   "gpu": {
+    "shadow": 0.50648,
+    "spires": 0.5086,
+    "ray": 12.088
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.9000000059604645
+   },
+   "instances": 2966,
+   "calls": 3
+  },
+  {
+   "t": 26.5,
+   "gpu": {
+    "shadow": 0.1878,
+    "spires": 0.60076,
+    "ray": 11.47672
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.2000000029802322,
+    "instances": 1.0999999940395355
+   },
+   "instances": 3479,
+   "calls": 3
+  },
+  {
+   "t": 26.75,
+   "gpu": {
+    "shadow": 0.40581,
+    "spires": 0.6634,
+    "ray": 10.90444
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 1.5999999940395355
+   },
+   "instances": 3589,
+   "calls": 3
+  },
+  {
+   "t": 27,
+   "gpu": {
+    "shadow": 0.24352,
+    "spires": 0.73884,
+    "ray": 10.32708
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.2000000029802322,
+    "instances": 1.3999999910593033
+   },
+   "instances": 3696,
+   "calls": 3
+  },
+  {
+   "t": 27.25,
+   "gpu": {
+    "shadow": 0.50037,
+    "spires": 0.77652,
+    "ray": 9.79196
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.199999988079071,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3801,
+   "calls": 3
+  },
+  {
+   "t": 27.5,
+   "gpu": {
+    "shadow": 0.45501,
+    "spires": 0.8204,
+    "ray": 9.348
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.300000011920929,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3837,
+   "calls": 3
+  },
+  {
+   "t": 27.75,
+   "gpu": {
+    "shadow": 0.50195,
+    "spires": 0.8536,
+    "ray": 8.99144
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.7000000029802322
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 28,
+   "gpu": {
+    "shadow": 0.42256,
+    "spires": 0.87884,
+    "ray": 8.64248
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.199999988079071,
+    "instances": 0.9000000059604645
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 28.25,
+   "gpu": {
+    "shadow": 0.59533,
+    "spires": 0.91496,
+    "ray": 8.35304
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.9000000059604645
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 28.5,
+   "gpu": {
+    "shadow": 0.56884,
+    "spires": 0.90548,
+    "ray": 8.29524
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.4000000059604645,
+    "instances": 0.699999988079071
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 28.75,
+   "gpu": {
+    "shadow": 0.37372,
+    "spires": 0.91496,
+    "ray": 8.15456
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.300000011920929,
+    "instances": 0.7999999970197678
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 29,
+   "gpu": {
+    "shadow": 0.48367,
+    "spires": 0.91092,
+    "ray": 8.12276
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.699999988079071
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 29.25,
+   "gpu": {
+    "shadow": 0.55453,
+    "spires": 0.91484,
+    "ray": 8.11408
+   },
+   "cpu": {
+    "phase": 1.1000000089406967,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 29.5,
+   "gpu": {
+    "shadow": 0.54349,
+    "spires": 0.919,
+    "ray": 8.08908
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.5
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 29.75,
+   "gpu": {
+    "shadow": 0.51288,
+    "spires": 0.92264,
+    "ray": 8.09708
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.2999999970197678,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 30,
+   "gpu": {
+    "shadow": 0.40995,
+    "spires": 0.92076,
+    "ray": 8.08572
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.2000000029802322,
+    "instances": 2.5999999940395355
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 30.25,
+   "gpu": {
+    "shadow": 0.3344,
+    "spires": 0.92256,
+    "ray": 8.10096
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.5,
+    "instances": 3
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 30.5,
+   "gpu": {
+    "shadow": 0.36268,
+    "spires": 0.92724,
+    "ray": 8.11632
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.3999999910593033,
+    "instances": 2.6000000089406967
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 30.75,
+   "gpu": {
+    "shadow": 0.43692,
+    "spires": 0.9262,
+    "ray": 8.09796
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 31,
+   "gpu": {
+    "shadow": 0.36088,
+    "spires": 0.9134,
+    "ray": 8.1194
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.5
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 31.25,
+   "gpu": {
+    "shadow": 0.71137,
+    "spires": 0.9166,
+    "ray": 8.09616
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3873,
+   "calls": 3
+  },
+  {
+   "t": 31.5,
+   "gpu": {
+    "shadow": 0.77534,
+    "spires": 0.91644,
+    "ray": 8.11032
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5
+   },
+   "instances": 3875,
+   "calls": 3
+  },
+  {
+   "t": 31.75,
+   "gpu": {
+    "shadow": 0.48604,
+    "spires": 0.91504,
+    "ray": 8.09032
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.7000000029802322
+   },
+   "instances": 3874,
+   "calls": 3
+  },
+  {
+   "t": 32,
+   "gpu": {
+    "shadow": 0.56665,
+    "spires": 0.91756,
+    "ray": 8.1798
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.3999999910593033,
+    "instances": 0.5
+   },
+   "instances": 3871,
+   "calls": 3
+  },
+  {
+   "t": 32.25,
+   "gpu": {
+    "shadow": 0.32744,
+    "spires": 0.9304,
+    "ray": 8.19604
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5
+   },
+   "instances": 3857,
+   "calls": 3
+  },
+  {
+   "t": 32.5,
+   "gpu": {
+    "shadow": 0.34864,
+    "spires": 0.90824,
+    "ray": 8.269
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3855,
+   "calls": 3
+  },
+  {
+   "t": 32.75,
+   "gpu": {
+    "shadow": 0.57563,
+    "spires": 0.90544,
+    "ray": 8.04384
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 1.1000000089406967,
+    "instances": 0.5
+   },
+   "instances": 3859,
+   "calls": 3
+  },
+  {
+   "t": 33,
+   "gpu": {
+    "shadow": 0.59356,
+    "spires": 0.9088,
+    "ray": 8.07472
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3851,
+   "calls": 3
+  },
+  {
+   "t": 33.25,
+   "gpu": {
+    "shadow": 0.69935,
+    "spires": 0.9018,
+    "ray": 8.01872
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 1,
+    "instances": 0.5
+   },
+   "instances": 3847,
+   "calls": 3
+  },
+  {
+   "t": 33.5,
+   "gpu": {
+    "shadow": 0.48644,
+    "spires": 0.90904,
+    "ray": 7.95736
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3841,
+   "calls": 3
+  },
+  {
+   "t": 33.75,
+   "gpu": {
+    "shadow": 0.44532,
+    "spires": 0.91104,
+    "ray": 7.89988
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3830,
+   "calls": 3
+  },
+  {
+   "t": 34,
+   "gpu": {
+    "shadow": 0.39734,
+    "spires": 0.90328,
+    "ray": 8.05032
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.5999999940395355,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3828,
+   "calls": 3
+  },
+  {
+   "t": 34.25,
+   "gpu": {
+    "shadow": 0.32268,
+    "spires": 0.8854,
+    "ray": 8.07792
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.699999988079071,
+    "instances": 0.5
+   },
+   "instances": 3818,
+   "calls": 3
+  },
+  {
+   "t": 34.5,
+   "gpu": {
+    "shadow": 0.36851,
+    "spires": 0.89716,
+    "ray": 7.98428
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5
+   },
+   "instances": 3802,
+   "calls": 3
+  },
+  {
+   "t": 34.75,
+   "gpu": {
+    "shadow": 0.37572,
+    "spires": 0.87792,
+    "ray": 7.80924
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 1,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3823,
+   "calls": 3
+  },
+  {
+   "t": 35,
+   "gpu": {
+    "shadow": 0.58738,
+    "spires": 0.87784,
+    "ray": 7.80252
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5
+   },
+   "instances": 3828,
+   "calls": 3
+  },
+  {
+   "t": 35.25,
+   "gpu": {
+    "shadow": 0.32344,
+    "spires": 0.84696,
+    "ray": 7.92
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5
+   },
+   "instances": 3834,
+   "calls": 3
+  },
+  {
+   "t": 35.5,
+   "gpu": {
+    "shadow": 0.41534,
+    "spires": 0.84388,
+    "ray": 7.82
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7000000029802322,
+    "instances": 0.5
+   },
+   "instances": 3829,
+   "calls": 3
+  },
+  {
+   "t": 35.75,
+   "gpu": {
+    "shadow": 0.71603,
+    "spires": 0.81044,
+    "ray": 7.73856
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0.5
+   },
+   "instances": 3825,
+   "calls": 3
+  },
+  {
+   "t": 36,
+   "gpu": {
+    "shadow": 0.3444,
+    "spires": 0.798,
+    "ray": 7.7056
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1,
+    "instances": 0.5
+   },
+   "instances": 3814,
+   "calls": 3
+  },
+  {
+   "t": 36.25,
+   "gpu": {
+    "shadow": 0.42682,
+    "spires": 0.80876,
+    "ray": 7.50564
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5
+   },
+   "instances": 3817,
+   "calls": 3
+  },
+  {
+   "t": 36.5,
+   "gpu": {
+    "shadow": 0.42007,
+    "spires": 0.81012,
+    "ray": 7.4242
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5
+   },
+   "instances": 3829,
+   "calls": 3
+  },
+  {
+   "t": 36.75,
+   "gpu": {
+    "shadow": 0.53724,
+    "spires": 0.79168,
+    "ray": 7.17088
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3838,
+   "calls": 3
+  },
+  {
+   "t": 37,
+   "gpu": {
+    "shadow": 0.39993,
+    "spires": 0.81324,
+    "ray": 6.91612
+   },
+   "cpu": {
+    "phase": 0.19999998807907104,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.5
+   },
+   "instances": 3851,
+   "calls": 3
+  },
+  {
+   "t": 37.25,
+   "gpu": {
+    "shadow": 0.71717,
+    "spires": 0.82828,
+    "ray": 6.9088
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3853,
+   "calls": 3
+  },
+  {
+   "t": 37.5,
+   "gpu": {
+    "shadow": 0.60811,
+    "spires": 0.85472,
+    "ray": 6.65456
+   },
+   "cpu": {
+    "phase": 0.29999999701976776,
+    "cellShadow": 0.5999999940395355,
+    "instances": 0.5
+   },
+   "instances": 3855,
+   "calls": 3
+  },
+  {
+   "t": 37.75,
+   "gpu": {
+    "shadow": 0.62106,
+    "spires": 0.87776,
+    "ray": 6.49776
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1,
+    "instances": 0.4000000059604645
+   },
+   "instances": 3853,
+   "calls": 3
+  },
+  {
+   "t": 38,
+   "gpu": {
+    "shadow": 0.67551,
+    "spires": 0.83008,
+    "ray": 6.66108
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.199999988079071,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3860,
+   "calls": 3
+  },
+  {
+   "t": 38.25,
+   "gpu": {
+    "shadow": 0.49524,
+    "spires": 0.79744,
+    "ray": 7.11316
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.6000000089406967
+   },
+   "instances": 3865,
+   "calls": 3
+  },
+  {
+   "t": 38.5,
+   "gpu": {
+    "shadow": 0.32512,
+    "spires": 0.78808,
+    "ray": 7.39084
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.9000000059604645,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3863,
+   "calls": 3
+  },
+  {
+   "t": 38.75,
+   "gpu": {
+    "shadow": 0.61888,
+    "spires": 0.76524,
+    "ray": 7.68872
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 0.8999999910593033,
+    "instances": 0.5
+   },
+   "instances": 3868,
+   "calls": 3
+  },
+  {
+   "t": 39,
+   "gpu": {
+    "shadow": 0.5522,
+    "spires": 0.77108,
+    "ray": 7.84696
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 0.7999999970197678,
+    "instances": 0.5
+   },
+   "instances": 3862,
+   "calls": 3
+  },
+  {
+   "t": 39.25,
+   "gpu": {
+    "shadow": 0.3792,
+    "spires": 0.78048,
+    "ray": 7.92116
+   },
+   "cpu": {
+    "phase": 0,
+    "cellShadow": 0.699999988079071,
+    "instances": 0.5
+   },
+   "instances": 3863,
+   "calls": 3
+  },
+  {
+   "t": 39.5,
+   "gpu": {
+    "shadow": 0.33172,
+    "spires": 0.78964,
+    "ray": 7.84476
+   },
+   "cpu": {
+    "phase": 0.09999999403953552,
+    "cellShadow": 1.2000000029802322,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3863,
+   "calls": 3
+  },
+  {
+   "t": 39.75,
+   "gpu": {
+    "shadow": 0.53748,
+    "spires": 0.79148,
+    "ray": 7.6588
+   },
+   "cpu": {
+    "phase": 0.20000000298023224,
+    "cellShadow": 1.0999999940395355,
+    "instances": 0.5999999940395355
+   },
+   "instances": 3866,
+   "calls": 3
+  },
+  {
+   "t": 40,
+   "gpu": {
+    "shadow": 0.61293,
+    "spires": 0.79356,
+    "ray": 7.6498
+   },
+   "cpu": {
+    "phase": 0.10000000894069672,
+    "cellShadow": 1.199999988079071,
+    "instances": 0.5
+   },
+   "instances": 3866,
+   "calls": 3
+  }
+ ],
+ "heapMB": 18.4,
+ "memory": {
+  "geometries": 2,
+  "textures": 6
+ }
+}

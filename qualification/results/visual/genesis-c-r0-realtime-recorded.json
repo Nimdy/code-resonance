@@ -1,0 +1,69 @@
+{
+ "concept": "metamorphic-r0",
+ "size": "1920x1080",
+ "params": {},
+ "record": true,
+ "frames": 2368,
+ "fps": 58.6,
+ "frameMs": {
+  "p50": 16.7,
+  "p95": 19.4,
+  "p99": 20.8,
+  "max": 42.5,
+  "over16_7": 36.87,
+  "over34": 0.04
+ },
+ "cpuMs": {
+  "p50": 2.7,
+  "p95": 3.8,
+  "max": 7.3
+ },
+ "gpuMs": {
+  "n": 2369,
+  "p50": 10.64,
+  "p95": 13.22,
+  "p99": 14.09,
+  "max": 14.77,
+  "worst": [
+   {
+    "t": 19.24,
+    "ms": 14.77
+   },
+   {
+    "t": 25.31,
+    "ms": 14.68
+   },
+   {
+    "t": 25.61,
+    "ms": 14.65
+   },
+   {
+    "t": 25.83,
+    "ms": 14.57
+   },
+   {
+    "t": 25.85,
+    "ms": 14.56
+   }
+  ]
+ },
+ "drawCalls": {
+  "p50": 2,
+  "max": 4
+ },
+ "heapMB": 51,
+ "memory": {
+  "geometries": 3,
+  "textures": 7
+ },
+ "video": {
+  "mime": "video/webm;codecs=vp9,opus",
+  "size": 53923379,
+  "file": "c-r0-realtime.webm"
+ },
+ "stats": {
+  "cells": 3828,
+  "spireCells": 115,
+  "instances": 3866
+ }
+}

@@ -44,6 +44,11 @@
   plays) and Metamorphic Matter (one matter in crystal, liquid, granular and foam regimes, composed by the score). Each
   is scripted from Code Resonance's structure and the densest 40 s of its score, labelled on every frame
   (`qualification/visual/genesis-concepts/`; [docs/worlds/genesis-concepts.md](docs/worlds/genesis-concepts.md)).
+- **Genesis C-R0** (rendering feasibility for the chosen Metamorphic Matter; the same scripted animatic, not a
+  simulation): a renderer that treats the scene as what it is, a field of hexagonal cells (a phase map of the cells
+  computed each frame, a cell-to-cell ray cast with each cell's exact geometry, instanced spires with a sun shadow
+  map). At native 1920×1080 on the AMD iGPU it runs at 60 fps in real time with the score (GPU p95 13.6 ms) where the
+  reference needed about 100 ms a frame ([docs/worlds/genesis-c-r0.md](docs/worlds/genesis-c-r0.md)).
 
 ## 0.9.2 — 2026-11-01
 
