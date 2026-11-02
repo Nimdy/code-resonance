@@ -56,17 +56,17 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     check('Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too',graduated,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
     // ---- The world browser: every world in groups (Built in, Previews, From packs), never a sideways strip ------------
     const groups=await A.evaluate(()=>[...document.querySelectorAll('.vs-cards .vs-shelf')].map(g=>({id:g.dataset.group,head:g.querySelector('.eyebrow')?.textContent,cards:[...g.querySelectorAll('.vs-card')].map(c=>c.dataset.card)})));
-    check('the worlds are grouped: Built in (the six built-in worlds), Previews (Aurora only), From packs (the installed world pack)',
-      groups.map(g=>`${g.head}:${g.cards.join('+')}`).join(' | ')==='Built in:fractal-biosphere+stellar-forge+machine-cathedral+synaptic-storm+fractal-continuum+temporal-terrain | Previews:aurora | From packs:halcyon.cymatic-field',JSON.stringify(groups.map(g=>[g.head,g.cards.length])));
-    check('the tabs read Worlds · 8, Looks, Classic stages, in that order',(await A.$$eval('.vs-browser-head .segmented button',b=>b.map(x=>x.textContent))).join(' | ')==='Worlds · 8 | Looks | Classic stages');
+    check('the worlds are grouped: Built in (the six built-in worlds), Previews (Aurora and Genesis), From packs (the installed world pack)',
+      groups.map(g=>`${g.head}:${g.cards.join('+')}`).join(' | ')==='Built in:fractal-biosphere+stellar-forge+machine-cathedral+synaptic-storm+fractal-continuum+temporal-terrain | Previews:aurora+genesis | From packs:halcyon.cymatic-field',JSON.stringify(groups.map(g=>[g.head,g.cards.length])));
+    check('the tabs read Worlds · 9, Looks, Classic stages, in that order',(await A.$$eval('.vs-browser-head .segmented button',b=>b.map(x=>x.textContent))).join(' | ')==='Worlds · 9 | Looks | Classic stages');
     // Chips say only what is true here: Saved on the saved world, Life on only where the identity's life is on, Needs approval on the unapproved pack.
     const rb=await recipe(),chips=await A.evaluate(()=>Object.fromEntries([...document.querySelectorAll('.vs-shelf .vs-card')].map(c=>[c.dataset.card,[...c.querySelectorAll('.vs-chips .pill')].map(p=>p.textContent)])));
     const withChip=t=>Object.entries(chips).filter(([,l])=>l.includes(t)).map(([k])=>k).join(',');
     check('the chips are true: Saved on the saved world only, Life on only where its life is on, Needs approval on the unapproved pack, no dated or design labels',
       withChip('Saved')===rb.family&&withChip('Life on')===(rb.genome.life?.enabled===true?rb.family:'')&&withChip('Needs approval')==='halcyon.cymatic-field'&&!Object.values(chips).flat().some(t=>/In design|New/.test(t)),JSON.stringify(chips));
     // The preview is rendered after the others.
-    const preview=await until(async()=>(await imgOf(['aurora'])).length===1,120000,500);
-    check('the Aurora preview shows a thumbnail rendered from this project too',preview,(await imgOf(['aurora'])).join(', ')||'none yet');
+    const preview=await until(async()=>(await imgOf(['aurora','genesis'])).length===2,180000,500);
+    check('the Aurora and Genesis previews show thumbnails rendered from this project too',preview,(await imgOf(['aurora','genesis'])).join(', ')||'none yet');
     // At 1920 x 1080 every world is in view, with no sideways scrolling; at 1366 x 768 the first card of every group is in
     // the first row (Aurora and the pack without hunting), the browser scrolls vertically and says how many cards are below.
     const gridAt=async(w,hh)=>{await A.setViewportSize({width:w,height:hh});await sleep(900);return A.evaluate(()=>{const c=document.querySelector('.vs-cards'),b=c.getBoundingClientRect(),m=document.querySelector('.vs-more');

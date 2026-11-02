@@ -1,0 +1,219 @@
+{
+  "at": "2026-11-02T03:57:08.794Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "checks": [
+    {
+      "name": "determinism: self (genesis) renders the same frame in two sessions, regardless of seek history",
+      "pass": true,
+      "detail": "026b151f8f1ca9a8 / 026b151f8f1ca9a8"
+    },
+    {
+      "name": "no page errors: self (genesis)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "idle life: genesis keeps changing for 90 s with no events",
+      "pass": true,
+      "detail": "mean |Δluma| between samples 29.7, 25.36, 13.19 (0-255)"
+    },
+    {
+      "name": "idle life: genesis shows no new structure or event while idle",
+      "pass": true,
+      "detail": "{\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}"
+    },
+    {
+      "name": "idle life: the director reports idle (genesis)",
+      "pass": true,
+      "detail": "active,idle,idle,idle"
+    },
+    {
+      "name": "no page errors while idle: genesis",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "privacy: no label of genesis contains a path, file name, source identifier or the project folder name",
+      "pass": true,
+      "detail": "45 distinct label strings checked"
+    },
+    {
+      "name": "resources: switching between the 6 worlds 12 times leaves GPU geometries and textures at their level",
+      "pass": true,
+      "detail": "geometries 29->29, textures 19->19"
+    },
+    {
+      "name": "live: opening the live view primes the whole intent history",
+      "pass": true,
+      "detail": "205 of 205 recorded intents"
+    },
+    {
+      "name": "no page errors in the live view",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "options": {
+      "families": [
+        "genesis"
+      ],
+      "size": "960x540",
+      "idleFps": 5
+    },
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "idleByFamily": {
+      "genesis": {
+        "seconds": "10-100 after the last event",
+        "fps": 5,
+        "meanAbsLumaDiff": [
+          29.7,
+          25.36,
+          13.19
+        ],
+        "structure": "{\"intents\":205,\"lasting\":2,\"unlocked\":2,\"effects\":{}}",
+        "phases": [
+          "active",
+          "idle",
+          "idle",
+          "idle"
+        ]
+      }
+    },
+    "privacyFolderName": true,
+    "labelsByFamily": {
+      "genesis": [
+        "1 agent present",
+        "1 component",
+        "A generative world from this project's code",
+        "A new chamber buds from the aperture",
+        "Alyror · logic",
+        "Building",
+        "Claude 2 · disconnected",
+        "Claude 2 · working on a request",
+        "Claude · connected",
+        "Claude · disconnected",
+        "Claude · editing",
+        "Claude · reading",
+        "Claude · running",
+        "Claude · searching",
+        "Claude · testing",
+        "Claude · waiting for the next prompt",
+        "Claude · working on a request",
+        "Claude: testing",
+        "Claude: working on a request",
+        "Code Resonance · Genesis (preview)",
+        "Committed · the sutures consolidate",
+        "Coupling · a thread joins two chambers",
+        "Deen · tests",
+        "Genesis (preview)",
+        "Integration validated",
+        "Ioeoel · logic",
+        "Phase transition · Integration validated",
+        "Pores open in the wall",
+        "Recovered · the cracks fill with gold",
+        "Recovery",
+        "Tests fail · the wall crazes over 8 chamberlets",
+        "Tests pass · 2 chamberlets ring true",
+        "The structure expands · chapter 2",
+        "The structure expands · chapter 3",
+        "Vauos · logic",
+        "accumulated structure",
+        "commit observed",
+        "commit observed · 1 file",
+        "decoherence",
+        "milestone · verified by a passing test run",
+        "observed failing run",
+        "observed passing run",
+        "repaired",
+        "the tests pass again",
+        "verified by a passing test run · the chamber stays crystal"
+      ]
+    },
+    "privacyPatterns": 44,
+    "worldSwitching": [
+      {
+        "geometries": 14,
+        "textures": 15,
+        "heap": 16100000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 16100000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 16100000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 16100000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 16100000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 16100000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 16100000
+      },
+      {
+        "family": "stellar-forge",
+        "geometries": 29,
+        "textures": 19,
+        "heap": 16100000
+      },
+      {
+        "family": "fractal-biosphere",
+        "geometries": 35,
+        "textures": 15,
+        "heap": 16100000
+      },
+      {
+        "family": "machine-cathedral",
+        "geometries": 22,
+        "textures": 16,
+        "heap": 16100000
+      },
+      {
+        "family": "synaptic-storm",
+        "geometries": 15,
+        "textures": 15,
+        "heap": 16100000
+      },
+      {
+        "family": "fractal-continuum",
+        "geometries": 14,
+        "textures": 18,
+        "heap": 16100000
+      },
+      {
+        "family": "temporal-terrain",
+        "geometries": 11,
+        "textures": 17,
+        "heap": 16100000
+      }
+    ],
+    "live": {
+      "recorded": 205,
+      "primed": 205,
+      "phase": "idle"
+    }
+  }
+}

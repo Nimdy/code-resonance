@@ -1,0 +1,64 @@
+{
+  "at": "2026-11-02T03:19:45.400Z",
+  "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "checks": [
+    {
+      "name": "performance: genesis on 450 files uses fewer than 40 scene draw calls",
+      "pass": true,
+      "detail": "9 draw calls; 34 fps full quality, 33.7 fps adaptive (level 0) on ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)"
+    },
+    {
+      "name": "no page errors in the live player: genesis",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "measurements": {
+    "options": {
+      "families": [
+        "genesis"
+      ],
+      "size": "1280x720",
+      "idleFps": 15
+    },
+    "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+    "performance": {
+      "genesis": {
+        "full": {
+          "fps": 34,
+          "quality": 0,
+          "drawCalls": 9,
+          "passes": 23,
+          "triangles": 257969,
+          "points": 993,
+          "updateMs": 0.9,
+          "drawMs": 0.29,
+          "gpuMs": 28.62,
+          "geometries": 14,
+          "textures": 15
+        },
+        "adaptive": {
+          "fps": 33.7,
+          "quality": 0,
+          "drawCalls": 9,
+          "passes": 23,
+          "triangles": 257969,
+          "points": 993,
+          "updateMs": 0.82,
+          "drawMs": 0.28,
+          "gpuMs": 28.78,
+          "geometries": 14,
+          "textures": 15
+        }
+      }
+    }
+  },
+  "reruns": [
+    {
+      "at": "2026-11-02T03:45:56.677Z",
+      "sections": [
+        "performance"
+      ]
+    }
+  ]
+}

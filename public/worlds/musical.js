@@ -8,9 +8,9 @@ const STALE=15000;
 const V2_ROLE={home:'statement',away:'development',tension:'tension',resolve:'resolve',lift:'return',breath:'release'};
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 export function createMusical({timeline,score=globalThis.ResonanceScore}={}){
-  let cfg={version:2,style:'ambient',profile:null,seed:0,tempo:92},key=JSON.stringify(cfg),frames=[],fv=-1;
+  let cfg={version:2,style:'ambient',profile:null,seed:0,tempo:92},cfgKey=JSON.stringify(cfg),frames=[],fv=-1;
   const cache=new Map();
-  function index(){if(fv===timeline.version)return;fv=timeline.version;frames=timeline.items.filter(x=>x.kind===1);cache.clear();}
+  function index(){if(fv===timeline.version)return;fv=timeline.version;frames=timeline.items.filter(x=>x.kind===1);cache.clear();bars.clear();}
   // The frame in force at T (its window started at or before T); after 15 s without a new one the work has gone
   // quiet and its energy no longer counts (the player's own rule).
   function frameAt(T){
@@ -50,11 +50,25 @@ export function createMusical({timeline,score=globalThis.ResonanceScore}={}){
       :expressionV2(bar,phase,c,f);
     return {...e,bar,phase};
   }
-  return {at,frameAt,conducted,
+  // The notes of bar `bar` as the performer schedules them (score v3: ResonanceScore.createBar with the conducted state,
+  // the chapter, style, profile and tempo it passes, public/music.js beginBar3), for a world whose matter answers the
+  // individual notes (Genesis). Null for a v2 score (its bars follow the performer's own running fold) or without a score.
+  const bars=new Map();
+  function bar(b){
+    if(cfg.version!==3||!score?.createBar||!score.conductAt)return null;b=Math.floor(b);
+    if(bars.has(b))return bars.get(b);
+    const B=barMs(),c=conducted(b),f=frameAt(b*B);
+    const x=score.createBar({scoreVersion:3,seed:cfg.seed,chapter:f?.chapter||1,energy:c.energy,tension:c.tension,style:cfg.style,barIndex:b,section:c.role,lift:c.lift,profile:cfg.profile,tempo:cfg.tempo});
+    bars.set(b,x);if(bars.size>48)bars.delete(bars.keys().next().value);
+    return x;
+  }
+  // The key the score is in (its tonic's pitch class and the mode's seven steps), or null without a score.
+  function key(){if(!score?.createIdentity)return null;const id=score.createIdentity(cfg.seed);return {tonic:id.tonic,scale:[...id.scale],mode:id.mode};}
+  return {at,frameAt,conducted,bar,key,
     configure(next={}){
       const n={version:score?.versionOf?score.versionOf(next.version??cfg.version):2,style:next.style??cfg.style,profile:next.profile===undefined?cfg.profile:next.profile,
         seed:Number.isFinite(next.seed)?next.seed>>>0:cfg.seed,tempo:next.tempo>0?next.tempo:cfg.tempo};
-      const k=JSON.stringify(n);if(k!==key){cfg=n;key=k;cache.clear();}
+      const k=JSON.stringify(n);if(k!==cfgKey){cfg=n;cfgKey=k;cache.clear();bars.clear();}
     },
-    get config(){return cfg;},get key(){return key;}};
+    get config(){return cfg;},get configKey(){return cfgKey;}};
 }
