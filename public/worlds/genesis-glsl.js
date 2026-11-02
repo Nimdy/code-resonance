@@ -30,6 +30,12 @@ float shadowAt(vec3 p,vec3 n,int a,int b){if(uQ>2.5)return 1.;float s=1.;
   for(int k=0;k<${MAXC};k++){if(float(k)>=uNC)break;if(k==a||k==b)continue;s*=sphShadow(p+n*.08,uKeyL,ch(k,0),5.);}return s;}
 float occAt(vec3 p,vec3 n,int a,int b){if(uQ>2.5)return 1.;float o=1.;
   for(int k=0;k<${MAXC};k++){if(float(k)>=uNC)break;if(k==a||k==b)continue;o*=1.-.75*sphOcc(p,n,ch(k,0));}return clamp(o,0.,1.);}
+// A wall point of chamber self in one pass over the other chambers: covered by one (false), else its key-light shadow
+// and its occlusion (only when lit: the inside of a chamber needs neither).
+bool wallAt(vec3 p,vec3 n,int self,bool lit,out float sh,out float ao){sh=1.;ao=1.;bool q=lit&&uQ<2.5;
+  for(int k=0;k<${MAXC};k++){if(float(k)>=uNC)break;if(k==self)continue;vec4 c=ch(k,0);vec3 d=p-c.xyz;if(dot(d,d)<c.w*c.w*.9998)return false;
+    if(q){sh*=sphShadow(p+n*.08,uKeyL,c,5.);ao*=1.-.75*sphOcc(p,n,c);}}
+  ao=clamp(ao,0.,1.);return true;}
 // A thin film's reflectance per channel (thickness in nm, index 1.33): what the glaze's opal and the films' colours are.
 vec3 thinFilm(float c,float d){float ct=sqrt(max(0.,1.-(1.-c*c)/1.77)),opd=2.*1.33*d*ct;vec3 s=sin(3.14159*opd/vec3(640.,540.,455.));return s*s;}
 float ggx(float nh,float a){float a2=a*a,d=nh*nh*(a2-1.)+1.;return a2/(3.14159*d*d);}
@@ -62,7 +68,7 @@ float modeOf(vec3 d,vec4 R,vec3 ax){vec3 a=normalize(ax+1e-5),b=normalize(cross(
 // coloured (amber, an agent's colour when it works there), with the file's own states.
 vec3 innerGlow(int k,vec3 d,out float stress,out float heal,out float touch){
   vec3 g=ch(k,8).rgb*.45;stress=0.;heal=0.;touch=0.;
-  for(int i=0;i<12;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 a=fl(m,0),b=fl(m,1),c=fl(m,2);
+  for(int i=0;i<8;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 a=fl(m,0),b=fl(m,1),c=fl(m,2);
     float cs=length(a.xyz)>.01?dot(d,normalize(a.xyz)):.2,w=exp(-(1.-cs)/max(.02,a.w*a.w));
     g+=b.rgb*b.w*w;stress=max(stress,c.x*w);heal=max(heal,c.y*w);touch=max(touch,c.w*w);}
   return g;}
@@ -78,9 +84,8 @@ float cracks(vec3 d,float seed){vec3 p=d*4.6+seed*13.1,i=floor(p),f=fract(p);flo
 export const SHELL_VS=`${DATA}attribute float aK;varying vec3 vP,vD;varying float vK;
 void main(){int k=int(aK+.5);vec4 c=ch(k,0);vec3 d=normalize(position);vec3 p=c.xyz+d*c.w;vP=p;vD=d;vK=aK;gl_Position=projectionMatrix*viewMatrix*vec4(uS*p,1.);}`;
 export const SHELL_FS=`${DATA}${LIGHT}${FIB}${MATTER}${NOISE}varying vec3 vP,vD;varying float vK;
-void main(){int k=int(vK+.5);if(covered(vP,k,-1))discard;
-  vec4 C0=ch(k,0),C1=ch(k,1),C2=ch(k,2),C3=ch(k,3),C4=ch(k,4),C5=ch(k,5),C6=ch(k,6),C7=ch(k,7);
-  vec3 d=normalize(vP-C0.xyz);
+void main(){int k=int(vK+.5);vec4 C0=ch(k,0);vec3 d=normalize(vP-C0.xyz);float sh0,ao0;if(!wallAt(vP,d,k,gl_FrontFacing,sh0,ao0))discard;
+  vec4 C1=ch(k,1),C2=ch(k,2),C3=ch(k,3),C4=ch(k,4),C5=ch(k,5),C6=ch(k,6),C7=ch(k,7);
   // a chamber whose files have gone dissolves
   if(C2.w<.999&&gnoise(d*4.3+vec3(vK*3.1))*.5+.5>C2.w)discard;
   // the aperture of the newest chamber: an opening with a lip
@@ -111,16 +116,18 @@ void main(){int k=int(vK+.5);if(covered(vP,k,-1))discard;
     float wall=smoothstep(.45,.95,bowl)*(1.-ridge);
     vec3 N=normalize(d-(d-q1)*wall*2.6/sp*.3*relief);
     if(rim>0.)N=normalize(N+(q1-d)*rim*1.6/sp);
-    float gr=gnoise(d*61.);N=normalize(N+uGrain*.03*vec3(gr,-gr,gr*.5)*detail);N=normalize(uSi*N);
+    // the glaze's orange peel: a few crossed ripples (cheap, smooth) rather than gradient noise
+    vec3 g3=sin(d.yzx*57.+d.zxy*43.+vec3(1.3,2.9,.7));N=normalize(N+uGrain*.022*(g3-g3.yzx)*detail);N=normalize(uSi*N);
     float pit=(1.-ridge)*(1.-smoothstep(.55,1.,bowl))*relief*detail;
-    float NL=dot(N,uKey),NV=max(dot(N,V),1e-3),sh=shadowAt(vP,d,k,-1),ao=occAt(vP,d,k,-1)*(1.-.5*rim)*(1.-.55*pit);
+    float NL=dot(N,uKey),NV=max(dot(N,V),1e-3),sh=sh0,ao=ao0*(1.-.5*rim)*(1.-.55*pit);
     // vitrified: clear dark crystal, its lattice gilded, its inner light twice as present
     vec3 body=mix(uBody,uCrystal*.18,vit);float trans=mix(uTrans,2.4,vit);
     float wrap=clamp((NL+.3)/1.3,0.,1.);
     col=body*(uKeyC*wrap*sh+uFillC*(.45+.55*dot(N,uFill))*.3*ao+uAmb*ao);
     col+=uSss*body*uKeyC*smoothstep(-.3,.1,NL)*(1.-smoothstep(.1,.55,NL))*.25*uTrans*sh;
     vec3 H=normalize(uKey+V);float F=.04+.96*pow(1.-NV,5.),rough=mix(uRough,.04,vit);
-    vec3 film=mix(vec3(1.),thinFilm(NV,300.+260.*(gnoise(d*2.2+vec3(uT*.012))*.5+.5))*2.,uOpal*.45);
+    float drift=.5+.25*sin(dot(d,vec3(2.3,1.7,3.1))*2.2+uT*.05)+.25*sin(dot(d,vec3(-1.9,2.6,1.2))*3.1-uT*.037);
+    vec3 film=mix(vec3(1.),thinFilm(NV,300.+260.*drift)*2.,uOpal*.45);
     col+=uKeyC*ggx(max(dot(N,H),0.),rough)*F*max(NL,0.)*sh*uGlaze*.25*film;
     col+=env(reflect(-V,N))*F*uGlaze*ao*film*(1.+vit);
     col+=uRimC*pow(1.-NV,4.)*max(dot(N,uRim),0.)*.18*ao;
@@ -140,11 +147,15 @@ void main(){int k=int(vK+.5);if(covered(vP,k,-1))discard;
     float rez=(1.-exp(-1.5*C4.y))*mode*mode*1.3+(1.-exp(-1.3*C4.x))*.55+.6*C3.z*mode;
     col+=uAcc*rez*thin*(1.-.75*ridge)*1.5;
     col+=uAcc*touch*.18*trans*thin+uAcc*uSpark*rim*.25;
+  }else if(dot(uSi*cameraPosition-C0.xyz,uSi*cameraPosition-C0.xyz)>C0.w*C0.w){
+    // inside, seen from outside (only through pores and the aperture): the chamber's own glow, cheaply
+    float day=max(dot(d,uKeyL),0.);col=uInterior*(ch(k,8).rgb*.5*ring+uAmb*.4)+uKeyC*day*rim*.6;
+    col=mix(col,uWarn*.8,crackF*.6);
   }else{
-    // inside: nacre lit by the files' lights and their standing wave; the day through the windows and pores
+    // inside, with the camera in the chamber: nacre lit by the files' lights and their standing wave; the day through the pores
     vec3 Nl=normalize(-d+(d-q1)*(1.-ridge)*bowl*.25/sp*.22),N=normalize(uSi*Nl);float NV=max(dot(N,V),1e-3);vec3 li=vec3(0.);
     li+=ch(k,8).rgb*.35;
-    for(int i=0;i<12;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 a=fl(m,3),b=fl(m,1);vec3 L=a.xyz-vP;float dl=length(L);li+=b.rgb*b.w*max(dot(Nl,L/dl),0.)/(1.+dl*dl/(C0.w*C0.w*.18));}
+    for(int i=0;i<8;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 a=fl(m,3),b=fl(m,1);vec3 L=a.xyz-vP;float dl=length(L);li+=b.rgb*b.w*max(dot(Nl,L/dl),0.)/(1.+dl*dl/(C0.w*C0.w*.18));}
     vec3 nac=mix(vec3(1.),thinFilm(NV,420.+300.*(gnoise(d*3.1+vec3(uT*.02))*.5+.5))*1.6,uOpal*.3);
     float day=max(dot(d,uKeyL),0.);
     col=uInterior*(li*.55*ring*(.7+.3*ridge)+uAmb*.4+uKeyC*day*uTrans*.04*thin)*nac;
@@ -163,7 +174,7 @@ void main(){int a=int(vC.x+.5),b=int(vC.y+.5);vec4 A=ch(a,0);vec3 da=vP-A.xyz;fl
   float lip=0.;if(vD.w>0.){float r=length(vP-vD.xyz);if(r<vD.w)discard;lip=1.-smoothstep(vD.w,vD.w*1.25,r);}
   vec3 V=normalize(cameraPosition-uS*vP),Nl=normalize(vB.xyz),N=normalize(uSi*Nl);int k=dot(V,N)>0.?b:a;if(dot(N,V)<0.){N=-N;Nl=-Nl;}
   vec4 Ck=ch(k,0),C4=ch(k,4);vec3 li=ch(k,8).rgb*.35;
-  for(int i=0;i<12;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 f=fl(m,3),c=fl(m,1);vec3 L=f.xyz-vP;float dl=length(L);li+=c.rgb*c.w*max(dot(Nl,L/dl),0.)/(1.+dl*dl/(Ck.w*Ck.w*.18));}
+  for(int i=0;i<8;i++){float x=ch(k,10+i/4)[i-4*(i/4)];if(x<0.)break;int m=int(x+.5);vec4 f=fl(m,3),c=fl(m,1);vec3 L=f.xyz-vP;float dl=length(L);li+=c.rgb*c.w*max(dot(Nl,L/dl),0.)/(1.+dl*dl/(Ck.w*Ck.w*.18));}
   float NV=max(dot(N,V),1e-3),tone=vC.z;
   // the counter-melody rings the septum in concentric standing waves
   float wave=.6+tone*.9*pow(abs(cos(vR*9.4248)),3.);

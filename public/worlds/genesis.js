@@ -36,7 +36,7 @@ const TAU=Math.PI*2,MAXF=1024,MAX_FX=6000,MAX_RIB=9000;
 const AGENT_COLORS=['#ffb0dc','#ffd28a','#9cf0c8','#a8b8ff','#ffb48c','#8ce4ff','#dcaaff','#c8f096'];
 // Quality levels (the host also drops MSAA at 1 and resolution at 2 and 3): the walls' tessellation and the motes drawn.
 // Level 3 also drops the analytic shadows and occlusion. Films render at 0.
-export const QUALITY=[{seg:[112,56],motes:520},{seg:[96,48],motes:420},{seg:[72,36],motes:300},{seg:[56,28],motes:180}];
+export const QUALITY=[{seg:[96,48],motes:520},{seg:[88,44],motes:420},{seg:[72,36],motes:300},{seg:[56,28],motes:180}];
 // Spans of the transient expressions (view seconds).
 const RING_S=3.4,FRONT_S=5.5,PULSE_S=4,DECO_S=2.6,GILD_S=3.2;
 export function createFamily(ctx){
@@ -62,7 +62,7 @@ export function createFamily(ctx){
   let prep=null,prepKey='';
   function prepared(){const m=M(),k=`${hist?'h':'l'}|${m.version}|${m.modules.size}`;if(k!==prepKey||!prep){prepKey=k;prep=prepare(m);}return prep;}
   // ---- State textures ----------------------------------------------------------------------------------------------------
-  const CW=13,cData=new Float32Array(CW*MAXC*4),cTex=keep(new THREE.DataTexture(cData,CW,MAXC,THREE.RGBAFormat,THREE.FloatType));
+  const CW=12,cData=new Float32Array(CW*MAXC*4),cTex=keep(new THREE.DataTexture(cData,CW,MAXC,THREE.RGBAFormat,THREE.FloatType));
   const fData=new Float32Array(4*MAXF*4),fTex=keep(new THREE.DataTexture(fData,4,MAXF,THREE.RGBAFormat,THREE.FloatType));
   for(const t of [cTex,fTex]){t.magFilter=t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;}
   const cRow=(k,j,a,b,c,d)=>{const o=(k*CW+j)*4;cData[o]=a;cData[o+1]=b;cData[o+2]=c;cData[o+3]=d;};
@@ -249,9 +249,9 @@ export function createFamily(ctx){
       cRow(k,5,c.lattice,0,c.region.ridge,res.pad[k]);cRow(k,6,m0,m-m0,deco,0);
       // the chamber's own glow (the mean of its files' lights) fills it between them
       let br=0,bg=0,bb=0;for(let j=m0;j<m;j++){const o=(j*4+1)*4;br+=fData[o]*fData[o+3];bg+=fData[o+1]*fData[o+3];bb+=fData[o+2]*fData[o+3];}const nm=Math.max(1,m-m0);cRow(k,8,br/nm,bg/nm,bb/nm,0);
-      // the files whose own light reaches the wall: the twelve that matter most now (touched, stressed, nucleating, bright)
+      // the files whose own light reaches the wall: the eight that matter most now (touched, stressed, nucleating, bright)
       const lit=[];for(let j=m0;j<m;j++){const o2=(j*4+2)*4,o1=(j*4+1)*4;lit.push([fData[o2+3]*10+fData[o2]*5+(1-fData[o2+2])*4+fData[o1+3],j]);}
-      lit.sort((a,b)=>b[0]-a[0]||a[1]-b[1]);for(let q=0;q<12;q++){const o=(k*CW+10+(q>>2))*4+(q&3);cData[o]=q<lit.length?lit[q][1]:-1;}
+      lit.sort((a,b)=>b[0]-a[0]||a[1]-b[1]);for(let q=0;q<8;q++){const o=(k*CW+10+(q>>2))*4+(q&3);cData[o]=q<lit.length?lit[q][1]:-1;}
       // the standing wave's axis: toward the chamber's own aperture slot (a fixed direction for each chamber)
       const ax=[c.slot.c[0]-extentLaw.center[0],c.slot.c[1]-extentLaw.center[1],c.slot.c[2]-extentLaw.center[2]],al=Math.hypot(...ax)||1;
       cRow(k,7,ax[0]/al,ax[1]/al,ax[2]/al,res.tone[k]);
