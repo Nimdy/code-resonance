@@ -10,7 +10,7 @@ then, graduated with generator 5: they are families like the three (scored for t
 curated looks); the owner watched each on a film of a whole session, inhabited, and accepted them (2026-10-31), while
 their six curated looks have not been reviewed (on 2026-11-01 four were reworked and a fifth now sets its own light, see
 the world docs). Aurora is a new preview, chosen only explicitly; the owner watched its films and accepted it, and then
-its digital life (2026-11-01). Technical qualification (determinism, idle life, resources, privacy, performance) is
+its digital life (2026-11-01). Genesis is a newer preview, a first proof not yet accepted. Technical qualification (determinism, idle life, resources, privacy, performance) is
 separate from that artistic judgement, and no one else has reviewed them yet.
 
 ## Layers
@@ -144,7 +144,7 @@ the technique without a finish, or with Classic, gives exactly the grade it alwa
 
 ## World families
 
-The six built-in families (and the Aurora preview) are different universes, each with its own visual grammar: an idle life that is
+The six built-in families (and the Aurora and Genesis previews) are different universes, each with its own visual grammar: an idle life that is
 ambient only and never suggests new work, events that mean what the data says, failure that is never celebratory,
 recovery that resolves it, and milestones that leave something lasting. Every image is a function of the model, the
 recipe and the performance clock, so seeks, replays and films reproduce it (no `Math.random`, `Date.now` or
@@ -297,6 +297,24 @@ a recovery sends the owl out over the ice and the light blooms (new identities l
 until the Digital life switch turns it on). Design brief, stills, measured GPU time and what remains:
 [worlds/aurora.md](worlds/aurora.md) (`public/worlds/aurora.js`, `aurora-layout.js`, `aurora-glsl.js`,
 `life/aurora.js`).
+
+### Genesis (preview)
+
+A universe whose laws are derived from the code. The project's structure writes a Lawbook of ten laws (cohesion,
+coupling, elasticity, conductivity, anisotropy, resonance, viscosity, morphogenesis, stability, dispersion: each an
+artistic abstraction of an observed trait, tunable under *Laws*), and a suspended structure of fired matter (glazed
+porcelain, celadon, smoky glass or onyx) grows under them: subsystems are chambers budding one after another along a
+growth coil, in their order of birth (a flat disc of lentil chambers or a rising cone of round ones, with the
+anisotropy law); files are chamberlets inside, each with its own inner light shining through the reticulate wall;
+symbols open its pores; dependencies between subsystems are cords along which light flows, and coupled neighbours
+share an opening. The matter answers the score's own notes: a bass note swells its chamber's light, the melody's
+standing wave lights the lattice in bands, tension detunes the chambers against each other. Agents are probes of light
+that enter the chamber of the file they edit. A failing run crazes the covered walls in vermilion; a verified recovery
+fills the cracks with gold; a verified milestone turns the covered chambers to crystal (both kept). Idle, the light
+breathes, beads glide along the sutures and spines, and the camera explores, sometimes through the newest chamber's
+aperture into its interior. A first proof (no digital life yet), not accepted artistically: design, stills,
+measurements and what remains in [worlds/genesis.md](worlds/genesis.md) (`public/worlds/genesis.js`,
+`genesis-laws.js`, `genesis-form.js`, `genesis-resonance.js`, `genesis-glsl.js`).
 
 The Visual Studio shows why to choose each world (its card's tooltip; the inspector for the one shown), offers under
 *Looks* twelve curated looks (two per family, built in and read-only, previewed and applied like any preset; the

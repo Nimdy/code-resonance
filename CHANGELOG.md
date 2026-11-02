@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **Genesis (preview)**: a new world, chosen only explicitly (the Visual Studio's Previews, the render lab's
+  `--family genesis`, the web demo), never by the automatic choice; generator 5 and every existing identity are
+  unchanged. The project's structure writes a Lawbook of ten laws (cohesion, coupling, elasticity, conductivity,
+  anisotropy, resonance, viscosity, morphogenesis, stability, dispersion; tunable in the Visual Studio), and a
+  porcelain structure grows under them: a chamber per subsystem budding along a growth coil, chamberlets per file
+  lit from within, titanium sutures, spines, cords of light between coupled chambers. The matter answers the score's
+  own notes. Failures craze the wall, a verified repair fills the cracks with gold, verified milestones turn chambers
+  to crystal. A first proof (phases G0 and G1 of its brief), not yet accepted artistically
+  ([docs/worlds/genesis.md](docs/worlds/genesis.md)).
+- The musical clock gives built-in worlds the notes of each bar as the performer plays them (score v3) and the key
+  (`ctx.musicBar`, `ctx.musicKey`); packs get neither.
+
 ## 0.9.2 — 2026-11-01
 
 Product 0.9.2, for use on your own machine; not stable. This tag is `v0.9.2`. A **Control Center** release: the
