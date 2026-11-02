@@ -4,8 +4,9 @@
 `genesis-glsl.js`), phases G0 and G1 of the GENESIS brief: the design below and a first rendered proof. It is chosen
 only explicitly (the Visual Studio's Previews, the render lab's `--family genesis`, the web demo), never by the automatic
 choice; adding it changed no existing identity (generator 5, interpretation 11, the score and every pinned fingerprint
-are unchanged). It has **not** been accepted artistically: G2 to G6 (the full event vocabulary, deeper music, digital
-life, product integration, graduation) wait for the owner's judgement of the films.
+are unchanged). It was **not** accepted artistically (2026-11-02: "a collection of hexagon-patterned spheres with slow
+camera movement"). The physical model is being replaced, not polished: one continuous field, an authoritative
+simulation, music as force. Its first proof is [Genesis field](genesis-field.md). G2 to G6 wait until it is judged.
 
 Genesis is not a picture of the code. The project's structure writes a **Lawbook**, ten laws its universe obeys, and a
 suspended structure of fired matter grows under those laws: a chamber for each subsystem, budding one after another

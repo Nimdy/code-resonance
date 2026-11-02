@@ -13,6 +13,12 @@
   ([docs/worlds/genesis.md](docs/worlds/genesis.md)).
 - The musical clock gives built-in worlds the notes of each bar as the performer plays them (score v3) and the key
   (`ctx.musicBar`, `ctx.musicKey`); packs get neither.
+- **Genesis field** (a proof, not yet a world): the revised physical model after the first proof was not accepted. One
+  continuous sheet of matter in which every subsystem anchors a territory of a field; dependencies become currents,
+  tendons and tolerance between territories; growth buckles the sheet into folds; the score's notes become forces. An
+  authoritative, fixed-step, bounded simulation on the CPU whose state hashes agree between Node, real time and offline
+  rendering (`public/worlds/genesis-field.js`, `genesis-field-view.js`; the proof in `qualification/visual/genesis-field/`;
+  [docs/worlds/genesis-field.md](docs/worlds/genesis-field.md)). The player still shows the first Genesis preview.
 
 ## 0.9.2 — 2026-11-01
 
