@@ -56,7 +56,7 @@ async function withPage(fn){
   }
   if(mode==='profile'){
     // each pass's GPU time and the CPU's preparation at film times (a concept that supports it; --params '{"profile":true}')
-    const times=(process.argv[4]||'10').split(',').map(Number),file=process.argv[5];
+    const times=(process.argv[4]||'10').split(',').map(Number),file=process.argv[5]&&!process.argv[5].startsWith('--')?process.argv[5]:null;
     const r=await withPage(async page=>page.evaluate(t=>window.__gc.profile(t),times));
     if(file)fs.writeFileSync(file,JSON.stringify(r,null,1));console.log(JSON.stringify(r.rows.map(x=>({t:x.t,gpu:x.gpu,cpu:x.cpu,inst:x.instances,calls:x.calls}))));return;
   }

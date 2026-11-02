@@ -33,6 +33,8 @@ vec2 nearestCenter(vec2 p){vec2 s=vec2(1.,Q3);vec2 a=(floor(p/s)+.5)*s;vec2 b=(f
 // the six edge normals of a cell (pointy in z): a neighbour's centre is one cell unit along each
 const vec2 N0=vec2(1.,0.),N1=vec2(.5,.8660254),N2=vec2(-.5,.8660254);
 float hexD(vec2 p){p=abs(p);return max(dot(p,N1),p.x);}
+// a cell's identity exactly as the reference's hexCell gives it (its column and half its row), for the hash
+vec2 idOf(vec2 c){return vec2(c.x,floor(c.y/(Q3*.5)+.5)*.5);}
 // the column of a crystal cell: its height (the freeze adds to it; spires are drawn as instances) and its top's slope
 float towerOf(float a){return a>=.5?(a*255.-128.)/127.:a*255./127.;}
 float colH(vec2 id,float a){float r=h21(id),r2=h21(id+7.1);return 1.6+3.4*r+towerOf(a)*r2*2.5;}
@@ -44,7 +46,7 @@ float grainShake(vec2 cellId){float s=0.;for(int i=0;i<8;i++){if(i>=uRings)break
 // one cell's geometry along the ray between t0 and t1 (the ray within the cell's column): a hit's t, normal and material
 // (0 crystal, 1 liquid, 2 grains, 3 foam, 4 floor)
 bool hitCell(vec3 ro,vec3 rd,vec2 c,float t0,float t1,vec4 st,out float th,out vec3 n,out float mat){
-  float wF=max(0.,1.-st.r-st.g-st.b);vec2 id=c/vec2(1.,Q3);
+  float wF=max(0.,1.-st.r-st.g-st.b);vec2 id=idOf(c);
   float best=max(max(st.r,st.g),max(st.b,wF));
   vec2 pc=c*S;
   if(st.r>=best){
@@ -85,7 +87,7 @@ bool hitCell(vec3 ro,vec3 rd,vec2 c,float t0,float t1,vec4 st,out float th,out v
   th=1e9;return false;
 }
 // a cell's highest point, for the shadow traversal
-float cellTop(vec2 c){vec4 st=cellAt(c);float wF=max(0.,1.-st.r-st.g-st.b),best=max(max(st.r,st.g),max(st.b,wF));vec2 id=c/vec2(1.,Q3);
+float cellTop(vec2 c){vec4 st=cellAt(c);float wF=max(0.,1.-st.r-st.g-st.b),best=max(max(st.r,st.g),max(st.b,wF));vec2 id=idOf(c);
   if(st.r>=best)return isSpire(id,st.a)?.9:mix(.9,colH(id,st.a),smoothstep(.15,.85,st.r));if(st.b>=best)return 2.2;if(wF>=best)return 3.6;return .9;}
 // cell to cell along a ray's ground track: the exit edge's parameter and the next centre
 float exitCell(vec2 o,vec2 d,vec2 c,out vec2 nc){float te=1e9;nc=c;
@@ -176,7 +178,9 @@ export function create({THREE,renderer,width,height,notes,structure,params={}}){
   const frontAt=dist=>{if(dist>PERIOD*.9)return Infinity;let a=22,b=30;for(let i=0;i<30;i++){const m=(a+b)/2;if(front(m)<dist)a=m;else b=m;}return b;};
   // the cells: centres (cell units) and their state, once a frame
   const cells=[];for(let row=0;row<ROWS;row++)for(let col=0;col<COLS;col++){const cx=col+(row%2?.5:0),cz=row*SQ3/2;cells.push({row,col,x:cx*CELL,z:cz*CELL,id:[cx,cz/SQ3]});}
-  const h21=(x,y)=>{let px=(x*123.34)%1,py=(y*456.21)%1;if(px<0)px+=1;if(py<0)py+=1;const dd=px*(px+45.32)+py*(py+45.32);px+=dd;py+=dd;const v=(px*py)%1;return v<0?v+1:v;};
+  // the shader's cell hash in single precision (as the GPU computes it: the reference picks its spires with it)
+  const f=Math.fround,fr=x=>f(x-Math.floor(x));
+  const h21=(x,y)=>{let px=fr(f(f(x)*f(123.34))),py=fr(f(f(y)*f(456.21)));const dd=f(f(px*f(px+f(45.32)))+f(py*f(py+f(45.32))));px=f(px+dd);py=f(py+dd);return fr(f(px*py));};
   const sun=new THREE.Vector3(.86,.13,-.49).normalize();
   const freezeArr=cells.map(c=>frontAt(Math.hypot(wx(c.x-seats[core][0]),wz(c.z-seats[core][1]))));
   const data=new Uint8Array(COLS*ROWS*4),tex=new THREE.DataTexture(data,COLS,ROWS,THREE.RGBAFormat,THREE.UnsignedByteType);tex.minFilter=tex.magFilter=THREE.NearestFilter;tex.needsUpdate=true;
@@ -218,7 +222,7 @@ export function create({THREE,renderer,width,height,notes,structure,params={}}){
     shadowTex.needsUpdate=true;
   }
   // the spires: the cells whose hash makes them spires, risen where the freeze has passed (over 2.5 s)
-  for(const c of cells){c.r=h21(c.id[0],c.id[1]);c.r2=h21(c.id[0]+7.1,c.id[1]+7.1);}
+  for(const c of cells){c.r=h21(c.id[0],c.id[1]);c.r2=h21(f(f(c.id[0])+f(7.1)),f(f(c.id[1])+f(7.1)));}
   const spireCells=cells.map((c,i)=>({c,i,r2:c.r2,r:c.r})).filter(s=>s.r2>.972);for(const s of spireCells)s.c.spire=true;
   const MAXI=12000,inst=new Float32Array(MAXI*4);
   const prism=new THREE.BufferGeometry();{const P=[];const V=k=>{const a=Math.PI/6+k*Math.PI/3;return [Math.cos(a)/Math.cos(Math.PI/6),Math.sin(a)/Math.cos(Math.PI/6)];};
