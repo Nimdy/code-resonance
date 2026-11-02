@@ -13,19 +13,22 @@
 //  - dependencies also drive currents in the field: a circulation cell along each dependency (an incompressible flow,
 //    the curl of a capsule-shaped stream function) that stretches and folds the boundaries it crosses, and a tendon that
 //    pulls the two territories toward each other, folding the sheet into an arch or a pleat;
+//  - a dependency is a supply line: the territory depended on releases a nutrient into the field, the current carries
+//    it, and the dependent territory takes it up where it arrives; what it takes up feeds its growth (it blooms into
+//    new folds), so a new dependency changes the matter's shape where its supply lands;
 //  - growth: every edge's rest length relaxes toward a target set by the phases under it (each subsystem's growth, more
 //    toward the rim, along or across the radius by the anisotropy law, and extra growth on boundaries between phases
 //    that do not mix, which raises them as crests). Excess length that has nowhere to go buckles the sheet into folds;
-//  - music: a bass note gives its territory an impulse along the sheet's normal, strikes the territory's resonator (a
-//    damped oscillator at its own frequency, tuned toward the beat by the resonance law, whose output is a pressure and
-//    a turgor: the territory's rest lengths swell and shrink, so its folds breathe) and sends a ripple from its seat;
-//    chord tones strike resonators gently; a melody note taps the rim at its pitch's angle; a kick sends a pressure
-//    front from the centre to the rim.
-export const FIELD_VERSION=1;
+//  - music, at two scales. The vibration of the matter: a bass note strikes its territory, which heaves and rings at the
+//    matter's natural frequency (tuned toward the beat by the resonance law) and radiates ripples across the sheet at the
+//    speed elasticity sets, hushed by viscosity; a melody note strikes the rim at its pitch's angle; a kick strikes the
+//    centre. The slow shape: each territory's resonator (struck by bass and chord tones) swells and shrinks its rest
+//    lengths a little (turgor), so its folds breathe. The vibration never pushes the slow shape, so nothing flaps.
+export const FIELD_VERSION=2;
 export const DT=1/60;
 // the music's force gains (pressure per unit of note velocity, per vertex area), calibrated so a strong note moves the
 // matter by a few rest lengths: tests/genesis-field.test.js measures the response
-export const GAIN={bass:5,attack:3.2,ripple:20,tap:36,turgor:.055};
+export const GAIN={bass:3,attack:40,tap:8,turgor:.08};
 const SUB=2,TAU=Math.PI*2;
 const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
 const lerp=(a,b,t)=>a+(b-a)*t;
@@ -77,11 +80,16 @@ export function physicsOf(laws){
     mix:lerp(.6,2.4,cp),                      // how much a dependency's phases tolerate each other
     current:lerp(.14,.34,cp),                 // circulation strength along a dependency (material units/s)
     tendon:lerp(160,380,cp),                  // tendon stiffness of a dependency
-    wave:lerp(.32,.62,el),                    // speed of a ripple through the sheet (material units/s): elasticity
+    supply:lerp(.5,1.1,co),                   // how much nutrient a depended-on territory releases (conductivity)
+    uptake:lerp(.9,1.8,co),                   // how readily the dependent territory takes it up
+    feed:lerp(.35,.8,mo),                     // how much what it took up grows the matter (morphogenesis)
     blink:lerp(5,11,st),                      // period (s) at which currents alternate (chaotic advection)
     noise:lerp(.06,.012,st),                  // initial roughness of the sheet (stability: a calmer start)
     spread:lerp(.34,.62,di),                  // how far subsystems' seats spread from the centre
-    tune:re,                                  // how close the resonators sit to the beat
+    tune:re,                                  // how close the resonators (and the matter's own ring) sit to the beat
+    ring:lerp(1.05,2.1,el),                   // the matter's natural frequency (Hz) before the resonance law tunes it
+    sound:lerp(16,36,el),                     // the speed of a vibration across the sheet (units/s): elasticity
+    hush:lerp(.55,2.1,vi),                    // how fast a vibration dies (1/s): viscosity
     q:lerp(1.6,5,1-vi),                       // resonator quality (cycles to decay)
     pressure:lerp(1.2,2.6,re),                // pressure gain of the music
   };
@@ -139,7 +147,9 @@ function seatsOf(structure,P,seed){
 // ---- The simulation -------------------------------------------------------------------------------------------------
 // laws: the Lawbook; structure: {subsystems:[{k,files,role}], deps:[{a,b,w}]} (k: the subsystem's order of birth);
 // seed: the identity's seed; R: rings (resolution; part of the identity of a run, never of the rendering quality).
-export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
+// boundary: 'stem' (a free sheet held at its centre: the sculpture scale) or 'vault' (the rim held in a ring and the sheet
+// gently inflated, so growth buckles it into a vaulted interior a viewer can stand inside: the interior scale).
+export function createField({laws,structure,seed=1,R=44,G=72,tempo=92,boundary='stem',inflate=.5}={}){
   const P=physicsOf(laws),rnd=stream(seed);
   const {N,mx,ring,tris}=disc(R),E=edgesOf(N,tris),NE=E.length/2;
   // material coordinates in the unit disc, and per-edge geometry in the material plane
@@ -157,7 +167,15 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
   // state
   const x=new Float64Array(N*3),v=new Float64Array(N*3),f=new Float64Array(N*3),fs=new Float64Array(N*3),n=new Float64Array(N*3),U=new Float64Array(N),area=new Float64Array(N);
   for(let i=0;i<N;i++){const r=ring[i]/R;x[3*i]=mx[2*i];x[3*i+2]=mx[2*i+1];x[3*i+1]=P.noise*R*.05*(rnd()-.5)*r*r;}
-  const x0=x.slice(0,3*7);
+  const x0=x.slice(0,3*7),vault=boundary==='vault',rimStart=1+3*(R-1)*R,xRim=x.slice(3*rimStart);
+  // in a vault the sheet starts as a shallow dome (so inflation and growth choose up), its rim in the ring
+  if(vault)for(let i=0;i<N;i++){const r=ring[i]/R;x[3*i+1]+=R*.08*(1-r*r);}
+  // vibration: small elastic displacements along the sheet's normal about its present shape (a damped membrane wave
+  // equation with a restoring term), the scale at which the music acts. A struck territory heaves and rings at the
+  // matter's natural frequency (tuned toward the beat by the resonance law) and radiates ripples that cross the sheet at
+  // the speed elasticity sets; viscosity hushes them. The slow shape (growth, folding) is never pushed by it.
+  const vu=new Float64Array(N),vud=new Float64Array(N),vlap=new Float64Array(N),vlen=new Float64Array(N);
+  const vibW2=sq(TAU*lerp(P.ring,tempo/60,P.tune*.85));
   // the field: one phase per subsystem on a G x G grid over the material square [-1,1]^2
   const MAXK=12,GG=G*G,h=2/G;
   let subs=[],K=0,seats=new Float64Array(0),target=new Float64Array(0),grow=new Float64Array(0),aniso=new Float64Array(0),born=new Float64Array(0);
@@ -168,13 +186,15 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
   // the flow map: for every cell, where its matter of the field came from (advected with the phases). The view draws
   // fine banding through it, so the currents' stretching and folding is visible at any scale.
   const mapX=new Float64Array(GG),mapY=new Float64Array(GG),mtmp=new Float64Array(GG*2);
+  // the supply lines' nutrient in the field, and what the matter has taken up (0..1, it feeds growth)
+  const nut=new Float64Array(GG),ntmp=new Float64Array(GG),fed=new Float64Array(GG);
   for(let c=0;c<GG;c++){mapX[c]=-1+h*((c%G)+.5);mapY[c]=-1+h*(Math.floor(c/G)+.5);}
   // per-vertex phase weights and growth drivers (refreshed each step)
   const pv=new Float64Array(N*MAXK),sv=new Float64Array(N),cv=new Float64Array(N),av=new Float64Array(N);
   const tv=new Float64Array(N);
   const rimProf=new Float64Array(N);for(let i=0;i<N;i++)rimProf[i]=dpow(Math.sqrt(xi[2*i]*xi[2*i]+xi[2*i+1]*xi[2*i+1]),P.rim);
-  // resonators (one per subsystem) and the music's travelling fronts
-  const res=new Float64Array(MAXK*2),omega=new Float64Array(MAXK),fronts=[],taps=[];
+  // resonators (one per subsystem)
+  const res=new Float64Array(MAXK*2),omega=new Float64Array(MAXK);
   let step=0,time=0;
   const ROLE_GROWTH={core:.75,interface:1.15,services:1,model:.85,logic:1,tests:.7};
   function grid(px,py){const gx=(px+1)/h-.5,gy=(py+1)/h-.5,ix=Math.floor(gx),iy=Math.floor(gy);return [ix,iy,gx-ix,gy-iy];}
@@ -231,7 +251,7 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
     for(let c=0;c<GG;c++){const gx=-1+h*((c%G)+.5),gy=-1+h*(Math.floor(c/G)+.5),t=clamp(((gx-ax)*dx+(gy-ay)*dy)/l2),px=ax+t*dx-gx,py=ay+t*dy-gy;psi[c]=dexp(-(px*px+py*py)/s2);}
     for(let c=0;c<GG;c++){const i=c%G,j=Math.floor(c/G);if(i<1||j<1||i>G-2||j>G-2)continue;
       u[2*c]=(psi[c+G]-psi[c-G])/(2*h)*Math.sqrt(s2);u[2*c+1]=-(psi[c+1]-psi[c-1])/(2*h)*Math.sqrt(s2);}
-    return u;
+    u.psi=psi;return u;
   }
   // a tendon between the two territories: the vertices near a point inside each, toward the other
   function tendonOf(d){
@@ -256,16 +276,18 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
     sampleField();
     growStep();
     normals();
-    // music: strike the resonators, launch fronts and taps
-    if(music){for(const b of music.bass||[])if(b.k>=0&&b.k<K){res[2*b.k+1]+=b.v*omega[b.k]*.9;if(b.v>.3)fronts.push({t:0,v:b.v*.8,cx:seats[2*b.k],cy:seats[2*b.k+1]});
-        // the attack: the note's pressure reaches the territory at once (an impulse along the sheet's normal)
-        const imp=GAIN.attack*P.pressure*b.v;for(let i=0;i<N;i++){const w=pv[i*MAXK+b.k];if(w<.15)continue;const a=imp*w;v[3*i]+=n[3*i]*a;v[3*i+1]+=n[3*i+1]*a;v[3*i+2]+=n[3*i+2]*a;}}
-      for(const v0 of music.kick||[])fronts.push({t:0,v:v0,cx:0,cy:0});for(const m of music.melody||[])taps.push({t:0,v:m.v,a:m.angle});}
+    // music: strike the resonators and the vibration
+    if(music){for(const b of music.bass||[])if(b.k>=0&&b.k<K){res[2*b.k+1]+=b.v*omega[b.k]*.9;
+        // the attack: the note's pressure front reaches the territory at once and lifts it as one body (an impulse along
+        // the sheet's axis, not each fold's normal, so the folds rise and settle together instead of flipping)
+        const imp=GAIN.attack*P.pressure*b.v;for(let i=0;i<N;i++){const w=pv[i*MAXK+b.k];if(w<.15)continue;vud[i]+=imp*w*w;}}
+      // a kick: the whole sheet is struck from the centre; a melody note: a small strike on the rim at its pitch's angle
+      for(const v0 of music.kick||[])for(let i=0;i<N;i++){const r=xi[2*i]*xi[2*i]+xi[2*i+1]*xi[2*i+1];if(r<.04)vud[i]+=GAIN.attack*P.pressure*v0*(1-r/.04);}
+      for(const m of music.melody||[]){const tx=.86*dcos(m.angle),ty=.86*dsin(m.angle);for(let i=0;i<N;i++){const d2=(sq(xi[2*i]-tx)+sq(xi[2*i+1]-ty))/.01;if(d2<4)vud[i]+=GAIN.tap*P.pressure*m.v*dexp(-d2);}}}
     for(let i=0;i<K;i++){const w=omega[i],z=1/(2*P.q),q=res[2*i],qd=res[2*i+1];const acc=-w*w*q-2*z*w*qd;res[2*i+1]=qd+acc*DT;res[2*i]=q+res[2*i+1]*DT;}
     slowForces();
     for(let s=0;s<SUB;s++)fastStep(DT/SUB);
-    for(const F of fronts)F.t+=DT;while(fronts.length&&fronts[0].t>3.2)fronts.shift();
-    for(const T of taps)T.t+=DT;while(taps.length&&taps[0].t>1.6)taps.shift();
+    for(let s=0;s<SUB;s++)vibrate(DT/SUB);
     step++;time=step*DT;
   }
   // the field: reaction (territory competition, mixing of coupled phases), diffusion, then advection by the currents
@@ -290,6 +312,17 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
         tmp[o+c]=p+DT*(D*(l+r+dn+up-4*p)+gam*p*(fit[i]-fb));
       }
     }
+    // supply lines: each dependency's provider releases nutrient where its phase is; its dependent takes it up where its
+    // phase is, and what it takes up accumulates as the matter's feeding (saturating, and slowly spent)
+    const ramps=deps.map(D0=>{const age=D0.born>-1e8?time-D0.born:1e9;return clamp(age/3)*(.55+.45*D0.w);});
+    for(let c=0;c<GG;c++){
+      // released only along the line the current runs (its capsule), so what flows is a stream, not a stain
+      let prod=0,upt=0;for(let d=0;d<deps.length;d++){const r=ramps[d];if(r<=0)continue;const q=Ud[d].psi[c];prod+=r*phi[deps[d].b*GG+c]*q*q*q;upt+=r*phi[deps[d].a*GG+c];}
+      const n=nut[c],gx=c%G,gy=Math.floor(c/G),l=gx>0?nut[c-1]:n,r=gx<G-1?nut[c+1]:n,dn=gy>0?nut[c-G]:n,up=gy<G-1?nut[c+G]:n;
+      const take=P.uptake*upt*n;
+      ntmp[c]=Math.max(0,n+DT*(P.supply*prod*(1-n)-take-.22*n+.5*D*(l+r+dn+up-4*n)));
+      fed[c]+=DT*(.6*take*(1-fed[c])-.004*fed[c]);
+    }
     // currents: each dependency's cell, alternating with the others (a blinking protocol: chaotic advection)
     ux.fill(0);uy.fill(0);let any=false;
     for(let d=0;d<deps.length;d++){
@@ -305,9 +338,10 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
         const o0=iy*G+ix;let s=0;
         mtmp[2*c]=(mapX[o0]*(1-fx)+mapX[o0+1]*fx)*(1-fy)+(mapX[o0+G]*(1-fx)+mapX[o0+G+1]*fx)*fy;
         mtmp[2*c+1]=(mapY[o0]*(1-fx)+mapY[o0+1]*fx)*(1-fy)+(mapY[o0+G]*(1-fx)+mapY[o0+G+1]*fx)*fy;
+        nut[c]=(ntmp[o0]*(1-fx)+ntmp[o0+1]*fx)*(1-fy)+(ntmp[o0+G]*(1-fx)+ntmp[o0+G+1]*fx)*fy;
         for(let i=0;i<K;i++){const o=i*GG+o0;let p=(tmp[o]*(1-fx)+tmp[o+1]*fx)*(1-fy)+(tmp[o+G]*(1-fx)+tmp[o+G+1]*fx)*fy;p=p<0?0:p;phi[i*GG+c]=p;s+=p;}
         s=s||1;for(let i=0;i<K;i++)phi[i*GG+c]/=s;
-      }else{mtmp[2*c]=mapX[c];mtmp[2*c+1]=mapY[c];let s=0;for(let i=0;i<K;i++){const p=tmp[i*GG+c]<0?0:tmp[i*GG+c];phi[i*GG+c]=p;s+=p;}s=s||1;for(let i=0;i<K;i++)phi[i*GG+c]/=s;}
+      }else{mtmp[2*c]=mapX[c];mtmp[2*c+1]=mapY[c];nut[c]=ntmp[c];let s=0;for(let i=0;i<K;i++){const p=tmp[i*GG+c]<0?0:tmp[i*GG+c];phi[i*GG+c]=p;s+=p;}s=s||1;for(let i=0;i<K;i++)phi[i*GG+c]/=s;}
     }
     for(let c=0;c<GG;c++){mapX[c]=mtmp[2*c];mapY[c]=mtmp[2*c+1];}
   }
@@ -319,7 +353,7 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
       for(let k=0;k<K;k++){const w=sample(phi,k,px,py);pv[i*MAXK+k]=w;const young=born[k]>-1e8?clamp((time-born[k])/6):1;s+=w*grow[k]*young;a+=w*aniso[k];}
       for(let k=0;k<K;k++)for(let j=k+1;j<K;j++)cr+=pv[i*MAXK+k]*pv[i*MAXK+j]*(1-clamp(C[k*K+j]));
       const prof=rimProf[i];
-      sv[i]=s*(.18+.82*prof);cv[i]=clamp(cr*4);av[i]=a;
+      sv[i]=s*(.18+.82*prof)+P.feed*sample(fed,0,px,py);cv[i]=clamp(cr*4);av[i]=a;
     }
   }
   function growStep(){
@@ -327,7 +361,7 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
     for(let e=0;e<NE;e++){
       const a=E[2*e],b=E[2*e+1],s=(sv[a]+sv[b])/2,cr=(cv[a]+cv[b])/2,an=(av[a]+av[b])/2;
       let g=1+P.reach*s+P.crest*cr+.45*P.reach*an*cos2[e]*s;
-      g=clamp(g,.85,1+P.reach+P.crest);Lt[e]=L0[e]*g;
+      g=clamp(g,.85,1+P.reach+P.crest+P.feed);Lt[e]=L0[e]*g;
       L[e]+=k*(Lt[e]-L[e]);
     }
   }
@@ -373,19 +407,22 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
       for(let k=0;k<T.A.ids.length;k++){const i=T.A.ids[k],w=T.A.ws[k]*F;fs[3*i]+=dx*w;fs[3*i+1]+=dy*w;fs[3*i+2]+=dz*w;}
       for(let k=0;k<T.B.ids.length;k++){const i=T.B.ids[k],w=T.B.ws[k]*F;fs[3*i]-=dx*w;fs[3*i+1]-=dy*w;fs[3*i+2]-=dz*w;}
     }
-    // the stem: the centre and its first ring hold their place and orientation
-    for(let i=0;i<7;i++){fs[3*i]+=(x0[3*i]-x[3*i])*80;fs[3*i+1]+=(x0[3*i+1]-x[3*i+1])*80;fs[3*i+2]+=(x0[3*i+2]-x[3*i+2])*80;}
-    // music: the resonators' pressure over their territories, the fronts and the taps, normal to the sheet
+    if(vault){
+      // the vault: the rim held in its ring, and a uniform inflation pressure (against the sheet's normal: upward)
+      for(let i=rimStart,o=0;i<N;i++,o+=3){fs[3*i]+=(xRim[o]-x[3*i])*200;fs[3*i+1]+=(xRim[o+1]-x[3*i+1])*200;fs[3*i+2]+=(xRim[o+2]-x[3*i+2])*200;}
+      for(let i=0;i<rimStart;i++){const s=-inflate*area[i];fs[3*i]+=n[3*i]*s;fs[3*i+1]+=n[3*i+1]*s;fs[3*i+2]+=n[3*i+2]*s;}
+    }else{
+      // the stem: the centre and its first ring hold their place and orientation
+      for(let i=0;i<7;i++){fs[3*i]+=(x0[3*i]-x[3*i])*80;fs[3*i+1]+=(x0[3*i+1]-x[3*i+1])*80;fs[3*i+2]+=(x0[3*i+2]-x[3*i+2])*80;}
+    }
+    // music on the slow shape: the resonators' pressure over their territories, normal to the sheet
     // turgor: a struck territory's resonator swells and shrinks its matter's rest lengths, so its folds breathe with it
     for(let i=0;i<N;i++){let t=0;for(let k=0;k<K;k++)t+=pv[i*MAXK+k]*res[2*k];tv[i]=GAIN.turgor*P.pressure*t;}
-    let anyMusic=false;for(let k=0;k<K;k++)if(res[2*k]!==0)anyMusic=true;anyMusic=anyMusic||fronts.length>0||taps.length>0;
+    let anyMusic=false;for(let k=0;k<K;k++)if(res[2*k]!==0)anyMusic=true;
     if(anyMusic){
       const pk=new Float64Array(K);for(let k=0;k<K;k++)pk[k]=res[2*k]*P.pressure*GAIN.bass;
       for(let i=0;i<N;i++){
         let p=0;for(let k=0;k<K;k++)p+=pv[i*MAXK+k]*pk[k];
-        const px=xi[2*i],py=xi[2*i+1],r=Math.sqrt(px*px+py*py);
-        for(const F of fronts){const rf=Math.sqrt(sq(px-F.cx)+sq(py-F.cy)),rw=F.t*P.wave,w=.06,dd=(rf-rw)/w;if(dd*dd<9)p+=F.v*GAIN.ripple*P.pressure*dexp(-dd*dd)*dexp(-F.t*1.1)*(rw<.04?rw/.04:1);}
-        for(const T of taps){const tx=.86*dcos(T.a),ty=.86*dsin(T.a),d2=(sq(px-tx)+sq(py-ty))/.012;if(d2<9)p+=T.v*GAIN.tap*P.pressure*dexp(-d2)*dexp(-T.t*2.4)*(T.t<.12?T.t/.12:1);}
         const s=p*area[i];fs[3*i]+=n[3*i]*s;fs[3*i+1]+=n[3*i+1]*s;fs[3*i+2]+=n[3*i+2]*s;
       }
     }
@@ -418,12 +455,21 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
       v[o]=vx;v[o+1]=vy;v[o+2]=vz;x[o]+=vx*dt;x[o+1]+=vy*dt;x[o+2]+=vz*dt;
     }
   }
+  function vibrate(dt){
+    vlen.fill(0);vlap.fill(0);
+    for(let e=0;e<NE;e++){const a=E[2*e],b=E[2*e+1];vlen[a]+=L[e];vlen[b]+=L[e];vlap[a]+=vu[b];vlap[b]+=vu[a];}
+    const c2=P.sound*P.sound,g=2*P.hush;
+    for(let i=0;i<N;i++){const d=adjStart[i+1]-adjStart[i],l=vlen[i]/d,lap=4*(vlap[i]/d-vu[i])/(l*l);
+      // the rim is free: its vibration reflects
+      vud[i]+=dt*(c2*lap-g*vud[i]-vibW2*vu[i]);}
+    for(let i=0;i<N;i++)vu[i]+=dt*vud[i];
+  }
   // ---- Read-outs ------------------------------------------------------------------------------------------------------
   // The authoritative state's hash: positions, velocities, rest lengths, the field and the resonators (exact bits).
   function hashState(){
     let h1=2166136261,h2=0x9747b28c;
     const eat=arr=>{const b=new Uint32Array(arr.buffer,arr.byteOffset,arr.byteLength/4);for(let i=0;i<b.length;i++){h1=Math.imul(h1^b[i],16777619);h2=Math.imul(h2^(b[i]>>>16|b[i]<<16),0x5bd1e995)^(h2>>>13);}};
-    eat(x);eat(v);eat(L);eat(phi);eat(res);eat(mapX);eat(mapY);
+    eat(x);eat(v);eat(L);eat(phi);eat(res);eat(mapX);eat(mapY);eat(nut);eat(fed);eat(vu);eat(vud);
     return (h1>>>0).toString(16).padStart(8,'0')+(h2>>>0).toString(16).padStart(8,'0');
   }
   function metrics(){
@@ -436,10 +482,10 @@ export function createField({laws,structure,seed=1,R=44,G=72,tempo=92}={}){
   }
   setStructure(structure,{initial:true});
   normals();
-  return {N,NE,R,G,K:()=>K,MAXK,tris,edges:E,xi,x,v,n,L,L0,pv,sv,cv,phi:()=>phi,seats:()=>seats,subs:()=>subs,coupling:()=>C,res,omega,physics:P,
+  return {N,NE,R,G,boundary,K:()=>K,MAXK,tris,edges:E,xi,x,v,n,L,L0,pv,sv,cv,phi:()=>phi,seats:()=>seats,subs:()=>subs,coupling:()=>C,res,omega,physics:P,
     get step(){return step;},get time(){return time;},
     advance,setStructure,hash:hashState,metrics,
     // current flow on the grid (for rendering streaks) and the tendons' state
-    flow:()=>({ux,uy,mapX,mapY}),tendons:()=>tendons.map((t,i)=>({rest:t.rest,from:t.from,len:t.len,born:t.born,a:deps[i].a,b:deps[i].b})),
-    fronts:()=>fronts.map(F=>({t:F.t,v:F.v})),taps:()=>taps.map(T=>({t:T.t,v:T.v,a:T.a}))};
+    flow:()=>({ux,uy,mapX,mapY,nut,fed}),vibration:vu,tendons:()=>tendons.map((t,i)=>({rest:t.rest,from:t.from,len:t.len,born:t.born,a:deps[i].a,b:deps[i].b})),
+  };
 }
