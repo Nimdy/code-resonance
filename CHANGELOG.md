@@ -20,6 +20,22 @@
     reading packs when none are installed; a pack's numeric values keep their decimal point (1.25, not "1 25"); a
     project's page names its export and its studios as the rest of the interface does, and the Visual Studio's
     information-mode note no longer runs two sentences together.
+- **First impressions** (the owner's three approved proposals from the UX pass):
+  - *Visual Studio:* the world browser is no longer a strip that scrolls sideways. Its tabs read *Worlds · N*, *Looks*
+    and *Classic stages*. Every world sits in a group (Built in, Previews, From packs), each with a one-line header. At
+    1920 × 1080 every world is in view; on a laptop the first row holds the first card of every group (Aurora and the
+    pack worlds without hunting), and the browser scrolls vertically, fades at its edge and says how many are below.
+    Cards carry only true chips: *Saved*, *Life on* (where the identity's life is on), *Needs approval*. *Looks* holds
+    the curated looks and your presets. The arrow keys move between cards.
+  - *Home, first run:* while no project of your own exists (the demo does not count), the stage comes first, playing the
+    demo with its *Demonstration (fictional)* label or idle with `npm run demo` to copy. Beside it the setup guide is a
+    compact checklist, one line per step with its true status; only the next step is open, the others open on demand. At
+    1366 × 768 the stage and the next step are both in the first view.
+  - *Record & Broadcast:* Record, the recording profile (sizes under the names) and where it is written (*File on disk*,
+    *Download at the end*) form one control area under the monitor, in the first view at 1366 × 768. *About profiles*
+    holds the explanations, beside *Performance and limits*. The last recording, the way to OBS and the exports fill the
+    right column.
+- The vertical format names Reels and Shorts only.
 
 ## 0.9.1 — 2026-11-01
 
@@ -442,7 +458,7 @@ chosen only explicitly. The extension is not published to the Marketplace or Ope
 - **Known limit.** Copilot (and Grok Build, Devin) also read the repository's Claude Code hook files. With Claude Code's
   hooks installed, a Copilot session in that project can also appear as Claude.
 - **Vertical clips (9:16):** `npm run film -- --project <id> --vertical` (or `--aspect 9:16`) renders the night's best
-  moment for Instagram Reels, YouTube Shorts and TikTok: 1080 × 1920, `--duration` seconds of film (default 30) at the
+  moment for Instagram Reels and YouTube Shorts: 1080 × 1920, `--duration` seconds of film (default 30) at the
   highlight's speed, centred on its key moment (of the moments that made the night score, the one whose clip scores
   highest by the same rules; `engine/highlight.js` `clip`), opening on the title card and ending on a 3-second end card
   with the public title and *Code Resonance*, the music faded in (1 s) and out (2.5 s). H.264 and AAC in MP4

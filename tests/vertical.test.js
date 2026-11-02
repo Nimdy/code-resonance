@@ -1,6 +1,6 @@
 'use strict';
-// Vertical clips (9:16): the portrait rules for words (sized by the short side, inside the safe area Reels, Shorts and
-// TikTok leave clear), the clip's window (centred on the highlight's key moment), npm run film -- --vertical, and the
+// Vertical clips (9:16): the portrait rules for words (sized by the short side, inside the safe area Reels and
+// Shorts leave clear), the clip's window (centred on the highlight's key moment), npm run film -- --vertical, and the
 // landscape rules left exactly as they were.
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');

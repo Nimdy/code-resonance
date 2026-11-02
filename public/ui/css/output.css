@@ -1,14 +1,15 @@
 /* Record & Broadcast, a desktop workspace in two columns that fill independently:
-     monitor (the stage as recorded, the recorder, what it will record)  |  recording profile, the last recording
-     Broadcast with OBS                                                   |  Export and replay (its three kinds stacked)
+     monitor (the stage as recorded; Record, the profile and where it is written)  |  the last recording, the way to OBS
+     Broadcast with OBS                                                             |  Export and replay (its kinds stacked)
    The monitor column is as wide as the screen's height allows (the frame and the Record control fit in the first view),
    the right column (.out-rail) takes the rest, never less than the inspector width. The rail spans both rows, so a
    short inspector never leaves a hole beside OBS. One record control; everything else reads like an instrument's
-   displays. --out-reserve is the height above and below the frame (top bar, page head, recorder) plus a margin, so
-   Record stays in the first view; the facts, the last-file line and any warning sit under Record and never push it down. */
-.ws-output{--out-reserve:340px}
+   displays. --out-reserve is the height above and below the frame (top bar, page head, recorder, the two switches) plus a
+   margin, so Record, the profile and where it is written stay in the first view; their explanations, the facts, the
+   last-file line and any warning sit under them and never push them down. */
+.ws-output{--out-reserve:430px}
 .ws-output .out-grid{display:grid;gap:20px;align-items:start;
-  grid-template-columns:minmax(0,calc((100vh - var(--out-reserve)) * 16 / 9 + 26px)) minmax(var(--inspector),1fr);
+  grid-template-columns:minmax(0,max(840px,calc((100vh - var(--out-reserve)) * 16 / 9 + 26px))) minmax(var(--inspector),1fr);
   grid-template-areas:"mon rail" "obs rail";grid-template-rows:auto 1fr}
 .ws-output .out-monitor{grid-area:mon}
 .ws-output .out-rail{grid-area:rail;display:grid;gap:20px;align-content:start;min-width:0}
@@ -19,13 +20,20 @@
    and tall enough: 1920 x 1200 still keeps the 1920 frame) OBS spans both columns under the monitor and the rail, which
    then end within about 100 px of each other. */
 @media (min-width:2260px) and (min-height:1210px){.ws-output .out-grid{grid-template-areas:"mon rail" "obs obs";grid-template-rows:auto auto}}
+/* From 1800 px wide the monitor (with its controls) and the right column end within a few pixels of each other, so OBS
+   spans both under them (beside the monitor it left the right column ending 600 px higher at 1920 x 1080). */
+@media (min-width:1800px){.ws-output .out-grid{grid-template-areas:"mon rail" "obs obs";grid-template-rows:auto auto}}
+/* At 1280 px and below the right column may be 300 px wide, so the recorder's controls keep one row each. */
+@media (max-width:1280px){.ws-output{--inspector:300px}}
 .ws-output .panel-head h2{font-size:16px}
 .ws-output .out-head-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2);flex:none}
 .ws-output .out-head-icon svg{width:16px;height:16px}
 
 /* ---- The monitor: the frame, the transport under it, then any warning ---- */
 .ws-output .out-monitor{padding:12px;gap:0;background:var(--bg-1);border-color:var(--line-2)}
-.ws-output .out-slot{aspect-ratio:16/9;width:100%}
+/* The frame is as large as the window's height allows; the column is never narrower than the recorder's two rows of
+   controls need (840 px), so on a laptop the frame centres in it rather than the controls wrapping below the fold. */
+.ws-output .out-slot{aspect-ratio:16/9;width:min(100%,calc((100vh - var(--out-reserve)) * 16 / 9));margin:0 auto}
 .out-chrome .slot-badge .pill.plain{background:rgba(8,10,16,.66);border-color:rgba(255,255,255,.08);color:rgba(222,230,242,.78);backdrop-filter:blur(6px)}
 .ws-output .out-deck{display:flex;align-items:center;gap:20px;padding:14px 6px 2px;min-width:0;flex-wrap:wrap}
 .ws-output .out-monitor:has(.out-deck.active){border-color:rgba(255,77,97,.34);box-shadow:0 0 0 1px rgba(255,77,97,.12),0 0 40px rgba(255,77,97,.06)}
@@ -66,29 +74,39 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-lastline-where{flex:none;color:var(--text-3);margin-left:auto}
 .ws-output .out-notice{display:grid;gap:8px;margin-top:12px}
 
-/* ---- The right column: profile, readiness, last recording ---- */
-.ws-output .out-side-profiles{gap:10px}
-.ws-output .out-side-last{border-top:1px solid var(--line);gap:12px}
-.ws-output .out-profiles{display:grid;gap:6px}
-.ws-output .out-profile{display:grid;gap:4px;width:100%;text-align:left;padding:11px 14px;border-radius:var(--r-2);border:1px solid var(--line-2);background:var(--bg-1);color:var(--text-1);transition:border-color var(--t-1),background var(--t-1)}
-.ws-output .out-profile:hover:not(:disabled){border-color:var(--line-3);background:var(--bg-3)}
-.ws-output .out-profile[aria-checked="true"]{border-color:var(--accent-line);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent-line) inset}
-.ws-output .out-profile:disabled{opacity:.5;cursor:not-allowed}
-.ws-output .out-profile[aria-checked="true"]:disabled{opacity:.8}
-.ws-output .out-profile-head{display:flex;align-items:center;gap:8px}
-.ws-output .out-profile-head strong{font-size:14.5px;font-weight:600}
+/* ---- Under the recorder: the profile and where it is written, two switches side by side (wrapping on a narrow frame) ---- */
+.ws-output .out-controls{display:grid;gap:10px;margin:12px 6px 0;padding-top:12px;border-top:1px solid var(--line);min-width:0}
+.ws-output .out-switches{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;min-width:0}
+.ws-output .out-switch-field{display:grid;gap:6px;min-width:0;max-width:100%}
+.ws-output .out-switch-head{display:flex;align-items:baseline;gap:8px;min-width:0}
+.ws-output .out-switch{display:inline-flex;flex-wrap:wrap;padding:2px;gap:2px;border-radius:var(--r-2);background:var(--bg-0);border:1px solid var(--line-2);max-width:100%}
+.ws-output .out-opt{display:grid;gap:1px;justify-items:start;text-align:left;min-width:0;padding:6px 10px 7px;border:0;border-radius:6px;background:transparent;color:var(--text-2);transition:background var(--t-1),color var(--t-1),box-shadow var(--t-1)}
+.ws-output .out-opt-label{font-size:13.5px;font-weight:600;white-space:nowrap}
+.ws-output .out-opt .out-dims,.ws-output .out-opt .out-dest-meta{font-size:12px;color:var(--text-3);white-space:nowrap}
+.ws-output .out-opt:hover:not(:disabled){color:var(--text-1);background:var(--bg-3)}
+.ws-output .out-opt[aria-checked="true"]{background:var(--accent-soft);color:var(--text-1);box-shadow:0 0 0 1px var(--accent-line) inset}
+.ws-output .out-opt[aria-checked="true"] .out-opt-label{color:var(--accent)}
+.ws-output .out-opt[aria-checked="true"] .out-dims,.ws-output .out-opt[aria-checked="true"] .out-dest-meta{color:var(--text-2)}
+.ws-output .out-opt:disabled{opacity:.5;cursor:not-allowed}
+.ws-output .out-opt[aria-checked="true"]:disabled{opacity:.8}
+/* The switch clips nothing, but its ring is drawn inside the option, like the other segmented controls. */
+.ws-output .out-opt:focus-visible{outline-offset:-2px}
+.ws-output .out-helps{display:grid;gap:6px;min-width:0}
+.ws-output .out-helps .field-doc{max-width:var(--measure)}
+.ws-output .out-discl{display:grid;gap:2px;margin-top:2px}
+.ws-output .out-discl details.disclosure{border-top:0;padding-top:0}
+.ws-output .out-discl details.disclosure>.disclosure-body{gap:8px;padding-top:4px}
+.ws-output .out-about-rows{display:grid}
+.ws-output .out-about{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line)}
+.ws-output .out-about:first-child{border-top:0;padding-top:2px}
+.ws-output .out-about-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ws-output .out-about-head strong{font-size:14px;font-weight:600}
+.ws-output .out-about.current .out-about-head strong{color:var(--accent)}
+.ws-output .out-about .out-tag{margin-left:0}
+.ws-output .out-about-meta{font-size:12.5px;color:var(--text-3)}
 .ws-output .out-tag{margin-left:auto;font-size:12px;letter-spacing:.06em;color:var(--text-3);padding:1px 7px;border:1px solid var(--line-2);border-radius:4px}
-.ws-output .out-profile[aria-checked="true"] .out-tag{color:var(--accent);border-color:var(--accent-line)}
-.ws-output .out-profile-meta{display:flex;gap:12px;font-size:13px}
-.ws-output .out-dims{color:var(--text-1)}
-.ws-output .out-rate{color:var(--text-3)}
-.ws-output .out-profile-note{font-size:13px;color:var(--text-3);line-height:1.42}
-/* Where it is written: a file on disk, or memory until it stops (the same cards as the profiles) */
-.ws-output .out-dest-field{display:grid;gap:8px;min-width:0;padding-top:4px}
-.ws-output .out-dest-meta{font-size:12.5px;color:var(--text-3)}
-.ws-output .out-dest[aria-checked="true"] .out-dest-meta{color:var(--text-2)}
-.ws-output .out-dest .out-profile-head strong{min-width:0}
-.ws-output .out-dest .out-tag{flex:none;white-space:nowrap}
+/* ---- The right column: the last recording and the way to OBS, then the exports ---- */
+.ws-output .out-side-last{gap:14px}
 .ws-output .out-fact-v code.out-file{font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46ch}
 .ws-output .out-kept .callout-actions{flex-wrap:wrap}
 /* The OBS presentation: not a recording profile, the way to the OBS view below */
@@ -105,8 +123,6 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 .ws-output .out-obs-link-go{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px 0 11px;border-radius:var(--r-1,6px);border:1px solid var(--line-3);background:var(--bg-3);
   font-size:13px;font-weight:600;color:var(--text-1);white-space:nowrap;transition:background var(--t-1),border-color var(--t-1)}
 .ws-output .out-obs-link-go svg{width:14px;height:14px;color:var(--accent)}
-.ws-output .out-side details.disclosure{border-top:0;padding-top:0}
-.ws-output .out-side details.disclosure>.disclosure-body{gap:8px;padding-top:4px}
 .ws-output .out-last{display:grid;gap:10px}
 .ws-output .out-last-head,.ws-output .out-last-empty{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .ws-output .out-last .kv{grid-template-columns:72px 1fr}
@@ -158,11 +174,10 @@ html[data-motion="reduce"] .ws-output .out-deck .btn.record .dot{animation:none}
 /* ---- Narrower screens ---- */
 /* A short screen (1280 x 720, 1366 x 768): the page head drops its one-line description (the frame's "As recorded"
    badge says the same), so the frame keeps its size and Record still sits well inside the first view. */
-@media (max-height:800px){.ws-output{--out-reserve:320px}.ws-output .out-lede{display:none}}
+@media (max-height:800px){.ws-output{--out-reserve:404px}.ws-output .out-lede{display:none}}
 @media (max-width:1280px){.ws-output .out-readout{padding:2px 12px}.ws-output .out-readouts{grid-template-columns:repeat(4,minmax(66px,auto))}}
-@media (max-width:1100px){.ws-output .out-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"mon" "side" "exp" "obs";grid-template-rows:none}
-  .ws-output .out-rail{display:contents}.ws-output .out-side{grid-area:side}.ws-output .out-export{grid-area:exp}
-  .ws-output .out-profiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:1100px){.ws-output .out-slot{width:100%}.ws-output .out-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"mon" "side" "exp" "obs";grid-template-rows:none}
+  .ws-output .out-rail{display:contents}.ws-output .out-side{grid-area:side}.ws-output .out-export{grid-area:exp}}
 @media (max-width:900px){.ws-output .out-readouts{margin-left:0;grid-template-columns:repeat(4,minmax(56px,auto))}.ws-output .out-readout:first-child{padding-left:0;border-left:0}}
 @media (max-width:900px){.ws-output .out-lastline-where{display:none}}
-@media (max-width:700px){.ws-output .out-profiles{grid-template-columns:1fr}.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(56px,auto))}}
+@media (max-width:700px){.ws-output .out-readouts{grid-template-columns:repeat(2,minmax(56px,auto))}}

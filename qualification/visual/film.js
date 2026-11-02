@@ -16,7 +16,7 @@
 //        [--end-card seconds (the last seconds show the end card: the public title and Code Resonance)]
 //        [--title-card (the living world's title card opens the film, wherever in the performance it starts)]
 //        [--fade-in seconds --fade-out seconds (the music faded in at the start and out at the end)]
-// --out ending in .mp4 encodes H.264 and AAC in MP4 (what Reels, Shorts and TikTok take); otherwise VP9 and Opus in WebM.
+// --out ending in .mp4 encodes H.264 and AAC in MP4 (what Reels and Shorts take); otherwise VP9 and Opus in WebM.
 // --tail keeps rendering (and the music playing) after the last recorded event: inactivity, with no events added.
 // The recipe the film used is written next to it (<out>.recipe.json), so the film can be rendered again exactly; so is
 // the music it was rendered with (<out>.music.json) when --music or --score chose it.

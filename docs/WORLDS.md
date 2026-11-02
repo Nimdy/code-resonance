@@ -298,10 +298,11 @@ until the Digital life switch turns it on). Design brief, stills, measured GPU t
 [worlds/aurora.md](worlds/aurora.md) (`public/worlds/aurora.js`, `aurora-layout.js`, `aurora-glsl.js`,
 `life/aurora.js`).
 
-The Visual Studio shows why to choose each world, offers twelve curated looks (two per family, built in and read-only,
-previewed and applied like any preset; the graduated worlds' six have not been reviewed by the owner, and five of them
-were retuned on 2026-11-01 to do what their lines say) and
-puts the few parameters that change a world the most in an Essentials group above the full parameter groups.
+The Visual Studio shows why to choose each world (its card's tooltip; the inspector for the one shown), offers under
+*Looks* twelve curated looks (two per family, built in and read-only, previewed and applied like any preset; the
+graduated worlds' six have not been reviewed by the owner, and five of them were retuned on 2026-11-01 to do what their
+lines say) and puts the few parameters that change a world the most in an Essentials group above the full parameter
+groups.
 
 Three catalogued values currently draw nothing on one world each: `music.reactivity` (*Reactivity*, offered for every
 world, also in the Music Studio) on Machine Cathedral, and `music.beatPulse` (*Beat pulse*) and

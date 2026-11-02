@@ -63,6 +63,19 @@ function probe(file){
     await page.waitForFunction(()=>window.ResonancePlayer.state.model&&window.ResonancePlayer.state.receiver===true,null,{timeout:20000});
     const state=()=>page.evaluate(()=>{const r=window.ResonancePlayer.state.recording;return {active:r.active,size:r.size,supported:r.supported,stats:r.stats,last:r.last};});
     check('recording is supported in this browser',(await state()).supported.ok,JSON.stringify((await state()).supported));
+    // ---- One control area under the monitor: Record, the profile switch (sizes under the names), the destination switch
+    const group=await page.evaluate(()=>{const mon=document.querySelector('.out-monitor'),c=mon?.querySelector('.out-controls');
+      const opt=sel=>[...document.querySelectorAll(sel)].map(b=>({label:b.querySelector('.out-opt-label')?.textContent,sub:(b.querySelector('.out-dims,.out-dest-meta')?.textContent||'').trim(),role:b.getAttribute('role'),inMon:mon.contains(b)}));
+      return {record:mon.contains(document.getElementById('outRecordBtn')),profiles:opt('[data-profile]'),dests:opt('[data-dest]'),controls:!!c,
+        groups:[...document.querySelectorAll('.out-switch')].map(g=>[g.getAttribute('role'),document.getElementById(g.getAttribute('aria-labelledby'))?.textContent])};});
+    check('under the monitor, one control area holds Record, the profile switch and the destination switch',group.record&&group.controls&&group.profiles.length===4&&group.profiles.every(p=>p.inMon&&p.role==='radio')&&group.dests.length===2&&group.dests.every(d=>d.inMon&&d.role==='radio')
+      &&group.groups.map(g=>g.join(':')).join('|')==='radiogroup:Recording profile|radiogroup:Where it is written',JSON.stringify(group.groups));
+    check('the profile switch names each profile with its size under it',group.profiles.map(p=>p.label).join()==='720p,1080p,Vertical,Stage size'&&group.profiles[0].sub==='1280 × 720'&&group.profiles[1].sub==='1920 × 1080'&&group.profiles[2].sub==='1080 × 1920'&&/^\d+ × \d+$/.test(group.profiles[3].sub),JSON.stringify(group.profiles.map(p=>`${p.label} ${p.sub}`)));
+    check('the destinations are named in plain words: File on disk, Download at the end',group.dests.map(d=>d.label).join()==='File on disk,Download at the end',JSON.stringify(group.dests.map(d=>d.label)));
+    const aboutRows=await page.evaluate(()=>{const d=[...document.querySelectorAll('.out-monitor details.disclosure')].map(x=>x.querySelector('summary').textContent);
+      return {summaries:d,rows:[...document.querySelectorAll('.out-about')].map(r=>r.dataset.about+':'+r.querySelector('strong').textContent+':'+!!r.querySelector('.field-doc')?.textContent)};});
+    check('the profiles are explained under About profiles (with Performance and limits beside it)',aboutRows.summaries.join('|')==='About profiles|Performance and limits'&&aboutRows.rows.join()==='720p:Standard:true,1080p:High quality:true,vertical:Vertical:true,stage:Stage size:true',JSON.stringify(aboutRows));
+    check('the right column holds the last recording and the way to OBS, then the exports',await page.evaluate(()=>{const r=document.querySelector('.out-rail');return !!r&&r.contains(document.getElementById('outLast'))&&r.contains(document.getElementById('outObsProfile'))&&r.contains(document.querySelector('.out-export'));}));
     // ---- Profiles: saved by the receiver, applied by the engine; mouse and keyboard ----------------------------------
     await page.click('[data-profile="1080p"]');
     const s1=await until(async()=>(await settings()).recording.profile==='1080p'&&(await state()).size==='1080p'&&(await page.getAttribute('[data-profile="1080p"]','aria-checked'))==='true');
@@ -404,6 +417,11 @@ function probe(file){
     const wide=await page.evaluate(()=>{const p=document.querySelector('.ws-output'),b=document.getElementById('outRecordBtn').getBoundingClientRect();return {overflow:p.scrollWidth-p.clientWidth,visible:b.bottom<=innerHeight&&b.top>0,cards:document.querySelectorAll('[data-profile]').length};});
     check('at 1920 × 1080 nothing overflows sideways and Record is visible, with the four profiles',wide.overflow<=1&&wide.visible&&wide.cards===4,JSON.stringify(wide));
     await page.evaluate(()=>{document.querySelector('.page').scrollTop=0;});
+    // At 1366 × 768, Record, the profile and where it is written are all in the first view, with nothing overflowing.
+    await page.setViewportSize({width:1366,height:768});await page.waitForTimeout(800);
+    await page.screenshot({path:path.join(OUT,'output-idle-1366.png')});
+    const fold=await page.evaluate(()=>{const v=s=>{const b=document.querySelector(s).getBoundingClientRect();return b.top>0&&b.bottom<=innerHeight;};const p=document.querySelector('.ws-output');return {record:v('#outRecordBtn'),profile:v('.out-profiles'),dest:v('.out-dests'),overflow:p.scrollWidth-p.clientWidth};});
+    check('at 1366 × 768 Record, the profile and the destination are visible without scrolling',fold.record&&fold.profile&&fold.dest&&fold.overflow<=1,JSON.stringify(fold));
     await page.setViewportSize({width:1280,height:720});await page.waitForTimeout(800);
     await page.screenshot({path:path.join(OUT,'output-idle-1280.png')});
     const fits=await page.evaluate(()=>{const b=document.getElementById('outRecordBtn').getBoundingClientRect();return b.bottom<=innerHeight&&b.top>0;});

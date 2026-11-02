@@ -255,7 +255,7 @@ export function createOverlay(){
     g.restore();
   }
   // A portrait frame (vertical clips): the same words at the portrait size (by the short side), inside the safe area
-  // that Reels, Shorts and TikTok leave clear (labels.js portraitPlaces); a line wider than the safe area is drawn smaller.
+  // that Reels and Shorts leave clear (labels.js portraitPlaces); a line wider than the safe area is drawn smaller.
   function drawPortrait(g,w,h,list){
     const P=portraitPlaces(w,h),s=P.safe,k=P.k;
     const font=(weight,size,text,maxW)=>{g.font=`${weight} ${Math.round(size)}px ${FONT}`;const m=g.measureText(text).width;if(m>maxW)g.font=`${weight} ${Math.max(1,Math.floor(size*maxW/m))}px ${FONT}`;};

@@ -31,7 +31,7 @@ export function titleCard(recipe){
 export function lowerThirdTitle(recipe){return `${publicTitle(recipe)||GENERIC_TITLE} · ${recipe?.familyName||'Living world'}`;}
 // ---- Portrait frames (vertical clips, 9:16) --------------------------------------------------------------------------
 // A frame taller than it is wide is a portrait. Its words are sized by its short side (the width; PORTRAIT_TEXT times the
-// landscape size at 1080 wide, so they read on a phone) and kept inside the area Reels, Shorts and TikTok leave clear of
+// landscape size at 1080 wide, so they read on a phone) and kept inside the area Reels and Shorts leave clear of
 // their own interface: below the top 12 %, above the bottom 20 %, with a margin at each side (a wider one on the right,
 // where their buttons are). A landscape (or square) frame keeps its rules exactly: words scaled by w/1920, the whole
 // frame usable.

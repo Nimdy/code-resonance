@@ -15,7 +15,7 @@ const TITLE_MSG='This night has no public title. Set one in Visual Studio, or pa
 const CI_HINT='cd qualification && npm ci';
 const GPUS=['auto','amd','nvidia','off'];
 const GPU_MSG=`--gpu takes ${GPUS.join(', ')} (or nothing, which is auto).`;
-// Vertical clips (--vertical or --aspect 9:16) for Reels, Shorts and TikTok: 1080 × 1920, 30 s by default, H.264 and AAC
+// Vertical clips (--vertical or --aspect 9:16) for Reels and Shorts: 1080 × 1920, 30 s by default, H.264 and AAC
 // in MP4 (the bundled ffmpeg has both; --format webm for VP9 and Opus).
 const VERTICAL_OUT={mp4:path.join(REPO,'qualification','results','films','last-night-vertical.mp4'),webm:path.join(REPO,'qualification','results','films','last-night-vertical.webm')};
 const VERTICAL_SIZE=[1080,1920],VERTICAL_S=30,END_CARD_S=3,FADE_IN_S=1,FADE_OUT_S=2.5;

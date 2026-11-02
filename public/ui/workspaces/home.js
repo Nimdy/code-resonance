@@ -1,7 +1,8 @@
 // Home: entering the creative application. The live world of the active project (the stage slot), its identity and
 // whether its capture and agents are really active, what needs attention, recent projects, and the way to the Stage
-// and the studios. On a first run it is a setup guide derived from what the
-// receiver actually observes, so it can be left and resumed at any step. Capture state is built from evidence only:
+// and the studios. On a first run (no project of your own yet; the fictional demo does not count) the stage still comes
+// first, idle or playing the demo, with a compact setup checklist beside it, derived from what the receiver actually
+// observes, so it can be left and resumed at any step. Capture state is built from evidence only:
 // a past event is never presented as proof that capture runs now.
 import {h,text,button,section,pill,callout,emptyState,copyable,toast,styles} from '../dom.js';
 import {icon} from '../icons.js';
@@ -27,30 +28,34 @@ export default {mount(view,ctx){
   // top bar already states the receiver, live mode and sound, so Home does not repeat them as pills.
   // A light, one-line head: the live world below it is what this page is about.
   const head=h('div',{class:'page-head home-head'},h('div',{class:'grow'},h('h1',{class:'title-l',text:'Home'}),h('span',{class:'eyebrow',text:'Code Resonance'})));
-  // The stage slot exists from the start (the shell finds it once, at mount); it is only hidden on a first run. Its size
-  // follows the column by CSS alone, so a layout change only moves the stage layer over it.
+  // The stage slot exists from the start (the shell finds it once, at mount) and is always shown, idle until a project
+  // exists. Its size follows the column by CSS alone, so a layout change only moves the stage layer over it.
   const slot=h('div',{class:'stage-slot home-slot','data-stage-slot':''});
   const night=h('section',{class:'home-night panel',hidden:true,'aria-label':'Last night'});
-  const hero=h('section',{class:'home-hero','aria-label':'Live world'},slot,night);
+  // A first run (no project of your own yet; the fictional demo does not count): under the stage, the demo playing on it
+  // and what it is, or the one command that makes it.
+  const firstDemo=h('section',{class:'panel home-first-demo',hidden:true,'aria-label':'Demonstration'});
+  const hero=h('section',{class:'home-hero','aria-label':'Live world'},slot,firstDemo,night);
   const projectEl=h('section',{class:'panel home-project','aria-label':'Active project'});
   const loading=h('p',{class:'faint small',text:'Connecting to the receiver…'});
-  // The guide goes under the stage while no real project exists (guideTop: on a first run the stage is hidden, so it
-  // takes the wide column), and below both columns, at the full width, once one does (guideBottom). Only one of them is
-  // ever filled. guideBottom is outside the columns, so the side column can end level with the recent projects.
-  const guideTop=h('div',{class:'home-guide-slot home-guide-top'}),guideBottom=h('div',{class:'home-guide-slot home-guide-bottom'}),firstEmpty=h('div',{class:'home-first'});
+  // The guide is a compact checklist beside the stage while no real project exists (guideSide, with the stage first), and
+  // below both columns, at the full width, once one does (guideBottom). Only one of them is ever filled. guideBottom is
+  // outside the columns, so the side column can end level with the recent projects.
+  const guideSide=h('div',{class:'home-guide-slot home-guide-side'}),guideBottom=h('div',{class:'home-guide-slot home-guide-bottom'}),firstEmpty=h('div',{class:'home-first'});
   const attention=h('div',{class:'home-attention'}),recent=h('div',{class:'home-recent'});
   const attentionCount=h('span',{class:'note'});
   const attentionEl=h('section',{class:'panel home-att','aria-label':'Needs attention'},
     h('div',{class:'panel-head'},h('div',{class:'grow'},h('h2',{text:'Needs attention'})),attentionCount),h('div',{class:'panel-body'},attention));
   const recentEl=section({title:'Recent projects',actions:[button({label:'All projects',icon:'projects',kind:'ghost',size:'sm',onClick:()=>navigate('projects'),attrs:fk('all-projects')})]},recent);
   recentEl.classList.add('home-recent-sec');
-  const main=h('div',{class:'home-main'},hero,firstEmpty,guideTop,recentEl);
-  const side=h('div',{class:'home-side'},projectEl,attentionEl);
+  const main=h('div',{class:'home-main'},hero,recentEl);
+  const side=h('div',{class:'home-side'},guideSide,firstEmpty,projectEl,attentionEl);
   const grid=h('div',{class:'home-grid'},main,side,guideBottom);
   view.append(h('div',{class:'page ws-home'},h('div',{class:'page-inner'},head,loading,grid)));
   // Over the stage: whether it is live or replaying, and a preview's label (the world stays clickable elsewhere).
   const modeBadge=h('span',{class:'pill plain'}),previewBadge=h('span',{class:'pill accent',text:'Preview · not saved'});
-  const overlay=h('div',{class:'chrome-pass home-chrome'},h('div',{class:'slot-badge'},modeBadge,previewBadge));
+  const demoBadge=h('span',{class:'pill warn',id:'homeDemoBadge',text:DEMO_LABEL});
+  const overlay=h('div',{class:'chrome-pass home-chrome'},h('div',{class:'slot-badge'},modeBadge,demoBadge,previewBadge));
   chrome.append(overlay);
   // ---- The active project ---------------------------------------------------------------------------------------
   function statusLines(pr){
@@ -113,8 +118,27 @@ export default {mount(view,ctx){
       last?button({label:`Continue ${last.composition.name}`,icon:'chevron-right',kind:'outline',size:'sm',id:'homeContinue',title:`Open ${last.composition.name} in the Artist Studio`,onClick:()=>navigate('artist','edit',last.id),attrs:fk('continue')}):null];
   }
   function renderChrome(){
-    const s=P.state;text(modeBadge,s.mode==='live'?'Live · about 10 s behind':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);
+    const s=P.state,pr=S.project();text(modeBadge,s.mode==='live'?'Live · about 10 s behind':`Replay ${s.playing?'▶':'❚❚'} ${timecode(s.position.now-s.position.start)}`);
     modeBadge.className=`pill ${s.mode==='live'?'accent live':'plain'}`;previewBadge.hidden=!s.preview;
+    // With no project the stage is idle: nothing is live. The demonstration says it is fictional over its world too.
+    modeBadge.hidden=!pr;demoBadge.hidden=!isDemo(pr);
+  }
+  // ---- First run: the stage first, and under it the demo or the way to it ----------------------------------------------
+  let firstDemoSig=null;
+  function renderFirstDemo(){
+    const st=S.state,pr=S.project(),demo=st.projects.find(isDemo),show=isFirst();
+    const sig=JSON.stringify([show,pr?.id,demo?.id,isDemo(pr)]);if(sig===firstDemoSig)return;firstDemoSig=sig;
+    firstDemo.hidden=!show;if(!show){firstDemo.replaceChildren();return;}
+    if(isDemo(pr))swap(firstDemo,[h('div',{class:'home-first-demo-text'},h('span',{class:'eyebrow',text:'On the stage'}),
+        h('strong',{text:`${DEMO_LABEL}: ${projectName(pr)}`}),
+        h('p',{class:'faint small',text:'Produced by npm run demo on this computer: nothing in it comes from real work. Your own project takes its place here when its first events arrive.'})),
+      h('div',{class:'home-first-demo-actions'},button({label:'Open Stage',icon:'stage',kind:'outline',id:'homeFirstStage',title:'The full-screen performance (F)',onClick:openStage,attrs:fk('first-stage')}))]);
+    else if(demo)swap(firstDemo,[h('div',{class:'home-first-demo-text'},h('span',{class:'eyebrow',text:'Optional'}),h('strong',{text:'See a performance first'}),
+        h('p',{class:'faint small',text:`The demonstration is installed: a fictional project, always labelled “${DEMO_LABEL}”.`})),
+      h('div',{class:'home-first-demo-actions'},button({label:'Show the demo',size:'sm',kind:'outline',onClick:()=>S.select(demo.id),attrs:fk('first-demo')}))]);
+    else swap(firstDemo,[h('div',{class:'home-first-demo-text'},h('span',{class:'eyebrow',text:'Optional'}),h('strong',{text:'See a performance first'}),
+        h('p',{class:'faint small',text:`In the Code Resonance folder, this makes a fictional project, always labelled “${DEMO_LABEL}”; it plays here within seconds. It is not your work and does not count as a connection.`})),
+      h('div',{class:'home-first-demo-cmd'},copyable('npm run demo'))]);
   }
   // ---- Needs attention: only real conditions, each with something to do -----------------------------------------
   function attentionItems(){
@@ -183,7 +207,7 @@ export default {mount(view,ctx){
           h('li',{},h('span',{text:'Install it into VS Code:'}),version?copyable(install?.install||`code --install-extension code-resonance-${version}.vsix`):h('span',{class:'faint',text:'(the exact file name appears once the receiver answers)'})),
           h('li',{},h('span',{},'In VS Code, open the project, press ',h('kbd',{text:'Ctrl+Shift+P'}),' and run ',h('strong',{text:START_CMD}),'.'))),
           button({label:'More ways to connect',icon:'connections',kind:'ghost',size:'sm',onClick:()=>navigate('connections'),attrs:fk('guide-connections')})]},
-      {id:'project',title:'Waiting for the first project',done:real.length>0,summary:real.length?`${projectName(real[0])} · first events received`:'',
+      {id:'project',title:'Waiting for the first project',done:real.length>0,summary:real.length?`${projectName(real[0])} · first events received`:'',status:st.changes==='open'?'Listening':'Not listening',
         body:[h('p',{class:'home-listen'},h('span',{class:`dot ${st.changes==='open'?'ok':'warn'}`}),st.changes==='open'?'Listening. The project appears here within seconds of its first events.':'Not listening right now: the change feed is reconnecting (this page also checks every few seconds).')]},
       {id:'sound',title:'Enable sound',done:s.sound.enabled,summary:'Sound is on in this window',
         body:[h('p',{class:'muted',text:'Browsers start sound only after a click, so this is needed once per visit.'}),button({label:'Enable sound',icon:'sound-on',size:'sm',id:'guideSound',onClick:()=>P.toggleSound().catch(e=>toast(`Sound could not start: ${e.message}`,'error')),attrs:fk('guide-sound')})]},
@@ -192,35 +216,46 @@ export default {mount(view,ctx){
   }
   // Shown until dismissed; on a first run also before the settings have loaded (nothing to dismiss it yet).
   function guideShown(){const st=S.state;return !st.settings?.onboarding?.dismissed&&(!!st.settings||!st.projects.length);}
+  // No project of your own yet (the fictional demo does not count): Home is a first run, the stage first.
+  function isFirst(){const st=S.state;return st.projectsLoaded?!st.projects.some(p=>!isDemo(p)):P.state.receiver===false;}
+  // A step the person opened or closed keeps that state across rebuilds; otherwise only the next step is open.
+  const stepOpen=new Map();
   function renderGuide(){
-    const st=S.state,first=!st.projects.length,list=steps(),current=list.findIndex(x=>!x.done),demo=st.projects.find(isDemo);
+    const st=S.state,first=isFirst(),list=steps(),current=list.findIndex(x=>!x.done),demo=st.projects.find(isDemo);
     const settingsKnown=!!st.settings,show=guideShown();
-    const firstReal=!st.projects.some(p=>!isDemo(p));
-    const sig=JSON.stringify([show,first,firstReal,st.projectsLoaded,settingsKnown,demo?.id,list.map(x=>[x.done,x.summary]),st.changes,P.state.receiver,st.integrations?.vscode?.latestVersion,st.status?.version]);
+    const sig=JSON.stringify([show,first,st.projectsLoaded,settingsKnown,demo?.id,list.map(x=>[x.done,x.summary,x.status]),st.changes,P.state.receiver,st.integrations?.vscode?.latestVersion,st.status?.version]);
     if(sig===guideSig)return;guideSig=sig;
-    if(!show){guideTop.replaceChildren();guideBottom.replaceChildren();grid.classList.remove('guide-top');
-      swap(firstEmpty,first&&st.projectsLoaded?[emptyState({icon:'projects',title:'No project yet',body:`Start capture in VS Code (${START_CMD}); the project appears here within seconds. The setup guide is hidden: Settings can show it again.`,
+    if(!show){guideSide.replaceChildren();guideBottom.replaceChildren();
+      swap(firstEmpty,first&&st.projectsLoaded?[emptyState({icon:'projects',title:demo?'No project of your own yet':'No project yet',
+        body:`Start capture in VS Code (${START_CMD}); the project appears here within seconds${demo?' and takes the demonstration’s place':''}. The setup guide is hidden: Settings can show it again.`,
         actions:[button({label:'How to connect',icon:'connections',kind:'primary',onClick:()=>navigate('connections'),attrs:fk('empty-connect')}),button({label:'Settings',icon:'settings',onClick:()=>navigate('settings'),attrs:fk('empty-settings')})]})]:[]);
       return;
     }
     firstEmpty.replaceChildren();
     const done=list.every(x=>x.done);
-    const guide=h('section',{class:'home-guide panel',id:'setupGuide','aria-label':'Setup guide'},
+    // One line per step with its true status; a step that is not done opens on demand (the next one is open).
+    const stepEl=(x,i)=>{
+      const cls=x.done?'done':i===current?'current':'',status=x.done?'Done':i===current?'Next':x.status||'To do';
+      const mark=h('span',{class:'home-step-mark','aria-hidden':'true'},x.done?icon('check'):String(i+1));
+      const line=h('span',{class:'home-step-line'},h('strong',{text:x.title}),h('span',{class:['home-step-status',cls],text:status}));
+      if(x.done)return h('li',{class:'home-step done',dataset:{step:x.id,done:'true'}},
+        h('div',{class:'home-step-sum'},mark,h('div',{class:'home-step-text'},line,h('span',{class:'faint small home-step-summary',text:x.summary}))));
+      const d=h('details',{class:'home-step-d',open:stepOpen.has(x.id)?stepOpen.get(x.id):i===current},
+        h('summary',{class:'home-step-sum',...fk(`step-${x.id}`)},mark,h('div',{class:'home-step-text'},line)),h('div',{class:'home-step-body'},...x.body));
+      d.addEventListener('toggle',()=>stepOpen.set(x.id,d.open));
+      return h('li',{class:['home-step',cls],dataset:{step:x.id,done:'false'}},d);};
+    const guide=h('section',{class:['home-guide','panel',first?'compact':''],id:'setupGuide','aria-label':'Setup guide'},
       h('div',{class:'home-guide-head'},h('div',{class:'grow'},h('h2',{class:'title-m',text:done?'All set':'Set up Code Resonance'}),
-        h('p',{class:'faint small',text:done?'Everything this guide covers has happened. You can hide it.':'Each step follows what actually happens, so you can leave and come back at any point.'})),
+        h('p',{class:'faint small',text:done?'Everything this guide covers has happened. You can hide it.':first?'Each step follows what actually happens.':'Each step follows what actually happens, so you can leave and come back at any point.'})),
         button({label:'Hide this guide',kind:'ghost',size:'sm',id:'hideGuide',disabled:!settingsKnown,onClick:async()=>{
           try{await S.saveSettings({onboarding:{dismissed:true}});toast('Setup guide hidden. Settings can show it again.','ok');}catch(e){toast(`The guide could not be hidden: ${e.message}`,'error');}},attrs:fk('guide-hide')})),
       h('div',{class:'home-guide-body'},
-        h('ol',{class:'home-steps'},...list.map((x,i)=>h('li',{class:['home-step',x.done?'done':i===current?'current':''],dataset:{step:x.id,done:String(x.done)}},
-          h('span',{class:'home-step-mark','aria-hidden':'true'},x.done?icon('check'):String(i+1)),
-          h('div',{class:'home-step-text'},h('strong',{text:x.title}),h('span',{class:'visually-hidden',text:x.done?' (done)':i===current?' (next step)':''}),
-            x.done?h('span',{class:'faint small',text:x.summary}):h('div',{class:'home-step-body'},...x.body))))),
-        h('aside',{class:'home-demo'},h('span',{class:'eyebrow',text:'Optional'}),h('strong',{text:'Preview with the demo'}),
+        h('ol',{class:'home-steps'},...list.map(stepEl)),
+        // Beside the stage on a first run the demo is under the stage itself; with projects it stays an optional aside.
+        first?null:h('aside',{class:'home-demo'},h('span',{class:'eyebrow',text:'Optional'}),h('strong',{text:'Preview with the demo'}),
           h('p',{class:'faint small',text:`A fictional project generated on this computer and always labelled “${DEMO_LABEL}”. It shows what a performance looks like; it is not your work and does not count as a connection.`}),
           demo?button({label:'Show the demo',size:'sm',onClick:()=>S.select(demo.id),attrs:fk('guide-demo')}):copyable('npm run demo'))));
-    const target=first||firstReal?guideTop:guideBottom;(target===guideTop?guideBottom:guideTop).replaceChildren();swap(target,[guide]);
-    // The guide in the wide column (only the demo so far) makes it far taller than the side: the side then keeps its own height.
-    grid.classList.toggle('guide-top',target===guideTop);
+    const target=first?guideSide:guideBottom;(target===guideSide?guideBottom:guideSide).replaceChildren();swap(target,[guide]);
   }
   // ---- Last night: sped-up replay of the scored highlight (Playwright is not involved) ----------------------------
   const REASON_WORDS={
@@ -272,13 +307,14 @@ export default {mount(view,ctx){
   }
   // ---- Updates ---------------------------------------------------------------------------------------------------
   function layout(){
-    const st=S.state,first=st.projectsLoaded?!st.projects.length:P.state.receiver===false;
+    const st=S.state,first=isFirst();
     loading.hidden=st.projectsLoaded||P.state.receiver===false;
     grid.hidden=!st.projectsLoaded&&P.state.receiver!==false;
-    hero.hidden=first||!st.projectsLoaded;projectEl.hidden=hero.hidden;recentEl.hidden=first;
+    // The stage is always first, idle until a project exists; a first run has no active project panel or recent list.
+    projectEl.hidden=first||!st.projectsLoaded;recentEl.hidden=first;
     grid.classList.toggle('first-run',first);
   }
-  const all=()=>{layout();renderProject();renderAttention();renderRecent();renderGuide();renderChrome();void loadNight();};
+  const all=()=>{layout();renderProject();renderAttention();renderRecent();renderGuide();renderFirstDemo();renderChrome();void loadNight();};
   all();
   if(!S.state.integrations)void S.loadIntegrations();
   if(!S.state.status)void S.loadStatus();
@@ -290,7 +326,7 @@ export default {mount(view,ctx){
   offs.push(S.on(t=>{
     const has=k=>T[k].some(x=>t.has(x));
     if(has('layout'))layout();
-    if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('chrome'))renderChrome();
+    if(has('project'))renderProject();if(has('recent'))renderRecent();if(has('guide'))renderGuide();if(has('project'))renderFirstDemo();if(has('chrome')||t.has('selection')||t.has('projects'))renderChrome();
     if(t.has('selection')||t.has('projects'))void loadNight();
     else if((t.has('recipe')||t.has('mode'))&&nightId===S.project()?.id&&nightCache)renderNight(S.project(),nightCache);
     const sup=P.state.recording.supported.ok;if(has('attention')||(t.has('recording')&&sup!==wasSupported)){wasSupported=sup;renderAttention();}

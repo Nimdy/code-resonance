@@ -54,10 +54,32 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     // The graduated worlds are rendered after the three (a raymarched world may take a while in software).
     const graduated=await until(async()=>(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).length===3,120000,500);
     check('Synaptic Storm, Fractal Continuum and Temporal Terrain show thumbnails rendered from this project too',graduated,(await imgOf(['synaptic-storm','fractal-continuum','temporal-terrain'])).join(', ')||'none yet');
-    check('only the Aurora preview carries an "In design" pill',await A.evaluate(()=>[...document.querySelectorAll('.vs-card')].filter(c=>[...c.querySelectorAll('.pill')].some(p=>/In design/.test(p.textContent))).map(c=>c.dataset.card).join(',')==='aurora'));
+    // ---- The world browser: every world in groups (Built in, Previews, From packs), never a sideways strip ------------
+    const groups=await A.evaluate(()=>[...document.querySelectorAll('.vs-cards .vs-shelf')].map(g=>({id:g.dataset.group,head:g.querySelector('.eyebrow')?.textContent,cards:[...g.querySelectorAll('.vs-card')].map(c=>c.dataset.card)})));
+    check('the worlds are grouped: Built in (the six built-in worlds), Previews (Aurora only), From packs (the installed world pack)',
+      groups.map(g=>`${g.head}:${g.cards.join('+')}`).join(' | ')==='Built in:fractal-biosphere+stellar-forge+machine-cathedral+synaptic-storm+fractal-continuum+temporal-terrain | Previews:aurora | From packs:halcyon.cymatic-field',JSON.stringify(groups.map(g=>[g.head,g.cards.length])));
+    check('the tabs read Worlds · 8, Looks, Classic stages, in that order',(await A.$$eval('.vs-browser-head .segmented button',b=>b.map(x=>x.textContent))).join(' | ')==='Worlds · 8 | Looks | Classic stages');
+    // Chips say only what is true here: Saved on the saved world, Life on only where the identity's life is on, Needs approval on the unapproved pack.
+    const rb=await recipe(),chips=await A.evaluate(()=>Object.fromEntries([...document.querySelectorAll('.vs-shelf .vs-card')].map(c=>[c.dataset.card,[...c.querySelectorAll('.vs-chips .pill')].map(p=>p.textContent)])));
+    const withChip=t=>Object.entries(chips).filter(([,l])=>l.includes(t)).map(([k])=>k).join(',');
+    check('the chips are true: Saved on the saved world only, Life on only where its life is on, Needs approval on the unapproved pack, no dated or design labels',
+      withChip('Saved')===rb.family&&withChip('Life on')===(rb.genome.life?.enabled===true?rb.family:'')&&withChip('Needs approval')==='halcyon.cymatic-field'&&!Object.values(chips).flat().some(t=>/In design|New/.test(t)),JSON.stringify(chips));
     // The preview is rendered after the others.
     const preview=await until(async()=>(await imgOf(['aurora'])).length===1,120000,500);
     check('the Aurora preview shows a thumbnail rendered from this project too',preview,(await imgOf(['aurora'])).join(', ')||'none yet');
+    // At 1920 x 1080 every world is in view, with no sideways scrolling; at 1366 x 768 the first card of every group is in
+    // the first row (Aurora and the pack without hunting), the browser scrolls vertically and says how many cards are below.
+    const gridAt=async(w,hh)=>{await A.setViewportSize({width:w,height:hh});await sleep(900);return A.evaluate(()=>{const c=document.querySelector('.vs-cards'),b=c.getBoundingClientRect(),m=document.querySelector('.vs-more');
+      const full=[...c.querySelectorAll('.vs-card')].filter(x=>{const r=x.getBoundingClientRect();return r.top>=b.top-1&&r.bottom<=b.bottom+1&&r.left>=b.left-1&&r.right<=b.right+1;}).map(x=>x.dataset.card);
+      return {sideways:c.scrollWidth-c.clientWidth,all:c.querySelectorAll('.vs-card').length,full,more:m.hidden?null:m.textContent.trim()};});};
+    const g1920=await gridAt(1920,1080);await shot(A,'worlds-1920');
+    check('at 1920 × 1080 every world card is in view, with no sideways scrolling and nothing below',g1920.sideways<=1&&g1920.full.length===g1920.all&&g1920.all===8&&!g1920.more,JSON.stringify(g1920));
+    const g1366=await gridAt(1366,768);await shot(A,'worlds-1366');
+    check('at 1366 × 768 the first card of every group is in the first view (Aurora, the pack), no sideways scrolling, and the browser says how many are below',
+      g1366.sideways<=1&&['fractal-biosphere','aurora','halcyon.cymatic-field'].every(x=>g1366.full.includes(x))&&g1366.more===`${g1366.all-g1366.full.length} more below`,JSON.stringify(g1366));
+    await A.click('.vs-more');await sleep(700);
+    check('"more below" scrolls the browser to its last cards',await A.evaluate(()=>{const c=document.querySelector('.vs-cards'),b=c.getBoundingClientRect(),r=c.querySelector('[data-card="temporal-terrain"]').getBoundingClientRect();return r.bottom<=b.bottom+1&&document.querySelector('.vs-more').hidden;}));
+    await A.evaluate(()=>{document.querySelector('.vs-cards').scrollTop=0;});await A.setViewportSize({width:1440,height:900});await sleep(800);
     const r0=await recipe();measurements.initial={family:r0.family,revision:r0.revision,source:r0.source};
     check('the page shows the saved identity at first',(await badge(A))==='Saved identity'&&(await A.textContent('.vs-family'))===r0.familyName,`${r0.familyName}, revision ${r0.revision}`);
     await shot(A,'saved-1440');
@@ -170,6 +192,8 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     // The Essentials group: first, open, with the few parameters that change this family the most.
     const ess=await A.evaluate(()=>{const d=document.querySelector('.vs-params details');return {summary:d?.querySelector('summary')?.textContent||'',open:!!d?.open,paths:[...(d?.querySelectorAll('.field[data-path]')||[])].map(f=>f.dataset.path)};});
     check('Essentials come first, open, with the world\'s high-value parameters',/^Essentials/.test(ess.summary.trim())&&ess.open&&ess.paths.includes('atmosphere.shafts')&&ess.paths.includes('technique.exposure'),JSON.stringify(ess));
+    // Looks: Curated (built in) and Your presets.
+    check('the Looks tab groups the curated looks and your presets',(await A.$$eval('.vs-cards .vs-shelf',g=>g.map(x=>`${x.dataset.group}:${x.querySelector('.eyebrow').textContent}`))).join()==='curated:Curated,yours:Your presets');
     // Curated looks: built in, read-only, previewed like any preset and saved only by Apply.
     const curated=await A.$$eval('.vs-card.curated',els=>els.map(e=>({id:e.dataset.preset,rename:!!e.querySelector('button[aria-label^="Rename"]'),del:!!e.querySelector('button[aria-label^="Delete"]')})));
     check('twelve curated looks are offered (two per built-in world), read-only',curated.length===12&&curated.every(c=>!c.rename&&!c.del),JSON.stringify(curated.map(c=>c.id)));
@@ -289,6 +313,10 @@ function filesOf(dir,rel=''){const out=[];for(const e of fs.readdirSync(path.joi
     await A.keyboard.press('Tab');
     // The built-in worlds are shown Fractal Biosphere, Stellar Forge, Machine Cathedral.
     check('Tab moves on to the next card',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='stellar-forge');
+    await A.keyboard.press('ArrowRight');
+    check('the arrow keys move between cards too (Right: the next one)',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='machine-cathedral');
+    await A.keyboard.press('End');
+    check('End goes to the last card (the world pack)',await state(A,()=>document.activeElement?.closest('[data-card]')?.dataset.card)==='halcyon.cymatic-field');
     await A.click('#vsCancel');await settled(A);
     await A.click('#vsQuality button[data-value="2"]');
     check('quality is set for this device only',await state(A,()=>window.ResonancePlayer.state.quality)==='2'&&await state(A,()=>JSON.parse(localStorage.getItem('code-resonance-device-v1')).quality)==='2');

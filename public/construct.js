@@ -424,7 +424,7 @@ export function createConstruct(canvas,{onCaption=()=>{},film=false,speed=1}={})
     ty=q(ty);const key=`${el.toFixed(3)}|${ty}|${camera.aspect.toFixed(3)}|${pts.join(';')}`;if(key===fitMemo.key)return fitMemo;
     probeCam.fov=camera.fov;probeCam.aspect=camera.aspect;probeCam.updateProjectionMatrix();
     // A portrait frame (a vertical clip): the site fills the width and sits a little above the middle, inside the area
-    // Reels, Shorts and TikTok leave clear (under the top 19 %, above the bottom 25 % of the frame).
+    // Reels and Shorts leave clear (under the top 19 %, above the bottom 25 % of the frame).
     const portrait=camera.aspect<1,top=portrait?.62:TOP,bottom=portrait?-.5:BOTTOM,side=portrait?.9:SIDE;
     const R=Math.max(MIN_SITE,...pts.map(p=>Math.hypot(p[0],p[2])));
     const extent=(d,s)=>{

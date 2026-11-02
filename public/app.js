@@ -92,7 +92,7 @@
   const QUALITY=['auto','0','1','2','3'];let qualityChoice='auto';
   // Recording size: the encoded video's dimensions. At a fixed size the world renders at exactly that size (16:9), and
   // the stage shows the same picture letterboxed; "stage" records the stage as it is on screen.
-  // "vertical" is a 9:16 clip for Reels, Shorts and TikTok: every world frames portraits for it (public/worlds/labels.js).
+  // "vertical" is a 9:16 clip for Reels and Shorts: every world frames portraits for it (public/worlds/labels.js).
   const RECORD_SIZES={'1080p':[1920,1080],'720p':[1280,720],vertical:[1080,1920]},RECORD_BITRATE={'1080p':8000000,'720p':5000000,vertical:8000000};
   // The words' rules for portrait frames (labels.js: sizes by the short side, the platforms' safe area), for the captions
   // and the end card this page draws itself.

@@ -19,31 +19,41 @@
 @container vs-main (max-width:1180px){.ws-visual .vs-term>span{display:none}}
 .ws-visual .vs-stage{flex:none;display:flex;justify-content:center;min-height:0}
 .ws-visual .vs-slot{flex:none;width:min(100cqw,(100cqh - var(--vs-head) - 2 * var(--vs-gap) - var(--vs-browser-min)) * 16 / 9);aspect-ratio:16/9;min-height:0}
-/* ---- World browser: a strip of cards across the full width ---- */
-.ws-visual .vs-browser{flex:1 1 0;min-height:var(--vs-browser-min);display:flex;flex-direction:column;gap:10px;min-width:0}
+/* ---- World browser: cards in groups, never a sideways strip ----
+   The groups (Built in, Previews, From packs) sit side by side; the script gives each its columns, and the cards their
+   width and height (--cols, --card-w, --card-h), in as few rows as keep every card at least 130 px wide: one row at
+   1920 x 1080. With more rows the first one holds the first card of every group, the browser shows a peek of the next,
+   scrolls vertically, fades at its lower edge and offers "N more below". The Looks tab's groups take the full width. */
+.ws-visual .vs-browser{position:relative;flex:1 1 0;min-height:var(--vs-browser-min);display:flex;flex-direction:column;gap:10px;min-width:0}
 .ws-visual .vs-browser-head{display:flex;align-items:center;gap:8px 14px;min-width:0;flex:none}
 .ws-visual .vs-browser-note{flex:1 1 160px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* The tabs keep their labels whole (a scrolling segmented control shrinks before the note, and cut Presets at 1024 px). */
+/* The tabs keep their labels whole (a scrolling segmented control shrinks before the note, and cut a tab at 1024 px). */
 .ws-visual .vs-browser-head>.segmented{flex:none}
 .ws-visual .vs-note-short{display:none}
 @container vs-main (max-width:860px){.ws-visual .vs-note-long{display:none}.ws-visual .vs-note-short{display:inline}}
 .ws-visual .vs-browser-actions{display:flex;gap:6px;flex:none}
-/* Four cards share the width with a deliberate peek of the fifth (more scroll sideways); each is as tall as the strip. A
-   column too narrow for four whole cards shows three and a peek of the fourth, and the edge the strip continues past fades
-   (.fade-r/.fade-l, set from script while it overflows), so a cut card reads as "more this way" (with five worlds and
-   the packs, four whole cards alone hid the fifth world completely at 1920 wide). */
-.ws-visual .vs-cards{flex:1 1 0;min-height:0;display:grid;grid-auto-flow:column;grid-auto-columns:clamp(228px,calc((100% - 36px - 56px) / 4),460px);grid-template-rows:minmax(0,1fr);
-  gap:12px;overflow-x:auto;overflow-y:hidden;padding:1px 1px 8px;scroll-snap-type:x proximity;container:vs-cards/size}
+.ws-visual .vs-cards{flex:1 1 0;min-height:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:14px 20px;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;padding:1px 2px 9px}
+.ws-visual .vs-cards.fade-b{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 24px),transparent)}
 .ws-visual .vs-cards-empty{align-self:center;padding:24px 4px}
-@container vs-main (max-width:947px){.ws-visual .vs-cards{grid-auto-columns:calc((100% - 24px - 56px) / 3)}}
-.ws-visual .vs-cards.fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
-.ws-visual .vs-cards.fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px);mask-image:linear-gradient(90deg,transparent,#000 56px)}
-.ws-visual .vs-cards.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 56px),transparent)}
-.ws-visual .vs-card{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;scroll-snap-align:start;
+.ws-visual .vs-shelf{display:grid;gap:8px;align-content:start;min-width:0}
+.ws-visual .vs-shelf.full{flex:1 1 100%}
+/* The header never widens its group (its line ellipsizes): the cards set the group's width. */
+.ws-visual .vs-shelf-head{display:grid;align-content:end;gap:1px;height:32px;width:0;min-width:100%}
+.ws-visual .vs-shelf-head .eyebrow{color:var(--text-2)}
+.ws-visual .vs-shelf-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.ws-visual .vs-shelf:not(.full) .vs-shelf-cards{display:grid;grid-template-columns:repeat(var(--cols,1),var(--card-w,200px));grid-auto-rows:var(--card-h,120px);gap:10px}
+.ws-visual .vs-shelf.full .vs-shelf-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+/* "N more below": in the head row, beside the actions; scrolls the browser to its end. */
+.ws-visual .vs-more{flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 8px;border-radius:14px;
+  border:1px solid var(--line-3);background:var(--bg-3);color:var(--text-1);font-size:12.5px;font-weight:600;white-space:nowrap}
+.ws-visual .vs-more:hover{background:var(--bg-4);border-color:var(--accent-line)}
+.ws-visual .vs-more svg{width:14px;height:14px;color:var(--accent)}
+.ws-visual .vs-more-word{white-space:pre}
+.ws-visual .vs-more[hidden]{display:none}
+.ws-visual .vs-card{position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-3);overflow:hidden;
   transition:border-color var(--t-1),background var(--t-1),box-shadow var(--t-1)}
 .ws-visual .vs-card:hover{border-color:var(--line-3)}
 .ws-visual .vs-card.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,0 0 24px rgba(117,237,255,.12)}
-.ws-visual .vs-card.ghost{border-style:dashed;background:transparent}
 .ws-visual .vs-card-main{position:relative;flex:1;display:block;min-height:0;text-align:left;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit}
 .ws-visual .vs-card-main:disabled{cursor:not-allowed}
 .ws-visual .vs-card-main:disabled .vs-thumb{opacity:.55}
@@ -51,74 +61,49 @@
    bright picture and on the active card's own accent border. */
 .ws-visual .vs-card-main:focus-visible{outline:none}
 .ws-visual .vs-card-main:focus-visible::after{content:'';position:absolute;inset:0;z-index:3;border-radius:calc(var(--r-3) - 1px);box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px rgba(4,6,10,.8);pointer-events:none}
-/* The picture fills the card; the name and line sit over its lowest third on a dark scrim, so on a short card (about
-   2.2:1 at 1920 x 1080) the rendered world still shows over the top two thirds. */
+/* The picture fills the card; the name and line sit over its lower part on a dark scrim. */
 .ws-visual .vs-thumb{position:absolute;inset:0;display:block;background:#000;overflow:hidden}
 .ws-visual .vs-thumb-media{position:absolute;inset:0;display:block}
 .ws-visual .vs-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;animation:fade-in var(--t-3) var(--ease);transition:transform var(--t-3) var(--ease)}
 .ws-visual .vs-card:hover .vs-thumb img{transform:scale(1.03)}
-.ws-visual .vs-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,6,10,.42) 0,rgba(4,6,10,0) 20%,rgba(4,6,10,0) 50%,rgba(4,6,10,.72) 74%,rgba(4,6,10,.9) 100%);pointer-events:none}
-/* A caption over a picture (a newer revision is rendering) is a chip at the top right, clear of the name whatever the
-   card's height; on a tile it sits under the icon. */
+.ws-visual .vs-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,6,10,.5) 0,rgba(4,6,10,0) 28%,rgba(4,6,10,0) 34%,rgba(4,6,10,.9) 74%);pointer-events:none}
+/* A caption over a picture (a newer revision is rendering) is a chip at the top right; on a tile it sits under the icon. */
 .ws-visual .vs-thumb-cap{font-size:12px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-thumb-media>.vs-thumb-cap{position:absolute;right:8px;top:7px;z-index:2;height:20px;line-height:20px;padding:0 8px;border-radius:10px;max-width:calc(100% - 16px);
   background:rgba(6,9,14,.82);backdrop-filter:blur(6px);color:rgba(232,238,247,.86)}
 .ws-visual .vs-thumb:has(.vs-match) .vs-thumb-media>.vs-thumb-cap{right:36px}
 .ws-visual .vs-thumb-tile .vs-thumb-cap{max-width:100%;padding:0 10px;text-align:center;color:var(--text-3)}
-.ws-visual .vs-chips{position:absolute;left:8px;top:7px;right:36px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
-.ws-visual .vs-chips .pill{height:20px;font-size:12px;padding:0 8px;gap:5px;background:rgba(6,9,14,.82);backdrop-filter:blur(6px);pointer-events:auto}
+.ws-visual .vs-chips{position:absolute;left:7px;top:7px;right:34px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
+/* Without the code's-match star the chips may use the whole width (a pack's Needs approval on a narrow card). */
+.ws-visual .vs-thumb:not(:has(.vs-match)) .vs-chips{right:7px}
+/* On a narrow card (1024 px) a chip drops its dot and some padding, so Needs approval fits whole. */
+.ws-visual .vs-shelf:not(.full) .vs-card{container-type:inline-size}
+@container (max-width:150px){.ws-visual .vs-chips .pill{padding:0 6px}.ws-visual .vs-chips .pill::before{display:none}}
+.ws-visual .vs-chips .pill{height:20px;font-size:12px;padding:0 7px;gap:5px;background:rgba(6,9,14,.82);backdrop-filter:blur(6px);pointer-events:auto}
 .ws-visual .vs-chips .pill::before{width:5px;height:5px}
-.ws-visual .vs-match{position:absolute;right:8px;top:7px;z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.82);color:var(--warn);backdrop-filter:blur(6px)}
+.ws-visual .vs-match{position:absolute;right:7px;top:7px;z-index:2;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:rgba(6,9,14,.82);color:var(--warn);backdrop-filter:blur(6px)}
 .ws-visual .vs-match svg{width:12px;height:12px}
-/* The tile's icon and caption are centred together in the part of the card above its name, under the chips. */
-.ws-visual .vs-thumb-tile{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:28px 0 56px;background:radial-gradient(ellipse at 50% 40%,#0f1828,#05070b 72%);color:var(--text-4)}
-.ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.preview{color:rgba(255,190,110,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
-.ws-visual .vs-thumb-tile svg{width:26px;height:26px;flex:none}
-/* A short strip (1280 x 720) keeps only the icon: the caption would meet the name (the card's label says what choosing
-   it does, its pills say why it cannot run). */
-@container vs-cards (max-height:139px){.ws-visual .vs-thumb-tile{padding-top:0}.ws-visual .vs-thumb-tile .vs-thumb-cap{display:none}}
-/* From 140 px the card's line may take two lines (below), so the tile keeps clear of a taller name block; up to 175 px
-   (1920 x 1080) the icon and caption sit side by side to fit the space left above it. */
-@container vs-cards (min-height:140px){.ws-visual .vs-thumb-tile{padding-bottom:76px}}
-@container vs-cards (min-height:140px) and (max-height:175px){.ws-visual .vs-thumb-tile{flex-direction:row;gap:8px}.ws-visual .vs-thumb-tile .vs-thumb-cap{padding:0}}
-.ws-visual .vs-card-text{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:1px;padding:0 12px 10px;min-width:0;pointer-events:none}
-.ws-visual .vs-card-text strong{font-size:15px;font-weight:620;color:#f2f6fc;text-shadow:0 1px 8px rgba(0,0,0,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-card-line{font-size:13px;line-height:1.35;color:rgba(214,222,236,.86);text-shadow:0 1px 6px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ws-visual .vs-card-why{display:none;font-size:12.5px;line-height:1.4;color:rgba(190,200,218,.78);margin-top:3px;text-shadow:0 1px 6px rgba(0,0,0,.9);-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-/* A strip of 140 px or more (every screen but a short one) gives the line two lines, so it reads whole; a tall strip
-   (1440 x 900, 2560 x 1440) also shows why to choose a world where that fits whole too (script marks a cut one .cut),
-   never on the card being shown, whose story the inspector tells. */
-@container vs-cards (min-height:140px){
-  .ws-visual .vs-card:not(.preset) .vs-card-line{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  /* Room for a two-line line on every card, so the names share one baseline across the strip. */
-  .ws-visual .vs-card:not(.preset) .vs-card-text{min-height:70px;align-content:start}
-  .ws-visual .vs-thumb::after{background:linear-gradient(180deg,rgba(4,6,10,.45) 0,rgba(4,6,10,0) 22%,rgba(4,6,10,0) 36%,rgba(4,6,10,.88) 78%)}}
-@container vs-cards (min-height:176px){
-  .ws-visual .vs-card-why{display:-webkit-box}
-  .ws-visual .vs-thumb::after{background:linear-gradient(180deg,rgba(4,6,10,.5) 0,rgba(4,6,10,0) 26%,rgba(4,6,10,0) 30%,rgba(4,6,10,.92) 76%)}}
-.ws-visual .vs-cards .vs-card.shown .vs-card-why,.ws-visual .vs-cards .vs-card .vs-card-why.cut{display:none}
-/* Presets: no picture, a compact text card with its actions */
-.ws-visual .vs-card.preset{padding:12px 12px 0;background:linear-gradient(160deg,var(--bg-3),var(--bg-2) 70%)}
+/* The tile's icon (and its caption) centred in the part of the card above its name, under the chips. */
+.ws-visual .vs-thumb-tile{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:22px 0 44px;background:radial-gradient(ellipse at 50% 40%,#0f1828,#05070b 72%);color:var(--text-4)}
+.ws-visual .vs-thumb-tile.pack{color:rgba(237,148,255,.55)}.ws-visual .vs-thumb-tile.classic{color:rgba(117,237,255,.45)}
+.ws-visual .vs-thumb-tile svg{width:22px;height:22px;flex:none}
+/* A world card is short: its tile keeps only the icon (the caption met the name; the card's label and tooltip say it). */
+.ws-visual .vs-shelf:not(.full) .vs-thumb-tile .vs-thumb-cap{display:none}
+.ws-visual .vs-card-text{position:absolute;left:0;right:0;bottom:0;z-index:1;display:grid;gap:1px;padding:0 8px 8px;min-width:0;pointer-events:none}
+.ws-visual .vs-card-text strong{font-size:13px;line-height:1.3;font-weight:620;letter-spacing:-.005em;color:#f2f6fc;text-shadow:0 1px 8px rgba(0,0,0,.8);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.ws-visual .vs-card-line{font-size:12px;line-height:1.35;color:rgba(214,222,236,.9);text-shadow:0 1px 6px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Looks: no picture, a compact text card with its actions */
+.ws-visual .vs-card.preset{padding:10px 12px 0;background:linear-gradient(160deg,var(--bg-3),var(--bg-2) 70%)}
 .ws-visual .vs-card.preset .vs-card-text{position:static;padding:0;gap:2px;pointer-events:auto}
-.ws-visual .vs-card.preset .vs-card-text strong{font-size:14.5px;line-height:1.3;color:var(--text-1);text-shadow:none;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.ws-visual .vs-card.preset .vs-card-line{color:var(--text-3);text-shadow:none;white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-.ws-visual .vs-card.preset .vs-card-why{display:none;color:var(--text-2);text-shadow:none;-webkit-line-clamp:1}
-/* A short strip (1280 x 720) keeps the name and summary whole: no icon beside them, no half-cut line under them. */
-@container vs-cards (max-height:139px){.ws-visual .vs-card.preset .vs-preset-icon{display:none}}
-/* The text takes the height the strip gives (these heights are the strip's inside, 9 px under its box): why to choose
-   the look in two lines first (1920 x 1080), then the name and summary, then more of the why. A why that would
-   still be cut is left to the tooltip (script marks it .cut). */
-@container vs-cards (min-height:140px){.ws-visual .vs-card.preset .vs-card-why{display:-webkit-box;-webkit-line-clamp:2}}
-@container vs-cards (min-height:165px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:3}.ws-visual .vs-card.preset .vs-card-text strong{-webkit-line-clamp:2}}
-@container vs-cards (min-height:205px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:4}}
-@container vs-cards (min-height:165px){.ws-visual .vs-card.preset .vs-card-line{-webkit-line-clamp:2}}
-@container vs-cards (min-height:245px){.ws-visual .vs-card.preset .vs-card-why{-webkit-line-clamp:5}}
+.ws-visual .vs-card.preset .vs-card-text strong{font-size:14.5px;line-height:1.3;color:var(--text-1);text-shadow:none}
+.ws-visual .vs-card.preset .vs-card-line{color:var(--text-3);text-shadow:none;min-width:0;font-size:12px}
+.ws-visual .vs-card.preset .vs-card-why{color:var(--text-2);font-size:12.5px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-visual .vs-card.preset .vs-error{margin-top:4px}
 .ws-visual .vs-card.preset.curated .vs-preset-icon{background:var(--accent-soft);color:var(--accent)}
 .ws-visual .vs-preset-body{display:flex;gap:10px;align-items:flex-start;min-width:0;min-height:0;overflow:hidden}
 .ws-visual .vs-preset-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn);flex:none}
 .ws-visual .vs-preset-icon svg{width:15px;height:15px}
-.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;padding:8px 0 10px;margin-top:auto;min-height:30px;flex:none}
+.ws-visual .vs-card-foot{display:flex;gap:5px;align-items:center;padding:6px 0 8px;margin-top:auto;min-height:30px;flex:none;min-width:0}
 .ws-visual .vs-card-foot .pill{height:20px;font-size:12px;padding:0 8px}
 .ws-visual .vs-card-foot .grow{flex:1}
 /* ---- Inspector ---- */
@@ -250,6 +235,8 @@
 /* The segmented track scrolls (overflow:auto), which clips an outside focus ring: draw it inside the button. */
 .ws-visual .segmented button:focus-visible{outline-offset:-2px}
 .ws-visual #vsQuality{display:flex}.ws-visual #vsQuality button{flex:1;padding:0 6px}
+/* A narrow inspector (1024 px): the five qualities take their own widths, so the switch never scrolls sideways. */
+@container vs-insp (max-width:330px){.ws-visual #vsQuality button{flex:1 1 auto;padding:0 5px}}
 /* Apply and Cancel: always at the foot of the inspector; a pending preview lights the bar. */
 .ws-visual .vs-foot{gap:8px;padding:12px 20px;min-height:60px;transition:background var(--t-2),border-color var(--t-2)}
 .ws-visual .vs-foot.pending{background:linear-gradient(0deg,rgba(117,237,255,.09),var(--bg-1));border-top-color:var(--accent-line)}
@@ -287,7 +274,7 @@
   .ws-visual .vs-legend{display:none}
   .ws-visual .vs-slot{width:100%}
   .ws-visual .vs-browser{flex:none}
-  .ws-visual .vs-cards{flex:none;height:170px;container-type:normal}
+  .ws-visual .vs-cards{flex:none;overflow:visible;-webkit-mask-image:none;mask-image:none}.ws-visual .vs-more{display:none}
   /* A pending preview keeps Apply and Cancel at the bottom of the screen wherever the page is scrolled. */
   .ws-visual .vs-foot.pending{position:fixed;left:var(--rail);right:0;bottom:0;z-index:30;border-top:1px solid var(--accent-line);background:var(--bg-1);box-shadow:0 -12px 32px rgba(0,0,0,.45)}
   .ws-visual.split:has(.vs-foot.pending){padding-bottom:58px}
