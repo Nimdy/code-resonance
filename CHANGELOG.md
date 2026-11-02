@@ -39,6 +39,11 @@
   dilates its architecture on its bass notes. A translucent material in the view, an 8-bit state upload and the
   regions' materials in a static texture. Four comparisons (a locked evolution for each of two identities, the recorded
   dependency on and off, the music's forces on and off, one continuous traversal), with their hashes and costs.
+- **Genesis visual identity concepts** (three art-directed animatics for a decision, not simulations): Impossible
+  Topology (the dependency graph as a space of glued rooms), Resonant Architecture (a city of tuned spires the score
+  plays) and Metamorphic Matter (one matter in crystal, liquid, granular and foam regimes, composed by the score). Each
+  is scripted from Code Resonance's structure and the densest 40 s of its score, labelled on every frame
+  (`qualification/visual/genesis-concepts/`; [docs/worlds/genesis-concepts.md](docs/worlds/genesis-concepts.md)).
 
 ## 0.9.2 — 2026-11-01
 
