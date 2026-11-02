@@ -53,7 +53,7 @@ SDK pages. It shows them as text without images, and a link to a document it doe
 
 ## Versions
 
-The product version (0.9.1) is not the version of the interpretation (11), the score, the Visual Recipe
+The product version (0.9.2) is not the version of the interpretation (11), the score, the Visual Recipe
 generator, digital life, the Visual Pack SDK or the composition format. Each is listed, with the rule that keeps older
 identities as they were: [ARCHITECTURE.md › Versions and compatibility](../ARCHITECTURE.md#versions-and-compatibility).
 The last published GitHub Release before the 0.7 series is 0.6.0 (`v0.6.0`).
@@ -71,8 +71,10 @@ disk and a third preview world, Temporal Terrain. 0.8.1 graduates the three prev
 choose them, and each is inhabited by digital life of its own. 0.9.0 finishes them: agents travel each
 world's own paths, the music reaches Fractal Continuum and Temporal Terrain, Temporal Terrain flies over its history
 when idle and Synaptic Storm's subagents are tethered to their parent (interpretation 11); it adds Visual Pack SDK 1.3
-and a new preview world, Aurora. 0.9.1 (this tree) gives Aurora its digital life and reworks the graduated worlds'
-curated looks ([CHANGELOG](../CHANGELOG.md)). The interpretation is independent of the product version.
+and a new preview world, Aurora. 0.9.1 gives Aurora its digital life and reworks the graduated worlds' curated looks.
+0.9.2 (this tree) polishes the Control Center: every world in view in the Visual Studio, a first run that starts with
+the stage, Record & Broadcast's choices together, and laptop layouts, contrast and focus fixed
+([CHANGELOG](../CHANGELOG.md)). The interpretation is independent of the product version.
 
 | PR | Milestone | Qualification | Changelog | Evidence in the repository |
 |---|---|---|---|---|
