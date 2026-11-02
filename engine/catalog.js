@@ -167,7 +167,8 @@ for(const f of Object.values(GRADUATED))f.parameters={...f.parameters,...COMMON}
 Object.assign(FAMILIES,GRADUATED);
 // Preview families: built in but still being designed, chosen only explicitly (the Visual Studio, the render lab's
 // --family, the web demo), never scored, and no base for packs (their parameters may still change). Aurora lists the
-// standard life.* group (its grammar: public/worlds/life/aurora.js).
+// standard life.* group (its grammar: public/worlds/life/aurora.js); Genesis has no digital life yet (its laws.* are the
+// Lawbook, docs/worlds/genesis.md).
 const PREVIEWS={
   'aurora':{name:'Aurora (preview)',preview:true,parameters:{
     'aurora.height':n(.4,1.8,'height of the curtains: how far their rays reach up along the field'),'aurora.folds':n(0,1.8,'how deeply the curtains fold'),
@@ -185,6 +186,29 @@ const PREVIEWS={
     effects:['kindle','ray','brighten','fade','field-line','storm','pulsate','corona','settle','breakup','meteor','widen'],
     unlocks:['airglow','milky-way','diamond-dust','hoarfrost']}
 };
+PREVIEWS.genesis={name:'Genesis (preview)',preview:true,parameters:{
+  'laws.cohesion':n(0,1,'cohesion: how tightly matter holds its form (chambers that embrace each other and few chambers to a whorl, against a loose, open coil)'),
+  'laws.coupling':n(0,1,'coupling: how freely energy passes between coupled chambers (the openings in their walls, the resonance that leaks through them)'),
+  'laws.elasticity':n(0,1,'elasticity: how quickly matter rings and returns to rest after a disturbance (higher: a faster, livelier ring)'),
+  'laws.conductivity':n(0,1,'conductivity: how porous the walls are and how fast light streams along the threads between chambers'),
+  'laws.anisotropy':n(0,1,'anisotropy: whether growth prefers a direction (0: a flat coil; 1: a rising cone)'),
+  'laws.resonance':n(0,1,'resonance: the natural modes of the chambers (higher: finer standing-wave patterns, a stronger answer to the music)'),
+  'laws.viscosity':n(0,1,'viscosity: how quickly motion dies away (higher: excitations fade sooner, currents creep)'),
+  'laws.morphogenesis':n(0,1,'morphogenesis: how vigorously new matter grows (how much larger each new chamber is than the one before)'),
+  'laws.stability':n(0,1,'stability: how much a disturbance deforms existing structure (higher: failures crack it less deeply)'),
+  'laws.dispersion':n(0,1,'dispersion: how waves split and spread (higher: light along the threads breaks into trains, resonance spreads to neighbours)'),
+  'material.kind':e(['porcelain','celadon','smoke','onyx'],'the material language: glazed ivory porcelain, grey-green celadon, smoky glass, or black onyx with gold'),
+  'material.glaze':n(0,1,'how glossy the glaze is'),'material.translucency':n(0,1.6,'how much inner light passes through the walls'),
+  'material.opal':n(0,1.6,'opalescence: the play of colour in the glaze and the interior\'s nacre'),'material.pores':n(0,1.6,'how many pores perforate the walls'),
+  'motion.breath':e([2,4,8],'breathing period of the inner light (bars)'),'motion.drift':n(0,1.6,'how far the structure turns while nothing happens'),
+  'motion.flow':n(0,1.6,'how fast light streams along the threads and sutures'),
+  'atmosphere.motes':n(0,1.6,'dust drifting in the light around the structure'),'atmosphere.haze':n(0,1.5,'haze in the void'),
+  'camera.personality':e(['monument','orbit','pilgrim'],'camera behaviour (monument: low and still; orbit: circling; pilgrim: travels close and into the chambers)'),
+  'camera.elevation':n(0,1.2,'elevation'),'camera.fov':i(24,50,'field of view'),'camera.drift':n(0,1.6,'idle drift'),
+  'camera.interior':n(0,1,'how often the idle camera passes into a chamber'),
+  'agents.form':e(['probe'],'agent form: a probe of light in its provider\'s colour'),'agents.trail':n(.2,2,'agent trail length')},
+  effects:['accrete','nucleate','perforate','dissolve','couple','decohere','ring','kintsugi','anneal','vitrify','consolidate','expand'],
+  unlocks:['gilded-sutures','nacre','filament-halo','crystal-dust']};
 PREVIEWS.aurora.parameters={...PREVIEWS.aurora.parameters,...LIFE};
 for(const f of Object.values(PREVIEWS))f.parameters={...f.parameters,...COMMON};
 const HEX=/^#[0-9a-f]{6}$/i;

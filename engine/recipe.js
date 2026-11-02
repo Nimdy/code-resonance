@@ -34,9 +34,10 @@
 // scores, family and values (tests/recipe.test.js pins them; tests/generator-v5.test.js pins v5 and proves v4
 // unchanged). An identity stored by an earlier generator is redrawn with that generator (generatorOf), so it never
 // switches to a graduated family by itself; choosing a family, regenerating or going back to automatic is a new identity,
-// drawn with the current generator. PREVIEWS is where a world still being designed waits (Aurora now): chosen only
-// explicitly, never scored, its genome and palette from its own streams, so adding one changes no existing identity
-// (tests/aurora.test.js pins that with the fingerprints of tests/recipe.test.js and tests/generator-v5.test.js).
+// drawn with the current generator. PREVIEWS is where a world still being designed waits (Aurora and Genesis now): chosen
+// only explicitly, never scored, its genome and palette from its own streams, so adding one changes no existing identity
+// (tests/aurora.test.js and tests/genesis.test.js pin that with the fingerprints of tests/recipe.test.js and
+// tests/generator-v5.test.js).
 //
 // Tuning: the user may set exact values for the genome parameters the family declares (engine/catalog.js for built-in
 // families, the manifest for a world pack, plus a shader look's uniforms). `tuning` records them with the generated
@@ -63,10 +64,10 @@ const FOUNDING_MODULES=6;
 const FLAGSHIPS=['stellar-forge','fractal-biosphere','machine-cathedral'];
 const GRADUATED=['synaptic-storm','fractal-continuum','temporal-terrain'];
 const FAMILIES=[...FLAGSHIPS,...GRADUATED];
-const PREVIEWS=['aurora'];
+const PREVIEWS=['aurora','genesis'];
 const familiesOf=(version=RECIPE_VERSION)=>version>=5?FAMILIES:FLAGSHIPS;
 const FAMILY_NAMES={'stellar-forge':'Stellar Forge','fractal-biosphere':'Fractal Biosphere','machine-cathedral':'Machine Cathedral','synaptic-storm':'Synaptic Storm','fractal-continuum':'Fractal Continuum',
-  'temporal-terrain':'Temporal Terrain','aurora':'Aurora (preview)'};
+  'temporal-terrain':'Temporal Terrain','aurora':'Aurora (preview)','genesis':'Genesis (preview)'};
 const round=(x,d=3)=>{const k=10**d;return Math.round(x*k)/k;};
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 function rng(...key){let s=parseInt(sha(key.join('/')).slice(0,8),16)>>>0||1;return ()=>{s^=s<<13;s>>>=0;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
@@ -208,7 +209,22 @@ function auroraPalette(r,family,traits){
   return {scheme,hue:round(hue,1),primary:hsl(hue,sat,.54),secondary:hsl(fringe,.72,.56),accent:hsl(lamp,.94,.6),highlight:hsl(sky-12,.26,.88),
     deep:hsl(sky,.6,between(r,.012,.022)),haze:hsl(sky+6,.42,between(r,.07,.1)),warning:hsl(warn,.9,.56),valid:hsl(pick(r,[176,186,168]),.62,.7)};
 }
-const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette,'temporal-terrain':terrainPalette,'aurora':auroraPalette};
+// Genesis (preview): fired matter in a charcoal void. The body's tint (ivory, bone, a cool white), the metal of its sutures
+// (champagne, bronze, rose gold, silver), the amber of its inner light and the void's warmth are the identity's own, from
+// its own stream; the body stays nearly neutral (the material decides its character, the palette only tints it); a
+// failure's crazing stays vermilion, at least 40 degrees from the inner light, and is never the metal's gold.
+function genesisPalette(r,family,traits){
+  const scheme=weighted(r,[['analogous',3],['complementary',1],['split',1]]);
+  const body=pick(r,[38,42,32,46,26,52,210])+between(r,-4,4),metal=pick(r,[40,34,22,16,44,214])+between(r,-3,3);
+  const lamp=pick(r,[32,36,28,40])+between(r,-3,3),voidHue=pick(r,[28,34,22,214,220])+between(r,-4,4);
+  const dist=h=>{const d=Math.abs((((h-lamp)%360)+360)%360);return Math.min(d,360-d);};
+  const warn=[356,352,4,348].find(h=>dist(h)>=40)??344;
+  const cool=body>180;
+  return {scheme,hue:round(body,1),primary:hsl(body,cool?.12:between(r,.18,.32),between(r,.82,.88)),secondary:hsl(metal,metal>180?.14:between(r,.38,.56),between(r,.6,.68)),
+    accent:hsl(lamp,.92,.58),highlight:hsl(body+4,.3,.94),deep:hsl(voidHue,between(r,.06,.12),between(r,.035,.05)),haze:hsl(voidHue+6,.1,between(r,.1,.13)),
+    warning:hsl(warn,.86,.55),valid:hsl(pick(r,[48,54,200]),.42,.84-.04*clamp(traits.tests*2))};
+}
+const PALETTES={'synaptic-storm':synapticPalette,'fractal-continuum':fractalPalette,'temporal-terrain':terrainPalette,'aurora':auroraPalette,'genesis':genesisPalette};
 // ---- Family genomes: the structural language of each universe -------------------------------------------------------
 const GENOMES={
   'stellar-forge'(r,t){
@@ -346,6 +362,40 @@ const GENOMES={
         'subsystem.connected':'field-line','validation.failed':'storm','validation.passed':'pulsate','validation.recovered':'corona',
         'refactor.validated':'settle','milestone.achieved':'breakup','repository.checkpoint':'meteor','world.expanded':'widen'}
     };
+  },
+  // Preview (chosen only explicitly). The Lawbook: ten laws (0..1) the universe obeys, each an artistic abstraction of an
+  // observable trait with a seeded share (docs/worlds/genesis.md, The Lawbook; public/worlds/genesis-laws.js derives the
+  // physics from them). Tests and shallow folders hold matter together (cohesion); coupling between subsystems lets
+  // energy pass between chambers (coupling); imports per file make the walls porous (conductivity); deep folder branching
+  // against a central hub gives growth a direction (anisotropy: a cone instead of a flat coil); a small project rings
+  // higher (resonance); structure grown under observation makes growth vigorous (morphogenesis). Elasticity, viscosity,
+  // stability and dispersion are the matter's own, from the seed (never a judgement of the code). The material language
+  // leans on the kind of code (tests toward celadon, functions toward smoky glass, classes and types toward onyx) with a
+  // seeded share; porcelain is the most common.
+  'genesis'(r,t){
+    const law=x=>round(clamp(x),3);
+    const laws={cohesion:law(.3+.3*clamp((t.tests||0)*3)+.22*(1-clamp((t.branching||0)*1.6))+between(r,-.14,.14)),
+      coupling:law(.14+.68*clamp((t.crossDensity||0)/1.2)+between(r,-.12,.12)),
+      elasticity:law(.3+.4*r()+.2*clamp(t.functions||0)),
+      conductivity:law(.14+.62*clamp((t.dependencyDensity||0)/3)+between(r,-.12,.12)),
+      anisotropy:law(.16+.62*clamp((t.branching||0)*1.8)-.3*clamp((t.hubness||0)*2)+between(r,-.16,.16)),
+      resonance:law(.22+.45*r()+.3*(1-clamp(Math.log2(1+(t.modules||0))/9))),
+      viscosity:law(.22+.48*r()+.18*clamp((t.tests||0)*2)),
+      morphogenesis:law(.18+.48*clamp(t.grown??.5)+.3*r()),
+      stability:law(.25+.55*r()),
+      dispersion:law(.18+.42*r()+.28*clamp(t.crossDensity||0))};
+    const kind=weighted(r,[['porcelain',3],['celadon',.6+3*clamp((t.tests||0)*2.5)],['smoke',.4+2.2*clamp(((t.functions||0)-.4)*2.5)],['onyx',.3+2.4*clamp((t.model||0)*2.5)]]);
+    return {
+      laws,
+      material:{kind,glaze:between(r,.7,.95),translucency:between(r,.75,1.15),opal:between(r,.5,1),pores:round(between(r,.8,1.15)*(.85+.3*laws.conductivity))},
+      motion:{breath:pick(r,[2,4,4,8]),drift:between(r,.5,1),flow:between(r,.7,1.2)},
+      atmosphere:{motes:between(r,.6,1.1),haze:between(r,.35,.8)},
+      camera:{personality:weighted(r,[['monument',3],['orbit',2],['pilgrim',(t.districts||0)>=6?2:1]]),elevation:between(r,.25,.6),fov:pick(r,[30,34,38]),drift:between(r,.5,1),interior:between(r,.35,.8)},
+      agents:{form:'probe',trail:between(r,.6,1.4)},
+      effects:{'subsystem.created':'accrete','module.created':'nucleate','structure.created':'perforate','structure.removed':'dissolve',
+        'subsystem.connected':'couple','validation.failed':'decohere','validation.passed':'ring','validation.recovered':'kintsugi',
+        'refactor.validated':'anneal','milestone.achieved':'vitrify','repository.checkpoint':'consolidate','world.expanded':'expand'}
+    };
   }
 };
 // Ambient layers every world keeps alive with no events, and the ones verified milestones unlock (lasting change).
@@ -356,7 +406,8 @@ const AMBIENT={
   'synaptic-storm':{base:['spontaneous-firing','breathing-glow','drift','motes','bokeh'],unlocks:['glial-stars','neuromodulator-tide','myelin-sheen','deep-network']},
   'fractal-continuum':{base:['breathing','light-drift','shimmer','resonance','motes'],unlocks:['stardust','inner-light','corona','echoes']},
   'temporal-terrain':{base:['light-path','mist','shimmer','flow','motes'],unlocks:['dawn','lanterns','stars','aurora']},
-  'aurora':{base:['drift','folding','star-wheel','meteors','reflections'],unlocks:['airglow','milky-way','diamond-dust','hoarfrost']}
+  'aurora':{base:['drift','folding','star-wheel','meteors','reflections'],unlocks:['airglow','milky-way','diamond-dust','hoarfrost']},
+  'genesis':{base:['breathing','streaming','film-currents','resonance','motes'],unlocks:['gilded-sutures','nacre','filament-halo','crystal-dust']}
 };
 function common(r,traits){
   const size=clamp(Math.log2(1+traits.modules)/10);

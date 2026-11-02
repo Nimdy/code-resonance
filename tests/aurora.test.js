@@ -23,7 +23,7 @@ function project(id,{modules=10,ui=0,classes=0,fns=3,tests=0,dirs=3,hub=0,cross=
   return {projectId:sha(id),graph:{nodes,edges},stats:{raw:100,agentEvents,testsPassed:0,testsFailed:0,created:modules},agents:Array.from({length:agents},(_,i)=>({id:`a${i}`}))};
 }
 test('Aurora is chosen only explicitly: never by the family scores, automatic or a plain regenerate',()=>{
-  assert.deepEqual(recipe.PREVIEWS,[ID]);assert(!recipe.FAMILIES.includes(ID));
+  assert(recipe.PREVIEWS.includes(ID));assert(!recipe.FAMILIES.includes(ID));
   const shapes=[{modules:120,ui:70,dirs:40},{modules:12,hub:10,agents:5,agentEvents:80},{modules:60,classes:40,tests:20,cross:50},{modules:3},{modules:400,cross:300,agents:8,agentEvents:90}];
   for(let k=0;k<300;k++){const p=project(`scored-${k}`,shapes[k%shapes.length]),r=recipe.generate(p,{variant:k%4,now:0});
     assert(recipe.FAMILIES.includes(r.family),`${k}: ${r.family}`);assert.deepEqual(Object.keys(r.familyScores),recipe.FAMILIES);}
