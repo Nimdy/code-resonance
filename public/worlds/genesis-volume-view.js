@@ -179,7 +179,7 @@ export function createVolumeView({renderer,sim,palette={},material={},width=1920
   // the state into the texture (cost measured by bench: pack is CPU, upload is the driver)
   const f32=new Float32Array(1),u32=new Uint32Array(f32.buffer);
   const half=x=>{f32[0]=x;const b=u32[0],s=(b>>>16)&0x8000,e=((b>>>23)&0xff)-112,m=b&0x7fffff;if(e<=0)return s;if(e>30)return s|0x7c00;return s|(e<<10)|(m>>>13);};
-  const breath=look.breath??.35,q=new Float64Array(16),moved=new Float32Array(NC);
+  const breath=look.breath??1,q=new Float64Array(16),moved=new Float32Array(NC);
   const wrap=(d,n)=>d>n/2?d-n:d<-n/2?d+n:d;
   // the activity as the music displaces it: each cell shows the activity from where its region's dilation carried it
   function displaced(v){
