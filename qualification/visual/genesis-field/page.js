@@ -4,6 +4,8 @@
 // its own simulation and view and the same camera. Exposes window.__gf.
 import {createField,DT,FIELD_VERSION} from '__ORIGIN__/worlds/genesis-field.js';
 import {createFieldView} from '__ORIGIN__/worlds/genesis-field-view.js';
+import {createVolume} from '__ORIGIN__/worlds/genesis-volume.js';
+import {createVolumeView} from '__ORIGIN__/worlds/genesis-volume-view.js';
 import {degreeOfMidi} from '__ORIGIN__/worlds/genesis-laws.js';
 import {createMusical} from '__ORIGIN__/worlds/musical.js';
 import {THREE} from '__ORIGIN__/worlds/core.js';
@@ -19,7 +21,7 @@ function stepAll(tau){for(const r of runs)while(r.proof.sim.step*DT+1e-9<tau){r.
 function drawAll(tau){
   for(const r of runs)r.view.sync(Math.min(1,Math.max(0,(tau-(r.proof.sim.step-1)*DT)/DT)));
   renderer.setScissorTest(false);renderer.setClearColor(0x000000,1);renderer.clear();
-  for(const r of runs)r.view.render(runs.length>1?r.viewport:null);
+  for(const r of runs){r.view.setTime?.(tau);r.view.render(runs.length>1?r.viewport:null);}
 }
 const first=()=>runs[0].proof;
 window.__gf={
@@ -34,12 +36,13 @@ window.__gf={
     const gl=renderer.getContext();gpu.ext=gl.getExtension('EXT_disjoint_timer_query_webgl2');
     const n=variants.length,cw=Math.floor(width/n);
     runs=variants.map((v,i)=>{
-      const proof=createProof({createField,DT,degreeOfMidi,score:window.ResonanceScore,createMusical},inputs,{R,idle,field,schedule,...v});
-      const view=createFieldView({renderer,sim:proof.sim,palette:inputs.palette,material:inputs.material,width:n>1?cw:width,height,look:viewOpts.look});
+      // field.volume: the universe as a volume (genesis-volume.js) instead of a sheet; the same timeline, score and inputs
+      const proof=createProof({createField:field.volume?createVolume:createField,DT,degreeOfMidi,score:window.ResonanceScore,createMusical},inputs,{R,idle,field,schedule,...v});
+      const view=(field.volume?createVolumeView:createFieldView)({renderer,sim:proof.sim,palette:inputs.palette,material:inputs.material,width:n>1?cw:width,height,look:viewOpts.look});
       if(viewOpts.frame)view.frame(viewOpts.frame);if(viewOpts.debug)view.debug(viewOpts.debug);
       return {proof,view,variant:v,viewport:{x:i*cw,y:0,w:cw,h:height}};
     });
-    return {N:first().sim.N,K:first().sim.K(),tempo:first().tempo,barMs:first().barMs,passage:first().passage,physics:first().sim.physics,
+    return {N:first().sim.N??first().sim.NC,K:first().sim.K(),tempo:first().tempo,barMs:first().barMs,passage:first().passage,physics:first().sim.physics,
       gpuTimer:!!gpu.ext,glRenderer:(gl.getExtension('WEBGL_debug_renderer_info')&&gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL))||null};
   },
   // lab: advance to tau as fast as possible and draw (the same states as real time; only the speed differs)
@@ -51,7 +54,7 @@ window.__gf={
   frame(i,fps=60,from=0){const tau=from+i/fps;stepAll(tau);drawAll(tau);return canvas.toDataURL('image/jpeg',.93);},
   // the score from proof time t0 to t1, rendered offline by the performer on the score's bar grid (film.js does the same)
   async scoreAudio(t0,t1){
-    const p=first().passage,start=options.idle?0:options.schedule.music;if(!p)return null;
+    const p=first().passage,start=options.idle?0:options.schedule.music;if(!p||t1<=start)return null;
     const from=Math.max(t0,start),perf=p.from+(from-start)*1000,frames=options.idle?inputs.idle.frames:inputs.frames;
     const timeline=frames.map(f=>({atMs:Math.max(perf,f.t),frame:{controls:{energy:f.energy,tension:f.tension},chapter:f.chapter,milestone:f.milestone,end:f.end,projectSeed:inputs.music.seed}})).filter(x=>x.atMs<=perf+(t1-from+4)*1000).sort((a,b)=>a.atMs-b.atMs);
     const buf=await window.ResonanceMusic.renderOffline({timeline,startMs:perf,durationSec:t1-from+1.5,style:inputs.music.style,speed:1,projectId:'genesis-field',scoreVersion:inputs.music.version,profile:inputs.music.profile,projectSeed:inputs.music.seed});
@@ -85,7 +88,7 @@ window.__gf={
       const tick=()=>{
         // the audio clock, read through its output timestamp (the context time paired with the moment it is heard), so it
         // advances smoothly between the audio thread's updates; it stays the only clock
-        const now=performance.now(),ts=audio.getOutputTimestamp(),ctxNow=ts.contextTime>0?ts.contextTime+(now-ts.performanceTime)/1000:audio.currentTime;
+        const now=performance.now(),ts=audio.getOutputTimestamp(),ctxNow=ts.contextTime>0&&ts.performanceTime>0?ts.contextTime+(now-ts.performanceTime)/1000:audio.currentTime;
         const tau=from+Math.max(0,ctxNow-A0);
         const c0=performance.now(),s0=first().sim.step;
         stepAll(tau);

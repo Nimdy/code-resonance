@@ -23,12 +23,14 @@ const inputsOf=d=>JSON.parse(fs.readFileSync(path.join(__dirname,'inputs',`${d}.
 const [W,Hh]=(arg('size','1920x1080')).split('x').map(Number);
 const R=Number(arg('R',44)),IDLE=process.argv.includes('--idle'),VARIANTS=json('variants',[{}]),FIELD=json('field',{}),LOOK=json('look',undefined),SCHED=json('schedule',null);
 async function modules(){
-  const {createField,DT,FIELD_VERSION}=await import(path.join(H.REPO,'public/worlds/genesis-field.js'));
+  const {createField:sheet,DT,FIELD_VERSION}=await import(path.join(H.REPO,'public/worlds/genesis-field.js'));
+  const {createVolume,VOLUME_VERSION}=await import(path.join(H.REPO,'public/worlds/genesis-volume.js'));
+  const createField=FIELD.volume?createVolume:sheet;
   const {degreeOfMidi}=await import(path.join(H.REPO,'public/worlds/genesis-laws.js'));
   const {createMusical}=await import(path.join(H.REPO,'public/worlds/musical.js'));
   const score=require(path.join(H.REPO,'public/score.js'));
   const proof=await import(path.join(__dirname,'proof.mjs'));
-  return {deps:{createField,DT,degreeOfMidi,score,createMusical},DT,FIELD_VERSION,...proof};
+  return {deps:{createField,DT,degreeOfMidi,score,createMusical},DT,FIELD_VERSION:FIELD.volume?`volume ${VOLUME_VERSION}`:FIELD_VERSION,...proof};
 }
 // The window a film covers: the proof's 28 s, or the idle experiment's tenth minute.
 async function windowOf(){const m=await modules();return IDLE?{from:Number(arg('from',m.IDLE.minutes*60)),to:Number(arg('to',m.IDLE.minutes*60+m.IDLE.film))}:{from:Number(arg('from',0)),to:Number(arg('to',(SCHED||m.SCHEDULE).end))};}
@@ -38,7 +40,7 @@ async function headless(d,variant={}){
   const p=m.createProof(m.deps,inputs,{R,idle:IDLE,field:FIELD,schedule:schedOf(m),...variant}),win=await windowOf();
   // the music's effect, measured: for every struck territory, its matter's mean vibration (displacement along the
   // normal) in the 0.25 s before a bass note and its peak in the 1.2 s after (and when the peak came)
-  const speedOf=k=>{const pv=p.sim.pv,u=p.sim.vibration;let s=0,w=0;for(let i=0;i<p.sim.N;i++){const a=pv[i*p.sim.MAXK+k];if(a<.5)continue;s+=Math.abs(u[i]);w++;}return w?s/w:0;};
+  const speedOf=FIELD.volume?(k=>{const r=p.sim.reg,P=p.sim.p;let s=0,w=0;for(let i=0;i<p.sim.NC;i++){if(r[i]!==k)continue;s+=Math.abs(P[i]);w++;}return w?s/w:0;}):(k=>{const pv=p.sim.pv,u=p.sim.vibration;let s=0,w=0;for(let i=0;i<p.sim.N;i++){const a=pv[i*p.sim.MAXK+k];if(a<.5)continue;s+=Math.abs(u[i]);w++;}return w?s/w:0;});
   const series=[];let ms=0;const steps=Math.round(win.to/DT),from=IDLE?win.from:schedOf(m).music;
   for(let s=1;s<=steps;s++){const t0=process.hrtime.bigint();p.advanceTo(s*DT);ms+=Number(process.hrtime.bigint()-t0)/1e6;
     if(s*DT>=from-1){const row={t:s*DT};for(let k=0;k<p.sim.K();k++)row[k]=speedOf(k);series.push(row);}}
@@ -47,7 +49,7 @@ async function headless(d,variant={}){
     const before=series.filter(r=>r.t>=t-.25&&r.t<t).map(r=>r[e.k]),after=series.filter(r=>r.t>=t&&r.t<t+1.2);
     let peak=0,at=0;for(const r of after)if(r[e.k]>peak){peak=r[e.k];at=r.t-t;}
     return {at:+t.toFixed(2),territory:e.k,velocity:e.v,before:+(before.reduce((a,b)=>a+b,0)/Math.max(1,before.length)).toFixed(2),peak:+peak.toFixed(2),peakAfterMs:Math.round(at*1000)};}).filter(Boolean);
-  return {dataset:d,variant,idle:IDLE,fieldVersion:m.FIELD_VERSION,N:p.sim.N,K:p.sim.K(),steps:p.sim.step,passage:p.passage,hashes:p.hashes,stepMs:+(ms/p.sim.step).toFixed(3),
+  return {dataset:d,variant,idle:IDLE,fieldVersion:m.FIELD_VERSION,N:p.sim.N??p.sim.NC,K:p.sim.K(),steps:p.sim.step,passage:p.passage,hashes:p.hashes,stepMs:+(ms/p.sim.step).toFixed(3),
     events:p.log.filter(e=>e.kind!=='pad').length,strikes,metrics:p.sim.metrics()};
 }
 // The fixed camera: aimed at the centre of the structures' bounds over the whole window (every variant), and far enough
@@ -74,7 +76,7 @@ async function withPage(d,fn){
         if(name!=='proof.mjs')body=body.replaceAll('__ORIGIN__','').replaceAll('__PROOF__','/__gf/proof.mjs');
         route.fulfill({status:200,contentType:'text/javascript',body});});
       await page.evaluate(()=>import('/__gf/page.js'));
-      const frame=arg('frame')?JSON.parse(arg('frame')):FIELD.boundary?undefined:await framing(d);
+      const frame=arg('frame')?JSON.parse(arg('frame')):FIELD.boundary||FIELD.volume?undefined:await framing(d);
       const info=await page.evaluate(o=>window.__gf.init(o),{inputs:inputsOf(d),width:W,height:Hh,R,variants:VARIANTS,idle:IDLE,field:FIELD,schedule:SCHED||undefined,view:{frame,look:LOOK,debug:Number(arg('debug',0))}});
       info.browserRenderer=renderer;
       const out=await fn(page,info);if(errors.length)console.log('page errors',errors.slice(0,5));return out;

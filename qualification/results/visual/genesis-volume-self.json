@@ -1,0 +1,364 @@
+{
+ "experiment": "genesis volume (art-direction gate)",
+ "volumeVersion": "volume 1",
+ "dataset": "self-dependency",
+ "identity": "Code Resonance",
+ "cells": 196608,
+ "regions": 8,
+ "schedule": {
+  "change": 36,
+  "music": 48,
+  "end": 88
+ },
+ "window": {
+  "from": 30,
+  "to": 88
+ },
+ "camera": {
+  "path": [
+   {
+    "t": 30,
+    "pos": [
+     40,
+     15,
+     33
+    ],
+    "target": [
+     28,
+     15,
+     15
+    ],
+    "fov": 84
+   },
+   {
+    "t": 44,
+    "pos": [
+     40,
+     15,
+     33
+    ],
+    "target": [
+     28,
+     15,
+     15
+    ],
+    "fov": 84
+   },
+   {
+    "t": 52,
+    "pos": [
+     35,
+     16.5,
+     17
+    ],
+    "target": [
+     42,
+     19,
+     16
+    ],
+    "fov": 80
+   },
+   {
+    "t": 58,
+    "pos": [
+     37,
+     15,
+     28
+    ],
+    "target": [
+     34,
+     13,
+     40
+    ],
+    "fov": 82
+   },
+   {
+    "t": 64,
+    "pos": [
+     34,
+     13,
+     40
+    ],
+    "target": [
+     20,
+     17,
+     15
+    ],
+    "fov": 84
+   },
+   {
+    "t": 88,
+    "pos": [
+     34,
+     13,
+     40
+    ],
+    "target": [
+     20,
+     17,
+     15
+    ],
+    "fov": 84
+   }
+  ]
+ },
+ "hashes": {
+  "4": "5d5fff983f8d1856",
+  "8": "822f0323add111ff",
+  "12": "da8b92713b649cd4",
+  "14": "021dff1e6604a894",
+  "18": "bbe19f005e319d44",
+  "20": "993b41ef37b83654",
+  "22": "cd828341531598cc",
+  "24": "86f830ca94f8ebed",
+  "26": "6b964106912be703",
+  "28": "ddb520de08a2a29b",
+  "32": "286bdd0c73176912",
+  "36": "6134ea7dba6847eb",
+  "40": "b7015eef06ec9358",
+  "44": "4c9c69416b7c2c26",
+  "48": "e2db581499872d82",
+  "52": "711a2fb1ebd68036",
+  "56": "299625cd29c7f2aa",
+  "60": "6e0f70dcec369993",
+  "64": "a60887dfbd5ad3bc",
+  "68": "35f6b60aa5e06937",
+  "72": "1b0939f1efd5bf3a",
+  "76": "dc517a8f4a5edca3",
+  "80": "a4539d8d19781874",
+  "84": "66e1f68f477e5a4e",
+  "88": "3c83d1e104169847"
+ },
+ "hashesAgree": {
+  "node": true,
+  "realtime": true,
+  "realtimeRecorded": true,
+  "offline": true,
+  "all": true
+ },
+ "hardware": {
+  "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+  "gpu": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+  "node": "v22.22.2",
+  "os": "WSL2 6.6.87.2-microsoft-standard-WSL2"
+ },
+ "nodeStepMs": 6.243,
+ "realtime": {
+  "size": "1920x1080",
+  "fps": 43,
+  "frames": 2514,
+  "frameMs": {
+   "p50": 23.3,
+   "p95": 37.9,
+   "p99": 40,
+   "max": 59.1,
+   "over34": 9.98
+  },
+  "cpuMs": {
+   "p50": 7.7,
+   "p95": 15.4,
+   "max": 58.7
+  },
+  "stepMs": {
+   "p50": 6.7,
+   "p95": 7.6,
+   "max": 30.7
+  },
+  "gpuMs": {
+   "n": 2509,
+   "p50": 22.13,
+   "p95": 23.92,
+   "max": 33.67
+  },
+  "heapMB": 24.8
+ },
+ "realtimeRecorded": {
+  "fps": 34.7,
+  "frames": 2027,
+  "frameMs": {
+   "p50": 28.7,
+   "p95": 31.8,
+   "p99": 37.6,
+   "max": 64.2,
+   "over34": 1.48
+  },
+  "cpuMs": {
+   "p50": 14.5,
+   "p95": 16.6,
+   "max": 62.1
+  },
+  "gpuMs": {
+   "n": 2025,
+   "p50": 22.33,
+   "p95": 24.43,
+   "max": 34.64
+  },
+  "video": {
+   "mime": "video/webm;codecs=vp9,opus",
+   "size": 37703429,
+   "file": "genesis-volume-self-realtime.webm"
+  }
+ },
+ "hallByResolution": {
+  "1920x1080": {
+   "fps": 43.6,
+   "frames": 627,
+   "cpuMs": {
+    "p50": 8.1,
+    "p95": 17.4,
+    "max": 61.8
+   },
+   "gpuMs": {
+    "n": 622,
+    "p50": 21.7,
+    "p95": 21.82,
+    "max": 38.08
+   }
+  },
+  "1280x720": {
+   "fps": 59.5,
+   "frames": 857,
+   "cpuMs": {
+    "p50": 7.4,
+    "p95": 9.1,
+    "max": 59.2
+   },
+   "gpuMs": {
+    "n": 857,
+    "p50": 10.64,
+    "p95": 10.95,
+    "max": 21.12
+   }
+  },
+  "960x540": {
+   "fps": 59.5,
+   "frames": 857,
+   "cpuMs": {
+    "p50": 7.5,
+    "p95": 9.3,
+    "max": 59.4
+   },
+   "gpuMs": {
+    "n": 857,
+    "p50": 6.55,
+    "p95": 6.83,
+    "max": 16.62
+   }
+  }
+ },
+ "loadAverageAtRuns": [
+  "== headless 11:10:32 : 2.89, 5.76, 5.83",
+  "== realtime 1080p 11:11:29 : 2.02, 4.99, 5.56",
+  "== record 1080p 11:12:43 : 1.48, 4.20, 5.24",
+  "== offline 1080p60 11:13:59",
+  "== realtime 1920x1080 11:17:05 : 1.54, 2.77, 4.37",
+  "== realtime 1280x720 11:17:33 : 1.76, 2.73, 4.31",
+  "== realtime 960x540 11:18:00 : 1.51, 2.58, 4.21"
+ ],
+ "strikes": [
+  {
+   "at": 48,
+   "territory": 3,
+   "velocity": 0.44,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 817
+  },
+  {
+   "at": 53.28,
+   "territory": 1,
+   "velocity": 0.31,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 533
+  },
+  {
+   "at": 53.63,
+   "territory": 2,
+   "velocity": 0.31,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 833
+  },
+  {
+   "at": 59.28,
+   "territory": 3,
+   "velocity": 0.4,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 833
+  },
+  {
+   "at": 64.93,
+   "territory": 4,
+   "velocity": 0.37,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 483
+  },
+  {
+   "at": 70.58,
+   "territory": 1,
+   "velocity": 0.42,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 517
+  },
+  {
+   "at": 76.23,
+   "territory": 4,
+   "velocity": 0.42,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 483
+  },
+  {
+   "at": 79.05,
+   "territory": 6,
+   "velocity": 0.45,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 167
+  },
+  {
+   "at": 81.52,
+   "territory": 4,
+   "velocity": 0.32,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 483
+  },
+  {
+   "at": 81.87,
+   "territory": 2,
+   "velocity": 0.44,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 517
+  },
+  {
+   "at": 84.7,
+   "territory": 0,
+   "velocity": 0.43,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 667
+  },
+  {
+   "at": 87.17,
+   "territory": 1,
+   "velocity": 0.31,
+   "before": 0,
+   "peak": 0,
+   "peakAfterMs": 717
+  },
+  {
+   "at": 87.52,
+   "territory": 4,
+   "velocity": 0.4,
+   "before": 0,
+   "peak": 0.01,
+   "peakAfterMs": 483
+  }
+ ]
+}

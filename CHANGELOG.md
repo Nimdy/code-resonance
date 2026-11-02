@@ -25,6 +25,12 @@
   resonator makes its folds breathe); a vault boundary (the rim held in a ring, gently inflated) gives an interior
   lit by the light the matter transmits. Comparisons with and without the recorded dependency and the music, the tenth
   minute of inactivity, and a continuous interior experiment, with their hashes and costs.
+- **Genesis volume** (an art-direction experiment): the sheet can fold and enclose but never open a hole, a tunnel or
+  a network of chambers, so the same laws are tried on matter in a volume. A periodic world in which life (a
+  reaction–diffusion, each region's chemistry by its role and the Lawbook) hollows the matter into each region's own
+  architecture; dependencies open passages that carry their supply; the score's notes are a pressure wave through the
+  whole world. Authoritative and deterministic like the field; drawn by a raymarcher
+  (`public/worlds/genesis-volume.js`, `genesis-volume-view.js`; [docs/worlds/genesis-volume.md](docs/worlds/genesis-volume.md)).
 
 ## 0.9.2 — 2026-11-01
 
