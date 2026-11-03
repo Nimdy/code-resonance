@@ -1,0 +1,1798 @@
+{
+ "dataset": "self",
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  9.04,
+  6.85,
+  7.94
+ ],
+ "tempo": 85,
+ "performanceSeconds": 1205,
+ "windows": 158,
+ "laws": {
+  "cohesion": 0.52,
+  "coupling": 0.521,
+  "elasticity": 0.559,
+  "conductivity": 0.26,
+  "anisotropy": 0.524,
+  "resonance": 0.635,
+  "viscosity": 0.724,
+  "morphogenesis": 0.606,
+  "stability": 0.518,
+  "dispersion": 0.476
+ },
+ "matterVersion": 1,
+ "cells": 14336,
+ "hz": 20,
+ "continuous": {
+  "ticks": 26898,
+  "tickMs": {
+   "mean": 0.932,
+   "p50": 0.815,
+   "p95": 1.167,
+   "max": 33.631
+  },
+  "digests": [
+   {
+    "tick": 0,
+    "digest": "02fe28c1"
+   },
+   {
+    "tick": 200,
+    "digest": "7e531381"
+   },
+   {
+    "tick": 400,
+    "digest": "a36c7389"
+   },
+   {
+    "tick": 600,
+    "digest": "93f2fcf1"
+   },
+   {
+    "tick": 800,
+    "digest": "37bfd536"
+   },
+   {
+    "tick": 1000,
+    "digest": "d0fb4b7d"
+   },
+   {
+    "tick": 1200,
+    "digest": "35f2d431"
+   },
+   {
+    "tick": 1400,
+    "digest": "e8049325"
+   },
+   {
+    "tick": 1600,
+    "digest": "00d8012b"
+   },
+   {
+    "tick": 1800,
+    "digest": "5e900e51"
+   },
+   {
+    "tick": 2000,
+    "digest": "a630a5a8"
+   },
+   {
+    "tick": 2200,
+    "digest": "1908c35e"
+   },
+   {
+    "tick": 2400,
+    "digest": "6b842eff"
+   },
+   {
+    "tick": 2600,
+    "digest": "9ff1d278"
+   },
+   {
+    "tick": 2800,
+    "digest": "3360e8f9"
+   },
+   {
+    "tick": 3000,
+    "digest": "91d6e0ca"
+   },
+   {
+    "tick": 3200,
+    "digest": "d7162bcd"
+   },
+   {
+    "tick": 3400,
+    "digest": "008314c2"
+   },
+   {
+    "tick": 3600,
+    "digest": "4527fc72"
+   },
+   {
+    "tick": 3800,
+    "digest": "00ef30f7"
+   },
+   {
+    "tick": 4000,
+    "digest": "56b28f05"
+   },
+   {
+    "tick": 4200,
+    "digest": "c7dcc597"
+   },
+   {
+    "tick": 4400,
+    "digest": "01aa1e53"
+   },
+   {
+    "tick": 4600,
+    "digest": "e4fa8508"
+   },
+   {
+    "tick": 4800,
+    "digest": "a3200eab"
+   },
+   {
+    "tick": 5000,
+    "digest": "9c63a3cb"
+   },
+   {
+    "tick": 5200,
+    "digest": "6639aeaf"
+   },
+   {
+    "tick": 5400,
+    "digest": "1715d556"
+   },
+   {
+    "tick": 5600,
+    "digest": "e5a6009f"
+   },
+   {
+    "tick": 5800,
+    "digest": "fa4d9ea4"
+   },
+   {
+    "tick": 6000,
+    "digest": "0ac85433"
+   },
+   {
+    "tick": 6200,
+    "digest": "fe409d3f"
+   },
+   {
+    "tick": 6400,
+    "digest": "8e2764c6"
+   },
+   {
+    "tick": 6600,
+    "digest": "e6a7755a"
+   },
+   {
+    "tick": 6800,
+    "digest": "fd0a0219"
+   },
+   {
+    "tick": 7000,
+    "digest": "5d787038"
+   },
+   {
+    "tick": 7200,
+    "digest": "bdc97929"
+   },
+   {
+    "tick": 7400,
+    "digest": "c6fbc69e"
+   },
+   {
+    "tick": 7600,
+    "digest": "f5de0dc5"
+   },
+   {
+    "tick": 7800,
+    "digest": "aa6994f3"
+   },
+   {
+    "tick": 8000,
+    "digest": "bde74c1c"
+   },
+   {
+    "tick": 8200,
+    "digest": "d2500a6f"
+   },
+   {
+    "tick": 8400,
+    "digest": "9514086a"
+   },
+   {
+    "tick": 8600,
+    "digest": "d6a0cd14"
+   },
+   {
+    "tick": 8800,
+    "digest": "dc2c745f"
+   },
+   {
+    "tick": 9000,
+    "digest": "d8c2d926"
+   },
+   {
+    "tick": 9200,
+    "digest": "81cf0ee2"
+   },
+   {
+    "tick": 9400,
+    "digest": "37859346"
+   },
+   {
+    "tick": 9600,
+    "digest": "c4dd680c"
+   },
+   {
+    "tick": 9800,
+    "digest": "e86d5abc"
+   },
+   {
+    "tick": 10000,
+    "digest": "4ce4b1a0"
+   },
+   {
+    "tick": 10200,
+    "digest": "32c96d32"
+   },
+   {
+    "tick": 10400,
+    "digest": "da3db883"
+   },
+   {
+    "tick": 10600,
+    "digest": "63e7f9a0"
+   },
+   {
+    "tick": 10800,
+    "digest": "5a4974ab"
+   },
+   {
+    "tick": 11000,
+    "digest": "3d6d1f45"
+   },
+   {
+    "tick": 11200,
+    "digest": "00f3a4d0"
+   },
+   {
+    "tick": 11400,
+    "digest": "948aa556"
+   },
+   {
+    "tick": 11600,
+    "digest": "9255f45e"
+   },
+   {
+    "tick": 11800,
+    "digest": "3b35d4e8"
+   },
+   {
+    "tick": 12000,
+    "digest": "f6d197a2"
+   },
+   {
+    "tick": 12200,
+    "digest": "4d2cefd5"
+   },
+   {
+    "tick": 12400,
+    "digest": "4c662fb6"
+   },
+   {
+    "tick": 12600,
+    "digest": "06689dc5"
+   },
+   {
+    "tick": 12800,
+    "digest": "0ac438da"
+   },
+   {
+    "tick": 13000,
+    "digest": "f62a0884"
+   },
+   {
+    "tick": 13200,
+    "digest": "7456f050"
+   },
+   {
+    "tick": 13400,
+    "digest": "bbca04c6"
+   },
+   {
+    "tick": 13600,
+    "digest": "a1434120"
+   },
+   {
+    "tick": 13800,
+    "digest": "0794700a"
+   },
+   {
+    "tick": 14000,
+    "digest": "7d693647"
+   },
+   {
+    "tick": 14200,
+    "digest": "49490122"
+   },
+   {
+    "tick": 14400,
+    "digest": "8e8ef767"
+   },
+   {
+    "tick": 14600,
+    "digest": "ba93292c"
+   },
+   {
+    "tick": 14800,
+    "digest": "f122ebce"
+   },
+   {
+    "tick": 15000,
+    "digest": "c59e28cd"
+   },
+   {
+    "tick": 15200,
+    "digest": "8a3ba911"
+   },
+   {
+    "tick": 15400,
+    "digest": "10fcd488"
+   },
+   {
+    "tick": 15600,
+    "digest": "5ca1315c"
+   },
+   {
+    "tick": 15800,
+    "digest": "caeced78"
+   },
+   {
+    "tick": 16000,
+    "digest": "5b5dd426"
+   },
+   {
+    "tick": 16200,
+    "digest": "771452d3"
+   },
+   {
+    "tick": 16400,
+    "digest": "6995bcc6"
+   },
+   {
+    "tick": 16600,
+    "digest": "ac41c31d"
+   },
+   {
+    "tick": 16800,
+    "digest": "599eb35f"
+   },
+   {
+    "tick": 17000,
+    "digest": "65e2810e"
+   },
+   {
+    "tick": 17200,
+    "digest": "6e0c862a"
+   },
+   {
+    "tick": 17400,
+    "digest": "f28b16e7"
+   },
+   {
+    "tick": 17600,
+    "digest": "29c267b7"
+   },
+   {
+    "tick": 17800,
+    "digest": "a946e008"
+   },
+   {
+    "tick": 18000,
+    "digest": "0edc2373"
+   },
+   {
+    "tick": 18200,
+    "digest": "ee5d22a3"
+   },
+   {
+    "tick": 18400,
+    "digest": "4b9cd33e"
+   },
+   {
+    "tick": 18600,
+    "digest": "f55cf8a2"
+   },
+   {
+    "tick": 18800,
+    "digest": "481cd6c3"
+   },
+   {
+    "tick": 19000,
+    "digest": "87c32bae"
+   },
+   {
+    "tick": 19200,
+    "digest": "78700caf"
+   },
+   {
+    "tick": 19400,
+    "digest": "98e79e75"
+   },
+   {
+    "tick": 19600,
+    "digest": "46a74dce"
+   },
+   {
+    "tick": 19800,
+    "digest": "754000e7"
+   },
+   {
+    "tick": 20000,
+    "digest": "24b93c97"
+   },
+   {
+    "tick": 20200,
+    "digest": "11990f6c"
+   },
+   {
+    "tick": 20400,
+    "digest": "9f2a9aeb"
+   },
+   {
+    "tick": 20600,
+    "digest": "426cc271"
+   },
+   {
+    "tick": 20800,
+    "digest": "3d0e8bb6"
+   },
+   {
+    "tick": 21000,
+    "digest": "ac4ba9f0"
+   },
+   {
+    "tick": 21200,
+    "digest": "3bbd5475"
+   },
+   {
+    "tick": 21400,
+    "digest": "c96af32e"
+   },
+   {
+    "tick": 21600,
+    "digest": "94a3e797"
+   },
+   {
+    "tick": 21800,
+    "digest": "c1851827"
+   },
+   {
+    "tick": 22000,
+    "digest": "5b9feed0"
+   },
+   {
+    "tick": 22200,
+    "digest": "04e80213"
+   },
+   {
+    "tick": 22400,
+    "digest": "9a1a4ac7"
+   },
+   {
+    "tick": 22600,
+    "digest": "0a4d09a7"
+   },
+   {
+    "tick": 22800,
+    "digest": "d18c6432"
+   },
+   {
+    "tick": 23000,
+    "digest": "e27de79b"
+   },
+   {
+    "tick": 23200,
+    "digest": "240d5f5f"
+   },
+   {
+    "tick": 23400,
+    "digest": "5aadc39e"
+   },
+   {
+    "tick": 23600,
+    "digest": "1af9f8c7"
+   },
+   {
+    "tick": 23800,
+    "digest": "a2fd7f57"
+   },
+   {
+    "tick": 24000,
+    "digest": "33f0cb6a"
+   },
+   {
+    "tick": 24200,
+    "digest": "82557643"
+   },
+   {
+    "tick": 24400,
+    "digest": "5a91ee29"
+   }
+  ],
+  "series": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 10,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 20,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 30,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 40,
+    "crystal": 148,
+    "liquid": 14188,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 50,
+    "crystal": 3277,
+    "liquid": 11059,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 60,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 70,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 80,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 90,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 100,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 110,
+    "crystal": 14293,
+    "liquid": 43,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 5
+   },
+   {
+    "s": 120,
+    "crystal": 12088,
+    "liquid": 2248,
+    "grains": 0,
+    "foam": 0,
+    "molten": 431,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 130,
+    "crystal": 9920,
+    "liquid": 4416,
+    "grains": 0,
+    "foam": 0,
+    "molten": 930,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 140,
+    "crystal": 9824,
+    "liquid": 4512,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1021,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 150,
+    "crystal": 9919,
+    "liquid": 4417,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1024,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 160,
+    "crystal": 10271,
+    "liquid": 4065,
+    "grains": 0,
+    "foam": 0,
+    "molten": 946,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 170,
+    "crystal": 10912,
+    "liquid": 3424,
+    "grains": 0,
+    "foam": 0,
+    "molten": 969,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 180,
+    "crystal": 11284,
+    "liquid": 3052,
+    "grains": 0,
+    "foam": 0,
+    "molten": 980,
+    "monuments": 0,
+    "channels": 8
+   },
+   {
+    "s": 190,
+    "crystal": 10714,
+    "liquid": 3622,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1109,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 200,
+    "crystal": 9424,
+    "liquid": 4912,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1295,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 210,
+    "crystal": 8300,
+    "liquid": 6036,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1461,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 220,
+    "crystal": 7725,
+    "liquid": 6611,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1292,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 230,
+    "crystal": 7645,
+    "liquid": 6691,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1255,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 240,
+    "crystal": 7642,
+    "liquid": 6694,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1383,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 250,
+    "crystal": 7754,
+    "liquid": 6582,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1217,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 260,
+    "crystal": 7684,
+    "liquid": 6652,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1261,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 270,
+    "crystal": 7471,
+    "liquid": 6865,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1356,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 280,
+    "crystal": 7486,
+    "liquid": 6850,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1230,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 290,
+    "crystal": 7389,
+    "liquid": 6947,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1387,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 300,
+    "crystal": 7681,
+    "liquid": 6655,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1307,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 310,
+    "crystal": 7585,
+    "liquid": 6751,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1311,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 320,
+    "crystal": 7703,
+    "liquid": 6633,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1256,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 330,
+    "crystal": 7830,
+    "liquid": 6506,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1309,
+    "monuments": 0,
+    "channels": 9
+   },
+   {
+    "s": 340,
+    "crystal": 7682,
+    "liquid": 6654,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1282,
+    "monuments": 0,
+    "channels": 10
+   },
+   {
+    "s": 350,
+    "crystal": 7453,
+    "liquid": 6883,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1474,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 360,
+    "crystal": 7174,
+    "liquid": 7162,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1644,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 370,
+    "crystal": 7185,
+    "liquid": 7151,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1685,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 380,
+    "crystal": 7155,
+    "liquid": 7181,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1697,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 390,
+    "crystal": 7461,
+    "liquid": 6875,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1593,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 400,
+    "crystal": 7747,
+    "liquid": 6589,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1556,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 410,
+    "crystal": 8154,
+    "liquid": 6182,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1512,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 420,
+    "crystal": 8451,
+    "liquid": 5885,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1705,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 430,
+    "crystal": 8415,
+    "liquid": 5921,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1608,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 440,
+    "crystal": 7545,
+    "liquid": 6791,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1722,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 450,
+    "crystal": 6423,
+    "liquid": 7913,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1782,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 460,
+    "crystal": 6235,
+    "liquid": 8101,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1775,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 470,
+    "crystal": 6127,
+    "liquid": 8209,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1764,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 480,
+    "crystal": 6446,
+    "liquid": 7890,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1609,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 490,
+    "crystal": 6934,
+    "liquid": 7402,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1485,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 500,
+    "crystal": 6930,
+    "liquid": 7406,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1617,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 510,
+    "crystal": 6615,
+    "liquid": 7721,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1651,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 520,
+    "crystal": 6481,
+    "liquid": 7855,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1615,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 530,
+    "crystal": 6373,
+    "liquid": 7963,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1684,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 540,
+    "crystal": 6420,
+    "liquid": 7916,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1592,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 550,
+    "crystal": 6533,
+    "liquid": 7803,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1623,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 560,
+    "crystal": 6347,
+    "liquid": 7989,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1625,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 570,
+    "crystal": 6336,
+    "liquid": 8000,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1685,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 580,
+    "crystal": 6369,
+    "liquid": 7967,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1573,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 590,
+    "crystal": 6496,
+    "liquid": 7840,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1622,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 600,
+    "crystal": 6485,
+    "liquid": 7851,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1607,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 610,
+    "crystal": 6331,
+    "liquid": 8005,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1697,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 620,
+    "crystal": 6360,
+    "liquid": 7976,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1633,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 630,
+    "crystal": 6206,
+    "liquid": 8130,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1719,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 640,
+    "crystal": 6266,
+    "liquid": 8070,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1589,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 650,
+    "crystal": 6350,
+    "liquid": 7986,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1568,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 660,
+    "crystal": 6703,
+    "liquid": 7633,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1557,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 670,
+    "crystal": 7006,
+    "liquid": 7330,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1559,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 680,
+    "crystal": 7578,
+    "liquid": 6758,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1513,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 690,
+    "crystal": 8349,
+    "liquid": 5987,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1512,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 700,
+    "crystal": 8900,
+    "liquid": 5436,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1509,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 710,
+    "crystal": 8177,
+    "liquid": 6159,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1696,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 720,
+    "crystal": 6612,
+    "liquid": 7724,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1810,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 730,
+    "crystal": 5845,
+    "liquid": 8491,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1768,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 740,
+    "crystal": 5424,
+    "liquid": 8912,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1747,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 750,
+    "crystal": 5526,
+    "liquid": 8810,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1679,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 760,
+    "crystal": 5518,
+    "liquid": 8818,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1737,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 770,
+    "crystal": 5594,
+    "liquid": 8742,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1674,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 780,
+    "crystal": 5640,
+    "liquid": 8696,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1618,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 790,
+    "crystal": 5844,
+    "liquid": 8492,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1611,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 800,
+    "crystal": 5856,
+    "liquid": 8480,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1635,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 810,
+    "crystal": 5720,
+    "liquid": 8616,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1645,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 820,
+    "crystal": 5798,
+    "liquid": 8538,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1673,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 830,
+    "crystal": 5662,
+    "liquid": 8674,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1712,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 840,
+    "crystal": 5848,
+    "liquid": 8488,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1629,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 850,
+    "crystal": 5798,
+    "liquid": 8538,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1650,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 860,
+    "crystal": 5675,
+    "liquid": 8661,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1655,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 870,
+    "crystal": 5749,
+    "liquid": 8587,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1548,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 880,
+    "crystal": 5793,
+    "liquid": 8543,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1617,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 890,
+    "crystal": 5707,
+    "liquid": 8629,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1677,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 900,
+    "crystal": 5468,
+    "liquid": 8868,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1730,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 910,
+    "crystal": 5658,
+    "liquid": 8678,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1665,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 920,
+    "crystal": 5525,
+    "liquid": 8811,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1700,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 930,
+    "crystal": 5844,
+    "liquid": 8492,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1578,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 940,
+    "crystal": 6213,
+    "liquid": 8123,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1577,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 950,
+    "crystal": 6970,
+    "liquid": 7366,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1480,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 960,
+    "crystal": 7968,
+    "liquid": 6368,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1509,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 970,
+    "crystal": 8755,
+    "liquid": 5581,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1557,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 980,
+    "crystal": 8215,
+    "liquid": 6121,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1669,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 990,
+    "crystal": 6664,
+    "liquid": 7672,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1790,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1000,
+    "crystal": 5857,
+    "liquid": 8479,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1764,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1010,
+    "crystal": 5351,
+    "liquid": 8985,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1778,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1020,
+    "crystal": 5284,
+    "liquid": 9052,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1784,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1030,
+    "crystal": 5436,
+    "liquid": 8900,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1698,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1040,
+    "crystal": 5582,
+    "liquid": 8754,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1682,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1050,
+    "crystal": 5624,
+    "liquid": 8712,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1660,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1060,
+    "crystal": 5762,
+    "liquid": 8574,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1618,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1070,
+    "crystal": 5674,
+    "liquid": 8662,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1688,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1080,
+    "crystal": 5705,
+    "liquid": 8631,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1672,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1090,
+    "crystal": 5660,
+    "liquid": 8676,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1701,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1100,
+    "crystal": 5389,
+    "liquid": 8947,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1773,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1110,
+    "crystal": 5381,
+    "liquid": 8955,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1685,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1120,
+    "crystal": 5303,
+    "liquid": 9033,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1759,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1130,
+    "crystal": 5370,
+    "liquid": 8966,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1664,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1140,
+    "crystal": 5523,
+    "liquid": 8813,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1590,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1150,
+    "crystal": 5526,
+    "liquid": 8810,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1707,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1160,
+    "crystal": 5620,
+    "liquid": 8716,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1644,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1170,
+    "crystal": 5473,
+    "liquid": 8863,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1678,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1180,
+    "crystal": 5608,
+    "liquid": 8728,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1591,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1190,
+    "crystal": 5744,
+    "liquid": 8592,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1609,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1200,
+    "crystal": 6135,
+    "liquid": 8201,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1582,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1210,
+    "crystal": 6584,
+    "liquid": 7752,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1605,
+    "monuments": 0,
+    "channels": 11
+   },
+   {
+    "s": 1220,
+    "crystal": 6957,
+    "liquid": 7379,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1558,
+    "monuments": 0,
+    "channels": 11
+   }
+  ],
+  "end": {
+   "tick": 24500,
+   "cells": 14336,
+   "crystal": 7313,
+   "liquid": 7023,
+   "grains": 0,
+   "foam": 0,
+   "molten": 1540,
+   "monuments": 0,
+   "contacts": 3,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 11,
+   "regions": 10,
+   "warm": -0.141
+  },
+  "lastCausal": {
+   "nucleate": 4,
+   "accrete": 7,
+   "couple": 4,
+   "edit": 3,
+   "dissolve": 1,
+   "consolidate": 1
+  }
+ },
+ "seek": {
+  "farFromNothingMs": 1485,
+  "farTicks": 1300,
+  "msPerSimulatedMinute": 74,
+  "backToMiddleMs": 1303,
+  "backFromCheckpoint": false,
+  "forwardAgainMs": 123,
+  "sameStateAsContinuous": true,
+  "digest": "14d7f2ba"
+ }
+}

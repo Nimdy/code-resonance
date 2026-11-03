@@ -1,0 +1,167 @@
+{
+ "dataset": "excalidraw",
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  8.58,
+  7.11,
+  7.96
+ ],
+ "tempo": 74,
+ "performanceSeconds": 5,
+ "windows": 1,
+ "laws": {
+  "cohesion": 0.728,
+  "coupling": 0.654,
+  "elasticity": 0.537,
+  "conductivity": 0.775,
+  "anisotropy": 0,
+  "resonance": 0.564,
+  "viscosity": 0.744,
+  "morphogenesis": 0.547,
+  "stability": 0.62,
+  "dispersion": 0.852
+ },
+ "matterVersion": 1,
+ "cells": 14336,
+ "hz": 20,
+ "continuous": {
+  "ticks": 1300,
+  "tickMs": {
+   "mean": 0.727,
+   "p50": 0.591,
+   "p95": 0.912,
+   "max": 32.777
+  },
+  "digests": [
+   {
+    "tick": 0,
+    "digest": "a3c5fb96"
+   },
+   {
+    "tick": 200,
+    "digest": "c6036914"
+   },
+   {
+    "tick": 400,
+    "digest": "139c7f26"
+   },
+   {
+    "tick": 600,
+    "digest": "33bc53d7"
+   },
+   {
+    "tick": 800,
+    "digest": "88d39643"
+   },
+   {
+    "tick": 1000,
+    "digest": "8a195708"
+   },
+   {
+    "tick": 1200,
+    "digest": "1da1a4e8"
+   }
+  ],
+  "series": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 10,
+    "crystal": 102,
+    "liquid": 14234,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1147,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 20,
+    "crystal": 5730,
+    "liquid": 8606,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1236,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 30,
+    "crystal": 6393,
+    "liquid": 7943,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1289,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 40,
+    "crystal": 6926,
+    "liquid": 7410,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1194,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 50,
+    "crystal": 7182,
+    "liquid": 7154,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1244,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 60,
+    "crystal": 7336,
+    "liquid": 7000,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1252,
+    "monuments": 0,
+    "channels": 6
+   }
+  ],
+  "end": {
+   "tick": 1300,
+   "cells": 14336,
+   "crystal": 7439,
+   "liquid": 6897,
+   "grains": 0,
+   "foam": 0,
+   "molten": 1318,
+   "monuments": 0,
+   "contacts": 8,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 6,
+   "regions": 9,
+   "warm": -0.051
+  },
+  "lastCausal": {}
+ },
+ "seek": {
+  "farFromNothingMs": 121,
+  "farTicks": 100,
+  "msPerSimulatedMinute": 1446,
+  "backToMiddleMs": 22,
+  "backFromCheckpoint": true,
+  "forwardAgainMs": 34,
+  "sameStateAsContinuous": true,
+  "digest": "764792fb"
+ }
+}

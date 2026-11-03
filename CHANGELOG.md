@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Genesis G2, Metamorphic Matter** (the chosen direction, after the C-R0 renderer was accepted): the Genesis preview
+  now draws an authoritative simulation driven by the real recording instead of G1's chambers. One matter on a
+  periodic sheet of hexagonal cells in four regimes (crystal, a mercury melt, grains of broken crystal, foam): a
+  fixed-step phase field with heat, latent heat, crystal grains and their habits, fracture and sintering, whose
+  constants all come from the Lawbook. Subsystems are regions (crystal plains or lakes), files are sites, dependencies
+  are molten channels. Every canonical intent has a physical response through the director's tiers and tokens (work
+  melts, failures fracture, recoveries sinter, only verified milestones raise lasting monumental crystals). The
+  score's notes nucleate and melt, and its form freezes and thaws the lakes. It runs on the life driver's timeline:
+  the same clock, checkpoints and generations, Node and the browser digest for digest. The world is the C-R0 ray caster
+  fed by the state, a polycrystal of grain terraces with seams under cold daylight. G1's world and every earlier
+  experiment are kept ([docs/worlds/genesis-matter.md](docs/worlds/genesis-matter.md)).
+- The life driver accepts a grammar's own ecosystem (`create`), intent mapping (`influences`) and the score
+  (`listens`); the host gives built-in worlds a matter driver on the canonical timeline (`ctx.matter`). Digital life
+  behaves exactly as before.
+
 - **Genesis (preview)**: a new world, chosen only explicitly (the Visual Studio's Previews, the render lab's
   `--family genesis`, the web demo), never by the automatic choice; generator 5 and every existing identity are
   unchanged. The project's structure writes a Lawbook of ten laws (cohesion, coupling, elasticity, conductivity,

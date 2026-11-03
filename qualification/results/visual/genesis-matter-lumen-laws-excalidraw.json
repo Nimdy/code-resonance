@@ -1,0 +1,1050 @@
+{
+ "dataset": "lumen",
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  9.07,
+  6.7,
+  7.91
+ ],
+ "tempo": 76,
+ "performanceSeconds": 240,
+ "windows": 41,
+ "laws": {
+  "cohesion": 0.37,
+  "coupling": 0.149,
+  "elasticity": 0.509,
+  "conductivity": 0.174,
+  "anisotropy": 0.415,
+  "resonance": 0.768,
+  "viscosity": 0.453,
+  "morphogenesis": 0.718,
+  "stability": 0.342,
+  "dispersion": 0.314
+ },
+ "matterVersion": 1,
+ "cells": 14336,
+ "hz": 20,
+ "continuous": {
+  "ticks": 5200,
+  "tickMs": {
+   "mean": 0.988,
+   "p50": 0.822,
+   "p95": 1.484,
+   "max": 19.059
+  },
+  "digests": [
+   {
+    "tick": 0,
+    "digest": "b26d9e31"
+   },
+   {
+    "tick": 200,
+    "digest": "26f414cb"
+   },
+   {
+    "tick": 400,
+    "digest": "aa60ccaa"
+   },
+   {
+    "tick": 600,
+    "digest": "a410b061"
+   },
+   {
+    "tick": 800,
+    "digest": "81de6a08"
+   },
+   {
+    "tick": 1000,
+    "digest": "d7ed39dc"
+   },
+   {
+    "tick": 1200,
+    "digest": "c3e69548"
+   },
+   {
+    "tick": 1400,
+    "digest": "367c7187"
+   },
+   {
+    "tick": 1600,
+    "digest": "129e65ed"
+   },
+   {
+    "tick": 1800,
+    "digest": "3304992c"
+   },
+   {
+    "tick": 2000,
+    "digest": "de2406dc"
+   },
+   {
+    "tick": 2200,
+    "digest": "02429311"
+   },
+   {
+    "tick": 2400,
+    "digest": "d6a9fac1"
+   },
+   {
+    "tick": 2600,
+    "digest": "3da6b81a"
+   },
+   {
+    "tick": 2800,
+    "digest": "d0de9650"
+   },
+   {
+    "tick": 3000,
+    "digest": "88058f87"
+   },
+   {
+    "tick": 3200,
+    "digest": "9a6a9541"
+   },
+   {
+    "tick": 3400,
+    "digest": "59f5d753"
+   },
+   {
+    "tick": 3600,
+    "digest": "1dd1f33d"
+   },
+   {
+    "tick": 3800,
+    "digest": "49948fdf"
+   },
+   {
+    "tick": 4000,
+    "digest": "cea95bc7"
+   },
+   {
+    "tick": 4200,
+    "digest": "6a729a17"
+   },
+   {
+    "tick": 4400,
+    "digest": "d72b7a85"
+   },
+   {
+    "tick": 4600,
+    "digest": "4629c069"
+   },
+   {
+    "tick": 4800,
+    "digest": "a44cc895"
+   },
+   {
+    "tick": 5000,
+    "digest": "9329422e"
+   },
+   {
+    "tick": 5200,
+    "digest": "504a9256"
+   }
+  ],
+  "series": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 10,
+    "crystal": 4,
+    "liquid": 14332,
+    "grains": 0,
+    "foam": 0,
+    "molten": 8,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 20,
+    "crystal": 5168,
+    "liquid": 9168,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 30,
+    "crystal": 11028,
+    "liquid": 3308,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 40,
+    "crystal": 10998,
+    "liquid": 3338,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 50,
+    "crystal": 11167,
+    "liquid": 3169,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 60,
+    "crystal": 11282,
+    "liquid": 3054,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 70,
+    "crystal": 11531,
+    "liquid": 2805,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 80,
+    "crystal": 10931,
+    "liquid": 3031,
+    "grains": 374,
+    "foam": 0,
+    "molten": 19,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 90,
+    "crystal": 10397,
+    "liquid": 3000,
+    "grains": 939,
+    "foam": 0,
+    "molten": 7,
+    "monuments": 0,
+    "channels": 1
+   },
+   {
+    "s": 100,
+    "crystal": 13136,
+    "liquid": 965,
+    "grains": 235,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 110,
+    "crystal": 14280,
+    "liquid": 56,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 120,
+    "crystal": 14308,
+    "liquid": 28,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 130,
+    "crystal": 14260,
+    "liquid": 76,
+    "grains": 0,
+    "foam": 0,
+    "molten": 23,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 140,
+    "crystal": 13966,
+    "liquid": 370,
+    "grains": 0,
+    "foam": 0,
+    "molten": 74,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 150,
+    "crystal": 13565,
+    "liquid": 771,
+    "grains": 0,
+    "foam": 0,
+    "molten": 193,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 160,
+    "crystal": 13317,
+    "liquid": 1019,
+    "grains": 0,
+    "foam": 0,
+    "molten": 92,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 170,
+    "crystal": 13524,
+    "liquid": 812,
+    "grains": 0,
+    "foam": 0,
+    "molten": 51,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 180,
+    "crystal": 13404,
+    "liquid": 932,
+    "grains": 0,
+    "foam": 0,
+    "molten": 52,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 190,
+    "crystal": 13391,
+    "liquid": 945,
+    "grains": 0,
+    "foam": 0,
+    "molten": 47,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 200,
+    "crystal": 13063,
+    "liquid": 1273,
+    "grains": 0,
+    "foam": 0,
+    "molten": 69,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 210,
+    "crystal": 12689,
+    "liquid": 1647,
+    "grains": 0,
+    "foam": 0,
+    "molten": 102,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 220,
+    "crystal": 12359,
+    "liquid": 1977,
+    "grains": 0,
+    "foam": 0,
+    "molten": 114,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 230,
+    "crystal": 11877,
+    "liquid": 2459,
+    "grains": 0,
+    "foam": 0,
+    "molten": 113,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 240,
+    "crystal": 11526,
+    "liquid": 2810,
+    "grains": 0,
+    "foam": 0,
+    "molten": 99,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 250,
+    "crystal": 11739,
+    "liquid": 2597,
+    "grains": 0,
+    "foam": 0,
+    "molten": 101,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 260,
+    "crystal": 12043,
+    "liquid": 2293,
+    "grains": 0,
+    "foam": 0,
+    "molten": 92,
+    "monuments": 12,
+    "channels": 2
+   }
+  ],
+  "end": {
+   "tick": 5200,
+   "cells": 14336,
+   "crystal": 12043,
+   "liquid": 2293,
+   "grains": 0,
+   "foam": 0,
+   "molten": 92,
+   "monuments": 12,
+   "contacts": 4,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 2,
+   "regions": 6,
+   "warm": -0.171
+  },
+  "lastCausal": {
+   "nucleate": 8,
+   "accrete": 7,
+   "region": 2,
+   "fracture": 1,
+   "sinter": 1,
+   "freeze": 2,
+   "couple": 1,
+   "work": 14,
+   "edit": 5,
+   "expand": 1,
+   "anneal": 3,
+   "consolidate": 2,
+   "dissolve": 1
+  }
+ },
+ "seek": {
+  "farFromNothingMs": 5006,
+  "farTicks": 4800,
+  "msPerSimulatedMinute": 1251,
+  "backToMiddleMs": 1,
+  "backFromCheckpoint": true,
+  "forwardAgainMs": 0,
+  "sameStateAsContinuous": true,
+  "digest": "a44cc895"
+ },
+ "comparison": {
+  "otherDataset": "excalidraw",
+  "otherLaws": {
+   "cohesion": 0.728,
+   "coupling": 0.654,
+   "elasticity": 0.537,
+   "conductivity": 0.775,
+   "anisotropy": 0,
+   "resonance": 0.564,
+   "viscosity": 0.744,
+   "morphogenesis": 0.547,
+   "stability": 0.62,
+   "dispersion": 0.852
+  },
+  "note": "the same recorded events (this dataset's), another project's Lawbook: a controlled comparison",
+  "own": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 10,
+    "crystal": 4,
+    "liquid": 14332,
+    "grains": 0,
+    "foam": 0,
+    "molten": 8,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 20,
+    "crystal": 5168,
+    "liquid": 9168,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 30,
+    "crystal": 11028,
+    "liquid": 3308,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 40,
+    "crystal": 10998,
+    "liquid": 3338,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 50,
+    "crystal": 11167,
+    "liquid": 3169,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 60,
+    "crystal": 11282,
+    "liquid": 3054,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 70,
+    "crystal": 11531,
+    "liquid": 2805,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 80,
+    "crystal": 10931,
+    "liquid": 3031,
+    "grains": 374,
+    "foam": 0,
+    "molten": 19,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 90,
+    "crystal": 10397,
+    "liquid": 3000,
+    "grains": 939,
+    "foam": 0,
+    "molten": 7,
+    "monuments": 0,
+    "channels": 1
+   },
+   {
+    "s": 100,
+    "crystal": 13136,
+    "liquid": 965,
+    "grains": 235,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 110,
+    "crystal": 14280,
+    "liquid": 56,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 120,
+    "crystal": 14308,
+    "liquid": 28,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 130,
+    "crystal": 14260,
+    "liquid": 76,
+    "grains": 0,
+    "foam": 0,
+    "molten": 23,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 140,
+    "crystal": 13966,
+    "liquid": 370,
+    "grains": 0,
+    "foam": 0,
+    "molten": 74,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 150,
+    "crystal": 13565,
+    "liquid": 771,
+    "grains": 0,
+    "foam": 0,
+    "molten": 193,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 160,
+    "crystal": 13317,
+    "liquid": 1019,
+    "grains": 0,
+    "foam": 0,
+    "molten": 92,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 170,
+    "crystal": 13524,
+    "liquid": 812,
+    "grains": 0,
+    "foam": 0,
+    "molten": 51,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 180,
+    "crystal": 13404,
+    "liquid": 932,
+    "grains": 0,
+    "foam": 0,
+    "molten": 52,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 190,
+    "crystal": 13391,
+    "liquid": 945,
+    "grains": 0,
+    "foam": 0,
+    "molten": 47,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 200,
+    "crystal": 13063,
+    "liquid": 1273,
+    "grains": 0,
+    "foam": 0,
+    "molten": 69,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 210,
+    "crystal": 12689,
+    "liquid": 1647,
+    "grains": 0,
+    "foam": 0,
+    "molten": 102,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 220,
+    "crystal": 12359,
+    "liquid": 1977,
+    "grains": 0,
+    "foam": 0,
+    "molten": 114,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 230,
+    "crystal": 11877,
+    "liquid": 2459,
+    "grains": 0,
+    "foam": 0,
+    "molten": 113,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 240,
+    "crystal": 11526,
+    "liquid": 2810,
+    "grains": 0,
+    "foam": 0,
+    "molten": 99,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 250,
+    "crystal": 11739,
+    "liquid": 2597,
+    "grains": 0,
+    "foam": 0,
+    "molten": 101,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 260,
+    "crystal": 12043,
+    "liquid": 2293,
+    "grains": 0,
+    "foam": 0,
+    "molten": 92,
+    "monuments": 12,
+    "channels": 2
+   }
+  ],
+  "other": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 10,
+    "crystal": 10,
+    "liquid": 14326,
+    "grains": 0,
+    "foam": 0,
+    "molten": 9,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 20,
+    "crystal": 13997,
+    "liquid": 339,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 30,
+    "crystal": 13989,
+    "liquid": 347,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 40,
+    "crystal": 12234,
+    "liquid": 2102,
+    "grains": 0,
+    "foam": 0,
+    "molten": 3,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 50,
+    "crystal": 11748,
+    "liquid": 2588,
+    "grains": 0,
+    "foam": 0,
+    "molten": 6,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 60,
+    "crystal": 11706,
+    "liquid": 2630,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 70,
+    "crystal": 11873,
+    "liquid": 2463,
+    "grains": 0,
+    "foam": 0,
+    "molten": 4,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 80,
+    "crystal": 11288,
+    "liquid": 2734,
+    "grains": 314,
+    "foam": 0,
+    "molten": 29,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 90,
+    "crystal": 10769,
+    "liquid": 2844,
+    "grains": 723,
+    "foam": 0,
+    "molten": 10,
+    "monuments": 0,
+    "channels": 1
+   },
+   {
+    "s": 100,
+    "crystal": 13465,
+    "liquid": 715,
+    "grains": 156,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 110,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 120,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 130,
+    "crystal": 13998,
+    "liquid": 338,
+    "grains": 0,
+    "foam": 0,
+    "molten": 134,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 140,
+    "crystal": 13466,
+    "liquid": 862,
+    "grains": 0,
+    "foam": 8,
+    "molten": 339,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 150,
+    "crystal": 12949,
+    "liquid": 1372,
+    "grains": 0,
+    "foam": 15,
+    "molten": 477,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 160,
+    "crystal": 12314,
+    "liquid": 2022,
+    "grains": 0,
+    "foam": 0,
+    "molten": 249,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 170,
+    "crystal": 12944,
+    "liquid": 1392,
+    "grains": 0,
+    "foam": 0,
+    "molten": 128,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 180,
+    "crystal": 12877,
+    "liquid": 1459,
+    "grains": 0,
+    "foam": 0,
+    "molten": 127,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 190,
+    "crystal": 12597,
+    "liquid": 1739,
+    "grains": 0,
+    "foam": 0,
+    "molten": 205,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 200,
+    "crystal": 12122,
+    "liquid": 2214,
+    "grains": 0,
+    "foam": 0,
+    "molten": 300,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 210,
+    "crystal": 11737,
+    "liquid": 2599,
+    "grains": 0,
+    "foam": 0,
+    "molten": 359,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 220,
+    "crystal": 11503,
+    "liquid": 2833,
+    "grains": 0,
+    "foam": 0,
+    "molten": 317,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 230,
+    "crystal": 11118,
+    "liquid": 3218,
+    "grains": 0,
+    "foam": 0,
+    "molten": 322,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 240,
+    "crystal": 10984,
+    "liquid": 3352,
+    "grains": 0,
+    "foam": 0,
+    "molten": 342,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 250,
+    "crystal": 11172,
+    "liquid": 3164,
+    "grains": 0,
+    "foam": 0,
+    "molten": 336,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 260,
+    "crystal": 11371,
+    "liquid": 2965,
+    "grains": 0,
+    "foam": 0,
+    "molten": 310,
+    "monuments": 12,
+    "channels": 2
+   }
+  ],
+  "otherEnd": {
+   "tick": 5200,
+   "cells": 14336,
+   "crystal": 11371,
+   "liquid": 2965,
+   "grains": 0,
+   "foam": 0,
+   "molten": 310,
+   "monuments": 12,
+   "contacts": 4,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 2,
+   "regions": 6,
+   "warm": -0.146
+  },
+  "peakGrains": {
+   "own": 939,
+   "other": 723
+  },
+  "meanLiquidShare": {
+   "own": 0.208,
+   "other": 0.194
+  },
+  "meanMolten": {
+   "own": 46.889,
+   "other": 148.37
+  }
+ }
+}
