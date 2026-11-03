@@ -39,7 +39,7 @@ vec3 fogged(vec3 c,vec3 rd,float t){return mix(c,mix(uSkyLo,uSkyHi,.1),1.-exp(-t
 `;
 export const RAY_FS=`precision highp float;precision highp sampler2D;
 uniform vec3 uCamPos;uniform mat3 uCamRot;uniform float uTanHalf;uniform float uAspect;uniform float uTime;
-uniform sampler2D uCells;uniform sampler2D uAux;uniform sampler2D uShadow;uniform int uShadowSteps;uniform float uLod;uniform float uSlab;
+uniform sampler2D uCells;uniform sampler2D uAux;uniform sampler2D uBlocks;uniform sampler2D uShadow;uniform int uShadowSteps;uniform float uLod;uniform float uSlab;
 uniform sampler2D uMonCol;uniform sampler2D uMonDepth;uniform vec2 uNearFar;uniform vec3 uFwd;uniform mat4 uShadowMat;
 uniform sampler2D uWave;uniform sampler2D uShape;uniform int uMons;uniform vec4 uAgent[6];uniform vec3 uAgentCol[6];uniform int uAgents;uniform float uCraze;
 uniform vec3 uMolten;uniform vec3 uRubble;uniform vec3 uSeam;uniform float uFade;
@@ -134,7 +134,15 @@ void main(){
   if(zd<1.){float zn=zd*2.-1.,zv=2.*uNearFar.x*uNearFar.y/(uNearFar.y+uNearFar.x-zn*(uNearFar.y-uNearFar.x));tMon=zv/max(dot(rd,uFwd),1e-3);mc=texture(uMonCol,vUv);}
   float t0=0.;if(ro.y>uSlab){if(rd.y>=0.){outColor=vec4(zd<1.?mc.rgb:sky(rd),1.);return;}t0=(ro.y-uSlab)/-rd.y;}
   if(t0>tMon){outColor=vec4(mc.rgb,1.);return;}
-  vec2 o=ro.xz/S,d=rd.xz/S;vec2 c=nearestCenter(o+d*t0),nc;float ta=t0;bool hit=false;float th;vec3 n;float mat;vec4 st;
+  vec2 o=ro.xz/S,d=rd.xz/S;
+  // a descending ray first crosses whole blocks of 8 x 8 cells (rectangles partitioning the sheet) while it stays above a
+  // block's highest point (its ring of neighbours included), and walks cell by cell only from the first it could touch
+  if(rd.y<0.){const float BH=8.*Q3*.5;vec2 sz=vec2(8.,BH),off=vec2(.25,Q3*.25);
+    for(int k=0;k<40;k++){vec2 p=o+d*t0;vec2 b=floor((p+off)/sz);
+      float m=texelFetch(uBlocks,ivec2(int(mod(b.x,${COLS/8}.)),int(mod(b.y,${ROWS/8}.))),0).r*16.+.06;
+      vec2 lo=b*sz-off,hi=lo+sz;float tx=d.x>0.?(hi.x-o.x)/d.x:(d.x<0.?(lo.x-o.x)/d.x:1e9),tz=d.y>0.?(hi.y-o.y)/d.y:(d.y<0.?(lo.y-o.y)/d.y:1e9),te=min(tx,tz);
+      if(ro.y+rd.y*te<=m||te>uLod||te>tMon)break;t0=te+1e-4;}}
+  vec2 c=nearestCenter(o+d*t0),nc;float ta=t0;bool hit=false;float th;vec3 n;float mat;vec4 st;
   vec2 e0=dot(d,N0)>=0.?N0:-N0,e1=dot(d,N1)>=0.?N1:-N1,e2=dot(d,N2)>=0.?N2:-N2;vec3 inv=1./max(vec3(dot(d,e0),dot(d,e1),dot(d,e2)),vec3(1e-7));
   for(int i=0;i<240;i++){vec2 rel=o-c;vec3 tt=(.5-vec3(dot(rel,e0),dot(rel,e1),dot(rel,e2)))*inv;float te=min(tt.x,min(tt.y,tt.z));
     nc=c+(te==tt.x?e0:(te==tt.y?e1:e2));float tb=max(te,ta);ivec2 tc=texOf(c);

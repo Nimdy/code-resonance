@@ -40,6 +40,12 @@ export function createFamily(ctx){
   const cellData=new Uint8Array(NCELL*4),auxData=new Uint8Array(NCELL*4),waveData=new Uint8Array(NCELL*4),shapeData=new Uint8Array(NCELL*4),top=new Float32Array(NCELL);
   const tex=d=>{const t=keep(new THREE.DataTexture(d,COLS,ROWS,THREE.RGBAFormat,THREE.UnsignedByteType));t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;};
   const cellTex=tex(cellData),auxTex=tex(auxData),waveTex=tex(waveData),shapeTex=tex(shapeData);
+  // the highest point of each block of 8 x 8 cells and its ring of neighbours (a ray crosses a block it clears whole)
+  const BW=COLS/8,BH=ROWS/8,blockData=new Uint8Array(BW*BH*4),blockTex=keep(new THREE.DataTexture(blockData,BW,BH,THREE.RGBAFormat,THREE.UnsignedByteType));
+  blockTex.minFilter=blockTex.magFilter=THREE.NearestFilter;blockTex.generateMipmaps=false;blockTex.needsUpdate=true;
+  function writeBlocks(){for(let by=0;by<BH;by++)for(let bx=0;bx<BW;bx++){let m=0;
+    for(let r=by*8-1;r<=by*8+8;r++){const rw=((r%ROWS)+ROWS)%ROWS;for(let c=bx*8-1;c<=bx*8+8;c++){const v=top[rw*COLS+((c%COLS)+COLS)%COLS];if(v>m)m=v;}}
+    blockData[4*(by*BW+bx)]=Math.min(255,Math.ceil(m/16*255));}blockTex.needsUpdate=true;}
   // the cloud layer's noise, once: three octaves (1, 2 and 4 lattice cells a cell, weights .55, .3, .15) of smooth value
   // noise on a periodic lattice, so it tiles (the sky samples it, filtered, as it drifts)
   const cloudTex=(()=>{const N=CLOUD_SIZE,d=new Uint8Array(N*N*4),lat=o=>{const L=CLOUD_CELLS*o,v=new Float32Array(L*L);for(let i=0;i<L*L;i++)v[i]=rand(hash(`${seed}/cloud/${o}/${i}`));return v;};
@@ -85,7 +91,7 @@ export function createFamily(ctx){
   const U={uCamPos:{value:new THREE.Vector3()},uCamRot:{value:new THREE.Matrix3()},uTanHalf:{value:1},uAspect:{value:16/9},uTime:{value:0},
     uCells:{value:cellTex},uAux:{value:auxTex},uShadow:{value:shadowRT.depthTexture},uShadowMat:{value:shadowMat},uShadowSteps:{value:12},uLod:{value:450},uSlab:{value:8},
     uMonCol:{value:monRT.texture},uMonDepth:{value:monRT.depthTexture},uNearFar:{value:new THREE.Vector2(.1,4000)},uFwd:{value:new THREE.Vector3()},
-    uWave:{value:waveTex},uShape:{value:shapeTex},uCloud:{value:cloudTex},uMons:{value:0},uAgent:{value:[...Array(6)].map(()=>new THREE.Vector4())},uAgentCol:{value:[...Array(6)].map(()=>new THREE.Vector3())},uAgents:{value:0},
+    uWave:{value:waveTex},uShape:{value:shapeTex},uCloud:{value:cloudTex},uMons:{value:0},uBlocks:{value:blockTex},uAgent:{value:[...Array(6)].map(()=>new THREE.Vector4())},uAgentCol:{value:[...Array(6)].map(()=>new THREE.Vector3())},uAgents:{value:0},
     uCraze:{value:0},uFade:{value:1},uClock:{value:0},
     uSun:{value:sun},uSunCol:{value:new THREE.Vector3(1,.97,.92).multiplyScalar(1.2)},uSkyLo:{value:V3([.4,.47,.57])},uSkyHi:{value:V3([.06,.12,.28])},
     uBody:{value:V3(body)},uGloss:{value:clamp(num(G.material?.glaze,.85),.5,1)},uMolten:{value:V3([1,.42,.12])},uRubble:{value:V3(body).multiplyScalar(.45).add(V3([.18,.13,.07]))},
@@ -132,7 +138,7 @@ export function createFamily(ctx){
       for(let d=0;d<6;d++){const j=NBW[6*k+d],v=wp[j]+(w[j]-wp[j])*a;ux+=v*NX[d];uz+=v*NZ[d];}
       waveData[o]=byte(127.5+s0/WAVE_H*255);waveData[o+1]=byte(127.5+ux/(3*CELL)/WAVE_G*255);waveData[o+2]=byte(127.5+uz/(3*CELL)/WAVE_G*255);
       waveData[o+3]=byte(255*f.foam[k]);}
-    maxTop=mt;cellTex.needsUpdate=true;waveTex.needsUpdate=true;shapeTex.needsUpdate=true;
+    maxTop=mt;cellTex.needsUpdate=true;waveTex.needsUpdate=true;shapeTex.needsUpdate=true;writeBlocks();
   }
   // the low columns' shadows: from each cell toward the sun, the lowest margin between the light and the tops it passes
   function writeShadows(){
@@ -150,7 +156,7 @@ export function createFamily(ctx){
     U.uFade.value=view.restoring?0:clamp(view.fadeIn??1);
     if(e!==lastEco||e.tick!==lastTick||view.alpha<1){writeMaps(e,view.alpha??1);if(e!==lastEco||e.tick!==lastTick)writeShadows();lastTick=e.tick;lastEco=e;}
     U.uCraze.value=e.craze;
-    U.uTime.value=i.tview;U.uClock.value=i.tview;U.uSlab.value=maxTop+.3;U.uLod.value=QUALITY[quality].lod;U.uShadowSteps.value=QUALITY[quality].shadow;
+    U.uTime.value=i.tview;U.uClock.value=i.tview;U.uSlab.value=maxTop+.3;U.uShadowSteps.value=QUALITY[quality].shadow;
     // agents at work: their file's melt takes their colour
     let n=0;const sites=new Map((e.sites||[]).map(s=>[s.id,s]));
     for(const a of i.agents||[]){if(n>=6)break;const s=a.fileId&&sites.get(a.fileId);if(!s)continue;const c=new THREE.Color(AGENT_COLORS[seatOf(a)]);
@@ -198,6 +204,9 @@ export function createFamily(ctx){
   const rot=new THREE.Matrix4(),fwd=new THREE.Vector3();
   function afterCamera(i){
     camera.updateMatrixWorld();U.uCamPos.value.copy(camera.position);rot.extractRotation(camera.matrixWorld);U.uCamRot.value.setFromMatrix4(rot);
+    // (the draw distance: from a low camera the far field is a thin band at the horizon, so above quality 0 it is drawn
+    // nearer, as the flat continuation, the lower the camera: all of it from 38 m up, .62 of it near the matter)
+    U.uLod.value=QUALITY[quality].lod*(quality?clamp(.62+camera.position.y/100,.62,1):1);
     U.uTanHalf.value=Math.tan(camera.fov*Math.PI/360);U.uAspect.value=camera.aspect||16/9;camera.getWorldDirection(fwd);U.uFwd.value.copy(fwd);U.uNearFar.value.set(camera.near,camera.far);
     const e=eco();if(!e||!renderer)return;
     // the monuments within 650 m and in front, nearest first (the depth test spares what is hidden)
