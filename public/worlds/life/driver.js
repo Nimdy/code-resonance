@@ -163,7 +163,11 @@ export function lifeScales(p={}){const n=(k,d=1)=>Number.isFinite(+p[k])?+p[k]:d
     persistence:n('persistence'),diffusion:n('diffusion'),radius:n('radius'),ecology:n('ecology')};}
 // grammar: {id, version, ecosystem(params, seed) -> spec for createEcosystem (without seed/params),
 //           habitat(model, t) -> sites [{id, x, y, z, r, w, kind}], siteOf?(id, model) -> site id,
-//           climate?(section, energy, tension) -> condition targets}
+//           climate?(section, energy, tension) -> condition targets,
+//           create?(spec) -> an ecosystem of the grammar's own (the same interface as createEcosystem's: Genesis's
+//                            matter, genesis-matter.js), influences?(intent, here, {history}) -> its own influences,
+//           listens?: the ecosystem hears the score: listen(T, music) after every tick (the driver's musical clock,
+//                     configured as the player's; its configuration is then part of the parameter key)}
 // config(): {speed, tempo, epoch (ms), params (the recipe's life values), film, live, music (ecology 2: the musical
 //           clock's configuration {version, style, profile, seed}, as the player's)}
 // onRebase(base): a live session's new base ({graph, t, from}) after its consumed inputs were folded into it;
@@ -181,10 +185,12 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   // Ecology 2: the music the climate is read from (its configuration is part of the parameter key: a checkpoint
   // never crosses a change of score, style, profile or seed; a live session keeps its population through one).
   const music=createMusical({timeline,score}),eco2=c=>+c.params?.ecology===2;
-  const paramKeyOf=c=>{if(!eco2(c))return fnv(JSON.stringify(c.params||{}));const m=music.config;return fnv(JSON.stringify([c.params,m.version,m.style,m.profile,m.seed]));};
+  const hears=c=>eco2(c)||!!grammar.listens;
+  const paramKeyOf=c=>{if(!hears(c))return fnv(JSON.stringify(c.params||{}));const m=music.config;return fnv(JSON.stringify([c.params,m.version,m.style,m.profile,m.seed]));};
   const genOf=(k,c)=>c.live?0:Math.floor(k/GEN_TICKS);
   const seedOf=g=>g?mix(seed,g):seed;   // generation 0 keeps the driver's own seed
-  const make=(c,g=0)=>{const s=seedOf(g);return createEcosystem({...grammar.ecosystem(c.params||{},s),seed:s,params:lifeScales(c.params)});};
+  const make=(c,g=0)=>{const s=seedOf(g);return (grammar.create||createEcosystem)({...grammar.ecosystem(c.params||{},s),seed:s,params:lifeScales(c.params)});};
+  const influences=grammar.influences||influencesOf;
   // ---- Runners -----------------------------------------------------------------------------------------------------
   // A runner: one generation's ecosystem and its own position in the inputs (the consumed cursor and the fingerprint
   // of what it consumed, the climate, the structure position, the habitat it holds) with its own shadow model (the
@@ -274,7 +280,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
       else if(x.kind===KIND.frame){cl.fe=x.energy;cl.ft=x.tension;cl.fend=x.end;}
       else{const i=x.intent,history=i.ts<c.epoch||(c.live&&base&&i.ts<base.from);
         if(!history&&MILESTONE.has(i.type)&&(i.tier>=2||i.evidence==='verified'))cl.milestone=true;
-        for(const ev of influencesOf(i,r.here,{history}))eco.influence(ev);}
+        for(const ev of influences(i,r.here,{history}))eco.influence(ev);}
     }
   }
   // ---- States, generations, checkpoints, restore ----------------------------------------------------------------------
@@ -301,7 +307,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
     const t0=performance.now(),s=r.gen*GEN_TICKS-WARM_TICKS,T=tickTime(s,c),eco=r.eco=make(c,r.gen);
     r.structPos=structAt(T);r.cursor=timeline.upto(T);r.climate=climateInit(c);
     const h=habitatAt(r,r.structPos);r.sitesSig=h.sig;eco.setSiteData(h.data);eco.setSites(h.sites);eco.populate(s);
-    for(const x of lastingIntents()){if(x.t>T)break;for(const ev of influencesOf(x.intent,r.here,{history:true}))eco.influence(ev);}
+    for(const x of lastingIntents()){if(x.t>T)break;for(const ev of influences(x.intent,r.here,{history:true}))eco.influence(ev);}
     climateFrom(r,T,c);r.print=timeline.print(r.cursor);counters.historyMs=+(performance.now()-t0).toFixed(2);
   }
   function snapshot(r){return {gen:r.gen,tick:r.eco.tick,cursor:r.cursor,print:r.print,frameKey,paramKey,sim:r.eco.snapshot(),climate:{...r.climate},structPos:r.structPos,sitesSig:r.sitesSig};}
@@ -342,7 +348,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   }
   function stepOnce(r,c){
     const t0=performance.now();
-    r.eco.step();const T=tickTime(r.eco.tick,c);consume(r,T,c);climateStep(r,T,c);r.print=timeline.print(r.cursor);
+    r.eco.step();const T=tickTime(r.eco.tick,c);consume(r,T,c);climateStep(r,T,c);if(grammar.listens)r.eco.listen(T,music);r.print=timeline.print(r.cursor);
     if(r!==R){counters.backgroundTicks++;return;}
     remember();counters.ticks++;counters.tickMs+=(performance.now()-t0-counters.tickMs)*.02;
   }
@@ -371,7 +377,7 @@ export function createLifeDriver({grammar,timeline,seed,config,score=globalThis.
   function update(info,{budgetMs=6}={}){
     const c=config();current=c;
     if(!Number.isFinite(c.epoch)||c.epoch<=0||!Number.isFinite(info.tview))return lastView=null;
-    if(eco2(c))music.configure({...(c.music||{}),tempo:c.tempo});
+    if(hears(c))music.configure({...(c.music||{}),tempo:c.tempo});
     const fk=frameKeyOf(c),lk=liveKeyOf(c),pk=paramKeyOf(c);
     if(fk!==frameKey||pk!==paramKey){
       // A live session keeps its population through a change of life parameters or tempo (they apply from now: the

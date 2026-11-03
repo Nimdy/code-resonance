@@ -204,7 +204,7 @@ test('An empty project, many subsystems, every quality level, and the music\'s n
 });
 test('The player and the receiver know the preview: the host loads it and gives it the score\'s notes, /api/catalog lists it',async t=>{
   const host=fs.readFileSync(path.join(__dirname,'../public/worlds/host.js'),'utf8');
-  assert.match(host,/'genesis':'\.\/genesis\.js'/);assert.match(host,/musicBar:b=>musical\.bar\(b\)/);
+  assert.match(host,/'genesis':'\.\/genesis-matter-world\.js'/);assert.match(host,/musicBar:b=>musical\.bar\(b\)/);
   assert.match(fs.readFileSync(path.join(__dirname,'../public/ui/workspaces/visual.js'),'utf8'),/id:'genesis'/);
   assert.match(fs.readFileSync(path.join(__dirname,'../public/web-demo/demo.js'),'utf8'),/'genesis':'Genesis'/);
   const svc=await startService(t,{port:0,dataDir:tempDir(t,'cr-genesis-'),quiet:true});
