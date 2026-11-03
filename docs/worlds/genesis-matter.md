@@ -1,6 +1,9 @@
 # Genesis G2: Metamorphic Matter, physical laws and software causality
 
 **Status.** G2 of the chosen direction (Concept C, Metamorphic Matter), after the owner accepted the C-R0 renderer.
+The owner accepted G2 as Genesis's engineering foundation. **G3** (musical metamorphosis and cinematic legibility,
+[`genesis-g3.md`](genesis-g3.md)) replaced this note's music mapping and parts of its renderer; both sections say so.
+This note keeps G2's design and evidence as they were.
 The Genesis preview in the player now draws **an authoritative simulation driven by the real recording**, not the
 scripted animatic. It is chosen only explicitly, like every preview. PR #47 stays open and unmerged.
 
@@ -150,6 +153,9 @@ change. An intent without files acts unlocalised, never on an invented target.
 
 ## Music → matter
 
+*Superseded by G3 ([`genesis-g3.md`](genesis-g3.md)): phrases, harmony, cadences and the bass now act in each lake's
+stage, and the bass is a simulated wave. G2's mapping was:*
+
 | | |
 |---|---|
 | Melody and counter notes | **nucleate** crystal at a site of the region the note's degree belongs to, with a brief local quench, so the crystal grows visibly. In a lake it melts back unless a calm passage supercools the lake; in a plain it is already solid |
@@ -175,7 +181,8 @@ evolves identically. Music never produces an engineering effect: no fracture, no
 ## The renderer (C-R0, fed by the simulation)
 
 The cell-to-cell ray cast, the instanced monuments drawn first with a sun shadow map, and the far continuation are
-C-R0's. Changed for G2:
+C-R0's. Changed for G2 (G3 changed the crystal's faces and outlines, the melt's motion, the grains, the foam and the
+light: [`genesis-g3.md`](genesis-g3.md)):
 
 - **The cells.** Two small maps per frame, written from the state: regime, column, glow, grain; shadow, top, seam,
   crazing. Columns are interpolated from the tick before.

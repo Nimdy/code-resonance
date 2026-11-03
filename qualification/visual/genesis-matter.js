@@ -9,6 +9,7 @@
 //    events are this recording's, the laws another's), with the response measured side by side;
 //  - --music-off: the same, the music's forces off from the start (G3: what the phrase logic costs, ticks and seeks).
 // node visual/genesis-matter.js --dataset lumen [--tail 20] [--laws excalidraw] [--music-off] [--out results/visual]
+//        [--prefix genesis-g3-matter] (the files' name: G2's evidence is genesis-matter-*.json, G3's genesis-g3-matter-*)
 // (the tempo is the player's: the score identity's for the style, public/app.js setMood)
 const path=require('node:path');
 const fs=require('node:fs');
@@ -17,7 +18,7 @@ const {pathToFileURL}=require('node:url');
 const {projectOf,withService,recipeAction}=require('./harness');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const ROOT=path.join(__dirname,'..','..'),DATA=path.join(__dirname,'..','results','datasets');
-const DATASET=arg('dataset','lumen'),TAIL=Number(arg('tail',20)),OTHER=arg('laws',null),OFF=process.argv.includes('--music-off');
+const DATASET=arg('dataset','lumen'),TAIL=Number(arg('tail',20)),OTHER=arg('laws',null),OFF=process.argv.includes('--music-off'),PREFIX=arg('prefix','genesis-g3-matter');
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual')));
 const mod=f=>import(pathToFileURL(path.join(ROOT,'public','worlds',f)).href);
 const pct=(a,p)=>{const s=a.slice().sort((x,y)=>x-y);return s.length?+s[Math.min(s.length-1,Math.floor(p*(s.length-1)))].toFixed(3):null;};
@@ -71,5 +72,5 @@ async function inputsOf(ds){
       meanLiquidShare:{own:+mean(A.series.map(x=>x.liquid/M.NCELL)).toFixed(3),other:+mean(B.series.map(x=>x.liquid/M.NCELL)).toFixed(3)},
       meanMolten:{own:mean(A.series.map(x=>x.molten)),other:mean(B.series.map(x=>x.molten))}};
     console.log(JSON.stringify({peakGrains:results.comparison.peakGrains,meanLiquidShare:results.comparison.meanLiquidShare,meanMolten:results.comparison.meanMolten}));}
-  const file=path.join(OUT,`genesis-matter-${DATASET}${OTHER?`-laws-${OTHER}`:''}${OFF?'-music-off':''}.json`);fs.writeFileSync(file,JSON.stringify(results,null,1));console.log('written',path.relative(process.cwd(),file));
+  const file=path.join(OUT,`${PREFIX}-${DATASET}${OTHER?`-laws-${OTHER}`:''}${OFF?'-music-off':''}.json`);fs.writeFileSync(file,JSON.stringify(results,null,1));console.log('written',path.relative(process.cwd(),file));
 })().catch(e=>{console.error(e);process.exitCode=1;});

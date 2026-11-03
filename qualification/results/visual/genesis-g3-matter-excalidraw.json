@@ -1,0 +1,131 @@
+{
+ "dataset": "excalidraw",
+ "musicForces": true,
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  1.15,
+  0.91,
+  1.3
+ ],
+ "tempo": 74,
+ "performanceSeconds": 5,
+ "windows": 1,
+ "laws": {
+  "cohesion": 0.728,
+  "coupling": 0.654,
+  "elasticity": 0.537,
+  "conductivity": 0.775,
+  "anisotropy": 0,
+  "resonance": 0.564,
+  "viscosity": 0.744,
+  "morphogenesis": 0.547,
+  "stability": 0.62,
+  "dispersion": 0.852
+ },
+ "matterVersion": 2,
+ "cells": 14336,
+ "hz": 20,
+ "continuous": {
+  "ticks": 500,
+  "tickMs": {
+   "mean": 1.072,
+   "p50": 0.663,
+   "p95": 2.173,
+   "max": 40.094
+  },
+  "digests": [
+   {
+    "tick": 0,
+    "digest": "38949472"
+   },
+   {
+    "tick": 200,
+    "digest": "1f56fd3f"
+   },
+   {
+    "tick": 400,
+    "digest": "73abe691"
+   }
+  ],
+  "series": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 10,
+    "crystal": 8,
+    "liquid": 14328,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1257,
+    "monuments": 0,
+    "channels": 6
+   },
+   {
+    "s": 20,
+    "crystal": 4917,
+    "liquid": 9419,
+    "grains": 0,
+    "foam": 0,
+    "molten": 1372,
+    "monuments": 0,
+    "channels": 6
+   }
+  ],
+  "end": {
+   "tick": 500,
+   "cells": 14336,
+   "crystal": 5697,
+   "liquid": 8639,
+   "grains": 0,
+   "foam": 0,
+   "molten": 1382,
+   "monuments": 0,
+   "contacts": 16,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 6,
+   "regions": 9,
+   "stages": 2,
+   "harmony": 0.03125,
+   "drives": 0
+  },
+  "lastCausal": {},
+  "stages": [
+   {
+    "rank": 6,
+    "reach": 20.6,
+    "fold": 6
+   },
+   {
+    "rank": 8,
+    "reach": 22.5,
+    "fold": 6
+   }
+  ],
+  "musicLog": [
+   "cadence",
+   "phrase",
+   "phrase"
+  ]
+ },
+ "seek": {
+  "farFromNothingMs": 146,
+  "farTicks": 100,
+  "msPerSimulatedMinute": 1751,
+  "backToMiddleMs": 26,
+  "backFromCheckpoint": true,
+  "forwardAgainMs": 40,
+  "sameStateAsContinuous": true,
+  "digest": "c951dc7f"
+ }
+}

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Genesis G3, musical metamorphosis** (G2 accepted as the engineering foundation): the composed score now shapes
+  the matter at the scale of its phrases, in each lake's stage. A phrase's notes nucleate one after another along a
+  path its intervals and rhythm steer, each struck up to its pitch's height and settling, so the phrase grows as an
+  arm with a crest; a section's phrases grow as arms at the stage's habit angles. Each bar's chord takes the stage
+  about the melting point (tension grows, rest relaxes), a cadence settles it, a release melts it. The bass drives a
+  simulated wave on the melt that the crystal reflects. Music never writes the causal log or touches the files'
+  matter. A verified milestone now also recrystallises the matter around its monuments into one lasting crystal; the
+  freeze itself is shorter. The four regimes read apart by geometry: each grain one tilted plate, outlines that follow
+  the phase field instead of the cells, a mirror moved only by the simulated wave, rattling shards, bursting bubbles
+  ([docs/worlds/genesis-g3.md](docs/worlds/genesis-g3.md)).
+- `film.js` and `live-demo.js` take `--qualify` (a built-in world's review controls; Genesis: a locked camera and a
+  music-off comparison), and the Node measurement of the matter `--music-off`.
+
 - **Genesis G2, Metamorphic Matter** (the chosen direction, after the C-R0 renderer was accepted): the Genesis preview
   now draws an authoritative simulation driven by the real recording instead of G1's chambers. One matter on a
   periodic sheet of hexagonal cells in four regimes (crystal, a mercury melt, grains of broken crystal, foam): a

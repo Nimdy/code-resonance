@@ -1,0 +1,502 @@
+{
+ "dataset": "lumen",
+ "musicForces": true,
+ "node": "v22.22.2",
+ "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+ "loadavg": [
+  0.22,
+  0.57,
+  1.37
+ ],
+ "tempo": 76,
+ "performanceSeconds": 240,
+ "windows": 41,
+ "laws": {
+  "cohesion": 0.37,
+  "coupling": 0.149,
+  "elasticity": 0.509,
+  "conductivity": 0.174,
+  "anisotropy": 0.415,
+  "resonance": 0.768,
+  "viscosity": 0.453,
+  "morphogenesis": 0.718,
+  "stability": 0.342,
+  "dispersion": 0.314
+ },
+ "matterVersion": 2,
+ "cells": 14336,
+ "hz": 20,
+ "continuous": {
+  "ticks": 5200,
+  "tickMs": {
+   "mean": 1.264,
+   "p50": 1.078,
+   "p95": 1.787,
+   "max": 21.604
+  },
+  "digests": [
+   {
+    "tick": 0,
+    "digest": "a2e560e1"
+   },
+   {
+    "tick": 200,
+    "digest": "cd6058e0"
+   },
+   {
+    "tick": 400,
+    "digest": "ae710919"
+   },
+   {
+    "tick": 600,
+    "digest": "b7319cc8"
+   },
+   {
+    "tick": 800,
+    "digest": "fb5d8a29"
+   },
+   {
+    "tick": 1000,
+    "digest": "d4a85bd0"
+   },
+   {
+    "tick": 1200,
+    "digest": "28ee98ed"
+   },
+   {
+    "tick": 1400,
+    "digest": "3bde9224"
+   },
+   {
+    "tick": 1600,
+    "digest": "da58bc74"
+   },
+   {
+    "tick": 1800,
+    "digest": "b0ccaccc"
+   },
+   {
+    "tick": 2000,
+    "digest": "a5d7e3da"
+   },
+   {
+    "tick": 2200,
+    "digest": "c7ad69af"
+   },
+   {
+    "tick": 2400,
+    "digest": "87d73614"
+   },
+   {
+    "tick": 2600,
+    "digest": "c2b6b63f"
+   },
+   {
+    "tick": 2800,
+    "digest": "2bee7d20"
+   },
+   {
+    "tick": 3000,
+    "digest": "bdda6f4a"
+   },
+   {
+    "tick": 3200,
+    "digest": "68388110"
+   },
+   {
+    "tick": 3400,
+    "digest": "f65c7fb7"
+   },
+   {
+    "tick": 3600,
+    "digest": "fea44bf6"
+   },
+   {
+    "tick": 3800,
+    "digest": "a002416a"
+   },
+   {
+    "tick": 4000,
+    "digest": "18a891eb"
+   },
+   {
+    "tick": 4200,
+    "digest": "ce6d8287"
+   },
+   {
+    "tick": 4400,
+    "digest": "dcd7f2f6"
+   },
+   {
+    "tick": 4600,
+    "digest": "4a71590e"
+   },
+   {
+    "tick": 4800,
+    "digest": "59a78dd1"
+   },
+   {
+    "tick": 5000,
+    "digest": "3dff6180"
+   },
+   {
+    "tick": 5200,
+    "digest": "ce4eb417"
+   }
+  ],
+  "series": [
+   {
+    "s": 0,
+    "crystal": 0,
+    "liquid": 14336,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 10,
+    "crystal": 4,
+    "liquid": 14332,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 20,
+    "crystal": 4353,
+    "liquid": 9983,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 30,
+    "crystal": 10869,
+    "liquid": 3467,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 40,
+    "crystal": 10987,
+    "liquid": 3349,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 50,
+    "crystal": 11242,
+    "liquid": 3094,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 60,
+    "crystal": 11375,
+    "liquid": 2961,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 70,
+    "crystal": 11467,
+    "liquid": 2869,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 80,
+    "crystal": 11043,
+    "liquid": 2982,
+    "grains": 311,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 0
+   },
+   {
+    "s": 90,
+    "crystal": 10326,
+    "liquid": 3196,
+    "grains": 814,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 0,
+    "channels": 1
+   },
+   {
+    "s": 100,
+    "crystal": 13941,
+    "liquid": 298,
+    "grains": 97,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 110,
+    "crystal": 14336,
+    "liquid": 0,
+    "grains": 0,
+    "foam": 0,
+    "molten": 0,
+    "monuments": 6,
+    "channels": 1
+   },
+   {
+    "s": 120,
+    "crystal": 14211,
+    "liquid": 125,
+    "grains": 0,
+    "foam": 0,
+    "molten": 38,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 130,
+    "crystal": 13951,
+    "liquid": 385,
+    "grains": 0,
+    "foam": 0,
+    "molten": 76,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 140,
+    "crystal": 13615,
+    "liquid": 721,
+    "grains": 0,
+    "foam": 0,
+    "molten": 95,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 150,
+    "crystal": 12835,
+    "liquid": 1501,
+    "grains": 0,
+    "foam": 0,
+    "molten": 176,
+    "monuments": 6,
+    "channels": 2
+   },
+   {
+    "s": 160,
+    "crystal": 11603,
+    "liquid": 2733,
+    "grains": 0,
+    "foam": 0,
+    "molten": 103,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 170,
+    "crystal": 12812,
+    "liquid": 1524,
+    "grains": 0,
+    "foam": 0,
+    "molten": 55,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 180,
+    "crystal": 12804,
+    "liquid": 1532,
+    "grains": 0,
+    "foam": 0,
+    "molten": 63,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 190,
+    "crystal": 12506,
+    "liquid": 1830,
+    "grains": 0,
+    "foam": 0,
+    "molten": 88,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 200,
+    "crystal": 12286,
+    "liquid": 2050,
+    "grains": 0,
+    "foam": 0,
+    "molten": 92,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 210,
+    "crystal": 12048,
+    "liquid": 2288,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 220,
+    "crystal": 11873,
+    "liquid": 2463,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 230,
+    "crystal": 11814,
+    "liquid": 2522,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 240,
+    "crystal": 11069,
+    "liquid": 3267,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 250,
+    "crystal": 10627,
+    "liquid": 3709,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   },
+   {
+    "s": 260,
+    "crystal": 10437,
+    "liquid": 3899,
+    "grains": 0,
+    "foam": 0,
+    "molten": 93,
+    "monuments": 12,
+    "channels": 2
+   }
+  ],
+  "end": {
+   "tick": 5200,
+   "cells": 14336,
+   "crystal": 10437,
+   "liquid": 3899,
+   "grains": 0,
+   "foam": 0,
+   "molten": 93,
+   "monuments": 12,
+   "contacts": 56,
+   "waves": 0,
+   "stressed": 0,
+   "sinters": 0,
+   "channels": 2,
+   "regions": 6,
+   "stages": 2,
+   "harmony": 0.15625,
+   "drives": 1
+  },
+  "lastCausal": {
+   "nucleate": 8,
+   "accrete": 7,
+   "region": 2,
+   "fracture": 1,
+   "sinter": 1,
+   "freeze": 2,
+   "couple": 1,
+   "work": 14,
+   "edit": 5,
+   "expand": 1,
+   "anneal": 3,
+   "consolidate": 2,
+   "dissolve": 1
+  },
+  "stages": [
+   {
+    "rank": 1,
+    "reach": 22.5,
+    "fold": 6
+   },
+   {
+    "rank": 4,
+    "reach": 37.4,
+    "fold": 6
+   }
+  ],
+  "musicLog": [
+   "phrase",
+   "phrase",
+   "cadence",
+   "phrase",
+   "phrase",
+   "phrase",
+   "phrase",
+   "cadence",
+   "phrase",
+   "phrase",
+   "phrase",
+   "phrase",
+   "cadence",
+   "phrase",
+   "phrase",
+   "cadence",
+   "phrase",
+   "phrase",
+   "cadence",
+   "release",
+   "phrase",
+   "release",
+   "phrase",
+   "cadence"
+  ]
+ },
+ "seek": {
+  "farFromNothingMs": 6429,
+  "farTicks": 4800,
+  "msPerSimulatedMinute": 1607,
+  "backToMiddleMs": 1,
+  "backFromCheckpoint": true,
+  "forwardAgainMs": 0,
+  "sameStateAsContinuous": true,
+  "digest": "59a78dd1"
+ }
+}

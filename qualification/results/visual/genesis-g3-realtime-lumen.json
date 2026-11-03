@@ -1,0 +1,1196 @@
+{
+ "note": "Genesis G3 in the real player (qualification/visual/live-demo.js), Lumen replayed in real time then live; native 1920x1080, quality 1, Auto off; AMD Radeon iGPU through WSL2 D3D12. Situations are told apart by what the world reported with each half-second sample: within 3 s of a phrase, cadence or release; within 26 s of a verified milestone (its freeze); the camera within 70 m. Per-frame arrays stay with the local films.",
+ "code": "6e0b809",
+ "runs": {
+  "genesis-g3-lumen-q1": {
+   "family": "genesis",
+   "dataset": "lumen",
+   "size": "1920x1080",
+   "speed": 1,
+   "record": null,
+   "quality": "1",
+   "idle": 30,
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 50.8,
+    "GPU": 27.2,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.7
+   },
+   "errors": [],
+   "summary": {
+    "all": {
+     "seconds": 266,
+     "frames": 16085,
+     "fps": 58.5,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 483.3
+     },
+     "slowFrames": {
+      "over34ms": 0.1,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 58.75,
+      "p05": 55.1
+     },
+     "qualitySeconds": {
+      "1": 266
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.29,
+      "p95": 15.74
+     },
+     "gpuBusyPercent": 83.85,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.18,
+      "draw": 0.68
+     },
+     "agentsMax": 2
+    },
+    "replay": {
+     "seconds": 236,
+     "frames": 14286,
+     "fps": 58.5,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 483.3
+     },
+     "slowFrames": {
+      "over34ms": 0.1,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 58.71,
+      "p05": 55
+     },
+     "qualitySeconds": {
+      "1": 236
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.21,
+      "p95": 15.78
+     },
+     "gpuBusyPercent": 83.31,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.17,
+      "draw": 0.7
+     },
+     "agentsMax": 2
+    },
+    "idle": {
+     "seconds": 30,
+     "frames": 1799,
+     "fps": 59,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 33.5
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59,
+      "p05": 58
+     },
+     "qualitySeconds": {
+      "1": 30
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.93,
+      "p95": 15.29
+     },
+     "gpuBusyPercent": 88.07,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.25,
+      "draw": 0.56
+     },
+     "agentsMax": 0
+    },
+    "multiAgent": {
+     "seconds": 21,
+     "frames": 1275,
+     "fps": 59.7,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 33.4
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.67,
+      "p05": 57.8
+     },
+     "qualitySeconds": {
+      "1": 21
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 13.01,
+      "p95": 14.9
+     },
+     "gpuBusyPercent": 77.57,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 2.8,
+      "draw": 0.71
+     },
+     "agentsMax": 2
+    },
+    "closeUp": null,
+    "wide": {
+     "seconds": 266,
+     "frames": 16085,
+     "fps": 58.5,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 483.3
+     },
+     "slowFrames": {
+      "over34ms": 0.1,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 58.75,
+      "p05": 55.1
+     },
+     "qualitySeconds": {
+      "1": 266
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.29,
+      "p95": 15.74
+     },
+     "gpuBusyPercent": 83.85,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.18,
+      "draw": 0.68
+     },
+     "agentsMax": 2
+    }
+   },
+   "memoryMb": {
+    "first": {
+     "node": 197,
+     "browser": 100,
+     "gpu": 333,
+     "renderer": 182,
+     "other": 210
+    },
+    "last": {
+     "node": 179,
+     "browser": 100,
+     "gpu": 345,
+     "renderer": 235,
+     "other": 211
+    },
+    "max": {
+     "node": 197,
+     "browser": 100,
+     "gpu": 345,
+     "renderer": 245,
+     "other": 211
+    },
+    "heap": {
+     "first": 17.4,
+     "last": 17.4,
+     "max": 17.4
+    }
+   },
+   "qualify": null,
+   "framesOver90msAfterStart": [],
+   "situations": {
+    "the rest": {
+     "samples": 297,
+     "frames": 9097,
+     "fps": 58.5,
+     "frameP95": 16.8,
+     "over20ms": 156,
+     "gpuMean": 14.07,
+     "gpuP95": 15.35
+    },
+    "all": {
+     "samples": 532,
+     "frames": 16085,
+     "fps": 58.5,
+     "frameP95": 16.8,
+     "over20ms": 330,
+     "gpuMean": 14.29,
+     "gpuP95": 15.74
+    },
+    "musical transition (3 s after a phrase, cadence or release)": {
+     "samples": 160,
+     "frames": 4806,
+     "fps": 59.0,
+     "frameP95": 16.8,
+     "over20ms": 76,
+     "gpuMean": 14.37,
+     "gpuP95": 15.44
+    },
+    "freeze (26 s after a verified milestone)": {
+     "samples": 102,
+     "frames": 2967,
+     "fps": 57.2,
+     "frameP95": 16.8,
+     "over20ms": 138,
+     "gpuMean": 14.95,
+     "gpuP95": 15.93
+    },
+    "close view (camera within 70 m)": {
+     "samples": 39,
+     "frames": 1139,
+     "fps": 57.4,
+     "frameP95": 16.8,
+     "over20ms": 50,
+     "gpuMean": 14.93,
+     "gpuP95": 15.81
+    }
+   }
+  },
+  "genesis-g3-lumen-q1-close": {
+   "family": "genesis",
+   "dataset": "lumen",
+   "size": "1920x1080",
+   "speed": 1,
+   "record": null,
+   "quality": "1",
+   "idle": 20,
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 50.1,
+    "GPU": 27.2,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.7
+   },
+   "errors": [],
+   "summary": {
+    "all": {
+     "seconds": 256,
+     "frames": 15610,
+     "fps": 59.1,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.21,
+      "p05": 56.4
+     },
+     "qualitySeconds": {
+      "1": 256
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.07,
+      "p95": 14.98
+     },
+     "gpuBusyPercent": 83.24,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.04,
+      "draw": 0.7
+     },
+     "agentsMax": 2
+    },
+    "replay": {
+     "seconds": 236,
+     "frames": 14393,
+     "fps": 59.1,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.16,
+      "p05": 56.4
+     },
+     "qualitySeconds": {
+      "1": 236
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.03,
+      "p95": 14.99
+     },
+     "gpuBusyPercent": 82.95,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.03,
+      "draw": 0.71
+     },
+     "agentsMax": 2
+    },
+    "idle": {
+     "seconds": 20,
+     "frames": 1217,
+     "fps": 59.8,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "p99": 16.8,
+      "max": 66.7
+     },
+     "slowFrames": {
+      "over34ms": 0.1,
+      "over50ms": 0.1
+     },
+     "autoFps": {
+      "mean": 59.79,
+      "p05": 57.9
+     },
+     "qualitySeconds": {
+      "1": 20
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.49,
+      "p95": 14.68
+     },
+     "gpuBusyPercent": 86.62,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.19,
+      "draw": 0.56
+     },
+     "agentsMax": 0
+    },
+    "multiAgent": {
+     "seconds": 21,
+     "frames": 1281,
+     "fps": 60,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 16.8
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 60,
+      "p05": 60
+     },
+     "qualitySeconds": {
+      "1": 21
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 12.83,
+      "p95": 14.03
+     },
+     "gpuBusyPercent": 77.01,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 2.64,
+      "draw": 0.72
+     },
+     "agentsMax": 2
+    },
+    "closeUp": null,
+    "wide": {
+     "seconds": 256,
+     "frames": 15610,
+     "fps": 59.1,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 33.3,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.21,
+      "p05": 56.4
+     },
+     "qualitySeconds": {
+      "1": 256
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.07,
+      "p95": 14.98
+     },
+     "gpuBusyPercent": 83.24,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.04,
+      "draw": 0.7
+     },
+     "agentsMax": 2
+    }
+   },
+   "memoryMb": {
+    "first": {
+     "node": 190,
+     "browser": 101,
+     "gpu": 336,
+     "renderer": 192,
+     "other": 211
+    },
+    "last": {
+     "node": 173,
+     "browser": 101,
+     "gpu": 347,
+     "renderer": 231,
+     "other": 211
+    },
+    "max": {
+     "node": 190,
+     "browser": 101,
+     "gpu": 347,
+     "renderer": 244,
+     "other": 211
+    },
+    "heap": {
+     "first": 16.3,
+     "last": 16.3,
+     "max": 16.3
+    }
+   },
+   "qualify": {
+    "asked": {
+     "camera": {
+      "rank": 1,
+      "distance": 38,
+      "azimuth": 5.6,
+      "elevation": 0.32,
+      "fov": 55
+     }
+    },
+    "world": {
+     "stages": [],
+     "silent": null
+    }
+   },
+   "framesOver90msAfterStart": [],
+   "situations": {
+    "the rest": {
+     "samples": 19,
+     "frames": 772,
+     "fps": 58.1,
+     "frameP95": 16.8,
+     "over20ms": 6,
+     "gpuMean": 10.04,
+     "gpuP95": 10.27
+    },
+    "all": {
+     "samples": 512,
+     "frames": 15610,
+     "fps": 59.1,
+     "frameP95": 16.8,
+     "over20ms": 208,
+     "gpuMean": 14.07,
+     "gpuP95": 14.98
+    },
+    "close view (camera within 70 m)": {
+     "samples": 493,
+     "frames": 14838,
+     "fps": 59.2,
+     "frameP95": 16.8,
+     "over20ms": 202,
+     "gpuMean": 14.22,
+     "gpuP95": 14.99
+    },
+    "musical transition (3 s after a phrase, cadence or release)": {
+     "samples": 154,
+     "frames": 4641,
+     "fps": 59.2,
+     "frameP95": 16.8,
+     "over20ms": 59,
+     "gpuMean": 14.23,
+     "gpuP95": 14.94
+    },
+    "freeze (26 s after a verified milestone)": {
+     "samples": 102,
+     "frames": 2996,
+     "fps": 57.7,
+     "frameP95": 16.8,
+     "over20ms": 117,
+     "gpuMean": 14.76,
+     "gpuP95": 15.3
+    }
+   }
+  },
+  "genesis-g3-lumen-q1-recorded": {
+   "family": "genesis",
+   "dataset": "lumen",
+   "size": "1920x1080",
+   "speed": 1,
+   "record": "1080p",
+   "quality": "1",
+   "idle": 20,
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "cpuPercent": {
+    "browser": 0.6,
+    "renderer": 154.6,
+    "GPU": 26.6,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.7
+   },
+   "errors": [],
+   "summary": {
+    "all": {
+     "seconds": 256,
+     "frames": 12605,
+     "fps": 47.7,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "p99": 33.4,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0.2,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 47.67,
+      "p05": 43.5
+     },
+     "qualitySeconds": {
+      "1": 256
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.4,
+      "p95": 15.91
+     },
+     "gpuBusyPercent": 68.28,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.24,
+      "draw": 0.64
+     },
+     "agentsMax": 2
+    },
+    "replay": {
+     "seconds": 236,
+     "frames": 11610,
+     "fps": 47.6,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "p99": 33.4,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0.2,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 47.56,
+      "p05": 43.4
+     },
+     "qualitySeconds": {
+      "1": 236
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.37,
+      "p95": 15.95
+     },
+     "gpuBusyPercent": 67.95,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.24,
+      "draw": 0.65
+     },
+     "agentsMax": 2
+    },
+    "idle": {
+     "seconds": 20,
+     "frames": 995,
+     "fps": 48.9,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "p99": 33.4,
+      "max": 50
+     },
+     "slowFrames": {
+      "over34ms": 0.1,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 48.9,
+      "p05": 46.9
+     },
+     "qualitySeconds": {
+      "1": 20
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.77,
+      "p95": 15.54
+     },
+     "gpuBusyPercent": 72.15,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.27,
+      "draw": 0.48
+     },
+     "agentsMax": 0
+    },
+    "multiAgent": {
+     "seconds": 21,
+     "frames": 1114,
+     "fps": 52.1,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "p99": 33.4,
+      "max": 33.5
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 52.27,
+      "p05": 45.8
+     },
+     "qualitySeconds": {
+      "1": 21
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 13.11,
+      "p95": 15.11
+     },
+     "gpuBusyPercent": 67.85,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 2.7,
+      "draw": 0.63
+     },
+     "agentsMax": 2
+    },
+    "closeUp": null,
+    "wide": {
+     "seconds": 256,
+     "frames": 12605,
+     "fps": 47.7,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 33.4,
+      "p99": 33.4,
+      "max": 233.3
+     },
+     "slowFrames": {
+      "over34ms": 0.2,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 47.67,
+      "p05": 43.5
+     },
+     "qualitySeconds": {
+      "1": 256
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.4,
+      "p95": 15.91
+     },
+     "gpuBusyPercent": 68.28,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 3.24,
+      "draw": 0.64
+     },
+     "agentsMax": 2
+    }
+   },
+   "memoryMb": {
+    "first": {
+     "node": 196,
+     "browser": 101,
+     "gpu": 374,
+     "renderer": 317,
+     "other": 208
+    },
+    "last": {
+     "node": 179,
+     "browser": 341,
+     "gpu": 367,
+     "renderer": 477,
+     "other": 207
+    },
+    "max": {
+     "node": 196,
+     "browser": 341,
+     "gpu": 412,
+     "renderer": 490,
+     "other": 208
+    },
+    "heap": {
+     "first": 15.4,
+     "last": 15.4,
+     "max": 15.4
+    }
+   },
+   "qualify": null,
+   "framesOver90msAfterStart": [],
+   "situations": {
+    "the rest": {
+     "samples": 276,
+     "frames": 6986,
+     "fps": 48.4,
+     "frameP95": 33.4,
+     "over20ms": 1634,
+     "gpuMean": 14.16,
+     "gpuP95": 16.19
+    },
+    "all": {
+     "samples": 512,
+     "frames": 12605,
+     "fps": 47.7,
+     "frameP95": 33.4,
+     "over20ms": 3207,
+     "gpuMean": 14.4,
+     "gpuP95": 15.91
+    },
+    "musical transition (3 s after a phrase, cadence or release)": {
+     "samples": 163,
+     "frames": 3938,
+     "fps": 47.5,
+     "frameP95": 33.4,
+     "over20ms": 1028,
+     "gpuMean": 14.5,
+     "gpuP95": 15.55
+    },
+    "freeze (26 s after a verified milestone)": {
+     "samples": 102,
+     "frames": 2345,
+     "fps": 45.2,
+     "frameP95": 33.4,
+     "over20ms": 765,
+     "gpuMean": 15.08,
+     "gpuP95": 16.06
+    },
+    "close view (camera within 70 m)": {
+     "samples": 39,
+     "frames": 902,
+     "fps": 45.5,
+     "frameP95": 33.4,
+     "over20ms": 287,
+     "gpuMean": 15.08,
+     "gpuP95": 15.96
+    }
+   }
+  },
+  "genesis-g2-lumen-q1-now": {
+   "family": "genesis",
+   "dataset": "lumen",
+   "size": "1920x1080",
+   "speed": 1,
+   "record": null,
+   "quality": "1",
+   "idle": 30,
+   "renderer": "ANGLE (Microsoft Corporation, D3D12 (AMD Radeon(TM) Graphics), OpenGL ES 3.1)",
+   "cpuPercent": {
+    "browser": 0.3,
+    "renderer": 34.9,
+    "GPU": 25.6,
+    "network.mojom.NetworkService": 0.1,
+    "audio.mojom.AudioService": 0.7
+   },
+   "errors": [],
+   "summary": {
+    "all": {
+     "seconds": 267,
+     "frames": 16357,
+     "fps": 59.6,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 200
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.7,
+      "p05": 58
+     },
+     "qualitySeconds": {
+      "1": 267
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 13.86,
+      "p95": 14.93
+     },
+     "gpuBusyPercent": 82.73,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 0.9,
+      "draw": 0.59
+     },
+     "agentsMax": 2
+    },
+    "replay": {
+     "seconds": 237,
+     "frames": 14534,
+     "fps": 59.6,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 200
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.67,
+      "p05": 58
+     },
+     "qualitySeconds": {
+      "1": 237
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 13.77,
+      "p95": 14.94
+     },
+     "gpuBusyPercent": 82.16,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 0.89,
+      "draw": 0.6
+     },
+     "agentsMax": 2
+    },
+    "idle": {
+     "seconds": 30,
+     "frames": 1823,
+     "fps": 59.9,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 33.4
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.93,
+      "p05": 59.5
+     },
+     "qualitySeconds": {
+      "1": 30
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 14.56,
+      "p95": 14.68
+     },
+     "gpuBusyPercent": 87.24,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 1.02,
+      "draw": 0.49
+     },
+     "agentsMax": 0
+    },
+    "multiAgent": {
+     "seconds": 21,
+     "frames": 1278,
+     "fps": 60,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.7,
+      "p99": 16.8,
+      "max": 16.8
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 60,
+      "p05": 60
+     },
+     "qualitySeconds": {
+      "1": 21
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 12.68,
+      "p95": 13.75
+     },
+     "gpuBusyPercent": 76.08,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 0.83,
+      "draw": 0.56
+     },
+     "agentsMax": 2
+    },
+    "closeUp": null,
+    "wide": {
+     "seconds": 267,
+     "frames": 16357,
+     "fps": 59.6,
+     "frameMs": {
+      "p50": 16.7,
+      "p95": 16.8,
+      "p99": 16.8,
+      "max": 200
+     },
+     "slowFrames": {
+      "over34ms": 0,
+      "over50ms": 0
+     },
+     "autoFps": {
+      "mean": 59.7,
+      "p05": 58
+     },
+     "qualitySeconds": {
+      "1": 267
+     },
+     "qualityChanges": 0,
+     "degraded": false,
+     "gpuMs": {
+      "mean": 13.86,
+      "p95": 14.93
+     },
+     "gpuBusyPercent": 82.73,
+     "gpuTimerBlind": false,
+     "cpuMs": {
+      "update": 0.9,
+      "draw": 0.59
+     },
+     "agentsMax": 2
+    }
+   },
+   "memoryMb": {
+    "first": {
+     "node": 196,
+     "browser": 100,
+     "gpu": 332,
+     "renderer": 179,
+     "other": 210
+    },
+    "last": {
+     "node": 179,
+     "browser": 101,
+     "gpu": 344,
+     "renderer": 228,
+     "other": 210
+    },
+    "max": {
+     "node": 197,
+     "browser": 101,
+     "gpu": 345,
+     "renderer": 232,
+     "other": 210
+    },
+    "heap": {
+     "first": 12.8,
+     "last": 12.8,
+     "max": 12.8
+    }
+   },
+   "qualify": null,
+   "framesOver90msAfterStart": [],
+   "situations": {
+    "the rest": {
+     "samples": 534,
+     "frames": 16357,
+     "fps": 59.6,
+     "frameP95": 16.8,
+     "over20ms": 86,
+     "gpuMean": 13.86,
+     "gpuP95": 14.93
+    },
+    "all": {
+     "samples": 534,
+     "frames": 16357,
+     "fps": 59.6,
+     "frameP95": 16.8,
+     "over20ms": 86,
+     "gpuMean": 13.86,
+     "gpuP95": 14.93
+    }
+   },
+   "note": "G2 (0d2f706) in the same conditions, right after, for reference"
+  }
+ },
+ "earlier": {
+  "note": "At a39a82d (before the matter step's object shapes were made uniform): the same three runs reached 59.0, 59.5 and 50.9 fps (GPU p95 15.3, 14.6, 15.5 ms) with the machine faster; four of eight G3 runs then held one to six isolated main-thread stalls of 0.1 to 1 s (long tasks in the page, only with the music's forces on; none in G2 runs or a music-off run). None in the three runs at 6e0b809.",
+  "a39a82d": {
+   "genesis-g3-lumen-q1": {
+    "seconds": 266,
+    "frames": 16227,
+    "fps": 59,
+    "frameMs": {
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 900
+    },
+    "slowFrames": {
+     "over34ms": 0.1,
+     "over50ms": 0.1
+    },
+    "autoFps": {
+     "mean": 59.27,
+     "p05": 56
+    },
+    "qualitySeconds": {
+     "1": 266
+    },
+    "qualityChanges": 0,
+    "degraded": false,
+    "gpuMs": {
+     "mean": 13.9,
+     "p95": 15.28
+    },
+    "gpuBusyPercent": 82.37,
+    "gpuTimerBlind": false,
+    "cpuMs": {
+     "update": 2.46,
+     "draw": 0.87
+    },
+    "agentsMax": 2
+   },
+   "genesis-g3-lumen-q1-close": {
+    "seconds": 256.5,
+    "frames": 15745,
+    "fps": 59.5,
+    "frameMs": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 1016.7
+    },
+    "slowFrames": {
+     "over34ms": 0,
+     "over50ms": 0
+    },
+    "autoFps": {
+     "mean": 59.79,
+     "p05": 59
+    },
+    "qualitySeconds": {
+     "1": 256.5
+    },
+    "qualityChanges": 0,
+    "degraded": false,
+    "gpuMs": {
+     "mean": 13.69,
+     "p95": 14.57
+    },
+    "gpuBusyPercent": 81.84,
+    "gpuTimerBlind": false,
+    "cpuMs": {
+     "update": 2.41,
+     "draw": 0.55
+    },
+    "agentsMax": 2
+   },
+   "genesis-g3-lumen-q1-recorded": {
+    "seconds": 256.5,
+    "frames": 13448,
+    "fps": 50.9,
+    "frameMs": {
+     "p50": 16.7,
+     "p95": 33.4,
+     "p99": 33.4,
+     "max": 616.6
+    },
+    "slowFrames": {
+     "over34ms": 0.1,
+     "over50ms": 0
+    },
+    "autoFps": {
+     "mean": 50.95,
+     "p05": 47.1
+    },
+    "qualitySeconds": {
+     "1": 256.5
+    },
+    "qualityChanges": 0,
+    "degraded": false,
+    "gpuMs": {
+     "mean": 14,
+     "p95": 15.46
+    },
+    "gpuBusyPercent": 70.95,
+    "gpuTimerBlind": true,
+    "cpuMs": {
+     "update": 2.69,
+     "draw": 0.48
+    },
+    "agentsMax": 2
+   }
+  }
+ }
+}
