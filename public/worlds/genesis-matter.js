@@ -150,7 +150,7 @@ export function regionLaws(P,seed,k){
   const an=clamp(P.anisotropy+.36*(h(4)-.5)),fold=an>.64?2:6;
   const delta=fold===6?lerp(.04,.38,an/.64):lerp(.3,.6,(an-.64)/.36);
   return {lake,U,fold,delta,mob:P.mobility*lerp(.85,1.15,h(7)),
-    cap:fold===2?lerp(2.6,4.4,h(6)):lerp(1.2,2.8,clamp(an/.64+.3*(h(6)-.5))),sens:lake?1:.3,hue:h(8)};
+    cap:fold===2?lerp(2.6,4.4,h(6)):lerp(1.2,2.8,clamp(an/.64+.3*(h(6)-.5))),hue:h(8)};
 }
 // ---- Layout: the structure at time t -> regions, sites and channels ------------------------------------------------
 // The habitat of the life driver: sites are the live files (id, position, cold radius, symbols, state), data the
@@ -235,7 +235,7 @@ export function createMatter(spec){
   const reg=new Int16Array(N),taBase=F(),cap=F(),chanW=F(),chanS=F(),chanIdx=new Int16Array(N).fill(-1);
   // the stages (G3: where the score's phrases grow, one per lake) and the monuments' coherent crystal (its monument, and
   // the tick its recrystallising front reaches the cell)
-  const stageW=F(),stageOf=new Int16Array(N).fill(-1),monoOf=new Int16Array(N).fill(-1),monoAt=new Float64Array(N);
+  const stageW=F(),stageOf=new Int16Array(N).fill(-1),monoOf=new Int16Array(N).fill(-1),monoAt=new Float64Array(N),monoG=new Uint16Array(N);
   // (a region's stage stays where it was first placed, as its seat does, while that spot is still open melt: stageAt)
   let stages=[],stageAt=new Map();
   // per tick: thermal contacts (sum of conductances, sum of conductance x temperature) and the stress sources
@@ -245,7 +245,15 @@ export function createMatter(spec){
   let tick=0,craze=0,lastT=null;
   // the harmony in force (the bar it was read at, the stage's temperature and conductance, settling) and the bass's
   // drives {k0, k1, w (rad/s), A, g (its grain)}, the music's own log (never the causal log)
-  let harm={b:null,T:0,k:0,smooth:0,damp:1,g:undefined},drives=[],mlog=[];
+  // (every object the step reads has one shape, made here, also on restore, so its loops stay monomorphic: a hot loop
+  // that meets a new shape is deoptimised, and the player's frame waits while it runs slowly)
+  const mkHarm=(b=-1,T=0,k=0,smooth=0,damp=1,g=-1)=>({b,T,k,smooth,damp,g});
+  const mkContact=c=>({x:c.x,z:c.z,r:c.r,k:c.k,T:c.T,k0:c.k0,k1:c.k1,ramp:c.ramp,rin:c.rin});
+  const mkWave=w=>({kind:w.kind,x:w.x,z:w.z,ux:w.ux||0,uz:w.uz||0,len:w.len||0,v:w.v,A:w.A,R:w.R||0,hold:w.hold||0,fade:w.fade||0,w:w.w,k0:w.k0});
+  const mkSinter=c=>({x:c.x,z:c.z,k0:c.k0,v:c.v,R:c.R});
+  const mkDrive=d=>({k0:d.k0,k1:d.k1,w:d.w,A:d.A,g:d.g});
+  const mkMonument=m=>({x:m.x,z:m.z,k0:m.k0,size:m.size,seed:m.seed,n:m.n,site:m.site,grain:m.grain});
+  let harm=mkHarm(),drives=[],mlog=[];
   // dynamic: contacts {x,z,r,k,T,k0,k1,ramp}, waves {x,z,v,k0,kind,A,R,hold,fade,w}, stressed sites, sintering fronts,
   // monuments, channels' birth ticks, files' growth (metres added by structure), the causal log
   let contacts=[],waves=[],stressed=new Map(),sinters=[],monuments=[],born=new Map(),growth=new Map(),log=[],surged=new Map();
@@ -266,7 +274,7 @@ export function createMatter(spec){
     // a verified milestone's monuments: a lasting cold, and around them one coherent crystal (their grain), recrystallised
     // by a front from each at 4 m/s
     monoOf.fill(-1);
-    monuments.forEach((m,j)=>forDisc(m.x,m.z,MONO_R,(i,q)=>{taBase[i]-=.5*(1-q);if(monoOf[i]<0){monoOf[i]=j;monoAt[i]=m.k0+Math.sqrt(q)*MONO_R/4*HZ;}}));
+    monuments.forEach((m,j)=>forDisc(m.x,m.z,MONO_R,(i,q)=>{taBase[i]-=.5*(1-q);if(monoOf[i]<0){monoOf[i]=j;monoG[i]=m.grain;monoAt[i]=m.k0+Math.sqrt(q)*MONO_R/4*HZ;}}));
     // channels: a capsule from the importing region's seat to the imported's (the shorter way round), weighted to its axis
     chanW.fill(0);chanIdx.fill(-1);const byRank=new Map(data.regions.map(r=>[r.rank,r]));
     data.channels.forEach((c,ci)=>{const A=byRank.get(c.a),B=byRank.get(c.b);if(!A||!B)return;const bx=wx(B.x-A.x),bz=wz(B.z-A.z),len=len2(bx,bz)||1;
@@ -307,8 +315,8 @@ export function createMatter(spec){
   const regionAt=id=>{const s=siteMap.get(id);if(s)return data.regions[s.region]||null;return regionById.get(id)||null;};
   let curRegions=[];   // the regions the input being applied concerns (for the causal log)
   const note=(kind,what,rule,extra={})=>{log.push({tick,kind,what,rule,regions:curRegions,...extra});if(log.length>48)log.shift();};
-  function contact(x,z,r,k,temp,secs,ramp=.4,rampIn=ramp){contacts.push({x,z,r,k,T:temp,k0:tick,k1:tick+Math.round(secs*HZ),ramp:Math.max(1,Math.round(ramp*HZ)),rin:Math.max(1,Math.round(rampIn*HZ))});if(contacts.length>320)contacts.shift();}
-  function wave(o){waves.push({k0:tick,...o});if(waves.length>6)waves.shift();}
+  function contact(x,z,r,k,temp,secs,ramp=.4,rampIn=ramp){contacts.push(mkContact({x,z,r,k,T:temp,k0:tick,k1:tick+Math.round(secs*HZ),ramp:Math.max(1,Math.round(ramp*HZ)),rin:Math.max(1,Math.round(rampIn*HZ))}));if(contacts.length>320)contacts.shift();}
+  function wave(o){waves.push(mkWave({k0:tick,...o}));if(waves.length>6)waves.shift();}
   // a surge of heat along the channels a region imports through (coupling: energy travels toward what it depends on),
   // at most one per channel every 4 s
   function surgeFrom(rank,A){const R0=data.regions.find(r=>r.rank===rank);if(!R0)return 0;let n=0;
@@ -324,7 +332,7 @@ export function createMatter(spec){
     if(quench>0)contact(x,z,r*CELL*3.2,quench,-.45,1.4,.15);return n;}
   function monument(siteIds,ev,grown,arrive=null){
     for(const id of siteIds.slice(0,6)){const p=posOf(id);if(!p)continue;const k=mix(pseed,hash(id),monuments.length);
-      monuments.push({x:p.x,z:p.z,k0:grown?-1e9:(arrive?arrive(p):tick),size:clamp(+ev.magnitude||0,.3,1.4)*(ev.tier>=4?1.3:1),seed:k,n:3+(k%5),site:id,grain:k%GRAINS});}
+      monuments.push(mkMonument({x:p.x,z:p.z,k0:grown?-1e9:(arrive?arrive(p):tick),size:clamp(+ev.magnitude||0,.3,1.4)*(ev.tier>=4?1.3:1),seed:k,n:3+(k%5),site:id,grain:k%GRAINS}));}
     while(monuments.length>MAX_MONUMENTS)monuments.shift();dirty=true;
   }
   function influence(ev){
@@ -353,7 +361,7 @@ export function createMatter(spec){
         else{craze=1;note('craze','a validation failed with no files attributed','the whole sea\'s crystal crazes faintly for a moment (unlocalised: nothing is broken)');}
         break;
       case 'validation.recovered':{const list=ev.sites.length?ev.sites:[...stressed.keys()];
-        for(const id of list){stressed.delete(id);const p=posOf(id);if(p){sinters.push({x:p.x,z:p.z,k0:tick,v:P.sinter,R:90});if(sinters.length>8)sinters.shift();}}
+        for(const id of list){stressed.delete(id);const p=posOf(id);if(p){sinters.push(mkSinter({x:p.x,z:p.z,k0:tick,v:P.sinter,R:90}));if(sinters.length>8)sinters.shift();}}
         if(!ev.sites.length){craze=0;}note('sinter','a failure was recovered','a sintering front fuses the grains back into crystal and leaves seams');break;}
       case 'validation.passed':for(const p of sites_.slice(0,6))contact(p.x,p.z,10*P.spread,1.2,-.55,3);note('anneal','a validation passed on these files','their matter is annealed: nearby melt crystallises (no celebration)');break;
       case 'refactor.validated':for(const p of sites_.slice(0,3))wave({kind:'reform',x:p.x,z:p.z,v:10,A:1.1*s,R:40,w:6});note('reform','a refactor was validated','the matter around it re-forms');break;
@@ -406,14 +414,14 @@ export function createMatter(spec){
     if(rel>0)t=t*(1-rel)+.22*rel;
     // (what freezes in a stage under this bar's harmony is its own grain: one ring of growth per bar, its faces' tilt by
     // the chord, so a chord's rings share their light)
-    harm={b,T:q10(t),k:.5,smooth:resolved?.6:0,damp:resolved?3:1,g:((((b*3)&15)<<8)|((((x.chord|0)%7+7)%7)*36+11))%GRAINS};
+    harm=mkHarm(b,q10(t),.5,resolved?.6:0,resolved?3:1,((((b*3)&15)<<8)|((((x.chord|0)%7+7)%7)*36+11))%GRAINS);
     if(resolved&&(e.barInPhrase|0)===2)mnote('cadence','the phrase closes on the tonic','the stages settle: fronts stop, interfaces relax, the melt calms');
     if(rel>.3&&(e.barInPhrase|0)===0)mnote('release','the music releases','the stages warm: what the phrases grew melts back');
   }
   function listen(T_,music){
     if(!music||!Number.isFinite(T_))return;
     if(lastT===null||T_<lastT){lastT=T_;return;}
-    if(T_>=silentFrom){harm={b:null,T:0,k:0,smooth:0,damp:1,g:undefined};lastT=T_;return;}
+    if(T_>=silentFrom){harm=mkHarm();lastT=T_;return;}
     const cfg=music.config,barMs=240000/(cfg?.tempo>0?cfg.tempo:92),step=barMs/16;
     for(let b=Math.floor(lastT/barMs);b<=Math.floor(T_/barMs);b++){const x=music.bar(b);if(!x?.steps)continue;
       if(b*barMs>lastT&&b*barMs<=T_)harmonyOf(b,x);
@@ -428,7 +436,7 @@ export function createMatter(spec){
               const [px,pz,sc]=place(S,x,p.x-p.hz*side*o,p.z+p.hx*side*o),r=Math.max(1.8,.7*P.nucleus*(.5+.8*v)*Math.sqrt(sc));
               nucleate(px,pz,r,0,g,-.25,pitchLift(m));contact(px,pz,r*CELL*1.3,1.2+3*v,-.3,dur,.1);contact(px,pz,r*CELL,.6,-.12,MEMORY,10,.3);}}
           else if(n.group==='bass'&&stages.length){const f=.28*dexp((clamp(m,28,64)-36)*.0577623);
-            drives.push({k0:tick,k1:tick+Math.round(dur*HZ),w:TAU*f,A:v,g:pitchGrain(m,0,b*16+k)});if(drives.length>4)drives.shift();}}}}
+            drives.push(mkDrive({k0:tick,k1:tick+Math.round(dur*HZ),w:TAU*f,A:v,g:pitchGrain(m,0,b*16+k)}));if(drives.length>4)drives.shift();}}}}
     lastT=T_;
   }
   // ---- The bass's waves (G3) ----------------------------------------------------------------------------------------
@@ -483,7 +491,7 @@ export function createMatter(spec){
     if(harm.k>0)for(let i=0;i<N;i++){const w=stageW[i];if(w>0){const k=harm.k*w;kc[i]+=k;kt[i]+=k*harm.T;}}
     // the bass: the melt's surface waves
     stepWaves();
-    const settle=harm.smooth,bassG=drives.length?drives[drives.length-1].g:0;
+    const settle=harm.smooth,hg=harm.g,bassG=drives.length?drives[drives.length-1].g:0;
     const D=P.diffusion,eps=P.width,beta=P.beta,Lh=P.latent,rel=P.relax,Ds=P.stressDiffusion,str=P.strength,froth=P.froth,grow=P.growth*DT,seeding=P.seeding;
     for(let i=0;i<N;i++){
       const o=6*i,p=phi[i],t=T[i],L=regionOf(i);
@@ -508,13 +516,13 @@ export function createMatter(spec){
       else if(p<.05&&sw>=.2&&t<-.02&&drives.length){const e=surf[i]*surf[i]-SONO;if(e>0&&u01(seed,i,tick,9)<4*seeding*e*(-t)*DT){pn=1;gid[i]=bassG;}}
       // a cell that freezes joins the grain it froze from, or (more often in deep undercooling) starts one of its own:
       // fast fronts fragment, so a plain grows as a mosaic of columnar grains radiating from its nuclei
-      else if(p<.5&&pn>=.5){const x=-t-.1;gid[i]=sw>=.2&&harm.g!==undefined?harm.g:u01(seed,i,tick,6)<seeding*(.002+.03*(x>0?x:0))?mix(seed,i,tick,8)%GRAINS:g;}
+      else if(p<.5&&pn>=.5){const x=-t-.1;gid[i]=sw>=.2&&hg>=0?hg:u01(seed,i,tick,6)<seeding*(.002+.03*(x>0?x:0))?mix(seed,i,tick,8)%GRAINS:g;}
       // a superheated solid melts throughout; a lake warmed past its melting point opens melt at cells here and there
       // (a freeze's crust on a lake thaws within seconds of the cold's going)
       if(p>.98){if(t>SUPERHEAT)pn-=DT*4*(t-SUPERHEAT);else if(L.lake&&t>.01&&u01(seed,i,tick,3)<4*DT*(t-.01))pn=.3;}
       pn=pn<0?0:pn>1?1:pn;
       // a verified milestone's coherent crystal: solid within its reach takes its grain as its front passes (lasting)
-      const mj=monoOf[i];if(mj>=0&&pn>=.5&&tick>=monoAt[i])gid[i]=monuments[mj].grain;
+      const mj=monoOf[i];if(mj>=0&&pn>=.5&&tick>=monoAt[i])gid[i]=monoG[i];
       const tn=t+DT*(D*lapT+rel*(taBase[i]-t)+kt[i]-kc[i]*t)+Lh*(pn-p);
       phi2[i]=pn;T2[i]=tn;
       // froth: boiling melt; collapses as it cools
@@ -550,18 +558,18 @@ export function createMatter(spec){
     hPrev.set(H);phiPrev.set(phi);surf.fill(0);svel.fill(0);sPrev.fill(0);lift.fill(0);wq=true;
     for(const s of sites)if(s.kind===3)stressed.set(s.id,.6);
     for(const c of data.channels)born.set(c.key,-1e9);
-    lastT=null;harm={b:null,T:0,k:0,smooth:0,damp:1,g:undefined};drives=[];
+    lastT=null;harm=mkHarm();drives=[];
   }
   // ---- Snapshots ---------------------------------------------------------------------------------------------------
   const ARR=()=>({phi,T,st,H,frac,foam,seam,hPrev,phiPrev,gid,surf,svel,sPrev,lift});
   function snapshot(){const a={};for(const [k,v] of Object.entries(ARR()))a[k]=v.slice();
     return {tick,craze,lastT,harm:{...harm},drives:structuredClone(drives),mlog:mlog.slice(),wq,stageAt:[...stageAt],a,sites,data,contacts:structuredClone(contacts),waves:structuredClone(waves),stressed:[...stressed],sinters:structuredClone(sinters),
       monuments:structuredClone(monuments),born:[...born],growth:[...growth],surged:[...surged],director:director.snapshot(),log:log.slice()};}
-  function restore(s){tick=s.tick;craze=s.craze;lastT=s.lastT;harm={...s.harm};drives=structuredClone(s.drives);mlog=s.mlog.slice();wq=s.wq;stageAt=new Map(s.stageAt);
+  function restore(s){tick=s.tick;craze=s.craze;lastT=s.lastT;const h=s.harm;harm=mkHarm(h.b,h.T,h.k,h.smooth,h.damp,h.g);drives=s.drives.map(mkDrive);mlog=s.mlog.slice();wq=s.wq;stageAt=new Map(s.stageAt);
     phi=s.a.phi.slice();T=s.a.T.slice();st=s.a.st.slice();H.set(s.a.H);frac.set(s.a.frac);foam.set(s.a.foam);seam.set(s.a.seam);hPrev.set(s.a.hPrev);phiPrev.set(s.a.phiPrev);gid.set(s.a.gid);
     surf.set(s.a.surf);svel.set(s.a.svel);sPrev.set(s.a.sPrev);lift.set(s.a.lift);
-    sites=s.sites;data=s.data;contacts=structuredClone(s.contacts);waves=structuredClone(s.waves);stressed=new Map(s.stressed);sinters=structuredClone(s.sinters);
-    monuments=structuredClone(s.monuments);born=new Map(s.born);growth=new Map(s.growth);surged=new Map(s.surged);director.restore(s.director);log=s.log.slice();dirty=true;}
+    sites=s.sites;data=s.data;contacts=s.contacts.map(mkContact);waves=s.waves.map(mkWave);stressed=new Map(s.stressed);sinters=s.sinters.map(mkSinter);
+    monuments=s.monuments.map(mkMonument);born=new Map(s.born);growth=new Map(s.growth);surged=new Map(s.surged);director.restore(s.director);log=s.log.slice();dirty=true;}
   function digest(){let h=2166136261;const mixIn=v=>{h^=v&0xffff;h=Math.imul(h,16777619);h^=v>>>16;h=Math.imul(h,16777619);};
     for(let i=0;i<N;i++){mixIn(Math.round(phi[i]*4096));mixIn(Math.round(T[i]*4096)+65536);mixIn(Math.round(H[i]*256));mixIn(Math.round(frac[i]*4096));mixIn(Math.round(foam[i]*4096));mixIn(gid[i]);mixIn(Math.round(surf[i]*4096)+65536);mixIn(Math.round(lift[i]*256));}
     mixIn(tick);mixIn(monuments.length);mixIn(stressed.size);return (h>>>0).toString(16).padStart(8,'0');}
