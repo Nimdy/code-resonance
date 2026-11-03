@@ -973,6 +973,8 @@
     // A flash and a click at the same performance time, delayMs (real time) from now.
     audioClock:()=>music.ctx?music.ctx.currentTime:null,structure:()=>model?{nodes:model.graph?.nodes?.length||0,edges:model.graph?.edges?.length||0}:null,setRecordSize:v=>setRecordSize(v),
     marker(delayMs=300){const at=perfNow()+delayMs*replaySpeed();flashes.push({at,shown:0});return music.marker(at);},pilot:on=>music.pilot(on),perfNow:()=>perfNow(),stats:()=>living?.stats?.()||null,
+    // A built-in world's review controls (Genesis: a locked camera), as the film page's --qualify passes them.
+    qualify:q=>living?.world?.qualify?.(q)??null,
     world:()=>({selectedWorld,remote:!!living?.remote,pack:living?.pack?.id||null,family:living?.recipe?.family||null,look:living?.recipe?.pack?.id||null,
       frames:document.querySelectorAll('iframe.pack-frame').length,notice:packNotice,lastStop}),
     action:a=>recipeAction(a),setWorld:w=>setWorld(w),

@@ -10,6 +10,9 @@
 //
 // node visual/live-demo.js --dataset <dir> --family synaptic-storm [--gpu amd] [--size 1920x1080] [--speed 1]
 //        [--record 1080p|720p|stage] [--quality auto|0-3] [--overlay] [--idle 60] [--out dir] [--tag name]
+//        [--qualify '{"camera":{...}}' (a built-in world's review controls, e.g. Genesis's locked camera for close views)]
+// A world may report a small `sample` in its stats (Genesis: its camera distance, harmony, latest musical and freeze
+// moments); it is kept with each sample, so its situations can be measured apart.
 //   --overlay  the OBS overlay page (?overlay=1&sound=1), as an OBS Browser Source loads it, instead of the player
 const path=require('node:path');
 const fs=require('node:fs');
@@ -31,7 +34,7 @@ const SAMPLE=()=>{const s=window.__qual.stats(),v=window.__view,st=window.Resona
   if(v){camera=v.camera.position.length();v.scene.traverse(o=>{const u=o.material?.uniforms;if(focus===null&&u?.uFocus)focus=u.uFocus.value;const F=o.userData?.fractal;if(form===null&&F?.uWSg)form=F.uWSg.value;});}
   return {perf:st.position.now,end:st.position.end,mode:st.mode,playing:st.playing,iv:window.__iv.splice(0),fps:s?.fps??null,quality:s?.quality??null,changes:s?.qualityChanges??null,degraded:!!s?.degraded,
     gpuMs:s?.gpuMs??null,blind:!!s?.gpuTimerBlind,updateMs:s?.updateMs??null,drawMs:s?.drawMs??null,agents:s?.agents??0,phase:s?.phase??null,family:s?.family??null,
-    heapMb:m?+(m.usedJSHeapSize/1048576).toFixed(1):null,canvas:(c=>c?[c.width,c.height]:null)(document.getElementById("world")),camera,focus,form,recording:window.__qual.recording()};};
+    heapMb:m?+(m.usedJSHeapSize/1048576).toFixed(1):null,canvas:(c=>c?[c.width,c.height]:null)(document.getElementById("world")),camera,focus,form,recording:window.__qual.recording(),sample:s?.sample??null};};
 // The camera's framing: a close-up is Synaptic Storm's camera within 26 units of what it frames (its own constants: 14
 // for an attention close-up, 23 for a busy agent, 38 or more for the network), or Fractal Continuum's camera nearer than
 // 0.7 of its usual framing (attention 0.36, a busy agent 0.64 of the whole form's framing distance).
@@ -69,6 +72,7 @@ function summary(list){
       // The music plays in every run (RECORD starts it; the overlay starts it itself with sound=1).
       if(RECORD)report.recordingStarted=await page.evaluate(async size=>{window.__qual.setRecordSize(size);await window.__qual.record();return window.__qual.recording();},RECORD);
       else if(!OVERLAY)await page.evaluate(()=>window.ResonancePlayer.toggleSound());
+      if(arg('qualify'))report.qualify={asked:JSON.parse(arg('qualify')),world:await page.evaluate(q=>window.__qual.qualify(q),JSON.parse(arg('qualify')))};
       await page.evaluate(()=>window.__qual.replayFromStart());
       const t0=Date.now(),cpu0=await cpu(),samples=[];let part='replay',liveAt=null;
       for(;;){

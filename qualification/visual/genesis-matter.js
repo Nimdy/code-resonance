@@ -1,13 +1,14 @@
 'use strict';
-// Genesis G2, Metamorphic Matter: the simulation measured outside the browser on the real recorded performances (the
+// Genesis G2 and G3, Metamorphic Matter: the simulation measured outside the browser on the real recorded performances (the
 // timeline the player receives from the receiver, the grammar the world creates, the player's score configuration).
 //  - cost: continuous play at 30 frames per second over the performance and a quiet tail; time per tick (mean, p95,
 //    max), the regimes' shares and what the matter did (monuments, channels, the causal log's kinds);
 //  - seeking: a far seek from nothing to the end, back to the middle (a checkpoint), forward again; and that the far
 //    seek reaches the state continuous play reaches (determinism at the real scale); the digests every 10 s;
 //  - --laws <dataset>: the same recorded events under another project's Lawbook (a controlled comparison: the
-//    events are this recording's, the laws another's), with the response measured side by side.
-// node visual/genesis-matter.js --dataset lumen [--tail 20] [--laws excalidraw] [--out results/visual]
+//    events are this recording's, the laws another's), with the response measured side by side;
+//  - --music-off: the same, the music's forces off from the start (G3: what the phrase logic costs, ticks and seeks).
+// node visual/genesis-matter.js --dataset lumen [--tail 20] [--laws excalidraw] [--music-off] [--out results/visual]
 // (the tempo is the player's: the score identity's for the style, public/app.js setMood)
 const path=require('node:path');
 const fs=require('node:fs');
@@ -16,7 +17,7 @@ const {pathToFileURL}=require('node:url');
 const {projectOf,withService,recipeAction}=require('./harness');
 const arg=(k,d)=>{const i=process.argv.indexOf(`--${k}`);return i<0?d:process.argv[i+1];};
 const ROOT=path.join(__dirname,'..','..'),DATA=path.join(__dirname,'..','results','datasets');
-const DATASET=arg('dataset','lumen'),TAIL=Number(arg('tail',20)),OTHER=arg('laws',null);
+const DATASET=arg('dataset','lumen'),TAIL=Number(arg('tail',20)),OTHER=arg('laws',null),OFF=process.argv.includes('--music-off');
 const OUT=path.resolve(arg('out',path.join(__dirname,'..','results','visual')));
 const mod=f=>import(pathToFileURL(path.join(ROOT,'public','worlds',f)).href);
 const pct=(a,p)=>{const s=a.slice().sort((x,y)=>x-y);return s.length?+s[Math.min(s.length-1,Math.floor(p*(s.length-1)))].toFixed(3):null;};
@@ -39,10 +40,10 @@ async function inputsOf(ds){
   const {entries,music}=own,start=entries[0].start,end=entries.at(-1).end,TEMPO=score.createIdentity(music.seed).tempo[music.style]||92;
   const make=recipe=>{const timeline=createLifeTimeline();timeline.prime(entries);
     // (seeded as the host seeds a world's matter: the same states as the player's, digest for digest)
-    return createLifeDriver({grammar:M.createMatterGrammar({recipe}),timeline,seed:hash(`${recipe.projectSeed}/${recipe.variant||0}/matter`),score,background:false,
+    return createLifeDriver({grammar:M.createMatterGrammar({recipe,silentFrom:OFF?start:Infinity}),timeline,seed:hash(`${recipe.projectSeed}/${recipe.variant||0}/matter`),score,background:false,
       config:()=>({speed:1,tempo:TEMPO,epoch:start,params:{},film:true,live:false,music})});};
   const view=t=>({tview:(t-start)/1000});
-  const results={dataset:DATASET,node:process.version,cpu:os.cpus()[0]?.model,loadavg:os.loadavg().map(x=>+x.toFixed(2)),tempo:TEMPO,
+  const results={dataset:DATASET,musicForces:!OFF,node:process.version,cpu:os.cpus()[0]?.model,loadavg:os.loadavg().map(x=>+x.toFixed(2)),tempo:TEMPO,
     performanceSeconds:+((end-start)/1000).toFixed(1),windows:entries.length,laws:own.recipe.genome.laws,matterVersion:M.MATTER_VERSION,cells:M.NCELL,hz:M.HZ};
   // continuous play at 30 fps, every frame timed; the digests every 10 s
   function play(recipe){const d=make(recipe),perTick=[],digests=[],series=[];let prev=0;const t1=end+TAIL*1000;
@@ -52,7 +53,7 @@ async function inputsOf(ds){
   const A=play(own.recipe),eco=A.d.view.eco;
   const kinds={};for(const x of eco.log)kinds[x.kind]=(kinds[x.kind]||0)+1;
   results.continuous={ticks:A.d.stats().ticks,tickMs:{mean:mean(A.perTick),p50:pct(A.perTick,.5),p95:pct(A.perTick,.95),max:pct(A.perTick,1)},digests:A.digests,series:A.series,
-    end:eco.stats(),lastCausal:kinds};
+    end:eco.stats(),lastCausal:kinds,stages:eco.stages.map(S=>({rank:S.rank,reach:+S.R.toFixed(1),fold:S.fold})),musicLog:eco.musicLog.map(x=>x.kind)};
   // seeking: from nothing to the end, back to the middle, forward again; the far seek against continuous play
   const s=make(own.recipe),mid=start+(end-start)/2;
   let a=performance.now();s.update(view(end),{budgetMs:Infinity});const far=performance.now()-a,farTicks=s.stats().ticks;
@@ -70,5 +71,5 @@ async function inputsOf(ds){
       meanLiquidShare:{own:+mean(A.series.map(x=>x.liquid/M.NCELL)).toFixed(3),other:+mean(B.series.map(x=>x.liquid/M.NCELL)).toFixed(3)},
       meanMolten:{own:mean(A.series.map(x=>x.molten)),other:mean(B.series.map(x=>x.molten))}};
     console.log(JSON.stringify({peakGrains:results.comparison.peakGrains,meanLiquidShare:results.comparison.meanLiquidShare,meanMolten:results.comparison.meanMolten}));}
-  const file=path.join(OUT,`genesis-matter-${DATASET}${OTHER?`-laws-${OTHER}`:''}.json`);fs.writeFileSync(file,JSON.stringify(results,null,1));console.log('written',path.relative(process.cwd(),file));
+  const file=path.join(OUT,`genesis-matter-${DATASET}${OTHER?`-laws-${OTHER}`:''}${OFF?'-music-off':''}.json`);fs.writeFileSync(file,JSON.stringify(results,null,1));console.log('written',path.relative(process.cwd(),file));
 })().catch(e=>{console.error(e);process.exitCode=1;});
